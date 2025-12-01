@@ -54,7 +54,7 @@ export function useSupplierDiscovery() {
     sourcesUsed: [],
     confidence: 0,
     webResults: null,
-    searchType: null
+    searchType: null,
   });
 
   // Traditional supplier discovery (existing functionality)
@@ -65,9 +65,9 @@ export function useSupplierDiscovery() {
       const response = await fetch('/api/suppliers/discovery', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       });
 
       const result: DiscoveryResponse = await response.json();
@@ -80,7 +80,7 @@ export function useSupplierDiscovery() {
           error: null,
           processingTime: result.metadata?.processingTime || 0,
           sourcesUsed: result.metadata?.sourcesUsed || [],
-          confidence: result.metadata?.confidence || 0
+          confidence: result.metadata?.confidence || 0,
         }));
       } else {
         setState(prev => ({
@@ -88,7 +88,7 @@ export function useSupplierDiscovery() {
           isLoading: false,
           error: result.error || 'Failed to discover supplier information',
           processingTime: result.metadata?.processingTime || 0,
-          sourcesUsed: result.metadata?.sourcesUsed || []
+          sourcesUsed: result.metadata?.sourcesUsed || [],
         }));
       }
     } catch (error) {
@@ -96,29 +96,34 @@ export function useSupplierDiscovery() {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Network error occurred'
+        error: error instanceof Error ? error.message : 'Network error occurred',
       }));
     }
   }, []);
 
   // Web-based supplier discovery (new functionality)
   const discoverFromWeb = useCallback(async (request: WebDiscoveryRequest) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null, searchType: request.searchType === 'query' ? 'web-query' : 'web-website' }));
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+      searchType: request.searchType === 'query' ? 'web-query' : 'web-website',
+    }));
 
     const startTime = Date.now();
 
     try {
-      let webResult: WebDiscoveryResult
+      let webResult: WebDiscoveryResult;
 
       if (request.searchType === 'website' && request.url) {
-        webResult = await supplierIntelligenceService.extractFromWebsite(request.url)
+        webResult = await supplierIntelligenceService.extractFromWebsite(request.url);
       } else if (request.searchType === 'query' && request.query) {
-        webResult = await supplierIntelligenceService.discoverSuppliers(request.query)
+        webResult = await supplierIntelligenceService.discoverSuppliers(request.query);
       } else {
-        throw new Error('Invalid web discovery request')
+        throw new Error('Invalid web discovery request');
       }
 
-      const processingTime = Date.now() - startTime
+      const processingTime = Date.now() - startTime;
 
       if (webResult.success) {
         setState(prev => ({
@@ -128,29 +133,29 @@ export function useSupplierDiscovery() {
           error: null,
           processingTime,
           sourcesUsed: webResult.metadata?.sources || [],
-          confidence: webResult.metadata?.confidence || 0
-        }))
+          confidence: webResult.metadata?.confidence || 0,
+        }));
 
-        return webResult
+        return webResult;
       } else {
         setState(prev => ({
           ...prev,
           isLoading: false,
           error: webResult.error || 'Failed to discover supplier from web',
           processingTime,
-          sourcesUsed: webResult.metadata?.sources || []
-        }))
-        return webResult
+          sourcesUsed: webResult.metadata?.sources || [],
+        }));
+        return webResult;
       }
     } catch (error) {
-      console.error('Web discovery error:', error)
-      const processingTime = Date.now() - startTime
+      console.error('Web discovery error:', error);
+      const processingTime = Date.now() - startTime;
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Web discovery failed',
-        processingTime
-      }))
+        processingTime,
+      }));
       return {
         success: false,
         data: [],
@@ -159,22 +164,22 @@ export function useSupplierDiscovery() {
           searchType: request.searchType,
           totalResults: 0,
           confidence: 0,
-          sources: []
-        }
-      }
+          sources: [],
+        },
+      };
     }
-  }, [])
+  }, []);
 
   // Transform web discovery results to form data
   const transformWebResultsToFormData = useCallback((webResult: WebDiscoveryResult) => {
     if (!webResult.success || !webResult.data || webResult.data.length === 0) {
-      return null
+      return null;
     }
 
     // Take the first result (highest confidence)
-    const firstResult = webResult.data[0]
-    return supplierIntelligenceService.transformToFormData(firstResult)
-  }, [])
+    const firstResult = webResult.data[0];
+    return supplierIntelligenceService.transformToFormData(firstResult);
+  }, []);
 
   const refreshSupplier = useCallback(async (request: DiscoveryRequest) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -183,9 +188,9 @@ export function useSupplierDiscovery() {
       const response = await fetch('/api/suppliers/discovery', {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       });
 
       const result: DiscoveryResponse = await response.json();
@@ -198,13 +203,13 @@ export function useSupplierDiscovery() {
           error: null,
           processingTime: result.metadata?.processingTime || 0,
           sourcesUsed: result.metadata?.sourcesUsed || [],
-          confidence: result.metadata?.confidence || 0
+          confidence: result.metadata?.confidence || 0,
         }));
       } else {
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: result.error || 'Failed to refresh supplier information'
+          error: result.error || 'Failed to refresh supplier information',
         }));
       }
     } catch (error) {
@@ -212,7 +217,7 @@ export function useSupplierDiscovery() {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Network error occurred'
+        error: error instanceof Error ? error.message : 'Network error occurred',
       }));
     }
   }, []);
@@ -226,35 +231,35 @@ export function useSupplierDiscovery() {
       sourcesUsed: [],
       confidence: 0,
       webResults: null,
-      searchType: null
+      searchType: null,
     });
   }, []);
 
   // Utility function to validate web results
   const validateWebResults = useCallback((webResult: WebDiscoveryResult) => {
     if (!webResult.success || !webResult.data || webResult.data.length === 0) {
-      return { isValid: false, issues: ['No valid data found'] }
+      return { isValid: false, issues: ['No valid data found'] };
     }
 
-    const issues: string[] = []
-    let validCount = 0
+    const issues: string[] = [];
+    let validCount = 0;
 
     webResult.data.forEach((data, index) => {
-      const validation = supplierIntelligenceService.validateExtractedData(data)
+      const validation = supplierIntelligenceService.validateExtractedData(data);
       if (validation.isValid) {
-        validCount++
+        validCount++;
       } else {
-        issues.push(`Result ${index + 1}: ${validation.issues.join(', ')}`)
+        issues.push(`Result ${index + 1}: ${validation.issues.join(', ')}`);
       }
-    })
+    });
 
     return {
       isValid: validCount > 0,
       issues,
       validCount,
-      totalCount: webResult.data.length
-    }
-  }, [])
+      totalCount: webResult.data.length,
+    };
+  }, []);
 
   return {
     ...state,
@@ -263,6 +268,6 @@ export function useSupplierDiscovery() {
     transformWebResultsToFormData,
     refreshSupplier,
     clearState,
-    validateWebResults
+    validateWebResults,
   };
 }

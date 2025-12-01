@@ -19,13 +19,13 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
   return (
     <html lang="en-ZA">
-      <body className="font-sans bg-gray-50">
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 border-2 border-red-200">
+      <body className="bg-gray-50 font-sans">
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-lg border-2 border-red-200 bg-white p-8 shadow-xl">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
                 <svg
-                  className="w-8 h-8 text-red-600"
+                  className="h-8 w-8 text-red-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -39,16 +39,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                 </svg>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Application Error
-              </h1>
+              <h1 className="mb-2 text-2xl font-bold text-gray-900">Application Error</h1>
 
-              <p className="text-gray-600 mb-6">
+              <p className="mb-6 text-gray-600">
                 A critical error occurred. Please try refreshing the page.
               </p>
 
               {error.digest && (
-                <div className="mb-6 p-3 bg-gray-100 rounded text-xs font-mono text-gray-700 break-all">
+                <div className="mb-6 rounded bg-gray-100 p-3 font-mono text-xs break-all text-gray-700">
                   Error ID: {error.digest}
                 </div>
               )}
@@ -56,14 +54,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               <div className="space-y-3">
                 <button
                   onClick={reset}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   Try Again
                 </button>
 
                 <button
-                  onClick={() => window.location.href = '/'}
-                  className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  onClick={() => (window.location.href = '/')}
+                  className="w-full rounded-lg bg-gray-200 px-4 py-2 font-medium text-gray-800 transition-colors hover:bg-gray-300"
                 >
                   Return Home
                 </button>
@@ -74,7 +72,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                   <summary className="cursor-pointer text-sm font-medium text-gray-700">
                     Error Details
                   </summary>
-                  <pre className="mt-2 text-xs bg-gray-100 p-3 rounded overflow-x-auto">
+                  <pre className="mt-2 overflow-x-auto rounded bg-gray-100 p-3 text-xs">
                     {error.message}
                     {'\n\n'}
                     {error.stack}

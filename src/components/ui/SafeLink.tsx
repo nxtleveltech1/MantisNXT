@@ -18,11 +18,11 @@ interface SafeLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElemen
  */
 export function SafeLink({ href, children, fallback = null, ...props }: SafeLinkProps) {
   const safeUrl = sanitizeUrl(href);
-  
+
   if (!safeUrl) {
     return <>{fallback}</>;
   }
-  
+
   return (
     <a href={safeUrl} {...props}>
       {children}

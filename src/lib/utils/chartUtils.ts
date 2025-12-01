@@ -7,12 +7,12 @@
 
 // Chart color palette from CSS variables
 export const CHART_COLORS = {
-  primary: 'hsl(var(--chart-1))',    // Green
-  secondary: 'hsl(var(--chart-2))',  // Purple
-  tertiary: 'hsl(var(--chart-3))',   // Blue
+  primary: 'hsl(var(--chart-1))', // Green
+  secondary: 'hsl(var(--chart-2))', // Purple
+  tertiary: 'hsl(var(--chart-3))', // Blue
   quaternary: 'hsl(var(--chart-4))', // Amber
-  quinary: 'hsl(var(--chart-5))',    // Red
-} as const
+  quinary: 'hsl(var(--chart-5))', // Red
+} as const;
 
 // Format currency values
 export const formatCurrency = (value: number): string => {
@@ -21,8 +21,8 @@ export const formatCurrency = (value: number): string => {
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value)
-}
+  }).format(value);
+};
 
 // Format compact numbers (e.g., 1.2K, 1.5M)
 export const formatCompactNumber = (value: number): string => {
@@ -30,13 +30,13 @@ export const formatCompactNumber = (value: number): string => {
     notation: 'compact',
     compactDisplay: 'short',
     maximumFractionDigits: 1,
-  }).format(value)
-}
+  }).format(value);
+};
 
 // Format percentage values
 export const formatPercentage = (value: number, decimals: number = 1): string => {
-  return `${value.toFixed(decimals)}%`
-}
+  return `${value.toFixed(decimals)}%`;
+};
 
 // Custom tooltip styles for Recharts
 export const tooltipStyles = {
@@ -54,14 +54,14 @@ export const tooltipStyles = {
   itemStyle: {
     color: 'hsl(var(--muted-foreground))',
   },
-}
+};
 
 // Grid styles for Recharts
 export const gridStyles = {
   stroke: 'hsl(var(--border))',
   strokeDasharray: '3 3',
   opacity: 0.5,
-}
+};
 
 // Axis styles for Recharts
 export const axisStyles = {
@@ -75,7 +75,7 @@ export const axisStyles = {
   tickLine: {
     stroke: 'hsl(var(--border))',
   },
-}
+};
 
 // Generate gradient definitions for area charts
 export const createGradient = (id: string, color: string, opacity: number = 0.3) => ({
@@ -88,20 +88,20 @@ export const createGradient = (id: string, color: string, opacity: number = 0.3)
     { offset: '5%', stopColor: color, stopOpacity: opacity },
     { offset: '95%', stopColor: color, stopOpacity: 0 },
   ],
-})
+});
 
 // Common chart margins
 export const chartMargins = {
   default: { top: 5, right: 5, left: 5, bottom: 5 },
   withAxis: { top: 5, right: 10, left: 0, bottom: 5 },
   large: { top: 20, right: 30, left: 20, bottom: 20 },
-}
+};
 
 // Animation configuration
 export const animationConfig = {
   duration: 300,
   easing: 'ease-in-out',
-}
+};
 
 // Responsive breakpoints for charts
 export const responsiveBreakpoints = {
@@ -109,38 +109,38 @@ export const responsiveBreakpoints = {
   tablet: 768,
   desktop: 1024,
   wide: 1280,
-}
+};
 
 // Calculate trend percentage
 export const calculateTrendPercentage = (current: number, previous: number): number => {
-  if (previous === 0) return 0
-  return ((current - previous) / previous) * 100
-}
+  if (previous === 0) return 0;
+  return ((current - previous) / previous) * 100;
+};
 
 // Determine trend direction
 export const getTrendDirection = (percentage: number): 'up' | 'down' | 'neutral' => {
-  if (percentage > 0) return 'up'
-  if (percentage < 0) return 'down'
-  return 'neutral'
-}
+  if (percentage > 0) return 'up';
+  if (percentage < 0) return 'down';
+  return 'neutral';
+};
 
 // Format trend display
 export const formatTrend = (percentage: number): string => {
-  const sign = percentage > 0 ? '+' : ''
-  return `${sign}${percentage.toFixed(1)}%`
-}
+  const sign = percentage > 0 ? '+' : '';
+  return `${sign}${percentage.toFixed(1)}%`;
+};
 
 // Get trend color class
 export const getTrendColorClass = (trend: 'up' | 'down' | 'neutral'): string => {
   switch (trend) {
     case 'up':
-      return 'text-green-600'
+      return 'text-green-600';
     case 'down':
-      return 'text-red-600'
+      return 'text-red-600';
     case 'neutral':
-      return 'text-muted-foreground'
+      return 'text-muted-foreground';
   }
-}
+};
 
 // Smooth data for better visualization
 export const smoothData = <T extends Record<string, unknown>>(
@@ -148,19 +148,19 @@ export const smoothData = <T extends Record<string, unknown>>(
   key: keyof T,
   windowSize: number = 3
 ): T[] => {
-  if (data.length < windowSize) return data
+  if (data.length < windowSize) return data;
 
   return data.map((item, index) => {
-    const start = Math.max(0, index - Math.floor(windowSize / 2))
-    const end = Math.min(data.length, index + Math.ceil(windowSize / 2))
-    const window = data.slice(start, end)
+    const start = Math.max(0, index - Math.floor(windowSize / 2));
+    const end = Math.min(data.length, index + Math.ceil(windowSize / 2));
+    const window = data.slice(start, end);
 
-    const sum = window.reduce((acc, curr) => acc + (curr[key] as number), 0)
-    const average = sum / window.length
+    const sum = window.reduce((acc, curr) => acc + (curr[key] as number), 0);
+    const average = sum / window.length;
 
-    return { ...item, [key]: average }
-  })
-}
+    return { ...item, [key]: average };
+  });
+};
 
 export default {
   CHART_COLORS,
@@ -178,4 +178,4 @@ export default {
   formatTrend,
   getTrendColorClass,
   smoothData,
-}
+};

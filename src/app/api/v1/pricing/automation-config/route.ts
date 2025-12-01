@@ -31,16 +31,18 @@ export async function GET(request: NextRequest) {
     const org_id = searchParams.get('org_id');
 
     if (!org_id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Organization ID is required',
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Organization ID is required',
+        },
+        { status: 400 }
+      );
     }
 
-    const result = await query(
-      `SELECT * FROM pricing_automation_config WHERE org_id = $1`,
-      [org_id]
-    );
+    const result = await query(`SELECT * FROM pricing_automation_config WHERE org_id = $1`, [
+      org_id,
+    ]);
 
     if (result.rows.length === 0) {
       // Return defaults if no config exists
@@ -68,11 +70,14 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching automation config:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch automation config',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch automation config',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -137,18 +142,24 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation error',
-        details: error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          details: error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     console.error('Error updating automation config:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to update automation config',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to update automation config',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

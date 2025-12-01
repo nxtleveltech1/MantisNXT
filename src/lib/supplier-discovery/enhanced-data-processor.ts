@@ -12,7 +12,7 @@ import type {
   StructuredData,
   DiscoveryResult,
   DiscoverySource,
-  DiscoveryConfiguration
+  DiscoveryConfiguration,
 } from './enhanced-types';
 
 interface ProcessingStats {
@@ -50,21 +50,25 @@ export class EnhancedDataProcessor {
 
     try {
       // Combine and organize all extracted data
-      const organizedData = this.organizeExtractedData(extractedFields, websiteContents, searchResults);
-      
+      const organizedData = this.organizeExtractedData(
+        extractedFields,
+        websiteContents,
+        searchResults
+      );
+
       // Validate and clean data
       const validatedData = this.validateAndCleanData(organizedData);
-      
+
       // Structure into supplier format
       const structuredData = this.structureSupplierData(validatedData);
-      
+
       // Calculate confidence and completeness scores
       const confidence = this.calculateConfidenceScore(extractedFields);
       const completeness = this.calculateCompletenessScore(structuredData);
-      
+
       // Generate sources metadata
       const sources = this.generateSourcesMetadata(websiteContents, searchResults, extractedFields);
-      
+
       // Calculate processing time
       const processingTime = Date.now() - startTime;
 
@@ -78,7 +82,7 @@ export class EnhancedDataProcessor {
             extractedFields,
             sources,
             websiteContents,
-            searchResults
+            searchResults,
           },
           metadata: {
             totalSources: sources.length,
@@ -86,14 +90,13 @@ export class EnhancedDataProcessor {
             completenessScore: completeness,
             extractionTime: processingTime,
             costEstimate: this.estimateCost(sources),
-            processingSteps: this.getProcessingSteps()
-          }
-        }
+            processingSteps: this.getProcessingSteps(),
+          },
+        },
       };
 
       console.log(`Discovery processing completed successfully in ${processingTime}ms`);
       return result;
-
     } catch (error) {
       console.error('Discovery processing failed:', error);
       return {
@@ -101,9 +104,9 @@ export class EnhancedDataProcessor {
         error: {
           code: 'PROCESSING_ERROR',
           message: error instanceof Error ? error.message : 'Unknown processing error',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
-        warnings: this.processingStats.errors
+        warnings: this.processingStats.errors,
       };
     }
   }
@@ -123,7 +126,7 @@ export class EnhancedDataProcessor {
       business: [] as ExtractedDataField[],
       compliance: [] as ExtractedDataField[],
       social: [] as ExtractedDataField[],
-      metadata: [] as ExtractedDataField[]
+      metadata: [] as ExtractedDataField[],
     };
 
     // Categorize extracted fields
@@ -136,7 +139,7 @@ export class EnhancedDataProcessor {
 
     // Add website content analysis
     const websiteData = this.analyzeWebsiteContents(websiteContents);
-    
+
     // Add search result context
     const searchData = this.analyzeSearchResults(searchResults);
 
@@ -144,7 +147,7 @@ export class EnhancedDataProcessor {
       fields: organized,
       websiteData,
       searchData,
-      allFields: extractedFields
+      allFields: extractedFields,
     };
   }
 
@@ -153,7 +156,7 @@ export class EnhancedDataProcessor {
    */
   private categorizeField(fieldName: string): keyof typeof this.organizeExtractedData {
     const name = fieldName.toLowerCase();
-    
+
     if (name.includes('name') || name.includes('company')) {
       return 'basicInfo';
     }
@@ -172,7 +175,7 @@ export class EnhancedDataProcessor {
     if (name.includes('social') || name.includes('linkedin') || name.includes('facebook')) {
       return 'social';
     }
-    
+
     return 'metadata';
   }
 
@@ -185,7 +188,7 @@ export class EnhancedDataProcessor {
       successfulExtractions: 0,
       averageResponseTime: 0,
       contentTypes: {} as Record<string, number>,
-      commonPatterns: [] as string[]
+      commonPatterns: [] as string[],
     };
 
     if (websiteContents.length === 0) return analysis;
@@ -196,15 +199,15 @@ export class EnhancedDataProcessor {
     websiteContents.forEach(content => {
       if (content.status === 'success') {
         successfulCount++;
-        
+
         // Analyze content size and type
         const wordCount = content.wordCount;
         if (wordCount > 0) {
-          analysis.contentTypes[content.contentType] = 
+          analysis.contentTypes[content.contentType] =
             (analysis.contentTypes[content.contentType] || 0) + 1;
         }
       }
-      
+
       totalResponseTime += content.responseTime;
     });
 
@@ -222,7 +225,7 @@ export class EnhancedDataProcessor {
       totalResults: searchResults.length,
       averageRelevance: 0,
       sourceDistribution: {} as Record<string, number>,
-      topDomains: [] as string[]
+      topDomains: [] as string[],
     };
 
     if (searchResults.length === 0) return analysis;
@@ -232,7 +235,7 @@ export class EnhancedDataProcessor {
 
     searchResults.forEach(result => {
       totalRelevance += result.relevanceScore;
-      
+
       // Track domain distribution
       try {
         const domain = new URL(result.url).hostname;
@@ -245,7 +248,7 @@ export class EnhancedDataProcessor {
     analysis.averageRelevance = totalRelevance / searchResults.length;
     analysis.sourceDistribution = this.groupBySource(searchResults);
     analysis.topDomains = Object.entries(domainCounts)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([domain]) => domain);
 
@@ -269,7 +272,7 @@ export class EnhancedDataProcessor {
   private validateAndCleanData(organizedData: unknown) {
     const cleaned = {
       ...organizedData,
-      fields: {} as unknown
+      fields: {} as unknown,
     };
 
     // Clean each category of fields
@@ -294,7 +297,7 @@ export class EnhancedDataProcessor {
         seen.add(key);
         cleaned.push({
           ...field,
-          value: this.normalizeFieldValue(field)
+          value: this.normalizeFieldValue(field),
         });
       }
     });
@@ -307,11 +310,11 @@ export class EnhancedDataProcessor {
    */
   private isValidFieldValue(field: ExtractedDataField): boolean {
     const value = field.value;
-    
+
     if (value === null || value === undefined) return false;
     if (typeof value === 'string' && value.trim().length === 0) return false;
     if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) return false;
-    
+
     // Field-specific validation
     switch (field.fieldName.toLowerCase()) {
       case 'email':
@@ -330,7 +333,7 @@ export class EnhancedDataProcessor {
    */
   private normalizeFieldValue(field: ExtractedDataField): string | number | boolean {
     const value = field.value;
-    
+
     switch (field.fieldName.toLowerCase()) {
       case 'email':
         return String(value).toLowerCase().trim();
@@ -351,12 +354,12 @@ export class EnhancedDataProcessor {
    */
   private structureSupplierData(validatedData: unknown): StructuredData {
     const fields = validatedData.fields;
-    
+
     // Extract the best values for each field
     const getBestValue = (category: string, fieldNames: string[]) => {
       for (const name of fieldNames) {
         const categoryFields = fields[category] || [];
-        const field = categoryFields.find((f: ExtractedDataField) => 
+        const field = categoryFields.find((f: ExtractedDataField) =>
           f.fieldName.toLowerCase().includes(name.toLowerCase())
         );
         if (field && field.confidence > 0.5) {
@@ -380,7 +383,7 @@ export class EnhancedDataProcessor {
         annualRevenue: this.parseNumber(getBestValue('business', ['revenue']) || 0),
         foundedYear: this.parseNumber(getBestValue('business', ['founded', 'established']) || 0),
         businessType: String(getBestValue('business', ['type']) || ''),
-        description: String(getBestValue('metadata', ['description']) || '')
+        description: String(getBestValue('metadata', ['description']) || ''),
       },
       contact: {
         primaryEmail: String(getBestValue('contact', ['email']) || ''),
@@ -392,33 +395,33 @@ export class EnhancedDataProcessor {
           linkedin: String(getBestValue('social', ['linkedin']) || ''),
           twitter: String(getBestValue('social', ['twitter']) || ''),
           facebook: String(getBestValue('social', ['facebook']) || ''),
-          instagram: String(getBestValue('social', ['instagram']) || '')
-        }
+          instagram: String(getBestValue('social', ['instagram']) || ''),
+        },
       },
       location: {
         primaryAddress: this.parseAddress(fields.location),
         additionalAddresses: [],
         coordinates: undefined,
-        timeZone: undefined
+        timeZone: undefined,
       },
       compliance: {
         beeLevel: String(getBestValue('compliance', ['bee']) || ''),
         certifications: [],
         licenses: [],
-        insurance: undefined
+        insurance: undefined,
       },
       financial: {
         bankDetails: undefined,
         paymentTerms: [],
-        creditRating: undefined
+        creditRating: undefined,
       },
       operations: {
         capacity: undefined,
         leadTime: undefined,
         minimumOrder: undefined,
         currencies: [],
-        shippingMethods: []
-      }
+        shippingMethods: [],
+      },
     };
 
     return structuredData;
@@ -441,19 +444,17 @@ export class EnhancedDataProcessor {
     if (!addressFields || addressFields.length === 0) return undefined;
 
     // Combine all address-related fields
-    const addressText = addressFields
-      .map(f => String(f.value))
-      .join(', ');
+    const addressText = addressFields.map(f => String(f.value)).join(', ');
 
     // Simple address parsing (could be enhanced with more sophisticated parsing)
     const parts = addressText.split(',').map(p => p.trim());
-    
+
     return {
       street: parts[0] || '',
       city: parts[1] || '',
       province: parts[2] || '',
       postalCode: this.extractPostalCode(addressText),
-      country: 'South Africa'
+      country: 'South Africa',
     };
   }
 
@@ -477,11 +478,12 @@ export class EnhancedDataProcessor {
     // Weight by field importance
     const weightedSum = extractedFields.reduce((sum, field) => {
       const weight = this.getFieldWeight(field.fieldName);
-      return sum + (field.confidence * weight);
+      return sum + field.confidence * weight;
     }, 0);
 
-    const totalWeight = extractedFields.reduce((sum, field) => 
-      sum + this.getFieldWeight(field.fieldName), 0
+    const totalWeight = extractedFields.reduce(
+      (sum, field) => sum + this.getFieldWeight(field.fieldName),
+      0
     );
 
     return totalWeight > 0 ? weightedSum / totalWeight : averageConfidence;
@@ -499,7 +501,7 @@ export class EnhancedDataProcessor {
       vatnumber: 2,
       address: 1,
       website: 1,
-      industry: 1
+      industry: 1,
     };
 
     const lowerName = fieldName.toLowerCase();
@@ -513,7 +515,7 @@ export class EnhancedDataProcessor {
     const requiredFields = [
       'supplier.name',
       'contact.primaryEmail',
-      'location.primaryAddress.street'
+      'location.primaryAddress.street',
     ];
 
     const optionalFields = [
@@ -522,7 +524,7 @@ export class EnhancedDataProcessor {
       'supplier.industry',
       'contact.primaryPhone',
       'contact.website',
-      'compliance.beeLevel'
+      'compliance.beeLevel',
     ];
 
     let requiredScore = 0;
@@ -548,7 +550,7 @@ export class EnhancedDataProcessor {
     const optionalPercentage = optionalScore / optionalFields.length;
 
     // Weight required fields more heavily
-    return (requiredPercentage * 0.7) + (optionalPercentage * 0.3);
+    return requiredPercentage * 0.7 + optionalPercentage * 0.3;
   }
 
   /**
@@ -579,18 +581,20 @@ export class EnhancedDataProcessor {
         extractionDate: content.extractedAt,
         dataFields: this.getDataFieldsFromContent(content, extractedFields),
         method: content.extractionMethod,
-        cost: 0
+        cost: 0,
       });
     });
 
     // Add search result sources
-    const uniqueDomains = new Set(searchResults.map(r => {
-      try {
-        return new URL(r.url).hostname;
-      } catch {
-        return 'unknown';
-      }
-    }));
+    const uniqueDomains = new Set(
+      searchResults.map(r => {
+        try {
+          return new URL(r.url).hostname;
+        } catch {
+          return 'unknown';
+        }
+      })
+    );
 
     uniqueDomains.forEach(domain => {
       sources.push({
@@ -602,7 +606,7 @@ export class EnhancedDataProcessor {
         extractionDate: new Date(),
         dataFields: this.getDataFieldsFromDomain(domain, extractedFields),
         method: 'search_engine',
-        cost: 0
+        cost: 0,
       });
     });
 
@@ -612,7 +616,10 @@ export class EnhancedDataProcessor {
   /**
    * Get data fields extracted from website content
    */
-  private getDataFieldsFromContent(content: WebsiteContent, extractedFields: ExtractedDataField[]): string[] {
+  private getDataFieldsFromContent(
+    content: WebsiteContent,
+    extractedFields: ExtractedDataField[]
+  ): string[] {
     // This would be enhanced to track which fields came from which sources
     return extractedFields
       .filter(f => f.sourceElement) // Fields with source tracking
@@ -659,7 +666,7 @@ export class EnhancedDataProcessor {
       'Data validation and cleaning',
       'Supplier data structuring',
       'Confidence calculation',
-      'Source metadata generation'
+      'Source metadata generation',
     ];
   }
 
@@ -673,7 +680,7 @@ export class EnhancedDataProcessor {
       highConfidenceFields: 0,
       averageConfidence: 0,
       processingTime: 0,
-      errors: []
+      errors: [],
     };
   }
 
@@ -747,8 +754,9 @@ export class EnhancedDataProcessor {
       .trim()
       .replace(/\s+/g, ' ')
       .replace(/[^\w\s&().-]/g, '')
-      .replace(/\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi, match =>
-        match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
+      .replace(
+        /\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi,
+        match => match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
       );
   }
 
@@ -764,15 +772,28 @@ export class EnhancedDataProcessor {
 export const enhancedDataProcessor = new EnhancedDataProcessor({
   sources: {
     webSearch: { enabled: true, providers: [], maxResults: 20, timeout: 30000 },
-    webScraping: { enabled: true, maxConcurrent: 5, timeout: 30000, retryAttempts: 3, userAgents: [] },
+    webScraping: {
+      enabled: true,
+      maxConcurrent: 5,
+      timeout: 30000,
+      retryAttempts: 3,
+      userAgents: [],
+    },
     socialMedia: { enabled: true, platforms: [], rateLimit: 60 },
-    businessDirectories: { enabled: true, directories: [], priority: 1 }
+    businessDirectories: { enabled: true, directories: [], priority: 1 },
   },
-  ai: { enabled: false, provider: 'openai', model: 'gpt-4.1', confidenceThreshold: 0.7, maxTokens: 2000, temperature: 0.1 },
-  data: { 
+  ai: {
+    enabled: false,
+    provider: 'openai',
+    model: 'gpt-4.1',
+    confidenceThreshold: 0.7,
+    maxTokens: 2000,
+    temperature: 0.1,
+  },
+  data: {
     validation: { strict: true, requiredFields: ['name'], optionalFields: ['email'] },
     enrichment: { enabled: true, sources: [], autoValidate: true },
-    storage: { cacheResults: true, storeRawData: true, retentionDays: 30 }
+    storage: { cacheResults: true, storeRawData: true, retentionDays: 30 },
   },
-  output: { format: 'both', includeMetadata: true, includeSources: true, includeConfidence: true }
+  output: { format: 'both', includeMetadata: true, includeSources: true, includeConfidence: true },
 });

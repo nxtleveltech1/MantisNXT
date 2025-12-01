@@ -1,8 +1,6 @@
 {
   "name": "MantisNXT Dev",
-  "dockerComposeFile": [
-    "../docker-compose.dev.yml"
-  ],
+  "dockerComposeFile": ["../docker-compose.dev.yml"],
   "service": "app",
   "workspaceFolder": "/app",
   "overrideCommand": true,

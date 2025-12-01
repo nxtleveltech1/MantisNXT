@@ -54,7 +54,11 @@ async function executeSQL(pool: Pool, sql: string, label: string): Promise<boole
   }
 }
 
-async function executeMigration(pool: Pool, migrationPath: string, label: string): Promise<boolean> {
+async function executeMigration(
+  pool: Pool,
+  migrationPath: string,
+  label: string
+): Promise<boolean> {
   console.log(`   Executing ${label}...`);
   const migrationSQL = readFileSync(migrationPath, 'utf8');
   const cleanedSQL = migrationSQL.replace(/^(RAISE NOTICE .*;)$/gm, '-- REMOVED: $1');
@@ -165,7 +169,9 @@ async function main() {
 
     console.log('\n📋 Step 3/7: Verifying core tables...');
 
-    const orgCheckRes = await pool.query(`SELECT 1 FROM pg_tables WHERE tablename = 'organization' AND schemaname = 'public';`);
+    const orgCheckRes = await pool.query(
+      `SELECT 1 FROM pg_tables WHERE tablename = 'organization' AND schemaname = 'public';`
+    );
     if (orgCheckRes.rows.length === 0) {
       console.log('   ⚠️  organization table missing');
       const success = await executeMigration(
@@ -178,7 +184,9 @@ async function main() {
       console.log('   ✓ organization table exists');
     }
 
-    const customerCheckRes = await pool.query(`SELECT 1 FROM pg_tables WHERE tablename = 'customer' AND schemaname = 'public';`);
+    const customerCheckRes = await pool.query(
+      `SELECT 1 FROM pg_tables WHERE tablename = 'customer' AND schemaname = 'public';`
+    );
     if (customerCheckRes.rows.length === 0) {
       console.log('   ℹ️  customer table will be created as part of migration chain');
       // Don't fail - customer table might be created by other migrations
@@ -188,7 +196,9 @@ async function main() {
 
     console.log('\n📋 Step 4/7: Checking sync infrastructure...');
 
-    const wooQueueRes = await pool.query(`SELECT 1 FROM pg_tables WHERE tablename = 'woo_customer_sync_queue' AND schemaname = 'public';`);
+    const wooQueueRes = await pool.query(
+      `SELECT 1 FROM pg_tables WHERE tablename = 'woo_customer_sync_queue' AND schemaname = 'public';`
+    );
     if (wooQueueRes.rows.length === 0) {
       console.log('   Applying Migration 0023...');
       const success = await executeMigration(
@@ -260,7 +270,7 @@ async function main() {
 
     if (result.prerequisitesApplied.length > 0) {
       console.log('PREREQUISITES:');
-      result.prerequisitesApplied.forEach((p) => console.log(`  ✓ Migration ${p}`));
+      result.prerequisitesApplied.forEach(p => console.log(`  ✓ Migration ${p}`));
       console.log('');
     }
 
@@ -280,7 +290,9 @@ async function main() {
 
     console.log('SECURITY:');
     console.log(`  ✓ RLS enabled on all ${result.rlsEnabled.length} tables`);
-    console.log(`  ✓ ${result.policiesCount} security policies (4 per table: SELECT, INSERT, UPDATE, DELETE)`);
+    console.log(
+      `  ✓ ${result.policiesCount} security policies (4 per table: SELECT, INSERT, UPDATE, DELETE)`
+    );
     console.log(`  ✓ Organization isolation ENFORCED`);
     console.log(`  ✓ Multi-tenant safe architecture`);
     console.log('');
@@ -293,7 +305,7 @@ async function main() {
     console.log('');
 
     console.log('ENUMERATIONS:');
-    result.enumsCreated.forEach((t) => console.log(`  ✓ ${t}`));
+    result.enumsCreated.forEach(t => console.log(`  ✓ ${t}`));
     console.log('');
 
     console.log('STATISTICS:');
@@ -330,7 +342,6 @@ async function main() {
     console.log('');
 
     process.exit(0);
-
   } catch (error: any) {
     result.endTime = performance.now();
     result.duration = result.endTime - result.startTime;
@@ -347,13 +358,12 @@ async function main() {
     console.error('');
 
     process.exit(1);
-
   } finally {
     await pool.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('FATAL:', err.message);
   process.exit(1);
 });

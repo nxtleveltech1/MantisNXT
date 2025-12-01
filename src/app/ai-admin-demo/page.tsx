@@ -17,7 +17,7 @@ export default function AIAdminDemoPage() {
   const [selectedTab, setSelectedTab] = useState('health');
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto space-y-6 p-6">
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">AI Admin Dashboard</h1>
         <p className="text-muted-foreground">
@@ -68,9 +68,7 @@ export default function AIAdminDemoPage() {
           <Card>
             <CardHeader>
               <CardTitle>AI Alert Management</CardTitle>
-              <CardDescription>
-                Monitor and manage AI-generated alerts by severity
-              </CardDescription>
+              <CardDescription>Monitor and manage AI-generated alerts by severity</CardDescription>
             </CardHeader>
             <CardContent>
               <AIAlertManagement />
@@ -110,9 +108,7 @@ export default function AIAdminDemoPage() {
           <Card>
             <CardHeader>
               <CardTitle>Dashboard Builder</CardTitle>
-              <CardDescription>
-                Drag-and-drop dashboard builder with widget library
-              </CardDescription>
+              <CardDescription>Drag-and-drop dashboard builder with widget library</CardDescription>
             </CardHeader>
             <CardContent>
               <DashboardBuilder />

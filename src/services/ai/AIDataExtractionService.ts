@@ -59,17 +59,23 @@ export interface ExtractedSupplierData {
 // Zod schema for structured data extraction - lenient to handle AI variations
 // Preprocess null values to undefined for optional fields
 const SupplierDataSchema = z.object({
-  companyName: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  description: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  industry: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  location: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  contactEmail: z.preprocess((val) => val === null ? undefined : val, z.string().email().optional().or(z.literal(''))),
-  contactPhone: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  website: z.preprocess((val) => val === null ? undefined : val, z.string().optional().or(z.literal(''))),
-  employees: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  founded: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  companyName: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  description: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  industry: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  location: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  contactEmail: z.preprocess(
+    val => (val === null ? undefined : val),
+    z.string().email().optional().or(z.literal(''))
+  ),
+  contactPhone: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  website: z.preprocess(
+    val => (val === null ? undefined : val),
+    z.string().optional().or(z.literal(''))
+  ),
+  employees: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  founded: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
   socialMedia: z.preprocess(
-    (val) => {
+    val => {
       if (val === null || val === undefined) return undefined;
       if (typeof val === 'object' && !Array.isArray(val)) {
         const record = val as Record<string, unknown>;
@@ -87,23 +93,21 @@ const SupplierDataSchema = z.object({
       }
       return val;
     },
-    z.object({
-      linkedin: z.string().url().optional().or(z.literal('')),
-      twitter: z.string().url().optional().or(z.literal('')),
-      facebook: z.string().url().optional().or(z.literal('')),
-    }).optional()
+    z
+      .object({
+        linkedin: z.string().url().optional().or(z.literal('')),
+        twitter: z.string().url().optional().or(z.literal('')),
+        facebook: z.string().url().optional().or(z.literal('')),
+      })
+      .optional()
   ),
-  certifications: z
-    .preprocess(
-      (val) => {
-        if (val === undefined || val === null) return undefined;
-        if (typeof val === 'string') {
-          return val === '' ? [] : [val];
-        }
-        return val;
-      },
-      z.array(z.string()).optional()
-    ),
+  certifications: z.preprocess(val => {
+    if (val === undefined || val === null) return undefined;
+    if (typeof val === 'string') {
+      return val === '' ? [] : [val];
+    }
+    return val;
+  }, z.array(z.string()).optional()),
   services: z.array(z.string()).optional(),
   products: z.array(z.string()).optional(),
   brands: z.array(z.string()).optional(),
@@ -128,16 +132,16 @@ const SupplierDataSchema = z.object({
       })
     )
     .optional(),
-  revenue: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  businessType: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  revenue: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  businessType: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
   tags: z.array(z.string()).optional(),
-  taxId: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  registrationNumber: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  vatNumber: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  taxId: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  registrationNumber: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  vatNumber: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
   currency: z.string().optional(),
-  paymentTerms: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  leadTime: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
-  minimumOrderValue: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  paymentTerms: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  leadTime: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
+  minimumOrderValue: z.preprocess(val => (val === null ? undefined : val), z.string().optional()),
 });
 
 export class AIDataExtractionService {
@@ -148,8 +152,8 @@ export class AIDataExtractionService {
   private openaiModel?: string;
   private provider: 'anthropic' | 'openai' = 'anthropic';
 
-  constructor(config?: { 
-    anthropicApiKey?: string; 
+  constructor(config?: {
+    anthropicApiKey?: string;
     anthropicBaseUrl?: string;
     openaiApiKey?: string;
     openaiBaseUrl?: string;
@@ -172,7 +176,9 @@ export class AIDataExtractionService {
       console.warn('⚠️ No AI API keys found. AI extraction will use fallback methods.');
     }
 
-    console.log(`🤖 AIDataExtractionService initialized with provider: ${this.provider}${this.openaiBaseUrl ? ` (baseUrl: ${this.openaiBaseUrl})` : ''}`);
+    console.log(
+      `🤖 AIDataExtractionService initialized with provider: ${this.provider}${this.openaiBaseUrl ? ` (baseUrl: ${this.openaiBaseUrl})` : ''}`
+    );
   }
 
   /**
@@ -296,11 +302,11 @@ Return ONLY the information that can be clearly identified in the content.`;
           model,
           schema: SupplierDataSchema,
           prompt,
-        }
+        };
         if (!this.isReasoningModel('claude-3-5-sonnet-20241022')) {
-          generateOptions.temperature = 0.1
+          generateOptions.temperature = 0.1;
         }
-        
+
         const result = await generateObject(generateOptions);
 
         console.log('✅ AI extraction completed successfully');
@@ -316,7 +322,7 @@ Return ONLY the information that can be clearly identified in the content.`;
           schemaError?.responseBody?.includes('json_schema')
         ) {
           console.warn(`⚠️ Anthropic model doesn't support JSON schema, using JSON mode fallback`);
-          
+
           // Use generateText with JSON mode
           const jsonPrompt = `${prompt}
 
@@ -357,15 +363,15 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: unknown = {
-              model,
-              prompt: jsonPrompt,
-            }
-            if (!this.isReasoningModel('claude-3-5-sonnet-20241022')) {
-              textOptions.temperature = 0.1
-            }
-            
-            const textResult = await generateText(textOptions);
+          const textOptions: unknown = {
+            model,
+            prompt: jsonPrompt,
+          };
+          if (!this.isReasoningModel('claude-3-5-sonnet-20241022')) {
+            textOptions.temperature = 0.1;
+          }
+
+          const textResult = await generateText(textOptions);
 
           // Parse the JSON response
           const jsonMatch = textResult.text.match(/\{[\s\S]*\}/);
@@ -374,7 +380,7 @@ Return ONLY the JSON object, no other text.`;
           }
 
           const parsedData = JSON.parse(jsonMatch[0]);
-          
+
           // Validate against schema
           const validatedData = SupplierDataSchema.parse(parsedData);
 
@@ -383,7 +389,7 @@ Return ONLY the JSON object, no other text.`;
           // Post-process and normalize the extracted data
           return this.postProcessExtractedData(validatedData, url);
         }
-        
+
         // Re-throw if it's a different error
         throw schemaError;
       }
@@ -397,9 +403,9 @@ Return ONLY the JSON object, no other text.`;
    * Check if a model is a reasoning model (doesn't support temperature)
    */
   private isReasoningModel(modelName: string): boolean {
-    if (!modelName) return false
-    const normalized = modelName.trim().toLowerCase()
-    return /^o1(-|$)/i.test(normalized) || /^o3(-|$)/i.test(normalized)
+    if (!modelName) return false;
+    const normalized = modelName.trim().toLowerCase();
+    return /^o1(-|$)/i.test(normalized) || /^o3(-|$)/i.test(normalized);
   }
 
   /**
@@ -407,17 +413,17 @@ Return ONLY the JSON object, no other text.`;
    */
   private supportsJsonSchema(modelName: string): boolean {
     if (!modelName) return false;
-    
+
     // Models that don't support JSON schema format
     // These are "responses" models that only support specific output formats
     // Note: gpt-5-nano DOES support JSON schema, so it's not included here
     const unsupportedPatterns = [
-      /gpt-5-mini/i,  // gpt-5-mini doesn't support JSON schema
-      /gpt-5-chat/i,   // gpt-5-chat variants don't support JSON schema
-      /^o1(-|$)/i,     // o1, o1-mini, o1-preview, etc. (reasoning models)
-      /^o3(-|$)/i,     // o3, o3-mini, etc. (reasoning models)
+      /gpt-5-mini/i, // gpt-5-mini doesn't support JSON schema
+      /gpt-5-chat/i, // gpt-5-chat variants don't support JSON schema
+      /^o1(-|$)/i, // o1, o1-mini, o1-preview, etc. (reasoning models)
+      /^o3(-|$)/i, // o3, o3-mini, etc. (reasoning models)
     ];
-    
+
     // Check if model name matches any unsupported pattern
     const normalizedModel = modelName.trim();
     return !unsupportedPatterns.some(pattern => pattern.test(normalizedModel));
@@ -430,14 +436,14 @@ Return ONLY the JSON object, no other text.`;
     if (!requestedModel) {
       return 'gpt-4o-mini';
     }
-    
+
     const trimmedModel = requestedModel.trim();
-    
+
     // If requested model supports JSON schema, use it
     if (this.supportsJsonSchema(trimmedModel)) {
       return trimmedModel;
     }
-    
+
     // Fallback to models that definitely support JSON schema
     return 'gpt-4o-mini';
   }
@@ -460,12 +466,14 @@ Return ONLY the JSON object, no other text.`;
 
     const requestedModel = this.openaiModel || 'gpt-4o-mini';
     const modelName = this.getCompatibleModel(requestedModel);
-    
+
     // Log if we're using a fallback model
     if (requestedModel !== modelName) {
-      console.warn(`⚠️ Model ${requestedModel} doesn't support JSON schema, falling back to ${modelName}`);
+      console.warn(
+        `⚠️ Model ${requestedModel} doesn't support JSON schema, falling back to ${modelName}`
+      );
     }
-    
+
     // Model name is already trimmed in constructor and getCompatibleModel, but double-check
     const model = openai(modelName.trim());
 
@@ -539,11 +547,11 @@ Return ONLY the information that can be clearly identified in the content.`;
           model,
           schema: SupplierDataSchema,
           prompt,
-        }
+        };
         if (!this.isReasoningModel(modelName)) {
-          generateOptions.temperature = 0.1
+          generateOptions.temperature = 0.1;
         }
-        
+
         const result = await generateObject(generateOptions);
 
         console.log('✅ AI extraction completed successfully');
@@ -553,7 +561,7 @@ Return ONLY the information that can be clearly identified in the content.`;
       } catch (schemaError: unknown) {
         // Check if it's a rate limit error - don't retry, return null so other provider can try
         // Handle both direct rate limit errors and retry errors that contain rate limit errors
-        const isRateLimitError = 
+        const isRateLimitError =
           schemaError?.statusCode === 429 ||
           schemaError?.lastError?.statusCode === 429 ||
           schemaError?.message?.includes('Rate limit') ||
@@ -564,16 +572,18 @@ Return ONLY the information that can be clearly identified in the content.`;
           schemaError?.responseBody?.includes('rate limit') ||
           schemaError?.lastError?.responseBody?.includes('Rate limit') ||
           schemaError?.lastError?.responseBody?.includes('rate limit');
-        
+
         if (isRateLimitError) {
           const errorSource = schemaError?.lastError || schemaError;
           const resetTime = errorSource?.responseHeaders?.['x-ratelimit-reset'];
           const resetDate = resetTime ? new Date(parseInt(resetTime)).toISOString() : 'unknown';
-          console.warn(`⚠️ Rate limit exceeded for model ${modelName}. Reset at: ${resetDate}. Skipping this provider.`);
+          console.warn(
+            `⚠️ Rate limit exceeded for model ${modelName}. Reset at: ${resetDate}. Skipping this provider.`
+          );
           // Return null to allow other provider to handle the request
           return null;
         }
-        
+
         // Check if it's a model not found error - fallback to compatible model
         if (
           schemaError?.message?.includes('model_not_found') ||
@@ -581,7 +591,7 @@ Return ONLY the information that can be clearly identified in the content.`;
           schemaError?.responseBody?.includes('model_not_found')
         ) {
           console.warn(`⚠️ Model ${modelName} not found, falling back to gpt-4o-mini`);
-          
+
           // Try with fallback model
           const fallbackModel = openai('gpt-4o-mini');
           try {
@@ -589,13 +599,13 @@ Return ONLY the information that can be clearly identified in the content.`;
               model: fallbackModel,
               schema: SupplierDataSchema,
               prompt,
-            }
+            };
             if (!this.isReasoningModel('gpt-4o-mini')) {
-              fallbackOptions.temperature = 0.1
+              fallbackOptions.temperature = 0.1;
             }
-            
+
             const result = await generateObject(fallbackOptions);
-            
+
             console.log('✅ AI extraction completed successfully (fallback model)');
             return this.postProcessExtractedData(result.object, url);
           } catch (fallbackError) {
@@ -604,15 +614,17 @@ Return ONLY the information that can be clearly identified in the content.`;
             throw schemaError; // Re-throw to trigger JSON mode fallback
           }
         }
-        
+
         // If JSON schema is not supported, fall back to generateText with JSON mode
         if (
           schemaError?.message?.includes('json_schema') ||
           schemaError?.message?.includes('text.format') ||
           schemaError?.responseBody?.includes('json_schema')
         ) {
-          console.warn(`⚠️ Model ${modelName} doesn't support JSON schema, using JSON mode fallback`);
-          
+          console.warn(
+            `⚠️ Model ${modelName} doesn't support JSON schema, using JSON mode fallback`
+          );
+
           // Use generateText with JSON mode
           const jsonPrompt = `${prompt}
 
@@ -654,18 +666,19 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 Return ONLY the JSON object, no other text.`;
 
           // Try with fallback model if original failed
-          const textModel = modelName.includes('gpt-5-nano') || modelName.includes('gpt-5-mini') 
-            ? openai('gpt-4o-mini') 
-            : model;
-          
+          const textModel =
+            modelName.includes('gpt-5-nano') || modelName.includes('gpt-5-mini')
+              ? openai('gpt-4o-mini')
+              : model;
+
           const textOptions: unknown = {
             model: textModel,
             prompt: jsonPrompt,
-          }
+          };
           if (!this.isReasoningModel(modelName)) {
-            textOptions.temperature = 0.1
+            textOptions.temperature = 0.1;
           }
-          
+
           const textResult = await generateText(textOptions);
 
           // Parse the JSON response
@@ -675,7 +688,7 @@ Return ONLY the JSON object, no other text.`;
           }
 
           const parsedData = JSON.parse(jsonMatch[0]);
-          
+
           // Validate against schema
           const validatedData = SupplierDataSchema.parse(parsedData);
 
@@ -684,7 +697,7 @@ Return ONLY the JSON object, no other text.`;
           // Post-process and normalize the extracted data
           return this.postProcessExtractedData(validatedData, url);
         }
-        
+
         // Re-throw if it's a different error
         throw schemaError;
       }
@@ -725,7 +738,7 @@ Return ONLY the JSON object, no other text.`;
         .filter((addr: unknown) => {
           // Remove empty addresses
           if (!addr.street && !addr.city) return false;
-          
+
           // Validate that street field contains actual address data, not brand/product info
           if (addr.street) {
             // Reject if it contains brand/product keywords (these are NOT addresses)
@@ -736,29 +749,38 @@ Return ONLY the JSON object, no other text.`;
               />>/g, // HTML/UI elements
               /\b(explore|check out|view)\b/i, // Action words from product pages
             ];
-            
+
             if (invalidPatterns.some(pattern => pattern.test(addr.street))) {
-              console.warn(`⚠️ Rejected invalid address street (contains brand/product info): "${addr.street.substring(0, 100)}"`);
+              console.warn(
+                `⚠️ Rejected invalid address street (contains brand/product info): "${addr.street.substring(0, 100)}"`
+              );
               return false;
             }
-            
+
             // Address should contain at least one of: street number, address keyword, or be a valid city name
             const hasStreetNumber = /\d+/.test(addr.street);
-            const hasAddressKeyword = /\b(street|st|avenue|ave|road|rd|drive|dr|court|ct|boulevard|blvd|way|lane|ln|place|pl|parkway|pkwy)\b/i.test(addr.street);
+            const hasAddressKeyword =
+              /\b(street|st|avenue|ave|road|rd|drive|dr|court|ct|boulevard|blvd|way|lane|ln|place|pl|parkway|pkwy)\b/i.test(
+                addr.street
+              );
             const isLikelyAddress = hasStreetNumber || hasAddressKeyword || addr.street.length < 50;
-            
+
             // If street is very long and doesn't look like an address, reject it
             if (addr.street.length > 100 && !hasStreetNumber && !hasAddressKeyword) {
-              console.warn(`⚠️ Rejected invalid address street (too long, doesn't look like address): "${addr.street.substring(0, 100)}"`);
+              console.warn(
+                `⚠️ Rejected invalid address street (too long, doesn't look like address): "${addr.street.substring(0, 100)}"`
+              );
               return false;
             }
-            
+
             if (!isLikelyAddress && addr.street.length > 50) {
-              console.warn(`⚠️ Rejected invalid address street (doesn't match address patterns): "${addr.street.substring(0, 100)}"`);
+              console.warn(
+                `⚠️ Rejected invalid address street (doesn't match address patterns): "${addr.street.substring(0, 100)}"`
+              );
               return false;
             }
           }
-          
+
           return true;
         });
     } else if (processed.location) {
@@ -820,7 +842,7 @@ Return ONLY the JSON object, no other text.`;
         /royalty/i,
         /streaming/i,
       ];
-      
+
       // Filter out UI elements, button names, and image names
       const uiElementPatterns = [
         /^(site|page|web|button|link|menu|nav|header|footer|sidebar)/i,
@@ -868,18 +890,18 @@ Return ONLY the JSON object, no other text.`;
       const filteredBrands = processed.brands.filter(brand => {
         const brandTrimmed = brand.trim();
         const brandLower = brandTrimmed.toLowerCase();
-        
+
         // Basic validation
         if (brandTrimmed.length < 2 || brandTrimmed.length > 40) {
           console.log(`🚫 Filtered out brand (length): "${brand}"`);
           return false;
         }
-        
+
         if (!brandTrimmed.match(/[a-z]/i)) {
           console.log(`🚫 Filtered out brand (no letters): "${brand}"`);
           return false;
         }
-        
+
         if (/^\d+$/.test(brandTrimmed)) {
           console.log(`🚫 Filtered out brand (only numbers): "${brand}"`);
           return false;
@@ -915,7 +937,8 @@ Return ONLY the JSON object, no other text.`;
 
         // Filter out items that look like product descriptions (too many words, contains dashes with model numbers)
         const wordCount = brandTrimmed.split(/\s+/).length;
-        if (wordCount > 3) { // Reduced from 4 to catch more product descriptions
+        if (wordCount > 3) {
+          // Reduced from 4 to catch more product descriptions
           console.log(`🚫 Filtered out brand (too many words): "${brand}"`);
           return false;
         }
@@ -950,7 +973,7 @@ Return ONLY the JSON object, no other text.`;
           .toLowerCase()
           .replace(/[\s\u00A0\u200B-\u200D\uFEFF\-_™®©]+/g, '')
           .trim();
-        
+
         // Check if we already have this brand (case-insensitive, ignoring special chars and spaces)
         const existing = brandMap.get(normalized);
 

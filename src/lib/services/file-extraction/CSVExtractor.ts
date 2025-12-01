@@ -39,8 +39,7 @@ function detectDelimiter(sample: string): string {
     // Check consistency - delimiter should appear same number of times per line
     const avg = total / lineCounts.length;
     const variance =
-      lineCounts.reduce((sum, count) => sum + Math.abs(count - avg), 0) /
-      lineCounts.length;
+      lineCounts.reduce((sum, count) => sum + Math.abs(count - avg), 0) / lineCounts.length;
 
     // Prefer delimiter with high count and low variance
     counts[delim] = variance < 1 ? total : 0;
@@ -140,7 +139,7 @@ function detectHeaderRow(lines: string[], delimiter: string): number {
  * Parse CSV content to sheet data
  */
 function parseCSVContent(content: string): SheetData {
-  const lines = content.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
 
   if (lines.length === 0) {
     throw new Error('CSV file is empty');
@@ -185,10 +184,7 @@ function parseCSVContent(content: string): SheetData {
 /**
  * Extract rows from sheet data
  */
-function extractRows(
-  sheetData: SheetData,
-  config?: ExtractionConfig
-): ParsedRow[] {
+function extractRows(sheetData: SheetData, config?: ExtractionConfig): ParsedRow[] {
   const { mapping, confidence } = mapColumns(sheetData.headers);
 
   if (!mapping.supplier_sku || !mapping.name || !mapping.price || !mapping.uom) {
@@ -231,7 +227,8 @@ function extractRows(
       }
 
       // Detect currency from price value
-      const detectedCurrency = detectCurrency(priceValue as string | number).currency || defaultCurrency;
+      const detectedCurrency =
+        detectCurrency(priceValue as string | number).currency || defaultCurrency;
 
       // Extract optional fields
       const brand = mapping.brand
@@ -321,10 +318,7 @@ export async function extractFromCSV(
   filename: string,
   config?: ExtractionConfig
 ): Promise<{ sheetData: SheetData; rows: ParsedRow[] }> {
-  const content =
-    typeof fileContent === 'string'
-      ? fileContent
-      : fileContent.toString('utf-8');
+  const content = typeof fileContent === 'string' ? fileContent : fileContent.toString('utf-8');
 
   const sheetData = parseCSVContent(content);
   const rows = extractRows(sheetData, config);

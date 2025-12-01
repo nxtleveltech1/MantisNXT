@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import React, { useState, useRef, useEffect } from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React, { useState, useRef, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Search,
   Send,
@@ -27,224 +27,234 @@ import {
   Image as ImageIcon,
   Download,
   X,
-  Plus
-} from "lucide-react"
+  Plus,
+} from 'lucide-react';
 
 // Types
 interface Message {
-  id: string
-  content: string
-  timestamp: Date
+  id: string;
+  content: string;
+  timestamp: Date;
   sender: {
-    id: string
-    name: string
-    avatar?: string
-    initials: string
-  }
-  isOwn: boolean
-  status: "sent" | "delivered" | "read"
+    id: string;
+    name: string;
+    avatar?: string;
+    initials: string;
+  };
+  isOwn: boolean;
+  status: 'sent' | 'delivered' | 'read';
   attachments?: Array<{
-    id: string
-    name: string
-    type: "image" | "document" | "other"
-    size: string
-    url: string
-  }>
+    id: string;
+    name: string;
+    type: 'image' | 'document' | 'other';
+    size: string;
+    url: string;
+  }>;
 }
 
 interface Conversation {
-  id: string
-  name: string
-  avatar?: string
-  initials: string
-  lastMessage: string
-  timestamp: Date
-  unreadCount: number
-  isOnline: boolean
-  isTyping: boolean
-  isPinned: boolean
-  type: "direct" | "group"
-  participants?: string[]
+  id: string;
+  name: string;
+  avatar?: string;
+  initials: string;
+  lastMessage: string;
+  timestamp: Date;
+  unreadCount: number;
+  isOnline: boolean;
+  isTyping: boolean;
+  isPinned: boolean;
+  type: 'direct' | 'group';
+  participants?: string[];
 }
 
 // Mock data
 const mockConversations: Conversation[] = [
   {
-    id: "1",
-    name: "Sarah Chen",
-    initials: "SC",
-    lastMessage: "The contract documents are ready for review",
+    id: '1',
+    name: 'Sarah Chen',
+    initials: 'SC',
+    lastMessage: 'The contract documents are ready for review',
     timestamp: new Date(Date.now() - 1000 * 60 * 15),
     unreadCount: 2,
     isOnline: true,
     isTyping: false,
     isPinned: true,
-    type: "direct"
+    type: 'direct',
   },
   {
-    id: "2",
-    name: "TechCorp Team",
-    initials: "TC",
-    lastMessage: "Meeting scheduled for tomorrow at 2 PM",
+    id: '2',
+    name: 'TechCorp Team',
+    initials: 'TC',
+    lastMessage: 'Meeting scheduled for tomorrow at 2 PM',
     timestamp: new Date(Date.now() - 1000 * 60 * 45),
     unreadCount: 0,
     isOnline: false,
     isTyping: true,
     isPinned: false,
-    type: "group",
-    participants: ["John Doe", "Sarah Chen", "Mike Johnson"]
+    type: 'group',
+    participants: ['John Doe', 'Sarah Chen', 'Mike Johnson'],
   },
   {
-    id: "3",
-    name: "Global Manufacturing",
-    initials: "GM",
-    lastMessage: "Invoice #INV-2024-003 has been processed",
+    id: '3',
+    name: 'Global Manufacturing',
+    initials: 'GM',
+    lastMessage: 'Invoice #INV-2024-003 has been processed',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
     unreadCount: 1,
     isOnline: true,
     isTyping: false,
     isPinned: false,
-    type: "direct"
+    type: 'direct',
   },
   {
-    id: "4",
-    name: "Procurement Team",
-    initials: "PT",
-    lastMessage: "Budget approval needed for Q1 purchases",
+    id: '4',
+    name: 'Procurement Team',
+    initials: 'PT',
+    lastMessage: 'Budget approval needed for Q1 purchases',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
     unreadCount: 0,
     isOnline: false,
     isTyping: false,
     isPinned: true,
-    type: "group",
-    participants: ["Alice Wilson", "Bob Smith", "Carol Brown"]
-  }
-]
+    type: 'group',
+    participants: ['Alice Wilson', 'Bob Smith', 'Carol Brown'],
+  },
+];
 
 const mockMessages: Message[] = [
   {
-    id: "1",
-    content: "Hi! I've reviewed the latest supplier contracts and have some questions about the terms.",
+    id: '1',
+    content:
+      "Hi! I've reviewed the latest supplier contracts and have some questions about the terms.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60),
     sender: {
-      id: "sarah",
-      name: "Sarah Chen",
-      initials: "SC"
+      id: 'sarah',
+      name: 'Sarah Chen',
+      initials: 'SC',
     },
     isOwn: false,
-    status: "read"
+    status: 'read',
   },
   {
-    id: "2",
+    id: '2',
     content: "Sure, I'd be happy to clarify. Which specific terms are you concerned about?",
     timestamp: new Date(Date.now() - 1000 * 60 * 45),
     sender: {
-      id: "me",
-      name: "John Doe",
-      initials: "JD"
+      id: 'me',
+      name: 'John Doe',
+      initials: 'JD',
     },
     isOwn: true,
-    status: "delivered"
+    status: 'delivered',
   },
   {
-    id: "3",
-    content: "The payment terms seem quite aggressive - 15 days instead of our usual 30. Also, the delivery penalties look steep.",
+    id: '3',
+    content:
+      'The payment terms seem quite aggressive - 15 days instead of our usual 30. Also, the delivery penalties look steep.',
     timestamp: new Date(Date.now() - 1000 * 60 * 30),
     sender: {
-      id: "sarah",
-      name: "Sarah Chen",
-      initials: "SC"
+      id: 'sarah',
+      name: 'Sarah Chen',
+      initials: 'SC',
     },
     isOwn: false,
-    status: "read"
+    status: 'read',
   },
   {
-    id: "4",
-    content: "I've attached the contract analysis document with highlighted sections that need attention.",
+    id: '4',
+    content:
+      "I've attached the contract analysis document with highlighted sections that need attention.",
     timestamp: new Date(Date.now() - 1000 * 60 * 25),
     sender: {
-      id: "sarah",
-      name: "Sarah Chen",
-      initials: "SC"
+      id: 'sarah',
+      name: 'Sarah Chen',
+      initials: 'SC',
     },
     isOwn: false,
-    status: "read",
+    status: 'read',
     attachments: [
       {
-        id: "att1",
-        name: "Contract_Analysis_TechCorp_2024.pdf",
-        type: "document",
-        size: "2.4 MB",
-        url: "#"
-      }
-    ]
+        id: 'att1',
+        name: 'Contract_Analysis_TechCorp_2024.pdf',
+        type: 'document',
+        size: '2.4 MB',
+        url: '#',
+      },
+    ],
   },
   {
-    id: "5",
-    content: "Thanks for the detailed analysis. Let me review this and get back to you by end of day.",
+    id: '5',
+    content:
+      'Thanks for the detailed analysis. Let me review this and get back to you by end of day.',
     timestamp: new Date(Date.now() - 1000 * 60 * 15),
     sender: {
-      id: "me",
-      name: "John Doe",
-      initials: "JD"
+      id: 'me',
+      name: 'John Doe',
+      initials: 'JD',
     },
     isOwn: true,
-    status: "read"
-  }
-]
+    status: 'read',
+  },
+];
 
 // Utility functions
 const formatTime = (date: Date) => {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / (1000 * 60))
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  if (minutes < 1) return "now"
-  if (minutes < 60) return `${minutes}m`
-  if (hours < 24) return `${hours}h`
-  if (days < 7) return `${days}d`
-  return date.toLocaleDateString()
-}
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  return date.toLocaleDateString();
+};
 
 const formatMessageTime = (date: Date) => {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 // Components
 const ConversationList: React.FC<{
-  conversations: Conversation[]
-  selectedId?: string
-  onSelect: (id: string) => void
-  searchQuery: string
-  onSearchChange: (query: string) => void
+  conversations: Conversation[];
+  selectedId?: string;
+  onSelect: (id: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }> = ({ conversations, selectedId, onSelect, searchQuery, onSearchChange }) => {
-  const [filter, setFilter] = useState<"all" | "unread" | "pinned">("all")
+  const [filter, setFilter] = useState<'all' | 'unread' | 'pinned'>('all');
 
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = conversations
+    .filter(conv => {
+      const matchesSearch =
+        conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (!matchesSearch) return false
+      if (!matchesSearch) return false;
 
-    switch (filter) {
-      case "unread": return conv.unreadCount > 0
-      case "pinned": return conv.isPinned
-      default: return true
-    }
-  }).sort((a, b) => {
-    // Sort pinned first, then by timestamp
-    if (a.isPinned && !b.isPinned) return -1
-    if (!a.isPinned && b.isPinned) return 1
-    return b.timestamp.getTime() - a.timestamp.getTime()
-  })
+      switch (filter) {
+        case 'unread':
+          return conv.unreadCount > 0;
+        case 'pinned':
+          return conv.isPinned;
+        default:
+          return true;
+      }
+    })
+    .sort((a, b) => {
+      // Sort pinned first, then by timestamp
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return b.timestamp.getTime() - a.timestamp.getTime();
+    });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-4">
+      <div className="border-b p-4">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Messages</h2>
           <Button size="icon" variant="outline" className="h-8 w-8">
             <Plus className="h-4 w-4" />
@@ -254,22 +264,28 @@ const ConversationList: React.FC<{
 
         {/* Search */}
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={e => onSearchChange(e.target.value)}
             className="pl-9"
             aria-label="Search conversations"
           />
         </div>
 
         {/* Filter Tabs */}
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+        <Tabs value={filter} onValueChange={v => setFilter(v as typeof filter)}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs">Unread</TabsTrigger>
-            <TabsTrigger value="pinned" className="text-xs">Pinned</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="unread" className="text-xs">
+              Unread
+            </TabsTrigger>
+            <TabsTrigger value="pinned" className="text-xs">
+              Pinned
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -277,19 +293,19 @@ const ConversationList: React.FC<{
       {/* Conversations */}
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
-          {filteredConversations.map((conversation) => (
+          {filteredConversations.map(conversation => (
             <div
               key={conversation.id}
               onClick={() => onSelect(conversation.id)}
-              className={`p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
-                selectedId === conversation.id ? "bg-muted" : ""
+              className={`hover:bg-muted/50 cursor-pointer rounded-lg p-3 transition-colors ${
+                selectedId === conversation.id ? 'bg-muted' : ''
               }`}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  onSelect(conversation.id)
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(conversation.id);
                 }
               }}
               aria-label={`Conversation with ${conversation.name}`}
@@ -303,28 +319,28 @@ const ConversationList: React.FC<{
                     <AvatarFallback>{conversation.initials}</AvatarFallback>
                   </Avatar>
                   {conversation.isOnline && (
-                    <Circle className="absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-green-500 text-green-500" />
+                    <Circle className="absolute -right-0.5 -bottom-0.5 h-3 w-3 fill-green-500 text-green-500" />
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{conversation.name}</p>
+                      <p className="truncate text-sm font-medium">{conversation.name}</p>
                       {conversation.isPinned && (
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       )}
-                      {conversation.type === "group" && (
-                        <Users className="h-3 w-3 text-muted-foreground" />
+                      {conversation.type === 'group' && (
+                        <Users className="text-muted-foreground h-3 w-3" />
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {formatTime(conversation.timestamp)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-sm text-muted-foreground truncate">
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-muted-foreground truncate text-sm">
                       {conversation.isTyping ? (
                         <span className="text-primary">Typing...</span>
                       ) : (
@@ -332,8 +348,11 @@ const ConversationList: React.FC<{
                       )}
                     </p>
                     {conversation.unreadCount > 0 && (
-                      <Badge variant="default" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
-                        {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                      <Badge
+                        variant="default"
+                        className="flex h-5 w-5 items-center justify-center p-0 text-xs"
+                      >
+                        {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
                       </Badge>
                     )}
                   </div>
@@ -344,41 +363,48 @@ const ConversationList: React.FC<{
         </div>
       </ScrollArea>
     </div>
-  )
-}
+  );
+};
 
-type MessageAttachment = Message['attachments'] extends Array<infer A> ? A : never
+type MessageAttachment = Message['attachments'] extends Array<infer A> ? A : never;
 
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   const renderAttachment = (attachment: MessageAttachment) => (
-    <div key={attachment.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50 mt-2">
-      {attachment.type === "document" ? (
-        <FileText className="h-4 w-4 text-muted-foreground" />
+    <div
+      key={attachment.id}
+      className="bg-muted/50 mt-2 flex items-center gap-2 rounded-lg border p-2"
+    >
+      {attachment.type === 'document' ? (
+        <FileText className="text-muted-foreground h-4 w-4" />
       ) : (
-        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+        <ImageIcon className="text-muted-foreground h-4 w-4" />
       )}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{attachment.name}</p>
-        <p className="text-xs text-muted-foreground">{attachment.size}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{attachment.name}</p>
+        <p className="text-muted-foreground text-xs">{attachment.size}</p>
       </div>
       <Button size="icon" variant="ghost" className="h-6 w-6">
         <Download className="h-3 w-3" />
         <span className="sr-only">Download {attachment.name}</span>
       </Button>
     </div>
-  )
+  );
 
   const StatusIcon = () => {
     switch (message.status) {
-      case "sent": return <Check className="h-3 w-3" />
-      case "delivered": return <CheckCheck className="h-3 w-3" />
-      case "read": return <CheckCheck className="h-3 w-3 text-blue-500" />
-      default: return null
+      case 'sent':
+        return <Check className="h-3 w-3" />;
+      case 'delivered':
+        return <CheckCheck className="h-3 w-3" />;
+      case 'read':
+        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+      default:
+        return null;
     }
-  }
+  };
 
   return (
-    <div className={`flex gap-3 group ${message.isOwn ? "flex-row-reverse" : ""}`}>
+    <div className={`group flex gap-3 ${message.isOwn ? 'flex-row-reverse' : ''}`}>
       {!message.isOwn && (
         <Avatar className="h-8 w-8">
           {message.sender.avatar && (
@@ -388,83 +414,83 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
         </Avatar>
       )}
 
-      <div className={`flex flex-col ${message.isOwn ? "items-end" : "items-start"} max-w-[70%]`}>
+      <div className={`flex flex-col ${message.isOwn ? 'items-end' : 'items-start'} max-w-[70%]`}>
         <div
           className={`rounded-lg px-3 py-2 ${
-            message.isOwn
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted"
+            message.isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'
           }`}
         >
           <p className="text-sm">{message.content}</p>
           {message.attachments?.map(renderAttachment)}
         </div>
 
-        <div className={`flex items-center gap-1 mt-1 ${message.isOwn ? "flex-row-reverse" : ""}`}>
-          <span className="text-xs text-muted-foreground">
+        <div className={`mt-1 flex items-center gap-1 ${message.isOwn ? 'flex-row-reverse' : ''}`}>
+          <span className="text-muted-foreground text-xs">
             {formatMessageTime(message.timestamp)}
           </span>
           {message.isOwn && <StatusIcon />}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const MessageThread: React.FC<{
-  conversation?: Conversation
-  messages: Message[]
-  onSendMessage: (content: string, attachments?: File[]) => void
+  conversation?: Conversation;
+  messages: Message[];
+  onSendMessage: (content: string, attachments?: File[]) => void;
 }> = ({ conversation, messages, onSendMessage }) => {
-  const [messageInput, setMessageInput] = useState("")
-  const [attachments, setAttachments] = useState<File[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messageInput, setMessageInput] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSend = () => {
     if (messageInput.trim() || attachments.length > 0) {
-      onSendMessage(messageInput.trim(), attachments)
-      setMessageInput("")
-      setAttachments([])
+      onSendMessage(messageInput.trim(), attachments);
+      setMessageInput('');
+      setAttachments([]);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setAttachments(prev => [...prev, ...files])
-  }
+    const files = Array.from(e.target.files || []);
+    setAttachments(prev => [...prev, ...files]);
+  };
 
   const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <MessageSquare className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <h3 className="text-lg font-medium">Select a conversation</h3>
-          <p className="text-muted-foreground">Choose a conversation from the sidebar to start messaging</p>
+          <p className="text-muted-foreground">
+            Choose a conversation from the sidebar to start messaging
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar className="h-10 w-10">
@@ -474,19 +500,17 @@ const MessageThread: React.FC<{
               <AvatarFallback>{conversation.initials}</AvatarFallback>
             </Avatar>
             {conversation.isOnline && (
-              <Circle className="absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-green-500 text-green-500" />
+              <Circle className="absolute -right-0.5 -bottom-0.5 h-3 w-3 fill-green-500 text-green-500" />
             )}
           </div>
           <div>
             <h3 className="font-medium">{conversation.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {conversation.isTyping ? (
-                "Typing..."
-              ) : conversation.isOnline ? (
-                "Online"
-              ) : (
-                `Last seen ${formatTime(conversation.timestamp)}`
-              )}
+            <p className="text-muted-foreground text-sm">
+              {conversation.isTyping
+                ? 'Typing...'
+                : conversation.isOnline
+                  ? 'Online'
+                  : `Last seen ${formatTime(conversation.timestamp)}`}
             </p>
           </div>
         </div>
@@ -510,7 +534,7 @@ const MessageThread: React.FC<{
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message) => (
+          {messages.map(message => (
             <MessageBubble key={message.id} message={message} />
           ))}
           {conversation.isTyping && (
@@ -520,9 +544,9 @@ const MessageThread: React.FC<{
               </Avatar>
               <div className="bg-muted rounded-lg px-3 py-2">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" />
+                  <div className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                  <div className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                  <div className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full" />
                 </div>
               </div>
             </div>
@@ -532,14 +556,14 @@ const MessageThread: React.FC<{
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t">
+      <div className="border-t p-4">
         {/* Attachments Preview */}
         {attachments.length > 0 && (
           <div className="mb-3 space-y-2">
             {attachments.map((file, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm flex-1 truncate">{file.name}</span>
+              <div key={index} className="bg-muted flex items-center gap-2 rounded-lg p-2">
+                <FileText className="text-muted-foreground h-4 w-4" />
+                <span className="flex-1 truncate text-sm">{file.name}</span>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -568,10 +592,10 @@ const MessageThread: React.FC<{
           <div className="flex-1">
             <Textarea
               value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
+              onChange={e => setMessageInput(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Type a message..."
-              className="min-h-[40px] max-h-32 resize-none"
+              className="max-h-32 min-h-[40px] resize-none"
               aria-label="Message input"
             />
           </div>
@@ -597,16 +621,16 @@ const MessageThread: React.FC<{
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default function MessagesPage() {
-  const [selectedConversationId, setSelectedConversationId] = useState<string>()
-  const [conversations, setConversations] = useState(mockConversations)
-  const [messages, setMessages] = useState(mockMessages)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedConversationId, setSelectedConversationId] = useState<string>();
+  const [conversations, setConversations] = useState(mockConversations);
+  const [messages, setMessages] = useState(mockMessages);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId)
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
   const handleSendMessage = (content: string, attachments?: File[]) => {
     const newMessage: Message = {
@@ -614,36 +638,36 @@ export default function MessagesPage() {
       content,
       timestamp: new Date(),
       sender: {
-        id: "me",
-        name: "John Doe",
-        initials: "JD"
+        id: 'me',
+        name: 'John Doe',
+        initials: 'JD',
       },
       isOwn: true,
-      status: "sent",
+      status: 'sent',
       attachments: attachments?.map(file => ({
         id: Date.now().toString(),
         name: file.name,
-        type: file.type.startsWith("image/") ? "image" : "document",
+        type: file.type.startsWith('image/') ? 'image' : 'document',
         size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-        url: URL.createObjectURL(file)
-      }))
-    }
+        url: URL.createObjectURL(file),
+      })),
+    };
 
-    setMessages(prev => [...prev, newMessage])
+    setMessages(prev => [...prev, newMessage]);
 
     // Update conversation last message
     if (selectedConversationId) {
-      setConversations(prev => prev.map(conv =>
-        conv.id === selectedConversationId
-          ? { ...conv, lastMessage: content || "📎 Attachment", timestamp: new Date() }
-          : conv
-      ))
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === selectedConversationId
+            ? { ...conv, lastMessage: content || '📎 Attachment', timestamp: new Date() }
+            : conv
+        )
+      );
     }
-  }
+  };
 
-  const breadcrumbs = [
-    { label: "Messages" }
-  ]
+  const breadcrumbs = [{ label: 'Messages' }];
 
   return (
     <AppLayout title="Messages" breadcrumbs={breadcrumbs}>
@@ -671,5 +695,5 @@ export default function MessagesPage() {
         </div>
       </Card>
     </AppLayout>
-  )
+  );
 }

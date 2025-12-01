@@ -496,5 +496,3 @@ export class QAValidator {
 }
 
 export default QAValidator;
-
-

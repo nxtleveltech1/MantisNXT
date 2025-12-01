@@ -4,8 +4,24 @@
 
 import { query } from '@/lib/database';
 
-export type EntityType = 'product' | 'customer' | 'order' | 'supplier' | 'inventory' | 'category' | 'payment' | 'shipment' | 'invoice' | 'purchase_order';
-export type SyncStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'partial' | 'conflict';
+export type EntityType =
+  | 'product'
+  | 'customer'
+  | 'order'
+  | 'supplier'
+  | 'inventory'
+  | 'category'
+  | 'payment'
+  | 'shipment'
+  | 'invoice'
+  | 'purchase_order';
+export type SyncStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'failed'
+  | 'partial'
+  | 'conflict';
 export type SyncDirection = 'inbound' | 'outbound' | 'bidirectional';
 
 export interface IntegrationMapping {
@@ -75,7 +91,7 @@ export class IntegrationMappingService {
         params.externalId,
         params.externalModel || null,
         JSON.stringify(params.mappingData || {}),
-        true
+        true,
       ]
     );
 
@@ -101,10 +117,7 @@ export class IntegrationMappingService {
   /**
    * Get mapping by internal ID
    */
-  async getMapping(
-    entityType: EntityType,
-    internalId: string
-  ): Promise<IntegrationMapping | null> {
+  async getMapping(entityType: EntityType, internalId: string): Promise<IntegrationMapping | null> {
     const result = await query<IntegrationMapping>(
       `SELECT * FROM integration_mapping
        WHERE connector_id = $1 AND entity_type = $2
@@ -186,9 +199,7 @@ export class IntegrationMappingService {
   /**
    * Get all mappings for an entity type
    */
-  async getMappingsByEntityType(
-    entityType: EntityType
-  ): Promise<IntegrationMapping[]> {
+  async getMappingsByEntityType(entityType: EntityType): Promise<IntegrationMapping[]> {
     const result = await query<IntegrationMapping>(
       `SELECT * FROM integration_mapping
        WHERE connector_id = $1 AND entity_type = $2 AND is_active = true
@@ -202,9 +213,7 @@ export class IntegrationMappingService {
   /**
    * Batch create mappings
    */
-  async batchCreateMappings(
-    mappings: CreateMappingParams[]
-  ): Promise<IntegrationMapping[]> {
+  async batchCreateMappings(mappings: CreateMappingParams[]): Promise<IntegrationMapping[]> {
     if (mappings.length === 0) return [];
 
     const values: unknown[] = [];
@@ -272,8 +281,15 @@ export class IntegrationMappingService {
     if (!tableName) return;
 
     const columns = [
-      'org_id', 'connector_id', 'entity_type', 'entity_id',
-      'external_id', 'direction', 'last_sync_status', 'retry_count', 'metadata'
+      'org_id',
+      'connector_id',
+      'entity_type',
+      'entity_id',
+      'external_id',
+      'direction',
+      'last_sync_status',
+      'retry_count',
+      'metadata',
     ];
     const values = [
       this.orgId,
@@ -284,7 +300,7 @@ export class IntegrationMappingService {
       params.direction,
       'pending',
       0,
-      JSON.stringify({})
+      JSON.stringify({}),
     ];
 
     let paramIndex = 10;
@@ -325,11 +341,7 @@ export class IntegrationMappingService {
     const tableName = await this.getTableName();
     if (!tableName) return;
 
-    const setClauses = [
-      'last_sync_status = $1',
-      'last_sync_at = NOW()',
-      'updated_at = NOW()'
-    ];
+    const setClauses = ['last_sync_status = $1', 'last_sync_at = NOW()', 'updated_at = NOW()'];
     const values: unknown[] = [status];
     let paramIndex = 2;
 
@@ -365,10 +377,7 @@ export class IntegrationMappingService {
   /**
    * Get sync state
    */
-  async getSyncState(
-    entityType: EntityType,
-    internalId: string
-  ): Promise<SyncState | null> {
+  async getSyncState(entityType: EntityType, internalId: string): Promise<SyncState | null> {
     const tableName = await this.getTableName();
     if (!tableName) return null;
 
@@ -442,9 +451,9 @@ export class IntegrationMappingService {
           params.requestPayload ? JSON.stringify(params.requestPayload) : null,
           params.responsePayload ? JSON.stringify(params.responsePayload) : null,
           params.durationMs || null,
-          (params.status === 'completed' || params.status === 'failed')
+          params.status === 'completed' || params.status === 'failed'
             ? new Date().toISOString()
-            : null
+            : null,
         ]
       );
     } catch (error) {

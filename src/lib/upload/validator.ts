@@ -5,11 +5,10 @@ import type {
   ValidationError,
   ValidationWarning,
   ImportConfiguration,
-  ValidationResponse
+  ValidationResponse,
 } from '@/types/pricelist-upload';
 
 export class DataValidator {
-
   /**
    * Validate processed price list data
    */
@@ -58,9 +57,9 @@ export class DataValidator {
         totalRows: mappedData.length,
         validRows,
         invalidRows,
-        warningRows
+        warningRows,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -81,7 +80,7 @@ export class DataValidator {
         value: row.sku,
         errorType: 'missing_required',
         message: 'SKU is required but missing or empty',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -97,7 +96,7 @@ export class DataValidator {
           value: priceValue,
           errorType: 'missing_required',
           message: `${priceField} is required but missing or invalid`,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -110,7 +109,7 @@ export class DataValidator {
         value: row.productName,
         errorType: 'missing_required',
         message: 'Product name is required but missing or empty',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -122,7 +121,7 @@ export class DataValidator {
         value: row.supplierPartNumber,
         errorType: 'missing_required',
         message: 'Supplier part number is required but missing or empty',
-        severity: 'error'
+        severity: 'error',
       });
     }
   }
@@ -144,9 +143,10 @@ export class DataValidator {
           field: 'sku',
           value: row.sku,
           warningType: 'format_suggestion',
-          message: 'SKU contains special characters - consider using only alphanumeric, hyphens, and underscores',
+          message:
+            'SKU contains special characters - consider using only alphanumeric, hyphens, and underscores',
           severity: 'warning',
-          suggestion: row.sku.replace(/[^A-Za-z0-9\-_]/g, '-')
+          suggestion: row.sku.replace(/[^A-Za-z0-9\-_]/g, '-'),
         });
       }
 
@@ -157,7 +157,7 @@ export class DataValidator {
           value: row.sku,
           errorType: 'constraint_violation',
           message: 'SKU exceeds maximum length of 50 characters',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -176,7 +176,7 @@ export class DataValidator {
           warningType: 'unusual_value',
           message: `Currency "${row.currency}" is not commonly supported`,
           severity: 'warning',
-          suggestion: 'Consider using USD, EUR, GBP, ZAR, AUD, CAD, or JPY'
+          suggestion: 'Consider using USD, EUR, GBP, ZAR, AUD, CAD, or JPY',
         });
       }
     }
@@ -190,7 +190,7 @@ export class DataValidator {
           value: row.weight,
           errorType: 'invalid_value',
           message: 'Weight must be greater than zero',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -204,7 +204,7 @@ export class DataValidator {
           value: row.minimumOrderQuantity,
           errorType: 'invalid_value',
           message: 'Minimum order quantity must be a positive integer',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -218,7 +218,7 @@ export class DataValidator {
           value: row.leadTime,
           errorType: 'invalid_value',
           message: 'Lead time must be a non-negative integer (days)',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -233,7 +233,7 @@ export class DataValidator {
           value: row.barcode,
           warningType: 'format_suggestion',
           message: 'Barcode should be 8-14 digits',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -248,7 +248,7 @@ export class DataValidator {
           value: length,
           errorType: 'invalid_value',
           message: 'Length must be a positive number',
-          severity: 'error'
+          severity: 'error',
         });
       }
       if (width !== undefined && (width <= 0 || isNaN(width))) {
@@ -258,7 +258,7 @@ export class DataValidator {
           value: width,
           errorType: 'invalid_value',
           message: 'Width must be a positive number',
-          severity: 'error'
+          severity: 'error',
         });
       }
       if (height !== undefined && (height <= 0 || isNaN(height))) {
@@ -268,7 +268,7 @@ export class DataValidator {
           value: height,
           errorType: 'invalid_value',
           message: 'Height must be a positive number',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -295,7 +295,7 @@ export class DataValidator {
             value: price,
             errorType: 'invalid_value',
             message: `${field} must be a positive number`,
-            severity: 'error'
+            severity: 'error',
           });
         } else if (price > 1000000) {
           warnings.push({
@@ -304,7 +304,7 @@ export class DataValidator {
             value: price,
             warningType: 'unusual_value',
             message: `${field} seems unusually high (${price})`,
-            severity: 'warning'
+            severity: 'warning',
           });
         } else if (price < 0.01) {
           warnings.push({
@@ -313,7 +313,7 @@ export class DataValidator {
             value: price,
             warningType: 'unusual_value',
             message: `${field} seems unusually low (${price})`,
-            severity: 'warning'
+            severity: 'warning',
           });
         }
       }
@@ -327,7 +327,7 @@ export class DataValidator {
         value: row.unitPrice,
         warningType: 'unusual_value',
         message: 'Unit price is higher than list price',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -338,7 +338,7 @@ export class DataValidator {
         value: row.wholesalePrice,
         warningType: 'unusual_value',
         message: 'Wholesale price is higher than retail price',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
   }
@@ -361,25 +361,39 @@ export class DataValidator {
         value: row.status,
         errorType: 'invalid_value',
         message: 'Status must be one of: active, inactive, discontinued',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
     // Availability validation
-    if (row.availability && !['available', 'limited', 'discontinued', 'seasonal'].includes(row.availability)) {
+    if (
+      row.availability &&
+      !['available', 'limited', 'discontinued', 'seasonal'].includes(row.availability)
+    ) {
       errors.push({
         rowIndex,
         field: 'availability',
         value: row.availability,
         errorType: 'invalid_value',
         message: 'Availability must be one of: available, limited, discontinued, seasonal',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
     // Unit validation
     if (row.unit) {
-      const validUnits = ['each', 'box', 'case', 'pack', 'kg', 'lb', 'liter', 'gallon', 'meter', 'foot'];
+      const validUnits = [
+        'each',
+        'box',
+        'case',
+        'pack',
+        'kg',
+        'lb',
+        'liter',
+        'gallon',
+        'meter',
+        'foot',
+      ];
       if (!validUnits.includes(row.unit.toLowerCase())) {
         warnings.push({
           rowIndex,
@@ -388,7 +402,7 @@ export class DataValidator {
           warningType: 'unusual_value',
           message: `Unit "${row.unit}" is not in common units list`,
           severity: 'warning',
-          suggestion: 'Consider using: each, box, case, pack, kg, lb, liter, gallon, meter, foot'
+          suggestion: 'Consider using: each, box, case, pack, kg, lb, liter, gallon, meter, foot',
         });
       }
     }
@@ -401,7 +415,7 @@ export class DataValidator {
         value: row.productName,
         errorType: 'constraint_violation',
         message: 'Product name exceeds maximum length of 200 characters',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -413,7 +427,7 @@ export class DataValidator {
         value: row.category,
         warningType: 'unusual_value',
         message: 'Category name seems too short',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
   }
@@ -437,7 +451,7 @@ export class DataValidator {
         value: row.sku,
         errorType: 'duplicate',
         message: `SKU "${row.sku}" is duplicated in the file`,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -449,7 +463,7 @@ export class DataValidator {
         value: row.supplierPartNumber,
         warningType: 'duplicate_suggestion',
         message: `Supplier part number "${row.supplierPartNumber}" is duplicated in the file`,
-        severity: 'warning'
+        severity: 'warning',
       });
     }
   }
@@ -466,17 +480,24 @@ export class DataValidator {
     const recommendations: string[] = [];
 
     // Error-based recommendations
-    const errorTypes = errors.reduce((acc, error) => {
-      acc[error.errorType] = (acc[error.errorType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const errorTypes = errors.reduce(
+      (acc, error) => {
+        acc[error.errorType] = (acc[error.errorType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     if (errorTypes.missing_required > 0) {
-      recommendations.push(`Fix ${errorTypes.missing_required} missing required field(s) before importing`);
+      recommendations.push(
+        `Fix ${errorTypes.missing_required} missing required field(s) before importing`
+      );
     }
 
     if (errorTypes.invalid_format > 0) {
-      recommendations.push(`Correct ${errorTypes.invalid_format} invalid format(s) to ensure data quality`);
+      recommendations.push(
+        `Correct ${errorTypes.invalid_format} invalid format(s) to ensure data quality`
+      );
     }
 
     if (errorTypes.duplicate > 0) {
@@ -485,7 +506,9 @@ export class DataValidator {
 
     // Warning-based recommendations
     if (warnings.length > 0) {
-      recommendations.push(`Review ${warnings.length} warning(s) for potential data quality improvements`);
+      recommendations.push(
+        `Review ${warnings.length} warning(s) for potential data quality improvements`
+      );
     }
 
     // Data quality recommendations
@@ -496,21 +519,27 @@ export class DataValidator {
 
     const rowsWithoutDescription = data.filter(row => !row.description).length;
     if (rowsWithoutDescription > data.length * 0.7) {
-      recommendations.push('Adding product descriptions will improve searchability and user experience');
+      recommendations.push(
+        'Adding product descriptions will improve searchability and user experience'
+      );
     }
 
     // Currency consistency
     const currencies = new Set(data.map(row => row.currency).filter(Boolean));
     if (currencies.size > 1) {
-      recommendations.push(`Multiple currencies detected (${Array.from(currencies).join(', ')}) - ensure consistency`);
+      recommendations.push(
+        `Multiple currencies detected (${Array.from(currencies).join(', ')}) - ensure consistency`
+      );
     }
 
     // Price completeness
-    const rowsWithAllPrices = data.filter(row =>
-      row.unitPrice && row.listPrice && row.wholesalePrice
+    const rowsWithAllPrices = data.filter(
+      row => row.unitPrice && row.listPrice && row.wholesalePrice
     ).length;
     if (rowsWithAllPrices < data.length * 0.3) {
-      recommendations.push('Consider providing multiple price points (unit, list, wholesale) for better flexibility');
+      recommendations.push(
+        'Consider providing multiple price points (unit, list, wholesale) for better flexibility'
+      );
     }
 
     return recommendations;
@@ -521,7 +550,6 @@ export class DataValidator {
  * Utility functions for data cleaning and transformation
  */
 export class DataCleaner {
-
   /**
    * Clean and normalize text fields
    */
@@ -562,15 +590,15 @@ export class DataCleaner {
 
     // Handle common variations
     const currencyMap: Record<string, string> = {
-      'DOLLAR': 'USD',
-      'DOLLARS': 'USD',
-      'US': 'USD',
-      'EURO': 'EUR',
-      'EUROS': 'EUR',
-      'POUND': 'GBP',
-      'POUNDS': 'GBP',
-      'RAND': 'ZAR',
-      'R': 'ZAR'
+      DOLLAR: 'USD',
+      DOLLARS: 'USD',
+      US: 'USD',
+      EURO: 'EUR',
+      EUROS: 'EUR',
+      POUND: 'GBP',
+      POUNDS: 'GBP',
+      RAND: 'ZAR',
+      R: 'ZAR',
     };
 
     return currencyMap[normalized] || normalized;

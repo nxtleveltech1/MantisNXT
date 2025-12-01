@@ -116,9 +116,14 @@ export class ExtractionMonitor extends EventEmitter {
     const dashboard = await extractionMetrics.getDashboardMetrics();
 
     // Calculate throughput (rows per second)
-    const throughput = dashboard.avg_duration_ms > 0
-      ? Math.round((dashboard.rows_processed_24h / dashboard.jobs_last_24h) / (dashboard.avg_duration_ms / 1000))
-      : 0;
+    const throughput =
+      dashboard.avg_duration_ms > 0
+        ? Math.round(
+            dashboard.rows_processed_24h /
+              dashboard.jobs_last_24h /
+              (dashboard.avg_duration_ms / 1000)
+          )
+        : 0;
 
     return {
       jobs_last_hour: dashboard.jobs_last_hour,
@@ -188,7 +193,9 @@ export class ExtractionMonitor extends EventEmitter {
       const queueMetrics = this.getQueueMetrics();
       if (queueMetrics.queued > this.MAX_QUEUE_SIZE) {
         queue_ok = false;
-        issues.push(`Queue size (${queueMetrics.queued}) exceeds threshold (${this.MAX_QUEUE_SIZE})`);
+        issues.push(
+          `Queue size (${queueMetrics.queued}) exceeds threshold (${this.MAX_QUEUE_SIZE})`
+        );
       }
 
       if (queueMetrics.dlq > this.MAX_DLQ_SIZE) {
@@ -200,12 +207,16 @@ export class ExtractionMonitor extends EventEmitter {
       const perfMetrics = await this.getPerformanceMetrics();
       if (perfMetrics.success_rate_24h < this.MIN_SUCCESS_RATE && perfMetrics.jobs_last_24h > 10) {
         performance_ok = false;
-        issues.push(`Success rate (${perfMetrics.success_rate_24h.toFixed(2)}%) below threshold (${this.MIN_SUCCESS_RATE}%)`);
+        issues.push(
+          `Success rate (${perfMetrics.success_rate_24h.toFixed(2)}%) below threshold (${this.MIN_SUCCESS_RATE}%)`
+        );
       }
 
       if (perfMetrics.avg_duration_ms > this.MAX_AVG_DURATION_MS) {
         performance_ok = false;
-        issues.push(`Average duration (${(perfMetrics.avg_duration_ms / 1000).toFixed(2)}s) exceeds threshold (${this.MAX_AVG_DURATION_MS / 1000}s)`);
+        issues.push(
+          `Average duration (${(perfMetrics.avg_duration_ms / 1000).toFixed(2)}s) exceeds threshold (${this.MAX_AVG_DURATION_MS / 1000}s)`
+        );
       }
 
       // Check DLQ
@@ -244,7 +255,6 @@ export class ExtractionMonitor extends EventEmitter {
       this.lastHealthStatus = healthStatus;
 
       return healthStatus;
-
     } catch (error) {
       console.error('Health check failed:', error);
 
@@ -254,7 +264,9 @@ export class ExtractionMonitor extends EventEmitter {
         performance_ok: false,
         dlq_ok: false,
         last_check: new Date(),
-        issues: [`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+        issues: [
+          `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
       };
 
       this.emit('health:check_failed', errorStatus);
@@ -295,7 +307,7 @@ export class ExtractionMonitor extends EventEmitter {
    */
   private attachQueueListeners(): void {
     // Queue backpressure
-    extractionQueue.on('queue:backpressure', (data) => {
+    extractionQueue.on('queue:backpressure', data => {
       this.emit('alert:backpressure', {
         severity: 'warning',
         message: `Queue at capacity: ${data.active}/${data.max} workers active, ${data.queued} jobs queued`,
@@ -304,7 +316,7 @@ export class ExtractionMonitor extends EventEmitter {
     });
 
     // DLQ alerts
-    extractionQueue.on('dlq:alert', (data) => {
+    extractionQueue.on('dlq:alert', data => {
       this.emit('alert:dlq', {
         severity: 'critical',
         message: data.message,
@@ -336,14 +348,16 @@ export class ExtractionMonitor extends EventEmitter {
   /**
    * Get recent job history
    */
-  async getRecentJobs(limit: number = 20): Promise<Array<{
-    job_id: string;
-    status: string;
-    created_at: Date;
-    completed_at: Date | null;
-    duration_ms: number | null;
-    rows_processed: number;
-  }>> {
+  async getRecentJobs(limit: number = 20): Promise<
+    Array<{
+      job_id: string;
+      status: string;
+      created_at: Date;
+      completed_at: Date | null;
+      duration_ms: number | null;
+      rows_processed: number;
+    }>
+  > {
     const result = await query<{
       job_id: string;
       status: string;
@@ -371,13 +385,15 @@ export class ExtractionMonitor extends EventEmitter {
   /**
    * Get hourly job statistics for the last 24 hours
    */
-  async getHourlyStats(): Promise<Array<{
-    hour: string;
-    total: number;
-    completed: number;
-    failed: number;
-    avg_duration_ms: number;
-  }>> {
+  async getHourlyStats(): Promise<
+    Array<{
+      hour: string;
+      total: number;
+      completed: number;
+      failed: number;
+      avg_duration_ms: number;
+    }>
+  > {
     const result = await query<{
       hour: string;
       total: string;

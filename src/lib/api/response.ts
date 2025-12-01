@@ -39,8 +39,8 @@ export function createSuccessResponse<T = unknown>(
       timestamp: new Date().toISOString(),
       requestId: uuidv4(),
       version: process.env.API_VERSION || '1.0.0',
-      ...metadata
-    }
+      ...metadata,
+    },
   };
 
   if (message) {
@@ -67,8 +67,8 @@ export function createErrorResponse(
     metadata: {
       timestamp: new Date().toISOString(),
       requestId: uuidv4(),
-      version: process.env.API_VERSION || '1.0.0'
-    }
+      version: process.env.API_VERSION || '1.0.0',
+    },
   };
 
   if (errors && errors.length > 0) {
@@ -89,56 +89,39 @@ export function handleAPIError(error: unknown): NextResponse<APIResponse> {
   if (error instanceof Error) {
     // Check for specific error types
     if (error.name === 'ValidationError') {
-      return createErrorResponse(
-        'Validation failed',
-        400,
-        [(error as unknown).errors || error.message]
-      );
+      return createErrorResponse('Validation failed', 400, [
+        (error as unknown).errors || error.message,
+      ]);
     }
 
     if (error.name === 'UnauthorizedError') {
-      return createErrorResponse(
-        error.message || 'Unauthorized',
-        401
-      );
+      return createErrorResponse(error.message || 'Unauthorized', 401);
     }
 
     if (error.name === 'ForbiddenError') {
-      return createErrorResponse(
-        error.message || 'Forbidden',
-        403
-      );
+      return createErrorResponse(error.message || 'Forbidden', 403);
     }
 
     if (error.name === 'NotFoundError') {
-      return createErrorResponse(
-        error.message || 'Resource not found',
-        404
-      );
+      return createErrorResponse(error.message || 'Resource not found', 404);
     }
 
     // Database errors
     if (error.message?.includes('ECONNREFUSED') || error.message?.includes('ENOTFOUND')) {
-      return createErrorResponse(
-        'Database connection error',
-        503
-      );
+      return createErrorResponse('Database connection error', 503);
     }
 
     // Duplicate key errors (PostgreSQL)
     if (error.message?.includes('duplicate key') || error.message?.includes('UNIQUE constraint')) {
-      return createErrorResponse(
-        'Resource already exists',
-        409
-      );
+      return createErrorResponse('Resource already exists', 409);
     }
 
     // Foreign key constraint errors
-    if (error.message?.includes('foreign key constraint') || error.message?.includes('FOREIGN KEY constraint')) {
-      return createErrorResponse(
-        'Referenced resource not found or cannot be deleted',
-        400
-      );
+    if (
+      error.message?.includes('foreign key constraint') ||
+      error.message?.includes('FOREIGN KEY constraint')
+    ) {
+      return createErrorResponse('Referenced resource not found or cannot be deleted', 400);
     }
 
     // Default error response
@@ -159,19 +142,12 @@ export function handleAPIError(error: unknown): NextResponse<APIResponse> {
   if (typeof error === 'object' && error !== null) {
     const err = error as unknown;
     if (err.statusCode && err.message) {
-      return createErrorResponse(
-        err.message,
-        err.statusCode,
-        err.errors
-      );
+      return createErrorResponse(err.message, err.statusCode, err.errors);
     }
   }
 
   // Fallback for unknown error types
-  return createErrorResponse(
-    'An unexpected error occurred',
-    500
-  );
+  return createErrorResponse('An unexpected error occurred', 500);
 }
 
 /**
@@ -188,7 +164,7 @@ export function extractErrorDetails(error: unknown): {
       message: error.message,
       stack: error.stack,
       code: (error as unknown).code,
-      details: (error as unknown).details
+      details: (error as unknown).details,
     };
   }
 
@@ -200,7 +176,7 @@ export function extractErrorDetails(error: unknown): {
     return {
       message: (error as unknown).message || 'Unknown error',
       code: (error as unknown).code,
-      details: error
+      details: error,
     };
   }
 
@@ -232,8 +208,8 @@ export function createPaginatedResponse<T = unknown>(
         hasNext,
         hasPrev,
         nextPage: hasNext ? page + 1 : null,
-        prevPage: hasPrev ? page - 1 : null
-      }
+        prevPage: hasPrev ? page - 1 : null,
+      },
     },
     message
   );

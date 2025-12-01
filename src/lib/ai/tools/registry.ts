@@ -104,9 +104,7 @@ export class ToolRegistry {
 
     return allTools.filter(tool => {
       // Check if user has all required permissions
-      const hasPermissions = tool.requiredPermissions.every(perm =>
-        userPermissions.includes(perm)
-      );
+      const hasPermissions = tool.requiredPermissions.every(perm => userPermissions.includes(perm));
 
       return hasPermissions;
     });
@@ -120,9 +118,10 @@ export class ToolRegistry {
     userPermissions?: string[],
     category?: ToolCategory
   ): OpenAIFunction[] {
-    const tools = userId && userPermissions
-      ? this.listToolsForUser(userId, userPermissions, category)
-      : this.listTools(category);
+    const tools =
+      userId && userPermissions
+        ? this.listToolsForUser(userId, userPermissions, category)
+        : this.listTools(category);
 
     return tools.map(tool => ({
       name: tool.name,

@@ -87,8 +87,11 @@ export async function GET(request: NextRequest) {
           },
           by_type: {
             priority: filteredConflicts.filter(c => c.conflict_type === 'priority').length,
-            scope_overlap: filteredConflicts.filter(c => c.conflict_type === 'scope_overlap').length,
-            contradictory_config: filteredConflicts.filter(c => c.conflict_type === 'contradictory_config').length,
+            scope_overlap: filteredConflicts.filter(c => c.conflict_type === 'scope_overlap')
+              .length,
+            contradictory_config: filteredConflicts.filter(
+              c => c.conflict_type === 'contradictory_config'
+            ).length,
           },
         },
       },
@@ -118,4 +121,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

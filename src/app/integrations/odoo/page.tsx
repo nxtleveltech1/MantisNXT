@@ -1,22 +1,48 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Database, RefreshCw, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, FileText, Eye, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import {
+  Database,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Package,
+  ShoppingCart,
+  Users,
+  Save,
+  TestTube2,
+  FileText,
+  Eye,
+  X,
+} from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import SyncPreview from "@/components/integrations/SyncPreview";
-import ProgressTracker from "@/components/integrations/ProgressTracker";
-import ActivityLog from "@/components/integrations/ActivityLog";
-import { useSyncManager } from "@/hooks/useSyncManager";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import SyncPreview from '@/components/integrations/SyncPreview';
+import ProgressTracker from '@/components/integrations/ProgressTracker';
+import ActivityLog from '@/components/integrations/ActivityLog';
+import { useSyncManager } from '@/hooks/useSyncManager';
 
 interface OdooConfig {
   id?: string;
@@ -66,15 +92,35 @@ export default function OdooPage() {
   const [testing, setTesting] = useState(false);
   const [previewData, setPreviewData] = useState<unknown>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
-  const [dataLoading, setDataLoading] = useState<Record<string, boolean>>({ products: false, customers: false, orders: false });
-  const [tableData, setTableData] = useState<Record<string, { rows: Array<{ external_id: string; status: string; raw: unknown }>; rowCount: number; page: number; pageSize: number }>>({ products: { rows: [], rowCount: 0, page: 1, pageSize: 50 }, customers: { rows: [], rowCount: 0, page: 1, pageSize: 50 }, orders: { rows: [], rowCount: 0, page: 1, pageSize: 50 } });
-  const [queueStatus, setQueueStatus] = useState<unknown | null>(null)
-  const [orchestrating, setOrchestrating] = useState(false)
+  const [dataLoading, setDataLoading] = useState<Record<string, boolean>>({
+    products: false,
+    customers: false,
+    orders: false,
+  });
+  const [tableData, setTableData] = useState<
+    Record<
+      string,
+      {
+        rows: Array<{ external_id: string; status: string; raw: unknown }>;
+        rowCount: number;
+        page: number;
+        pageSize: number;
+      }
+    >
+  >({
+    products: { rows: [], rowCount: 0, page: 1, pageSize: 50 },
+    customers: { rows: [], rowCount: 0, page: 1, pageSize: 50 },
+    orders: { rows: [], rowCount: 0, page: 1, pageSize: 50 },
+  });
+  const [queueStatus, setQueueStatus] = useState<unknown | null>(null);
+  const [orchestrating, setOrchestrating] = useState(false);
 
   // Sync preview and progress management
   const syncManager = useSyncManager();
   const [orgId, setOrgId] = useState<string | null>(null);
-  const [channelDirections, setChannelDirections] = useState<Record<EntityKey, 'inbound' | 'outbound'>>({
+  const [channelDirections, setChannelDirections] = useState<
+    Record<EntityKey, 'inbound' | 'outbound'>
+  >({
     products: 'inbound',
     orders: 'inbound',
     customers: 'inbound',
@@ -151,17 +197,17 @@ export default function OdooPage() {
       if (data.success) {
         setConfig(data.data);
         toast({
-          title: "Configuration Saved",
-          description: "Odoo ERP integration settings have been updated successfully.",
+          title: 'Configuration Saved',
+          description: 'Odoo ERP integration settings have been updated successfully.',
         });
       } else {
         throw new Error(data.error || 'Failed to save configuration');
       }
     } catch (error: unknown) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setSaving(false);
@@ -188,14 +234,14 @@ export default function OdooPage() {
         const envInfo = data.data.environment ? ` (${data.data.environment})` : '';
         const versionInfo = data.data.odoo_version ? ` - Version: ${data.data.odoo_version}` : '';
         toast({
-          title: "Connection Successful",
+          title: 'Connection Successful',
           description: `Successfully connected to Odoo ERP server${envInfo}${versionInfo}`,
         });
-        
+
         // Update status to active BEFORE saving
         const updatedConfig = { ...config, status: 'active' as const };
         setConfig(updatedConfig);
-        
+
         // Save the configuration with active status
         if (config.id) {
           setSaving(true);
@@ -221,12 +267,12 @@ export default function OdooPage() {
       }
     } catch (error: unknown) {
       toast({
-        title: "Connection Failed",
+        title: 'Connection Failed',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
       setConfig(prev => ({ ...prev, status: 'error' }));
-      
+
       // Save error status if config exists
       if (config.id) {
         try {
@@ -248,9 +294,9 @@ export default function OdooPage() {
     try {
       if (!orgId) {
         toast({
-          title: "Organization Error",
-          description: "Could not determine your organization. Please contact support.",
-          variant: "destructive",
+          title: 'Organization Error',
+          description: 'Could not determine your organization. Please contact support.',
+          variant: 'destructive',
         });
         return;
       }
@@ -271,7 +317,7 @@ export default function OdooPage() {
 
       if (data.success) {
         toast({
-          title: "Sync Started",
+          title: 'Sync Started',
           description: `${entityType} sync has been initiated.`,
         });
       } else {
@@ -279,9 +325,9 @@ export default function OdooPage() {
       }
     } catch (error: unknown) {
       toast({
-        title: "Sync Failed",
+        title: 'Sync Failed',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -306,7 +352,7 @@ export default function OdooPage() {
       if (data.success) {
         setPreviewData(data.data);
         toast({
-          title: "Preview Loaded",
+          title: 'Preview Loaded',
           description: `Found ${data.data.totalCount} ${entityType} records. Showing preview of ${data.data.previewCount} records.`,
         });
       } else {
@@ -314,80 +360,123 @@ export default function OdooPage() {
       }
     } catch (error: unknown) {
       toast({
-        title: "Preview Failed",
+        title: 'Preview Failed',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setPreviewLoading(null);
     }
   };
 
-  const loadTable = async (entity: "products" | "customers" | "orders", page = 1, pageSize = 50) => {
+  const loadTable = async (
+    entity: 'products' | 'customers' | 'orders',
+    page = 1,
+    pageSize = 50
+  ) => {
     setDataLoading(prev => ({ ...prev, [entity]: true }));
     try {
-      const res = await fetch(`/api/v1/integrations/odoo/table?entity=${entity}&page=${page}&pageSize=${pageSize}`);
+      const res = await fetch(
+        `/api/v1/integrations/odoo/table?entity=${entity}&page=${page}&pageSize=${pageSize}`
+      );
       const json = await res.json();
       if (json.success) {
-        setTableData(prev => ({ ...prev, [entity]: { rows: json.data || [], rowCount: json.rowCount || 0, page, pageSize } }));
+        setTableData(prev => ({
+          ...prev,
+          [entity]: { rows: json.data || [], rowCount: json.rowCount || 0, page, pageSize },
+        }));
       }
     } finally {
       setDataLoading(prev => ({ ...prev, [entity]: false }));
     }
   };
 
-  const stageQueue = async (entity: "products" | "customers" | "orders") => {
+  const stageQueue = async (entity: 'products' | 'customers' | 'orders') => {
     if (!orgId) return;
-    const res = await fetch(`/api/v1/integrations/odoo/queue/${entity}`, { method: "POST", headers: { "x-org-id": orgId } });
+    const res = await fetch(`/api/v1/integrations/odoo/queue/${entity}`, {
+      method: 'POST',
+      headers: { 'x-org-id': orgId },
+    });
     const json = await res.json();
     if (json.success) {
       await loadTable(entity);
-      toast({ title: "Staged", description: `${entity} queued: ${json.data.inserted || 0}` });
+      toast({ title: 'Staged', description: `${entity} queued: ${json.data.inserted || 0}` });
     } else {
-      toast({ title: "Error", description: json.error || "Failed to stage", variant: "destructive" });
+      toast({
+        title: 'Error',
+        description: json.error || 'Failed to stage',
+        variant: 'destructive',
+      });
     }
   };
 
-  const selectRows = async (entity: "products" | "customers" | "orders", ids: string[], selected: boolean) => {
-    const res = await fetch(`/api/v1/integrations/odoo/select`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-id": "00000000-0000-0000-0000-000000000001" }, body: JSON.stringify({ entity, ids, selected }) });
+  const selectRows = async (
+    entity: 'products' | 'customers' | 'orders',
+    ids: string[],
+    selected: boolean
+  ) => {
+    const res = await fetch(`/api/v1/integrations/odoo/select`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': '00000000-0000-0000-0000-000000000001',
+      },
+      body: JSON.stringify({ entity, ids, selected }),
+    });
     const json = await res.json();
     if (json.success) {
       await loadTable(entity, tableData[entity].page, tableData[entity].pageSize);
-      toast({ title: "Selection Updated", description: `${json.data.updated} rows updated` });
+      toast({ title: 'Selection Updated', description: `${json.data.updated} rows updated` });
     } else {
-      toast({ title: "Error", description: json.error || "Failed to update selection", variant: "destructive" });
+      toast({
+        title: 'Error',
+        description: json.error || 'Failed to update selection',
+        variant: 'destructive',
+      });
     }
   };
 
   const loadQueueStatus = async () => {
-    if (!orgId) return
-    const res = await fetch(`/api/v1/integrations/odoo/queue/status`, { headers: { 'x-org-id': orgId } })
-    const json = await res.json()
+    if (!orgId) return;
+    const res = await fetch(`/api/v1/integrations/odoo/queue/status`, {
+      headers: { 'x-org-id': orgId },
+    });
+    const json = await res.json();
     if (json.success) {
-      setQueueStatus(json.data)
+      setQueueStatus(json.data);
     }
-  }
+  };
 
   const startOrchestration = async () => {
-    if (!orgId) return
-    setOrchestrating(true)
+    if (!orgId) return;
+    setOrchestrating(true);
     try {
       const res = await fetch(`/api/v1/integrations/odoo/orchestrate/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
-        body: JSON.stringify({ entityTypes: ['customers','products'], conflictStrategy: 'auto-retry', batchSize: 50, maxRetries: 3, rateLimit: 10 })
-      })
-      const json = await res.json()
+        body: JSON.stringify({
+          entityTypes: ['customers', 'products'],
+          conflictStrategy: 'auto-retry',
+          batchSize: 50,
+          maxRetries: 3,
+          rateLimit: 10,
+        }),
+      });
+      const json = await res.json();
       if (json.success) {
-        toast({ title: 'Orchestration Started', description: `Sync ${json.data.syncId}` })
-        await loadQueueStatus()
+        toast({ title: 'Orchestration Started', description: `Sync ${json.data.syncId}` });
+        await loadQueueStatus();
       } else {
-        toast({ title: 'Error', description: json.error || 'Failed to start orchestration', variant: 'destructive' })
+        toast({
+          title: 'Error',
+          description: json.error || 'Failed to start orchestration',
+          variant: 'destructive',
+        });
       }
     } finally {
-      setOrchestrating(false)
+      setOrchestrating(false);
     }
-  }
+  };
 
   const closePreview = () => {
     setPreviewData(null);
@@ -449,13 +538,10 @@ export default function OdooPage() {
     return (
       <AppLayout
         title="Odoo ERP Integration"
-        breadcrumbs={[
-          { label: "Integrations", href: "/integrations" },
-          { label: "Odoo ERP" },
-        ]}
+        breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'Odoo ERP' }]}
       >
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
         </div>
       </AppLayout>
     );
@@ -464,26 +550,29 @@ export default function OdooPage() {
   return (
     <AppLayout
       title="Odoo ERP Integration"
-      breadcrumbs={[
-        { label: "Integrations", href: "/integrations" },
-        { label: "Odoo ERP" },
-      ]}
+      breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'Odoo ERP' }]}
     >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+            <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
               <Database className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-muted-foreground">
-                {config.server_url || 'Not configured'}
-              </p>
+              <p className="text-muted-foreground">{config.server_url || 'Not configured'}</p>
             </div>
           </div>
 
-          <Badge variant={config.status === 'active' ? 'default' : config.status === 'error' ? 'destructive' : 'secondary'}>
+          <Badge
+            variant={
+              config.status === 'active'
+                ? 'default'
+                : config.status === 'error'
+                  ? 'destructive'
+                  : 'secondary'
+            }
+          >
             {config.status === 'active' ? (
               <>
                 <CheckCircle2 className="mr-1 h-3 w-3" />
@@ -527,7 +616,7 @@ export default function OdooPage() {
                   <Input
                     id="name"
                     value={config.name}
-                    onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={e => setConfig(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="My Odoo ERP"
                   />
                 </div>
@@ -537,14 +626,16 @@ export default function OdooPage() {
                   <Input
                     id="server_url"
                     value={config.server_url}
-                    onChange={(e) => setConfig(prev => ({ ...prev, server_url: e.target.value }))}
+                    onChange={e => setConfig(prev => ({ ...prev, server_url: e.target.value }))}
                     placeholder="https://your-company.odoo.sh"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Your Odoo instance URL. For Odoo.sh: https://company-branch-id.odoo.com (NOT the project management URL) | For self-hosted: https://odoo.your-domain.com
+                  <p className="text-muted-foreground text-xs">
+                    Your Odoo instance URL. For Odoo.sh: https://company-branch-id.odoo.com (NOT the
+                    project management URL) | For self-hosted: https://odoo.your-domain.com
                   </p>
-                  <p className="text-xs text-amber-600 font-medium mt-1">
-                    ⚠️ For Odoo.sh: Use your instance URL from the dashboard, NOT www.odoo.sh/project/...
+                  <p className="mt-1 text-xs font-medium text-amber-600">
+                    ⚠️ For Odoo.sh: Use your instance URL from the dashboard, NOT
+                    www.odoo.sh/project/...
                   </p>
                 </div>
 
@@ -553,11 +644,12 @@ export default function OdooPage() {
                   <Input
                     id="database_name"
                     value={config.database_name}
-                    onChange={(e) => setConfig(prev => ({ ...prev, database_name: e.target.value }))}
+                    onChange={e => setConfig(prev => ({ ...prev, database_name: e.target.value }))}
                     placeholder="your_database_name"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    The name of your Odoo database. For Odoo.sh, this is typically your instance name (e.g., mycompany-production)
+                  <p className="text-muted-foreground text-xs">
+                    The name of your Odoo database. For Odoo.sh, this is typically your instance
+                    name (e.g., mycompany-production)
                   </p>
                 </div>
 
@@ -566,12 +658,10 @@ export default function OdooPage() {
                   <Input
                     id="username"
                     value={config.username}
-                    onChange={(e) => setConfig(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={e => setConfig(prev => ({ ...prev, username: e.target.value }))}
                     placeholder="admin@company.com"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Your Odoo user email or username
-                  </p>
+                  <p className="text-muted-foreground text-xs">Your Odoo user email or username</p>
                 </div>
 
                 <div className="space-y-2">
@@ -580,18 +670,24 @@ export default function OdooPage() {
                     id="api_key"
                     type="password"
                     value={config.api_key}
-                    onChange={(e) => setConfig(prev => ({ ...prev, api_key: e.target.value }))}
+                    onChange={e => setConfig(prev => ({ ...prev, api_key: e.target.value }))}
                     placeholder="********************************"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Your Odoo API key or user password
                   </p>
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t">
+                <div className="flex gap-2 border-t pt-4">
                   <Button
                     onClick={handleTestConnection}
-                    disabled={!config.server_url || !config.database_name || !config.username || !config.api_key || testing}
+                    disabled={
+                      !config.server_url ||
+                      !config.database_name ||
+                      !config.username ||
+                      !config.api_key ||
+                      testing
+                    }
                     variant="outline"
                   >
                     {testing ? (
@@ -606,10 +702,7 @@ export default function OdooPage() {
                       </>
                     )}
                   </Button>
-                  <Button
-                    onClick={handleSaveConfiguration}
-                    disabled={saving}
-                  >
+                  <Button onClick={handleSaveConfiguration} disabled={saving}>
                     {saving ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -633,14 +726,12 @@ export default function OdooPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Products</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <Package className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                  <p className="text-muted-foreground mt-2 text-xs">Ready to sync</p>
+                  <div className="border-border/40 mt-4 flex items-center justify-between border-b pb-3">
                     <Badge variant="outline" className="capitalize">
                       {channelDirections.products === 'inbound' ? 'Sync Down' : 'Sync Up'}
                     </Badge>
@@ -649,7 +740,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.products === 'inbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             products: 'inbound',
                           }))
@@ -661,7 +752,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.products === 'outbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             products: 'outbound',
                           }))
@@ -671,7 +762,7 @@ export default function OdooPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="mt-4 flex flex-col gap-2">
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -715,14 +806,12 @@ export default function OdooPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  <ShoppingCart className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                  <p className="text-muted-foreground mt-2 text-xs">Ready to sync</p>
+                  <div className="border-border/40 mt-4 flex items-center justify-between border-b pb-3">
                     <Badge variant="outline" className="capitalize">
                       {channelDirections.orders === 'inbound' ? 'Sync Down' : 'Sync Up'}
                     </Badge>
@@ -731,7 +820,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.orders === 'inbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             orders: 'inbound',
                           }))
@@ -743,7 +832,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.orders === 'outbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             orders: 'outbound',
                           }))
@@ -753,7 +842,7 @@ export default function OdooPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="mt-4 flex flex-col gap-2">
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -797,14 +886,12 @@ export default function OdooPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                  <p className="text-muted-foreground mt-2 text-xs">Ready to sync</p>
+                  <div className="border-border/40 mt-4 flex items-center justify-between border-b pb-3">
                     <Badge variant="outline" className="capitalize">
                       {channelDirections.customers === 'inbound' ? 'Sync Down' : 'Sync Up'}
                     </Badge>
@@ -813,7 +900,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.customers === 'inbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             customers: 'inbound',
                           }))
@@ -825,7 +912,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.customers === 'outbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             customers: 'outbound',
                           }))
@@ -835,7 +922,7 @@ export default function OdooPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="mt-4 flex flex-col gap-2">
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -879,14 +966,12 @@ export default function OdooPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Invoices</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <FileText className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                  <p className="text-muted-foreground mt-2 text-xs">Ready to sync</p>
+                  <div className="border-border/40 mt-4 flex items-center justify-between border-b pb-3">
                     <Badge variant="outline" className="capitalize">
                       {channelDirections.invoices === 'inbound' ? 'Sync Down' : 'Sync Up'}
                     </Badge>
@@ -895,7 +980,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.invoices === 'inbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             invoices: 'inbound',
                           }))
@@ -907,7 +992,7 @@ export default function OdooPage() {
                         size="sm"
                         variant={channelDirections.invoices === 'outbound' ? 'default' : 'outline'}
                         onClick={() =>
-                          setChannelDirections((prev) => ({
+                          setChannelDirections(prev => ({
                             ...prev,
                             invoices: 'outbound',
                           }))
@@ -917,7 +1002,7 @@ export default function OdooPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="mt-4 flex flex-col gap-2">
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -970,29 +1055,23 @@ export default function OdooPage() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <Eye className="h-5 w-5" />
-                        Sync Preview - {previewData.entityType.charAt(0).toUpperCase() + previewData.entityType.slice(1)}
+                        Sync Preview -{' '}
+                        {previewData.entityType.charAt(0).toUpperCase() +
+                          previewData.entityType.slice(1)}
                       </CardTitle>
                       <CardDescription className="mt-2">
                         Preview of available data before syncing to production database
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={closePreview}
-                    >
+                    <Button variant="ghost" size="sm" onClick={closePreview}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4 flex items-center gap-4">
-                    <Badge variant="secondary">
-                      Total Records: {previewData.totalCount}
-                    </Badge>
-                    <Badge variant="outline">
-                      Showing: {previewData.previewCount}
-                    </Badge>
+                    <Badge variant="secondary">Total Records: {previewData.totalCount}</Badge>
+                    <Badge variant="outline">Showing: {previewData.previewCount}</Badge>
                   </div>
 
                   {previewData.previewData && previewData.previewData.length > 0 ? (
@@ -1000,11 +1079,12 @@ export default function OdooPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            {previewData.fields && previewData.fields.map((field: string) => (
-                              <TableHead key={field} className="capitalize">
-                                {field.replace(/_/g, ' ')}
-                              </TableHead>
-                            ))}
+                            {previewData.fields &&
+                              previewData.fields.map((field: string) => (
+                                <TableHead key={field} className="capitalize">
+                                  {field.replace(/_/g, ' ')}
+                                </TableHead>
+                              ))}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1018,31 +1098,69 @@ export default function OdooPage() {
                                       return <span className="text-muted-foreground">-</span>;
                                     }
                                     // Handle Odoo tuple format [id, name] for relational fields
-                                    if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'number') {
+                                    if (
+                                      Array.isArray(value) &&
+                                      value.length === 2 &&
+                                      typeof value[0] === 'number'
+                                    ) {
                                       return <span>{value[1] || `ID: ${value[0]}`}</span>;
                                     }
                                     // Handle array of IDs
-                                    if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'number') {
-                                      return <span className="text-muted-foreground">[{value.length} items]</span>;
+                                    if (
+                                      Array.isArray(value) &&
+                                      value.length > 0 &&
+                                      typeof value[0] === 'number'
+                                    ) {
+                                      return (
+                                        <span className="text-muted-foreground">
+                                          [{value.length} items]
+                                        </span>
+                                      );
                                     }
                                     // Handle other arrays
                                     if (Array.isArray(value)) {
-                                      return <span className="text-muted-foreground">[{value.length} items]</span>;
+                                      return (
+                                        <span className="text-muted-foreground">
+                                          [{value.length} items]
+                                        </span>
+                                      );
                                     }
                                     // Handle objects
                                     if (typeof value === 'object') {
-                                      return <span className="text-muted-foreground" title={JSON.stringify(value)}>{JSON.stringify(value).substring(0, 50)}...</span>;
+                                      return (
+                                        <span
+                                          className="text-muted-foreground"
+                                          title={JSON.stringify(value)}
+                                        >
+                                          {JSON.stringify(value).substring(0, 50)}...
+                                        </span>
+                                      );
                                     }
                                     // Handle booleans
                                     if (typeof value === 'boolean') {
-                                      return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Yes' : 'No'}</Badge>;
+                                      return (
+                                        <Badge variant={value ? 'default' : 'secondary'}>
+                                          {value ? 'Yes' : 'No'}
+                                        </Badge>
+                                      );
                                     }
                                     // Handle prices/amounts
-                                    if (typeof value === 'number' && (field.includes('price') || field.includes('amount') || field.includes('total'))) {
-                                      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+                                    if (
+                                      typeof value === 'number' &&
+                                      (field.includes('price') ||
+                                        field.includes('amount') ||
+                                        field.includes('total'))
+                                    ) {
+                                      return new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                      }).format(value);
                                     }
                                     // Handle dates
-                                    if (typeof value === 'string' && (field.includes('date') || field.includes('time'))) {
+                                    if (
+                                      typeof value === 'string' &&
+                                      (field.includes('date') || field.includes('time'))
+                                    ) {
                                       try {
                                         const date = new Date(value);
                                         return date.toLocaleDateString();
@@ -1060,16 +1178,13 @@ export default function OdooPage() {
                       </Table>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-muted-foreground py-8 text-center">
                       No preview data available
                     </div>
                   )}
 
                   <div className="mt-4 flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={closePreview}
-                    >
+                    <Button variant="outline" onClick={closePreview}>
                       Close Preview
                     </Button>
                     <Button
@@ -1101,7 +1216,11 @@ export default function OdooPage() {
                       Queue Status
                     </Button>
                     <Button onClick={startOrchestration} disabled={!orgId || orchestrating}>
-                      {orchestrating ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}
+                      {orchestrating ? (
+                        <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-3 w-3" />
+                      )}
                       Start Orchestration
                     </Button>
                   </div>
@@ -1109,33 +1228,81 @@ export default function OdooPage() {
                 </div>
                 {queueStatus && (
                   <div className="rounded-md border p-3 text-sm">
-                    <pre className="overflow-auto max-h-48">{JSON.stringify(queueStatus, null, 2)}</pre>
+                    <pre className="max-h-48 overflow-auto">
+                      {JSON.stringify(queueStatus, null, 2)}
+                    </pre>
                   </div>
                 )}
                 <div className="grid gap-4 md:grid-cols-3">
-                  {(["products", "customers", "orders"] as const).map(entity => (
+                  {(['products', 'customers', 'orders'] as const).map(entity => (
                     <div key={entity} className="space-y-2">
                       <Label className="capitalize">{entity}</Label>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => stageQueue(entity)} disabled={!orgId || dataLoading[entity]}>
-                          {dataLoading[entity] ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => stageQueue(entity)}
+                          disabled={!orgId || dataLoading[entity]}
+                        >
+                          {dataLoading[entity] ? (
+                            <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-2 h-3 w-3" />
+                          )}
                           Stage
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => loadTable(entity)} disabled={dataLoading[entity]}>
-                          {dataLoading[entity] ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Eye className="mr-2 h-3 w-3" />}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => loadTable(entity)}
+                          disabled={dataLoading[entity]}
+                        >
+                          {dataLoading[entity] ? (
+                            <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Eye className="mr-2 h-3 w-3" />
+                          )}
                           Load
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-                {(["products", "customers", "orders"] as const).map(entity => (
+                {(['products', 'customers', 'orders'] as const).map(entity => (
                   <div key={`table-${entity}`} className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="capitalize">{entity}</Badge>
+                      <Badge variant="outline" className="capitalize">
+                        {entity}
+                      </Badge>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => selectRows(entity, tableData[entity].rows.map(r => r.external_id), true)} disabled={tableData[entity].rows.length === 0}>Select All</Button>
-                        <Button size="sm" variant="outline" onClick={() => selectRows(entity, tableData[entity].rows.map(r => r.external_id), false)} disabled={tableData[entity].rows.length === 0}>Clear</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            selectRows(
+                              entity,
+                              tableData[entity].rows.map(r => r.external_id),
+                              true
+                            )
+                          }
+                          disabled={tableData[entity].rows.length === 0}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            selectRows(
+                              entity,
+                              tableData[entity].rows.map(r => r.external_id),
+                              false
+                            )
+                          }
+                          disabled={tableData[entity].rows.length === 0}
+                        >
+                          Clear
+                        </Button>
                       </div>
                     </div>
                     <div className="rounded-md border">
@@ -1151,8 +1318,17 @@ export default function OdooPage() {
                           {tableData[entity].rows.map((row, idx) => (
                             <TableRow key={`${entity}-${idx}`}>
                               <TableCell>{row.external_id}</TableCell>
-                              <TableCell><Badge variant="outline" className="capitalize">{row.status}</Badge></TableCell>
-                              <TableCell className="max-w-xl truncate" title={JSON.stringify(row.raw)}>{JSON.stringify(row.raw).substring(0, 100)}...</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell
+                                className="max-w-xl truncate"
+                                title={JSON.stringify(row.raw)}
+                              >
+                                {JSON.stringify(row.raw).substring(0, 100)}...
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1169,59 +1345,69 @@ export default function OdooPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Sync Configuration</CardTitle>
-                <CardDescription>Configure how data syncs between MantisNXT and Odoo ERP</CardDescription>
+                <CardDescription>
+                  Configure how data syncs between MantisNXT and Odoo ERP
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Auto Sync Products</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Automatically sync products when they are updated
                       </p>
                     </div>
                     <Switch
                       checked={config.auto_sync_products}
-                      onCheckedChange={(checked) => setConfig(prev => ({ ...prev, auto_sync_products: checked }))}
+                      onCheckedChange={checked =>
+                        setConfig(prev => ({ ...prev, auto_sync_products: checked }))
+                      }
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Auto Sync Customers</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Automatically sync customer data bi-directionally
                       </p>
                     </div>
                     <Switch
                       checked={config.auto_sync_customers}
-                      onCheckedChange={(checked) => setConfig(prev => ({ ...prev, auto_sync_customers: checked }))}
+                      onCheckedChange={checked =>
+                        setConfig(prev => ({ ...prev, auto_sync_customers: checked }))
+                      }
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Auto Sync Orders</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Automatically import new orders from Odoo
                       </p>
                     </div>
                     <Switch
                       checked={config.auto_sync_orders}
-                      onCheckedChange={(checked) => setConfig(prev => ({ ...prev, auto_sync_orders: checked }))}
+                      onCheckedChange={checked =>
+                        setConfig(prev => ({ ...prev, auto_sync_orders: checked }))
+                      }
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Auto Sync Invoices</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Automatically sync invoices and payment data
                       </p>
                     </div>
                     <Switch
                       checked={config.auto_sync_invoices}
-                      onCheckedChange={(checked) => setConfig(prev => ({ ...prev, auto_sync_invoices: checked }))}
+                      onCheckedChange={checked =>
+                        setConfig(prev => ({ ...prev, auto_sync_invoices: checked }))
+                      }
                     />
                   </div>
                 </div>
@@ -1230,7 +1416,9 @@ export default function OdooPage() {
                   <Label>Sync Frequency</Label>
                   <Select
                     value={config.sync_frequency.toString()}
-                    onValueChange={(value) => setConfig(prev => ({ ...prev, sync_frequency: parseInt(value) }))}
+                    onValueChange={value =>
+                      setConfig(prev => ({ ...prev, sync_frequency: parseInt(value) }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -1245,7 +1433,7 @@ export default function OdooPage() {
                   </Select>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t">
+                <div className="flex justify-end gap-2 border-t pt-4">
                   <Button variant="outline">Cancel</Button>
                   <Button onClick={handleSaveConfiguration} disabled={saving}>
                     {saving ? 'Saving...' : 'Save Settings'}
@@ -1257,7 +1445,7 @@ export default function OdooPage() {
         </Tabs>
 
         {/* Activity Log Tab */}
-        <Tabs defaultValue="activity" className="space-y-6 mt-6">
+        <Tabs defaultValue="activity" className="mt-6 space-y-6">
           <TabsList>
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
@@ -1274,16 +1462,16 @@ export default function OdooPage() {
         entityType={syncManager.state.currentEntityType || ''}
         orgId={orgId}
         direction={syncManager.state.direction}
-        onDirectionChange={(nextDirection) => {
-          syncManager.setDirection(nextDirection)
+        onDirectionChange={nextDirection => {
+          syncManager.setDirection(nextDirection);
           if (syncManager.state.currentEntityType) {
-            setChannelDirections((prev) => ({
+            setChannelDirections(prev => ({
               ...prev,
               [syncManager.state.currentEntityType as EntityKey]: nextDirection,
-            }))
+            }));
           }
         }}
-        onConfirm={(config) =>
+        onConfirm={config =>
           handleSyncConfirmed({
             ...config,
             entityType: syncManager.state.currentEntityType,
@@ -1299,11 +1487,14 @@ export default function OdooPage() {
           syncType="odoo"
           entityType={syncManager.state.currentEntityType || ''}
           isVisible={syncManager.state.isProgressVisible}
-          onComplete={(status) => {
+          onComplete={status => {
             syncManager.hideProgress();
             toast({
               title: status === 'completed' ? 'Sync Completed' : 'Sync Failed',
-              description: status === 'completed' ? 'All items synced successfully' : 'Check the error details above',
+              description:
+                status === 'completed'
+                  ? 'All items synced successfully'
+                  : 'Check the error details above',
             });
           }}
           onCancel={() => syncManager.hideProgress()}

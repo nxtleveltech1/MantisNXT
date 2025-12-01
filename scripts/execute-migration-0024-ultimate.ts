@@ -83,7 +83,11 @@ async function executeSQL(pool: Pool, sql: string, label: string): Promise<void>
   }
 }
 
-async function executeMigration(pool: Pool, migrationPath: string, label: string): Promise<boolean> {
+async function executeMigration(
+  pool: Pool,
+  migrationPath: string,
+  label: string
+): Promise<boolean> {
   console.log(`   Executing ${label}...`);
   const migrationSQL = readFileSync(migrationPath, 'utf8');
 
@@ -247,7 +251,7 @@ async function main() {
     const tablesRes = await pool.query(VERIFICATION_QUERIES['Tables Created']);
     result.tablesCreated = tablesRes.rows.map((r: any) => r.tablename);
     console.log(`   ✓ Tables created: ${result.tablesCreated.length}`);
-    result.tablesCreated.forEach((t) => console.log(`      - ${t}`));
+    result.tablesCreated.forEach(t => console.log(`      - ${t}`));
 
     // Get RLS enabled tables
     const rlsRes = await pool.query(VERIFICATION_QUERIES['RLS Status']);
@@ -273,7 +277,7 @@ async function main() {
     const enumsRes = await pool.query(VERIFICATION_QUERIES['Enum Types']);
     result.enumsCreated = enumsRes.rows.map((r: any) => r.typname);
     console.log(`   ✓ Enum types created: ${result.enumsCreated.length}`);
-    result.enumsCreated.forEach((t) => console.log(`      - ${t}`));
+    result.enumsCreated.forEach(t => console.log(`      - ${t}`));
 
     // Step 7: Final report
     console.log('\n📋 Step 7/7: Generating final report...');
@@ -288,7 +292,7 @@ async function main() {
 
     if (result.prerequisitesApplied.length > 0) {
       console.log('PREREQUISITES APPLIED:');
-      result.prerequisitesApplied.forEach((p) => {
+      result.prerequisitesApplied.forEach(p => {
         console.log(`  ✓ Migration ${p}`);
       });
       console.log('');
@@ -331,7 +335,7 @@ async function main() {
 
     console.log('DATA TYPES:');
     console.log(`  ✓ Enum Types: ${result.enumsCreated.length}`);
-    result.enumsCreated.forEach((t) => {
+    result.enumsCreated.forEach(t => {
       console.log(`    • ${t}`);
     });
     console.log('');
@@ -376,7 +380,6 @@ async function main() {
     console.log('');
 
     process.exit(0);
-
   } catch (error: any) {
     result.endTime = performance.now();
     result.duration = result.endTime - result.startTime;
@@ -404,13 +407,12 @@ async function main() {
     console.error('');
 
     process.exit(1);
-
   } finally {
     await pool.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('FATAL:', err.message);
   process.exit(1);
 });

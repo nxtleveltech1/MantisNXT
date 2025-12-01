@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import React, { useState, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -13,14 +13,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -44,11 +44,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
-import type { Resolver } from 'react-hook-form'
-import * as z from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
+} from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import type { Resolver } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Building2,
   Search,
@@ -63,13 +63,13 @@ import {
   Save,
   Loader2,
   RefreshCw,
-} from 'lucide-react'
-import type { SupplierContact } from '@/types/supplier'
+} from 'lucide-react';
+import type { SupplierContact } from '@/types/supplier';
 
 interface ContactWithSupplier extends SupplierContact {
-  supplierId: string
-  supplierName: string
-  supplierCode: string
+  supplierId: string;
+  supplierName: string;
+  supplierCode: string;
 }
 
 const contactFormSchema = z.object({
@@ -82,28 +82,38 @@ const contactFormSchema = z.object({
   type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']),
   isPrimary: z.boolean().default(false),
   isActive: z.boolean().default(true),
-})
+});
 
-type ContactFormData = z.infer<typeof contactFormSchema>
+type ContactFormData = z.infer<typeof contactFormSchema>;
 
 export default function SupplierContactsDirectoryPage() {
-  const [contacts, setContacts] = useState<ContactWithSupplier[]>([])
-  const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string; code: string }>>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [editingContact, setEditingContact] = useState<ContactWithSupplier | null>(null)
-  const [deletingContact, setDeletingContact] = useState<ContactWithSupplier | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [contacts, setContacts] = useState<ContactWithSupplier[]>([]);
+  const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string; code: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<ContactWithSupplier | null>(null);
+  const [deletingContact, setDeletingContact] = useState<ContactWithSupplier | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<ContactFormData & { supplierId: string }, unknown, ContactFormData & { supplierId: string }>({
-    resolver: zodResolver(contactFormSchema.extend({
-      supplierId: z.string().min(1, 'Supplier is required'),
-    })) as Resolver<ContactFormData & { supplierId: string }, unknown, ContactFormData & { supplierId: string }>,
+  const form = useForm<
+    ContactFormData & { supplierId: string },
+    unknown,
+    ContactFormData & { supplierId: string }
+  >({
+    resolver: zodResolver(
+      contactFormSchema.extend({
+        supplierId: z.string().min(1, 'Supplier is required'),
+      })
+    ) as Resolver<
+      ContactFormData & { supplierId: string },
+      unknown,
+      ContactFormData & { supplierId: string }
+    >,
     defaultValues: {
       name: '',
       email: '',
@@ -116,36 +126,36 @@ export default function SupplierContactsDirectoryPage() {
       isActive: true,
       supplierId: '',
     },
-  })
+  });
 
   useEffect(() => {
-    fetchData()
-    
+    fetchData();
+
     // Set up real-time refresh: poll every 5 seconds
     const refreshInterval = setInterval(() => {
-      fetchData()
-    }, 5000)
-    
+      fetchData();
+    }, 5000);
+
     // Refresh on window focus (when user returns to tab)
     const handleFocus = () => {
-      fetchData()
-    }
-    window.addEventListener('focus', handleFocus)
-    
+      fetchData();
+    };
+    window.addEventListener('focus', handleFocus);
+
     // Listen for supplier deletion/update events from other parts of the app
     const handleSupplierChange = () => {
-      fetchData()
-    }
-    window.addEventListener('supplier:updated', handleSupplierChange)
-    window.addEventListener('supplier:deleted', handleSupplierChange)
-    
+      fetchData();
+    };
+    window.addEventListener('supplier:updated', handleSupplierChange);
+    window.addEventListener('supplier:deleted', handleSupplierChange);
+
     return () => {
-      clearInterval(refreshInterval)
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('supplier:updated', handleSupplierChange)
-      window.removeEventListener('supplier:deleted', handleSupplierChange)
-    }
-  }, [])
+      clearInterval(refreshInterval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('supplier:updated', handleSupplierChange);
+      window.removeEventListener('supplier:deleted', handleSupplierChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (editingContact && isEditDialogOpen) {
@@ -160,29 +170,29 @@ export default function SupplierContactsDirectoryPage() {
         isPrimary: editingContact.isPrimary,
         isActive: editingContact.isActive,
         supplierId: editingContact.supplierId,
-      })
+      });
     }
-  }, [editingContact, isEditDialogOpen, form])
+  }, [editingContact, isEditDialogOpen]);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
-      
+      setLoading(true);
+
       // Fetch suppliers for dropdown
-      const suppliersResponse = await fetch('/api/directories/suppliers')
-      if (!suppliersResponse.ok) throw new Error('Failed to fetch suppliers')
-      const suppliersData = await suppliersResponse.json()
-      
+      const suppliersResponse = await fetch('/api/directories/suppliers');
+      if (!suppliersResponse.ok) throw new Error('Failed to fetch suppliers');
+      const suppliersData = await suppliersResponse.json();
+
       if (suppliersData.success) {
         const suppliersList = (suppliersData.data || []).map((s: unknown) => ({
           id: s.id,
           name: s.name,
           code: s.code,
-        }))
-        setSuppliers(suppliersList)
-        
+        }));
+        setSuppliers(suppliersList);
+
         // Flatten contacts with supplier info
-        const allContacts: ContactWithSupplier[] = []
+        const allContacts: ContactWithSupplier[] = [];
         suppliersData.data.forEach((supplier: unknown) => {
           (supplier.contacts || []).forEach((contact: SupplierContact) => {
             allContacts.push({
@@ -190,32 +200,32 @@ export default function SupplierContactsDirectoryPage() {
               supplierId: supplier.id,
               supplierName: supplier.name,
               supplierCode: supplier.code,
-            })
-          })
-        })
-        setContacts(allContacts)
+            });
+          });
+        });
+        setContacts(allContacts);
       }
     } catch (error) {
-      console.error('Error fetching contacts:', error)
+      console.error('Error fetching contacts:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleAdd = async (data: ContactFormData & { supplierId: string }) => {
     try {
-      setSubmitting(true)
-      
+      setSubmitting(true);
+
       // Get supplier to update
-      const supplierResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`)
-      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier')
-      const supplierData = await supplierResponse.json()
-      
-      if (!supplierData.success) throw new Error('Supplier not found')
-      
-      const supplier = supplierData.data
-      const existingContacts = supplier.contacts || []
-      
+      const supplierResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`);
+      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier');
+      const supplierData = await supplierResponse.json();
+
+      if (!supplierData.success) throw new Error('Supplier not found');
+
+      const supplier = supplierData.data;
+      const existingContacts = supplier.contacts || [];
+
       // Add new contact
       const newContact = {
         type: data.type,
@@ -227,8 +237,8 @@ export default function SupplierContactsDirectoryPage() {
         department: data.department || '',
         isPrimary: data.isPrimary,
         isActive: data.isActive,
-      }
-      
+      };
+
       // Update supplier with new contact
       const updateResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`, {
         method: 'PUT',
@@ -236,42 +246,42 @@ export default function SupplierContactsDirectoryPage() {
         body: JSON.stringify({
           contacts: [...existingContacts, newContact],
         }),
-      })
+      });
 
-      if (!updateResponse.ok) throw new Error('Failed to add contact')
-      
-      await fetchData()
-      setIsAddDialogOpen(false)
-      form.reset()
+      if (!updateResponse.ok) throw new Error('Failed to add contact');
+
+      await fetchData();
+      setIsAddDialogOpen(false);
+      form.reset();
     } catch (error) {
-      console.error('Error adding contact:', error)
-      alert('Failed to add contact')
+      console.error('Error adding contact:', error);
+      alert('Failed to add contact');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleEdit = async (data: ContactFormData & { supplierId: string }) => {
-    if (!editingContact) return
-    
+    if (!editingContact) return;
+
     try {
-      setSubmitting(true)
-      
+      setSubmitting(true);
+
       // Get supplier to update
-      const supplierResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`)
-      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier')
-      const supplierData = await supplierResponse.json()
-      
-      if (!supplierData.success) throw new Error('Supplier not found')
-      
-      const supplier = supplierData.data
+      const supplierResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`);
+      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier');
+      const supplierData = await supplierResponse.json();
+
+      if (!supplierData.success) throw new Error('Supplier not found');
+
+      const supplier = supplierData.data;
       const existingContacts = (supplier.contacts || []).map((c: unknown) => ({
         ...c,
         id: c.id || editingContact.id,
-      }))
-      
+      }));
+
       // Update the contact
-      const updatedContacts = existingContacts.map((c: unknown) => 
+      const updatedContacts = existingContacts.map((c: unknown) =>
         String(c.id) === String(editingContact.id)
           ? {
               ...c,
@@ -286,8 +296,8 @@ export default function SupplierContactsDirectoryPage() {
               isActive: data.isActive,
             }
           : c
-      )
-      
+      );
+
       // Update supplier
       const updateResponse = await fetch(`/api/suppliers/v3/${data.supplierId}`, {
         method: 'PUT',
@@ -295,46 +305,46 @@ export default function SupplierContactsDirectoryPage() {
         body: JSON.stringify({
           contacts: updatedContacts,
         }),
-      })
+      });
 
-      if (!updateResponse.ok) throw new Error('Failed to update contact')
-      
-      await fetchData()
-      setIsEditDialogOpen(false)
-      setEditingContact(null)
-      form.reset()
+      if (!updateResponse.ok) throw new Error('Failed to update contact');
+
+      await fetchData();
+      setIsEditDialogOpen(false);
+      setEditingContact(null);
+      form.reset();
     } catch (error) {
-      console.error('Error updating contact:', error)
-      alert('Failed to update contact')
+      console.error('Error updating contact:', error);
+      alert('Failed to update contact');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!deletingContact) return
-    
+    if (!deletingContact) return;
+
     try {
-      setSubmitting(true)
-      
+      setSubmitting(true);
+
       // Get supplier to update
-      const supplierResponse = await fetch(`/api/suppliers/v3/${deletingContact.supplierId}`)
-      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier')
-      const supplierData = await supplierResponse.json()
-      
-      if (!supplierData.success) throw new Error('Supplier not found')
-      
-      const supplier = supplierData.data
-      const existingContacts = supplier.contacts || []
-      
+      const supplierResponse = await fetch(`/api/suppliers/v3/${deletingContact.supplierId}`);
+      if (!supplierResponse.ok) throw new Error('Failed to fetch supplier');
+      const supplierData = await supplierResponse.json();
+
+      if (!supplierData.success) throw new Error('Supplier not found');
+
+      const supplier = supplierData.data;
+      const existingContacts = supplier.contacts || [];
+
       // Remove the contact (set inactive or remove from array)
       const updatedContacts = existingContacts
         .filter((c: unknown) => String(c.id) !== String(deletingContact.id))
         .map((c: unknown) => ({
           ...c,
           id: c.id,
-        }))
-      
+        }));
+
       // Update supplier
       const updateResponse = await fetch(`/api/suppliers/v3/${deletingContact.supplierId}`, {
         method: 'PUT',
@@ -342,36 +352,37 @@ export default function SupplierContactsDirectoryPage() {
         body: JSON.stringify({
           contacts: updatedContacts,
         }),
-      })
+      });
 
-      if (!updateResponse.ok) throw new Error('Failed to delete contact')
-      
-      await fetchData()
-      setIsDeleteDialogOpen(false)
-      setDeletingContact(null)
+      if (!updateResponse.ok) throw new Error('Failed to delete contact');
+
+      await fetchData();
+      setIsDeleteDialogOpen(false);
+      setDeletingContact(null);
     } catch (error) {
-      console.error('Error deleting contact:', error)
-      alert('Failed to delete contact')
+      console.error('Error deleting contact:', error);
+      alert('Failed to delete contact');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch =
+      !searchQuery ||
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.supplierName.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesSupplier = supplierFilter === 'all' || contact.supplierId === supplierFilter
-    const matchesType = typeFilter === 'all' || contact.type === typeFilter
-    
-    return matchesSearch && matchesSupplier && matchesType
-  })
+      contact.supplierName.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const activeContacts = contacts.filter(c => c.isActive).length
-  const primaryContacts = contacts.filter(c => c.isPrimary).length
+    const matchesSupplier = supplierFilter === 'all' || contact.supplierId === supplierFilter;
+    const matchesType = typeFilter === 'all' || contact.type === typeFilter;
+
+    return matchesSearch && matchesSupplier && matchesType;
+  });
+
+  const activeContacts = contacts.filter(c => c.isActive).length;
+  const primaryContacts = contacts.filter(c => c.isPrimary).length;
 
   return (
     <AppLayout
@@ -383,15 +394,15 @@ export default function SupplierContactsDirectoryPage() {
     >
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Contacts</p>
+                  <p className="text-muted-foreground text-sm">Total Contacts</p>
                   <p className="text-2xl font-bold">{contacts.length}</p>
                 </div>
-                <User className="h-8 w-8 text-primary" />
+                <User className="text-primary h-8 w-8" />
               </div>
             </CardContent>
           </Card>
@@ -399,7 +410,7 @@ export default function SupplierContactsDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Contacts</p>
+                  <p className="text-muted-foreground text-sm">Active Contacts</p>
                   <p className="text-2xl font-bold">{activeContacts}</p>
                 </div>
                 <User className="h-8 w-8 text-green-500" />
@@ -410,7 +421,7 @@ export default function SupplierContactsDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Primary Contacts</p>
+                  <p className="text-muted-foreground text-sm">Primary Contacts</p>
                   <p className="text-2xl font-bold">{primaryContacts}</p>
                 </div>
                 <User className="h-8 w-8 text-purple-500" />
@@ -421,7 +432,7 @@ export default function SupplierContactsDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Suppliers</p>
+                  <p className="text-muted-foreground text-sm">Suppliers</p>
                   <p className="text-2xl font-bold">{suppliers.length}</p>
                 </div>
                 <Building2 className="h-8 w-8 text-indigo-500" />
@@ -433,14 +444,14 @@ export default function SupplierContactsDirectoryPage() {
         {/* Filters and Actions */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <div className="flex flex-1 gap-4 items-center">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex flex-1 items-center gap-4">
+                <div className="relative max-w-md flex-1">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     placeholder="Search contacts..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="pl-9"
                   />
                 </div>
@@ -472,21 +483,16 @@ export default function SupplierContactsDirectoryPage() {
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => fetchData()}
-                  disabled={loading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={loading}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
                 <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Contact
                 </Button>
               </div>
@@ -501,14 +507,14 @@ export default function SupplierContactsDirectoryPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <div className="py-8 text-center">
+                <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
                 <p className="text-muted-foreground">Loading contacts...</p>
               </div>
             ) : filteredContacts.length === 0 ? (
-              <div className="text-center py-12">
-                <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No contacts found</h3>
+              <div className="py-12 text-center">
+                <User className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-semibold">No contacts found</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchQuery || supplierFilter !== 'all' || typeFilter !== 'all'
                     ? 'Try adjusting your filters'
@@ -516,7 +522,7 @@ export default function SupplierContactsDirectoryPage() {
                 </p>
                 {!searchQuery && supplierFilter === 'all' && typeFilter === 'all' && (
                   <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Contact
                   </Button>
                 )}
@@ -536,17 +542,19 @@ export default function SupplierContactsDirectoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContacts.map((contact) => (
+                  {filteredContacts.map(contact => (
                     <TableRow key={`${contact.supplierId}-${contact.id}`}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <User className="text-primary h-5 w-5" />
                           </div>
                           <div>
                             <div className="font-medium">{contact.name}</div>
                             {contact.department && (
-                              <div className="text-sm text-muted-foreground">{contact.department}</div>
+                              <div className="text-muted-foreground text-sm">
+                                {contact.department}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -554,14 +562,16 @@ export default function SupplierContactsDirectoryPage() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{contact.supplierName}</div>
-                          <code className="text-xs bg-secondary px-1 py-0.5 rounded">{contact.supplierCode}</code>
+                          <code className="bg-secondary rounded px-1 py-0.5 text-xs">
+                            {contact.supplierCode}
+                          </code>
                         </div>
                       </TableCell>
                       <TableCell>{contact.title || 'N/A'}</TableCell>
                       <TableCell>
                         {contact.email ? (
                           <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <Mail className="text-muted-foreground h-4 w-4" />
                             {contact.email}
                           </div>
                         ) : (
@@ -571,7 +581,7 @@ export default function SupplierContactsDirectoryPage() {
                       <TableCell>
                         {contact.phone ? (
                           <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <Phone className="text-muted-foreground h-4 w-4" />
                             {contact.phone}
                           </div>
                         ) : (
@@ -581,7 +591,9 @@ export default function SupplierContactsDirectoryPage() {
                       <TableCell>
                         <Badge variant="outline">{contact.type || 'primary'}</Badge>
                         {contact.isPrimary && (
-                          <Badge variant="outline" className="ml-2 text-xs">Primary</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Primary
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -608,31 +620,31 @@ export default function SupplierContactsDirectoryPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
-                                window.location.href = `/suppliers/${contact.supplierId}/profile`
+                                window.location.href = `/suppliers/${contact.supplierId}/profile`;
                               }}
                             >
-                              <Building2 className="h-4 w-4 mr-2" />
+                              <Building2 className="mr-2 h-4 w-4" />
                               Open Supplier Profile
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
-                                setEditingContact(contact)
-                                setIsEditDialogOpen(true)
+                                setEditingContact(contact);
+                                setIsEditDialogOpen(true);
                               }}
                             >
-                              <Edit className="h-4 w-4 mr-2" />
+                              <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => {
-                                setDeletingContact(contact)
-                                setIsDeleteDialogOpen(true)
+                                setDeletingContact(contact);
+                                setIsDeleteDialogOpen(true);
                               }}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -649,12 +661,10 @@ export default function SupplierContactsDirectoryPage() {
 
       {/* Add Contact Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Contact</DialogTitle>
-            <DialogDescription>
-              Add a new contact to a supplier
-            </DialogDescription>
+            <DialogDescription>Add a new contact to a supplier</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-4">
@@ -800,8 +810,8 @@ export default function SupplierContactsDirectoryPage() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setIsAddDialogOpen(false)
-                    form.reset()
+                    setIsAddDialogOpen(false);
+                    form.reset();
                   }}
                 >
                   Cancel
@@ -809,12 +819,12 @@ export default function SupplierContactsDirectoryPage() {
                 <Button type="submit" disabled={submitting}>
                   {submitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                       Add Contact
                     </>
                   )}
@@ -827,12 +837,10 @@ export default function SupplierContactsDirectoryPage() {
 
       {/* Edit Contact Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Contact</DialogTitle>
-            <DialogDescription>
-              Update contact information
-            </DialogDescription>
+            <DialogDescription>Update contact information</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleEdit)} className="space-y-4">
@@ -978,9 +986,9 @@ export default function SupplierContactsDirectoryPage() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setIsEditDialogOpen(false)
-                    setEditingContact(null)
-                    form.reset()
+                    setIsEditDialogOpen(false);
+                    setEditingContact(null);
+                    form.reset();
                   }}
                 >
                   Cancel
@@ -988,12 +996,12 @@ export default function SupplierContactsDirectoryPage() {
                 <Button type="submit" disabled={submitting}>
                   {submitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                       Save Changes
                     </>
                   )}
@@ -1010,32 +1018,29 @@ export default function SupplierContactsDirectoryPage() {
           <DialogHeader>
             <DialogTitle>Delete Contact</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete contact &ldquo;{deletingContact?.name}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete contact &ldquo;{deletingContact?.name}&rdquo;? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
-                setIsDeleteDialogOpen(false)
-                setDeletingContact(null)
+                setIsDeleteDialogOpen(false);
+                setDeletingContact(null);
               }}
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="destructive"
-              disabled={submitting}
-            >
+            <Button onClick={handleDelete} variant="destructive" disabled={submitting}>
               {submitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </>
               )}
@@ -1044,5 +1049,5 @@ export default function SupplierContactsDirectoryPage() {
         </DialogContent>
       </Dialog>
     </AppLayout>
-  )
+  );
 }

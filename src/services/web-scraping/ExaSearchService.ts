@@ -1,6 +1,6 @@
 /**
  * Exa (formerly Metaphor) Search API Service
- * 
+ *
  * Exa provides semantic search capabilities optimized for AI applications.
  * Documentation: https://docs.exa.ai
  */
@@ -112,7 +112,10 @@ export class ExaSearchService {
   /**
    * Get contents for specific URLs
    */
-  async getContents(urls: string[], options?: { text?: { maxCharacters?: number } }): Promise<ExaSearchResult> {
+  async getContents(
+    urls: string[],
+    options?: { text?: { maxCharacters?: number } }
+  ): Promise<ExaSearchResult> {
     if (!this.apiKey) {
       return {
         success: false,
@@ -158,7 +161,9 @@ export class ExaSearchService {
 /**
  * Create an Exa Search service instance from environment variables or config
  */
-export function createExaSearchService(config?: { apiKey?: string; baseUrl?: string }): ExaSearchService {
+export function createExaSearchService(config?: {
+  apiKey?: string;
+  baseUrl?: string;
+}): ExaSearchService {
   return new ExaSearchService(config);
 }
-

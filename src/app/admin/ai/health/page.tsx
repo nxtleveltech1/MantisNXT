@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import AIServiceHealthMonitor from "@/components/ai/admin/AIServiceHealthMonitor"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import AIServiceHealthMonitor from '@/components/ai/admin/AIServiceHealthMonitor';
 
 /**
  * AI Service Health Monitor Admin Page
@@ -13,12 +13,9 @@ import AIServiceHealthMonitor from "@/components/ai/admin/AIServiceHealthMonitor
 export default function AIHealthPage() {
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Health Monitor" },
-      ]}
+      breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Health Monitor' }]}
     >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Service Health</h1>
           <p className="text-muted-foreground">
@@ -29,5 +26,5 @@ export default function AIHealthPage() {
         <AIServiceHealthMonitor />
       </div>
     </AppLayout>
-  )
+  );
 }

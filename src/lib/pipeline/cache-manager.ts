@@ -233,16 +233,14 @@ export class SWRCache<T = unknown> {
     }
 
     // Check if we have stale data
-    const staleEntry = this.cache.has(fullKey, false)
-      ? this.cache.get(fullKey)
-      : null;
+    const staleEntry = this.cache.has(fullKey, false) ? this.cache.get(fullKey) : null;
 
     // If stale data exists, return it and revalidate in background
     if (staleEntry && this.isStale(fullKey)) {
       console.log(`⚠️ Cache hit (stale): ${fullKey}, revalidating...`);
 
       // Revalidate in background
-      this.revalidate(fullKey, ...args).catch((error) => {
+      this.revalidate(fullKey, ...args).catch(error => {
         console.error(`❌ Background revalidation failed for ${fullKey}:`, error);
       });
 

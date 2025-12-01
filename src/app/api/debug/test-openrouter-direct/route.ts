@@ -9,17 +9,17 @@ export async function GET() {
     }
 
     const provider = config.providers[0];
-    
+
     // Direct fetch to OpenRouter API
     console.log(`[test-openrouter-direct] Testing direct API call`);
     console.log(`[test-openrouter-direct] URL: https://openrouter.ai/api/v1/chat/completions`);
     console.log(`[test-openrouter-direct] API Key prefix: ${provider.apiKey?.substring(0, 30)}...`);
     console.log(`[test-openrouter-direct] Model: ${provider.model}`);
-    
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${provider.apiKey}`,
+        Authorization: `Bearer ${provider.apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost:3000',
         'X-Title': 'MantisNXT Test',
@@ -40,16 +40,19 @@ export async function GET() {
     console.log(`[test-openrouter-direct] Response: ${responseText.substring(0, 500)}`);
 
     if (!response.ok) {
-      return NextResponse.json({
-        success: false,
-        status: response.status,
-        error: responseText,
-        details: {
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          apiKeyPrefix: provider.apiKey?.substring(0, 30),
-          model: provider.model,
+      return NextResponse.json(
+        {
+          success: false,
+          status: response.status,
+          error: responseText,
+          details: {
+            url: 'https://openrouter.ai/api/v1/chat/completions',
+            apiKeyPrefix: provider.apiKey?.substring(0, 30),
+            model: provider.model,
+          },
         },
-      }, { status: response.status });
+        { status: response.status }
+      );
     }
 
     const data = JSON.parse(responseText);
@@ -65,16 +68,13 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[test-openrouter-direct] Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
-
-
-
-
-
-

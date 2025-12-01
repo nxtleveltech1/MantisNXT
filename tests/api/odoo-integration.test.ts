@@ -1,12 +1,12 @@
 /**
  * Odoo Integration Tests
- * 
+ *
  * Tests for Odoo ERP integration including:
  * - Connection testing for Odoo.sh and self-hosted instances
  * - XML-RPC authentication
  * - CRUD operations
  * - Error handling
- * 
+ *
  * Last Updated: 2025-01-27
  */
 
@@ -85,7 +85,7 @@ describe('Odoo Integration', () => {
       // For now, we test the structure
       const service = new OdooService(odooShConfig);
       const result = await service.testConnection();
-      
+
       if (result.success) {
         expect(result).toHaveProperty('version');
       }
@@ -176,4 +176,3 @@ describe('Odoo Integration', () => {
     });
   });
 });
-

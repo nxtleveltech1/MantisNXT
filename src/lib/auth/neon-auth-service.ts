@@ -16,111 +16,111 @@
  */
 
 // @ts-nocheck
-import crypto from 'node:crypto'
-import { db } from '@/lib/database'
-import { passwordSecurity } from '@/lib/security/password-security'
+import crypto from 'node:crypto';
+import { db } from '@/lib/database';
+import { passwordSecurity } from '@/lib/security/password-security';
 
 // ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
 
 export interface StackAuthUser {
-  id: string
-  email: string
-  emailVerified: boolean
-  displayName?: string
-  profileImageUrl?: string
-  provider: 'stack' | 'google' | 'github' | 'microsoft' | 'email'
-  createdAt: Date
-  lastSignInAt: Date
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  displayName?: string;
+  profileImageUrl?: string;
+  provider: 'stack' | 'google' | 'github' | 'microsoft' | 'email';
+  createdAt: Date;
+  lastSignInAt: Date;
 }
 
 export interface NeonAuthSession {
-  sessionToken: string
-  refreshToken?: string
-  expiresAt: Date
-  user: ExtendedUser
+  sessionToken: string;
+  refreshToken?: string;
+  expiresAt: Date;
+  user: ExtendedUser;
 }
 
 export interface ExtendedUser {
-  id: string
-  stackAuthUserId: string
-  email: string
-  emailVerified: boolean
-  firstName?: string
-  lastName?: string
-  displayName: string
-  avatarUrl?: string
-  phone?: string
-  mobile?: string
+  id: string;
+  stackAuthUserId: string;
+  email: string;
+  emailVerified: boolean;
+  firstName?: string;
+  lastName?: string;
+  displayName: string;
+  avatarUrl?: string;
+  phone?: string;
+  mobile?: string;
 
   // Organization
-  orgId: string
-  orgName: string
-  department?: string
-  jobTitle?: string
+  orgId: string;
+  orgName: string;
+  department?: string;
+  jobTitle?: string;
 
   // Roles and permissions
-  roles: UserRole[]
-  permissions: UserPermission[]
+  roles: UserRole[];
+  permissions: UserPermission[];
 
   // Status
-  isActive: boolean
-  isSuspended: boolean
+  isActive: boolean;
+  isSuspended: boolean;
 
   // Security
-  twoFactorEnabled: boolean
-  lastLoginAt?: Date
-  lastActivityAt?: Date
+  twoFactorEnabled: boolean;
+  lastLoginAt?: Date;
+  lastActivityAt?: Date;
 
   // Preferences
-  preferences: UserPreferences
+  preferences: UserPreferences;
 }
 
 export interface UserRole {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  level: number
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  level: number;
 }
 
 export interface UserPermission {
-  id: string
-  name: string
-  resource: string
-  action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'execute'
-  conditions?: unknown[]
+  id: string;
+  name: string;
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'execute';
+  conditions?: unknown[];
 }
 
 export interface UserPreferences {
-  language: string
-  timezone: string
-  dateFormat: string
-  currency: string
-  theme: 'light' | 'dark' | 'auto'
+  language: string;
+  timezone: string;
+  dateFormat: string;
+  currency: string;
+  theme: 'light' | 'dark' | 'auto';
   notifications: {
-    email: boolean
-    sms: boolean
-    push: boolean
-    digestFrequency: 'realtime' | 'daily' | 'weekly' | 'never'
-  }
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+    digestFrequency: 'realtime' | 'daily' | 'weekly' | 'never';
+  };
 }
 
 export interface LoginOptions {
-  email: string
-  password: string
-  rememberMe?: boolean
-  twoFactorCode?: string
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+  twoFactorCode?: string;
 }
 
 export interface LoginResult {
-  success: boolean
-  session?: NeonAuthSession
-  requiresTwoFactor?: boolean
-  twoFactorToken?: string
-  error?: string
-  message?: string
+  success: boolean;
+  session?: NeonAuthSession;
+  requiresTwoFactor?: boolean;
+  twoFactorToken?: string;
+  error?: string;
+  message?: string;
 }
 
 // ============================================================================
@@ -128,15 +128,15 @@ export interface LoginResult {
 // ============================================================================
 
 export class NeonAuthService {
-  private stackAuthApiKey: string
-  private stackAuthProjectId: string
+  private stackAuthApiKey: string;
+  private stackAuthProjectId: string;
 
   constructor() {
-    this.stackAuthApiKey = process.env.STACK_AUTH_API_KEY || ''
-    this.stackAuthProjectId = process.env.STACK_AUTH_PROJECT_ID || ''
+    this.stackAuthApiKey = process.env.STACK_AUTH_API_KEY || '';
+    this.stackAuthProjectId = process.env.STACK_AUTH_PROJECT_ID || '';
 
     if (!this.stackAuthApiKey || !this.stackAuthProjectId) {
-      console.warn('⚠️  Stack Auth credentials not configured. Using fallback mode.')
+      console.warn('⚠️  Stack Auth credentials not configured. Using fallback mode.');
     }
   }
 
@@ -146,68 +146,68 @@ export class NeonAuthService {
   async login(options: LoginOptions): Promise<LoginResult> {
     try {
       // Step 1: Get user ID for lockout check (before auth)
-      const userLookup = await db.query(`
+      const userLookup = await db.query(
+        `
         SELECT id FROM auth.users_extended WHERE email = $1
-      `, [options.email])
+      `,
+        [options.email]
+      );
 
       if (userLookup.rows.length > 0) {
-        const userId = userLookup.rows[0].id
+        const userId = userLookup.rows[0].id;
 
         // Check for account lockout BEFORE authentication attempt
-        const lockStatus = await passwordSecurity.isAccountLocked(userId)
+        const lockStatus = await passwordSecurity.isAccountLocked(userId);
         if (lockStatus.locked) {
-          await this.logLoginAttempt(options.email, false, 'ACCOUNT_LOCKED')
+          await this.logLoginAttempt(options.email, false, 'ACCOUNT_LOCKED');
           return {
             success: false,
             error: 'ACCOUNT_LOCKED',
-            message: lockStatus.reason || 'Account is locked'
-          }
+            message: lockStatus.reason || 'Account is locked',
+          };
         }
       }
 
       // Step 2: Authenticate with Stack Auth
-      const stackAuthResult = await this.authenticateWithStackAuth(
-        options.email,
-        options.password
-      )
+      const stackAuthResult = await this.authenticateWithStackAuth(options.email, options.password);
 
       if (!stackAuthResult.success) {
         // Record failed login attempt for lockout tracking
         if (userLookup.rows.length > 0) {
-          const lockoutResult = await passwordSecurity.recordFailedLogin(userLookup.rows[0].id)
+          const lockoutResult = await passwordSecurity.recordFailedLogin(userLookup.rows[0].id);
 
-          let message = 'Invalid email or password'
+          let message = 'Invalid email or password';
           if (lockoutResult.locked) {
-            message = `Account locked due to too many failed attempts. Try again after ${lockoutResult.lockedUntil?.toLocaleTimeString()}`
+            message = `Account locked due to too many failed attempts. Try again after ${lockoutResult.lockedUntil?.toLocaleTimeString()}`;
           } else if (lockoutResult.attemptsRemaining <= 2) {
-            message += `. Warning: ${lockoutResult.attemptsRemaining} attempts remaining before lockout.`
+            message += `. Warning: ${lockoutResult.attemptsRemaining} attempts remaining before lockout.`;
           }
 
-          await this.logLoginAttempt(options.email, false, stackAuthResult.error)
+          await this.logLoginAttempt(options.email, false, stackAuthResult.error);
           return {
             success: false,
             error: stackAuthResult.error,
-            message
-          }
+            message,
+          };
         }
 
-        await this.logLoginAttempt(options.email, false, stackAuthResult.error)
+        await this.logLoginAttempt(options.email, false, stackAuthResult.error);
         return {
           success: false,
           error: stackAuthResult.error,
-          message: 'Invalid email or password'
-        }
+          message: 'Invalid email or password',
+        };
       }
 
       // Step 3: Get or create extended user profile
-      const user = await this.getOrCreateExtendedUser(stackAuthResult.user!)
+      const user = await this.getOrCreateExtendedUser(stackAuthResult.user!);
 
       if (!user) {
         return {
           success: false,
           error: 'USER_NOT_FOUND',
-          message: 'User account not found'
-        }
+          message: 'User account not found',
+        };
       }
 
       // Step 4: Check if user is active
@@ -215,48 +215,48 @@ export class NeonAuthService {
         return {
           success: false,
           error: 'ACCOUNT_DISABLED',
-          message: 'Your account has been disabled. Please contact support.'
-        }
+          message: 'Your account has been disabled. Please contact support.',
+        };
       }
 
       // Step 4: Check for 2FA requirement
       if (user.twoFactorEnabled && !options.twoFactorCode) {
-        const twoFactorToken = await this.generateTwoFactorToken(user.id)
+        const twoFactorToken = await this.generateTwoFactorToken(user.id);
 
         return {
           success: false,
           requiresTwoFactor: true,
           twoFactorToken,
-          message: 'Two-factor authentication required'
-        }
+          message: 'Two-factor authentication required',
+        };
       }
 
       // Step 5: Verify 2FA code if provided
       if (user.twoFactorEnabled && options.twoFactorCode) {
-        const isValid = await this.verifyTwoFactorCode(user.id, options.twoFactorCode)
+        const isValid = await this.verifyTwoFactorCode(user.id, options.twoFactorCode);
 
         if (!isValid) {
           return {
             success: false,
             error: 'INVALID_2FA_CODE',
-            message: 'Invalid verification code'
-          }
+            message: 'Invalid verification code',
+          };
         }
       }
 
       // Step 6: Reset failed login attempts on successful auth
-      await passwordSecurity.resetFailedLogins(user.id)
+      await passwordSecurity.resetFailedLogins(user.id);
 
       // Step 7: Create session
       const session = await this.createSession(user, {
-        rememberMe: options.rememberMe
-      })
+        rememberMe: options.rememberMe,
+      });
 
       // Step 8: Update last login
-      await this.updateLastLogin(user.id)
+      await this.updateLastLogin(user.id);
 
       // Step 9: Log successful login
-      await this.logLoginAttempt(options.email, true)
+      await this.logLoginAttempt(options.email, true);
 
       // Step 9: Log audit event
       await this.logAuditEvent({
@@ -265,24 +265,23 @@ export class NeonAuthService {
         eventType: 'login',
         action: 'User logged in successfully',
         metadata: {
-          twoFactorUsed: user.twoFactorEnabled
-        }
-      })
+          twoFactorUsed: user.twoFactorEnabled,
+        },
+      });
 
       return {
         success: true,
         session,
-        message: 'Login successful'
-      }
-
+        message: 'Login successful',
+      };
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('Login error:', error);
 
       return {
         success: false,
         error: 'LOGIN_ERROR',
-        message: 'An error occurred during login. Please try again.'
-      }
+        message: 'An error occurred during login. Please try again.',
+      };
     }
   }
 
@@ -292,14 +291,15 @@ export class NeonAuthService {
   async verifySession(sessionToken: string): Promise<ExtendedUser | null> {
     try {
       // Step 1: Verify token with Stack Auth
-      const isValidToken = await this.verifyStackAuthToken(sessionToken)
+      const isValidToken = await this.verifyStackAuthToken(sessionToken);
 
       if (!isValidToken) {
-        return null
+        return null;
       }
 
       // Step 2: Get session from database
-      const sessionResult = await db.query(`
+      const sessionResult = await db.query(
+        `
         SELECT
           s.user_id,
           s.expires_at,
@@ -309,29 +309,30 @@ export class NeonAuthService {
         WHERE s.session_token = $1
           AND s.status = 'active'
           AND s.expires_at > NOW()
-      `, [sessionToken])
+      `,
+        [sessionToken]
+      );
 
       if (sessionResult.rows.length === 0) {
-        return null
+        return null;
       }
 
-      const session = sessionResult.rows[0]
+      const session = sessionResult.rows[0];
 
       // Step 3: Get extended user with roles and permissions
-      const user = await this.getExtendedUser(session.user_id)
+      const user = await this.getExtendedUser(session.user_id);
 
       if (!user || !user.isActive || user.isSuspended) {
-        return null
+        return null;
       }
 
       // Step 4: Update last activity
-      await this.updateSessionActivity(sessionToken)
+      await this.updateSessionActivity(sessionToken);
 
-      return user
-
+      return user;
     } catch (error) {
-      console.error('Session verification error:', error)
-      return null
+      console.error('Session verification error:', error);
+      return null;
     }
   }
 
@@ -341,32 +342,34 @@ export class NeonAuthService {
   async logout(sessionToken: string): Promise<void> {
     try {
       // Step 1: Revoke session in database
-      await db.query(`
+      await db.query(
+        `
         UPDATE auth.user_sessions
         SET
           status = 'revoked',
           revoked_at = NOW()
         WHERE session_token = $1
-      `, [sessionToken])
+      `,
+        [sessionToken]
+      );
 
       // Step 2: Revoke with Stack Auth
-      await this.revokeStackAuthSession(sessionToken)
+      await this.revokeStackAuthSession(sessionToken);
 
       // Step 3: Log audit event
-      const session = await this.getSessionByToken(sessionToken)
+      const session = await this.getSessionByToken(sessionToken);
       if (session) {
         await this.logAuditEvent({
           orgId: session.orgId,
           userId: session.userId,
           eventType: 'logout',
           action: 'User logged out',
-          metadata: {}
-        })
+          metadata: {},
+        });
       }
-
     } catch (error) {
-      console.error('Logout error:', error)
-      throw error
+      console.error('Logout error:', error);
+      throw error;
     }
   }
 
@@ -375,7 +378,8 @@ export class NeonAuthService {
    */
   async getExtendedUser(userId: string): Promise<ExtendedUser | null> {
     try {
-      const result = await db.query(`
+      const result = await db.query(
+        `
         SELECT
           u.id,
           u.stack_auth_user_id,
@@ -451,13 +455,15 @@ export class NeonAuthService {
         GROUP BY u.id, o.id, o.name, p.language, p.timezone, p.date_format,
                  p.currency, p.theme, p.email_notifications, p.sms_notifications,
                  p.push_notifications, p.notification_digest_frequency
-      `, [userId])
+      `,
+        [userId]
+      );
 
       if (result.rows.length === 0) {
-        return null
+        return null;
       }
 
-      const row = result.rows[0]
+      const row = result.rows[0];
 
       return {
         id: row.id,
@@ -481,12 +487,11 @@ export class NeonAuthService {
         twoFactorEnabled: row.two_factor_enabled,
         lastLoginAt: row.last_login_at,
         lastActivityAt: row.last_activity_at,
-        preferences: row.preferences || this.getDefaultPreferences()
-      }
-
+        preferences: row.preferences || this.getDefaultPreferences(),
+      };
     } catch (error) {
-      console.error('Get extended user error:', error)
-      return null
+      console.error('Get extended user error:', error);
+      return null;
     }
   }
 
@@ -503,8 +508,8 @@ export class NeonAuthService {
     if (!this.stackAuthApiKey || !this.stackAuthProjectId) {
       return {
         success: false,
-        error: 'Authentication service not configured'
-      }
+        error: 'Authentication service not configured',
+      };
     }
 
     try {
@@ -514,20 +519,20 @@ export class NeonAuthService {
         headers: {
           'Content-Type': 'application/json',
           'X-API-Key': this.stackAuthApiKey,
-          'X-Project-Id': this.stackAuthProjectId
+          'X-Project-Id': this.stackAuthProjectId,
         },
-        body: JSON.stringify({ email, password })
-      })
+        body: JSON.stringify({ email, password }),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = await response.json().catch(() => ({}));
         return {
           success: false,
-          error: errorData.message || 'Authentication failed'
-        }
+          error: errorData.message || 'Authentication failed',
+        };
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
       return {
         success: true,
@@ -539,15 +544,15 @@ export class NeonAuthService {
           profileImageUrl: data.user.profileImageUrl,
           provider: data.user.provider || 'email',
           createdAt: new Date(data.user.createdAt),
-          lastSignInAt: new Date()
-        }
-      }
+          lastSignInAt: new Date(),
+        },
+      };
     } catch (error) {
-      console.error('Stack Auth error:', error)
+      console.error('Stack Auth error:', error);
       return {
         success: false,
-        error: 'Authentication service unavailable'
-      }
+        error: 'Authentication service unavailable',
+      };
     }
   }
 
@@ -555,7 +560,7 @@ export class NeonAuthService {
     // SECURITY FIX: Removed DISABLE_AUTH bypass - implement real token verification
 
     if (!this.stackAuthApiKey || !this.stackAuthProjectId) {
-      return false
+      return false;
     }
 
     try {
@@ -564,15 +569,15 @@ export class NeonAuthService {
         headers: {
           'Content-Type': 'application/json',
           'X-API-Key': this.stackAuthApiKey,
-          'X-Project-Id': this.stackAuthProjectId
+          'X-Project-Id': this.stackAuthProjectId,
         },
-        body: JSON.stringify({ token })
-      })
+        body: JSON.stringify({ token }),
+      });
 
-      return response.ok
+      return response.ok;
     } catch (error) {
-      console.error('Token verification error:', error)
-      return false
+      console.error('Token verification error:', error);
+      return false;
     }
   }
 
@@ -582,84 +587,96 @@ export class NeonAuthService {
 
   private async getOrCreateExtendedUser(stackUser: StackAuthUser): Promise<ExtendedUser | null> {
     // Check if user exists
-    const user = await db.query(`
+    const user = await db.query(
+      `
       SELECT id FROM auth.users_extended
       WHERE stack_auth_user_id = $1
-    `, [stackUser.id])
+    `,
+      [stackUser.id]
+    );
 
     if (user.rows.length === 0) {
       // Create new extended user
       // This would typically happen during first login after Stack Auth signup
 
       // For now, return null and require manual user provisioning
-      return null
+      return null;
     }
 
-    return this.getExtendedUser(user.rows[0].id)
+    return this.getExtendedUser(user.rows[0].id);
   }
 
   private async createSession(
     user: ExtendedUser,
     options: { rememberMe?: boolean }
   ): Promise<NeonAuthSession> {
-    const sessionToken = this.generateSessionToken()
-    const expiresAt = new Date()
+    const sessionToken = this.generateSessionToken();
+    const expiresAt = new Date();
 
     // Remember me: 30 days, otherwise 1 day
     if (options.rememberMe) {
-      expiresAt.setDate(expiresAt.getDate() + 30)
+      expiresAt.setDate(expiresAt.getDate() + 30);
     } else {
-      expiresAt.setDate(expiresAt.getDate() + 1)
+      expiresAt.setDate(expiresAt.getDate() + 1);
     }
 
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO auth.user_sessions (
         user_id, session_token, expires_at, ip_address, user_agent, status
       )
       VALUES ($1, $2, $3, $4, $5, 'active')
-    `, [user.id, sessionToken, expiresAt, '0.0.0.0', 'unknown'])
+    `,
+      [user.id, sessionToken, expiresAt, '0.0.0.0', 'unknown']
+    );
 
     return {
       sessionToken,
       expiresAt,
-      user
-    }
+      user,
+    };
   }
 
   private generateSessionToken(): string {
     // Generate cryptographically secure random token
-    return crypto.randomBytes(32).toString('hex')
+    return crypto.randomBytes(32).toString('hex');
   }
 
   private async generateTwoFactorToken(userId: string): Promise<string> {
     // Generate temporary 2FA token
-    return crypto.randomBytes(16).toString('hex')
+    return crypto.randomBytes(16).toString('hex');
   }
 
   private async verifyTwoFactorCode(userId: string, code: string): Promise<boolean> {
     // SECURITY FIX: Implement real TOTP verification with rate limiting
-    const { totpService } = await import('@/lib/security/totp-service')
+    const { totpService } = await import('@/lib/security/totp-service');
 
-    const result = await totpService.verify(userId, code)
-    return result.valid
+    const result = await totpService.verify(userId, code);
+    return result.valid;
   }
 
   private async updateLastLogin(userId: string): Promise<void> {
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET
         last_login_at = NOW(),
         last_activity_at = NOW()
       WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
   }
 
   private async updateSessionActivity(sessionToken: string): Promise<void> {
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.user_sessions
       SET last_activity_at = NOW()
       WHERE session_token = $1
-    `, [sessionToken])
+    `,
+      [sessionToken]
+    );
   }
 
   private async logLoginAttempt(
@@ -667,46 +684,64 @@ export class NeonAuthService {
     success: boolean,
     failureReason?: string
   ): Promise<void> {
-    const userResult = await db.query(`
+    const userResult = await db.query(
+      `
       SELECT id FROM auth.users_extended WHERE email = $1
-    `, [email])
+    `,
+      [email]
+    );
 
-    const userId = userResult.rows.length > 0 ? userResult.rows[0].id : null
+    const userId = userResult.rows.length > 0 ? userResult.rows[0].id : null;
 
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO auth.login_history (
         user_id, email, success, failure_reason, ip_address, user_agent
       )
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, [userId, email, success, failureReason, '0.0.0.0', 'unknown'])
+    `,
+      [userId, email, success, failureReason, '0.0.0.0', 'unknown']
+    );
   }
 
   private async logAuditEvent(params: {
-    orgId: string
-    userId: string
-    eventType: string
-    action: string
-    metadata?: unknown
+    orgId: string;
+    userId: string;
+    eventType: string;
+    action: string;
+    metadata?: unknown;
   }): Promise<void> {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO auth.audit_events (
         org_id, user_id, event_type, action, metadata
       )
       VALUES ($1, $2, $3::audit_event_type, $4, $5)
-    `, [params.orgId, params.userId, params.eventType, params.action, JSON.stringify(params.metadata || {})])
+    `,
+      [
+        params.orgId,
+        params.userId,
+        params.eventType,
+        params.action,
+        JSON.stringify(params.metadata || {}),
+      ]
+    );
   }
 
   private async getSessionByToken(sessionToken: string): Promise<unknown> {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         s.user_id,
         u.org_id
       FROM auth.user_sessions s
       JOIN auth.users_extended u ON s.user_id = u.id
       WHERE s.session_token = $1
-    `, [sessionToken])
+    `,
+      [sessionToken]
+    );
 
-    return result.rows.length > 0 ? result.rows[0] : null
+    return result.rows.length > 0 ? result.rows[0] : null;
   }
 
   private getDefaultPreferences(): UserPreferences {
@@ -720,9 +755,9 @@ export class NeonAuthService {
         email: true,
         sms: false,
         push: true,
-        digestFrequency: 'daily'
-      }
-    }
+        digestFrequency: 'daily',
+      },
+    };
   }
 }
 
@@ -730,4 +765,4 @@ export class NeonAuthService {
 // SINGLETON EXPORT
 // ============================================================================
 
-export const neonAuthService = new NeonAuthService()
+export const neonAuthService = new NeonAuthService();

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
@@ -6,11 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronDown, Search, Loader2 } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PROVIDER_CONFIGS, getProviderModels, getDefaultModel } from '@/lib/ai/provider-configs';
 
 interface ModelSelectorProps {
@@ -121,7 +117,7 @@ export function ModelSelector({
         <Input
           placeholder={placeholder}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           disabled={disabled}
         />
       </div>
@@ -146,7 +142,7 @@ export function ModelSelector({
             disabled={disabled || isLoading}
           >
             <span className="truncate">
-              {isLoading ? 'Loading models...' : (value || defaultModel || placeholder)}
+              {isLoading ? 'Loading models...' : value || defaultModel || placeholder}
             </span>
             {isLoading ? (
               <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
@@ -161,31 +157,33 @@ export function ModelSelector({
             <Input
               placeholder="Search models..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
           <ScrollArea className="h-[300px]">
             <div className="p-2">
               {isLoading ? (
-                <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
+                <div className="text-muted-foreground flex flex-col items-center gap-2 py-6 text-center text-sm">
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span>Loading {providerId === 'openrouter' ? '400+' : ''} models...</span>
                 </div>
               ) : fetchError && providerId === 'openrouter' ? (
                 <div className="py-4 text-center text-sm">
                   <p className="text-destructive mb-2">Failed to load dynamic models</p>
-                  <p className="text-muted-foreground text-xs">Using cached model list ({staticModels.length} models)</p>
+                  <p className="text-muted-foreground text-xs">
+                    Using cached model list ({staticModels.length} models)
+                  </p>
                 </div>
               ) : filteredModels.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground py-6 text-center text-sm">
                   No models found.
                 </div>
               ) : (
-                filteredModels.map((model) => (
+                filteredModels.map(model => (
                   <div
                     key={model}
-                    className={`flex items-center justify-between rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                    className={`hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm ${
                       value === model ? 'bg-accent' : ''
                     }`}
                     onClick={() => {
@@ -195,13 +193,9 @@ export function ModelSelector({
                     }}
                   >
                     <span className="truncate">{model}</span>
-                    {value === model && (
-                      <Check className="ml-2 h-4 w-4 shrink-0" />
-                    )}
+                    {value === model && <Check className="ml-2 h-4 w-4 shrink-0" />}
                     {model === defaultModel && value !== model && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        (default)
-                      </span>
+                      <span className="text-muted-foreground ml-2 text-xs">(default)</span>
                     )}
                   </div>
                 ))
@@ -210,15 +204,13 @@ export function ModelSelector({
           </ScrollArea>
           {/* Allow custom model input */}
           <div className="border-t p-2">
-            <div className="text-xs text-muted-foreground mb-2">
-              Or enter a custom model:
-            </div>
+            <div className="text-muted-foreground mb-2 text-xs">Or enter a custom model:</div>
             <div className="flex gap-2">
               <Input
                 placeholder="Custom model name..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     onChange(searchQuery.trim());
                     setOpen(false);
@@ -245,9 +237,7 @@ export function ModelSelector({
         </PopoverContent>
       </Popover>
       {providerConfig?.description && (
-        <p className="text-xs text-muted-foreground">
-          {providerConfig.description}
-        </p>
+        <p className="text-muted-foreground text-xs">{providerConfig.description}</p>
       )}
       {providerId === 'openrouter' && !isLoading && !fetchError && dynamicModels.length > 0 && (
         <p className="text-xs text-emerald-600">

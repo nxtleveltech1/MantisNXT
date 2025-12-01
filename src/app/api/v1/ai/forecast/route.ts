@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DemandForecastingService } from '@/lib/ai/services/DemandForecastingService';
 import { ensureServiceRuntime } from '@/lib/ai/runtime/ensure-service-runtime';
@@ -36,15 +36,12 @@ export async function POST(request: NextRequest) {
       const validated = batchForecastSchema.parse(body);
       const service = new DemandForecastingService();
 
-      const result = await service.generateBatchForecast(
-        orgId,
-        validated,
-      );
+      const result = await service.generateBatchForecast(orgId, validated);
 
       if (!result.success) {
         return NextResponse.json(
           { error: result.error || 'Forecast generation failed' },
-          { status: 500 },
+          { status: 500 }
         );
       }
 
@@ -64,15 +61,12 @@ export async function POST(request: NextRequest) {
       const validated = forecastRequestSchema.parse(body);
       const service = new DemandForecastingService();
 
-      const result = await service.generateForecast(
-        orgId,
-        validated,
-      );
+      const result = await service.generateForecast(orgId, validated);
 
       if (!result.success) {
         return NextResponse.json(
           { error: result.error || 'Forecast generation failed' },
-          { status: 500 },
+          { status: 500 }
         );
       }
 
@@ -93,14 +87,11 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request', details: error.errors },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -116,10 +107,7 @@ export async function GET(request: NextRequest) {
     const productId = searchParams.get('productId');
 
     if (!productId) {
-      return NextResponse.json(
-        { error: 'productId is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'productId is required' }, { status: 400 });
     }
 
     // Fetch forecasts from database
@@ -147,10 +135,10 @@ export async function GET(request: NextRequest) {
       ORDER BY forecast_date DESC, created_at DESC
       LIMIT 50
       `,
-      [orgId, productId],
+      [orgId, productId]
     );
 
-    const forecasts = result.rows.map((row) => ({
+    const forecasts = result.rows.map(row => ({
       id: row.id,
       productId: row.product_id,
       forecastDate: row.forecast_date,
@@ -173,9 +161,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Get forecasts error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

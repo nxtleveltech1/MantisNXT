@@ -68,7 +68,7 @@ class SppConnectionManager {
   }
 
   private registerEvents(): void {
-    this.pool.on('error', (err) => {
+    this.pool.on('error', err => {
       console.error('❌ SPP pool error:', err);
     });
   }
@@ -129,4 +129,3 @@ export const sppDb = {
 };
 
 export default sppManager;
-

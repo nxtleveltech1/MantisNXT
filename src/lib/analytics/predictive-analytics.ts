@@ -13,7 +13,12 @@ export { PredictiveAnalyticsEngine as PredictiveAnalyticsService };
 export interface PredictiveModel {
   id: string;
   name: string;
-  type: 'demand_forecast' | 'supplier_risk' | 'price_prediction' | 'inventory_optimization' | 'churn_prediction';
+  type:
+    | 'demand_forecast'
+    | 'supplier_risk'
+    | 'price_prediction'
+    | 'inventory_optimization'
+    | 'churn_prediction';
   algorithm: 'neural_network' | 'time_series' | 'ensemble' | 'regression' | 'classification';
   accuracy: number;
   trainingData: number;
@@ -142,7 +147,7 @@ export class PredictiveAnalyticsEngine {
           lastTrained: new Date(row.last_trained),
           nextRetraining: new Date(row.next_retraining),
           parameters: JSON.parse(row.parameters || '{}'),
-          status: row.status
+          status: row.status,
         });
       });
 
@@ -150,7 +155,6 @@ export class PredictiveAnalyticsEngine {
       if (this.models.size === 0) {
         await this.createDefaultModels();
       }
-
     } catch (error) {
       console.error('Error initializing models:', error);
       await this.createDefaultModels();
@@ -164,29 +168,29 @@ export class PredictiveAnalyticsEngine {
         type: 'demand_forecast',
         algorithm: 'time_series',
         accuracy: 0.85,
-        parameters: { horizon: 30, seasonality: true, trend: true }
+        parameters: { horizon: 30, seasonality: true, trend: true },
       },
       {
         name: 'Supplier Risk Predictor',
         type: 'supplier_risk',
         algorithm: 'neural_network',
         accuracy: 0.78,
-        parameters: { layers: [10, 20, 15, 1], learningRate: 0.01 }
+        parameters: { layers: [10, 20, 15, 1], learningRate: 0.01 },
       },
       {
         name: 'Price Movement Predictor',
         type: 'price_prediction',
         algorithm: 'ensemble',
         accuracy: 0.72,
-        parameters: { models: ['neural_network', 'regression', 'time_series'] }
+        parameters: { models: ['neural_network', 'regression', 'time_series'] },
       },
       {
         name: 'Inventory Optimizer',
         type: 'inventory_optimization',
         algorithm: 'regression',
         accuracy: 0.81,
-        parameters: { optimization: 'cost_minimization' }
-      }
+        parameters: { optimization: 'cost_minimization' },
+      },
     ];
 
     for (const model of defaultModels) {
@@ -209,24 +213,33 @@ export class PredictiveAnalyticsEngine {
       lastTrained: now,
       nextRetraining,
       parameters: modelData.parameters || {},
-      status: 'active'
+      status: 'active',
     };
 
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO predictive_models (
           id, name, type, algorithm, accuracy, training_data,
           last_trained, next_retraining, parameters, status, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-      `, [
-        model.id, model.name, model.type, model.algorithm,
-        model.accuracy, model.trainingData, model.lastTrained,
-        model.nextRetraining, JSON.stringify(model.parameters), model.status
-      ]);
+      `,
+        [
+          model.id,
+          model.name,
+          model.type,
+          model.algorithm,
+          model.accuracy,
+          model.trainingData,
+          model.lastTrained,
+          model.nextRetraining,
+          JSON.stringify(model.parameters),
+          model.status,
+        ]
+      );
 
       this.models.set(modelId, model);
       return modelId;
-
     } catch (error) {
       console.error('Error creating model:', error);
       throw new Error('Failed to create predictive model');
@@ -276,7 +289,6 @@ export class PredictiveAnalyticsEngine {
       await this.storePredictionResult(result);
 
       return result;
-
     } catch (error) {
       console.error('Prediction error:', error);
       throw new Error('Failed to generate prediction');
@@ -311,45 +323,47 @@ export class PredictiveAnalyticsEngine {
         confidence,
         range: {
           min: avgPrediction * 0.8,
-          max: avgPrediction * 1.2
+          max: avgPrediction * 1.2,
         },
         explanation: [
           `Forecast based on ${forecast.modelMetadata.trainingData} historical data points`,
           `Seasonal patterns and trends incorporated`,
-          `Confidence level: ${(confidence * 100).toFixed(1)}%`
-        ]
+          `Confidence level: ${(confidence * 100).toFixed(1)}%`,
+        ],
       },
       forecast: {
         horizon: options.horizon || 30,
-        points: forecast.predictions.next7Days ? [
-          {
-            date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            value: forecast.predictions.next7Days,
-            confidence: confidence
-          },
-          {
-            date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            value: forecast.predictions.next30Days,
-            confidence: confidence * 0.9
-          },
-          {
-            date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-            value: forecast.predictions.next90Days,
-            confidence: confidence * 0.8
-          }
-        ] : []
+        points: forecast.predictions.next7Days
+          ? [
+              {
+                date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                value: forecast.predictions.next7Days,
+                confidence: confidence,
+              },
+              {
+                date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                value: forecast.predictions.next30Days,
+                confidence: confidence * 0.9,
+              },
+              {
+                date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+                value: forecast.predictions.next90Days,
+                confidence: confidence * 0.8,
+              },
+            ]
+          : [],
       },
       features: {
         seasonality: forecast.seasonality.yearlyTrend,
         weeklyPattern: forecast.seasonality.weeklyPattern.reduce((sum, val) => sum + val, 0) / 7,
-        monthlyPattern: forecast.seasonality.monthlyPattern.reduce((sum, val) => sum + val, 0) / 12
+        monthlyPattern: forecast.seasonality.monthlyPattern.reduce((sum, val) => sum + val, 0) / 12,
       },
       metadata: {
         algorithm: model.algorithm,
         processingTime: 0,
         dataQuality: confidence,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -384,15 +398,15 @@ export class PredictiveAnalyticsEngine {
         value: prediction.prediction,
         confidence: prediction.confidence,
         range: prediction.uncertaintyBounds,
-        explanation: prediction.explanation
+        explanation: prediction.explanation,
       },
       features: prediction.features,
       metadata: {
         algorithm: model.algorithm,
         processingTime: 0,
         dataQuality: prediction.confidence,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -439,26 +453,26 @@ export class PredictiveAnalyticsEngine {
         confidence,
         range: {
           min: predictedPrice * (1 - volatility),
-          max: predictedPrice * (1 + volatility)
+          max: predictedPrice * (1 + volatility),
         },
         explanation: [
           `Price trend: ${trend > 0 ? 'increasing' : 'decreasing'} by ${Math.abs(trend * 100).toFixed(1)}%`,
           `Volatility: ${(volatility * 100).toFixed(1)}%`,
-          `Based on ${priceHistory.length} price points`
-        ]
+          `Based on ${priceHistory.length} price points`,
+        ],
       },
       features: {
         trend,
         volatility,
         recentAverage: recentAvg,
-        priceChange: (recentAvg - olderAvg) / olderAvg
+        priceChange: (recentAvg - olderAvg) / olderAvg,
       },
       metadata: {
         algorithm: model.algorithm,
         processingTime: 0,
         dataQuality: confidence,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -499,13 +513,17 @@ export class PredictiveAnalyticsEngine {
     const serviceLevel = 0.95; // 95% service level
     const safetyStock = item.demand_volatility * Math.sqrt(leadTime) * 1.65; // Z-score for 95%
 
-    const optimalReorderPoint = (item.avg_daily_demand * leadTime) + safetyStock;
+    const optimalReorderPoint = item.avg_daily_demand * leadTime + safetyStock;
     const optimalOrderQuantity = Math.sqrt(
       (2 * item.avg_daily_demand * 365 * 50) / (item.unit_cost * 0.2) // EOQ formula
     );
 
     const currentEfficiency = this.calculateInventoryEfficiency(item);
-    const optimizedEfficiency = this.calculateOptimizedEfficiency(item, optimalReorderPoint, optimalOrderQuantity);
+    const optimizedEfficiency = this.calculateOptimizedEfficiency(
+      item,
+      optimalReorderPoint,
+      optimalOrderQuantity
+    );
 
     return {
       modelId: model.id,
@@ -516,13 +534,13 @@ export class PredictiveAnalyticsEngine {
         confidence: 0.85,
         range: {
           min: optimizedEfficiency * 0.9,
-          max: optimizedEfficiency * 1.1
+          max: optimizedEfficiency * 1.1,
         },
         explanation: [
           `Optimal reorder point: ${Math.round(optimalReorderPoint)} units`,
           `Optimal order quantity: ${Math.round(optimalOrderQuantity)} units`,
-          `Expected efficiency improvement: ${((optimizedEfficiency - currentEfficiency) * 100).toFixed(1)}%`
-        ]
+          `Expected efficiency improvement: ${((optimizedEfficiency - currentEfficiency) * 100).toFixed(1)}%`,
+        ],
       },
       features: {
         currentStock: item.current_stock,
@@ -532,14 +550,14 @@ export class PredictiveAnalyticsEngine {
         avgDailyDemand: item.avg_daily_demand,
         demandVolatility: item.demand_volatility,
         currentEfficiency,
-        optimizedEfficiency
+        optimizedEfficiency,
       },
       metadata: {
         algorithm: model.algorithm,
         processingTime: 0,
         dataQuality: 0.85,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -553,14 +571,18 @@ export class PredictiveAnalyticsEngine {
 
   private calculateInventoryEfficiency(item: unknown): number {
     // Simple efficiency metric based on turnover and stockout risk
-    const turnover = item.avg_daily_demand * 365 / Math.max(item.current_stock, 1);
+    const turnover = (item.avg_daily_demand * 365) / Math.max(item.current_stock, 1);
     const stockoutRisk = item.current_stock <= item.reorder_point ? 0.5 : 0.1;
 
     return Math.max(0, Math.min(1, turnover / 10 - stockoutRisk));
   }
 
-  private calculateOptimizedEfficiency(item: unknown, optimalReorder: number, optimalQuantity: number): number {
-    const turnover = item.avg_daily_demand * 365 / Math.max(optimalQuantity / 2, 1);
+  private calculateOptimizedEfficiency(
+    item: unknown,
+    optimalReorder: number,
+    optimalQuantity: number
+  ): number {
+    const turnover = (item.avg_daily_demand * 365) / Math.max(optimalQuantity / 2, 1);
     const stockoutRisk = 0.05; // 5% with optimized levels
 
     return Math.max(0, Math.min(1, turnover / 10 - stockoutRisk));
@@ -568,22 +590,25 @@ export class PredictiveAnalyticsEngine {
 
   private async storePredictionResult(result: PredictionResult): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO analytics_predictions (
           model_id, target_id, target_type, prediction_value,
           confidence, range_min, range_max, features, metadata, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-      `, [
-        result.modelId,
-        result.targetId,
-        result.targetType,
-        result.prediction.value,
-        result.prediction.confidence,
-        result.prediction.range.min,
-        result.prediction.range.max,
-        JSON.stringify(result.features),
-        JSON.stringify(result.metadata)
-      ]);
+      `,
+        [
+          result.modelId,
+          result.targetId,
+          result.targetType,
+          result.prediction.value,
+          result.prediction.confidence,
+          result.prediction.range.min,
+          result.prediction.range.max,
+          JSON.stringify(result.features),
+          JSON.stringify(result.metadata),
+        ]
+      );
     } catch (error) {
       console.error('Error storing prediction result:', error);
     }
@@ -594,15 +619,14 @@ export class PredictiveAnalyticsEngine {
       const [priceAnalysis, demandAnalysis, supplierIntelligence] = await Promise.all([
         this.generatePriceAnalysis(organizationId),
         this.generateDemandAnalysis(organizationId),
-        this.generateSupplierIntelligence(organizationId)
+        this.generateSupplierIntelligence(organizationId),
       ]);
 
       return {
         priceAnalysis,
         demandAnalysis,
-        supplierIntelligence
+        supplierIntelligence,
       };
-
     } catch (error) {
       console.error('Error generating market intelligence:', error);
       throw new Error('Failed to generate market intelligence');
@@ -645,8 +669,8 @@ export class PredictiveAnalyticsEngine {
       currentTrends.push({
         category: item.category,
         trend,
-        changePercent: (item.price_volatility * 100),
-        confidence: Math.min(0.9, item.price_points / 10)
+        changePercent: item.price_volatility * 100,
+        confidence: Math.min(0.9, item.price_points / 10),
       });
 
       // Generate price forecast
@@ -656,7 +680,7 @@ export class PredictiveAnalyticsEngine {
         currentPrice: parseFloat(item.avg_price),
         predictedPrice,
         timeframe: '30 days',
-        confidence: Math.min(0.85, item.price_points / 15)
+        confidence: Math.min(0.85, item.price_points / 15),
       });
 
       // Market opportunities
@@ -666,7 +690,7 @@ export class PredictiveAnalyticsEngine {
           item: item.name,
           reasoning: 'Price declining, good time to increase inventory',
           potentialGain: item.price_volatility * 100,
-          risk: item.price_volatility > 0.2 ? 'high' as const : 'medium' as const
+          risk: item.price_volatility > 0.2 ? ('high' as const) : ('medium' as const),
         });
       }
     }
@@ -674,7 +698,7 @@ export class PredictiveAnalyticsEngine {
     return {
       currentTrends,
       priceForecasts,
-      marketOpportunities
+      marketOpportunities,
     };
   }
 
@@ -709,15 +733,15 @@ export class PredictiveAnalyticsEngine {
       demandDrivers: [
         { factor: 'Seasonality', impact: 0.3, confidence: 0.8 },
         { factor: 'Market Trends', impact: 0.2, confidence: 0.6 },
-        { factor: 'Economic Factors', impact: 0.15, confidence: 0.5 }
+        { factor: 'Economic Factors', impact: 0.15, confidence: 0.5 },
       ],
       emergingTrends: [
         {
           pattern: 'Increased demand volatility',
           strength: 0.7,
-          items: Object.keys(seasonalPatterns).slice(0, 5)
-        }
-      ]
+          items: Object.keys(seasonalPatterns).slice(0, 5),
+        },
+      ],
     };
   }
 
@@ -760,7 +784,7 @@ export class PredictiveAnalyticsEngine {
         riskLevel,
         riskFactors,
         mitigation: riskLevel === 'low' ? [] : ['Increase monitoring', 'Develop alternatives'],
-        impact: riskLevel === 'critical' ? 0.8 : riskLevel === 'high' ? 0.6 : 0.3
+        impact: riskLevel === 'critical' ? 0.8 : riskLevel === 'high' ? 0.6 : 0.3,
       });
 
       performanceTrends.push({
@@ -769,15 +793,15 @@ export class PredictiveAnalyticsEngine {
         metrics: {
           delivery: supplier.on_time_delivery_rate || 0,
           quality: supplier.quality_acceptance_rate || 0,
-          response: supplier.response_time_hours || 0
-        }
+          response: supplier.response_time_hours || 0,
+        },
       });
     });
 
     return {
       riskAssessment,
       performanceTrends,
-      alternativeSuppliers: [] // Would be populated with actual alternative analysis
+      alternativeSuppliers: [], // Would be populated with actual alternative analysis
     };
   }
 
@@ -803,7 +827,6 @@ export class PredictiveAnalyticsEngine {
 
       await this.updateModel(model);
       return true;
-
     } catch (error) {
       console.error('Model retraining error:', error);
       model.status = 'error';
@@ -813,19 +836,25 @@ export class PredictiveAnalyticsEngine {
   }
 
   private async updateModel(model: PredictiveModel): Promise<void> {
-    await this.db.query(`
+    await this.db.query(
+      `
       UPDATE predictive_models
       SET accuracy = $1, last_trained = $2, next_retraining = $3, status = $4
       WHERE id = $5
-    `, [model.accuracy, model.lastTrained, model.nextRetraining, model.status, model.id]);
+    `,
+      [model.accuracy, model.lastTrained, model.nextRetraining, model.status, model.id]
+    );
   }
 
   private async updateModelStatus(modelId: string, status: string): Promise<void> {
-    await this.db.query(`
+    await this.db.query(
+      `
       UPDATE predictive_models
       SET status = $1, updated_at = NOW()
       WHERE id = $2
-    `, [status, modelId]);
+    `,
+      [status, modelId]
+    );
   }
 
   getActiveModels(): PredictiveModel[] {
@@ -838,12 +867,12 @@ export class PredictiveAnalyticsEngine {
     return {
       accuracy: model?.accuracy || 0,
       predictions: 0, // Would be counted from database
-      errors: 0      // Would be counted from database
+      errors: 0, // Would be counted from database
     };
   }
 }
 
 // Export the predictive analytics engine
 export const predictiveAnalytics = {
-  engine: (db: Pool) => new PredictiveAnalyticsEngine(db)
+  engine: (db: Pool) => new PredictiveAnalyticsEngine(db),
 };

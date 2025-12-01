@@ -3,7 +3,7 @@
  * Manage allowed IP addresses and ranges for enhanced security
  */
 
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Shield, Plus, Edit, Trash2, Globe, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -31,7 +31,7 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
     ipAddress: '',
     description: '',
     type: 'single' as 'single' | 'range' | 'cidr',
-    status: 'active' as 'active' | 'disabled'
+    status: 'active' as 'active' | 'disabled',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,13 +39,13 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
     onAdd({
       ...formData,
       createdBy: 'current-user', // Replace with actual user
-      location: 'Unknown' // You could add geolocation lookup here
+      location: 'Unknown', // You could add geolocation lookup here
     });
     setFormData({
       ipAddress: '',
       description: '',
       type: 'single',
-      status: 'active'
+      status: 'active',
     });
     onClose();
   };
@@ -53,50 +53,41 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="bg-opacity-50 fixed inset-0 z-50 h-full w-full overflow-y-auto bg-gray-600">
+      <div className="relative top-20 mx-auto w-96 rounded-md border bg-white p-5 shadow-lg">
         <div className="mt-3">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900">Add IP Address</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               ×
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="add-ip-address"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="add-ip-address" className="block text-sm font-medium text-gray-700">
                 IP Address/Range
               </label>
               <input
                 id="add-ip-address"
                 type="text"
                 value={formData.ipAddress}
-                onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
+                onChange={e => setFormData({ ...formData, ipAddress: e.target.value })}
                 placeholder="192.168.1.1 or 192.168.1.0/24"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label
-                htmlFor="add-ip-type"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="add-ip-type" className="block text-sm font-medium text-gray-700">
                 Type
               </label>
               <select
                 id="add-ip-type"
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as unknown })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={e => setFormData({ ...formData, type: e.target.value as unknown })}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="single">Single IP</option>
                 <option value="range">IP Range</option>
@@ -115,25 +106,22 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
                 id="add-ip-description"
                 type="text"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Office network, VPN, etc."
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label
-                htmlFor="add-ip-status"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="add-ip-status" className="block text-sm font-medium text-gray-700">
                 Status
               </label>
               <select
                 id="add-ip-status"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as unknown })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={e => setFormData({ ...formData, status: e.target.value as unknown })}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="active">Active</option>
                 <option value="disabled">Disabled</option>
@@ -144,13 +132,13 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
               >
                 Add IP Address
               </button>
@@ -174,7 +162,7 @@ export default function IPWhitelistPage() {
       lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000),
       status: 'active',
       type: 'cidr',
-      location: 'Johannesburg, South Africa'
+      location: 'Johannesburg, South Africa',
     },
     {
       id: '2',
@@ -185,7 +173,7 @@ export default function IPWhitelistPage() {
       lastUsed: new Date(Date.now() - 30 * 60 * 1000),
       status: 'active',
       type: 'single',
-      location: 'Cape Town, South Africa'
+      location: 'Cape Town, South Africa',
     },
     {
       id: '3',
@@ -196,7 +184,7 @@ export default function IPWhitelistPage() {
       lastUsed: new Date(Date.now() - 4 * 60 * 60 * 1000),
       status: 'active',
       type: 'cidr',
-      location: 'Durban, South Africa'
+      location: 'Durban, South Africa',
     },
     {
       id: '4',
@@ -207,15 +195,15 @@ export default function IPWhitelistPage() {
       lastUsed: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
       status: 'disabled',
       type: 'single',
-      location: 'Pretoria, South Africa'
-    }
+      location: 'Pretoria, South Africa',
+    },
   ]);
 
   const handleAddIP = (newEntry: Omit<IPWhitelistEntry, 'id' | 'createdAt' | 'lastUsed'>) => {
     const entry: IPWhitelistEntry = {
       ...newEntry,
       id: Date.now().toString(),
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     setIpEntries([...ipEntries, entry]);
   };
@@ -225,11 +213,13 @@ export default function IPWhitelistPage() {
   };
 
   const toggleStatus = (id: string) => {
-    setIpEntries(ipEntries.map(entry =>
-      entry.id === id
-        ? { ...entry, status: entry.status === 'active' ? 'disabled' : 'active' }
-        : entry
-    ));
+    setIpEntries(
+      ipEntries.map(entry =>
+        entry.id === id
+          ? { ...entry, status: entry.status === 'active' ? 'disabled' : 'active' }
+          : entry
+      )
+    );
   };
 
   const formatDate = (date: Date) => {
@@ -238,7 +228,7 @@ export default function IPWhitelistPage() {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -262,11 +252,11 @@ export default function IPWhitelistPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Shield className="h-8 w-8 text-blue-600 mr-3" />
+                <Shield className="mr-3 h-8 w-8 text-blue-600" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">IP Whitelist</h1>
                   <p className="mt-1 text-sm text-gray-600">
@@ -276,9 +266,9 @@ export default function IPWhitelistPage() {
               </div>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add IP Address
               </button>
             </div>
@@ -287,10 +277,10 @@ export default function IPWhitelistPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -298,19 +288,15 @@ export default function IPWhitelistPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Active IPs
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
-                      {activeEntries.length}
-                    </dd>
+                    <dt className="truncate text-sm font-medium text-gray-500">Active IPs</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{activeEntries.length}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -318,9 +304,7 @@ export default function IPWhitelistPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Disabled IPs
-                    </dt>
+                    <dt className="truncate text-sm font-medium text-gray-500">Disabled IPs</dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {disabledEntries.length}
                     </dd>
@@ -330,7 +314,7 @@ export default function IPWhitelistPage() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -338,12 +322,8 @@ export default function IPWhitelistPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Entries
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
-                      {ipEntries.length}
-                    </dd>
+                    <dt className="truncate text-sm font-medium text-gray-500">Total Entries</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{ipEntries.length}</dd>
                   </dl>
                 </div>
               </div>
@@ -352,8 +332,8 @@ export default function IPWhitelistPage() {
         </div>
 
         {/* IP Whitelist Table */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="rounded-lg bg-white shadow">
+          <div className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               Whitelisted IP Addresses
             </h3>
@@ -362,31 +342,31 @@ export default function IPWhitelistPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     IP Address
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Location
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Last Used
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {ipEntries.map((entry) => (
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {ipEntries.map(entry => (
                   <tr key={entry.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -397,27 +377,31 @@ export default function IPWhitelistPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        entry.type === 'single' ? 'bg-blue-100 text-blue-800' :
-                        entry.type === 'range' ? 'bg-green-100 text-green-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          entry.type === 'single'
+                            ? 'bg-blue-100 text-blue-800'
+                            : entry.type === 'range'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-purple-100 text-purple-800'
+                        }`}
+                      >
                         {entry.type.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                       {entry.description}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                       {entry.location}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                       {entry.lastUsed ? formatDate(entry.lastUsed) : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => toggleStatus(entry.id)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           entry.status === 'active'
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -426,7 +410,7 @@ export default function IPWhitelistPage() {
                         {entry.status === 'active' ? 'Active' : 'Disabled'}
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                       <div className="flex space-x-2">
                         <button className="text-blue-600 hover:text-blue-500">
                           <Edit className="h-4 w-4" />

@@ -70,14 +70,14 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
     updateFilter('status', newStatuses.length > 0 ? newStatuses : undefined);
   };
 
-  const activeFilterCount = Object.values(filters).filter(v =>
-    v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : true)
+  const activeFilterCount = Object.values(filters).filter(
+    v => v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : true)
   ).length;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
       <div
-        className="flex items-center justify-between p-4 cursor-pointer"
+        className="flex cursor-pointer items-center justify-between p-4"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
@@ -94,7 +94,7 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onClearFilters();
               }}
@@ -112,20 +112,18 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
       </div>
 
       {isExpanded && (
-        <div className="p-4 pt-0 space-y-6 border-t border-gray-200">
+        <div className="space-y-6 border-t border-gray-200 p-4 pt-0">
           {/* Segment Filter */}
           <div>
-            <p className="block text-sm font-medium text-gray-700 mb-2">
-              Segment
-            </p>
+            <p className="mb-2 block text-sm font-medium text-gray-700">Segment</p>
             <div className="flex flex-wrap gap-2">
               {SEGMENT_OPTIONS.map(option => (
                 <button
                   key={option.value}
                   onClick={() => toggleSegment(option.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
                     filters.segment?.includes(option.value)
-                      ? option.color + ' ring-2 ring-offset-2 ring-blue-500'
+                      ? option.color + ' ring-2 ring-blue-500 ring-offset-2'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -137,17 +135,15 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Status Filter */}
           <div>
-            <p className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </p>
+            <p className="mb-2 block text-sm font-medium text-gray-700">Status</p>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map(option => (
                 <button
                   key={option.value}
                   onClick={() => toggleStatus(option.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
                     filters.status?.includes(option.value)
-                      ? option.color + ' ring-2 ring-offset-2 ring-blue-500'
+                      ? option.color + ' ring-2 ring-blue-500 ring-offset-2'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -159,17 +155,20 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Lifetime Value Range */}
           <div>
-            <p className="block text-sm font-medium text-gray-700 mb-2">
-              Lifetime Value
-            </p>
+            <p className="mb-2 block text-sm font-medium text-gray-700">Lifetime Value</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input
                   type="number"
                   placeholder="Min ($)"
                   value={filters.lifetimeValueMin || ''}
-                  onChange={(e) => updateFilter('lifetimeValueMin', e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e =>
+                    updateFilter(
+                      'lifetimeValueMin',
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -177,8 +176,13 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
                   type="number"
                   placeholder="Max ($)"
                   value={filters.lifetimeValueMax || ''}
-                  onChange={(e) => updateFilter('lifetimeValueMax', e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e =>
+                    updateFilter(
+                      'lifetimeValueMax',
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -186,24 +190,22 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Acquisition Date Range */}
           <div>
-            <p className="block text-sm font-medium text-gray-700 mb-2">
-              Acquisition Date
-            </p>
+            <p className="mb-2 block text-sm font-medium text-gray-700">Acquisition Date</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input
                   type="date"
                   value={filters.acquisitionDateFrom || ''}
-                  onChange={(e) => updateFilter('acquisitionDateFrom', e.target.value || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e => updateFilter('acquisitionDateFrom', e.target.value || undefined)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <input
                   type="date"
                   value={filters.acquisitionDateTo || ''}
-                  onChange={(e) => updateFilter('acquisitionDateTo', e.target.value || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e => updateFilter('acquisitionDateTo', e.target.value || undefined)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -211,24 +213,22 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Last Interaction Date Range */}
           <div>
-            <p className="block text-sm font-medium text-gray-700 mb-2">
-              Last Interaction
-            </p>
+            <p className="mb-2 block text-sm font-medium text-gray-700">Last Interaction</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input
                   type="date"
                   value={filters.lastInteractionFrom || ''}
-                  onChange={(e) => updateFilter('lastInteractionFrom', e.target.value || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e => updateFilter('lastInteractionFrom', e.target.value || undefined)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <input
                   type="date"
                   value={filters.lastInteractionTo || ''}
-                  onChange={(e) => updateFilter('lastInteractionTo', e.target.value || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e => updateFilter('lastInteractionTo', e.target.value || undefined)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>

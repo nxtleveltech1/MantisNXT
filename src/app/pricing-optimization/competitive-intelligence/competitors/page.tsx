@@ -213,15 +213,17 @@ export default function CompetitorsPage() {
       const data = XLSX.utils.sheet_to_json(worksheet);
 
       // Map to competitor format
-      const competitors = data.map((row: unknown) => {
-        const r = row as Record<string, unknown>;
-        return {
-          company_name: String(r['Company Name'] || r['company_name'] || ''),
-          website_url: String(r['Website URL'] || r['website_url'] || ''),
-          default_currency: String(r['Currency'] || r['default_currency'] || 'USD'),
-          notes: String(r['Notes'] || r['notes'] || ''),
-        };
-      }).filter(c => c.company_name);
+      const competitors = data
+        .map((row: unknown) => {
+          const r = row as Record<string, unknown>;
+          return {
+            company_name: String(r['Company Name'] || r['company_name'] || ''),
+            website_url: String(r['Website URL'] || r['website_url'] || ''),
+            default_currency: String(r['Currency'] || r['default_currency'] || 'USD'),
+            notes: String(r['Notes'] || r['notes'] || ''),
+          };
+        })
+        .filter(c => c.company_name);
 
       // Bulk import
       const response = await fetch('/api/v1/pricing-intel/competitors/bulk-import', {
@@ -259,7 +261,10 @@ export default function CompetitorsPage() {
       title="Competitor Management"
       breadcrumbs={[
         { label: 'Pricing Optimization', href: '/pricing-optimization' },
-        { label: 'Competitive Intelligence', href: '/pricing-optimization/competitive-intelligence' },
+        {
+          label: 'Competitive Intelligence',
+          href: '/pricing-optimization/competitive-intelligence',
+        },
         { label: 'Competitors' },
       ]}
     >
@@ -297,7 +302,7 @@ export default function CompetitorsPage() {
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : competitors && competitors.length > 0 ? (
               <Table>
@@ -311,18 +316,16 @@ export default function CompetitorsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {competitors.map((competitor) => (
+                  {competitors.map(competitor => (
                     <TableRow key={competitor.competitor_id}>
-                      <TableCell className="font-medium">
-                        {competitor.company_name}
-                      </TableCell>
+                      <TableCell className="font-medium">{competitor.company_name}</TableCell>
                       <TableCell>
                         {competitor.website_url ? (
                           <a
                             href={competitor.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-primary hover:underline"
+                            className="text-primary flex items-center gap-1 hover:underline"
                           >
                             {competitor.website_url}
                             <ExternalLink className="h-3 w-3" />
@@ -331,9 +334,7 @@ export default function CompetitorsPage() {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {competitor.default_currency || 'USD'}
-                      </TableCell>
+                      <TableCell>{competitor.default_currency || 'USD'}</TableCell>
                       <TableCell>
                         <Badge variant={competitor.is_active !== false ? 'default' : 'secondary'}>
                           {competitor.is_active !== false ? 'Active' : 'Inactive'}
@@ -353,7 +354,7 @@ export default function CompetitorsPage() {
                             size="sm"
                             onClick={() => setDeletingCompetitor(competitor)}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -363,9 +364,9 @@ export default function CompetitorsPage() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">No competitors yet</p>
-                <p className="text-sm text-muted-foreground mb-4">
+                <AlertCircle className="text-muted-foreground mb-4 h-12 w-12" />
+                <p className="mb-2 text-lg font-medium">No competitors yet</p>
+                <p className="text-muted-foreground mb-4 text-sm">
                   Add your first competitor to start tracking pricing intelligence
                 </p>
                 <Button onClick={() => handleOpenDialog()}>
@@ -381,9 +382,7 @@ export default function CompetitorsPage() {
         <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>
-                {editingCompetitor ? 'Edit Competitor' : 'Add Competitor'}
-              </DialogTitle>
+              <DialogTitle>{editingCompetitor ? 'Edit Competitor' : 'Add Competitor'}</DialogTitle>
               <DialogDescription>
                 {editingCompetitor
                   ? 'Update competitor information'
@@ -466,8 +465,10 @@ export default function CompetitorsPage() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
                       </>
+                    ) : editingCompetitor ? (
+                      'Update'
                     ) : (
-                      editingCompetitor ? 'Update' : 'Create'
+                      'Create'
                     )}
                   </Button>
                 </div>
@@ -482,7 +483,8 @@ export default function CompetitorsPage() {
             <DialogHeader>
               <DialogTitle>Delete Competitor</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete {deletingCompetitor?.company_name}? This action cannot be undone.
+                Are you sure you want to delete {deletingCompetitor?.company_name}? This action
+                cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-end gap-2 pt-4">
@@ -522,32 +524,37 @@ export default function CompetitorsPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div
-                className="border-2 border-dashed rounded-lg p-8 text-center"
-                onDrop={(e) => {
+                className="rounded-lg border-2 border-dashed p-8 text-center"
+                onDrop={e => {
                   e.preventDefault();
                   const file = e.dataTransfer.files[0];
-                  if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                  if (
+                    file &&
+                    (file.name.endsWith('.csv') ||
+                      file.name.endsWith('.xlsx') ||
+                      file.name.endsWith('.xls'))
+                  ) {
                     setImportFile(file);
                   }
                 }}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={e => e.preventDefault()}
               >
                 {importFile ? (
                   <div className="space-y-2">
-                    <FileSpreadsheet className="h-12 w-12 text-green-600 mx-auto" />
+                    <FileSpreadsheet className="mx-auto h-12 w-12 text-green-600" />
                     <div className="font-medium">{importFile.name}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {(importFile.size / 1024).toFixed(2)} KB
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setImportFile(null)}>
-                      <X className="h-4 w-4 mr-2" />
+                      <X className="mr-2 h-4 w-4" />
                       Remove
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <p className="text-sm text-muted-foreground">
+                    <Upload className="text-muted-foreground mx-auto h-12 w-12" />
+                    <p className="text-muted-foreground text-sm">
                       Drag and drop a CSV or Excel file here, or click to browse
                     </p>
                     <input
@@ -555,7 +562,7 @@ export default function CompetitorsPage() {
                       accept=".csv,.xlsx,.xls"
                       className="hidden"
                       id="bulk-import-file"
-                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                      onChange={e => setImportFile(e.target.files?.[0] || null)}
                     />
                     <Button
                       variant="outline"
@@ -566,9 +573,9 @@ export default function CompetitorsPage() {
                   </div>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium mb-1">Expected columns:</p>
-                <ul className="list-disc list-inside space-y-1">
+              <div className="text-muted-foreground text-sm">
+                <p className="mb-1 font-medium">Expected columns:</p>
+                <ul className="list-inside list-disc space-y-1">
                   <li>Company Name (required)</li>
                   <li>Website URL (optional)</li>
                   <li>Currency (optional, defaults to USD)</li>
@@ -607,4 +614,3 @@ export default function CompetitorsPage() {
     </AppLayout>
   );
 }
-

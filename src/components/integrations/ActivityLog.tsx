@@ -6,11 +6,31 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-
-import { AlertCircle, CheckCircle2, Clock, Download, Loader2, Search, AlertTriangle } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  Search,
+  AlertTriangle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ActivityLogEntry {
@@ -125,7 +145,10 @@ const EntityTypeBadge = React.memo(({ type }: { type: string }) => {
 
   return (
     <span
-      className={cn('inline-block px-2 py-1 rounded text-xs font-medium', colorMap[type] || colorMap.products)}
+      className={cn(
+        'inline-block rounded px-2 py-1 text-xs font-medium',
+        colorMap[type] || colorMap.products
+      )}
     >
       {type.charAt(0).toUpperCase() + type.slice(1)}
     </span>
@@ -164,13 +187,13 @@ const ActivityRow = React.memo(
           </Badge>
         </TableCell>
         <TableCell className="text-right text-sm">{entry.recordCount}</TableCell>
-        <TableCell className="text-right text-sm text-muted-foreground">
+        <TableCell className="text-muted-foreground text-right text-sm">
           {formatDuration(entry.duration)}
         </TableCell>
         <TableCell>
           {entry.errorMessage && (
             <span
-              className="text-xs text-muted-foreground truncate max-w-xs block"
+              className="text-muted-foreground block max-w-xs truncate text-xs"
               title={entry.errorMessage}
             >
               {entry.errorMessage.substring(0, 40)}...
@@ -200,8 +223,8 @@ const DetailsModal = React.memo(
     const statusInfo = getStatusInfo(entry.status);
 
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div>
@@ -216,12 +239,7 @@ const DetailsModal = React.memo(
                   {new Date(entry.timestamp).toLocaleString()}
                 </CardDescription>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                aria-label="Close details"
-              >
+              <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close details">
                 ✕
               </Button>
             </div>
@@ -231,19 +249,21 @@ const DetailsModal = React.memo(
             {/* Basic info */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Action</p>
+                <p className="text-muted-foreground text-sm">Action</p>
                 <p className="font-medium capitalize">{entry.action}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Entity Type</p>
+                <p className="text-muted-foreground text-sm">Entity Type</p>
                 <p className="font-medium">{entry.entityType}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sync Type</p>
-                <p className="font-medium">{entry.syncType === 'woocommerce' ? 'WooCommerce' : 'Odoo'}</p>
+                <p className="text-muted-foreground text-sm">Sync Type</p>
+                <p className="font-medium">
+                  {entry.syncType === 'woocommerce' ? 'WooCommerce' : 'Odoo'}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Duration</p>
+                <p className="text-muted-foreground text-sm">Duration</p>
                 <p className="font-medium">{formatDuration(entry.duration)}</p>
               </div>
             </div>
@@ -253,34 +273,34 @@ const DetailsModal = React.memo(
               entry.updatedCount !== undefined ||
               entry.deletedCount !== undefined) && (
               <div className="border-t pt-4">
-                <p className="text-sm font-semibold mb-3">Summary</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <p className="mb-3 text-sm font-semibold">Summary</p>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-muted-foreground text-sm">Total</p>
                     <p className="text-2xl font-bold">{entry.recordCount}</p>
                   </div>
                   {entry.createdCount !== undefined && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Created</p>
+                      <p className="text-muted-foreground text-sm">Created</p>
                       <p className="text-2xl font-bold text-green-600">{entry.createdCount}</p>
                     </div>
                   )}
                   {entry.updatedCount !== undefined && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Updated</p>
+                      <p className="text-muted-foreground text-sm">Updated</p>
                       <p className="text-2xl font-bold text-blue-600">{entry.updatedCount}</p>
                     </div>
                   )}
                   {entry.deletedCount !== undefined && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Deleted</p>
+                      <p className="text-muted-foreground text-sm">Deleted</p>
                       <p className="text-2xl font-bold text-amber-600">{entry.deletedCount}</p>
                     </div>
                   )}
                   {entry.failedCount !== undefined && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Failed</p>
-                      <p className="text-2xl font-bold text-destructive">{entry.failedCount}</p>
+                      <p className="text-muted-foreground text-sm">Failed</p>
+                      <p className="text-destructive text-2xl font-bold">{entry.failedCount}</p>
                     </div>
                   )}
                 </div>
@@ -289,14 +309,14 @@ const DetailsModal = React.memo(
 
             {/* Error message */}
             {entry.errorMessage && (
-              <div className="border-t pt-4 bg-destructive/5 border border-destructive/20 p-3 rounded">
-                <p className="text-sm font-semibold text-destructive mb-2">Error</p>
-                <p className="text-sm text-muted-foreground break-words">{entry.errorMessage}</p>
+              <div className="bg-destructive/5 border-destructive/20 rounded border border-t p-3 pt-4">
+                <p className="text-destructive mb-2 text-sm font-semibold">Error</p>
+                <p className="text-muted-foreground text-sm break-words">{entry.errorMessage}</p>
               </div>
             )}
 
             {/* Close button */}
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end border-t pt-4">
               <Button variant="outline" onClick={onClose}>
                 Close
               </Button>
@@ -324,49 +344,57 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
   // Load initial data and set up polling
   useEffect(() => {
-    let cancelled = false
-    let lastErrorKey = ''
+    let cancelled = false;
+    let lastErrorKey = '';
     async function loadData() {
-      setLoading(true)
+      setLoading(true);
       try {
-        const res = await fetch(`/api/v1/integrations/sync/activity?orgId=${orgId}`)
+        const res = await fetch(`/api/v1/integrations/sync/activity?orgId=${orgId}`);
         if (!res.ok) {
-          const body = await res.json().catch(() => ({} as unknown))
-          const key = `${res.status}:${body?.error || ''}`
+          const body = await res.json().catch(() => ({}) as unknown);
+          const key = `${res.status}:${body?.error || ''}`;
           // stop repeated hammering when circuit is open
           if (key === lastErrorKey) {
-            setLoading(false)
-            return
+            setLoading(false);
+            return;
           }
-          lastErrorKey = key
-          throw new Error(body?.error || `HTTP ${res.status}`)
+          lastErrorKey = key;
+          throw new Error(body?.error || `HTTP ${res.status}`);
         }
-        const json = await res.json()
+        const json = await res.json();
         const entries = (json.data || []).map((row: unknown) => {
-          const a = String(row.action || '').toLowerCase()
-          const action = a.includes('preview') ? 'preview' : a.includes('orchestrate') ? 'orchestrate' : a.includes('cancel') ? 'cancel' : 'sync'
+          const a = String(row.action || '').toLowerCase();
+          const action = a.includes('preview')
+            ? 'preview'
+            : a.includes('orchestrate')
+              ? 'orchestrate'
+              : a.includes('cancel')
+                ? 'cancel'
+                : 'sync';
           return {
             id: String(row.id ?? crypto.randomUUID()),
             timestamp: row.started_at || row.created_at || new Date().toISOString(),
             action,
             entityType: row.entity_type || 'unknown',
             syncType: row.sync_type || 'unknown',
-            status: (row.status || 'completed'),
+            status: row.status || 'completed',
             recordCount: row.record_count || 0,
             duration: row.duration_ms || 0,
             errorMessage: row.error_message || undefined,
-          }
-        })
-        if (!cancelled) setEntries(entries)
+          };
+        });
+        if (!cancelled) setEntries(entries);
       } catch (e: unknown) {
-        if (!cancelled) setError(e?.message || 'Failed to load activity')
+        if (!cancelled) setError(e?.message || 'Failed to load activity');
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
-    loadData()
-    return () => { cancelled = true }
-  }, [orgId])
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   // Filter entries based on criteria
   const filteredEntries = useMemo(() => {
@@ -375,7 +403,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
     // Search filter
     if (searchTerm) {
       result = result.filter(
-        (entry) =>
+        entry =>
           entry.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
           entry.entityType.toLowerCase().includes(searchTerm.toLowerCase()) ||
           entry.errorMessage?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -384,12 +412,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
     // Status filter
     if (statusFilter !== 'all') {
-      result = result.filter((entry) => entry.status === statusFilter);
+      result = result.filter(entry => entry.status === statusFilter);
     }
 
     // Entity type filter
     if (entityFilter !== 'all') {
-      result = result.filter((entry) => entry.entityType === entityFilter);
+      result = result.filter(entry => entry.entityType === entityFilter);
     }
 
     // Date filter
@@ -401,7 +429,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
     };
 
     if (dateFilter !== 'all' && filters[dateFilter]) {
-      result = result.filter((entry) => now - new Date(entry.timestamp).getTime() <= filters[dateFilter]);
+      result = result.filter(
+        entry => now - new Date(entry.timestamp).getTime() <= filters[dateFilter]
+      );
     }
 
     // Sort by timestamp descending (newest first)
@@ -431,7 +461,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
       'Error Message',
     ];
 
-    const rows = filteredEntries.map((entry) => [
+    const rows = filteredEntries.map(entry => [
       entry.timestamp,
       entry.action,
       entry.entityType,
@@ -445,9 +475,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
       `"${(entry.errorMessage || '').replace(/"/g, '""')}"`,
     ]);
 
-    const csv = [headers, ...rows]
-      .map((row) => row.join(','))
-      .join('\n');
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -466,19 +494,19 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
             {/* Search */}
             <div className="lg:col-span-2">
-              <Label htmlFor="search" className="text-sm mb-2 block">
+              <Label htmlFor="search" className="mb-2 block text-sm">
                 Search
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
                 <Input
                   id="search"
                   placeholder="Search by ID, entity type..."
                   value={searchTerm}
-                  onChange={(e) => {
+                  onChange={e => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
@@ -489,13 +517,16 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
             {/* Status filter */}
             <div>
-              <Label htmlFor="status" className="text-sm mb-2 block">
+              <Label htmlFor="status" className="mb-2 block text-sm">
                 Status
               </Label>
-              <Select value={statusFilter} onValueChange={(value) => {
-                setStatusFilter(value);
-                setCurrentPage(1);
-              }}>
+              <Select
+                value={statusFilter}
+                onValueChange={value => {
+                  setStatusFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
@@ -511,13 +542,16 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
             {/* Entity type filter */}
             <div>
-              <Label htmlFor="entity" className="text-sm mb-2 block">
+              <Label htmlFor="entity" className="mb-2 block text-sm">
                 Entity Type
               </Label>
-              <Select value={entityFilter} onValueChange={(value) => {
-                setEntityFilter(value);
-                setCurrentPage(1);
-              }}>
+              <Select
+                value={entityFilter}
+                onValueChange={value => {
+                  setEntityFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger id="entity">
                   <SelectValue />
                 </SelectTrigger>
@@ -533,13 +567,16 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
             {/* Date filter */}
             <div>
-              <Label htmlFor="date" className="text-sm mb-2 block">
+              <Label htmlFor="date" className="mb-2 block text-sm">
                 Date Range
               </Label>
-              <Select value={dateFilter} onValueChange={(value) => {
-                setDateFilter(value);
-                setCurrentPage(1);
-              }}>
+              <Select
+                value={dateFilter}
+                onValueChange={value => {
+                  setDateFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger id="date">
                   <SelectValue />
                 </SelectTrigger>
@@ -578,21 +615,19 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
         <CardContent>
           {error && (
-            <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-md border px-4 py-3 text-sm">
               {error}
             </div>
           )}
           {loading && !entries.length ? (
-            <div className="flex items-center justify-center h-40">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
           ) : filteredEntries.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No activity logs found
-            </div>
+            <div className="text-muted-foreground py-8 text-center">No activity logs found</div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-lg border overflow-hidden">
+              <div className="overflow-hidden rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -606,7 +641,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedEntries.map((entry) => (
+                    {paginatedEntries.map(entry => (
                       <ActivityRow
                         key={entry.id}
                         entry={entry}
@@ -619,10 +654,13 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
               {/* Pagination */}
               <div className="flex items-center justify-between">
-                <Select value={itemsPerPage.toString()} onValueChange={(v) => {
-                  setItemsPerPage(parseInt(v));
-                  setCurrentPage(1);
-                }}>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={v => {
+                    setItemsPerPage(parseInt(v));
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
@@ -637,18 +675,18 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                   >
                     Previous
                   </Button>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                   >
                     Next

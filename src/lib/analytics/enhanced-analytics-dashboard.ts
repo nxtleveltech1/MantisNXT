@@ -165,17 +165,22 @@ export class AIInsightsGenerator {
         anomalyInsights,
         opportunityInsights,
         riskInsights,
-        predictionInsights
+        predictionInsights,
       ] = await Promise.all([
         this.generateTrendInsights(organizationId, context),
         this.generateAnomalyInsights(organizationId, context),
         this.generateOpportunityInsights(organizationId, context),
         this.generateRiskInsights(organizationId, context),
-        this.generatePredictionInsights(organizationId, context)
+        this.generatePredictionInsights(organizationId, context),
       ]);
 
-      insights.push(...trendInsights, ...anomalyInsights, ...opportunityInsights,
-                   ...riskInsights, ...predictionInsights);
+      insights.push(
+        ...trendInsights,
+        ...anomalyInsights,
+        ...opportunityInsights,
+        ...riskInsights,
+        ...predictionInsights
+      );
 
       // Sort by priority and confidence
       return insights
@@ -186,14 +191,16 @@ export class AIInsightsGenerator {
           return bScore - aScore;
         })
         .slice(0, context.limit || 20);
-
     } catch (error) {
       console.error('Error generating AI insights:', error);
       return [];
     }
   }
 
-  private async generateTrendInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
+  private async generateTrendInsights(
+    organizationId: string,
+    context: unknown
+  ): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Supplier performance trends
@@ -216,7 +223,8 @@ export class AIInsightsGenerator {
       const data = supplierTrendResult.rows;
       const recent = data.slice(-2);
       const trend = this.calculateTrend(recent.map(r => r.avg_rating));
-      const changePercent = ((recent[1].avg_rating - recent[0].avg_rating) / recent[0].avg_rating) * 100;
+      const changePercent =
+        ((recent[1].avg_rating - recent[0].avg_rating) / recent[0].avg_rating) * 100;
 
       if (Math.abs(changePercent) > 5) {
         insights.push({
@@ -233,30 +241,31 @@ export class AIInsightsGenerator {
             previousValue: recent[0].avg_rating,
             trend: trend as unknown,
             changePercent,
-            context: { evaluationCount: recent[1].evaluation_count }
+            context: { evaluationCount: recent[1].evaluation_count },
           },
 
           visualization: {
             type: 'chart',
             config: { chartType: 'line', showTrend: true },
-            data: data.map(d => ({ x: d.month, y: d.avg_rating }))
+            data: data.map(d => ({ x: d.month, y: d.avg_rating })),
           },
 
           actionable: {
             canAct: true,
-            suggestedActions: trend === 'decreasing' ?
-              ['Review underperforming suppliers', 'Implement supplier development program'] :
-              ['Recognize top performers', 'Expand partnerships with high performers'],
+            suggestedActions:
+              trend === 'decreasing'
+                ? ['Review underperforming suppliers', 'Implement supplier development program']
+                : ['Recognize top performers', 'Expand partnerships with high performers'],
             potentialImpact: 'Improved supplier relationships and cost savings',
-            timeline: '2-4 weeks'
+            timeline: '2-4 weeks',
           },
 
           metadata: {
             source: 'supplier_performance_analysis',
             lastUpdated: new Date(),
             refreshInterval: 3600000, // 1 hour
-            accuracy: 0.85
-          }
+            accuracy: 0.85,
+          },
         });
       }
     }
@@ -287,7 +296,8 @@ export class AIInsightsGenerator {
     const inventoryTrendResult = await this.db.query(inventoryTrendQuery, [organizationId]);
 
     inventoryTrendResult.rows.forEach(row => {
-      if (row.avg_turnover > 0.5) { // High turnover
+      if (row.avg_turnover > 0.5) {
+        // High turnover
         insights.push({
           id: `trend_inventory_${row.category}_${Date.now()}`,
           type: 'trend',
@@ -301,28 +311,32 @@ export class AIInsightsGenerator {
             currentValue: row.avg_turnover,
             trend: 'increasing' as unknown,
             changePercent: 0,
-            context: { itemCount: row.item_count, category: row.category }
+            context: { itemCount: row.item_count, category: row.category },
           },
 
           visualization: {
             type: 'gauge',
             config: { min: 0, max: 2, target: 1 },
-            data: [{ value: row.avg_turnover, label: 'Turnover Rate' }]
+            data: [{ value: row.avg_turnover, label: 'Turnover Rate' }],
           },
 
           actionable: {
             canAct: true,
-            suggestedActions: ['Review reorder points', 'Consider JIT inventory', 'Optimize supplier lead times'],
+            suggestedActions: [
+              'Review reorder points',
+              'Consider JIT inventory',
+              'Optimize supplier lead times',
+            ],
             potentialImpact: 'Reduced carrying costs and improved cash flow',
-            timeline: '2-3 weeks'
+            timeline: '2-3 weeks',
           },
 
           metadata: {
             source: 'inventory_turnover_analysis',
             lastUpdated: new Date(),
             refreshInterval: 7200000, // 2 hours
-            accuracy: 0.8
-          }
+            accuracy: 0.8,
+          },
         });
       }
     });
@@ -330,7 +344,10 @@ export class AIInsightsGenerator {
     return insights;
   }
 
-  private async generateAnomalyInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
+  private async generateAnomalyInsights(
+    organizationId: string,
+    context: unknown
+  ): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Detect price anomalies
@@ -373,7 +390,7 @@ export class AIInsightsGenerator {
     const priceAnomalyResult = await this.db.query(priceAnomalyQuery, [organizationId]);
 
     priceAnomalyResult.rows.forEach(row => {
-      const deviation = Math.abs(row.current_price - row.avg_price) / row.avg_price * 100;
+      const deviation = (Math.abs(row.current_price - row.avg_price) / row.avg_price) * 100;
       const isIncrease = row.current_price > row.avg_price;
 
       insights.push({
@@ -388,13 +405,13 @@ export class AIInsightsGenerator {
         data: {
           currentValue: row.current_price,
           previousValue: row.avg_price,
-          trend: isIncrease ? 'increasing' : 'decreasing' as unknown,
+          trend: isIncrease ? 'increasing' : ('decreasing' as unknown),
           changePercent: isIncrease ? deviation : -deviation,
           context: {
             sku: row.sku,
             category: row.category,
-            volatility: row.price_volatility
-          }
+            volatility: row.price_volatility,
+          },
         },
 
         visualization: {
@@ -402,8 +419,8 @@ export class AIInsightsGenerator {
           config: { showThreshold: true, threshold: row.avg_price },
           data: [
             { x: 'Historical Avg', y: row.avg_price },
-            { x: 'Current', y: row.current_price }
-          ]
+            { x: 'Current', y: row.current_price },
+          ],
         },
 
         actionable: {
@@ -412,25 +429,30 @@ export class AIInsightsGenerator {
             'Verify price change with supplier',
             'Check for market conditions impact',
             'Review contract terms',
-            'Consider alternative suppliers'
+            'Consider alternative suppliers',
           ],
-          potentialImpact: isIncrease ? 'Cost increase mitigation' : 'Potential cost savings opportunity',
-          timeline: '1-2 days'
+          potentialImpact: isIncrease
+            ? 'Cost increase mitigation'
+            : 'Potential cost savings opportunity',
+          timeline: '1-2 days',
         },
 
         metadata: {
           source: 'price_anomaly_detection',
           lastUpdated: new Date(),
           refreshInterval: 3600000, // 1 hour
-          accuracy: 0.9
-        }
+          accuracy: 0.9,
+        },
       });
     });
 
     return insights;
   }
 
-  private async generateOpportunityInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
+  private async generateOpportunityInsights(
+    organizationId: string,
+    context: unknown
+  ): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Volume discount opportunities
@@ -471,14 +493,14 @@ export class AIInsightsGenerator {
           context: {
             orderCount: row.order_count,
             avgOrderValue: row.avg_order_value,
-            potentialSavings
-          }
+            potentialSavings,
+          },
         },
 
         visualization: {
           type: 'metric',
           config: { format: 'currency', target: potentialSavings },
-          data: [{ label: 'Potential Savings', value: potentialSavings }]
+          data: [{ label: 'Potential Savings', value: potentialSavings }],
         },
 
         actionable: {
@@ -487,25 +509,28 @@ export class AIInsightsGenerator {
             'Negotiate volume discount terms',
             'Consolidate orders to increase volume',
             'Propose annual contract with guaranteed volumes',
-            'Review competitor pricing for leverage'
+            'Review competitor pricing for leverage',
           ],
           potentialImpact: `Potential annual savings of $${potentialSavings.toLocaleString()}`,
-          timeline: '2-4 weeks'
+          timeline: '2-4 weeks',
         },
 
         metadata: {
           source: 'volume_discount_analysis',
           lastUpdated: new Date(),
           refreshInterval: 86400000, // 24 hours
-          accuracy: 0.75
-        }
+          accuracy: 0.75,
+        },
       });
     });
 
     return insights;
   }
 
-  private async generateRiskInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
+  private async generateRiskInsights(
+    organizationId: string,
+    context: unknown
+  ): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Single source dependency risk
@@ -542,14 +567,14 @@ export class AIInsightsGenerator {
           context: {
             category: row.category,
             itemCount: row.total_items,
-            categoryValue: row.category_value
-          }
+            categoryValue: row.category_value,
+          },
         },
 
         visualization: {
           type: 'gauge',
           config: { min: 0, max: 5, target: 3, warningThreshold: 1 },
-          data: [{ value: 1, label: 'Supplier Count' }]
+          data: [{ value: 1, label: 'Supplier Count' }],
         },
 
         actionable: {
@@ -558,25 +583,28 @@ export class AIInsightsGenerator {
             'Identify alternative suppliers',
             'Conduct supplier market research',
             'Develop backup supplier relationships',
-            'Implement dual sourcing strategy'
+            'Implement dual sourcing strategy',
           ],
           potentialImpact: 'Reduced supply chain risk and improved negotiation power',
-          timeline: '4-8 weeks'
+          timeline: '4-8 weeks',
         },
 
         metadata: {
           source: 'supplier_dependency_analysis',
           lastUpdated: new Date(),
           refreshInterval: 86400000, // 24 hours
-          accuracy: 0.95
-        }
+          accuracy: 0.95,
+        },
       });
     });
 
     return insights;
   }
 
-  private async generatePredictionInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
+  private async generatePredictionInsights(
+    organizationId: string,
+    context: unknown
+  ): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Stockout prediction
@@ -618,7 +646,8 @@ export class AIInsightsGenerator {
       const leadTime = row.avg_lead_time || 7;
       const daysToStockout = row.current_stock / Math.max(row.daily_demand, 0.1);
 
-      if (daysToStockout <= leadTime * 1.5) { // Within 1.5x lead time
+      if (daysToStockout <= leadTime * 1.5) {
+        // Within 1.5x lead time
         const urgency = daysToStockout <= leadTime ? 'critical' : 'high';
 
         insights.push({
@@ -633,13 +662,13 @@ export class AIInsightsGenerator {
           data: {
             currentValue: row.current_stock,
             trend: 'decreasing' as unknown,
-            changePercent: -((leadTime - daysToStockout) / leadTime * 100),
+            changePercent: -(((leadTime - daysToStockout) / leadTime) * 100),
             context: {
               sku: row.sku,
               dailyDemand: row.daily_demand,
               leadTime: leadTime,
-              daysToStockout: Math.round(daysToStockout)
-            }
+              daysToStockout: Math.round(daysToStockout),
+            },
           },
 
           visualization: {
@@ -648,9 +677,9 @@ export class AIInsightsGenerator {
               min: 0,
               max: leadTime * 2,
               target: leadTime,
-              warningThreshold: leadTime * 0.5
+              warningThreshold: leadTime * 0.5,
             },
-            data: [{ value: daysToStockout, label: 'Days to Stockout' }]
+            data: [{ value: daysToStockout, label: 'Days to Stockout' }],
           },
 
           actionable: {
@@ -659,18 +688,18 @@ export class AIInsightsGenerator {
               'Place emergency order',
               'Contact supplier for expedited delivery',
               'Check alternative suppliers',
-              'Consider customer communication if stockout imminent'
+              'Consider customer communication if stockout imminent',
             ],
             potentialImpact: 'Prevent stockout and maintain service levels',
-            timeline: urgency === 'critical' ? 'Immediate' : '1-2 days'
+            timeline: urgency === 'critical' ? 'Immediate' : '1-2 days',
           },
 
           metadata: {
             source: 'stockout_prediction_model',
             lastUpdated: new Date(),
             refreshInterval: 3600000, // 1 hour
-            accuracy: 0.8
-          }
+            accuracy: 0.8,
+          },
         });
       }
     });
@@ -718,7 +747,7 @@ export class SmartDashboardManager {
       layout: config.layout || {
         type: 'grid',
         theme: 'light',
-        breakpoints: { sm: 576, md: 768, lg: 992, xl: 1200 }
+        breakpoints: { sm: 576, md: 768, lg: 992, xl: 1200 },
       },
 
       widgets: config.widgets || (await this.generateDefaultWidgets(organizationId)),
@@ -728,13 +757,13 @@ export class SmartDashboardManager {
         adaptiveLayout: false,
         personalizedContent: true,
         aiRecommendations: true,
-        anomalyDetection: true
+        anomalyDetection: true,
       },
 
       sharing: config.sharing || {
         isPublic: false,
         allowedUsers: [],
-        exportFormats: ['pdf', 'excel', 'png']
+        exportFormats: ['pdf', 'excel', 'png'],
       },
 
       metadata: {
@@ -742,31 +771,33 @@ export class SmartDashboardManager {
         createdAt: new Date(),
         lastModified: new Date(),
         version: 1,
-        tags: config.metadata?.tags || []
-      }
+        tags: config.metadata?.tags || [],
+      },
     };
 
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO smart_dashboards (
           id, name, description, organization_id, layout, widgets,
           intelligence, sharing, metadata, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      `, [
-        dashboard.id,
-        dashboard.name,
-        dashboard.description,
-        dashboard.organizationId,
-        JSON.stringify(dashboard.layout),
-        JSON.stringify(dashboard.widgets),
-        JSON.stringify(dashboard.intelligence),
-        JSON.stringify(dashboard.sharing),
-        JSON.stringify(dashboard.metadata),
-        dashboard.metadata.createdAt
-      ]);
+      `,
+        [
+          dashboard.id,
+          dashboard.name,
+          dashboard.description,
+          dashboard.organizationId,
+          JSON.stringify(dashboard.layout),
+          JSON.stringify(dashboard.widgets),
+          JSON.stringify(dashboard.intelligence),
+          JSON.stringify(dashboard.sharing),
+          JSON.stringify(dashboard.metadata),
+          dashboard.metadata.createdAt,
+        ]
+      );
 
       return dashboardId;
-
     } catch (error) {
       console.error('Error creating dashboard:', error);
       throw new Error('Failed to create dashboard');
@@ -785,24 +816,24 @@ export class SmartDashboardManager {
           dataSource: 'purchase_orders',
           filters: { timeRange: '30d' },
           refreshInterval: 300000,
-          displayOptions: { format: 'currency', trend: true }
+          displayOptions: { format: 'currency', trend: true },
         },
         permissions: {
           view: ['all'],
           edit: ['admin', 'manager'],
-          export: ['admin', 'manager', 'analyst']
+          export: ['admin', 'manager', 'analyst'],
         },
         analytics: {
           aiEnabled: true,
           insights: [],
-          predictions: []
+          predictions: [],
         },
         performance: {
           loadTime: 0,
           lastRefresh: new Date(),
           errorCount: 0,
-          dataQuality: 1.0
-        }
+          dataQuality: 1.0,
+        },
       },
       {
         id: 'chart_supplier_performance',
@@ -816,25 +847,25 @@ export class SmartDashboardManager {
           refreshInterval: 600000,
           displayOptions: {
             chartType: 'line',
-            metrics: ['overall_rating', 'on_time_delivery_rate', 'quality_acceptance_rate']
-          }
+            metrics: ['overall_rating', 'on_time_delivery_rate', 'quality_acceptance_rate'],
+          },
         },
         permissions: {
           view: ['all'],
           edit: ['admin', 'manager'],
-          export: ['all']
+          export: ['all'],
         },
         analytics: {
           aiEnabled: true,
           insights: [],
-          predictions: []
+          predictions: [],
         },
         performance: {
           loadTime: 0,
           lastRefresh: new Date(),
           errorCount: 0,
-          dataQuality: 1.0
-        }
+          dataQuality: 1.0,
+        },
       },
       {
         id: 'insight_ai_recommendations',
@@ -846,24 +877,24 @@ export class SmartDashboardManager {
           dataSource: 'ai_insights',
           filters: { priority: ['high', 'critical'] },
           refreshInterval: 300000,
-          displayOptions: { maxItems: 5, showActions: true }
+          displayOptions: { maxItems: 5, showActions: true },
         },
         permissions: {
           view: ['all'],
           edit: ['admin'],
-          export: ['admin', 'manager']
+          export: ['admin', 'manager'],
         },
         analytics: {
           aiEnabled: true,
           insights: [],
-          predictions: []
+          predictions: [],
         },
         performance: {
           loadTime: 0,
           lastRefresh: new Date(),
           errorCount: 0,
-          dataQuality: 1.0
-        }
+          dataQuality: 1.0,
+        },
       },
       {
         id: 'table_top_suppliers',
@@ -877,24 +908,24 @@ export class SmartDashboardManager {
           refreshInterval: 900000,
           displayOptions: {
             columns: ['name', 'total_spend', 'performance_score', 'risk_level'],
-            sortBy: 'total_spend'
-          }
+            sortBy: 'total_spend',
+          },
         },
         permissions: {
           view: ['all'],
           edit: ['admin', 'manager'],
-          export: ['all']
+          export: ['all'],
         },
         analytics: {
           aiEnabled: false,
-          insights: []
+          insights: [],
         },
         performance: {
           loadTime: 0,
           lastRefresh: new Date(),
           errorCount: 0,
-          dataQuality: 1.0
-        }
+          dataQuality: 1.0,
+        },
       },
       {
         id: 'alert_anomalies',
@@ -906,24 +937,24 @@ export class SmartDashboardManager {
           dataSource: 'anomaly_alerts',
           filters: { status: 'active', severity: ['medium', 'high', 'critical'] },
           refreshInterval: 60000,
-          displayOptions: { groupBy: 'severity', showTimestamp: true }
+          displayOptions: { groupBy: 'severity', showTimestamp: true },
         },
         permissions: {
           view: ['all'],
           edit: ['admin', 'manager'],
-          export: ['admin']
+          export: ['admin'],
         },
         analytics: {
           aiEnabled: true,
-          insights: []
+          insights: [],
         },
         performance: {
           loadTime: 0,
           lastRefresh: new Date(),
           errorCount: 0,
-          dataQuality: 1.0
-        }
-      }
+          dataQuality: 1.0,
+        },
+      },
     ];
 
     return defaultWidgets;
@@ -931,9 +962,12 @@ export class SmartDashboardManager {
 
   async getDashboard(dashboardId: string): Promise<SmartDashboard | null> {
     try {
-      const result = await this.db.query(`
+      const result = await this.db.query(
+        `
         SELECT * FROM smart_dashboards WHERE id = $1
-      `, [dashboardId]);
+      `,
+        [dashboardId]
+      );
 
       if (result.rows.length === 0) return null;
 
@@ -947,9 +981,8 @@ export class SmartDashboardManager {
         widgets: JSON.parse(row.widgets),
         intelligence: JSON.parse(row.intelligence),
         sharing: JSON.parse(row.sharing),
-        metadata: JSON.parse(row.metadata)
+        metadata: JSON.parse(row.metadata),
       };
-
     } catch (error) {
       console.error('Error fetching dashboard:', error);
       return null;
@@ -976,10 +1009,16 @@ export class SmartDashboardManager {
           data = await this.getPurchaseOrderData(organizationId, widget.configuration.filters);
           break;
         case 'supplier_performance':
-          data = await this.getSupplierPerformanceData(organizationId, widget.configuration.filters);
+          data = await this.getSupplierPerformanceData(
+            organizationId,
+            widget.configuration.filters
+          );
           break;
         case 'ai_insights':
-          data = await this.insightsGenerator.generateInsights(organizationId, widget.configuration.filters);
+          data = await this.insightsGenerator.generateInsights(
+            organizationId,
+            widget.configuration.filters
+          );
           break;
         case 'suppliers_spend_ranking':
           data = await this.getSupplierSpendRanking(organizationId, widget.configuration.filters);
@@ -1007,10 +1046,9 @@ export class SmartDashboardManager {
         metadata: {
           loadTime: widget.performance.loadTime,
           dataQuality: widget.performance.dataQuality,
-          lastRefresh: widget.performance.lastRefresh
-        }
+          lastRefresh: widget.performance.lastRefresh,
+        },
       };
-
     } catch (error) {
       console.error(`Error updating widget data for ${widgetId}:`, error);
       widget.performance.errorCount++;
@@ -1036,7 +1074,10 @@ export class SmartDashboardManager {
     return result.rows[0];
   }
 
-  private async getSupplierPerformanceData(organizationId: string, filters: unknown): Promise<unknown> {
+  private async getSupplierPerformanceData(
+    organizationId: string,
+    filters: unknown
+  ): Promise<unknown> {
     const timeRange = this.parseTimeRange(filters.timeRange || '6m');
 
     const query = `
@@ -1057,7 +1098,10 @@ export class SmartDashboardManager {
     return result.rows;
   }
 
-  private async getSupplierSpendRanking(organizationId: string, filters: unknown): Promise<unknown> {
+  private async getSupplierSpendRanking(
+    organizationId: string,
+    filters: unknown
+  ): Promise<unknown> {
     const timeRange = this.parseTimeRange(filters.timeRange || '30d');
     const limit = filters.limit || 10;
 
@@ -1121,11 +1165,11 @@ export class SmartDashboardManager {
       '30d': 30,
       '3m': 90,
       '6m': 180,
-      '1y': 365
+      '1y': 365,
     };
 
     const days = ranges[timeRange] || 30;
-    return new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+    return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   }
 
   private calculateDataQuality(data: unknown): number {
@@ -1134,11 +1178,12 @@ export class SmartDashboardManager {
     if (Array.isArray(data)) {
       if (data.length === 0) return 0.5;
 
-      const completeness = data.reduce((sum, item) => {
-        const fields = Object.values(item);
-        const nonNullFields = fields.filter(field => field !== null && field !== undefined);
-        return sum + (nonNullFields.length / fields.length);
-      }, 0) / data.length;
+      const completeness =
+        data.reduce((sum, item) => {
+          const fields = Object.values(item);
+          const nonNullFields = fields.filter(field => field !== null && field !== undefined);
+          return sum + nonNullFields.length / fields.length;
+        }, 0) / data.length;
 
       return Math.min(1, completeness);
     }
@@ -1149,7 +1194,10 @@ export class SmartDashboardManager {
     return nonNullFields.length / fields.length;
   }
 
-  private async generateWidgetInsights(widget: DashboardWidget, data: unknown): Promise<AIInsight[]> {
+  private async generateWidgetInsights(
+    widget: DashboardWidget,
+    data: unknown
+  ): Promise<AIInsight[]> {
     // Generate insights specific to widget type and data
     const insights: AIInsight[] = [];
 
@@ -1183,7 +1231,7 @@ export class SmartDashboardManager {
 
       const [metricsResult, usageResult] = await Promise.all([
         this.db.query(metricsQuery, [dashboardId]),
-        this.db.query(usageQuery, [dashboardId])
+        this.db.query(usageQuery, [dashboardId]),
       ]);
 
       const metrics = metricsResult.rows[0];
@@ -1194,23 +1242,22 @@ export class SmartDashboardManager {
           avgLoadTime: parseFloat(metrics.avg_load_time || '0'),
           dataFreshness: 0.95, // Calculated based on refresh intervals
           errorRate: metrics.total_errors / Math.max(metrics.total_widgets, 1),
-          userSatisfaction: 0.85 // Would be calculated from user feedback
+          userSatisfaction: 0.85, // Would be calculated from user feedback
         },
         usage: {
           totalViews: parseInt(usage.total_views || '0'),
           uniqueUsers: parseInt(usage.unique_users || '0'),
           avgSessionDuration: parseFloat(usage.avg_session_duration || '0'),
           interactionRate: 0.75, // Calculated from click/interaction events
-          exportCount: 0 // Would be tracked separately
+          exportCount: 0, // Would be tracked separately
         },
         intelligence: {
           insightsGenerated: 15, // Would be counted from insights
           predictionsAccuracy: 0.82,
           anomaliesDetected: 3,
-          recommendationsActioned: 8
-        }
+          recommendationsActioned: 8,
+        },
       };
-
     } catch (error) {
       console.error('Error calculating dashboard metrics:', error);
       throw new Error('Failed to calculate dashboard metrics');
@@ -1221,5 +1268,5 @@ export class SmartDashboardManager {
 // Export enhanced analytics dashboard
 export const enhancedAnalyticsDashboard = {
   insightsGenerator: (db: Pool) => new AIInsightsGenerator(db),
-  dashboardManager: (db: Pool) => new SmartDashboardManager(db)
+  dashboardManager: (db: Pool) => new SmartDashboardManager(db),
 };

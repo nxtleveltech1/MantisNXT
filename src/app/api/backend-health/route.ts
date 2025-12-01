@@ -3,7 +3,7 @@
  * Independent of frontend compilation - direct API access
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     // Test basic database connectivity
     console.log('🔍 Testing backend database connection...');
-    const basicTest = await db.query('SELECT NOW() as timestamp, \'backend-health-check\' as test');
+    const basicTest = await db.query("SELECT NOW() as timestamp, 'backend-health-check' as test");
     const basicLatency = Date.now() - startTime;
 
     console.log('✅ Basic connectivity verified');
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const checks = await Promise.allSettled([
       db.query('SELECT COUNT(*) as count FROM public.suppliers LIMIT 1'),
       db.query('SELECT COUNT(*) as count FROM public.inventory_items LIMIT 1'),
-      db.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1')
+      db.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1'),
     ]);
 
     const totalLatency = Date.now() - startTime;
@@ -35,30 +35,29 @@ export async function GET(request: NextRequest) {
         basicConnection: {
           status: 'pass',
           latency: `${basicLatency}ms`,
-          result: basicTest.rows[0]
+          result: basicTest.rows[0],
         },
         supplierTable: {
           status: checks[0].status === 'fulfilled' ? 'pass' : 'fail',
           count: checks[0].status === 'fulfilled' ? checks[0].value.rows[0]?.count : 'unavailable',
-          error: checks[0].status === 'rejected' ? checks[0].reason.message : null
+          error: checks[0].status === 'rejected' ? checks[0].reason.message : null,
         },
         inventoryTable: {
           status: checks[1].status === 'fulfilled' ? 'pass' : 'fail',
           count: checks[1].status === 'fulfilled' ? checks[1].value.rows[0]?.count : 'unavailable',
-          error: checks[1].status === 'rejected' ? checks[1].reason.message : null
+          error: checks[1].status === 'rejected' ? checks[1].reason.message : null,
         },
         purchaseOrderTable: {
           status: checks[2].status === 'fulfilled' ? 'pass' : 'fail',
           count: checks[2].status === 'fulfilled' ? checks[2].value.rows[0]?.count : 'unavailable',
-          error: checks[2].status === 'rejected' ? checks[2].reason.message : null
-        }
+          error: checks[2].status === 'rejected' ? checks[2].reason.message : null,
+        },
       },
       performance: {
         totalLatency: `${totalLatency}ms`,
-        connectionStatus: db.getStatus()
-      }
+        connectionStatus: db.getStatus(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Backend health check failed:', error);
 
@@ -71,8 +70,8 @@ export async function GET(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown backend error',
         timestamp: new Date().toISOString(),
         performance: {
-          errorLatency: `${errorLatency}ms`
-        }
+          errorLatency: `${errorLatency}ms`,
+        },
       },
       { status: 503 }
     );
@@ -91,18 +90,17 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Backend database connection test successful',
         timestamp: new Date().toISOString(),
-        connectionStatus: db.getStatus()
+        connectionStatus: db.getStatus(),
       });
     }
 
     return NextResponse.json(
       {
         success: false,
-        error: 'Invalid action. Use "test-connection" to verify backend connectivity.'
+        error: 'Invalid action. Use "test-connection" to verify backend connectivity.',
       },
       { status: 400 }
     );
-
   } catch (error) {
     console.error('❌ Backend connection test failed:', error);
 
@@ -111,7 +109,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Backend connection test failed',
         details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

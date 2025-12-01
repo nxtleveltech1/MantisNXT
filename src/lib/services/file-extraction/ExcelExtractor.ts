@@ -15,20 +15,13 @@ import type { SheetData, ExtractionConfig, ParsedRow } from './types';
 import { mapColumns } from './ColumnMapper';
 import { parsePrice, detectCurrency } from './CurrencyNormalizer';
 import { validateRow } from './ValidationEngine';
-import {
-  extractBrandFromSheetName,
-  extractBrandFromColumn,
-  detectBrand,
-} from './BrandDetector';
+import { extractBrandFromSheetName, extractBrandFromColumn, detectBrand } from './BrandDetector';
 
 /**
  * Detect header row in worksheet
  * Looks for row with most non-numeric, non-empty values
  */
-function detectHeaderRow(
-  worksheet: XLSX.WorkSheet,
-  maxRowsToCheck: number = 10
-): number {
+function detectHeaderRow(worksheet: XLSX.WorkSheet, maxRowsToCheck: number = 10): number {
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   let bestRow = 0;
   let bestScore = 0;
@@ -52,11 +45,7 @@ function detectHeaderRow(
       }
 
       // Bonus: common header keywords
-      if (
-        /^(sku|code|name|product|description|price|cost|uom|brand|category)/i.test(
-          value
-        )
-      ) {
+      if (/^(sku|code|name|product|description|price|cost|uom|brand|category)/i.test(value)) {
         score += 2;
       }
     }
@@ -76,10 +65,7 @@ function detectHeaderRow(
 /**
  * Extract headers from worksheet at given row
  */
-function extractHeaders(
-  worksheet: XLSX.WorkSheet,
-  headerRow: number
-): string[] {
+function extractHeaders(worksheet: XLSX.WorkSheet, headerRow: number): string[] {
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   const headers: string[] = [];
 
@@ -131,10 +117,7 @@ function extractCellValue(cell: XLSX.CellObject | undefined): unknown {
 /**
  * Parse worksheet to sheet data
  */
-function parseWorksheet(
-  worksheet: XLSX.WorkSheet,
-  sheetName: string
-): SheetData {
+function parseWorksheet(worksheet: XLSX.WorkSheet, sheetName: string): SheetData {
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
 
   // Detect header row
@@ -191,16 +174,13 @@ function selectBestSheet(workbook: XLSX.WorkBook): string {
   const keywords = ['price', 'product', 'list', 'catalog', 'catalogue', 'item'];
 
   for (const keyword of keywords) {
-    const match = sheetNames.find((name) =>
-      name.toLowerCase().includes(keyword)
-    );
+    const match = sheetNames.find(name => name.toLowerCase().includes(keyword));
     if (match) return match;
   }
 
   // Avoid sheets with "summary", "notes", "info"
   const filtered = sheetNames.filter(
-    (name) =>
-      !/(summary|notes|info|instructions|help|template)/i.test(name)
+    name => !/(summary|notes|info|instructions|help|template)/i.test(name)
   );
 
   // Return first non-filtered sheet with data
@@ -227,9 +207,7 @@ function extractRows(
   filename: string,
   config?: ExtractionConfig
 ): ParsedRow[] {
-  const { mapping, confidence: mappingConfidence } = mapColumns(
-    sheetData.headers
-  );
+  const { mapping, confidence: mappingConfidence } = mapColumns(sheetData.headers);
 
   if (!mapping.supplier_sku || !mapping.name || !mapping.price || !mapping.uom) {
     throw new Error(
@@ -253,11 +231,7 @@ function extractRows(
   }
 
   // Detect brand from multiple sources
-  const brandDetection = detectBrand(
-    filename,
-    sheetData.sheetName,
-    brandColumnValues
-  );
+  const brandDetection = detectBrand(filename, sheetData.sheetName, brandColumnValues);
 
   for (let i = 0; i < Math.min(sheetData.rows.length, maxRows); i++) {
     const sourceRow = sheetData.rows[i];
@@ -278,7 +252,8 @@ function extractRows(
       }
 
       // Detect currency from price value
-      const detectedCurrency = detectCurrency(priceValue as string | number).currency || defaultCurrency;
+      const detectedCurrency =
+        detectCurrency(priceValue as string | number).currency || defaultCurrency;
 
       // Extract optional fields
       let brand = mapping.brand
@@ -400,9 +375,7 @@ export async function extractFromExcel(
 /**
  * Get workbook metadata
  */
-export function getWorkbookInfo(
-  fileContent: Buffer
-): {
+export function getWorkbookInfo(fileContent: Buffer): {
   sheetNames: string[];
   totalSheets: number;
 } {

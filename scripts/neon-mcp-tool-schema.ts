@@ -30,7 +30,12 @@ async function main() {
   const command = process.platform === 'win32' ? 'pwsh.exe' : 'npx';
   const args =
     process.platform === 'win32'
-      ? ['-NoLogo', '-NoProfile', '-Command', `npx -y @neondatabase/mcp-server-neon start ${apiKey}`]
+      ? [
+          '-NoLogo',
+          '-NoProfile',
+          '-Command',
+          `npx -y @neondatabase/mcp-server-neon start ${apiKey}`,
+        ]
       : ['-y', '@neondatabase/mcp-server-neon', 'start', apiKey];
   const transport = new StdioClientTransport({ command, args, env: process.env as any });
   await client.connect(transport);

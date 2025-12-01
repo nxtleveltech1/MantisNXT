@@ -86,7 +86,8 @@ export default function PricingReviewQueue() {
   const [priority, setPriority] = useState<string>('all');
   const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<PricingRecommendation | null>(null);
+  const [selectedRecommendation, setSelectedRecommendation] =
+    useState<PricingRecommendation | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);
 
@@ -144,7 +145,7 @@ export default function PricingReviewQueue() {
       setReviewNotes('');
       setReviewAction(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Failed to process review: ${error.message}`);
     },
   });
@@ -158,7 +159,10 @@ export default function PricingReviewQueue() {
     });
   };
 
-  const openReviewDialog = (recommendation: PricingRecommendation, action: 'approve' | 'reject') => {
+  const openReviewDialog = (
+    recommendation: PricingRecommendation,
+    action: 'approve' | 'reject'
+  ) => {
     setSelectedRecommendation(recommendation);
     setReviewAction(action);
     setReviewNotes('');
@@ -223,11 +227,11 @@ export default function PricingReviewQueue() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.pagination.total}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {data.pagination.hasMore ? 'Showing first' : 'Total'} {data.recommendations.length}
               </p>
             </CardContent>
@@ -236,36 +240,32 @@ export default function PricingReviewQueue() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg. Confidence</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {data.recommendations.length > 0
                   ? (
-                      data.recommendations.reduce(
-                        (sum, r) => sum + r.confidence_score,
-                        0
-                      ) / data.recommendations.length
+                      data.recommendations.reduce((sum, r) => sum + r.confidence_score, 0) /
+                      data.recommendations.length
                     ).toFixed(1)
                   : 0}
                 %
               </div>
-              <p className="text-xs text-muted-foreground">AI recommendation confidence</p>
+              <p className="text-muted-foreground text-xs">AI recommendation confidence</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Auto-Eligible</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle2 className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {data.recommendations.filter((r) => r.eligible_for_auto_apply).length}
+                {data.recommendations.filter(r => r.eligible_for_auto_apply).length}
               </div>
-              <p className="text-xs text-muted-foreground">
-                High confidence recommendations
-              </p>
+              <p className="text-muted-foreground text-xs">High confidence recommendations</p>
             </CardContent>
           </Card>
         </div>
@@ -282,13 +282,13 @@ export default function PricingReviewQueue() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
             </div>
           ) : data?.recommendations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CheckCircle2 className="mb-4 h-12 w-12 text-muted-foreground" />
+              <CheckCircle2 className="text-muted-foreground mb-4 h-12 w-12" />
               <h3 className="mb-2 text-lg font-semibold">All Caught Up!</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No pricing recommendations pending review
               </p>
             </div>
@@ -309,14 +309,12 @@ export default function PricingReviewQueue() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.recommendations.map((rec) => (
+                  {data?.recommendations.map(rec => (
                     <TableRow key={rec.recommendation_id}>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{rec.product_name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {rec.supplier_sku}
-                          </span>
+                          <span className="text-muted-foreground text-xs">{rec.supplier_sku}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">{rec.supplier_name}</TableCell>
@@ -337,9 +335,7 @@ export default function PricingReviewQueue() {
                             <TrendingDown className="h-3 w-3 text-red-600" />
                           )}
                           <span
-                            className={
-                              rec.price_difference > 0 ? 'text-green-600' : 'text-red-600'
-                            }
+                            className={rec.price_difference > 0 ? 'text-green-600' : 'text-red-600'}
                           >
                             {rec.price_difference > 0 ? '+' : ''}
                             {rec.price_difference.toFixed(1)}%
@@ -347,7 +343,10 @@ export default function PricingReviewQueue() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className={getConfidenceColor(rec.confidence_score)}>
+                        <Badge
+                          variant="outline"
+                          className={getConfidenceColor(rec.confidence_score)}
+                        >
                           {rec.confidence_score.toFixed(1)}%
                         </Badge>
                       </TableCell>
@@ -384,7 +383,7 @@ export default function PricingReviewQueue() {
           {/* Pagination */}
           {data && data.pagination.total > limit && (
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Showing {offset + 1} to {Math.min(offset + limit, data.pagination.total)} of{' '}
                 {data.pagination.total} recommendations
               </p>
@@ -412,14 +411,15 @@ export default function PricingReviewQueue() {
       </Card>
 
       {/* Review Dialog */}
-      <Dialog open={!!selectedRecommendation} onOpenChange={(open) => !open && closeReviewDialog()}>
+      <Dialog open={!!selectedRecommendation} onOpenChange={open => !open && closeReviewDialog()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {reviewAction === 'approve' ? 'Approve' : 'Reject'} Pricing Recommendation
             </DialogTitle>
             <DialogDescription>
-              Review the AI recommendation details before {reviewAction === 'approve' ? 'approving' : 'rejecting'}
+              Review the AI recommendation details before{' '}
+              {reviewAction === 'approve' ? 'approving' : 'rejecting'}
             </DialogDescription>
           </DialogHeader>
 
@@ -453,20 +453,22 @@ export default function PricingReviewQueue() {
               {/* Pricing Comparison */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">Rule-Based Price</p>
+                  <p className="text-muted-foreground text-xs">Rule-Based Price</p>
                   <p className="text-xl font-semibold">
                     {formatCurrency(selectedRecommendation.rule_based_price)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-primary p-4 bg-primary/5">
-                  <p className="text-xs text-muted-foreground">AI Recommended</p>
+                <div className="border-primary bg-primary/5 rounded-lg border p-4">
+                  <p className="text-muted-foreground text-xs">AI Recommended</p>
                   <p className="text-xl font-semibold">
                     {formatCurrency(selectedRecommendation.ai_recommended_price)}
                   </p>
                 </div>
                 <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">Change</p>
-                  <p className={`text-xl font-semibold ${selectedRecommendation.price_difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className="text-muted-foreground text-xs">Change</p>
+                  <p
+                    className={`text-xl font-semibold ${selectedRecommendation.price_difference > 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
                     {selectedRecommendation.price_difference > 0 ? '+' : ''}
                     {selectedRecommendation.price_difference.toFixed(1)}%
                   </p>
@@ -479,7 +481,7 @@ export default function PricingReviewQueue() {
                   <Info className="h-4 w-4" />
                   AI Reasoning
                 </h5>
-                <p className="text-sm text-muted-foreground">{selectedRecommendation.reasoning}</p>
+                <p className="text-muted-foreground text-sm">{selectedRecommendation.reasoning}</p>
               </div>
 
               {/* Impact Analysis */}
@@ -492,7 +494,13 @@ export default function PricingReviewQueue() {
                     {selectedRecommendation.impact_on_revenue !== null && (
                       <div>
                         <span className="text-muted-foreground">Revenue:</span>{' '}
-                        <span className={selectedRecommendation.impact_on_revenue > 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span
+                          className={
+                            selectedRecommendation.impact_on_revenue > 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }
+                        >
                           {selectedRecommendation.impact_on_revenue > 0 ? '+' : ''}
                           {selectedRecommendation.impact_on_revenue.toFixed(1)}%
                         </span>
@@ -501,7 +509,13 @@ export default function PricingReviewQueue() {
                     {selectedRecommendation.impact_on_margin !== null && (
                       <div>
                         <span className="text-muted-foreground">Margin:</span>{' '}
-                        <span className={selectedRecommendation.impact_on_margin > 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span
+                          className={
+                            selectedRecommendation.impact_on_margin > 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }
+                        >
                           {selectedRecommendation.impact_on_margin > 0 ? '+' : ''}
                           {selectedRecommendation.impact_on_margin.toFixed(1)}%
                         </span>
@@ -510,7 +524,13 @@ export default function PricingReviewQueue() {
                     {selectedRecommendation.impact_on_volume !== null && (
                       <div>
                         <span className="text-muted-foreground">Volume:</span>{' '}
-                        <span className={selectedRecommendation.impact_on_volume > 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span
+                          className={
+                            selectedRecommendation.impact_on_volume > 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }
+                        >
                           {selectedRecommendation.impact_on_volume > 0 ? '+' : ''}
                           {selectedRecommendation.impact_on_volume.toFixed(1)}%
                         </span>
@@ -538,13 +558,14 @@ export default function PricingReviewQueue() {
               {/* Review Notes */}
               <div className="space-y-2">
                 <Label htmlFor="review-notes">
-                  Review Notes {reviewAction === 'reject' && <span className="text-destructive">*</span>}
+                  Review Notes{' '}
+                  {reviewAction === 'reject' && <span className="text-destructive">*</span>}
                 </Label>
                 <Textarea
                   id="review-notes"
                   placeholder={`Add notes about your decision to ${reviewAction}...`}
                   value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
+                  onChange={e => setReviewNotes(e.target.value)}
                   rows={3}
                 />
               </div>

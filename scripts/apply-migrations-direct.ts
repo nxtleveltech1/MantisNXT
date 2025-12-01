@@ -20,7 +20,7 @@ async function applyMigrations() {
   const migrations = [
     'database/migrations/0025_extraction_pipeline_core_fixed.sql',
     'database/migrations/0026_import_and_rollback_fixed.sql',
-    'database/migrations/0027_metrics_and_monitoring_fixed.sql'
+    'database/migrations/0027_metrics_and_monitoring_fixed.sql',
   ];
 
   console.log('Starting extraction pipeline migrations...');

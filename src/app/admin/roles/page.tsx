@@ -1,14 +1,20 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Shield,
   Users,
@@ -22,37 +28,37 @@ import {
   Copy,
   Key,
   CheckCircle,
-  Clock
-} from "lucide-react"
+  Clock,
+} from 'lucide-react';
 
 interface Permission {
-  id: string
-  name: string
-  description: string
-  category: string
+  id: string;
+  name: string;
+  description: string;
+  category: string;
 }
 
 interface Role {
-  id: string
-  name: string
-  description: string
-  type: 'system' | 'custom'
-  userCount: number
-  permissions: string[]
-  createdAt: string
-  updatedAt: string
-  isDefault: boolean
-  canModify: boolean
+  id: string;
+  name: string;
+  description: string;
+  type: 'system' | 'custom';
+  userCount: number;
+  permissions: string[];
+  createdAt: string;
+  updatedAt: string;
+  isDefault: boolean;
+  canModify: boolean;
 }
 
 interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
-  roles: string[]
-  status: 'active' | 'inactive'
-  lastLogin: string
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  roles: string[];
+  status: 'active' | 'inactive';
+  lastLogin: string;
 }
 
 export default function RolesPage() {
@@ -67,7 +73,7 @@ export default function RolesPage() {
       createdAt: '2023-01-01',
       updatedAt: '2023-01-01',
       isDefault: false,
-      canModify: false
+      canModify: false,
     },
     {
       id: '2',
@@ -79,7 +85,7 @@ export default function RolesPage() {
       createdAt: '2023-01-01',
       updatedAt: '2023-06-15',
       isDefault: true,
-      canModify: true
+      canModify: true,
     },
     {
       id: '3',
@@ -91,7 +97,7 @@ export default function RolesPage() {
       createdAt: '2023-02-15',
       updatedAt: '2023-11-20',
       isDefault: false,
-      canModify: true
+      canModify: true,
     },
     {
       id: '4',
@@ -103,7 +109,7 @@ export default function RolesPage() {
       createdAt: '2023-03-10',
       updatedAt: '2023-10-05',
       isDefault: false,
-      canModify: true
+      canModify: true,
     },
     {
       id: '5',
@@ -115,7 +121,7 @@ export default function RolesPage() {
       createdAt: '2023-04-20',
       updatedAt: '2023-12-01',
       isDefault: false,
-      canModify: true
+      canModify: true,
     },
     {
       id: '6',
@@ -127,9 +133,9 @@ export default function RolesPage() {
       createdAt: '2023-01-01',
       updatedAt: '2023-08-12',
       isDefault: false,
-      canModify: true
-    }
-  ])
+      canModify: true,
+    },
+  ]);
 
   const [users] = useState<User[]>([
     {
@@ -138,7 +144,7 @@ export default function RolesPage() {
       email: 'john@acme.com',
       roles: ['2'],
       status: 'active',
-      lastLogin: '2 hours ago'
+      lastLogin: '2 hours ago',
     },
     {
       id: '2',
@@ -146,7 +152,7 @@ export default function RolesPage() {
       email: 'sarah@acme.com',
       roles: ['3'],
       status: 'active',
-      lastLogin: '1 day ago'
+      lastLogin: '1 day ago',
     },
     {
       id: '3',
@@ -154,43 +160,44 @@ export default function RolesPage() {
       email: 'mike@acme.com',
       roles: ['5'],
       status: 'active',
-      lastLogin: '3 days ago'
-    }
-  ])
+      lastLogin: '3 days ago',
+    },
+  ]);
 
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState<string>("all")
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
-  const [isNewRoleDialogOpen, setIsNewRoleDialogOpen] = useState(false)
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isNewRoleDialogOpen, setIsNewRoleDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const filteredRoles = roles.filter(role => {
-    const matchesSearch = role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         role.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === "all" || role.type === filterType
+    const matchesSearch =
+      role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      role.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || role.type === filterType;
 
-    return matchesSearch && matchesType
-  })
+    return matchesSearch && matchesType;
+  });
 
   const getRoleIcon = (role: Role) => {
     if (role.name.includes('Admin') || role.name.includes('System')) {
-      return <Crown className="h-4 w-4" />
+      return <Crown className="h-4 w-4" />;
     }
     if (role.name.includes('Manager')) {
-      return <Shield className="h-4 w-4" />
+      return <Shield className="h-4 w-4" />;
     }
-    return <Users className="h-4 w-4" />
-  }
+    return <Users className="h-4 w-4" />;
+  };
 
   const getRoleColor = (role: Role) => {
     if (role.type === 'system') {
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-100 text-blue-800';
     }
-    return 'bg-green-100 text-green-800'
-  }
+    return 'bg-green-100 text-green-800';
+  };
 
   const duplicateRole = (roleId: string) => {
-    const originalRole = roles.find(r => r.id === roleId)
+    const originalRole = roles.find(r => r.id === roleId);
     if (originalRole) {
       const newRole: Role = {
         ...originalRole,
@@ -201,25 +208,25 @@ export default function RolesPage() {
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
         isDefault: false,
-        canModify: true
-      }
-      setRoles(prev => [...prev, newRole])
+        canModify: true,
+      };
+      setRoles(prev => [...prev, newRole]);
     }
-  }
+  };
 
   const deleteRole = (roleId: string) => {
-    setRoles(prev => prev.filter(role => role.id !== roleId))
-  }
+    setRoles(prev => prev.filter(role => role.id !== roleId));
+  };
 
   const viewRoleDetails = (role: Role) => {
-    setSelectedRole(role)
-    setIsViewDialogOpen(true)
-  }
+    setSelectedRole(role);
+    setIsViewDialogOpen(true);
+  };
 
-  const totalRoles = roles.length
-  const customRoles = roles.filter(role => role.type === 'custom').length
-  const systemRoles = roles.filter(role => role.type === 'system').length
-  const totalUsers = roles.reduce((sum, role) => sum + role.userCount, 0)
+  const totalRoles = roles.length;
+  const customRoles = roles.filter(role => role.type === 'custom').length;
+  const systemRoles = roles.filter(role => role.type === 'system').length;
+  const totalUsers = roles.reduce((sum, role) => sum + role.userCount, 0);
 
   return (
     <div className="space-y-6">
@@ -227,20 +234,20 @@ export default function RolesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Role Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             Manage user roles and permissions across your organization
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <a href="/admin/roles/permissions">
-              <Key className="h-4 w-4 mr-2" />
+              <Key className="mr-2 h-4 w-4" />
               Manage Permissions
             </a>
           </Button>
           <Button asChild>
             <a href="/admin/roles/new">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Create Role
             </a>
           </Button>
@@ -248,7 +255,7 @@ export default function RolesPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -298,13 +305,13 @@ export default function RolesPage() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-4 md:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Search roles..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -323,9 +330,9 @@ export default function RolesPage() {
       </Card>
 
       {/* Roles List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRoles.map((role) => (
-          <Card key={role.id} className="hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredRoles.map(role => (
+          <Card key={role.id} className="transition-shadow hover:shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -361,16 +368,14 @@ export default function RolesPage() {
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">Last updated</span>
-                <span className="font-medium">
-                  {new Date(role.updatedAt).toLocaleDateString()}
-                </span>
+                <span className="font-medium">{new Date(role.updatedAt).toLocaleDateString()}</span>
               </div>
 
               {/* Permissions Preview */}
               <div className="space-y-2">
                 <p className="text-xs text-gray-500">Key Permissions:</p>
                 <div className="flex flex-wrap gap-1">
-                  {role.permissions.slice(0, 3).map((permission) => (
+                  {role.permissions.slice(0, 3).map(permission => (
                     <Badge key={permission} variant="outline" className="text-xs">
                       {permission}
                     </Badge>
@@ -391,7 +396,7 @@ export default function RolesPage() {
                   onClick={() => viewRoleDetails(role)}
                   className="flex-1"
                 >
-                  <Eye className="h-4 w-4 mr-1" />
+                  <Eye className="mr-1 h-4 w-4" />
                   View
                 </Button>
                 {role.canModify && (
@@ -401,19 +406,11 @@ export default function RolesPage() {
                     </a>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => duplicateRole(role.id)}
-                >
+                <Button variant="outline" size="sm" onClick={() => duplicateRole(role.id)}>
                   <Copy className="h-4 w-4" />
                 </Button>
                 {role.canModify && role.type === 'custom' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteRole(role.id)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => deleteRole(role.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -425,19 +422,18 @@ export default function RolesPage() {
 
       {filteredRoles.length === 0 && (
         <Card>
-          <CardContent className="text-center py-12">
-            <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No roles found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm || filterType !== "all"
-                ? "Try adjusting your search or filters"
-                : "Get started by creating your first custom role"
-              }
+          <CardContent className="py-12 text-center">
+            <Shield className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900">No roles found</h3>
+            <p className="mb-4 text-gray-500">
+              {searchTerm || filterType !== 'all'
+                ? 'Try adjusting your search or filters'
+                : 'Get started by creating your first custom role'}
             </p>
-            {!searchTerm && filterType === "all" && (
+            {!searchTerm && filterType === 'all' && (
               <Button asChild>
                 <a href="/admin/roles/new">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Role
                 </a>
               </Button>
@@ -470,25 +466,32 @@ export default function RolesPage() {
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">Created</Label>
-                  <p className="font-medium">{new Date(selectedRole.createdAt).toLocaleDateString()}</p>
+                  <p className="font-medium">
+                    {new Date(selectedRole.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">Last Updated</Label>
-                  <p className="font-medium">{new Date(selectedRole.updatedAt).toLocaleDateString()}</p>
+                  <p className="font-medium">
+                    {new Date(selectedRole.updatedAt).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
 
               <div>
                 <Label className="text-sm text-gray-500">Description</Label>
-                <p className="text-sm mt-1">{selectedRole.description}</p>
+                <p className="mt-1 text-sm">{selectedRole.description}</p>
               </div>
 
               <div>
-                <Label className="text-sm text-gray-500 mb-2 block">Permissions</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {selectedRole.permissions.map((permission) => (
-                    <div key={permission} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm font-mono">{permission}</span>
+                <Label className="mb-2 block text-sm text-gray-500">Permissions</Label>
+                <div className="max-h-40 space-y-2 overflow-y-auto">
+                  {selectedRole.permissions.map(permission => (
+                    <div
+                      key={permission}
+                      className="flex items-center justify-between rounded bg-gray-50 p-2"
+                    >
+                      <span className="font-mono text-sm">{permission}</span>
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     </div>
                   ))}
@@ -497,16 +500,19 @@ export default function RolesPage() {
 
               {/* Users with this role */}
               <div>
-                <Label className="text-sm text-gray-500 mb-2 block">Users with this Role</Label>
+                <Label className="mb-2 block text-sm text-gray-500">Users with this Role</Label>
                 <div className="space-y-2">
                   {users
                     .filter(user => user.roles.includes(selectedRole.id))
                     .map(user => (
-                      <div key={user.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                      <div key={user.id} className="flex items-center gap-3 rounded bg-gray-50 p-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.avatar} alt={user.name} />
                           <AvatarFallback>
-                            {user.name.split(' ').map(n => n[0]).join('')}
+                            {user.name
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
@@ -517,8 +523,8 @@ export default function RolesPage() {
                           <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
                             {user.status}
                           </Badge>
-                          <p className="text-xs text-gray-500 mt-1">
-                            <Clock className="h-3 w-3 inline mr-1" />
+                          <p className="mt-1 text-xs text-gray-500">
+                            <Clock className="mr-1 inline h-3 w-3" />
                             {user.lastLogin}
                           </p>
                         </div>
@@ -534,7 +540,7 @@ export default function RolesPage() {
                 {selectedRole.canModify && (
                   <Button asChild>
                     <a href={`/admin/roles/${selectedRole.id}/edit`}>
-                      <Edit className="h-4 w-4 mr-2" />
+                      <Edit className="mr-2 h-4 w-4" />
                       Edit Role
                     </a>
                   </Button>
@@ -545,5 +551,5 @@ export default function RolesPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

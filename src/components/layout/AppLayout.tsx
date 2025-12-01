@@ -1,117 +1,94 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { usePathname } from "next/navigation"
+import * as React from 'react';
+import { usePathname } from 'next/navigation';
 
-import { sidebarData } from "@/components/app-sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SectionQuickLinks } from "@/components/layout/SectionQuickLinks"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
+import { sidebarData } from '@/components/app-sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { SectionQuickLinks } from '@/components/layout/SectionQuickLinks';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 interface AppLayoutProps {
-  children: React.ReactNode
-  title?: string
+  children: React.ReactNode;
+  title?: string;
   breadcrumbs?: Array<{
-    label: string
-    href?: string
-  }>
-  showQuickLinks?: boolean
+    label: string;
+    href?: string;
+  }>;
+  showQuickLinks?: boolean;
 }
 
 const normalizePath = (path: string) => {
-  if (!path) return "/"
-  const [base] = path.split("?")
-  if (base === "/") return base
-  return base.endsWith("/") ? base.slice(0, -1) : base
-}
+  if (!path) return '/';
+  const [base] = path.split('?');
+  if (base === '/') return base;
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+};
 
 export const findSectionForPath = (pathname: string) => {
-  const normalizedPath = normalizePath(pathname)
-  let bestMatch: { item: (typeof sidebarData.navMain)[number]; score: number } | null = null
+  const normalizedPath = normalizePath(pathname);
+  let bestMatch: { item: (typeof sidebarData.navMain)[number]; score: number } | null = null;
 
   const registerMatch = (item: (typeof sidebarData.navMain)[number], url: string) => {
-    const normalizedTarget = normalizePath(url)
-    if (normalizedTarget === "/") {
-      if (normalizedPath === "/") {
-        bestMatch = { item, score: 1 }
+    const normalizedTarget = normalizePath(url);
+    if (normalizedTarget === '/') {
+      if (normalizedPath === '/') {
+        bestMatch = { item, score: 1 };
       }
-      return
+      return;
     }
 
     const isMatch =
-      normalizedPath === normalizedTarget || normalizedPath.startsWith(`${normalizedTarget}/`)
+      normalizedPath === normalizedTarget || normalizedPath.startsWith(`${normalizedTarget}/`);
 
     if (isMatch) {
-      const score = normalizedTarget.length
+      const score = normalizedTarget.length;
       if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { item, score }
+        bestMatch = { item, score };
       }
     }
-  }
+  };
 
-  sidebarData.navMain.forEach((item) => {
-    registerMatch(item, item.url)
-    item.items?.forEach((subItem) => registerMatch(item, subItem.url))
-  })
+  sidebarData.navMain.forEach(item => {
+    registerMatch(item, item.url);
+    item.items?.forEach(subItem => registerMatch(item, subItem.url));
+  });
 
-  return bestMatch?.item ?? null
-}
+  return bestMatch?.item ?? null;
+};
 
 export default function AppLayout({
   children,
-  title = "MantisNXT Dashboard",
+  title = 'MantisNXT Dashboard',
   breadcrumbs = [],
   showQuickLinks = true,
 }: AppLayoutProps) {
-  const pathname = usePathname()
+  const pathname = usePathname();
   const currentSection = React.useMemo(
     () => (pathname ? findSectionForPath(pathname) : null),
-    [pathname],
-  )
-  const quickLinks = currentSection?.items ?? []
+    [pathname]
+  );
+  const quickLinks = currentSection?.items ?? [];
+
+  // Build breadcrumb subtitle for AppHeader
+  const breadcrumbSubtitle = React.useMemo(() => {
+    if (breadcrumbs.length === 0) return undefined;
+    return breadcrumbs.map(crumb => crumb.label).join(' / ');
+  }, [breadcrumbs]);
 
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center gap-2 overflow-hidden">
-            <span className="font-semibold truncate">{title}</span>
-            {breadcrumbs.length > 0 && (
-              <div className="flex items-center gap-2 text-sm truncate">
-                {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={index}>
-                    <span className="text-muted-foreground">/</span>
-                    {crumb.href ? (
-                      <a
-                        href={crumb.href}
-                        className="truncate text-muted-foreground hover:text-foreground"
-                      >
-                        {crumb.label}
-                      </a>
-                    ) : (
-                      <span className="truncate text-muted-foreground">{crumb.label}</span>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
-          </div>
-        </header>
+        <AppHeader title={title} subtitle={breadcrumbSubtitle} />
         <div className="flex flex-1 flex-col gap-2 p-4 md:p-6 lg:p-8">
           {showQuickLinks && quickLinks.length > 0 ? (
-            <div className="flex justify-end mb-0">
+            <div className="mb-0 flex justify-end">
               <SectionQuickLinks
                 sectionTitle={currentSection?.title ?? title}
                 links={quickLinks}
-                activePath={pathname ?? ""}
+                activePath={pathname ?? ''}
                 className="w-full justify-end gap-3"
               />
             </div>
@@ -120,6 +97,5 @@ export default function AppLayout({
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
-

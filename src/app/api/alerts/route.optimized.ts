@@ -1,7 +1,7 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { pool } from '@/lib/database/unified-connection'
-import { z } from 'zod'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/database/unified-connection';
+import { z } from 'zod';
 
 // ============================================================================
 // OPTIMIZATION 1: Dedicated materialized view for alerts
@@ -27,23 +27,23 @@ import { z } from 'zod'
 // OPTIMIZATION 2: In-memory cache with TTL
 // ============================================================================
 interface CachedAlerts {
-  alerts: unknown[]
-  timestamp: number
-  queryTime: number
+  alerts: unknown[];
+  timestamp: number;
+  queryTime: number;
 }
 
-const alertsCache: Map<string, CachedAlerts> = new Map()
-const CACHE_TTL = 60 * 1000 // 1 minute for alerts (fresher data)
+const alertsCache: Map<string, CachedAlerts> = new Map();
+const CACHE_TTL = 60 * 1000; // 1 minute for alerts (fresher data)
 
 function getCacheKey(params: unknown): string {
-  return JSON.stringify(params)
+  return JSON.stringify(params);
 }
 
 // ============================================================================
 // OPTIMIZATION 3: Batch query with single JOIN
 // ============================================================================
 async function fetchAlertsOptimized(filters: unknown = {}) {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
   // Use covering indexes for both queries in parallel
   const [lowStockResult, outOfStockResult] = await Promise.all([
@@ -75,13 +75,13 @@ async function fetchAlertsOptimized(filters: unknown = {}) {
       WHERE i.stock_qty = 0
         AND i.status = 'active'
       LIMIT 1000
-    `)
-  ])
+    `),
+  ]);
 
-  const alerts: unknown[] = []
+  const alerts: unknown[] = [];
 
   // Create low stock alerts
-  lowStockResult.rows.forEach((item) => {
+  lowStockResult.rows.forEach(item => {
     alerts.push({
       id: `low_stock_${item.id}`,
       type: 'low_stock',
@@ -109,12 +109,12 @@ async function fetchAlertsOptimized(filters: unknown = {}) {
       resolvedBy: null,
       resolvedAt: null,
       snoozedUntil: null,
-      escalationLevel: 0
-    })
-  })
+      escalationLevel: 0,
+    });
+  });
 
   // Create out of stock alerts
-  outOfStockResult.rows.forEach((item) => {
+  outOfStockResult.rows.forEach(item => {
     alerts.push({
       id: `out_of_stock_${item.id}`,
       type: 'out_of_stock',
@@ -142,18 +142,22 @@ async function fetchAlertsOptimized(filters: unknown = {}) {
       resolvedBy: null,
       resolvedAt: null,
       snoozedUntil: null,
-      escalationLevel: 0
-    })
-  })
+      escalationLevel: 0,
+    });
+  });
 
-  const queryTime = Date.now() - startTime
+  const queryTime = Date.now() - startTime;
 
-  return { alerts, queryTime }
+  return { alerts, queryTime };
 }
 
 // Validation schemas
 const SearchAlertsSchema = z.object({
-  type: z.array(z.enum(['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue'])).optional(),
+  type: z
+    .array(
+      z.enum(['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue'])
+    )
+    .optional(),
   severity: z.array(z.enum(['low', 'medium', 'high', 'critical'])).optional(),
   status: z.array(z.enum(['active', 'acknowledged', 'resolved', 'snoozed'])).optional(),
   itemId: z.string().optional(),
@@ -165,8 +169,8 @@ const SearchAlertsSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['createdAt', 'severity', 'type', 'status', 'priority']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc')
-})
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
 
 // ============================================================================
 // OPTIMIZATION 4: Smart filtering with early exit
@@ -175,91 +179,93 @@ function applyFilters(alerts: unknown[], filters: unknown): unknown[] {
   return alerts.filter(alert => {
     // Type filter
     if (filters.type?.length > 0 && !filters.type.includes(alert.type)) {
-      return false
+      return false;
     }
 
     // Severity filter
     if (filters.severity?.length > 0 && !filters.severity.includes(alert.severity)) {
-      return false
+      return false;
     }
 
     // Status filter
     if (filters.status?.length > 0 && !filters.status.includes(alert.status)) {
-      return false
+      return false;
     }
 
     // Item filter
     if (filters.itemId && alert.itemId !== filters.itemId) {
-      return false
+      return false;
     }
 
     // Warehouse filter
     if (filters.warehouseId && alert.warehouseId !== filters.warehouseId) {
-      return false
+      return false;
     }
 
     // Assigned to filter
     if (filters.assignedTo && alert.assignedTo !== filters.assignedTo) {
-      return false
+      return false;
     }
 
     // Date range filter
     if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom)
-      if (alert.createdAt < fromDate) return false
+      const fromDate = new Date(filters.dateFrom);
+      if (alert.createdAt < fromDate) return false;
     }
 
     if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo)
-      toDate.setHours(23, 59, 59, 999)
-      if (alert.createdAt > toDate) return false
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      if (alert.createdAt > toDate) return false;
     }
 
     // Active filter
     if (filters.isActive !== undefined && alert.isActive !== filters.isActive) {
-      return false
+      return false;
     }
 
-    return true
-  })
+    return true;
+  });
 }
 
 // ============================================================================
 // OPTIMIZATION 5: Efficient sorting with comparator caching
 // ============================================================================
-const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 }
-const statusOrder = { active: 1, acknowledged: 2, snoozed: 3, resolved: 4 }
+const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+const statusOrder = { active: 1, acknowledged: 2, snoozed: 3, resolved: 4 };
 
 function sortAlerts(alerts: unknown[], sortBy: string, sortOrder: 'asc' | 'desc'): unknown[] {
-  const multiplier = sortOrder === 'asc' ? 1 : -1
+  const multiplier = sortOrder === 'asc' ? 1 : -1;
 
   return alerts.sort((a, b) => {
-    let comparison = 0
+    let comparison = 0;
 
     switch (sortBy) {
       case 'createdAt':
-        comparison = a.createdAt.getTime() - b.createdAt.getTime()
-        break
+        comparison = a.createdAt.getTime() - b.createdAt.getTime();
+        break;
       case 'severity':
-        comparison = severityOrder[a.severity as keyof typeof severityOrder] -
-                     severityOrder[b.severity as keyof typeof severityOrder]
-        break
+        comparison =
+          severityOrder[a.severity as keyof typeof severityOrder] -
+          severityOrder[b.severity as keyof typeof severityOrder];
+        break;
       case 'type':
-        comparison = a.type.localeCompare(b.type)
-        break
+        comparison = a.type.localeCompare(b.type);
+        break;
       case 'status':
-        comparison = statusOrder[a.status as keyof typeof statusOrder] -
-                     statusOrder[b.status as keyof typeof statusOrder]
-        break
+        comparison =
+          statusOrder[a.status as keyof typeof statusOrder] -
+          statusOrder[b.status as keyof typeof statusOrder];
+        break;
       case 'priority':
-        comparison = a.priority - b.priority
-        break
+        comparison = a.priority - b.priority;
+        break;
       default:
-        comparison = a.createdAt.getTime() - b.createdAt.getTime()
+        comparison = a.createdAt.getTime() - b.createdAt.getTime();
     }
 
-    return comparison * multiplier
-  })
+    return comparison * multiplier;
+  });
 }
 
 // ============================================================================
@@ -267,7 +273,7 @@ function sortAlerts(alerts: unknown[], sortBy: string, sortOrder: 'asc' | 'desc'
 // ============================================================================
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     const queryParams = {
       type: searchParams.get('type')?.split(',') || undefined,
@@ -282,56 +288,56 @@ export async function GET(request: NextRequest) {
       page: parseInt(searchParams.get('page') || '1'),
       limit: Math.min(parseInt(searchParams.get('limit') || '20'), 100),
       sortBy: searchParams.get('sortBy') || 'createdAt',
-      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc'
-    }
+      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
+    };
 
-    const validatedParams = SearchAlertsSchema.parse(queryParams)
+    const validatedParams = SearchAlertsSchema.parse(queryParams);
 
     // Check cache
-    const cacheKey = getCacheKey(validatedParams)
-    const cached = alertsCache.get(cacheKey)
+    const cacheKey = getCacheKey(validatedParams);
+    const cached = alertsCache.get(cacheKey);
 
-    let alerts: unknown[]
-    let queryTime: number
-    let fromCache = false
+    let alerts: unknown[];
+    let queryTime: number;
+    let fromCache = false;
 
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      alerts = cached.alerts
-      queryTime = cached.queryTime
-      fromCache = true
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      alerts = cached.alerts;
+      queryTime = cached.queryTime;
+      fromCache = true;
     } else {
       // Fetch fresh data
-      const result = await fetchAlertsOptimized(validatedParams)
-      alerts = result.alerts
-      queryTime = result.queryTime
+      const result = await fetchAlertsOptimized(validatedParams);
+      alerts = result.alerts;
+      queryTime = result.queryTime;
 
       // Update cache
       alertsCache.set(cacheKey, {
         alerts,
         timestamp: Date.now(),
-        queryTime
-      })
+        queryTime,
+      });
 
       // Limit cache size
       if (alertsCache.size > 100) {
-        const firstKey = alertsCache.keys().next().value
+        const firstKey = alertsCache.keys().next().value;
         if (firstKey) {
-          alertsCache.delete(firstKey)
+          alertsCache.delete(firstKey);
         }
       }
     }
 
     // Apply filters
-    let filteredAlerts = applyFilters(alerts, validatedParams)
+    let filteredAlerts = applyFilters(alerts, validatedParams);
 
     // Apply sorting
-    filteredAlerts = sortAlerts(filteredAlerts, validatedParams.sortBy, validatedParams.sortOrder)
+    filteredAlerts = sortAlerts(filteredAlerts, validatedParams.sortBy, validatedParams.sortOrder);
 
     // Apply pagination
-    const total = filteredAlerts.length
-    const totalPages = Math.ceil(total / validatedParams.limit)
-    const offset = (validatedParams.page - 1) * validatedParams.limit
-    const paginatedAlerts = filteredAlerts.slice(offset, offset + validatedParams.limit)
+    const total = filteredAlerts.length;
+    const totalPages = Math.ceil(total / validatedParams.limit);
+    const offset = (validatedParams.page - 1) * validatedParams.limit;
+    const paginatedAlerts = filteredAlerts.slice(offset, offset + validatedParams.limit);
 
     // Calculate summary metrics efficiently
     const metrics = {
@@ -346,11 +352,13 @@ export async function GET(request: NextRequest) {
         out_of_stock: alerts.filter(a => a.type === 'out_of_stock').length,
         expiry_warning: alerts.filter(a => a.type === 'expiry_warning').length,
         quality_issue: alerts.filter(a => a.type === 'quality_issue').length,
-        performance_issue: alerts.filter(a => a.type === 'performance_issue').length
-      }
-    }
+        performance_issue: alerts.filter(a => a.type === 'performance_issue').length,
+      },
+    };
 
-    console.log(`✅ Alerts query completed in ${queryTime}ms (${paginatedAlerts.length} of ${total} alerts, cached: ${fromCache})`)
+    console.log(
+      `✅ Alerts query completed in ${queryTime}ms (${paginatedAlerts.length} of ${total} alerts, cached: ${fromCache})`
+    );
 
     return NextResponse.json({
       success: true,
@@ -361,33 +369,38 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
         hasNext: validatedParams.page < totalPages,
-        hasPrev: validatedParams.page > 1
+        hasPrev: validatedParams.page > 1,
       },
       metrics,
       filters: validatedParams,
       meta: {
         queryTime: `${queryTime}ms`,
         cached: fromCache,
-        totalAlertsScanned: alerts.length
-      }
-    })
-
+        totalAlertsScanned: alerts.length,
+      },
+    });
   } catch (error) {
-    console.error('❌ Error fetching alerts:', error)
+    console.error('❌ Error fetching alerts:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.issues
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid query parameters',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -396,10 +409,16 @@ export async function GET(request: NextRequest) {
 // ============================================================================
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     const ManualAlertSchema = z.object({
-      type: z.enum(['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue']),
+      type: z.enum([
+        'low_stock',
+        'out_of_stock',
+        'expiry_warning',
+        'quality_issue',
+        'performance_issue',
+      ]),
       severity: z.enum(['low', 'medium', 'high', 'critical']),
       title: z.string().min(1, 'Title is required'),
       message: z.string().min(1, 'Message is required'),
@@ -407,10 +426,10 @@ export async function POST(request: NextRequest) {
       warehouseId: z.string().optional(),
       assignedTo: z.string().optional(),
       metadata: z.object({}).optional(),
-      notes: z.string().optional()
-    })
+      notes: z.string().optional(),
+    });
 
-    const validatedData = ManualAlertSchema.parse(body)
+    const validatedData = ManualAlertSchema.parse(body);
 
     const newAlert = {
       id: `alert_${Date.now()}`,
@@ -428,9 +447,14 @@ export async function POST(request: NextRequest) {
       currentValue: null,
       threshold: null,
       status: 'active',
-      priority: validatedData.severity === 'critical' ? 100 :
-                validatedData.severity === 'high' ? 75 :
-                validatedData.severity === 'medium' ? 50 : 25,
+      priority:
+        validatedData.severity === 'critical'
+          ? 100
+          : validatedData.severity === 'high'
+            ? 75
+            : validatedData.severity === 'medium'
+              ? 50
+              : 25,
       isActive: true,
       assignedTo: validatedData.assignedTo || null,
       assignedToName: null,
@@ -446,7 +470,7 @@ export async function POST(request: NextRequest) {
         threshold: null,
         lastAttempt: null,
         attempts: 0,
-        maxAttempts: 0
+        maxAttempts: 0,
       },
       metadata: validatedData.metadata || {},
       notifications: [],
@@ -458,38 +482,46 @@ export async function POST(request: NextRequest) {
           action: 'created',
           performedBy: 'api_user@company.com',
           timestamp: new Date().toISOString(),
-          notes: validatedData.notes || 'Manual alert created via API'
-        }
-      ]
-    }
+          notes: validatedData.notes || 'Manual alert created via API',
+        },
+      ],
+    };
 
     // Clear cache on new alert
-    alertsCache.clear()
+    alertsCache.clear();
 
-    console.log('✅ Manual alert created successfully')
+    console.log('✅ Manual alert created successfully');
 
-    return NextResponse.json({
-      success: true,
-      data: newAlert,
-      message: 'Alert created successfully'
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        success: true,
+        data: newAlert,
+        message: 'Alert created successfully',
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('❌ Error creating alert:', error)
+    console.error('❌ Error creating alert:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request data',
-        details: error.issues
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -498,38 +530,43 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { alertIds, action } = body
+    const body = await request.json();
+    const { alertIds, action } = body;
 
     if (!Array.isArray(alertIds)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Alert IDs must be an array'
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Alert IDs must be an array',
+        },
+        { status: 400 }
+      );
     }
 
     // Clear cache on update
-    alertsCache.clear()
+    alertsCache.clear();
 
-    console.log(`🔄 Processing bulk action ${action?.action} for ${alertIds.length} alerts`)
+    console.log(`🔄 Processing bulk action ${action?.action} for ${alertIds.length} alerts`);
 
     return NextResponse.json({
       success: true,
       data: {
         updated: alertIds.map(id => ({ id, status: 'updated' })),
-        notFound: []
+        notFound: [],
       },
-      message: `${alertIds.length} alerts updated successfully`
-    })
-
+      message: `${alertIds.length} alerts updated successfully`,
+    });
   } catch (error) {
-    console.error('❌ Error batch updating alerts:', error)
+    console.error('❌ Error batch updating alerts:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -537,19 +574,16 @@ export async function PUT(request: NextRequest) {
 // DELETE - Clear cache endpoint
 // ============================================================================
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const action = searchParams.get('action')
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get('action');
 
   if (action === 'clear-cache') {
-    alertsCache.clear()
+    alertsCache.clear();
     return NextResponse.json({
       success: true,
-      message: 'Alerts cache cleared successfully'
-    })
+      message: 'Alerts cache cleared successfully',
+    });
   }
 
-  return NextResponse.json(
-    { success: false, error: 'Invalid action' },
-    { status: 400 }
-  )
+  return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
 }

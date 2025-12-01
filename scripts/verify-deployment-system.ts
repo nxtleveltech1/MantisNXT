@@ -27,7 +27,12 @@ interface CheckResult {
 class DeploymentSystemVerifier {
   private results: CheckResult[] = [];
 
-  private addResult(category: string, name: string, status: 'pass' | 'fail' | 'warning', message: string): void {
+  private addResult(
+    category: string,
+    name: string,
+    status: 'pass' | 'fail' | 'warning',
+    message: string
+  ): void {
     this.results.push({ category, name, status, message });
 
     const icon = status === 'pass' ? '✅' : status === 'warning' ? '⚠️' : '❌';
@@ -41,12 +46,7 @@ class DeploymentSystemVerifier {
     const fullPath = join(process.cwd(), path);
     const exists = existsSync(fullPath);
 
-    this.addResult(
-      category,
-      name,
-      exists ? 'pass' : 'fail',
-      exists ? 'Found' : 'Missing'
-    );
+    this.addResult(category, name, exists ? 'pass' : 'fail', exists ? 'Found' : 'Missing');
 
     return exists;
   }
@@ -91,9 +91,7 @@ class DeploymentSystemVerifier {
   private checkTests(): void {
     console.log('\n🧪 Checking Test Files...\n');
 
-    const tests = [
-      { name: 'Authentication Tests', path: '__tests__/auth/authentication.test.ts' },
-    ];
+    const tests = [{ name: 'Authentication Tests', path: '__tests__/auth/authentication.test.ts' }];
 
     tests.forEach(test => {
       this.checkFileExists('Tests', test.name, test.path);
@@ -146,7 +144,6 @@ class DeploymentSystemVerifier {
           exists ? 'Defined' : 'Missing'
         );
       });
-
     } catch (error) {
       this.addResult('NPM Scripts', 'package.json', 'fail', 'Cannot read package.json');
     }
@@ -158,12 +155,7 @@ class DeploymentSystemVerifier {
   private checkDependencies(): void {
     console.log('\n📦 Checking Dependencies...\n');
 
-    const requiredDeps = [
-      'pg',
-      'bcryptjs',
-      'jsonwebtoken',
-      '@neondatabase/serverless',
-    ];
+    const requiredDeps = ['pg', 'bcryptjs', 'jsonwebtoken', '@neondatabase/serverless'];
 
     const requiredDevDeps = [
       'tsx',
@@ -196,7 +188,6 @@ class DeploymentSystemVerifier {
           exists ? 'Installed' : 'Missing (may need to install)'
         );
       });
-
     } catch (error) {
       this.addResult('Dependencies', 'package.json', 'fail', 'Cannot read package.json');
     }
@@ -246,17 +237,9 @@ class DeploymentSystemVerifier {
   private checkEnvironment(): void {
     console.log('\n🔧 Checking Environment Configuration...\n');
 
-    const requiredVars = [
-      'DATABASE_URL',
-      'NEXTAUTH_SECRET',
-      'JWT_SECRET',
-    ];
+    const requiredVars = ['DATABASE_URL', 'NEXTAUTH_SECRET', 'JWT_SECRET'];
 
-    const optionalVars = [
-      'NEXTAUTH_URL',
-      'VERCEL_TOKEN',
-      'SLACK_WEBHOOK_URL',
-    ];
+    const optionalVars = ['NEXTAUTH_URL', 'VERCEL_TOKEN', 'SLACK_WEBHOOK_URL'];
 
     requiredVars.forEach(varName => {
       const exists = process.env[varName] !== undefined;
@@ -378,11 +361,12 @@ class DeploymentSystemVerifier {
 if (require.main === module) {
   const verifier = new DeploymentSystemVerifier();
 
-  verifier.run()
-    .then((success) => {
+  verifier
+    .run()
+    .then(success => {
       process.exit(success ? 0 : 1);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Fatal error:', error);
       process.exit(1);
     });

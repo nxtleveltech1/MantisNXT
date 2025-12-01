@@ -5,7 +5,7 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { tagJobManager } from '@/lib/cmm/ai-tagging';
 import type { StartTaggingJobRequest, StartTaggingJobResponse } from '@/lib/cmm/ai-tagging/types';
@@ -15,14 +15,8 @@ export async function POST(request: NextRequest) {
     console.log('\n==== [/api/tag/ai-tagging/start] incoming request ====');
     const body: StartTaggingJobRequest = await request.json();
     console.log('[API:start] payload:', body);
-    
-    const {
-      job_type = 'full_scan',
-      filters = {},
-      config = {},
-      batch_size,
-      product_limit,
-    } = body;
+
+    const { job_type = 'full_scan', filters = {}, config = {}, batch_size, product_limit } = body;
 
     // Create the job
     console.log('[API:start] creating job…');
@@ -77,4 +71,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

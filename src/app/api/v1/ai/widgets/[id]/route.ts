@@ -61,11 +61,7 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateWidgetSchema.parse(body);
 
-    const widget = await DashboardService.updateWidget(
-      user.org_id,
-      id,
-      validated
-    );
+    const widget = await DashboardService.updateWidget(user.org_id, id, validated);
 
     if (!widget) {
       return new Response(

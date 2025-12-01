@@ -10,8 +10,7 @@ import { join } from 'path';
 const { Pool } = pg;
 
 async function applyMigration() {
-  const databaseUrl =
-    process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL environment variable is required');

@@ -4,11 +4,7 @@ import {
   query as coreQuery,
   withTransaction as coreTransaction,
 } from '@/lib/database/unified-connection';
-import {
-  sppDb,
-  sppQuery,
-  sppWithTransaction,
-} from '@/lib/database/spp-connection-manager';
+import { sppDb, sppQuery, sppWithTransaction } from '@/lib/database/spp-connection-manager';
 
 export type DatabaseTenant = 'core' | 'spp';
 
@@ -45,4 +41,3 @@ export const transactions = {
 export function resolveTenantForSchema(schema: string): DatabaseTenant {
   return schema === 'spp' ? 'spp' : 'core';
 }
-

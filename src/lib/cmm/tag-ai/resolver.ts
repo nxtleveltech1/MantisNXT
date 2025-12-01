@@ -44,11 +44,9 @@ const SERVICE_LABEL = 'Inventory Tagging';
  * Load the Inventory Tagging AI service configuration for an org from ai_service + ai_service_config.
  * Honors whatever provider/model is set there. No substitutions here.
  */
-export async function loadTagAIConfig(
-  orgId?: string | null
-): Promise<TagAIResolvedConfig | null> {
+export async function loadTagAIConfig(orgId?: string | null): Promise<TagAIResolvedConfig | null> {
   console.log(`[tag-ai:resolver] ENTRY: Loading config for orgId: ${orgId}`);
-  
+
   const resolvedOrg = resolveOrgId(orgId);
   console.log(`[tag-ai:resolver] Resolved orgId: ${resolvedOrg}`);
 
@@ -70,7 +68,7 @@ export async function loadTagAIConfig(
     console.warn(`[tag-ai:resolver] Searched for orgId: ${resolvedOrg}, label: ${SERVICE_LABEL}`);
     return null;
   }
-  
+
   const serviceId = serviceResult.rows[0].id;
 
   // Get service config
@@ -150,9 +148,7 @@ export async function loadTagAIConfig(
   }
 
   if (filtered.length === 0) {
-    console.warn(
-      '[tag-ai:resolver] No usable providers remain after platform ordering/limits'
-    );
+    console.warn('[tag-ai:resolver] No usable providers remain after platform ordering/limits');
     return null;
   }
 
@@ -161,49 +157,51 @@ export async function loadTagAIConfig(
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   };
-  
+
   // Extract web research provider and API keys from providerInstances if available
-  let webResearchProvider: string | undefined = cfg.webResearchProvider 
-    ? String(cfg.webResearchProvider) 
+  let webResearchProvider: string | undefined = cfg.webResearchProvider
+    ? String(cfg.webResearchProvider)
     : undefined;
   let webResearchApiKey: string | undefined = undefined;
   let webResearchEngineId: string | undefined = undefined;
-  
+
   if (Array.isArray(cfg.providerInstances)) {
     const webSearchProviders = ['tavily', 'serper', 'brave', 'exa', 'google_search'];
     const activeProviderInstanceId = cfg.activeProviderInstanceId;
-    
+
     // Find enabled web search providers
     const enabledWebSearch = cfg.providerInstances.filter(
       (inst: unknown) => inst?.enabled && webSearchProviders.includes(inst?.provider)
     );
-    
+
     if (enabledWebSearch.length > 0) {
       // If there's an activeProviderInstanceId pointing to a web search provider, use that
       const activeWebSearch = activeProviderInstanceId
         ? enabledWebSearch.find((inst: unknown) => inst?.id === activeProviderInstanceId)
         : null;
-      
+
       // Otherwise use first enabled web search provider
       const selectedWebSearch = activeWebSearch || enabledWebSearch[0];
-      
+
       if (selectedWebSearch) {
         // Map provider names to web research provider names
         const providerMap: Record<string, string> = {
-          'tavily': 'tavily',
-          'serper': 'serper',
-          'brave': 'brave',
-          'exa': 'exa',
-          'google_search': 'google_custom_search',
+          tavily: 'tavily',
+          serper: 'serper',
+          brave: 'brave',
+          exa: 'exa',
+          google_search: 'google_custom_search',
         };
         webResearchProvider = providerMap[selectedWebSearch.provider] || selectedWebSearch.provider;
         webResearchApiKey = selectedWebSearch.apiKey || undefined;
         webResearchEngineId = selectedWebSearch.googleSearchEngineId || undefined;
-        console.log(`[tag-ai:resolver] Selected web research provider: ${webResearchProvider} from providerInstances`);
+        console.log(
+          `[tag-ai:resolver] Selected web research provider: ${webResearchProvider} from providerInstances`
+        );
       }
     }
   }
-  
+
   const defaults = {
     timeoutMs:
       toInt(cfg.timeoutMs) || toInt(cfg.aiTimeoutMs) || toInt(cfg.tagTimeoutMs) || undefined,
@@ -266,11 +264,12 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
 
   // Web search providers should NOT be used as LLM providers
   const webSearchProviders = ['tavily', 'serper', 'brave', 'exa', 'google_search', 'firecrawl'];
-  
+
   // Helper to clean model names (remove suffixes like "medium", "high", etc.)
   const cleanModelName = (model: string | undefined): string | undefined => {
     if (!model) return undefined;
-    const cleaned = String(model).trim()
+    const cleaned = String(model)
+      .trim()
       .replace(/\s+(medium|high|low|fast|slow)$/i, '')
       .replace(/\(medium\)|\(high\)|\(low\)/gi, '')
       .trim();
@@ -280,7 +279,7 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
   // Priority 1: providerInstances array (used by AI Services UI)
   if (Array.isArray(config?.providerInstances)) {
     console.log(`[tag-ai:resolver] Found ${config.providerInstances.length} providerInstances`);
-    
+
     // If there's an activeProviderInstanceId, use only that one
     const activeId = config.activeProviderInstanceId;
     if (activeId) {
@@ -290,19 +289,25 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
       } else {
         const providerType = activeInst.providerType || activeInst.provider || 'openai';
         const providerKey = String(providerType).toLowerCase();
-        
+
         // Skip web search providers - they should only be used for web research, not LLM
         if (webSearchProviders.includes(providerKey)) {
-          console.warn(`[tag-ai:resolver] Skipping web search provider ${providerKey} as LLM provider`);
+          console.warn(
+            `[tag-ai:resolver] Skipping web search provider ${providerKey} as LLM provider`
+          );
         } else if (activeInst?.enabled && (activeInst?.apiKey || activeInst?.useCLI)) {
-          const sanitizedKey = sanitizeApiKey(activeInst.apiKey, { allowEmpty: !!activeInst?.useCLI });
+          const sanitizedKey = sanitizeApiKey(activeInst.apiKey, {
+            allowEmpty: !!activeInst?.useCLI,
+          });
           if (!sanitizedKey && !activeInst?.useCLI) {
             console.warn(
               `[tag-ai:resolver] Active provider instance ${activeInst.id} is missing a usable API key`
             );
             return providers;
           }
-          console.log(`[tag-ai:resolver] Using active provider instance: ${activeInst.id} (${cleanModelName(activeInst.model)})`);
+          console.log(
+            `[tag-ai:resolver] Using active provider instance: ${activeInst.id} (${cleanModelName(activeInst.model)})`
+          );
           providers.push({
             provider: providerType,
             apiKey: sanitizedKey || '', // Empty for CLI OAuth mode
@@ -310,14 +315,16 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
             model: cleanModelName(activeInst.model),
             enabled: true,
             // Include CLI config for the engine to use
-            ...(activeInst.useCLI ? {
-              useCLI: true,
-              cliCommand: activeInst.cliCommand,
-              cliArgs: activeInst.cliArgs,
-              useOAuth: activeInst.useOAuth,
-              useGCloudADC: activeInst.useGCloudADC,
-              cliWorkingDirectory: activeInst.cliWorkingDirectory,
-            } : {}),
+            ...(activeInst.useCLI
+              ? {
+                  useCLI: true,
+                  cliCommand: activeInst.cliCommand,
+                  cliArgs: activeInst.cliArgs,
+                  useOAuth: activeInst.useOAuth,
+                  useGCloudADC: activeInst.useGCloudADC,
+                  cliWorkingDirectory: activeInst.cliWorkingDirectory,
+                }
+              : {}),
             ...(typeof activeInst.useChatCompletions === 'boolean'
               ? { useChatCompletions: activeInst.useChatCompletions }
               : {}),
@@ -329,17 +336,17 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
         }
       }
     }
-    
+
     // Otherwise, use all enabled instances (excluding web search providers)
     for (const inst of config.providerInstances) {
       const providerType = inst?.providerType || inst?.provider || 'openai';
       const providerKey = String(providerType).toLowerCase();
-      
+
       // Skip web search providers - they should only be used for web research, not LLM
       if (webSearchProviders.includes(providerKey)) {
         continue; // Skip web search providers
       }
-      
+
       // For CLI providers with OAuth, apiKey is optional
       if (inst?.enabled && (inst?.apiKey || inst?.useCLI)) {
         const sanitizedKey = sanitizeApiKey(inst.apiKey, { allowEmpty: !!inst?.useCLI });
@@ -349,7 +356,9 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
           );
           continue;
         }
-        console.log(`[tag-ai:resolver] Adding provider instance: ${inst.id} (${cleanModelName(inst.model)})`);
+        console.log(
+          `[tag-ai:resolver] Adding provider instance: ${inst.id} (${cleanModelName(inst.model)})`
+        );
         providers.push({
           provider: providerType,
           apiKey: sanitizedKey || '', // Empty for CLI OAuth mode
@@ -357,14 +366,16 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
           model: cleanModelName(inst.model || config.model),
           enabled: true,
           // Include CLI config for the engine to use
-          ...(inst.useCLI ? {
-            useCLI: true,
-            cliCommand: inst.cliCommand,
-            cliArgs: inst.cliArgs,
-            useOAuth: inst.useOAuth,
-            useGCloudADC: inst.useGCloudADC,
-            cliWorkingDirectory: inst.cliWorkingDirectory,
-          } : {}),
+          ...(inst.useCLI
+            ? {
+                useCLI: true,
+                cliCommand: inst.cliCommand,
+                cliArgs: inst.cliArgs,
+                useOAuth: inst.useOAuth,
+                useGCloudADC: inst.useGCloudADC,
+                cliWorkingDirectory: inst.cliWorkingDirectory,
+              }
+            : {}),
           ...(typeof inst.useChatCompletions === 'boolean'
             ? { useChatCompletions: inst.useChatCompletions }
             : {}),
@@ -422,4 +433,3 @@ export function extractProviders(config: Record<string, unknown>): ProviderConfi
 
   return providers;
 }
-

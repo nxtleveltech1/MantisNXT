@@ -16,7 +16,7 @@ export function SkeletonMetrics() {
             <Skeleton className="h-4 w-24" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-8 w-16 mb-2" />
+            <Skeleton className="mb-2 h-8 w-16" />
             <Skeleton className="h-3 w-32" />
           </CardContent>
         </Card>
@@ -62,7 +62,7 @@ export function SkeletonWizard() {
                 <Skeleton className="h-3 w-32" />
               </div>
             </div>
-            {i < 2 && <Skeleton className="h-0.5 flex-1 mx-4" />}
+            {i < 2 && <Skeleton className="mx-4 h-0.5 flex-1" />}
           </React.Fragment>
         ))}
       </div>
@@ -70,7 +70,7 @@ export function SkeletonWizard() {
       {/* Content */}
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="mb-2 h-6 w-48" />
           <Skeleton className="h-4 w-full" />
         </CardHeader>
         <CardContent>
@@ -158,7 +158,7 @@ export function SkeletonCard() {
   return (
     <Card>
       <CardHeader>
-        <Skeleton className="h-5 w-32 mb-2" />
+        <Skeleton className="mb-2 h-5 w-32" />
         <Skeleton className="h-4 w-full" />
       </CardHeader>
       <CardContent>

@@ -201,12 +201,15 @@ export default function CustomersPage() {
     // Apply acquisition date range
     if (filters.acquisitionDateFrom) {
       result = result.filter(
-        c => c.acquisition_date && new Date(c.acquisition_date) >= new Date(filters.acquisitionDateFrom!)
+        c =>
+          c.acquisition_date &&
+          new Date(c.acquisition_date) >= new Date(filters.acquisitionDateFrom!)
       );
     }
     if (filters.acquisitionDateTo) {
       result = result.filter(
-        c => c.acquisition_date && new Date(c.acquisition_date) <= new Date(filters.acquisitionDateTo!)
+        c =>
+          c.acquisition_date && new Date(c.acquisition_date) <= new Date(filters.acquisitionDateTo!)
       );
     }
 
@@ -236,11 +239,14 @@ export default function CustomersPage() {
     const totalValue = customers.reduce((sum, c) => sum + (c.lifetime_value || 0), 0);
     const avgValue = total > 0 ? totalValue / total : 0;
 
-    const segments = customers.reduce((acc, c) => {
-      const seg = c.segment || 'unknown';
-      acc[seg] = (acc[seg] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const segments = customers.reduce(
+      (acc, c) => {
+        const seg = c.segment || 'unknown';
+        acc[seg] = (acc[seg] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       total,
@@ -264,22 +270,22 @@ export default function CustomersPage() {
       {
         key: 'lifetime_value',
         label: 'Lifetime Value',
-        format: (v) => ExportUtils.formatCurrency(v),
+        format: v => ExportUtils.formatCurrency(v),
       },
       {
         key: 'acquisition_date',
         label: 'Acquisition Date',
-        format: (v) => ExportUtils.formatDate(v),
+        format: v => ExportUtils.formatDate(v),
       },
       {
         key: 'last_interaction_date',
         label: 'Last Interaction',
-        format: (v) => ExportUtils.formatDate(v),
+        format: v => ExportUtils.formatDate(v),
       },
       {
         key: 'tags',
         label: 'Tags',
-        format: (v) => ExportUtils.formatArray(v),
+        format: v => ExportUtils.formatArray(v),
       },
     ];
 
@@ -298,22 +304,22 @@ export default function CustomersPage() {
       {
         key: 'lifetime_value',
         label: 'Lifetime Value',
-        format: (v) => ExportUtils.formatCurrency(v),
+        format: v => ExportUtils.formatCurrency(v),
       },
       {
         key: 'acquisition_date',
         label: 'Acquisition Date',
-        format: (v) => ExportUtils.formatDate(v),
+        format: v => ExportUtils.formatDate(v),
       },
       {
         key: 'last_interaction_date',
         label: 'Last Interaction',
-        format: (v) => ExportUtils.formatDate(v),
+        format: v => ExportUtils.formatDate(v),
       },
       {
         key: 'tags',
         label: 'Tags',
-        format: (v) => ExportUtils.formatArray(v),
+        format: v => ExportUtils.formatArray(v),
       },
     ];
 
@@ -321,7 +327,7 @@ export default function CustomersPage() {
     toast.success('Customers exported to Excel');
   };
 
-  const handleQuickFilter = (quickFilter: typeof QUICK_FILTERS[0]) => {
+  const handleQuickFilter = (quickFilter: (typeof QUICK_FILTERS)[0]) => {
     setFilters(quickFilter.filter);
   };
 
@@ -332,9 +338,9 @@ export default function CustomersPage() {
   if (loading) {
     return (
       <AppLayout title="Customers" breadcrumbs={[{ label: 'Customers' }]}>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <p className="text-gray-600">Loading customers...</p>
           </div>
         </div>
@@ -352,9 +358,7 @@ export default function CustomersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
-            <p className="text-gray-600 mt-2">
-              Manage and analyze your customer relationships
-            </p>
+            <p className="mt-2 text-gray-600">Manage and analyze your customer relationships</p>
           </div>
           <Button onClick={() => router.push('/customers/new')} size="lg" className="gap-2">
             <Plus className="h-5 w-5" />
@@ -363,37 +367,37 @@ export default function CustomersPage() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-background rounded-lg border border-border p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-background border-border rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
-                <p className="text-3xl font-bold mt-2">{stats.total}</p>
+                <p className="text-muted-foreground text-sm font-medium">Total Customers</p>
+                <p className="mt-2 text-3xl font-bold">{stats.total}</p>
               </div>
-              <div className="h-12 w-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-chart-1" />
+              <div className="bg-chart-1/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                <Users className="text-chart-1 h-6 w-6" />
               </div>
             </div>
           </div>
 
-          <div className="bg-background rounded-lg border border-border p-6">
+          <div className="bg-background border-border rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Customers</p>
-                <p className="text-3xl font-bold text-chart-2 mt-2">{stats.activePercentage}%</p>
-                <p className="text-xs text-muted-foreground mt-1">{stats.active} active</p>
+                <p className="text-muted-foreground text-sm font-medium">Active Customers</p>
+                <p className="text-chart-2 mt-2 text-3xl font-bold">{stats.activePercentage}%</p>
+                <p className="text-muted-foreground mt-1 text-xs">{stats.active} active</p>
               </div>
-              <div className="h-12 w-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
-                <Activity className="h-6 w-6 text-chart-2" />
+              <div className="bg-chart-2/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                <Activity className="text-chart-2 h-6 w-6" />
               </div>
             </div>
           </div>
 
-          <div className="bg-background rounded-lg border border-border p-6">
+          <div className="bg-background border-border rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Lifetime Value</p>
-                <p className="text-2xl font-bold text-chart-3 mt-2">
+                <p className="text-muted-foreground text-sm font-medium">Total Lifetime Value</p>
+                <p className="text-chart-3 mt-2 text-2xl font-bold">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'USD',
@@ -402,17 +406,17 @@ export default function CustomersPage() {
                   }).format(stats.totalValue)}
                 </p>
               </div>
-              <div className="h-12 w-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-chart-3" />
+              <div className="bg-chart-3/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                <DollarSign className="text-chart-3 h-6 w-6" />
               </div>
             </div>
           </div>
 
-          <div className="bg-background rounded-lg border border-border p-6">
+          <div className="bg-background border-border rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Lifetime Value</p>
-                <p className="text-2xl font-bold text-chart-4 mt-2">
+                <p className="text-muted-foreground text-sm font-medium">Avg Lifetime Value</p>
+                <p className="text-chart-4 mt-2 text-2xl font-bold">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'USD',
@@ -421,16 +425,16 @@ export default function CustomersPage() {
                   }).format(stats.avgValue)}
                 </p>
               </div>
-              <div className="h-12 w-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-chart-4" />
+              <div className="bg-chart-4/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                <TrendingUp className="text-chart-4 h-6 w-6" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Segment Breakdown */}
-        <div className="bg-background rounded-lg border border-border p-6">
-          <h3 className="text-lg font-semibold mb-4">Customer Segments</h3>
+        <div className="bg-background border-border rounded-lg border p-6">
+          <h3 className="mb-4 text-lg font-semibold">Customer Segments</h3>
           <div className="flex flex-wrap gap-3">
             {Object.entries(stats.segments).map(([segment, count]) => {
               return (
@@ -443,21 +447,21 @@ export default function CustomersPage() {
         </div>
 
         {/* Search, Filters, and Actions */}
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
             <input
               type="text"
               placeholder="Search customers by name, email, company, or phone..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
+              onChange={e => setSearchTerm(e.target.value)}
+              className="border-border bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 focus:border-transparent focus:ring-2"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transform"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -487,12 +491,12 @@ export default function CustomersPage() {
                   <Download className="h-4 w-4" />
                   Export
                   <select
-                    onChange={(e) => {
+                    onChange={e => {
                       if (e.target.value === 'csv') handleExportCSV();
                       if (e.target.value === 'excel') handleExportExcel();
                       e.target.value = '';
                     }}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 w-full cursor-pointer opacity-0"
                   >
                     <option value="">Select format</option>
                     <option value="csv">Export as CSV</option>
@@ -506,7 +510,7 @@ export default function CustomersPage() {
 
         {/* Quick Filters */}
         <div className="flex flex-wrap gap-2">
-          <span className="text-sm font-medium text-gray-700 flex items-center">
+          <span className="flex items-center text-sm font-medium text-gray-700">
             Quick Filters:
           </span>
           {QUICK_FILTERS.map(qf => (
@@ -541,9 +545,10 @@ export default function CustomersPage() {
 
         {/* Results Summary */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{filteredCustomers.length}</span> of{' '}
-            <span className="font-semibold text-foreground">{customers.length}</span> customers
+          <p className="text-muted-foreground text-sm">
+            Showing{' '}
+            <span className="text-foreground font-semibold">{filteredCustomers.length}</span> of{' '}
+            <span className="text-foreground font-semibold">{customers.length}</span> customers
             {debouncedSearch && (
               <span className="text-muted-foreground"> matching &quot;{debouncedSearch}&quot;</span>
             )}

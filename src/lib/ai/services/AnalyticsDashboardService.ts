@@ -69,7 +69,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
   async createDashboard(
     orgId: string,
     data: CreateDashboardData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard>> {
     return this.executeOperation(
       'dashboard.create',
@@ -82,7 +82,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
             SET is_default = false
             WHERE org_id = $1 AND is_default = true
             `,
-            [orgId],
+            [orgId]
           );
         }
 
@@ -104,13 +104,13 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
             data.isDefault || false,
             data.isShared || false,
             data.createdBy,
-          ],
+          ]
         );
 
         return this.mapDashboardRow(result.rows[0]);
       },
       options,
-      { orgId, name: data.name },
+      { orgId, name: data.name }
     );
   }
 
@@ -120,7 +120,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
   async updateDashboard(
     dashboardId: string,
     updates: UpdateDashboardData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard>> {
     return this.executeOperation(
       'dashboard.update',
@@ -149,10 +149,9 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         // Handle is_default separately to unset other defaults
         if (updates.isDefault === true) {
           // Get the org_id for this dashboard
-          const orgResult = await db.query(
-            `SELECT org_id FROM analytics_dashboard WHERE id = $1`,
-            [dashboardId],
-          );
+          const orgResult = await db.query(`SELECT org_id FROM analytics_dashboard WHERE id = $1`, [
+            dashboardId,
+          ]);
 
           if (orgResult.rows.length > 0) {
             const orgId = orgResult.rows[0].org_id;
@@ -162,7 +161,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
               SET is_default = false
               WHERE org_id = $1 AND is_default = true AND id != $2
               `,
-              [orgId, dashboardId],
+              [orgId, dashboardId]
             );
           }
 
@@ -186,7 +185,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE id = $${paramIndex}
           RETURNING *
           `,
-          values,
+          values
         );
 
         if (result.rows.length === 0) {
@@ -196,7 +195,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         return this.mapDashboardRow(result.rows[0]);
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -205,7 +204,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async deleteDashboard(
     dashboardId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'dashboard.delete',
@@ -216,7 +215,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE id = $1
           RETURNING id
           `,
-          [dashboardId],
+          [dashboardId]
         );
 
         if (result.rows.length === 0) {
@@ -224,7 +223,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         }
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -233,7 +232,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async getDashboard(
     dashboardId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard>> {
     return this.executeOperation(
       'dashboard.get',
@@ -243,7 +242,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           SELECT * FROM analytics_dashboard
           WHERE id = $1
           `,
-          [dashboardId],
+          [dashboardId]
         );
 
         if (result.rows.length === 0) {
@@ -253,7 +252,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         return this.mapDashboardRow(result.rows[0]);
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -262,7 +261,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async listDashboards(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard[]>> {
     return this.executeOperation(
       'dashboard.list',
@@ -273,13 +272,13 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE org_id = $1
           ORDER BY is_default DESC, name ASC
           `,
-          [orgId],
+          [orgId]
         );
 
-        return result.rows.map((row) => this.mapDashboardRow(row));
+        return result.rows.map(row => this.mapDashboardRow(row));
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -288,7 +287,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async getUserDashboards(
     userId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard[]>> {
     return this.executeOperation(
       'dashboard.getByUser',
@@ -299,13 +298,13 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE created_by = $1
           ORDER BY created_at DESC
           `,
-          [userId],
+          [userId]
         );
 
-        return result.rows.map((row) => this.mapDashboardRow(row));
+        return result.rows.map(row => this.mapDashboardRow(row));
       },
       options,
-      { userId },
+      { userId }
     );
   }
 
@@ -314,7 +313,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async getDefaultDashboard(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsDashboard | null>> {
     return this.executeOperation(
       'dashboard.getDefault',
@@ -325,7 +324,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE org_id = $1 AND is_default = true
           LIMIT 1
           `,
-          [orgId],
+          [orgId]
         );
 
         if (result.rows.length === 0) {
@@ -335,7 +334,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         return this.mapDashboardRow(result.rows[0]);
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -344,7 +343,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async shareDashboard(
     dashboardId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'dashboard.share',
@@ -356,7 +355,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE id = $1
           RETURNING id
           `,
-          [dashboardId],
+          [dashboardId]
         );
 
         if (result.rows.length === 0) {
@@ -364,7 +363,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         }
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -373,7 +372,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
    */
   async unshareDashboard(
     dashboardId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'dashboard.unshare',
@@ -385,7 +384,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE id = $1
           RETURNING id
           `,
-          [dashboardId],
+          [dashboardId]
         );
 
         if (result.rows.length === 0) {
@@ -393,7 +392,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         }
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -409,7 +408,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
       width: number;
       height: number;
     }>,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'dashboard.updateLayout',
@@ -421,7 +420,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
           WHERE id = $2
           RETURNING id
           `,
-          [JSON.stringify(layout), dashboardId],
+          [JSON.stringify(layout), dashboardId]
         );
 
         if (result.rows.length === 0) {
@@ -429,7 +428,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
         }
       },
       options,
-      { dashboardId, widgetCount: layout.length },
+      { dashboardId, widgetCount: layout.length }
     );
   }
 

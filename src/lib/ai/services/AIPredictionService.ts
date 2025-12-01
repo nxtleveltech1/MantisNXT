@@ -72,7 +72,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   async createPrediction(
     orgId: string,
     data: CreatePredictionData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIPrediction>> {
     return this.executeOperation(
       'prediction.create',
@@ -100,7 +100,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
             data.confidenceScore,
             data.expiresAt,
             JSON.stringify(data.metadata || {}),
-          ],
+          ]
         );
 
         return this.mapPredictionRow(result.rows[0]);
@@ -110,7 +110,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         orgId,
         serviceType: data.serviceType,
         entityType: data.entityType,
-      },
+      }
     );
   }
 
@@ -120,7 +120,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   async updatePredictionAccuracy(
     predictionId: string,
     actualOutcome: Record<string, unknown>,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'prediction.updateAccuracy',
@@ -132,7 +132,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
           FROM ai_prediction
           WHERE id = $1
           `,
-          [predictionId],
+          [predictionId]
         );
 
         if (predResult.rows.length === 0) {
@@ -140,10 +140,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         }
 
         const prediction = predResult.rows[0];
-        const accuracyScore = this.calculateAccuracy(
-          prediction.prediction_data,
-          actualOutcome,
-        );
+        const accuracyScore = this.calculateAccuracy(prediction.prediction_data, actualOutcome);
 
         // Update with actual outcome and accuracy
         await db.query(
@@ -155,11 +152,11 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
             feedback_received = true
           WHERE id = $3
           `,
-          [JSON.stringify(actualOutcome), accuracyScore, predictionId],
+          [JSON.stringify(actualOutcome), accuracyScore, predictionId]
         );
       },
       options,
-      { predictionId },
+      { predictionId }
     );
   }
 
@@ -168,7 +165,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
    */
   async getPrediction(
     predictionId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIPrediction>> {
     return this.executeOperation(
       'prediction.get',
@@ -178,7 +175,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
           SELECT * FROM ai_prediction
           WHERE id = $1
           `,
-          [predictionId],
+          [predictionId]
         );
 
         if (result.rows.length === 0) {
@@ -188,7 +185,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         return this.mapPredictionRow(result.rows[0]);
       },
       options,
-      { predictionId },
+      { predictionId }
     );
   }
 
@@ -198,7 +195,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   async getPredictionsByEntity(
     entityType: string,
     entityId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIPrediction[]>> {
     return this.executeOperation(
       'prediction.getByEntity',
@@ -209,13 +206,13 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
           WHERE entity_type = $1 AND entity_id = $2
           ORDER BY created_at DESC
           `,
-          [entityType, entityId],
+          [entityType, entityId]
         );
 
-        return result.rows.map((row) => this.mapPredictionRow(row));
+        return result.rows.map(row => this.mapPredictionRow(row));
       },
       options,
-      { entityType, entityId },
+      { entityType, entityId }
     );
   }
 
@@ -227,7 +224,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
     serviceType: AIServiceType,
     page: number = 1,
     pageSize: number = 50,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<PaginatedResult<AIPrediction>>> {
     return this.executeOperation(
       'prediction.getByService',
@@ -241,7 +238,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
           FROM ai_prediction
           WHERE org_id = $1 AND service_type = $2
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         const total = parseInt(countResult.rows[0]?.total || '0');
@@ -254,10 +251,10 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
           ORDER BY created_at DESC
           LIMIT $3 OFFSET $4
           `,
-          [orgId, serviceType, pageSize, offset],
+          [orgId, serviceType, pageSize, offset]
         );
 
-        const data = result.rows.map((row) => this.mapPredictionRow(row));
+        const data = result.rows.map(row => this.mapPredictionRow(row));
 
         return {
           data,
@@ -268,7 +265,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         };
       },
       options,
-      { orgId, serviceType, page, pageSize },
+      { orgId, serviceType, page, pageSize }
     );
   }
 
@@ -278,7 +275,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   async getAverageConfidence(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'prediction.avgConfidence',
@@ -291,13 +288,13 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
             AND service_type = $2
             AND expires_at > NOW()
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         return parseFloat(result.rows[0]?.avg_confidence || '0');
       },
       options,
-      { orgId, serviceType },
+      { orgId, serviceType }
     );
   }
 
@@ -307,7 +304,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   async getAccuracyMetrics(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AccuracyMetrics>> {
     return this.executeOperation(
       'prediction.accuracyMetrics',
@@ -325,7 +322,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
             AND service_type = $2
             AND accuracy_score IS NOT NULL
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         const overall = overallResult.rows[0];
@@ -355,17 +352,15 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
             END
           ORDER BY confidence_range DESC
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         return {
           avgAccuracy: parseFloat(overall.avg_accuracy || '0'),
           medianAccuracy: parseFloat(overall.median_accuracy || '0'),
           totalPredictions: parseInt(overall.total_predictions || '0'),
-          predictionsWithFeedback: parseInt(
-            overall.predictions_with_feedback || '0',
-          ),
-          accuracyByConfidence: rangeResult.rows.map((row) => ({
+          predictionsWithFeedback: parseInt(overall.predictions_with_feedback || '0'),
+          accuracyByConfidence: rangeResult.rows.map(row => ({
             confidenceRange: row.confidence_range,
             avgAccuracy: parseFloat(row.avg_accuracy),
             count: parseInt(row.count),
@@ -373,7 +368,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         };
       },
       options,
-      { orgId, serviceType },
+      { orgId, serviceType }
     );
   }
 
@@ -381,7 +376,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
    * Clean up expired predictions (older than 30 days past expiration)
    */
   async cleanupExpiredPredictions(
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'prediction.cleanup',
@@ -389,12 +384,12 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
         const result = await db.query(
           `
           SELECT cleanup_expired_predictions() as deleted_count
-          `,
+          `
         );
 
         return parseInt(result.rows[0]?.deleted_count || '0');
       },
-      options,
+      options
     );
   }
 
@@ -403,16 +398,13 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
    */
   private calculateAccuracy(
     predictionData: Record<string, unknown>,
-    actualOutcome: Record<string, unknown>,
+    actualOutcome: Record<string, unknown>
   ): number {
     // This is a simplified accuracy calculation
     // In production, you'd want domain-specific accuracy metrics
 
     // For numeric predictions
-    if (
-      typeof predictionData.value === 'number' &&
-      typeof actualOutcome.value === 'number'
-    ) {
+    if (typeof predictionData.value === 'number' && typeof actualOutcome.value === 'number') {
       const predicted = predictionData.value;
       const actual = actualOutcome.value;
 
@@ -425,18 +417,12 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
     }
 
     // For categorical predictions
-    if (
-      typeof predictionData.category === 'string' &&
-      typeof actualOutcome.category === 'string'
-    ) {
+    if (typeof predictionData.category === 'string' && typeof actualOutcome.category === 'string') {
       return predictionData.category === actualOutcome.category ? 1.0 : 0.0;
     }
 
     // For boolean predictions
-    if (
-      typeof predictionData.result === 'boolean' &&
-      typeof actualOutcome.result === 'boolean'
-    ) {
+    if (typeof predictionData.result === 'boolean' && typeof actualOutcome.result === 'boolean') {
       return predictionData.result === actualOutcome.result ? 1.0 : 0.0;
     }
 
@@ -471,9 +457,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
       entityId: row.entity_id,
       predictionData: row.prediction_data || {},
       confidenceScore: parseFloat(row.confidence_score),
-      accuracyScore: row.accuracy_score
-        ? parseFloat(row.accuracy_score)
-        : undefined,
+      accuracyScore: row.accuracy_score ? parseFloat(row.accuracy_score) : undefined,
       createdAt: new Date(row.created_at),
       expiresAt: new Date(row.expires_at),
       feedbackReceived: row.feedback_received,

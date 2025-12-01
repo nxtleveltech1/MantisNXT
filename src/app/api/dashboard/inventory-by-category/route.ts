@@ -3,8 +3,8 @@
  * Returns inventory value and product count breakdown by category
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { CORE_TABLES, SERVE_VIEWS } from '@/lib/db/schema-contract';
@@ -19,8 +19,8 @@ export async function GET(request: Request) {
     let sohDateFilter = '';
     switch (dateRange) {
       case 'today':
-        nxtDateFilter = "AND nxt.as_of_ts >= CURRENT_DATE";
-        sohDateFilter = "AND soh.as_of_ts >= CURRENT_DATE";
+        nxtDateFilter = 'AND nxt.as_of_ts >= CURRENT_DATE';
+        sohDateFilter = 'AND soh.as_of_ts >= CURRENT_DATE';
         break;
       case 'week':
         nxtDateFilter = "AND nxt.as_of_ts >= CURRENT_DATE - INTERVAL '7 days'";
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
       switch (range) {
         case 'today':
           return {
-            nxt: "AND nxt.as_of_ts >= CURRENT_DATE",
-            soh: "AND soh.as_of_ts >= CURRENT_DATE",
+            nxt: 'AND nxt.as_of_ts >= CURRENT_DATE',
+            soh: 'AND soh.as_of_ts >= CURRENT_DATE',
           };
         case 'week':
           return {

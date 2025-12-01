@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import React, { useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   LineChart,
   Line,
@@ -24,7 +24,7 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
-} from 'recharts'
+} from 'recharts';
 import {
   TrendingUp,
   TrendingDown,
@@ -33,61 +33,63 @@ import {
   DollarSign,
   BarChart3,
   Loader2,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface PricePositioning {
-  internalPrice: number
+  internalPrice: number;
   competitorPrices: Array<{
-    competitorId: string
-    competitorName: string
-    price: number
-    currency: string
-    observedAt: string
-  }>
-  rank: number
-  percentile: number
-  spread: number
-  marketMedian: number
-  marketAverage: number
-  position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest'
+    competitorId: string;
+    competitorName: string;
+    price: number;
+    currency: string;
+    observedAt: string;
+  }>;
+  rank: number;
+  percentile: number;
+  spread: number;
+  marketMedian: number;
+  marketAverage: number;
+  position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest';
 }
 
 export default function PricePositioningPage() {
-  const [productId, setProductId] = useState<string>('')
-  const [positioning, setPositioning] = useState<PricePositioning | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [productId, setProductId] = useState<string>('');
+  const [positioning, setPositioning] = useState<PricePositioning | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPositioning = async () => {
     if (!productId) {
-      setError('Please select a product')
-      return
+      setError('Please select a product');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/v1/pricing-intel/price-positioning?productId=${productId}`)
-      const data = await response.json()
+      const response = await fetch(
+        `/api/v1/pricing-intel/price-positioning?productId=${productId}`
+      );
+      const data = await response.json();
 
       if (data.error) {
-        setError(data.error.message)
-        setPositioning(null)
+        setError(data.error.message);
+        setPositioning(null);
       } else {
-        setPositioning(data.data)
+        setPositioning(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch price positioning')
-      setPositioning(null)
+      setError(err instanceof Error ? err.message : 'Failed to fetch price positioning');
+      setPositioning(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const chartData = positioning
     ? [
-        ...positioning.competitorPrices.map((cp) => ({
+        ...positioning.competitorPrices.map(cp => ({
           name: cp.competitorName,
           price: cp.price,
           type: 'competitor' as const,
@@ -98,28 +100,31 @@ export default function PricePositioningPage() {
           type: 'internal' as const,
         },
       ].sort((a, b) => a.price - b.price)
-    : []
+    : [];
 
   const getPositionBadge = () => {
-    if (!positioning) return null
+    if (!positioning) return null;
 
-    const variants: Record<PricePositioning['position'], { variant: 'default' | 'secondary' | 'destructive'; icon: React.ReactNode }> = {
+    const variants: Record<
+      PricePositioning['position'],
+      { variant: 'default' | 'secondary' | 'destructive'; icon: React.ReactNode }
+    > = {
       lowest: { variant: 'destructive', icon: <TrendingDown className="h-3 w-3" /> },
       below_median: { variant: 'secondary', icon: <TrendingDown className="h-3 w-3" /> },
       at_median: { variant: 'default', icon: <Target className="h-3 w-3" /> },
       above_median: { variant: 'secondary', icon: <TrendingUp className="h-3 w-3" /> },
       highest: { variant: 'destructive', icon: <TrendingUp className="h-3 w-3" /> },
-    }
+    };
 
-    const config = variants[positioning.position]
+    const config = variants[positioning.position];
 
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
         {config.icon}
         {positioning.position.replace('_', ' ').toUpperCase()}
       </Badge>
-    )
-  }
+    );
+  };
 
   return (
     <AppLayout
@@ -178,7 +183,7 @@ export default function PricePositioningPage() {
         {error && (
           <Card className="border-destructive">
             <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-destructive">
+              <div className="text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 <span>{error}</span>
               </div>
@@ -193,26 +198,24 @@ export default function PricePositioningPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Our Price</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <DollarSign className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${positioning.internalPrice.toFixed(2)}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">{getPositionBadge()}</div>
+                  <div className="text-2xl font-bold">${positioning.internalPrice.toFixed(2)}</div>
+                  <div className="mt-2 flex items-center gap-2">{getPositionBadge()}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Market Rank</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
+                  <Target className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     #{positioning.rank} / {positioning.competitorPrices.length + 1}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {positioning.percentile.toFixed(1)} percentile
                   </p>
                 </CardContent>
@@ -221,13 +224,11 @@ export default function PricePositioningPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Market Median</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <BarChart3 className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${positioning.marketMedian.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-2xl font-bold">${positioning.marketMedian.toFixed(2)}</div>
+                  <p className="text-muted-foreground text-xs">
                     ${positioning.marketAverage.toFixed(2)} average
                   </p>
                 </CardContent>
@@ -236,11 +237,11 @@ export default function PricePositioningPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Price Spread</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">${positioning.spread.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">Range</p>
+                  <p className="text-muted-foreground text-xs">Range</p>
                 </CardContent>
               </Card>
             </div>
@@ -249,7 +250,9 @@ export default function PricePositioningPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Price Comparison</CardTitle>
-                <CardDescription>Visual comparison of prices across all competitors</CardDescription>
+                <CardDescription>
+                  Visual comparison of prices across all competitors
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
@@ -297,18 +300,18 @@ export default function PricePositioningPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {positioning.competitorPrices.map((cp) => {
-                    const diff = cp.price - positioning.internalPrice
-                    const diffPercent = (diff / positioning.internalPrice) * 100
+                  {positioning.competitorPrices.map(cp => {
+                    const diff = cp.price - positioning.internalPrice;
+                    const diffPercent = (diff / positioning.internalPrice) * 100;
 
                     return (
                       <div
                         key={cp.competitorId}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                        className="flex items-center justify-between rounded-lg border p-4"
                       >
                         <div>
                           <div className="font-medium">{cp.competitorName}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Observed: {new Date(cp.observedAt).toLocaleDateString()}
                           </div>
                         </div>
@@ -316,9 +319,7 @@ export default function PricePositioningPage() {
                           <div className="text-lg font-bold">${cp.price.toFixed(2)}</div>
                           {diff !== 0 && (
                             <div
-                              className={`text-sm ${
-                                diff > 0 ? 'text-red-600' : 'text-green-600'
-                              }`}
+                              className={`text-sm ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}
                             >
                               {diff > 0 ? '+' : ''}
                               {diffPercent.toFixed(1)}% vs us
@@ -326,7 +327,7 @@ export default function PricePositioningPage() {
                           )}
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>
@@ -335,6 +336,5 @@ export default function PricePositioningPage() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }
-

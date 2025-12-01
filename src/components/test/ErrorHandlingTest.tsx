@@ -3,31 +3,37 @@
  * Validates crash prevention and fallback behavior
  */
 
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ErrorBoundary } from 'react-error-boundary'
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface TestState {
-  thrownErrors: number
-  caughtErrors: number
-  lastError: string
+  thrownErrors: number;
+  caughtErrors: number;
+  lastError: string;
 }
 
 // Component that intentionally throws errors
 function CrashableComponent({ shouldCrash }: { shouldCrash: boolean }) {
   if (shouldCrash) {
-    throw new Error('Intentional test error for error boundary validation')
+    throw new Error('Intentional test error for error boundary validation');
   }
-  return <div className="text-green-600">✅ Component rendered successfully</div>
+  return <div className="text-green-600">✅ Component rendered successfully</div>;
 }
 
 // Error fallback component
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
   return (
     <Alert className="border-red-500">
       <AlertDescription>
@@ -39,48 +45,48 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
         </div>
       </AlertDescription>
     </Alert>
-  )
+  );
 }
 
 export default function ErrorHandlingTest() {
   const [state, setState] = useState<TestState>({
     thrownErrors: 0,
     caughtErrors: 0,
-    lastError: ''
-  })
-  const [shouldCrash, setShouldCrash] = useState(false)
+    lastError: '',
+  });
+  const [shouldCrash, setShouldCrash] = useState(false);
 
   const triggerError = () => {
-    setShouldCrash(true)
+    setShouldCrash(true);
     setState(prev => ({
       ...prev,
-      thrownErrors: prev.thrownErrors + 1
-    }))
-  }
+      thrownErrors: prev.thrownErrors + 1,
+    }));
+  };
 
   const triggerAsyncError = async () => {
     try {
       // Simulate async error
       await new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Async operation failed')), 100)
-      })
+        setTimeout(() => reject(new Error('Async operation failed')), 100);
+      });
     } catch (error) {
       setState(prev => ({
         ...prev,
         caughtErrors: prev.caughtErrors + 1,
-        lastError: (error as Error).message
-      }))
+        lastError: (error as Error).message,
+      }));
     }
-  }
+  };
 
   const resetErrors = () => {
-    setShouldCrash(false)
+    setShouldCrash(false);
     setState({
       thrownErrors: 0,
       caughtErrors: 0,
-      lastError: ''
-    })
-  }
+      lastError: '',
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -91,20 +97,14 @@ export default function ErrorHandlingTest() {
         <CardContent className="space-y-4">
           {/* Error Statistics */}
           <div className="flex gap-4">
-            <Badge variant="destructive">
-              Thrown: {state.thrownErrors}
-            </Badge>
-            <Badge variant="secondary">
-              Caught: {state.caughtErrors}
-            </Badge>
+            <Badge variant="destructive">Thrown: {state.thrownErrors}</Badge>
+            <Badge variant="secondary">Caught: {state.caughtErrors}</Badge>
           </div>
 
           {/* Last Error Display */}
           {state.lastError && (
             <Alert>
-              <AlertDescription>
-                Last async error: {state.lastError}
-              </AlertDescription>
+              <AlertDescription>Last async error: {state.lastError}</AlertDescription>
             </Alert>
           )}
 
@@ -122,16 +122,16 @@ export default function ErrorHandlingTest() {
           </div>
 
           {/* Error Boundary Test Area */}
-          <div className="border rounded p-4">
-            <h4 className="font-medium mb-2">Error Boundary Test Area:</h4>
+          <div className="rounded border p-4">
+            <h4 className="mb-2 font-medium">Error Boundary Test Area:</h4>
             <ErrorBoundary
               FallbackComponent={ErrorFallback}
-              onError={(error) => {
+              onError={error => {
                 setState(prev => ({
                   ...prev,
                   caughtErrors: prev.caughtErrors + 1,
-                  lastError: error.message
-                }))
+                  lastError: error.message,
+                }));
               }}
               onReset={() => setShouldCrash(false)}
             >
@@ -148,5 +148,5 @@ export default function ErrorHandlingTest() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

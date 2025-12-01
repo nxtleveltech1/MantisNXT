@@ -9,7 +9,7 @@
  * - Comparative analysis
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supplierDiscoveryEngine } from '@/lib/supplier-discovery/engine';
@@ -28,12 +28,17 @@ const riskRequestSchema = z.object({
 
 const predictionRequestSchema = z.object({
   supplierId: z.number().int().positive('Supplier ID must be a positive integer'),
-  predictionType: z.enum(['on_time_delivery', 'quality_score', 'cost_trend', 'order_volume']).optional(),
+  predictionType: z
+    .enum(['on_time_delivery', 'quality_score', 'cost_trend', 'order_volume'])
+    .optional(),
   forecastDays: z.number().int().min(7).max(90).optional(),
 });
 
 const compareRequestSchema = z.object({
-  supplierIds: z.array(z.number().int().positive()).min(2, 'At least 2 supplier IDs required').max(10, 'Maximum 10 suppliers for comparison'),
+  supplierIds: z
+    .array(z.number().int().positive())
+    .min(2, 'At least 2 supplier IDs required')
+    .max(10, 'Maximum 10 suppliers for comparison'),
 });
 
 const comprehensiveRequestSchema = z.object({
@@ -103,7 +108,9 @@ async function handleRiskRequest(request: NextRequest): Promise<NextResponse> {
 
     console.log(`AI Insights API: Assessing risk for supplier ${validatedData.supplierId}`);
 
-    const riskAssessment = await supplierDiscoveryEngine.assessSupplierRisk(validatedData.supplierId);
+    const riskAssessment = await supplierDiscoveryEngine.assessSupplierRisk(
+      validatedData.supplierId
+    );
 
     return NextResponse.json({
       success: true,
@@ -251,7 +258,9 @@ async function handleComprehensiveRequest(request: NextRequest): Promise<NextRes
     const body = await request.json();
     const validatedData = comprehensiveRequestSchema.parse(body);
 
-    console.log(`AI Insights API: Getting comprehensive insights for supplier ${validatedData.supplierId}`);
+    console.log(
+      `AI Insights API: Getting comprehensive insights for supplier ${validatedData.supplierId}`
+    );
 
     const insights = await supplierDiscoveryEngine.getSupplierAIInsights(validatedData.supplierId);
 
@@ -423,7 +432,8 @@ export async function GET(request: NextRequest) {
               description: 'Performance predictions and forecasting',
               body: {
                 supplierId: 'number (required)',
-                predictionType: 'string (optional): on_time_delivery | quality_score | cost_trend | order_volume',
+                predictionType:
+                  'string (optional): on_time_delivery | quality_score | cost_trend | order_volume',
                 forecastDays: 'number (optional, default: 30, min: 7, max: 90)',
               },
               example: {
@@ -449,7 +459,8 @@ export async function GET(request: NextRequest) {
           queryParameters: {
             supplierId: {
               required: false,
-              description: 'Supplier ID to get insights for. If omitted, returns API documentation.',
+              description:
+                'Supplier ID to get insights for. If omitted, returns API documentation.',
             },
           },
           example: '/api/suppliers/ai-insights?supplierId=123',

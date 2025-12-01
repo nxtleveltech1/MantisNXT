@@ -152,9 +152,7 @@ describe('Vercel AI SDK v5 Integration Tests', () => {
       const { getProviderClient } = await import('@/lib/ai/providers');
       const client = getProviderClient('openai');
 
-      const messages = [
-        { role: 'user' as const, content: 'Test message' },
-      ];
+      const messages = [{ role: 'user' as const, content: 'Test message' }];
 
       // Verify method signature accepts messages
       expect(() => {

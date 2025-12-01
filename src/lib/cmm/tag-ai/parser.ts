@@ -86,7 +86,7 @@ export function parseStructuredJsonResponse<T>(rawText: string, schema: z.ZodSch
       const repairedResult = tryParseCandidate(repaired, schema);
       if (repairedResult) return repairedResult;
     }
-    
+
     // If repair failed, try to close truncated JSON structures
     const closed = attemptCloseTruncatedJson(candidate);
     if (closed) {
@@ -103,57 +103,57 @@ export function parseStructuredJsonResponse<T>(rawText: string, schema: z.ZodSch
  */
 function attemptCloseTruncatedJson(text: string): string | null {
   if (!text || !text.trim().startsWith('{')) return null;
-  
+
   try {
     // Count open/close braces and brackets
     let openBraces = 0;
     let openBrackets = 0;
     let inString = false;
     let escapeNext = false;
-    
+
     for (let i = 0; i < text.length; i++) {
       const char = text[i];
-      
+
       if (escapeNext) {
         escapeNext = false;
         continue;
       }
-      
+
       if (char === '\\') {
         escapeNext = true;
         continue;
       }
-      
+
       if (char === '"') {
         inString = !inString;
         continue;
       }
-      
+
       if (inString) continue;
-      
+
       if (char === '{') openBraces++;
       else if (char === '}') openBraces--;
       else if (char === '[') openBrackets++;
       else if (char === ']') openBrackets--;
     }
-    
+
     // If we're in a string, try to close it
     if (inString) {
       text = text + '"';
     }
-    
+
     // Close any open brackets first
     while (openBrackets > 0) {
       text = text + ']';
       openBrackets--;
     }
-    
+
     // Close any open braces
     while (openBraces > 0) {
       text = text + '}';
       openBraces--;
     }
-    
+
     // Try to repair the closed JSON
     return repairCandidate(text);
   } catch {
@@ -178,4 +178,3 @@ function repairCandidate(candidate: string): string | null {
     return null;
   }
 }
-

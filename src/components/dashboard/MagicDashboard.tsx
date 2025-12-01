@@ -3,7 +3,7 @@
  * Comprehensive dashboard with KPIs, charts, alerts, and analytics
  */
 
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { BulletproofErrorBoundary } from '@/components/ui/BulletproofErrorBoundary';
@@ -12,10 +12,7 @@ import { Button } from '@/components/ui/button';
 
 // Data hooks
 import { useDashboardMetrics } from '@/hooks/api/useDashboardMetrics';
-import {
-  useRealTimeSuppliers,
-  useRealTimeInventory,
-} from '@/hooks/useRealTimeDataFixed';
+import { useRealTimeSuppliers, useRealTimeInventory } from '@/hooks/useRealTimeDataFixed';
 import { formatCurrency } from '@/hooks/api/useDashboardWidgets';
 
 // New Widget Components
@@ -55,18 +52,12 @@ const MagicDashboard = () => {
   // Data hooks
   const dashboardQuery = useDashboardMetrics();
 
-  const {
-    data: suppliersData,
-    isLoading: suppliersLoading,
-  } = useRealTimeSuppliers({
+  const { data: suppliersData, isLoading: suppliersLoading } = useRealTimeSuppliers({
     status: ['active', 'preferred'],
     includeMetrics: true,
   });
 
-  const {
-    data: inventoryData,
-    isLoading: inventoryLoading,
-  } = useRealTimeInventory({
+  const { data: inventoryData, isLoading: inventoryLoading } = useRealTimeInventory({
     includeAlerts: true,
     includeMetrics: true,
   });
@@ -83,13 +74,13 @@ const MagicDashboard = () => {
     // Use dashboard API data when available
     const totalSuppliers = dashboardData?.totalSuppliers ?? suppliers.length;
     const activeSuppliers =
-      dashboardData?.activeSuppliers ?? suppliers.filter((s) => s.status === 'active').length;
+      dashboardData?.activeSuppliers ?? suppliers.filter(s => s.status === 'active').length;
     const preferredSuppliers = dashboardData?.preferredSuppliers ?? 0;
     const totalInventoryValue = dashboardData?.totalInventoryValue ?? (invMetrics.totalValue || 0);
     const totalInventoryItems = dashboardData?.totalInventoryItems ?? inventory.length;
     const stockAlerts =
       dashboardData?.totalAlerts ??
-      ((invMetrics.lowStockItems || 0) + (invMetrics.outOfStockItems || 0));
+      (invMetrics.lowStockItems || 0) + (invMetrics.outOfStockItems || 0);
     const lowStockAlerts = dashboardData?.lowStockAlerts ?? (invMetrics.lowStockItems || 0);
     const outOfStockItems = dashboardData?.outOfStockItems ?? (invMetrics.outOfStockItems || 0);
 
@@ -101,9 +92,10 @@ const MagicDashboard = () => {
 
     // Calculate trends (simplified)
     const previousInventoryValue = totalInventoryValue * 0.95;
-    const changePercent = previousInventoryValue > 0
-      ? ((totalInventoryValue - previousInventoryValue) / previousInventoryValue) * 100
-      : 0;
+    const changePercent =
+      previousInventoryValue > 0
+        ? ((totalInventoryValue - previousInventoryValue) / previousInventoryValue) * 100
+        : 0;
 
     return {
       totalSuppliers,
@@ -158,19 +150,19 @@ const MagicDashboard = () => {
 
   if (!mounted || loading) {
     return (
-      <div className="space-y-6 p-6 bg-background min-h-screen">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />
+      <div className="bg-background min-h-screen space-y-6 p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-muted h-32 animate-pulse rounded-xl" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 space-y-6">
-            <div className="h-[400px] bg-muted animate-pulse rounded-xl" />
-            <div className="h-[400px] bg-muted animate-pulse rounded-xl" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-8">
+            <div className="bg-muted h-[400px] animate-pulse rounded-xl" />
+            <div className="bg-muted h-[400px] animate-pulse rounded-xl" />
           </div>
           <div className="lg:col-span-4">
-            <div className="h-[800px] bg-muted animate-pulse rounded-xl" />
+            <div className="bg-muted h-[800px] animate-pulse rounded-xl" />
           </div>
         </div>
       </div>
@@ -178,14 +170,12 @@ const MagicDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 p-6 bg-background min-h-screen">
+    <div className="bg-background min-h-screen space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here&apos;s your business overview.
-          </p>
+          <p className="text-muted-foreground">Welcome back! Here&apos;s your business overview.</p>
         </div>
         <div className="flex items-center gap-3">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
@@ -197,7 +187,7 @@ const MagicDashboard = () => {
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <EnhancedKPICard
           title="Active Suppliers"
           subtitle={`${metrics.preferredSuppliers} preferred`}
@@ -240,9 +230,9 @@ const MagicDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column - Main Widgets */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="space-y-6 lg:col-span-8">
           {/* Flippable Main Widget */}
           <FlippableWidget views={mainWidgetViews} defaultViewId="inventory-value" />
 
@@ -257,7 +247,7 @@ const MagicDashboard = () => {
       </div>
 
       {/* Bottom Row - Loyalty Widgets + Activity Feed */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <LoyaltySignupsWidget />
         <ActiveMembersWidget />
         <PointsEconomyWidget />

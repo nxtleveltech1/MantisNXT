@@ -115,12 +115,7 @@ export class DashboardService {
     orgId: string,
     options: ListDashboardsOptions = {}
   ): Promise<{ dashboards: Dashboard[]; total: number }> {
-    const {
-      isPublic,
-      limit = 50,
-      offset = 0,
-      includeWidgets = false,
-    } = options;
+    const { isPublic, limit = 50, offset = 0, includeWidgets = false } = options;
 
     let whereClause = 'WHERE d.org_id = $1';
     const params: unknown[] = [orgId];
@@ -138,10 +133,7 @@ export class DashboardService {
     `;
 
     // Get total count
-    const countResult = await query(
-      `SELECT COUNT(*)::int as total ${baseQuery}`,
-      params
-    );
+    const countResult = await query(`SELECT COUNT(*)::int as total ${baseQuery}`, params);
     const total = countResult.rows[0]?.total || 0;
 
     // Get dashboards
@@ -170,7 +162,7 @@ export class DashboardService {
 
     // Optionally include widgets
     if (includeWidgets && dashboards.length > 0) {
-      const dashboardIds = dashboards.map((d) => d.id);
+      const dashboardIds = dashboards.map(d => d.id);
       const widgetsResult = await query(
         `
         SELECT
@@ -196,16 +188,19 @@ export class DashboardService {
       );
 
       // Group widgets by dashboard
-      const widgetsByDashboard = widgetsResult.rows.reduce((acc, widget) => {
-        if (!acc[widget.dashboard_id]) {
-          acc[widget.dashboard_id] = [];
-        }
-        acc[widget.dashboard_id].push(widget);
-        return acc;
-      }, {} as Record<string, Widget[]>);
+      const widgetsByDashboard = widgetsResult.rows.reduce(
+        (acc, widget) => {
+          if (!acc[widget.dashboard_id]) {
+            acc[widget.dashboard_id] = [];
+          }
+          acc[widget.dashboard_id].push(widget);
+          return acc;
+        },
+        {} as Record<string, Widget[]>
+      );
 
       // Attach widgets to dashboards
-      dashboards = dashboards.map((dashboard) => ({
+      dashboards = dashboards.map(dashboard => ({
         ...dashboard,
         widgets: widgetsByDashboard[dashboard.id] || [],
       }));
@@ -462,11 +457,7 @@ export class DashboardService {
   /**
    * Unshare dashboard
    */
-  static async unshareDashboard(
-    userId: string,
-    orgId: string,
-    dashboardId: string
-  ): Promise<void> {
+  static async unshareDashboard(userId: string, orgId: string, dashboardId: string): Promise<void> {
     await query(
       `
       UPDATE analytics_dashboard
@@ -544,10 +535,7 @@ export class DashboardService {
   /**
    * Get default dashboard for organization
    */
-  static async getDefaultDashboard(
-    userId: string,
-    orgId: string
-  ): Promise<Dashboard | null> {
+  static async getDefaultDashboard(userId: string, orgId: string): Promise<Dashboard | null> {
     const result = await query(
       `
       SELECT

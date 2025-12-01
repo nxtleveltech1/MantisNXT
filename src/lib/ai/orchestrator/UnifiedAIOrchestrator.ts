@@ -125,7 +125,6 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       });
 
       return response;
-
     } catch (error) {
       this.setState('error', { sessionId: session.id, error });
       this.emitEvent('error_occurred', {
@@ -182,7 +181,6 @@ export class UnifiedAIOrchestrator extends EventEmitter {
         done: true,
         metadata: { sessionId: session.id },
       };
-
     } catch (error) {
       yield {
         type: 'error',
@@ -244,9 +242,9 @@ Available Tools:`;
 
     // Add available tools to prompt
     const availableTools = this.getAvailableTools(request.options.tools || []);
-    const toolDescriptions = availableTools.map(tool =>
-      `- ${tool.name}: ${tool.description}`
-    ).join('\n');
+    const toolDescriptions = availableTools
+      .map(tool => `- ${tool.name}: ${tool.description}`)
+      .join('\n');
 
     return `${basePrompt}\n${toolDescriptions}\n\nRespond naturally while leveraging these capabilities as needed.`;
   }
@@ -254,13 +252,8 @@ Available Tools:`;
   /**
    * Build messages array for AI provider
    */
-  private buildMessages(
-    request: OrchestratorRequest,
-    systemPrompt: string
-  ): ModelMessage[] {
-    const messages: ModelMessage[] = [
-      { role: 'system', content: systemPrompt },
-    ];
+  private buildMessages(request: OrchestratorRequest, systemPrompt: string): ModelMessage[] {
+    const messages: ModelMessage[] = [{ role: 'system', content: systemPrompt }];
 
     // Add conversation history (limited by config)
     const history = request.conversationHistory.slice(-this.config.maxConversationHistory);
@@ -365,15 +358,16 @@ Available Tools:`;
           result: result.data,
           success: result.success,
           executionTimeMs,
-          ...(result.success ? {} : {
-            error: {
-              code: result.error?.code || 'TOOL_EXECUTION_FAILED',
-              message: result.error?.message || 'Tool execution failed',
-              details: result.error?.details,
-            },
-          }),
+          ...(result.success
+            ? {}
+            : {
+                error: {
+                  code: result.error?.code || 'TOOL_EXECUTION_FAILED',
+                  message: result.error?.message || 'Tool execution failed',
+                  details: result.error?.details,
+                },
+              }),
         });
-
       } catch (error) {
         results.push({
           id: toolCall.id,
@@ -413,7 +407,7 @@ Available Tools:`;
   private emitEvent(type: OrchestratorEvent['type'], data: Record<string, unknown> = {}): void {
     const event: OrchestratorEvent = {
       id: crypto.randomUUID(),
-      sessionId: data.sessionId as string || 'system',
+      sessionId: (data.sessionId as string) || 'system',
       type,
       timestamp: new Date(),
       data,
@@ -455,9 +449,7 @@ Available Tools:`;
   private wrapError(error: unknown): Error {
     if (error instanceof Error) {
       if (error.message.includes('timeout') || error.message.includes('timed out')) {
-        return new OrchestratorTimeoutError(
-          this.config.requestTimeoutMs || 30000
-        );
+        return new OrchestratorTimeoutError(this.config.requestTimeoutMs || 30000);
       }
       return new OrchestratorError(error.message, 'INTERNAL_ERROR', error);
     }

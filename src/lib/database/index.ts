@@ -16,7 +16,7 @@ import {
   getPoolStatus as enterpriseGetPoolStatus,
   closePool as enterpriseClosePool,
   dbManager,
-  enterpriseDb as enterpriseDbFromManager
+  enterpriseDb as enterpriseDbFromManager,
 } from '../../../lib/database/enterprise-connection-manager';
 
 /**
@@ -56,9 +56,7 @@ export async function query<T extends QueryResultRow = unknown>(
  * });
  * ```
  */
-export async function withTransaction<T>(
-  callback: (client: PoolClient) => Promise<T>
-): Promise<T> {
+export async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
   return enterpriseWithTransaction(callback);
 }
 
@@ -137,14 +135,17 @@ export const pool = {
   /**
    * End the pool connection
    */
-  end: closePool
+  end: closePool,
 };
 
 /**
  * DatabaseManager class for object-oriented API
  */
 export class DatabaseManager {
-  async query<T extends QueryResultRow = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> {
+  async query<T extends QueryResultRow = unknown>(
+    text: string,
+    params?: unknown[]
+  ): Promise<{ rows: T[]; rowCount: number }> {
     return query<T>(text, params);
   }
 

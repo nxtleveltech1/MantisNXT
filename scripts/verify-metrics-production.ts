@@ -78,18 +78,13 @@ async function verifyDatabase() {
       'calculated_at',
     ];
 
-    const actualColumns = result.rows.map((r) => r.column_name);
-    const missing = requiredColumns.filter((c) => !actualColumns.includes(c));
+    const actualColumns = result.rows.map(r => r.column_name);
+    const missing = requiredColumns.filter(c => !actualColumns.includes(c));
 
     if (missing.length === 0) {
       check('Database', 'Required columns present', 'PASS', `${actualColumns.length} columns`);
     } else {
-      check(
-        'Database',
-        'Required columns present',
-        'FAIL',
-        `Missing: ${missing.join(', ')}`
-      );
+      check('Database', 'Required columns present', 'FAIL', `Missing: ${missing.join(', ')}`);
     }
   } catch (error) {
     check('Database', 'Column verification', 'FAIL', (error as Error).message);
@@ -110,8 +105,8 @@ async function verifyDatabase() {
       'idx_metric_cache_calculated',
     ];
 
-    const actualIndexes = result.rows.map((r) => r.indexname);
-    const missingIndexes = expectedIndexes.filter((i) => !actualIndexes.includes(i));
+    const actualIndexes = result.rows.map(r => r.indexname);
+    const missingIndexes = expectedIndexes.filter(i => !actualIndexes.includes(i));
 
     if (missingIndexes.length === 0) {
       check('Database', 'Performance indexes created', 'PASS', `${actualIndexes.length} indexes`);
@@ -171,7 +166,7 @@ function verifyService() {
     'getMetricsSummary',
   ];
 
-  requiredMethods.forEach((method) => {
+  requiredMethods.forEach(method => {
     if (content.includes(`static async ${method}`)) {
       check('Service', `${method} implemented`, 'PASS');
     } else {
@@ -207,7 +202,7 @@ function verifyAPI() {
     'recalculate/route.ts',
   ];
 
-  requiredRoutes.forEach((route) => {
+  requiredRoutes.forEach(route => {
     const routePath = join(apiBase, route);
     if (existsSync(routePath)) {
       check('API', `${route} exists`, 'PASS');
@@ -258,7 +253,8 @@ function verifySecurity() {
 
       // Check for parameterized queries
       const hasParams = serviceContent.includes('$1') && serviceContent.includes('$2');
-      const noStringConcat = !serviceContent.includes('WHERE " + ') && !serviceContent.includes("WHERE ' + ");
+      const noStringConcat =
+        !serviceContent.includes('WHERE " + ') && !serviceContent.includes("WHERE ' + ");
 
       if (hasParams && noStringConcat) {
         check('Security', 'SQL injection protection', 'PASS', 'Parameterized queries');
@@ -308,11 +304,11 @@ function printSummary() {
 
   const categories = ['Database', 'Service', 'API', 'Security', 'Performance'] as const;
 
-  categories.forEach((category) => {
-    const categoryChecks = checks.filter((c) => c.category === category);
-    const passed = categoryChecks.filter((c) => c.status === 'PASS').length;
-    const failed = categoryChecks.filter((c) => c.status === 'FAIL').length;
-    const warned = categoryChecks.filter((c) => c.status === 'WARN').length;
+  categories.forEach(category => {
+    const categoryChecks = checks.filter(c => c.category === category);
+    const passed = categoryChecks.filter(c => c.status === 'PASS').length;
+    const failed = categoryChecks.filter(c => c.status === 'FAIL').length;
+    const warned = categoryChecks.filter(c => c.status === 'WARN').length;
     const total = categoryChecks.length;
 
     console.log(`${category}:`);
@@ -322,9 +318,9 @@ function printSummary() {
     console.log('');
   });
 
-  const totalPassed = checks.filter((c) => c.status === 'PASS').length;
-  const totalFailed = checks.filter((c) => c.status === 'FAIL').length;
-  const totalWarned = checks.filter((c) => c.status === 'WARN').length;
+  const totalPassed = checks.filter(c => c.status === 'PASS').length;
+  const totalFailed = checks.filter(c => c.status === 'FAIL').length;
+  const totalWarned = checks.filter(c => c.status === 'WARN').length;
   const total = checks.length;
 
   console.log('Overall:');

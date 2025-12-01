@@ -1,5 +1,3 @@
 {
-    "recommendations": [
-        "factory.factory-vscode-extension"
-    ]
+  "recommendations": ["factory.factory-vscode-extension"]
 }

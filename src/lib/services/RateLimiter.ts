@@ -16,11 +16,11 @@ import { NextRequest, NextResponse } from 'next/server';
  * Rate limit presets
  */
 export enum RateLimitPreset {
-  UPLOAD = 'upload',      // 50 requests per hour
-  EXTRACT = 'extract',    // 20 requests per hour
-  PREVIEW = 'preview',    // 100 requests per hour
-  IMPORT = 'import',      // 10 requests per hour
-  API = 'api',           // 1000 requests per hour
+  UPLOAD = 'upload', // 50 requests per hour
+  EXTRACT = 'extract', // 20 requests per hour
+  PREVIEW = 'preview', // 100 requests per hour
+  IMPORT = 'import', // 10 requests per hour
+  API = 'api', // 1000 requests per hour
 }
 
 /**
@@ -92,15 +92,13 @@ export class RateLimiter {
     key: string,
     preset: RateLimitPreset | RateLimitConfig
   ): Promise<RateLimitResult> {
-    const config = typeof preset === 'string'
-      ? RATE_LIMIT_PRESETS[preset]
-      : preset;
+    const config = typeof preset === 'string' ? RATE_LIMIT_PRESETS[preset] : preset;
 
     const fullKey = `${config.key_prefix}:${key}`;
     const now = new Date();
     const windowStart = new Date(now.getTime() - config.window);
 
-    return await withTransaction(async (client) => {
+    return await withTransaction(async client => {
       // Clean up old entries for this key
       await client.query(
         `DELETE FROM rate_limit_entries
@@ -143,9 +141,7 @@ export class RateLimiter {
         );
 
         if (oldestResult.rows[0]?.timestamp) {
-          reset = new Date(
-            oldestResult.rows[0].timestamp.getTime() + config.window
-          );
+          reset = new Date(oldestResult.rows[0].timestamp.getTime() + config.window);
           retry_after = Math.ceil((reset.getTime() - now.getTime()) / 1000);
         }
       }
@@ -164,16 +160,11 @@ export class RateLimiter {
    * Reset rate limit for a key
    */
   async resetLimit(key: string, preset: RateLimitPreset | RateLimitConfig): Promise<void> {
-    const config = typeof preset === 'string'
-      ? RATE_LIMIT_PRESETS[preset]
-      : preset;
+    const config = typeof preset === 'string' ? RATE_LIMIT_PRESETS[preset] : preset;
 
     const fullKey = `${config.key_prefix}:${key}`;
 
-    await query(
-      'DELETE FROM rate_limit_entries WHERE key = $1',
-      [fullKey]
-    );
+    await query('DELETE FROM rate_limit_entries WHERE key = $1', [fullKey]);
   }
 
   /**
@@ -187,9 +178,7 @@ export class RateLimiter {
     first_request: Date | null;
     last_request: Date | null;
   }> {
-    const config = typeof preset === 'string'
-      ? RATE_LIMIT_PRESETS[preset]
-      : preset;
+    const config = typeof preset === 'string' ? RATE_LIMIT_PRESETS[preset] : preset;
 
     const fullKey = `${config.key_prefix}:${key}`;
     const windowStart = new Date(Date.now() - config.window);
@@ -225,9 +214,7 @@ export class RateLimiter {
     keyExtractor?: (req: NextRequest) => string | null
   ): Promise<NextResponse | null> {
     // Extract key from request
-    const key = keyExtractor
-      ? keyExtractor(request)
-      : this.extractDefaultKey(request);
+    const key = keyExtractor ? keyExtractor(request) : this.extractDefaultKey(request);
 
     if (!key) {
       // No key available, skip rate limiting
@@ -281,9 +268,8 @@ export class RateLimiter {
     }
 
     // Fall back to IP address
-    const ip = request.headers.get('x-forwarded-for') ||
-               request.headers.get('x-real-ip') ||
-               'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     return `ip:${ip}`;
   }
 
@@ -292,9 +278,12 @@ export class RateLimiter {
    */
   private startCleanup(): void {
     // Run cleanup every hour
-    this.cleanupInterval = setInterval(async () => {
-      await this.cleanup();
-    }, 60 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      async () => {
+        await this.cleanup();
+      },
+      60 * 60 * 1000
+    );
   }
 
   /**
@@ -304,10 +293,7 @@ export class RateLimiter {
     // Remove entries older than 24 hours
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const result = await query(
-      'DELETE FROM rate_limit_entries WHERE timestamp < $1',
-      [cutoff]
-    );
+    const result = await query('DELETE FROM rate_limit_entries WHERE timestamp < $1', [cutoff]);
 
     const deleted = result.rowCount || 0;
     if (deleted > 0) {
@@ -320,12 +306,14 @@ export class RateLimiter {
   /**
    * Get statistics for all rate limits
    */
-  async getStatistics(): Promise<Array<{
-    key_prefix: string;
-    unique_keys: number;
-    total_requests: number;
-    avg_requests_per_key: number;
-  }>> {
+  async getStatistics(): Promise<
+    Array<{
+      key_prefix: string;
+      unique_keys: number;
+      total_requests: number;
+      avg_requests_per_key: number;
+    }>
+  > {
     const result = await query<{
       key_prefix: string;
       unique_keys: string;

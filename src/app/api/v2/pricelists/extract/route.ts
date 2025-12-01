@@ -38,12 +38,11 @@ export async function POST(request: NextRequest) {
           estimated_duration_ms: 30000,
           position_in_queue: position,
           created_at: new Date().toISOString(),
-          poll_url: `/api/v2/pricelists/extract/${job_id}`
-        }
+          poll_url: `/api/v2/pricelists/extract/${job_id}`,
+        },
       },
       { status: 202 }
     );
-
   } catch (error: any) {
     console.error('[Extract API] Error:', error);
     return NextResponse.json(

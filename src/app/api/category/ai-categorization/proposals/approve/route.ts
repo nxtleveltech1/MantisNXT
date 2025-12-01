@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { approveProposedCategory } from '@/lib/cmm/proposed-categories';
 
@@ -43,5 +43,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

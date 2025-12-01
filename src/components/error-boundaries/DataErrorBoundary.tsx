@@ -40,7 +40,7 @@ class DataErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
       retryCount: 0,
-      lastErrorTime: 0
+      lastErrorTime: 0,
     };
   }
 
@@ -48,7 +48,7 @@ class DataErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      lastErrorTime: Date.now()
+      lastErrorTime: Date.now(),
     };
   }
 
@@ -63,7 +63,7 @@ class DataErrorBoundary extends Component<Props, State> {
 
     // Set error info in state
     this.setState({
-      errorInfo
+      errorInfo,
     });
 
     // Log specific error types for debugging
@@ -79,7 +79,7 @@ class DataErrorBoundary extends Component<Props, State> {
         message: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
-        category: 'timestamp'
+        category: 'timestamp',
       });
     }
 
@@ -87,7 +87,7 @@ class DataErrorBoundary extends Component<Props, State> {
       console.error('🌐 API Error:', {
         message: error.message,
         stack: error.stack,
-        category: 'api'
+        category: 'api',
       });
     }
 
@@ -95,7 +95,7 @@ class DataErrorBoundary extends Component<Props, State> {
       console.error('📊 Data Parsing Error:', {
         message: error.message,
         stack: error.stack,
-        category: 'data'
+        category: 'data',
       });
     }
 
@@ -104,7 +104,7 @@ class DataErrorBoundary extends Component<Props, State> {
       (window as unknown).errorReporter.reportError(error, {
         category,
         componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -125,7 +125,7 @@ class DataErrorBoundary extends Component<Props, State> {
         hasError: false,
         error: null,
         errorInfo: null,
-        retryCount: retryCount + 1
+        retryCount: retryCount + 1,
       });
     }, delay);
   };
@@ -200,19 +200,17 @@ class DataErrorBoundary extends Component<Props, State> {
         <Card className={`border-red-200 ${className}`}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-red-700">
-              <ErrorIcon className="w-5 h-5" />
+              <ErrorIcon className="h-5 w-5" />
               <span>{this.getErrorTitle()}</span>
             </CardTitle>
-            <CardDescription>
-              {this.getErrorDescription()}
-            </CardDescription>
+            <CardDescription>{this.getErrorDescription()}</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <Alert variant="destructive">
               <Bug className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-mono text-xs mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400 overflow-x-auto">
+                <div className="mt-2 overflow-x-auto rounded border-l-4 border-red-400 bg-red-50 p-2 font-mono text-xs">
                   {error?.message || 'Unknown error occurred'}
                 </div>
               </AlertDescription>
@@ -226,16 +224,12 @@ class DataErrorBoundary extends Component<Props, State> {
                   size="sm"
                   className="border-red-300 text-red-700 hover:bg-red-50"
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Retry ({this.maxRetries - retryCount} attempts left)
                 </Button>
               )}
 
-              <Button
-                onClick={this.handleReload}
-                variant="destructive"
-                size="sm"
-              >
+              <Button onClick={this.handleReload} variant="destructive" size="sm">
                 Reload Page
               </Button>
             </div>
@@ -245,7 +239,7 @@ class DataErrorBoundary extends Component<Props, State> {
                 <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-800">
                   Developer Details
                 </summary>
-                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono whitespace-pre-wrap">
+                <div className="mt-2 rounded bg-gray-100 p-3 font-mono text-xs whitespace-pre-wrap">
                   <div className="mb-2">
                     <strong>Error Stack:</strong>
                     <div className="mt-1">{error?.stack}</div>

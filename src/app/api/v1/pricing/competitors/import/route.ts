@@ -1,6 +1,6 @@
 /**
  * Competitor Price Import API
- * 
+ *
  * POST /api/v1/pricing/competitors/import - Import competitor prices (manual or bulk)
  */
 
@@ -68,12 +68,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
-
-
-
-
-
-
-

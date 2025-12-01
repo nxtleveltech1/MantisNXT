@@ -3,7 +3,7 @@
  * Replaces all conflicting supplier endpoints with single, robust API
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { APIResponse, PaginatedAPIResponse } from '@/lib/suppliers/types/SupplierDomain';
@@ -118,7 +118,11 @@ const SupplierFiltersSchema = z.object({
 });
 
 // Error handling utility
-function createErrorResponse(message: string, status: number = 400, details?: unknown): NextResponse {
+function createErrorResponse(
+  message: string,
+  status: number = 400,
+  details?: unknown
+): NextResponse {
   const response: APIResponse<null> = {
     success: false,
     data: null,
@@ -252,7 +256,10 @@ async function getOrgIdFromRequest(
         : typeof body.org_id === 'string'
           ? body.org_id
           : null;
-    if (bodyOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bodyOrgId)) {
+    if (
+      bodyOrgId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bodyOrgId)
+    ) {
       return bodyOrgId;
     }
   }
@@ -270,7 +277,10 @@ async function getOrgIdFromRequest(
 
   // 3. Check environment variable
   const envOrgId = process.env.DEFAULT_ORG_ID;
-  if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+  if (
+    envOrgId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)
+  ) {
     return envOrgId;
   }
 

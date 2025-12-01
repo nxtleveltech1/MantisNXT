@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import React from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
-import { AlertTriangle, RefreshCw, Settings, Database, Wifi, WifiOff, Clock } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import React from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { AlertTriangle, RefreshCw, Settings, Database, Wifi, WifiOff, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface ErrorInfo {
-  error: Error
-  resetErrorBoundary: () => void
+  error: Error;
+  resetErrorBoundary: () => void;
 }
 
 // Enhanced error analysis
 function analyzeError(error: Error) {
-  const message = error.message.toLowerCase()
+  const message = error.message.toLowerCase();
 
   if (message.includes('timeout') || message.includes('timed out')) {
     return {
@@ -27,9 +27,9 @@ function analyzeError(error: Error) {
       suggestions: [
         'Check your internet connection',
         'Try refreshing the page',
-        'Wait a moment and try again'
-      ]
-    }
+        'Wait a moment and try again',
+      ],
+    };
   }
 
   if (message.includes('fetch') || message.includes('network')) {
@@ -43,9 +43,9 @@ function analyzeError(error: Error) {
       suggestions: [
         'Check your internet connection',
         'Verify the server is running',
-        'Contact support if the issue persists'
-      ]
-    }
+        'Contact support if the issue persists',
+      ],
+    };
   }
 
   if (message.includes('database') || message.includes('circuit breaker')) {
@@ -59,12 +59,17 @@ function analyzeError(error: Error) {
       suggestions: [
         'This is a server-side issue',
         'Please wait while we restore service',
-        'Contact your system administrator'
-      ]
-    }
+        'Contact your system administrator',
+      ],
+    };
   }
 
-  if (message.includes('http 5') || message.includes('500') || message.includes('502') || message.includes('503')) {
+  if (
+    message.includes('http 5') ||
+    message.includes('500') ||
+    message.includes('502') ||
+    message.includes('503')
+  ) {
     return {
       type: 'server',
       severity: 'error',
@@ -75,9 +80,9 @@ function analyzeError(error: Error) {
       suggestions: [
         'This is a temporary server issue',
         'Try refreshing in a few moments',
-        'Contact support if the problem continues'
-      ]
-    }
+        'Contact support if the problem continues',
+      ],
+    };
   }
 
   if (message.includes('gettime') || message.includes('timestamp') || message.includes('date')) {
@@ -91,9 +96,9 @@ function analyzeError(error: Error) {
       suggestions: [
         'This is usually a temporary data sync issue',
         'Try refreshing the page',
-        'The system will retry automatically'
-      ]
-    }
+        'The system will retry automatically',
+      ],
+    };
   }
 
   // Default fallback
@@ -107,51 +112,49 @@ function analyzeError(error: Error) {
     suggestions: [
       'Try refreshing the page',
       'Clear your browser cache',
-      'Contact support if the issue persists'
-    ]
-  }
+      'Contact support if the issue persists',
+    ],
+  };
 }
 
 const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
-  const errorInfo = analyzeError(error)
-  const [isRetrying, setIsRetrying] = React.useState(false)
+  const errorInfo = analyzeError(error);
+  const [isRetrying, setIsRetrying] = React.useState(false);
 
   const handleRetry = async () => {
-    setIsRetrying(true)
+    setIsRetrying(true);
     try {
       // Wait a moment before retrying to allow any issues to resolve
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      resetErrorBoundary()
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      resetErrorBoundary();
     } catch (retryError) {
-      console.error('Retry failed:', retryError)
+      console.error('Retry failed:', retryError);
     } finally {
-      setIsRetrying(false)
+      setIsRetrying(false);
     }
-  }
+  };
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <Badge variant="destructive">Critical</Badge>
+        return <Badge variant="destructive">Critical</Badge>;
       case 'error':
-        return <Badge variant="destructive">Error</Badge>
+        return <Badge variant="destructive">Error</Badge>;
       case 'warning':
-        return <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>;
       default:
-        return <Badge variant="secondary">Info</Badge>
+        return <Badge variant="secondary">Info</Badge>;
     }
-  }
+  };
 
   return (
-    <div className="min-h-[400px] flex items-center justify-center p-6">
-      <Card className="max-w-2xl w-full">
+    <div className="flex min-h-[400px] items-center justify-center p-6">
+      <Card className="w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-full ${errorInfo.color}`}>
-              {errorInfo.icon}
-            </div>
+            <div className={`rounded-full p-3 ${errorInfo.color}`}>{errorInfo.icon}</div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 <CardTitle className="text-xl">{errorInfo.title}</CardTitle>
                 {getSeverityBadge(errorInfo.severity)}
               </div>
@@ -163,11 +166,11 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
         <CardContent className="space-y-6">
           {/* Error Details */}
           <div className="space-y-2">
-            <h4 className="font-medium text-sm">What can you do?</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
+            <h4 className="text-sm font-medium">What can you do?</h4>
+            <ul className="text-muted-foreground space-y-1 text-sm">
               {errorInfo.suggestions.map((suggestion, index) => (
                 <li key={index} className="flex items-center gap-2">
-                  <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                  <div className="bg-muted-foreground h-1 w-1 rounded-full"></div>
                   {suggestion}
                 </li>
               ))}
@@ -176,19 +179,12 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
 
           {/* Actions */}
           <div className="flex gap-3">
-            <Button
-              onClick={handleRetry}
-              disabled={isRetrying}
-              className="flex items-center gap-2"
-            >
+            <Button onClick={handleRetry} disabled={isRetrying} className="flex items-center gap-2">
               <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
               {isRetrying ? 'Retrying...' : 'Try Again'}
             </Button>
 
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-            >
+            <Button variant="outline" onClick={() => window.location.reload()}>
               Refresh Page
             </Button>
 
@@ -203,7 +199,7 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
           </div>
 
           {/* Technical Details (Collapsible) */}
-          <details className="border rounded-lg p-3">
+          <details className="rounded-lg border p-3">
             <summary className="cursor-pointer text-sm font-medium">
               Technical Details (for support)
             </summary>
@@ -223,7 +219,7 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
               {error.stack && (
                 <div>
                   <strong>Stack Trace:</strong>
-                  <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
+                  <pre className="bg-muted mt-1 overflow-x-auto rounded p-2 text-xs">
                     {error.stack}
                   </pre>
                 </div>
@@ -233,11 +229,11 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
 interface DashboardErrorBoundaryProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 const DashboardErrorBoundary: React.FC<DashboardErrorBoundaryProps> = ({ children }) => {
@@ -245,20 +241,20 @@ const DashboardErrorBoundary: React.FC<DashboardErrorBoundaryProps> = ({ childre
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onError={(error, errorInfo) => {
-        console.error('Dashboard Error Boundary caught an error:', error)
-        console.error('Error Info:', errorInfo)
+        console.error('Dashboard Error Boundary caught an error:', error);
+        console.error('Error Info:', errorInfo);
 
         // Here you could send error reports to your monitoring service
         // Example: sendErrorReport(error, errorInfo)
       }}
       onReset={() => {
-        console.log('Dashboard Error Boundary reset')
+        console.log('Dashboard Error Boundary reset');
         // Clear any cached error states or perform cleanup
       }}
     >
       {children}
     </ErrorBoundary>
-  )
-}
+  );
+};
 
-export default DashboardErrorBoundary
+export default DashboardErrorBoundary;

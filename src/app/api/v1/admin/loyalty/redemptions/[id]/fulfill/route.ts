@@ -7,14 +7,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for fulfillment
 const fulfillSchema = z.object({
@@ -34,7 +30,6 @@ export async function POST(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // Parse body (optional notes)
     const body = await request.json().catch(() => ({}));

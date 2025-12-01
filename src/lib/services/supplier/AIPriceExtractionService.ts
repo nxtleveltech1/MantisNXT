@@ -95,7 +95,9 @@ export class AIPriceExtractionService {
     const sanitizedItems = items.map((item: any, idx: number) => {
       const supplier_sku = this.ensureString(item?.supplier_sku, `UNKNOWN_SKU_${idx + 1}`);
       const name = this.ensureString(item?.name, `UNKNOWN_NAME_${idx + 1}`);
-      const currency = item?.currency ? String(item.currency).toUpperCase() : item?.currency ?? null;
+      const currency = item?.currency
+        ? String(item.currency).toUpperCase()
+        : (item?.currency ?? null);
       return {
         ...item,
         supplier_sku,
@@ -122,19 +124,18 @@ export class AIPriceExtractionService {
 
     const config =
       this.unwrapConfig(
-        req.serviceName &&
-          (await this.aiConfig.getConfigByServiceName(req.orgId, req.serviceName)),
+        req.serviceName && (await this.aiConfig.getConfigByServiceName(req.orgId, req.serviceName))
       ) ||
       this.unwrapConfig(
-        req.serviceId && (await this.aiConfig.getConfigByServiceId(req.orgId, req.serviceId)),
+        req.serviceId && (await this.aiConfig.getConfigByServiceId(req.orgId, req.serviceId))
       ) ||
       this.unwrapConfig(await this.aiConfig.getConfig(req.orgId, 'price_extraction')) ||
       this.unwrapConfig(
-        req.serviceName && (await this.aiConfig.getConfigByServiceName('', req.serviceName)),
+        req.serviceName && (await this.aiConfig.getConfigByServiceName('', req.serviceName))
       );
     if (!config || !config.isEnabled) {
       throw new Error(
-        `AI price extraction service is not configured for this org; expected service "${req.serviceName || 'Supplier Pricelist Data Extraction'}"`,
+        `AI price extraction service is not configured for this org; expected service "${req.serviceName || 'Supplier Pricelist Data Extraction'}"`
       );
     }
 
@@ -172,7 +173,11 @@ export class AIPriceExtractionService {
         err?.responseHeaders?.['openai-request-id'] ||
         err?.responseHeaders?.['x-openai-request-id'];
       const code = err?.data?.error?.code || err?.reason || err?.statusCode;
-      const detail = [message, code ? `code=${code}` : null, requestId ? `request_id=${requestId}` : null]
+      const detail = [
+        message,
+        code ? `code=${code}` : null,
+        requestId ? `request_id=${requestId}` : null,
+      ]
         .filter(Boolean)
         .join(' | ');
       throw new Error(`AI provider error: ${detail}`);
@@ -209,7 +214,10 @@ export class AIPriceExtractionService {
     }
   }
 
-  private async readSpreadsheet(fileBuffer: Buffer, fileName?: string): Promise<{
+  private async readSpreadsheet(
+    fileBuffer: Buffer,
+    fileName?: string
+  ): Promise<{
     headers: string[];
     rows: Array<Record<string, any> & { __rowIndex: number }>;
   }> {
@@ -226,14 +234,14 @@ export class AIPriceExtractionService {
         throw new Error('CSV file is empty');
       }
       const headers = Object.keys(csvRows[0] || {})
-        .map((h) => this.normalizeHeader(h))
+        .map(h => this.normalizeHeader(h))
         .filter(Boolean);
       if (!headers.length) {
         throw new Error('CSV header row could not be detected.');
       }
       const rows = csvRows.map((row, idx) => {
         const normalized: Record<string, any> & { __rowIndex: number } = { __rowIndex: idx + 2 };
-        headers.forEach((header) => {
+        headers.forEach(header => {
           const candidate =
             row[header] ??
             row[header.toUpperCase()] ??
@@ -274,7 +282,9 @@ export class AIPriceExtractionService {
         });
         return record;
       })
-      .filter((row) => Object.values(row).some((v) => v !== null && v !== undefined && `${v}`.trim() !== ''));
+      .filter(row =>
+        Object.values(row).some(v => v !== null && v !== undefined && `${v}`.trim() !== '')
+      );
 
     return { headers, rows };
   }
@@ -295,7 +305,7 @@ export class AIPriceExtractionService {
     supplierId?: string;
   }): string {
     const rowsPreview = input.rows
-      .map((row) => JSON.stringify(row))
+      .map(row => JSON.stringify(row))
       .join('\n')
       .slice(0, 8000);
 
@@ -358,7 +368,7 @@ Return ONLY the JSON object (no markdown, no code fences, no prose). The first c
         return JSON.parse(repaired);
       } catch (e) {
         throw new Error(
-          'AI response did not include JSON payload. Ensure the AI service uses a response format matching the prompt.',
+          'AI response did not include JSON payload. Ensure the AI service uses a response format matching the prompt.'
         );
       }
     }

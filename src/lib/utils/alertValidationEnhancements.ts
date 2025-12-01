@@ -5,7 +5,7 @@
  * This module provides additional utilities to handle edge cases in alert validation
  */
 
-import type { ValidatedAlertItem} from './dataValidation';
+import type { ValidatedAlertItem } from './dataValidation';
 import { validateAlertItems, transformAlertItem } from './dataValidation';
 
 /**
@@ -65,14 +65,15 @@ export function validateAlertsWithRecovery(rawData: unknown): {
     processed: 0,
     validated: 0,
     recovered: 0,
-    failed: 0
+    failed: 0,
   };
 
   try {
     // Step 1: Preprocess data
     const preprocessed = preprocessAlertsData(rawData);
-    stats.input = Array.isArray(rawData) ? rawData.length : 
-                  rawData?.data?.length || rawData?.alerts?.length || 0;
+    stats.input = Array.isArray(rawData)
+      ? rawData.length
+      : rawData?.data?.length || rawData?.alerts?.length || 0;
     stats.processed = preprocessed.length;
 
     if (preprocessed.length === 0) {
@@ -87,7 +88,7 @@ export function validateAlertsWithRecovery(rawData: unknown): {
     // Step 3: Validate with detailed tracking
     console.log(`✅ Validating ${transformed.length} transformed alerts`);
     const validated = validateAlertItems(transformed);
-    
+
     stats.validated = validated.length;
     stats.recovered = stats.validated; // All validated alerts are "recovered" in some sense
     stats.failed = stats.processed - stats.validated;
@@ -96,11 +97,10 @@ export function validateAlertsWithRecovery(rawData: unknown): {
       input: stats.input,
       processed: stats.processed,
       validated: stats.validated,
-      successRate: `${((stats.validated / Math.max(stats.input, 1)) * 100).toFixed(1)}%`
+      successRate: `${((stats.validated / Math.max(stats.input, 1)) * 100).toFixed(1)}%`,
     });
 
     return { alerts: validated, stats };
-
   } catch (error) {
     console.error('❌ Critical error in alert validation:', error);
     return { alerts: [], stats };
@@ -122,7 +122,7 @@ export function createMockAlert(overrides: Partial<unknown> = {}): unknown {
     status: 'active',
     isActive: true,
     priority: 50,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -141,7 +141,7 @@ export function validateAlertApiResponse(response: unknown): {
     hasResponse: !!response,
     responseType: typeof response,
     isArray: Array.isArray(response),
-    keys: response && typeof response === 'object' ? Object.keys(response) : []
+    keys: response && typeof response === 'object' ? Object.keys(response) : [],
   });
 
   // Check if response exists
@@ -175,7 +175,10 @@ export function validateAlertApiResponse(response: unknown): {
       data = response.data.data;
       console.log('📥 Extracted data from response.data.data:', data.length, 'items');
     } else {
-      console.warn('⚠️ response.data exists but no recognizable array found:', Object.keys(response.data));
+      console.warn(
+        '⚠️ response.data exists but no recognizable array found:',
+        Object.keys(response.data)
+      );
       issues.push('Response.data exists but contains no recognizable alert array');
       return { isValid: false, issues, data: [] };
     }
@@ -203,13 +206,13 @@ export function validateAlertApiResponse(response: unknown): {
   console.log('✅ Alert API response validation:', {
     isValid: issues.length === 0,
     issueCount: issues.length,
-    dataCount: data.length
+    dataCount: data.length,
   });
 
   return {
     isValid: issues.length === 0,
     issues,
-    data
+    data,
   };
 }
 
@@ -221,7 +224,7 @@ export function processAlertsData(apiResponse: unknown): ValidatedAlertItem[] {
     hasResponse: !!apiResponse,
     responseType: typeof apiResponse,
     hasData: !!apiResponse?.data,
-    dataLength: apiResponse?.data?.length
+    dataLength: apiResponse?.data?.length,
   });
 
   // Handle null/undefined response
@@ -236,7 +239,7 @@ export function processAlertsData(apiResponse: unknown): ValidatedAlertItem[] {
   console.log('📋 API response validation:', {
     isValid: responseValidation.isValid,
     issues: responseValidation.issues,
-    dataCount: responseValidation.data.length
+    dataCount: responseValidation.data.length,
   });
 
   if (!responseValidation.isValid && responseValidation.data.length === 0) {
@@ -253,13 +256,16 @@ export function processAlertsData(apiResponse: unknown): ValidatedAlertItem[] {
     processed: result.stats.processed,
     validated: result.stats.validated,
     failed: result.stats.failed,
-    successRate: result.stats.input > 0
-      ? `${((result.stats.validated / result.stats.input) * 100).toFixed(1)}%`
-      : '0%'
+    successRate:
+      result.stats.input > 0
+        ? `${((result.stats.validated / result.stats.input) * 100).toFixed(1)}%`
+        : '0%',
   });
 
   if (result.stats.failed > 0) {
-    console.warn(`⚠️ Alert processing had ${result.stats.failed} failures out of ${result.stats.input} total`);
+    console.warn(
+      `⚠️ Alert processing had ${result.stats.failed} failures out of ${result.stats.input} total`
+    );
   }
 
   return result.alerts;
@@ -271,5 +277,5 @@ export default {
   validateAlertsWithRecovery,
   createMockAlert,
   validateAlertApiResponse,
-  processAlertsData
+  processAlertsData,
 };

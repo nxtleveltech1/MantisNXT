@@ -110,5 +110,3 @@ export async function linkProposedCategoryToProduct(
 export function normalizeCategoryLabel(label: string): string {
   return normalizeName(label);
 }
-
-

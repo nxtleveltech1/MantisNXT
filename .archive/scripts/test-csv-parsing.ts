@@ -10,7 +10,7 @@ interface CSVRow {
   'Supplier Name': string;
   'Supplier Code': string;
   'Produt Category': string; // Note: typo in CSV
-  'BRAND': string;
+  BRAND: string;
   'Brand Sub Tag': string;
   'SKU / MODEL': string;
   'PRODUCT DESCRIPTION': string;
@@ -18,8 +18,8 @@ interface CSVRow {
   'COST  EX VAT': string;
   'QTY ON ORDER': string;
   'NEXT SHIPMENT': string;
-  'Tags': string;
-  'LINKS': string;
+  Tags: string;
+  LINKS: string;
 }
 
 async function testCSVParsing() {
@@ -28,7 +28,10 @@ async function testCSVParsing() {
   try {
     // Read CSV file
     console.log('📁 Reading CSV file...');
-    const csvPath = path.join(__dirname, '../database/Uploads/New data/Active Music Distrabution - cleaned v2.csv');
+    const csvPath = path.join(
+      __dirname,
+      '../database/Uploads/New data/Active Music Distrabution - cleaned v2.csv'
+    );
 
     if (!fs.existsSync(csvPath)) {
       throw new Error(`CSV file not found at: ${csvPath}`);
@@ -89,7 +92,7 @@ async function testCSVParsing() {
         category_raw: String(row['Produt Category'] || '').trim() || null,
         vat_code: null,
         barcode: null,
-        valid: isValid
+        valid: isValid,
       };
     });
 
@@ -129,7 +132,9 @@ async function testCSVParsing() {
     console.log('📈 Data Summary:');
     console.log(`   Unique categories: ${categories.size}`);
     console.log(`   Unique brands: ${brands.size}`);
-    console.log(`   Price range: ${Math.min(...validRows.map(r => r.price)).toFixed(2)} - ${Math.max(...validRows.map(r => r.price)).toFixed(2)} ZAR\n`);
+    console.log(
+      `   Price range: ${Math.min(...validRows.map(r => r.price)).toFixed(2)} - ${Math.max(...validRows.map(r => r.price)).toFixed(2)} ZAR\n`
+    );
 
     console.log('✅ CSV parsing test completed successfully!');
 
@@ -139,9 +144,8 @@ async function testCSVParsing() {
       invalidRows: invalidCount,
       transformedRows,
       categories: Array.from(categories),
-      brands: Array.from(brands)
+      brands: Array.from(brands),
     };
-
   } catch (error) {
     console.error('❌ Test failed:', error);
     if (error instanceof Error) {
@@ -153,7 +157,7 @@ async function testCSVParsing() {
 
 // Run the test
 testCSVParsing()
-  .then((result) => {
+  .then(result => {
     console.log('\n🎉 CSV parsing test passed!');
     console.log(`\nReady to upload ${result.validRows} products to database.`);
     process.exit(0);

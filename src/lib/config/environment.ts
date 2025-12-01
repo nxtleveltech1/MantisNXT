@@ -120,7 +120,7 @@ class EnvironmentConfig {
       if (error instanceof z.ZodError) {
         this.validationErrors = error;
         console.error('❌ Environment validation failed:');
-        error.errors.forEach((err) => {
+        error.errors.forEach(err => {
           console.error(`  - ${err.path.join('.')}: ${err.message}`);
         });
 
@@ -313,7 +313,9 @@ export function isDevelopment(): boolean {
   return envConfig.isDevelopment();
 }
 
-export function isFeatureEnabled(feature: 'analytics' | 'audit' | 'rateLimit' | 'realtime'): boolean {
+export function isFeatureEnabled(
+  feature: 'analytics' | 'audit' | 'rateLimit' | 'realtime'
+): boolean {
   return envConfig.isFeatureEnabled(feature);
 }
 

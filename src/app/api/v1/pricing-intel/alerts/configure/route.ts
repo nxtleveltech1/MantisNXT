@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { AlertService } from '@/lib/services/pricing-intel/AlertService'
-import { getOrgId } from '../../_helpers'
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { AlertService } from '@/lib/services/pricing-intel/AlertService';
+import { getOrgId } from '../../_helpers';
 
 const configureSchema = z.object({
   orgId: z.string().uuid(),
@@ -13,16 +13,16 @@ const configureSchema = z.object({
   competitor_id: z.string().uuid().optional(),
   notification_channels: z.array(z.string()),
   metadata: z.record(z.unknown()).optional(),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const orgId = await getOrgId(request, body)
+    const body = await request.json();
+    const orgId = await getOrgId(request, body);
 
-    const validated = configureSchema.parse({ ...body, orgId })
+    const validated = configureSchema.parse({ ...body, orgId });
 
-    const alertService = new AlertService()
+    const alertService = new AlertService();
 
     // Configure alert threshold
     await alertService.configureAlert(orgId, {
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
         ...validated.metadata,
       },
       enabled: validated.enabled,
-    })
+    });
 
-    return NextResponse.json({ data: { success: true }, error: null })
+    return NextResponse.json({ data: { success: true }, error: null });
   } catch (error) {
-    console.error('Error configuring alert:', error)
+    console.error('Error configuring alert:', error);
     return NextResponse.json(
       {
         data: null,
@@ -50,12 +50,6 @@ export async function POST(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
-
-
-
-
-
-

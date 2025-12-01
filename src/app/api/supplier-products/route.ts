@@ -1,16 +1,14 @@
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { query as dbQuery } from "@/lib/database";
-import { z } from "zod";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { query as dbQuery } from '@/lib/database';
+import { z } from 'zod';
 
 // Zod validation schemas for type safety and security
 const SupplierProductsQuerySchema = z.object({
   page: z.number().int().min(1).max(10000).default(1),
   page_size: z.number().int().min(1).max(500).default(50),
-  sort_by: z
-    .enum(["name", "sku", "supplier", "stock", "price"])
-    .default("name"),
-  sort_direction: z.enum(["asc", "desc"]).default("asc"),
+  sort_by: z.enum(['name', 'sku', 'supplier', 'stock', 'price']).default('name'),
+  sort_direction: z.enum(['asc', 'desc']).default('asc'),
   selection_id: z.string().uuid().optional(),
   supplier_id: z.string().uuid().optional(),
   search: z.string().min(1).max(200).optional(),
@@ -24,15 +22,13 @@ export async function GET(request: NextRequest) {
 
     // Validate and parse query parameters
     const queryParams = SupplierProductsQuerySchema.parse({
-      page: searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1,
-      page_size: searchParams.get("page_size")
-        ? parseInt(searchParams.get("page_size")!)
-        : 50,
-      sort_by: searchParams.get("sort_by") || "name",
-      sort_direction: searchParams.get("sort_direction") || "asc",
-      selection_id: searchParams.get("selection_id") || undefined,
-      supplier_id: searchParams.get("supplier_id") || undefined,
-      search: searchParams.get("search") || undefined,
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
+      page_size: searchParams.get('page_size') ? parseInt(searchParams.get('page_size')!) : 50,
+      sort_by: searchParams.get('sort_by') || 'name',
+      sort_direction: searchParams.get('sort_direction') || 'asc',
+      selection_id: searchParams.get('selection_id') || undefined,
+      supplier_id: searchParams.get('supplier_id') || undefined,
+      search: searchParams.get('search') || undefined,
     });
 
     const {
@@ -48,7 +44,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * pageSize;
 
     // Build WHERE conditions with parameterized queries
-    const whereConditions: string[] = ["1=1"];
+    const whereConditions: string[] = ['1=1'];
     const sqlParams: unknown[] = [];
     let paramIndex = 1;
 
@@ -74,19 +70,19 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     }
 
-    const whereClause = whereConditions.join(" AND ");
+    const whereClause = whereConditions.join(' AND ');
 
     // Add sorting with validated fields
     const validSortFields: Record<string, string> = {
-      name: "sp.name_from_supplier",
-      sku: "sp.supplier_sku",
-      supplier: "s.name",
-      stock: "soh.qty",
-      price: "soh.unit_cost",
+      name: 'sp.name_from_supplier',
+      sku: 'sp.supplier_sku',
+      supplier: 's.name',
+      stock: 'soh.qty',
+      price: 'soh.unit_cost',
     };
 
-    const sortField = validSortFields[sortBy] || "sp.name_from_supplier";
-    const direction = sortDirection.toUpperCase() === "DESC" ? "DESC" : "ASC";
+    const sortField = validSortFields[sortBy] || 'sp.name_from_supplier';
+    const direction = sortDirection.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
     // Execute main query with proper parameterization
     const query = `
@@ -125,10 +121,7 @@ export async function GET(request: NextRequest) {
       FROM core.supplier_product sp
       WHERE ${whereClause}
     `;
-    const countResult = await dbQuery<{ total: string }>(
-      countQuery,
-      sqlParams.slice(0, -2)
-    );
+    const countResult = await dbQuery<{ total: string }>(countQuery, sqlParams.slice(0, -2));
     const total = parseInt(countResult.rows[0].total);
 
     return NextResponse.json({
@@ -146,16 +139,16 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching supplier products:", error);
+    console.error('Error fetching supplier products:', error);
 
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid query parameters",
-          details: error.issues.map((e) => ({
-            field: e.path.join("."),
+          error: 'Invalid query parameters',
+          details: error.issues.map(e => ({
+            field: e.path.join('.'),
             message: e.message,
           })),
         },
@@ -166,8 +159,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch supplier products",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch supplier products',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -55,7 +55,7 @@ export class MetricsCalculator {
   static async calculateSalesMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<SalesMetrics> {
     // Total revenue and orders
     const totalsResult = await db.query(
@@ -69,7 +69,7 @@ export class MetricsCalculator {
         AND po.created_at BETWEEN $2 AND $3
         AND po.status = 'completed'
       `,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd]
     );
 
     const { total_revenue, total_orders, average_order_value } = totalsResult.rows[0];
@@ -92,10 +92,10 @@ export class MetricsCalculator {
       ORDER BY revenue DESC
       LIMIT 10
       `,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd]
     );
 
-    const topProducts = topProductsResult.rows.map((row) => ({
+    const topProducts = topProductsResult.rows.map(row => ({
       productId: row.product_id,
       name: row.name,
       revenue: parseFloat(row.revenue),
@@ -118,10 +118,10 @@ export class MetricsCalculator {
       GROUP BY c.name
       ORDER BY revenue DESC
       `,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd]
     );
 
-    const revenueByCategory = categoryResult.rows.map((row) => ({
+    const revenueByCategory = categoryResult.rows.map(row => ({
       category: row.category,
       revenue: parseFloat(row.revenue),
     }));
@@ -141,13 +141,14 @@ export class MetricsCalculator {
         AND po.created_at BETWEEN $2 AND $3
         AND po.status = 'completed'
       `,
-      [orgId, previousPeriodStart, previousPeriodEnd],
+      [orgId, previousPeriodStart, previousPeriodEnd]
     );
 
     const previousRevenue = parseFloat(previousResult.rows[0].previous_revenue);
-    const growthRate = previousRevenue > 0
-      ? ((parseFloat(total_revenue) - previousRevenue) / previousRevenue) * 100
-      : 0;
+    const growthRate =
+      previousRevenue > 0
+        ? ((parseFloat(total_revenue) - previousRevenue) / previousRevenue) * 100
+        : 0;
 
     return {
       totalRevenue: parseFloat(total_revenue),
@@ -162,9 +163,7 @@ export class MetricsCalculator {
   /**
    * Calculate inventory metrics
    */
-  static async calculateInventoryMetrics(
-    orgId: string,
-  ): Promise<InventoryMetrics> {
+  static async calculateInventoryMetrics(orgId: string): Promise<InventoryMetrics> {
     const result = await db.query(
       `
       WITH inventory_data AS (
@@ -198,7 +197,7 @@ export class MetricsCalculator {
       FROM inventory_data id
       LEFT JOIN movement_data md ON md.product_id = id.id
       `,
-      [orgId],
+      [orgId]
     );
 
     const row = result.rows[0];
@@ -217,9 +216,7 @@ export class MetricsCalculator {
   /**
    * Calculate supplier performance metrics
    */
-  static async calculateSupplierMetrics(
-    orgId: string,
-  ): Promise<SupplierPerformanceMetrics> {
+  static async calculateSupplierMetrics(orgId: string): Promise<SupplierPerformanceMetrics> {
     // Total and active suppliers
     const suppliersResult = await db.query(
       `
@@ -229,7 +226,7 @@ export class MetricsCalculator {
       FROM public.suppliers
       WHERE current_setting('app.current_org_id', true)::uuid = $1
       `,
-      [orgId],
+      [orgId]
     );
 
     const { total_suppliers, active_suppliers } = suppliersResult.rows[0];
@@ -243,7 +240,7 @@ export class MetricsCalculator {
         AND service_type = 'supplier_scoring'
         AND expires_at > NOW()
       `,
-      [orgId],
+      [orgId]
     );
 
     const averageScore = (parseFloat(scoreResult.rows[0]?.avg_score) || 0.75) * 100;
@@ -257,7 +254,7 @@ export class MetricsCalculator {
         AND status = 'completed'
         AND created_at >= NOW() - INTERVAL '90 days'
       `,
-      [orgId],
+      [orgId]
     );
 
     const onTimeDeliveryRate = parseFloat(deliveryResult.rows[0]?.on_time_rate) || 0;
@@ -285,10 +282,10 @@ export class MetricsCalculator {
       ORDER BY score DESC, total_orders DESC
       LIMIT 10
       `,
-      [orgId],
+      [orgId]
     );
 
-    const topSuppliers = topSuppliersResult.rows.map((row) => ({
+    const topSuppliers = topSuppliersResult.rows.map(row => ({
       supplierId: row.supplier_id,
       name: row.name,
       score: parseFloat(row.score),
@@ -303,7 +300,7 @@ export class MetricsCalculator {
       critical: 0,
     };
 
-    topSuppliers.forEach((supplier) => {
+    topSuppliers.forEach(supplier => {
       if (supplier.score >= 85) riskDistribution.low++;
       else if (supplier.score >= 70) riskDistribution.medium++;
       else if (supplier.score >= 50) riskDistribution.high++;
@@ -330,7 +327,7 @@ export class MetricsCalculator {
     value: unknown,
     timePeriod: TimePeriod,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<void> {
     await db.query(
       `
@@ -344,15 +341,7 @@ export class MetricsCalculator {
         metric_value = EXCLUDED.metric_value,
         calculated_at = NOW()
       `,
-      [
-        orgId,
-        metricType,
-        metricKey,
-        JSON.stringify(value),
-        timePeriod,
-        periodStart,
-        periodEnd,
-      ],
+      [orgId, metricType, metricKey, JSON.stringify(value), timePeriod, periodStart, periodEnd]
     );
   }
 
@@ -363,7 +352,7 @@ export class MetricsCalculator {
     orgId: string,
     metricType: MetricType,
     metricKey: string,
-    periodStart: Date,
+    periodStart: Date
   ): Promise<unknown | null> {
     const result = await db.query(
       `
@@ -377,7 +366,7 @@ export class MetricsCalculator {
       ORDER BY calculated_at DESC
       LIMIT 1
       `,
-      [orgId, metricType, metricKey, periodStart],
+      [orgId, metricType, metricKey, periodStart]
     );
 
     if (result.rows.length === 0) {

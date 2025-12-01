@@ -5,7 +5,15 @@ const TARGET_DIRS = ['src', 'scripts'];
 const FILE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const DML_REGEX = /\b(INSERT|UPDATE|DELETE)\b[\s\S]{0,200}?public\.(suppliers|inventory_items)\b/gi;
 
-const IGNORED_PATHS = ['node_modules', '.next', '.git', 'database', 'migrations', 'tools', '__tests__'];
+const IGNORED_PATHS = [
+  'node_modules',
+  '.next',
+  '.git',
+  'database',
+  'migrations',
+  'tools',
+  '__tests__',
+];
 
 function collectFiles(dir: string): string[] {
   const entries = readdirSync(dir);
@@ -16,7 +24,7 @@ function collectFiles(dir: string): string[] {
     const relativePath = fullPath.replace(process.cwd(), '').replace(/^[/\\]/, '');
 
     if (
-      IGNORED_PATHS.some((ignore) => relativePath.startsWith(ignore)) ||
+      IGNORED_PATHS.some(ignore => relativePath.startsWith(ignore)) ||
       relativePath.includes('scripts/check-public-dml.ts')
     ) {
       continue;
@@ -52,7 +60,7 @@ function main() {
         matches.push({
           file,
           snippet: results
-            .map((match) => match[0].trim().replace(/\s+/g, ' ').slice(0, 200))
+            .map(match => match[0].trim().replace(/\s+/g, ' ').slice(0, 200))
             .join('\n'),
         });
       }
@@ -66,9 +74,10 @@ function main() {
     }
     process.exit(1);
   } else {
-    console.log('✓ No direct DML statements targeting public.suppliers/public.inventory_items found.');
+    console.log(
+      '✓ No direct DML statements targeting public.suppliers/public.inventory_items found.'
+    );
   }
 }
 
 main();
-

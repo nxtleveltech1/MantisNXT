@@ -76,12 +76,7 @@ export class ToolExecutor {
       }
 
       // 4. Execute with timeout
-      const result = await this.executeWithTimeout(
-        tool,
-        params,
-        context,
-        executionOptions.timeout
-      );
+      const result = await this.executeWithTimeout(tool, params, context, executionOptions.timeout);
 
       // 5. Validate output (if enabled)
       if (executionOptions.validateOutput) {
@@ -109,7 +104,6 @@ export class ToolExecutor {
       }
 
       return toolResult;
-
     } catch (error) {
       // Handle execution errors
       const executionTimeMs = Date.now() - startTime;
@@ -150,9 +144,7 @@ export class ToolExecutor {
     // In production, this would integrate with your auth system
     const userPermissions = await this.getUserPermissions(context.userId);
 
-    const hasPermissions = tool.requiredPermissions.every(perm =>
-      userPermissions.includes(perm)
-    );
+    const hasPermissions = tool.requiredPermissions.every(perm => userPermissions.includes(perm));
 
     if (!hasPermissions) {
       throw new ToolPermissionError(tool.name, tool.requiredPermissions);
@@ -215,10 +207,7 @@ export class ToolExecutor {
     });
 
     // Race between execution and timeout
-    return Promise.race([
-      toolHandler(params, context),
-      timeoutPromise,
-    ]);
+    return Promise.race([toolHandler(params, context), timeoutPromise]);
   }
 
   /**

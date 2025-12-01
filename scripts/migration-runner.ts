@@ -277,7 +277,6 @@ class MigrationRunner {
 
         await client.query('COMMIT');
         console.log('   Transaction committed');
-
       } catch (execError) {
         await client.query('ROLLBACK');
         console.log('   Transaction rolled back');
@@ -300,7 +299,6 @@ class MigrationRunner {
         backupId,
         duration,
       };
-
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(`❌ Migration failed:`, error);
@@ -312,7 +310,12 @@ class MigrationRunner {
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (migration_name) DO UPDATE
            SET executed_at = NOW(), duration_ms = $2, status = $3, error_message = $4`,
-          [migrationName, duration, 'failed', error instanceof Error ? error.message : String(error)]
+          [
+            migrationName,
+            duration,
+            'failed',
+            error instanceof Error ? error.message : String(error),
+          ]
         );
       } catch (recordError) {
         console.error('Failed to record migration failure:', recordError);
@@ -394,7 +397,6 @@ class MigrationRunner {
 
       console.log('✅ Rollback completed successfully');
       return true;
-
     } catch (error) {
       console.error('❌ Rollback failed:', error);
       return false;
@@ -415,7 +417,7 @@ class MigrationRunner {
       await this.ensureMigrationTable();
 
       // Pre-migration validation
-      if (!await this.validatePreMigration()) {
+      if (!(await this.validatePreMigration())) {
         throw new Error('Pre-migration validation failed');
       }
 
@@ -432,7 +434,7 @@ class MigrationRunner {
 
         for (const migration of allMigrations) {
           const migrationName = migration.replace('.sql', '');
-          if (!await this.isMigrationApplied(migrationName)) {
+          if (!(await this.isMigrationApplied(migrationName))) {
             migrationsToRun.push(migration);
           }
         }
@@ -486,7 +488,6 @@ class MigrationRunner {
       if (failCount > 0) {
         process.exit(1);
       }
-
     } catch (error) {
       console.error('\n❌ Migration runner failed:', error);
       process.exit(1);
@@ -524,7 +525,7 @@ function parseArgs(): MigrationConfig {
 if (require.main === module) {
   const config = parseArgs();
   const runner = new MigrationRunner(config);
-  runner.run().catch((error) => {
+  runner.run().catch(error => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

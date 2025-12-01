@@ -13,27 +13,11 @@
 
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
 
-export type RewardType =
-  | 'points'
-  | 'discount'
-  | 'cashback'
-  | 'free_shipping'
-  | 'upgrade'
-  | 'gift';
+export type RewardType = 'points' | 'discount' | 'cashback' | 'free_shipping' | 'upgrade' | 'gift';
 
-export type TransactionType =
-  | 'earn'
-  | 'redeem'
-  | 'expire'
-  | 'adjust'
-  | 'bonus';
+export type TransactionType = 'earn' | 'redeem' | 'expire' | 'adjust' | 'bonus';
 
-export type RedemptionStatus =
-  | 'pending'
-  | 'approved'
-  | 'fulfilled'
-  | 'cancelled'
-  | 'expired';
+export type RedemptionStatus = 'pending' | 'approved' | 'fulfilled' | 'cancelled' | 'expired';
 
 export type RuleTriggerType =
   | 'order_placed'
@@ -604,24 +588,16 @@ export class InsufficientPointsError extends LoyaltyError {
 
 export class RewardNotAvailableError extends LoyaltyError {
   constructor(reason: string) {
-    super(
-      `Reward not available: ${reason}`,
-      'REWARD_NOT_AVAILABLE',
-      400,
-      { reason }
-    );
+    super(`Reward not available: ${reason}`, 'REWARD_NOT_AVAILABLE', 400, { reason });
     this.name = 'RewardNotAvailableError';
   }
 }
 
 export class RedemptionLimitReachedError extends LoyaltyError {
   constructor(limit: number) {
-    super(
-      `Maximum redemption limit reached (${limit})`,
-      'REDEMPTION_LIMIT_REACHED',
-      400,
-      { limit }
-    );
+    super(`Maximum redemption limit reached (${limit})`, 'REDEMPTION_LIMIT_REACHED', 400, {
+      limit,
+    });
     this.name = 'RedemptionLimitReachedError';
   }
 }

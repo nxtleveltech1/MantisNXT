@@ -5,14 +5,12 @@
  * Usage: Wrap API route handlers with withAuth()
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-type RouteHandler<TContext extends Record<string, unknown> | undefined = Record<string, unknown>> = (
-  request: NextRequest,
-  context?: TContext
-) => Promise<NextResponse>;
+type RouteHandler<TContext extends Record<string, unknown> | undefined = Record<string, unknown>> =
+  (request: NextRequest, context?: TContext) => Promise<NextResponse>;
 
 // Public endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
@@ -28,7 +26,7 @@ const PUBLIC_ENDPOINTS = [
 // Transitional flag: allow public GETs on selected endpoints
 const ALLOW_PUBLIC_GET_ENDPOINTS = (process.env.ALLOW_PUBLIC_GET_ENDPOINTS || '')
   .split(',')
-  .map((s) => s.trim())
+  .map(s => s.trim())
   .filter(Boolean);
 
 /**
@@ -105,9 +103,9 @@ function isPublicEndpoint(pathname: string): boolean {
  * });
  * ```
  */
-export function withAuth<TContext extends Record<string, unknown> | undefined = Record<string, unknown>>(
-  handler: RouteHandler<TContext>
-) {
+export function withAuth<
+  TContext extends Record<string, unknown> | undefined = Record<string, unknown>,
+>(handler: RouteHandler<TContext>) {
   return async (request: NextRequest, context?: TContext): Promise<NextResponse> => {
     const pathname = request.nextUrl.pathname;
 
@@ -117,10 +115,7 @@ export function withAuth<TContext extends Record<string, unknown> | undefined = 
     }
 
     // Support transitional public GETs via env config
-    if (
-      request.method === 'GET' &&
-      ALLOW_PUBLIC_GET_ENDPOINTS.some((e) => pathname.startsWith(e))
-    ) {
+    if (request.method === 'GET' && ALLOW_PUBLIC_GET_ENDPOINTS.some(e => pathname.startsWith(e))) {
       return handler(request, context);
     }
 
@@ -232,7 +227,7 @@ export function validateApiKey(request: NextRequest): boolean {
  * ```
  */
 export function withApiKey<
-  TContext extends Record<string, unknown> | undefined = Record<string, unknown>
+  TContext extends Record<string, unknown> | undefined = Record<string, unknown>,
 >(handler: RouteHandler<TContext>) {
   return async (request: NextRequest, context?: TContext): Promise<NextResponse> => {
     const pathname = request.nextUrl.pathname;
@@ -243,10 +238,7 @@ export function withApiKey<
     }
 
     // Transitional public GETs support
-    if (
-      request.method === 'GET' &&
-      ALLOW_PUBLIC_GET_ENDPOINTS.some((e) => pathname.startsWith(e))
-    ) {
+    if (request.method === 'GET' && ALLOW_PUBLIC_GET_ENDPOINTS.some(e => pathname.startsWith(e))) {
       return handler(request, context);
     }
 

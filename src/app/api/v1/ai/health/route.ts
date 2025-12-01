@@ -4,11 +4,7 @@
  */
 
 import type { NextRequest } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 
 /**
  * GET /api/v1/ai/health
@@ -95,29 +91,39 @@ export async function GET(request: NextRequest) {
     const forecastRow = forecastStats.rows[0] || {};
     services.demand_forecasting = {
       status: forecastRow.requests > 0 ? 'healthy' : 'idle',
-      enabled: enabledServices.rows.find((s: unknown) => s.service_type === 'demand_forecasting')?.enabled ?? true,
+      enabled:
+        enabledServices.rows.find((s: unknown) => s.service_type === 'demand_forecasting')
+          ?.enabled ?? true,
       lastUsed: forecastRow.last_used || null,
       requests24h: parseInt(forecastRow.requests) || 0,
       avgLatency: '120ms',
-      errorRate: forecastRow.avg_accuracy ? (1 - forecastRow.avg_accuracy / 100) : 0,
+      errorRate: forecastRow.avg_accuracy ? 1 - forecastRow.avg_accuracy / 100 : 0,
     };
 
     // Anomaly Detection
     const anomalyRow = anomalyStats.rows[0] || {};
     services.anomaly_detection = {
       status: anomalyRow.detections > 0 ? 'healthy' : 'idle',
-      enabled: enabledServices.rows.find((s: unknown) => s.service_type === 'anomaly_detection')?.enabled ?? true,
+      enabled:
+        enabledServices.rows.find((s: unknown) => s.service_type === 'anomaly_detection')
+          ?.enabled ?? true,
       lastUsed: anomalyRow.last_used || null,
       requests24h: parseInt(anomalyRow.detections) || 0,
       avgLatency: '95ms',
-      errorRate: anomalyRow.detections > 0 ? (anomalyRow.detections - anomalyRow.resolved) / anomalyRow.detections : 0,
+      errorRate:
+        anomalyRow.detections > 0
+          ? (anomalyRow.detections - anomalyRow.resolved) / anomalyRow.detections
+          : 0,
     };
 
     // Supplier Scoring (from predictions)
-    const supplierPred = predictionStats.rows.find((r: unknown) => r.service_type === 'supplier_risk') || {};
+    const supplierPred =
+      predictionStats.rows.find((r: unknown) => r.service_type === 'supplier_risk') || {};
     services.supplier_scoring = {
       status: supplierPred.requests > 0 ? 'healthy' : 'idle',
-      enabled: enabledServices.rows.find((s: unknown) => s.service_type === 'supplier_scoring')?.enabled ?? true,
+      enabled:
+        enabledServices.rows.find((s: unknown) => s.service_type === 'supplier_scoring')?.enabled ??
+        true,
       lastUsed: supplierPred.last_used || null,
       requests24h: parseInt(supplierPred.requests) || 0,
       avgLatency: '150ms',
@@ -128,7 +134,8 @@ export async function GET(request: NextRequest) {
     const convRow = conversationStats.rows[0] || {};
     services.assistant = {
       status: convRow.conversations > 0 ? 'healthy' : 'idle',
-      enabled: enabledServices.rows.find((s: unknown) => s.service_type === 'assistant')?.enabled ?? true,
+      enabled:
+        enabledServices.rows.find((s: unknown) => s.service_type === 'assistant')?.enabled ?? true,
       lastUsed: convRow.last_used || null,
       requests24h: parseInt(convRow.messages) || 0,
       avgLatency: '200ms',

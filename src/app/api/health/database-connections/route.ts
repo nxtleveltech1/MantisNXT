@@ -1,5 +1,5 @@
 // Database Connection Health Check API
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query, getPoolStatus } from '@/lib/database/unified-connection';
 
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Test basic connection
-    const basicTest = await query('SELECT NOW() as timestamp, \'database-health-check\' as test');
+    const basicTest = await query("SELECT NOW() as timestamp, 'database-health-check' as test");
     const basicLatency = Date.now() - startTime;
 
     // Test table access
@@ -32,24 +32,23 @@ export async function GET(request: NextRequest) {
         basicConnection: {
           status: 'pass',
           latency: `${basicLatency}ms`,
-          timestamp: basicTest.rows[0]?.timestamp
+          timestamp: basicTest.rows[0]?.timestamp,
         },
         supplierTableAccess: {
           status: 'pass',
-          count: supplierTest.rows[0]?.supplier_count || 0
+          count: supplierTest.rows[0]?.supplier_count || 0,
         },
         inventoryTableAccess: {
           status: 'pass',
-          count: inventoryTest.rows[0]?.inventory_count || 0
-        }
+          count: inventoryTest.rows[0]?.inventory_count || 0,
+        },
       },
       connection: connectionStatus,
       performance: {
         totalLatency: `${totalLatency}ms`,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('Database health check failed:', error);
 
@@ -62,9 +61,9 @@ export async function GET(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown database error',
         performance: {
           errorLatency: `${errorLatency}ms`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         },
-        connection: getPoolStatus()
+        connection: getPoolStatus(),
       },
       { status: 503 }
     );
@@ -85,18 +84,17 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Database connection verified',
         connection: getPoolStatus(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
     return NextResponse.json(
       {
         success: false,
-        error: 'Invalid action. Use "reinitialize" to verify connections.'
+        error: 'Invalid action. Use "reinitialize" to verify connections.',
       },
       { status: 400 }
     );
-
   } catch (error) {
     console.error('Database verification failed:', error);
 
@@ -104,7 +102,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Failed to verify database connection',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

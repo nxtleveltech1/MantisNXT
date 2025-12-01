@@ -7,10 +7,7 @@
 
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
-import type {
-  WebSearchRequest,
-  WebSearchResult} from './enhanced-types';
-
+import type { WebSearchRequest, WebSearchResult } from './enhanced-types';
 
 import { DISCOVERY_CONFIG } from './config';
 
@@ -32,8 +29,9 @@ export class WebSearchService {
     this.axiosInstance = axios.create({
       timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
     });
 
     this.initializeProviders();
@@ -47,8 +45,8 @@ export class WebSearchService {
       rateLimit: {
         requestsPerSecond: 1,
         requestsUsed: 0,
-        resetTime: new Date()
-      }
+        resetTime: new Date(),
+      },
     });
 
     // Bing Search Provider
@@ -58,8 +56,8 @@ export class WebSearchService {
       rateLimit: {
         requestsPerSecond: 1,
         requestsUsed: 0,
-        resetTime: new Date()
-      }
+        resetTime: new Date(),
+      },
     });
 
     // DuckDuckGo Provider
@@ -69,8 +67,8 @@ export class WebSearchService {
       rateLimit: {
         requestsPerSecond: 1,
         requestsUsed: 0,
-        resetTime: new Date()
-      }
+        resetTime: new Date(),
+      },
     });
   }
 
@@ -87,17 +85,16 @@ export class WebSearchService {
     for (const [providerName, provider] of this.providers) {
       if (this.checkRateLimit(provider)) {
         promises.push(
-          this.executeSearchWithRetry(provider, request.searchQuery, request)
-            .catch(error => {
-              console.warn(`Search failed for ${providerName}:`, error);
-              return [];
-            })
+          this.executeSearchWithRetry(provider, request.searchQuery, request).catch(error => {
+            console.warn(`Search failed for ${providerName}:`, error);
+            return [];
+          })
         );
       }
     }
 
     const results = await Promise.allSettled(promises);
-    
+
     // Collect successful results
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
@@ -138,9 +135,9 @@ export class WebSearchService {
    * Search using Google Custom Search API
    */
   private async googleApiSearch(
-    query: string, 
-    request: WebSearchRequest, 
-    apiKey: string, 
+    query: string,
+    request: WebSearchRequest,
+    apiKey: string,
     searchEngineId: string
   ): Promise<WebSearchResult[]> {
     const params = {
@@ -151,25 +148,26 @@ export class WebSearchService {
       gl: request.region || 'za',
       lr: request.language || 'lang_en',
       ...(request.dateRange && {
-        dateRestrict: this.formatDateRestriction(request.dateRange)
-      })
+        dateRestrict: this.formatDateRestriction(request.dateRange),
+      }),
     };
 
-    const response = await this.axiosInstance.get(
-      'https://www.googleapis.com/customsearch/v1',
-      { params }
-    );
+    const response = await this.axiosInstance.get('https://www.googleapis.com/customsearch/v1', {
+      params,
+    });
 
-    return response.data.items?.map((item: unknown) => ({
-      title: item.title,
-      url: item.link,
-      description: item.snippet,
-      displayedUrl: item.displayLink,
-      score: 1.0,
-      source: 'google' as const,
-      crawlDate: new Date(),
-      relevanceScore: this.calculateRelevanceScore(item.title, item.snippet, query)
-    })) || [];
+    return (
+      response.data.items?.map((item: unknown) => ({
+        title: item.title,
+        url: item.link,
+        description: item.snippet,
+        displayedUrl: item.displayLink,
+        score: 1.0,
+        source: 'google' as const,
+        crawlDate: new Date(),
+        relevanceScore: this.calculateRelevanceScore(item.title, item.snippet, query),
+      })) || []
+    );
   }
 
   /**
@@ -200,15 +198,15 @@ export class WebSearchService {
         url: `https://eservices.cipc.co.za`,
         description: `Official company registration information and compliance details.`,
         displayedUrl: 'cipc.co.za',
-      }
+      },
     ];
 
     return baseResults.map((item, index) => ({
       ...item,
-      score: 1.0 - (index * 0.1),
+      score: 1.0 - index * 0.1,
       source: 'google' as const,
       crawlDate: new Date(),
-      relevanceScore: 0.9 - (index * 0.1)
+      relevanceScore: 0.9 - index * 0.1,
     }));
   }
 
@@ -233,9 +231,13 @@ export class WebSearchService {
   /**
    * Search using Bing Search API
    */
-  private async bingApiSearch(query: string, request: WebSearchRequest, apiKey: string): Promise<WebSearchResult[]> {
+  private async bingApiSearch(
+    query: string,
+    request: WebSearchRequest,
+    apiKey: string
+  ): Promise<WebSearchResult[]> {
     const headers = {
-      'Ocp-Apim-Subscription-Key': apiKey
+      'Ocp-Apim-Subscription-Key': apiKey,
     };
 
     const params = {
@@ -243,24 +245,26 @@ export class WebSearchService {
       count: request.maxResults || 10,
       offset: 0,
       mkt: 'en-ZA',
-      safeSearch: 'Moderate'
+      safeSearch: 'Moderate',
     };
 
-    const response = await this.axiosInstance.get(
-      'https://api.bing.microsoft.com/v7.0/search',
-      { headers, params }
-    );
+    const response = await this.axiosInstance.get('https://api.bing.microsoft.com/v7.0/search', {
+      headers,
+      params,
+    });
 
-    return response.data.webPages?.value?.map((item: unknown) => ({
-      title: item.name,
-      url: item.url,
-      description: item.snippet,
-      displayedUrl: item.displayUrl,
-      score: 0.8,
-      source: 'bing' as const,
-      crawlDate: new Date(),
-      relevanceScore: this.calculateRelevanceScore(item.name, item.snippet, query)
-    })) || [];
+    return (
+      response.data.webPages?.value?.map((item: unknown) => ({
+        title: item.name,
+        url: item.url,
+        description: item.snippet,
+        displayedUrl: item.displayUrl,
+        score: 0.8,
+        source: 'bing' as const,
+        crawlDate: new Date(),
+        relevanceScore: this.calculateRelevanceScore(item.name, item.snippet, query),
+      })) || []
+    );
   }
 
   /**
@@ -276,27 +280,30 @@ export class WebSearchService {
         score: 0.8,
         source: 'bing' as const,
         crawlDate: new Date(),
-        relevanceScore: 0.8
-      }
+        relevanceScore: 0.8,
+      },
     ];
   }
 
   /**
    * Search DuckDuckGo for supplier information
    */
-  private async duckDuckGoSearch(query: string, request: WebSearchRequest): Promise<WebSearchResult[]> {
+  private async duckDuckGoSearch(
+    query: string,
+    request: WebSearchRequest
+  ): Promise<WebSearchResult[]> {
     try {
       const response = await this.axiosInstance.get('https://api.duckduckgo.com/', {
         params: {
           q: query,
           format: 'json',
           no_html: '1',
-          skip_disambig: '1'
-        }
+          skip_disambig: '1',
+        },
       });
 
       const results: WebSearchResult[] = [];
-      
+
       // Process Abstract results
       if (response.data.Abstract) {
         results.push({
@@ -307,7 +314,7 @@ export class WebSearchService {
           score: 0.7,
           source: 'duckduckgo' as const,
           crawlDate: new Date(),
-          relevanceScore: 0.7
+          relevanceScore: 0.7,
         });
       }
 
@@ -323,7 +330,7 @@ export class WebSearchService {
               score: 0.6,
               source: 'duckduckgo' as const,
               crawlDate: new Date(),
-              relevanceScore: 0.6
+              relevanceScore: 0.6,
             });
           }
         });
@@ -375,7 +382,7 @@ export class WebSearchService {
     for (const result of results) {
       // Normalize URL for comparison
       const normalizedUrl = this.normalizeUrl(result.url);
-      
+
       if (!seen.has(normalizedUrl)) {
         seen.add(normalizedUrl);
         unique.push(result);
@@ -398,7 +405,11 @@ export class WebSearchService {
     return results
       .map(result => ({
         ...result,
-        relevanceScore: this.calculateRelevanceScore(result.title, result.description, request.searchQuery)
+        relevanceScore: this.calculateRelevanceScore(
+          result.title,
+          result.description,
+          request.searchQuery
+        ),
       }))
       .sort((a, b) => {
         // Primary sort by relevance score
@@ -416,7 +427,7 @@ export class WebSearchService {
   private calculateRelevanceScore(title: string, description: string, query: string): number {
     const queryTerms = query.toLowerCase().split(' ');
     const text = `${title} ${description}`.toLowerCase();
-    
+
     let score = 0;
     let maxScore = 0;
 
@@ -498,21 +509,20 @@ export class WebSearchService {
    */
   getStatistics() {
     const providerStats: Record<string, unknown> = {};
-    
+
     for (const [name, provider] of this.providers) {
       providerStats[name] = {
         requestsUsed: provider.rateLimit.requestsUsed,
         requestsPerSecond: provider.rateLimit.requestsPerSecond,
-        resetTime: provider.rateLimit.resetTime
+        resetTime: provider.rateLimit.resetTime,
       };
     }
 
     return {
       providers: providerStats,
       totalProviders: this.providers.size,
-      activeProviders: Array.from(this.providers.values()).filter(p => 
-        this.checkRateLimit(p)
-      ).length
+      activeProviders: Array.from(this.providers.values()).filter(p => this.checkRateLimit(p))
+        .length,
     };
   }
 }

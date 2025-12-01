@@ -1,17 +1,17 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -19,12 +19,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   BarChart,
   Bar,
@@ -37,7 +37,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts'
+} from 'recharts';
 import {
   Package,
   DollarSign,
@@ -49,31 +49,31 @@ import {
   CheckCircle2,
   Search,
   X,
-} from 'lucide-react'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import type { NxtSoh, InventorySelection } from '@/types/nxt-spp'
+} from 'lucide-react';
+import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import type { NxtSoh, InventorySelection } from '@/types/nxt-spp';
 
 interface ISSohReportsProps {
-  onExport?: (data: NxtSoh[], format: 'csv' | 'excel') => void
+  onExport?: (data: NxtSoh[], format: 'csv' | 'excel') => void;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
-const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
-const ALL_LOCATIONS_VALUE = '__all-locations__'
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const ALL_SUPPLIERS_VALUE = '__all-suppliers__';
+const ALL_LOCATIONS_VALUE = '__all-locations__';
 
 export function ISSohReports({ onExport }: ISSohReportsProps) {
   // State
-  const [sohData, setSohData] = useState<NxtSoh[]>([])
-  const [activeSelection, setActiveSelection] = useState<InventorySelection | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [sohData, setSohData] = useState<NxtSoh[]>([]);
+  const [activeSelection, setActiveSelection] = useState<InventorySelection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Filters
-  const [supplierFilter, setSupplierFilter] = useState<string>('')
-  const [locationFilter, setLocationFilter] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Metrics
   const [metrics, setMetrics] = useState({
@@ -82,143 +82,165 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
     supplierCount: 0,
     locationCount: 0,
     lowStockCount: 0,
-  })
+  });
 
   // Auto-refresh timer
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!loading && !refreshing) {
-        fetchData(true) // Silent refresh
-      }
-    }, 5 * 60 * 1000) // 5 minutes
+    const interval = setInterval(
+      () => {
+        if (!loading && !refreshing) {
+          fetchData(true); // Silent refresh
+        }
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
 
-    return () => clearInterval(interval)
-  }, [fetchData, loading, refreshing])
+    return () => clearInterval(interval);
+  }, [fetchData, loading, refreshing]);
 
   // Fetch active selection
   const fetchActiveSelection = useCallback(async () => {
     try {
-      const response = await fetch('/api/core/selections/active')
-      if (!response.ok) throw new Error('Failed to fetch active selection')
+      const response = await fetch('/api/core/selections/active');
+      if (!response.ok) throw new Error('Failed to fetch active selection');
 
-      const result = await response.json()
-      setActiveSelection(result.data)
-      return result.data
+      const result = await response.json();
+      setActiveSelection(result.data);
+      return result.data;
     } catch (err) {
-      console.error('Failed to fetch active selection:', err)
-      return null
+      console.error('Failed to fetch active selection:', err);
+      return null;
     }
-  }, [])
+  }, []);
 
   // Fetch NXT SOH data
-  const fetchSohData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
-    else setRefreshing(true)
-    setError(null)
+  const fetchSohData = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+      setError(null);
 
-    try {
-      // Build query parameters
-      const params = new URLSearchParams()
-      if (supplierFilter) params.append('supplier_ids', supplierFilter)
-      if (locationFilter) params.append('location_ids', locationFilter)
-      if (searchTerm) params.append('search', searchTerm)
+      try {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (supplierFilter) params.append('supplier_ids', supplierFilter);
+        if (locationFilter) params.append('location_ids', locationFilter);
+        if (searchTerm) params.append('search', searchTerm);
 
-      const response = await fetch(`/api/serve/nxt-soh?${params}`)
-      if (!response.ok) throw new Error('Failed to fetch NXT SOH data')
+        const response = await fetch(`/api/serve/nxt-soh?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch NXT SOH data');
 
-      const result = await response.json()
+        const result = await response.json();
 
-      // Handle warning if no active selection
-      if (result.warning) {
-        setError(result.warning)
-        setSohData([])
-        setMetrics({
-          totalValue: 0,
-          totalItems: 0,
-          supplierCount: 0,
-          locationCount: 0,
-          lowStockCount: 0,
-        })
-        return
+        // Handle warning if no active selection
+        if (result.warning) {
+          setError(result.warning);
+          setSohData([]);
+          setMetrics({
+            totalValue: 0,
+            totalItems: 0,
+            supplierCount: 0,
+            locationCount: 0,
+            lowStockCount: 0,
+          });
+          return;
+        }
+
+        const data: NxtSoh[] = result.data || [];
+        setSohData(data);
+        setLastUpdated(new Date());
+
+        // Calculate metrics
+        const totalValue = data.reduce((sum, item) => sum + item.total_value, 0);
+        const totalItems = data.reduce((sum, item) => sum + item.qty_on_hand, 0);
+        const supplierCount = new Set(data.map(item => item.supplier_id)).size;
+        const locationCount = new Set(data.map(item => item.location_id)).size;
+        const lowStockCount = data.filter(item => item.qty_on_hand < 10).length;
+
+        setMetrics({ totalValue, totalItems, supplierCount, locationCount, lowStockCount });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load stock data');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      const data: NxtSoh[] = result.data || []
-      setSohData(data)
-      setLastUpdated(new Date())
-
-      // Calculate metrics
-      const totalValue = data.reduce((sum, item) => sum + item.total_value, 0)
-      const totalItems = data.reduce((sum, item) => sum + item.qty_on_hand, 0)
-      const supplierCount = new Set(data.map(item => item.supplier_id)).size
-      const locationCount = new Set(data.map(item => item.location_id)).size
-      const lowStockCount = data.filter(item => item.qty_on_hand < 10).length
-
-      setMetrics({ totalValue, totalItems, supplierCount, locationCount, lowStockCount })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load stock data')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [supplierFilter, locationFilter, searchTerm])
+    },
+    [supplierFilter, locationFilter, searchTerm]
+  );
 
   // Initial data fetch
-  const fetchData = useCallback(async (silent = false) => {
-    const selection = await fetchActiveSelection()
-    await fetchSohData(silent)
-  }, [fetchActiveSelection, fetchSohData])
+  const fetchData = useCallback(
+    async (silent = false) => {
+      const selection = await fetchActiveSelection();
+      await fetchSohData(silent);
+    },
+    [fetchActiveSelection, fetchSohData]
+  );
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData();
+  }, [fetchData]);
 
   // Get unique suppliers and locations for filters
   const uniqueSuppliers = React.useMemo(() => {
-    const suppliers = new Map<string, string>()
-    sohData.forEach(item => suppliers.set(item.supplier_id, item.supplier_name))
-    return Array.from(suppliers.entries()).map(([id, name]) => ({ id, name }))
-  }, [sohData])
+    const suppliers = new Map<string, string>();
+    sohData.forEach(item => suppliers.set(item.supplier_id, item.supplier_name));
+    return Array.from(suppliers.entries()).map(([id, name]) => ({ id, name }));
+  }, [sohData]);
 
   const uniqueLocations = React.useMemo(() => {
-    const locations = new Map<string, string>()
-    sohData.forEach(item => locations.set(item.location_id, item.location_name))
-    return Array.from(locations.entries()).map(([id, name]) => ({ id, name }))
-  }, [sohData])
+    const locations = new Map<string, string>();
+    sohData.forEach(item => locations.set(item.location_id, item.location_name));
+    return Array.from(locations.entries()).map(([id, name]) => ({ id, name }));
+  }, [sohData]);
 
   // Chart data transformations
   const supplierChartData = React.useMemo(() => {
-    const grouped = sohData.reduce((acc, item) => {
-      const existing = acc.find(g => g.supplier_name === item.supplier_name)
-      if (existing) {
-        existing.quantity += item.qty_on_hand
-        existing.value += item.total_value
-      } else {
-        acc.push({
-          supplier_name: item.supplier_name,
-          quantity: item.qty_on_hand,
-          value: item.total_value,
-        })
-      }
-      return acc
-    }, [] as Array<{ supplier_name: string; quantity: number; value: number }>)
+    const grouped = sohData.reduce(
+      (acc, item) => {
+        const existing = acc.find(g => g.supplier_name === item.supplier_name);
+        if (existing) {
+          existing.quantity += item.qty_on_hand;
+          existing.value += item.total_value;
+        } else {
+          acc.push({
+            supplier_name: item.supplier_name,
+            quantity: item.qty_on_hand,
+            value: item.total_value,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ supplier_name: string; quantity: number; value: number }>
+    );
 
-    return grouped.sort((a, b) => b.value - a.value).slice(0, 10)
-  }, [sohData])
+    return grouped.sort((a, b) => b.value - a.value).slice(0, 10);
+  }, [sohData]);
 
   const valueDistributionData = React.useMemo(() => {
     return supplierChartData.map(item => ({
       name: item.supplier_name,
       value: item.value,
-    }))
-  }, [supplierChartData])
+    }));
+  }, [supplierChartData]);
 
   // Export handlers
   const handleExport = (format: 'csv' | 'excel') => {
     if (onExport) {
-      onExport(sohData, format)
+      onExport(sohData, format);
     } else {
       // Default CSV export
-      const headers = ['Supplier', 'Product', 'SKU', 'Location', 'Quantity', 'Unit Cost', 'Total Value', 'Currency', 'As of Date']
+      const headers = [
+        'Supplier',
+        'Product',
+        'SKU',
+        'Location',
+        'Quantity',
+        'Unit Cost',
+        'Total Value',
+        'Currency',
+        'As of Date',
+      ];
       const rows = sohData.map(item => [
         item.supplier_name,
         item.product_name,
@@ -228,19 +250,19 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
         item.unit_cost.toString(),
         item.total_value.toString(),
         item.currency,
-        formatDate(item.as_of_ts)
-      ])
+        formatDate(item.as_of_ts),
+      ]);
 
-      const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
-      const blob = new Blob([csv], { type: 'text/csv' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `nxt-soh-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nxt-soh-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-  }
+  };
 
   // Loading skeleton
   if (loading && sohData.length === 0) {
@@ -253,29 +275,28 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
         </div>
         <Skeleton className="h-[400px]" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Active Selection Banner */}
       {activeSelection ? (
-        <Alert className="bg-blue-50 border-blue-200">
+        <Alert className="border-blue-200 bg-blue-50">
           <CheckCircle2 className="h-4 w-4 text-blue-600" />
           <AlertDescription className="flex items-center justify-between">
             <div>
               <strong className="text-blue-900">Active Selection:</strong>{' '}
               <span className="text-blue-700">{activeSelection.selection_name}</span>
               {activeSelection.metrics && (
-                <span className="text-blue-600 ml-2">
-                  ({activeSelection.metrics.item_count} products from {activeSelection.metrics.supplier_count} suppliers)
+                <span className="ml-2 text-blue-600">
+                  ({activeSelection.metrics.item_count} products from{' '}
+                  {activeSelection.metrics.supplier_count} suppliers)
                 </span>
               )}
             </div>
             {lastUpdated && (
-              <div className="text-xs text-blue-600">
-                Last updated: {formatDate(lastUpdated)}
-              </div>
+              <div className="text-xs text-blue-600">Last updated: {formatDate(lastUpdated)}</div>
             )}
           </AlertDescription>
         </Alert>
@@ -283,7 +304,8 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>No Active Selection:</strong> Create and activate an inventory selection to view stock data.
+            <strong>No Active Selection:</strong> Create and activate an inventory selection to view
+            stock data.
           </AlertDescription>
         </Alert>
       )}
@@ -300,7 +322,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
       <div className="grid grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
               <DollarSign className="h-4 w-4" />
               Total Value
             </CardTitle>
@@ -309,13 +331,13 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
             <div className="text-2xl font-bold text-green-600">
               {formatCurrency(metrics.totalValue)}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Selected inventory</div>
+            <div className="text-muted-foreground mt-1 text-xs">Selected inventory</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
               <Package className="h-4 w-4" />
               Total Items
             </CardTitle>
@@ -324,52 +346,46 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
             <div className="text-2xl font-bold text-blue-600">
               {metrics.totalItems.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Units on hand</div>
+            <div className="text-muted-foreground mt-1 text-xs">Units on hand</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
               <TrendingUp className="h-4 w-4" />
               Suppliers
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {metrics.supplierCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">Active suppliers</div>
+            <div className="text-2xl font-bold text-purple-600">{metrics.supplierCount}</div>
+            <div className="text-muted-foreground mt-1 text-xs">Active suppliers</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
               <Package className="h-4 w-4" />
               Locations
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {metrics.locationCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">Stock locations</div>
+            <div className="text-2xl font-bold text-orange-600">{metrics.locationCount}</div>
+            <div className="text-muted-foreground mt-1 text-xs">Stock locations</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
               <AlertTriangle className="h-4 w-4" />
               Low Stock
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {metrics.lowStockCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">Below threshold</div>
+            <div className="text-2xl font-bold text-red-600">{metrics.lowStockCount}</div>
+            <div className="text-muted-foreground mt-1 text-xs">Below threshold</div>
           </CardContent>
         </Card>
       </div>
@@ -381,20 +397,22 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
             {/* Filters Row */}
             <div className="flex items-end gap-4">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="search" className="text-sm">Search Product / SKU</Label>
+                <Label htmlFor="search" className="text-sm">
+                  Search Product / SKU
+                </Label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="search"
                     placeholder="Search product name or SKU..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-9"
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pr-9 pl-9"
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -403,10 +421,12 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
               </div>
 
               <div className="w-[200px] space-y-2">
-                <Label htmlFor="supplier-filter" className="text-sm">Supplier</Label>
+                <Label htmlFor="supplier-filter" className="text-sm">
+                  Supplier
+                </Label>
                 <Select
                   value={supplierFilter || ALL_SUPPLIERS_VALUE}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setSupplierFilter(value === ALL_SUPPLIERS_VALUE ? '' : value)
                   }
                 >
@@ -416,17 +436,21 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                   <SelectContent>
                     <SelectItem value={ALL_SUPPLIERS_VALUE}>All suppliers</SelectItem>
                     {uniqueSuppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="w-[200px] space-y-2">
-                <Label htmlFor="location-filter" className="text-sm">Location</Label>
+                <Label htmlFor="location-filter" className="text-sm">
+                  Location
+                </Label>
                 <Select
                   value={locationFilter || ALL_LOCATIONS_VALUE}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setLocationFilter(value === ALL_LOCATIONS_VALUE ? '' : value)
                   }
                 >
@@ -436,7 +460,9 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                   <SelectContent>
                     <SelectItem value={ALL_LOCATIONS_VALUE}>All locations</SelectItem>
                     {uniqueLocations.map(l => (
-                      <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -449,7 +475,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                 disabled={loading || refreshing}
                 className="self-end"
               >
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Apply
               </Button>
             </div>
@@ -457,16 +483,31 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
             {/* Actions Row */}
             <div className="flex items-center justify-between border-t pt-4">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => fetchSohData()} disabled={loading || refreshing}>
-                  <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchSohData()}
+                  disabled={loading || refreshing}
+                >
+                  <RefreshCw className={cn('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
                   Refresh
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleExport('csv')} disabled={sohData.length === 0}>
-                  <Download className="h-4 w-4 mr-2" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport('csv')}
+                  disabled={sohData.length === 0}
+                >
+                  <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleExport('excel')} disabled={sohData.length === 0}>
-                  <Download className="h-4 w-4 mr-2" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport('excel')}
+                  disabled={sohData.length === 0}
+                >
+                  <Download className="mr-2 h-4 w-4" />
                   Export Excel
                 </Button>
               </div>
@@ -476,12 +517,12 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setSupplierFilter('')
-                    setLocationFilter('')
-                    setSearchTerm('')
+                    setSupplierFilter('');
+                    setLocationFilter('');
+                    setSearchTerm('');
                   }}
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="mr-2 h-4 w-4" />
                   Clear Filters
                 </Button>
               )}
@@ -494,9 +535,9 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
       {!loading && sohData.length === 0 && !error && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Package className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Stock Data</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+            <Package className="text-muted-foreground mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-lg font-medium">No Stock Data</h3>
+            <p className="text-muted-foreground mb-6 max-w-md text-center text-sm">
               {activeSelection
                 ? 'No stock records found for selected products. Try adjusting filters or add stock data.'
                 : 'Create and activate an inventory selection to view stock data.'}
@@ -524,28 +565,23 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={supplierChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="supplier_name"
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                    />
+                    <XAxis dataKey="supplier_name" angle={-45} textAnchor="end" height={100} />
                     <YAxis />
                     <Tooltip
                       content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null
-                        const data = payload[0].payload
+                        if (!active || !payload || !payload.length) return null;
+                        const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border rounded shadow-lg">
-                            <div className="font-medium mb-1">{data.supplier_name}</div>
-                            <div className="text-sm text-muted-foreground">
+                          <div className="rounded border bg-white p-3 shadow-lg">
+                            <div className="mb-1 font-medium">{data.supplier_name}</div>
+                            <div className="text-muted-foreground text-sm">
                               Quantity: {data.quantity.toLocaleString()}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               Value: {formatCurrency(data.value)}
                             </div>
                           </div>
-                        )
+                        );
                       }}
                     />
                     <Bar dataKey="quantity" fill="#3b82f6" />
@@ -571,9 +607,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                       cx="50%"
                       cy="50%"
                       outerRadius={120}
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
                       {valueDistributionData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -581,16 +615,16 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                     </Pie>
                     <Tooltip
                       content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null
-                        const data = payload[0]
+                        if (!active || !payload || !payload.length) return null;
+                        const data = payload[0];
                         return (
-                          <div className="bg-white p-3 border rounded shadow-lg">
-                            <div className="font-medium mb-1">{data.name}</div>
-                            <div className="text-sm text-muted-foreground">
+                          <div className="rounded border bg-white p-3 shadow-lg">
+                            <div className="mb-1 font-medium">{data.name}</div>
+                            <div className="text-muted-foreground text-sm">
                               {formatCurrency(data.value as number)}
                             </div>
                           </div>
-                        )
+                        );
                       }}
                     />
                     <Legend />
@@ -609,7 +643,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
               <CardContent>
                 <ScrollArea className="h-[500px]">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-background">
+                    <TableHeader className="bg-background sticky top-0">
                       <TableRow>
                         <TableHead>Supplier</TableHead>
                         <TableHead>Product Name</TableHead>
@@ -630,9 +664,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
                           <TableCell>
                             <div className="max-w-xs truncate">{item.product_name}</div>
                           </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {item.supplier_sku}
-                          </TableCell>
+                          <TableCell className="font-mono text-sm">{item.supplier_sku}</TableCell>
                           <TableCell>{item.location_name}</TableCell>
                           <TableCell className="text-right font-medium">
                             {item.qty_on_hand.toLocaleString()}
@@ -667,5 +699,5 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
         </Tabs>
       )}
     </div>
-  )
+  );
 }

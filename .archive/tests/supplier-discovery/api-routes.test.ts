@@ -29,33 +29,33 @@ describe('Supplier Discovery API Routes', () => {
             city: 'Johannesburg',
             province: 'Gauteng',
             postalCode: '2001',
-            country: 'South Africa'
+            country: 'South Africa',
           },
           contactInfo: {
             phone: '+27 11 123 4567',
             email: 'test@company.com',
-            website: 'https://testcompany.com'
+            website: 'https://testcompany.com',
           },
           businessInfo: {
             industry: 'Technology',
             establishedDate: '2023',
             employeeCount: 50,
-            annualRevenue: 1000000
+            annualRevenue: 1000000,
           },
           compliance: {
             vatNumber: '4123456789',
             beeRating: 'Level 4',
-            certifications: []
+            certifications: [],
           },
           confidence: {
             overall: 0.85,
-            individual: {}
+            individual: {},
           },
           sources: ['test-source'],
-          discoveredAt: new Date()
+          discoveredAt: new Date(),
         },
         processingTime: 1500,
-        sourcesUsed: ['test-source']
+        sourcesUsed: ['test-source'],
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
@@ -63,12 +63,12 @@ describe('Supplier Discovery API Routes', () => {
         body: JSON.stringify({
           supplierName: 'Test Company',
           additionalContext: {
-            industry: 'Technology'
-          }
+            industry: 'Technology',
+          },
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -88,8 +88,8 @@ describe('Supplier Discovery API Routes', () => {
           supplierName: '', // Invalid - too short
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -108,17 +108,17 @@ describe('Supplier Discovery API Routes', () => {
         success: false,
         error: 'No data found for the specified supplier',
         processingTime: 1000,
-        sourcesUsed: []
+        sourcesUsed: [],
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'POST',
         body: JSON.stringify({
-          supplierName: 'Nonexistent Company'
+          supplierName: 'Nonexistent Company',
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -131,16 +131,18 @@ describe('Supplier Discovery API Routes', () => {
 
     it('should handle internal server errors', async () => {
       const { supplierDiscoveryEngine } = require('@/lib/supplier-discovery/engine');
-      supplierDiscoveryEngine.initialize = jest.fn().mockRejectedValue(new Error('Initialization failed'));
+      supplierDiscoveryEngine.initialize = jest
+        .fn()
+        .mockRejectedValue(new Error('Initialization failed'));
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'POST',
         body: JSON.stringify({
-          supplierName: 'Test Company'
+          supplierName: 'Test Company',
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -161,20 +163,20 @@ describe('Supplier Discovery API Routes', () => {
           success: true,
           data: { supplierName: 'Company A' },
           processingTime: 1000,
-          sourcesUsed: ['source1']
+          sourcesUsed: ['source1'],
         },
         {
           success: false,
           error: 'Company not found',
           processingTime: 500,
-          sourcesUsed: []
+          sourcesUsed: [],
         },
         {
           success: true,
           data: { supplierName: 'Company C' },
           processingTime: 1200,
-          sourcesUsed: ['source2']
-        }
+          sourcesUsed: ['source2'],
+        },
       ]);
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
@@ -183,12 +185,12 @@ describe('Supplier Discovery API Routes', () => {
           suppliers: [
             { supplierName: 'Company A' },
             { supplierName: 'Company B' },
-            { supplierName: 'Company C' }
-          ]
+            { supplierName: 'Company C' },
+          ],
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await PUT(request);
@@ -203,16 +205,18 @@ describe('Supplier Discovery API Routes', () => {
     });
 
     it('should validate bulk request limits', async () => {
-      const suppliers = Array(15).fill(0).map((_, i) => ({
-        supplierName: `Company ${i}`
-      }));
+      const suppliers = Array(15)
+        .fill(0)
+        .map((_, i) => ({
+          supplierName: `Company ${i}`,
+        }));
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'PUT',
         body: JSON.stringify({ suppliers }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await PUT(request);
@@ -232,20 +236,20 @@ describe('Supplier Discovery API Routes', () => {
         success: true,
         data: {
           supplierName: 'Refreshed Company',
-          confidence: { overall: 0.9 }
+          confidence: { overall: 0.9 },
         },
         processingTime: 2000,
-        sourcesUsed: ['fresh-source']
+        sourcesUsed: ['fresh-source'],
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'PATCH',
         body: JSON.stringify({
-          supplierName: 'Refreshed Company'
+          supplierName: 'Refreshed Company',
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await PATCH(request);
@@ -266,13 +270,13 @@ describe('Supplier Discovery API Routes', () => {
         details: {
           initialized: true,
           activeRequests: 0,
-          cacheSize: 5
-        }
+          cacheSize: 5,
+        },
       });
       supplierDiscoveryEngine.getStatistics = jest.fn().mockReturnValue({
         cacheStats: { keys: 5, hitRate: 75 },
         activeRequests: 0,
-        queueLength: 0
+        queueLength: 0,
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery/health');
@@ -292,12 +296,12 @@ describe('Supplier Discovery API Routes', () => {
         healthy: false,
         details: {
           initialized: false,
-          error: 'Initialization failed'
-        }
+          error: 'Initialization failed',
+        },
       });
       supplierDiscoveryEngine.getStatistics = jest.fn().mockReturnValue({
         activeRequests: 0,
-        queueLength: 0
+        queueLength: 0,
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery/health');
@@ -317,8 +321,8 @@ describe('Supplier Discovery API Routes', () => {
         method: 'POST',
         body: 'invalid json',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -332,8 +336,8 @@ describe('Supplier Discovery API Routes', () => {
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await POST(request);
@@ -352,16 +356,16 @@ describe('Supplier Discovery API Routes', () => {
         success: true,
         data: {
           supplierName: 'Format Test Company',
-          confidence: { overall: 0.8 }
+          confidence: { overall: 0.8 },
         },
         processingTime: 1000,
-        sourcesUsed: ['test']
+        sourcesUsed: ['test'],
       });
 
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'POST',
         body: JSON.stringify({ supplierName: 'Format Test Company' }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const response = await POST(request);
@@ -380,7 +384,7 @@ describe('Supplier Discovery API Routes', () => {
       const request = new NextRequest('http://localhost:3000/api/suppliers/discovery', {
         method: 'POST',
         body: JSON.stringify({ supplierName: 'x' }), // Too short
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const response = await POST(request);

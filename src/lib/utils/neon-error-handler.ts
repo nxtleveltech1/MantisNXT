@@ -50,9 +50,9 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
       message: 'Input validation failed',
       details: error.issues.map(e => ({
         field: e.path.join('.'),
-        message: e.message
+        message: e.message,
       })),
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     };
   }
 
@@ -70,9 +70,9 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
         table: pgError.table,
         column: pgError.column,
         dataType: pgError.dataType,
-        detail: pgError.detail
+        detail: pgError.detail,
       },
-      code
+      code,
     };
   }
 
@@ -81,7 +81,7 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
     return {
       error: 'Operation Failed',
       message: error.message,
-      code: 'OPERATION_ERROR'
+      code: 'OPERATION_ERROR',
     };
   }
 
@@ -89,7 +89,7 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
   return {
     error: 'Unknown Error',
     message: 'An unexpected error occurred',
-    code: 'UNKNOWN_ERROR'
+    code: 'UNKNOWN_ERROR',
   };
 }
 
@@ -97,12 +97,7 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
  * Type guard for DatabaseError
  */
 function isDatabaseError(error: unknown): error is DatabaseError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'severity' in error
-  );
+  return typeof error === 'object' && error !== null && 'code' in error && 'severity' in error;
 }
 
 /**
@@ -129,7 +124,7 @@ export function validateUploadData(data: unknown): { valid: boolean; errors: str
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -157,7 +152,7 @@ export function validateSelectionOperation(operation: {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -174,7 +169,7 @@ export function createErrorResponse(
   console.error('API Error:', {
     error: errorResponse,
     statusCode,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   return NextResponse.json(errorResponse, { status: statusCode });
@@ -183,9 +178,12 @@ export function createErrorResponse(
 /**
  * Validate and sanitize query parameters
  */
-export function validateQueryParams(params: URLSearchParams, schema: {
-  [key: string]: 'string' | 'number' | 'boolean' | 'uuid' | 'date' | 'array'
-}): { valid: boolean; errors: string[]; parsed: Record<string, unknown> } {
+export function validateQueryParams(
+  params: URLSearchParams,
+  schema: {
+    [key: string]: 'string' | 'number' | 'boolean' | 'uuid' | 'date' | 'array';
+  }
+): { valid: boolean; errors: string[]; parsed: Record<string, unknown> } {
   const errors: string[] = [];
   const parsed: Record<string, unknown> = {};
 
@@ -250,7 +248,7 @@ export function validateQueryParams(params: URLSearchParams, schema: {
   return {
     valid: errors.length === 0,
     errors,
-    parsed
+    parsed,
   };
 }
 
@@ -271,6 +269,6 @@ export function validateRequestBody(
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }

@@ -18,17 +18,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Copy,
-  Mail,
-  Share2,
-  Users,
-  TrendingUp,
-  Check,
-  Clock,
-  X,
-  Plus,
-} from 'lucide-react';
+import { Copy, Mail, Share2, Users, TrendingUp, Check, Clock, X, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,9 +103,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['loyalty-referrals', customerId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/referrals`
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/referrals`);
       if (!response.ok) throw new Error('Failed to fetch referrals');
       const json = await response.json();
       return json.data as ReferralData;
@@ -124,14 +112,11 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
 
   const createReferralMutation = useMutation({
     mutationFn: async (data: { referred_email: string; referred_name?: string }) => {
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/referrals`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/referrals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!response.ok) throw new Error('Failed to create referral');
       return response.json();
     },
@@ -153,9 +138,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
     },
   });
 
-  const referralLink = data
-    ? `${window.location.origin}/signup?ref=${data.referral_code}`
-    : '';
+  const referralLink = data ? `${window.location.origin}/signup?ref=${data.referral_code}` : '';
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -171,9 +154,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
   };
 
   const handleShareTwitter = () => {
-    const text = encodeURIComponent(
-      `Join me and earn rewards! ${referralLink}`
-    );
+    const text = encodeURIComponent(`Join me and earn rewards! ${referralLink}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
 
@@ -205,8 +186,8 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+        <div className="space-y-4 text-center">
+          <div className="border-primary mx-auto h-12 w-12 animate-spin rounded-full border-b-2" />
           <p className="text-muted-foreground">Loading referral program...</p>
         </div>
       </div>
@@ -220,9 +201,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Referral Program</h2>
-        <p className="text-muted-foreground">
-          Invite friends and earn rewards together
-        </p>
+        <p className="text-muted-foreground">Invite friends and earn rewards together</p>
       </div>
 
       {/* Stats Overview */}
@@ -230,7 +209,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 <span className="text-sm font-medium">Total Referrals</span>
               </div>
@@ -242,13 +221,11 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <Check className="h-4 w-4" />
                 <span className="text-sm font-medium">Successful</span>
               </div>
-              <p className="text-3xl font-bold text-green-600">
-                {data.successful_referrals}
-              </p>
+              <p className="text-3xl font-bold text-green-600">{data.successful_referrals}</p>
             </div>
           </CardContent>
         </Card>
@@ -256,13 +233,11 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium">Pending</span>
               </div>
-              <p className="text-3xl font-bold text-yellow-600">
-                {data.pending_referrals}
-              </p>
+              <p className="text-3xl font-bold text-yellow-600">{data.pending_referrals}</p>
             </div>
           </CardContent>
         </Card>
@@ -270,11 +245,11 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
                 <span className="text-sm font-medium">Points Earned</span>
               </div>
-              <p className="text-3xl font-bold text-primary">
+              <p className="text-primary text-3xl font-bold">
                 {data.total_points_earned.toLocaleString()}
               </p>
             </div>
@@ -283,21 +258,17 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
       </div>
 
       {/* Referral Link */}
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+      <Card className="border-primary/30 from-primary/5 to-primary/10 bg-gradient-to-br">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-primary" />
+            <Share2 className="text-primary h-5 w-5" />
             Your Referral Link
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Input
-              value={referralLink}
-              readOnly
-              className="font-mono text-sm bg-background"
-            />
-            <Button onClick={handleCopyLink} className="gap-2 shrink-0">
+            <Input value={referralLink} readOnly className="bg-background font-mono text-sm" />
+            <Button onClick={handleCopyLink} className="shrink-0 gap-2">
               <Copy className="h-4 w-4" />
               Copy
             </Button>
@@ -308,53 +279,25 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
           {/* Share Buttons */}
           <div className="space-y-3">
             <p className="text-sm font-medium">Share via:</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <Button
-                variant="outline"
-                onClick={handleShareEmail}
-                className="gap-2"
-              >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Button variant="outline" onClick={handleShareEmail} className="gap-2">
                 <Mail className="h-4 w-4" />
                 Email
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleShareTwitter}
-                className="gap-2"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              <Button variant="outline" onClick={handleShareTwitter} className="gap-2">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
                 Twitter
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleShareLinkedIn}
-                className="gap-2"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              <Button variant="outline" onClick={handleShareLinkedIn} className="gap-2">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
                 LinkedIn
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleShareFacebook}
-                className="gap-2"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              <Button variant="outline" onClick={handleShareFacebook} className="gap-2">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
                 Facebook
@@ -386,10 +329,10 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         </CardHeader>
         <CardContent>
           {data.referrals.length === 0 ? (
-            <div className="text-center py-8 space-y-2">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div className="space-y-2 py-8 text-center">
+              <Users className="text-muted-foreground mx-auto h-12 w-12" />
               <p className="font-medium">No referrals yet</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Start inviting friends to earn rewards!
               </p>
             </div>
@@ -405,7 +348,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.referrals.map((referral) => {
+                  {data.referrals.map(referral => {
                     const statusConfig = STATUS_CONFIG[referral.status];
                     const StatusIcon = statusConfig.icon;
 
@@ -414,20 +357,15 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
                         <TableCell>
                           <div className="space-y-1">
                             {referral.referred_name && (
-                              <p className="font-medium">
-                                {referral.referred_name}
-                              </p>
+                              <p className="font-medium">{referral.referred_name}</p>
                             )}
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {referral.referred_email}
                             </p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn('gap-1.5', statusConfig.color)}
-                          >
+                          <Badge variant="outline" className={cn('gap-1.5', statusConfig.color)}>
                             <StatusIcon className="h-3 w-3" />
                             {statusConfig.label}
                           </Badge>
@@ -448,19 +386,10 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <p>
-                              {format(
-                                new Date(referral.referred_at),
-                                'MMM d, yyyy'
-                              )}
-                            </p>
+                            <p>{format(new Date(referral.referred_at), 'MMM d, yyyy')}</p>
                             {referral.completed_at && (
-                              <p className="text-xs text-muted-foreground">
-                                Completed{' '}
-                                {format(
-                                  new Date(referral.completed_at),
-                                  'MMM d'
-                                )}
+                              <p className="text-muted-foreground text-xs">
+                                Completed {format(new Date(referral.completed_at), 'MMM d')}
                               </p>
                             )}
                           </div>
@@ -485,37 +414,34 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
             <AccordionItem value="item-1">
               <AccordionTrigger>How do I refer someone?</AccordionTrigger>
               <AccordionContent>
-                Simply share your unique referral link with friends via email,
-                social media, or direct invitation. When they sign up using your
-                link, you&apos;ll both receive rewards!
+                Simply share your unique referral link with friends via email, social media, or
+                direct invitation. When they sign up using your link, you&apos;ll both receive
+                rewards!
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2">
               <AccordionTrigger>What rewards do I earn?</AccordionTrigger>
               <AccordionContent>
-                You&apos;ll earn 100 points for each successful referral when your
-                friend completes their first purchase. Your friend will also
-                receive 50 bonus points as a welcome gift!
+                You&apos;ll earn 100 points for each successful referral when your friend completes
+                their first purchase. Your friend will also receive 50 bonus points as a welcome
+                gift!
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3">
-              <AccordionTrigger>
-                When will I receive my referral points?
-              </AccordionTrigger>
+              <AccordionTrigger>When will I receive my referral points?</AccordionTrigger>
               <AccordionContent>
-                Referral points are credited to your account once your friend
-                completes their first qualifying purchase. This typically
-                happens within 24-48 hours of their purchase.
+                Referral points are credited to your account once your friend completes their first
+                qualifying purchase. This typically happens within 24-48 hours of their purchase.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4">
               <AccordionTrigger>Is there a referral limit?</AccordionTrigger>
               <AccordionContent>
-                No! You can refer as many friends as you&apos;d like. There&apos;s no cap
-                on the rewards you can earn through referrals.
+                No! You can refer as many friends as you&apos;d like. There&apos;s no cap on the
+                rewards you can earn through referrals.
               </AccordionContent>
             </AccordionItem>
 
@@ -524,9 +450,8 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
                 What if my referral doesn&apos;t complete a purchase?
               </AccordionTrigger>
               <AccordionContent>
-                Referral bonuses are only awarded when the referred customer
-                completes their first purchase. Pending referrals will expire
-                after 90 days if no purchase is made.
+                Referral bonuses are only awarded when the referred customer completes their first
+                purchase. Pending referrals will expire after 90 days if no purchase is made.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -538,9 +463,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Send Invitation</DialogTitle>
-            <DialogDescription>
-              Invite someone directly by email
-            </DialogDescription>
+            <DialogDescription>Invite someone directly by email</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -551,7 +474,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
                 type="email"
                 placeholder="friend@example.com"
                 value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                onChange={e => setInviteEmail(e.target.value)}
               />
             </div>
 
@@ -559,9 +482,9 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
               <Label htmlFor="name">Name (optional)</Label>
               <Input
                 id="name"
-                placeholder="Friend&apos;s name"
+                placeholder="Friend's name"
                 value={inviteName}
-                onChange={(e) => setInviteName(e.target.value)}
+                onChange={e => setInviteName(e.target.value)}
               />
             </div>
           </div>
@@ -581,7 +504,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
             >
               {createReferralMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
                   Sending...
                 </>
               ) : (

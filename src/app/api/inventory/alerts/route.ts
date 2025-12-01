@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/database";
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 
 export async function GET() {
   try {
@@ -46,52 +46,42 @@ export async function GET() {
       const isCritical = item.stock_qty <= item.reorder_point * 0.5;
       const isLowStock = item.stock_qty <= item.reorder_point;
 
-      let type:
-        | "low_stock"
-        | "out_of_stock"
-        | "excess_stock"
-        | "slow_moving"
-        | "expiring";
-      let severity: "critical" | "high" | "medium" | "low";
+      let type: 'low_stock' | 'out_of_stock' | 'excess_stock' | 'slow_moving' | 'expiring';
+      let severity: 'critical' | 'high' | 'medium' | 'low';
       let message: string;
       let recommendation: string;
       let impact: string;
       let estimatedCost: number;
 
       if (isOutOfStock) {
-        type = "out_of_stock";
-        severity = "critical";
+        type = 'out_of_stock';
+        severity = 'critical';
         message = `${item.name} is completely out of stock`;
         recommendation = `Immediate reorder required. Contact ${
-          item.supplier_name || "supplier"
+          item.supplier_name || 'supplier'
         } to expedite delivery.`;
-        impact =
-          "Cannot fulfill orders. Potential customer loss and revenue impact.";
-        estimatedCost =
-          parseFloat(item.cost_price || "0") * item.reorder_point * 1.5;
+        impact = 'Cannot fulfill orders. Potential customer loss and revenue impact.';
+        estimatedCost = parseFloat(item.cost_price || '0') * item.reorder_point * 1.5;
       } else if (isCritical) {
-        type = "low_stock";
-        severity = "high";
+        type = 'low_stock';
+        severity = 'high';
         message = `${item.name} stock critically low (${item.stock_qty} units remaining)`;
         recommendation = `Reorder immediately. Current stock below 50% of reorder point.`;
-        impact =
-          "High risk of stockout within 1-2 days. May impact order fulfillment.";
-        estimatedCost = parseFloat(item.cost_price || "0") * item.reorder_point;
+        impact = 'High risk of stockout within 1-2 days. May impact order fulfillment.';
+        estimatedCost = parseFloat(item.cost_price || '0') * item.reorder_point;
       } else if (isLowStock) {
-        type = "low_stock";
-        severity = "medium";
+        type = 'low_stock';
+        severity = 'medium';
         message = `${item.name} approaching reorder point (${item.stock_qty}/${item.reorder_point} units)`;
         recommendation = `Plan reorder within 3-5 days to maintain optimal stock levels.`;
-        impact = "Moderate risk. Monitor closely to avoid stockouts.";
-        estimatedCost =
-          parseFloat(item.cost_price || "0") *
-          (item.reorder_point - item.stock_qty);
+        impact = 'Moderate risk. Monitor closely to avoid stockouts.';
+        estimatedCost = parseFloat(item.cost_price || '0') * (item.reorder_point - item.stock_qty);
       } else {
-        type = "low_stock";
-        severity = "low";
+        type = 'low_stock';
+        severity = 'low';
         message = `${item.name} stock level normal`;
-        recommendation = "No immediate action required.";
-        impact = "Minimal risk.";
+        recommendation = 'No immediate action required.';
+        impact = 'Minimal risk.';
         estimatedCost = 0;
       }
 
@@ -119,20 +109,20 @@ export async function GET() {
         alerts,
         summary: {
           total: alerts.length,
-          critical: alerts.filter((a) => a.severity === "critical").length,
-          high: alerts.filter((a) => a.severity === "high").length,
-          medium: alerts.filter((a) => a.severity === "medium").length,
-          low: alerts.filter((a) => a.severity === "low").length,
+          critical: alerts.filter(a => a.severity === 'critical').length,
+          high: alerts.filter(a => a.severity === 'high').length,
+          medium: alerts.filter(a => a.severity === 'medium').length,
+          low: alerts.filter(a => a.severity === 'low').length,
         },
       },
     });
   } catch (error) {
-    console.error("Error fetching inventory alerts:", error);
+    console.error('Error fetching inventory alerts:', error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch inventory alerts",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch inventory alerts',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

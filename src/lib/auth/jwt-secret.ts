@@ -15,8 +15,8 @@ export function getValidatedJwtSecret(): string {
   if (!secret || secret.trim().length === 0) {
     throw new Error(
       'SECURITY ERROR: JWT_SECRET environment variable is required but not set. ' +
-      'Please configure JWT_SECRET in your environment variables before starting the application. ' +
-      'Generate a secure secret using: openssl rand -base64 32'
+        'Please configure JWT_SECRET in your environment variables before starting the application. ' +
+        'Generate a secure secret using: openssl rand -base64 32'
     );
   }
 
@@ -24,8 +24,10 @@ export function getValidatedJwtSecret(): string {
   if (secret.length < 32) {
     throw new Error(
       'SECURITY ERROR: JWT_SECRET must be at least 32 characters long for secure token generation. ' +
-      'Current length: ' + secret.length + '. ' +
-      'Generate a secure secret using: openssl rand -base64 32'
+        'Current length: ' +
+        secret.length +
+        '. ' +
+        'Generate a secure secret using: openssl rand -base64 32'
     );
   }
 
@@ -41,7 +43,10 @@ export function validateJwtSecretOnStartup(): void {
     getValidatedJwtSecret();
     console.log('✅ JWT_SECRET validation passed');
   } catch (error) {
-    console.error('❌ JWT_SECRET validation failed:', error instanceof Error ? error.message : error);
+    console.error(
+      '❌ JWT_SECRET validation failed:',
+      error instanceof Error ? error.message : error
+    );
     throw error;
   }
 }
@@ -74,12 +79,12 @@ export function getJwtSecretStatus(): {
     return {
       configured: true,
       length: secret.length,
-      meetsMinimumRequirement: secret.length >= 32
+      meetsMinimumRequirement: secret.length >= 32,
     };
   } catch (error) {
     return {
       configured: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

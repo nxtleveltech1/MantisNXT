@@ -186,11 +186,12 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         api: apiMetrics.responseTime,
         database: dbMetrics.averageQueryTime,
         frontend: apiMetrics.frontendTime,
-        average: (apiMetrics.responseTime + dbMetrics.averageQueryTime + apiMetrics.frontendTime) / 3
+        average:
+          (apiMetrics.responseTime + dbMetrics.averageQueryTime + apiMetrics.frontendTime) / 3,
       },
       resources: resourceMetrics,
       database: dbMetrics,
-      business: businessMetrics
+      business: businessMetrics,
     };
 
     // Store metrics
@@ -220,11 +221,11 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         '/api/suppliers',
         '/api/inventory',
         '/api/analytics/dashboard',
-        '/api/predictions'
+        '/api/predictions',
       ];
 
       const measurements = await Promise.all(
-        endpoints.map(async (endpoint) => {
+        endpoints.map(async endpoint => {
           const endpointStart = Date.now();
           // In real implementation, make actual HTTP requests
           await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
@@ -240,15 +241,15 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         frontendTime,
         endpointMetrics: endpoints.map((endpoint, index) => ({
           endpoint,
-          responseTime: measurements[index]
-        }))
+          responseTime: measurements[index],
+        })),
       };
     } catch (error) {
       console.error('API performance measurement error:', error);
       return {
         responseTime: 5000, // High value to indicate error
         frontendTime: 5000,
-        endpointMetrics: []
+        endpointMetrics: [],
       };
     }
   }
@@ -262,7 +263,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       const queryTimes = [
         Math.random() * 100 + 20, // Typical query time
         Math.random() * 200 + 50, // Complex query time
-        Math.random() * 50 + 10   // Simple query time
+        Math.random() * 50 + 10, // Simple query time
       ];
 
       const averageQueryTime = queryTimes.reduce((a, b) => a + b, 0) / queryTimes.length;
@@ -275,7 +276,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         queryTime: averageQueryTime,
         connectionCount,
         slowQueries,
-        cacheHitRatio
+        cacheHitRatio,
       };
     } catch (error) {
       console.error('Database performance measurement error:', error);
@@ -284,7 +285,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         queryTime: 1000,
         connectionCount: 0,
         slowQueries: 10,
-        cacheHitRatio: 0.5
+        cacheHitRatio: 0.5,
       };
     }
   }
@@ -298,7 +299,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       cpu: Math.random() * 80 + 10, // 10-90% CPU usage
       memory: Math.random() * 70 + 20, // 20-90% memory usage
       disk: Math.random() * 60 + 30, // 30-90% disk usage
-      network: Math.random() * 50 + 10 // 10-60% network usage
+      network: Math.random() * 50 + 10, // 10-60% network usage
     };
   }
 
@@ -310,7 +311,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       transactionThroughput: Math.floor(Math.random() * 1000) + 100, // 100-1100 transactions/hour
       userConcurrency: Math.floor(Math.random() * 50) + 5, // 5-55 concurrent users
       errorRate: Math.random() * 0.05, // 0-5% error rate
-      availability: 0.95 + Math.random() * 0.049 // 95-99.9% availability
+      availability: 0.95 + Math.random() * 0.049, // 95-99.9% availability
     };
   }
 
@@ -357,7 +358,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         threshold: this.thresholds.responseTime.critical,
         impact: 'Severe user experience degradation',
         recommendation: 'Investigate database queries and API bottlenecks immediately',
-        organizationId: metrics.organizationId
+        organizationId: metrics.organizationId,
       });
     } else if (metrics.responseTime.average > this.thresholds.responseTime.warning) {
       alerts.push({
@@ -370,7 +371,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         threshold: this.thresholds.responseTime.warning,
         impact: 'Noticeable user experience impact',
         recommendation: 'Review recent changes and optimize slow queries',
-        organizationId: metrics.organizationId
+        organizationId: metrics.organizationId,
       });
     }
 
@@ -386,7 +387,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         threshold: this.thresholds.resourceUtilization.critical,
         impact: 'System instability and severe performance degradation',
         recommendation: 'Scale resources immediately or reduce system load',
-        organizationId: metrics.organizationId
+        organizationId: metrics.organizationId,
       });
     }
 
@@ -402,7 +403,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         threshold: this.thresholds.errorRate.critical,
         impact: 'High failure rate affecting user operations',
         recommendation: 'Investigate error logs and fix critical bugs immediately',
-        organizationId: metrics.organizationId
+        organizationId: metrics.organizationId,
       });
     }
 
@@ -412,7 +413,10 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Get performance trends
    */
-  async getPerformanceTrends(organizationId: string, timeframe: string = '24h'): Promise<PerformanceTrend[]> {
+  async getPerformanceTrends(
+    organizationId: string,
+    timeframe: string = '24h'
+  ): Promise<PerformanceTrend[]> {
     const orgMetrics = this.metrics.get(organizationId) || [];
 
     if (orgMetrics.length < 2) {
@@ -433,8 +437,8 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       forecasted: {
         nextWeek: rtTrend.forecast.week,
         nextMonth: rtTrend.forecast.month,
-        confidence: rtTrend.confidence
-      }
+        confidence: rtTrend.confidence,
+      },
     });
 
     // Analyze error rate trend
@@ -449,8 +453,8 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       forecasted: {
         nextWeek: erTrend.forecast.week,
         nextMonth: erTrend.forecast.month,
-        confidence: erTrend.confidence
-      }
+        confidence: erTrend.confidence,
+      },
     });
 
     return trends;
@@ -465,7 +469,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
         direction: 'stable' as const,
         rate: 0,
         confidence: 0,
-        forecast: { week: values[values.length - 1], month: values[values.length - 1] }
+        forecast: { week: values[values.length - 1], month: values[values.length - 1] },
       };
     }
 
@@ -487,7 +491,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       return sum + Math.pow(yi - predicted, 2);
     }, 0);
     const ssTot = values.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
-    const rSquared = 1 - (ssRes / ssTot);
+    const rSquared = 1 - ssRes / ssTot;
 
     const direction = Math.abs(slope) < 0.1 ? 'stable' : slope > 0 ? 'degrading' : 'improving';
     const changeRate = Math.abs(slope);
@@ -503,8 +507,8 @@ export class RealTimePerformanceMonitor extends EventEmitter {
       confidence,
       forecast: {
         week: Math.max(0, weekForecast),
-        month: Math.max(0, monthForecast)
-      }
+        month: Math.max(0, monthForecast),
+      },
     };
   }
 
@@ -531,20 +535,20 @@ export class RealTimePerformanceMonitor extends EventEmitter {
     return {
       responseTime: {
         warning: 1000, // 1 second
-        critical: 3000 // 3 seconds
+        critical: 3000, // 3 seconds
       },
       errorRate: {
         warning: 0.01, // 1%
-        critical: 0.05 // 5%
+        critical: 0.05, // 5%
       },
       resourceUtilization: {
         warning: 70, // 70%
-        critical: 90 // 90%
+        critical: 90, // 90%
       },
       availability: {
         warning: 0.99, // 99%
-        critical: 0.95 // 95%
-      }
+        critical: 0.95, // 95%
+      },
     };
   }
 }
@@ -564,7 +568,9 @@ export class PerformanceOptimizationEngine {
   /**
    * Generate optimization recommendations
    */
-  async generateOptimizationRecommendations(organizationId: string): Promise<OptimizationRecommendation[]> {
+  async generateOptimizationRecommendations(
+    organizationId: string
+  ): Promise<OptimizationRecommendation[]> {
     const currentMetrics = this.monitor.getCurrentMetrics(organizationId);
     const trends = await this.monitor.getPerformanceTrends(organizationId);
     const alerts = this.monitor.getRecentAlerts(organizationId, 50);
@@ -582,11 +588,12 @@ export class PerformanceOptimizationEngine {
         type: 'database',
         priority: currentMetrics.database.queryTime > 1000 ? 'critical' : 'high',
         title: 'Optimize Database Query Performance',
-        description: 'Database queries are taking longer than optimal. Consider query optimization, indexing, and connection pooling.',
+        description:
+          'Database queries are taking longer than optimal. Consider query optimization, indexing, and connection pooling.',
         estimatedImpact: {
           performanceGain: 40,
           costReduction: 15,
-          implementationEffort: 16
+          implementationEffort: 16,
         },
         implementation: {
           steps: [
@@ -594,23 +601,23 @@ export class PerformanceOptimizationEngine {
             'Add missing database indexes',
             'Optimize complex JOIN operations',
             'Implement query result caching',
-            'Configure connection pooling'
+            'Configure connection pooling',
           ],
           requirements: [
             'Database administrator access',
             'Query performance monitoring tools',
-            'Caching infrastructure'
+            'Caching infrastructure',
           ],
           risks: [
             'Index creation may temporarily slow writes',
             'Cache invalidation complexity',
-            'Connection pool configuration tuning needed'
-          ]
+            'Connection pool configuration tuning needed',
+          ],
         },
         metrics: {
           before: { averageQueryTime: currentMetrics.database.queryTime },
-          expectedAfter: { averageQueryTime: currentMetrics.database.queryTime * 0.6 }
-        }
+          expectedAfter: { averageQueryTime: currentMetrics.database.queryTime * 0.6 },
+        },
       });
     }
 
@@ -621,11 +628,12 @@ export class PerformanceOptimizationEngine {
         type: 'api',
         priority: 'high',
         title: 'Implement API Response Optimization',
-        description: 'API response times can be improved through caching, compression, and payload optimization.',
+        description:
+          'API response times can be improved through caching, compression, and payload optimization.',
         estimatedImpact: {
           performanceGain: 35,
           costReduction: 10,
-          implementationEffort: 12
+          implementationEffort: 12,
         },
         implementation: {
           steps: [
@@ -633,23 +641,19 @@ export class PerformanceOptimizationEngine {
             'Add response compression (gzip)',
             'Optimize JSON payload sizes',
             'Implement API rate limiting',
-            'Add CDN for static assets'
+            'Add CDN for static assets',
           ],
-          requirements: [
-            'Redis server setup',
-            'CDN configuration',
-            'API versioning strategy'
-          ],
+          requirements: ['Redis server setup', 'CDN configuration', 'API versioning strategy'],
           risks: [
             'Cache invalidation complexity',
             'CDN propagation delays',
-            'Rate limiting may affect legitimate users'
-          ]
+            'Rate limiting may affect legitimate users',
+          ],
         },
         metrics: {
           before: { responseTime: currentMetrics.responseTime.api },
-          expectedAfter: { responseTime: currentMetrics.responseTime.api * 0.65 }
-        }
+          expectedAfter: { responseTime: currentMetrics.responseTime.api * 0.65 },
+        },
       });
     }
 
@@ -660,11 +664,12 @@ export class PerformanceOptimizationEngine {
         type: 'infrastructure',
         priority: currentMetrics.resources.cpu > 85 ? 'critical' : 'medium',
         title: 'Scale Infrastructure Resources',
-        description: 'CPU utilization is high. Consider scaling up or implementing horizontal scaling.',
+        description:
+          'CPU utilization is high. Consider scaling up or implementing horizontal scaling.',
         estimatedImpact: {
           performanceGain: 50,
           costReduction: 0,
-          implementationEffort: 8
+          implementationEffort: 8,
         },
         implementation: {
           steps: [
@@ -672,23 +677,23 @@ export class PerformanceOptimizationEngine {
             'Implement auto-scaling policies',
             'Optimize resource-intensive operations',
             'Consider load balancing',
-            'Schedule non-critical tasks during off-peak hours'
+            'Schedule non-critical tasks during off-peak hours',
           ],
           requirements: [
             'Cloud infrastructure setup',
             'Monitoring and alerting systems',
-            'Load balancer configuration'
+            'Load balancer configuration',
           ],
           risks: [
             'Increased infrastructure costs',
             'Auto-scaling misconfiguration',
-            'Load balancer single point of failure'
-          ]
+            'Load balancer single point of failure',
+          ],
         },
         metrics: {
           before: { cpuUtilization: currentMetrics.resources.cpu },
-          expectedAfter: { cpuUtilization: Math.min(60, currentMetrics.resources.cpu * 0.7) }
-        }
+          expectedAfter: { cpuUtilization: Math.min(60, currentMetrics.resources.cpu * 0.7) },
+        },
       });
     }
 
@@ -699,11 +704,12 @@ export class PerformanceOptimizationEngine {
         type: 'business',
         priority: 'high',
         title: 'Improve Error Handling and Reliability',
-        description: 'High error rate detected. Implement better error handling and retry mechanisms.',
+        description:
+          'High error rate detected. Implement better error handling and retry mechanisms.',
         estimatedImpact: {
           performanceGain: 25,
           costReduction: 20,
-          implementationEffort: 20
+          implementationEffort: 20,
         },
         implementation: {
           steps: [
@@ -711,23 +717,23 @@ export class PerformanceOptimizationEngine {
             'Add retry mechanisms for failed operations',
             'Improve input validation',
             'Implement circuit breaker patterns',
-            'Add health checks and monitoring'
+            'Add health checks and monitoring',
           ],
           requirements: [
             'Error tracking system',
             'Monitoring and alerting infrastructure',
-            'Testing framework for error scenarios'
+            'Testing framework for error scenarios',
           ],
           risks: [
             'Retry storms may worsen performance',
             'Circuit breaker false positives',
-            'Increased system complexity'
-          ]
+            'Increased system complexity',
+          ],
         },
         metrics: {
           before: { errorRate: currentMetrics.business.errorRate },
-          expectedAfter: { errorRate: currentMetrics.business.errorRate * 0.3 }
-        }
+          expectedAfter: { errorRate: currentMetrics.business.errorRate * 0.3 },
+        },
       });
     }
 
@@ -738,11 +744,12 @@ export class PerformanceOptimizationEngine {
         type: 'frontend',
         priority: 'medium',
         title: 'Optimize Frontend Performance',
-        description: 'Frontend rendering is slow. Implement code splitting, lazy loading, and asset optimization.',
+        description:
+          'Frontend rendering is slow. Implement code splitting, lazy loading, and asset optimization.',
         estimatedImpact: {
           performanceGain: 30,
           costReduction: 5,
-          implementationEffort: 24
+          implementationEffort: 24,
         },
         implementation: {
           steps: [
@@ -750,23 +757,23 @@ export class PerformanceOptimizationEngine {
             'Optimize image assets and use WebP format',
             'Minimize and compress JavaScript/CSS bundles',
             'Implement service worker for caching',
-            'Use virtual scrolling for large lists'
+            'Use virtual scrolling for large lists',
           ],
           requirements: [
             'Build system configuration',
             'CDN setup for static assets',
-            'Performance monitoring tools'
+            'Performance monitoring tools',
           ],
           risks: [
             'Code splitting may increase complexity',
             'Service worker caching issues',
-            'Browser compatibility concerns'
-          ]
+            'Browser compatibility concerns',
+          ],
         },
         metrics: {
           before: { frontendTime: currentMetrics.responseTime.frontend },
-          expectedAfter: { frontendTime: currentMetrics.responseTime.frontend * 0.7 }
-        }
+          expectedAfter: { frontendTime: currentMetrics.responseTime.frontend * 0.7 },
+        },
       });
     }
 
@@ -803,23 +810,29 @@ export class PerformanceOptimizationEngine {
       overall: {
         status: this.calculateOverallStatus(currentMetrics, alerts),
         score: this.calculatePerformanceScore(currentMetrics),
-        lastUpdated: currentMetrics.timestamp
+        lastUpdated: currentMetrics.timestamp,
       },
       metrics: currentMetrics,
       trends: trends,
       alerts: {
         critical: alerts.filter(a => a.severity === 'critical').length,
         warning: alerts.filter(a => a.severity === 'warning').length,
-        recent: alerts.slice(0, 5)
+        recent: alerts.slice(0, 5),
       },
       recommendations: {
         count: recommendations.length,
-        highPriority: recommendations.filter(r => r.priority === 'critical' || r.priority === 'high').length,
+        highPriority: recommendations.filter(
+          r => r.priority === 'critical' || r.priority === 'high'
+        ).length,
         estimatedGains: {
-          performance: recommendations.reduce((sum, r) => sum + r.estimatedImpact.performanceGain, 0) / recommendations.length || 0,
-          cost: recommendations.reduce((sum, r) => sum + r.estimatedImpact.costReduction, 0) / recommendations.length || 0
-        }
-      }
+          performance:
+            recommendations.reduce((sum, r) => sum + r.estimatedImpact.performanceGain, 0) /
+              recommendations.length || 0,
+          cost:
+            recommendations.reduce((sum, r) => sum + r.estimatedImpact.costReduction, 0) /
+              recommendations.length || 0,
+        },
+      },
     };
   }
 
@@ -843,21 +856,21 @@ export class PerformanceOptimizationEngine {
     let score = 100;
 
     // Response time impact (0-30 points)
-    const responseTimeScore = Math.max(0, 30 - (metrics.responseTime.average / 100));
-    score -= (30 - responseTimeScore);
+    const responseTimeScore = Math.max(0, 30 - metrics.responseTime.average / 100);
+    score -= 30 - responseTimeScore;
 
     // Error rate impact (0-25 points)
-    const errorRateScore = Math.max(0, 25 - (metrics.business.errorRate * 500));
-    score -= (25 - errorRateScore);
+    const errorRateScore = Math.max(0, 25 - metrics.business.errorRate * 500);
+    score -= 25 - errorRateScore;
 
     // Resource utilization impact (0-25 points)
     const avgResourceUse = (metrics.resources.cpu + metrics.resources.memory) / 2;
-    const resourceScore = Math.max(0, 25 - (avgResourceUse / 4));
-    score -= (25 - resourceScore);
+    const resourceScore = Math.max(0, 25 - avgResourceUse / 4);
+    score -= 25 - resourceScore;
 
     // Availability impact (0-20 points)
     const availabilityScore = metrics.business.availability * 20;
-    score -= (20 - availabilityScore);
+    score -= 20 - availabilityScore;
 
     return Math.round(Math.max(0, Math.min(100, score)));
   }
@@ -877,8 +890,8 @@ export class PerformanceManagementSystem extends EventEmitter {
     this.optimizer = new PerformanceOptimizationEngine(this.monitor);
 
     // Forward events
-    this.monitor.on('alertsGenerated', (data) => this.emit('alertsGenerated', data));
-    this.monitor.on('metricsCollected', (data) => this.emit('metricsCollected', data));
+    this.monitor.on('alertsGenerated', data => this.emit('alertsGenerated', data));
+    this.monitor.on('metricsCollected', data => this.emit('metricsCollected', data));
   }
 
   /**
@@ -894,15 +907,16 @@ export class PerformanceManagementSystem extends EventEmitter {
    */
   async getPerformanceDashboard(organizationId: string): Promise<unknown> {
     const summary = await this.optimizer.getPerformanceSummary(organizationId);
-    const recommendations = await this.optimizer.generateOptimizationRecommendations(organizationId);
+    const recommendations =
+      await this.optimizer.generateOptimizationRecommendations(organizationId);
 
     return {
       summary,
       recommendations: recommendations.slice(0, 5), // Top 5 recommendations
       monitoring: {
         isActive: this.monitor['isMonitoring'],
-        lastUpdate: summary?.overall.lastUpdated || null
-      }
+        lastUpdate: summary?.overall.lastUpdated || null,
+      },
     };
   }
 

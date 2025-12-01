@@ -27,7 +27,7 @@ export function EnhancedPricelistUploadForm({ supplier_id, org_id, onUploadCompl
       const response = await fetch('/api/v2/pricelists/upload', {
         method: 'POST',
         body: formData,
-        headers: { 'x-org-id': org_id }
+        headers: { 'x-org-id': org_id },
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
@@ -47,8 +47,16 @@ export function EnhancedPricelistUploadForm({ supplier_id, org_id, onUploadCompl
         <CardTitle>Upload Pricelist</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <input type="file" onChange={(e) => setSelectedFile(e.target.files?.[0])} accept=".xlsx,.xls,.csv,.pdf" />
-        <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full px-3 py-2 border rounded-md">
+        <input
+          type="file"
+          onChange={e => setSelectedFile(e.target.files?.[0])}
+          accept=".xlsx,.xls,.csv,.pdf"
+        />
+        <select
+          value={currency}
+          onChange={e => setCurrency(e.target.value)}
+          className="w-full rounded-md border px-3 py-2"
+        >
           <option value="ZAR">ZAR</option>
           <option value="USD">USD</option>
         </select>

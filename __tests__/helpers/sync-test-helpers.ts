@@ -94,7 +94,7 @@ export const createMockDatabase = () => {
     },
 
     clear() {
-      Object.keys(data).forEach((key) => {
+      Object.keys(data).forEach(key => {
         data[key] = [];
       });
     },
@@ -218,7 +218,10 @@ export const createMockSyncProgressTracker = () => {
         const elapsedMs = Date.now() - progress.startTime;
         progress.speed = progress.processed / (elapsedMs / 1000);
         const remaining = progress.total - progress.processed;
-        progress.eta = remaining > 0 ? progress.startTime + elapsedMs + (remaining / progress.speed) * 1000 : null;
+        progress.eta =
+          remaining > 0
+            ? progress.startTime + elapsedMs + (remaining / progress.speed) * 1000
+            : null;
       }
 
       return progress;
@@ -253,7 +256,11 @@ export const createMockConflictResolver = () => {
       return conflict.id;
     },
 
-    async resolveConflict(conflictId: string, strategy: 'auto-retry' | 'manual' | 'skip', resolution: Record<string, unknown> = {}) {
+    async resolveConflict(
+      conflictId: string,
+      strategy: 'auto-retry' | 'manual' | 'skip',
+      resolution: Record<string, unknown> = {}
+    ) {
       if (!conflicts[conflictId]) throw new Error(`Conflict not found: ${conflictId}`);
 
       const resolved = {
@@ -282,8 +289,8 @@ export const createMockConflictResolver = () => {
     },
 
     clear() {
-      Object.keys(conflicts).forEach((k) => delete conflicts[k]);
-      Object.keys(resolutions).forEach((k) => delete resolutions[k]);
+      Object.keys(conflicts).forEach(k => delete conflicts[k]);
+      Object.keys(resolutions).forEach(k => delete resolutions[k]);
     },
   };
 };
@@ -311,7 +318,7 @@ export const createMockDeltaDetectionService = () => {
     async compareRecords(external: Record<string, unknown>, local: Record<string, unknown> | null) {
       const changes: Record<string, { old: unknown; new: unknown }> = {};
 
-      Object.keys(external).forEach((key) => {
+      Object.keys(external).forEach(key => {
         if (JSON.stringify(external[key]) !== JSON.stringify(local?.[key])) {
           changes[key] = {
             old: local?.[key],
@@ -347,18 +354,22 @@ export const createApiRequest = (method: string = 'POST', body: unknown = {}) =>
     method,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer test-token',
+      Authorization: 'Bearer test-token',
     },
     body: JSON.stringify(body),
   };
 };
 
-export const createAuthenticatedRequest = (token: string, method: string = 'POST', body: unknown = {}) => {
+export const createAuthenticatedRequest = (
+  token: string,
+  method: string = 'POST',
+  body: unknown = {}
+) => {
   return {
     method,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'X-Org-Id': 'org-test',
     },
     body: JSON.stringify(body),
@@ -379,7 +390,7 @@ export const createMockSSEStream = () => {
 
     emit(eventType: string, data: unknown) {
       if (listeners[eventType]) {
-        listeners[eventType].forEach((cb) => cb(data));
+        listeners[eventType].forEach(cb => cb(data));
       }
     },
 
@@ -404,7 +415,7 @@ export const createMockSSEStream = () => {
     },
 
     close() {
-      Object.keys(listeners).forEach((k) => delete listeners[k]);
+      Object.keys(listeners).forEach(k => delete listeners[k]);
     },
   };
 };
@@ -419,11 +430,11 @@ export const waitForCondition = async (condition: () => boolean, timeout: number
     if (Date.now() - startTime > timeout) {
       throw new Error('Condition timeout exceeded');
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 };
 
-export const waitForMs = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const waitForMs = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Assertion helpers
@@ -480,7 +491,10 @@ export const createPaginationHelper = (items: unknown[], pageSize: number = 50) 
 /**
  * Performance measurement helpers
  */
-export const measurePerformance = async (fn: () => Promise<unknown>, label: string = 'Operation') => {
+export const measurePerformance = async (
+  fn: () => Promise<unknown>,
+  label: string = 'Operation'
+) => {
   const startTime = performance.now();
   const startMemory = process.memoryUsage().heapUsed;
 

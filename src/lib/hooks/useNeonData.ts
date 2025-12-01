@@ -16,7 +16,7 @@ import type {
   InventorySelection,
   NxtSoh,
   PricelistUpload,
-  InventorySelectedItem
+  InventorySelectedItem,
 } from '@/types/nxt-spp';
 
 // ============================================================================
@@ -33,16 +33,13 @@ async function fetcher<T>(url: string): Promise<T> {
   return data.data || data;
 }
 
-async function mutator<T>(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function mutator<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers
-    }
+      ...options.headers,
+    },
   });
 
   if (!response.ok) {
@@ -66,7 +63,7 @@ export function useActiveSelection() {
     queryKey: ['activeSelection'],
     queryFn: () => fetcher<InventorySelection>('/api/core/selections/active'),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1
+    retry: 1,
   });
 }
 
@@ -79,25 +76,22 @@ export function useActivateSelection() {
   return useMutation({
     mutationFn: async ({
       selectionId,
-      deactivateOthers = false
+      deactivateOthers = false,
     }: {
       selectionId: string;
       deactivateOthers?: boolean;
     }) => {
-      return mutator<InventorySelection>(
-        `/api/core/selections/${selectionId}/activate`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ deactivate_others: deactivateOthers })
-        }
-      );
+      return mutator<InventorySelection>(`/api/core/selections/${selectionId}/activate`, {
+        method: 'POST',
+        body: JSON.stringify({ deactivate_others: deactivateOthers }),
+      });
     },
     onSuccess: () => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['activeSelection'] });
       queryClient.invalidateQueries({ queryKey: ['selections'] });
       queryClient.invalidateQueries({ queryKey: ['nxtSoh'] });
-    }
+    },
   });
 }
 
@@ -147,7 +141,7 @@ export function useNxtSoh(
     queryKey: ['nxtSoh', filters],
     queryFn: () => fetcher<NxtSoh[]>(url),
     staleTime: 30 * 1000, // 30 seconds
-    ...options
+    ...options,
   });
 }
 
@@ -170,7 +164,10 @@ export interface PricelistUploadFilters {
  */
 export function usePricelistUploads(
   filters?: PricelistUploadFilters,
-  options?: Omit<UseQueryOptions<{ uploads: PricelistUpload[]; total: number }>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<{ uploads: PricelistUpload[]; total: number }>,
+    'queryKey' | 'queryFn'
+  >
 ) {
   const params = new URLSearchParams();
 
@@ -202,7 +199,7 @@ export function usePricelistUploads(
     queryKey: ['pricelistUploads', filters],
     queryFn: () => fetcher(url),
     staleTime: 60 * 1000, // 1 minute
-    ...options
+    ...options,
   });
 }
 
@@ -214,7 +211,7 @@ export function useUploadDetails(uploadId: string | null) {
     queryKey: ['uploadDetails', uploadId],
     queryFn: () => fetcher(`/api/spp/uploads/${uploadId}`),
     enabled: !!uploadId,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -228,13 +225,13 @@ export function useReprocessUpload() {
     mutationFn: async (uploadId: string) => {
       return mutator(`/api/spp/uploads/${uploadId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ action: 'reprocess' })
+        body: JSON.stringify({ action: 'reprocess' }),
       });
     },
     onSuccess: (_, uploadId) => {
       queryClient.invalidateQueries({ queryKey: ['uploadDetails', uploadId] });
       queryClient.invalidateQueries({ queryKey: ['pricelistUploads'] });
-    }
+    },
   });
 }
 
@@ -273,7 +270,7 @@ export function useSelectionProducts(
     queryKey: ['selectionProducts', selectionId, filters],
     queryFn: () => fetcher(url),
     enabled: !!selectionId,
-    staleTime: 60 * 1000 // 1 minute
+    staleTime: 60 * 1000, // 1 minute
   });
 }
 
@@ -287,7 +284,7 @@ export function useAddProducts() {
     mutationFn: async ({
       selectionId,
       supplierProductIds,
-      notes
+      notes,
     }: {
       selectionId: string;
       supplierProductIds: string[];
@@ -297,14 +294,14 @@ export function useAddProducts() {
         method: 'POST',
         body: JSON.stringify({
           supplier_product_ids: supplierProductIds,
-          notes
-        })
+          notes,
+        }),
       });
     },
     onSuccess: (_, { selectionId }) => {
       queryClient.invalidateQueries({ queryKey: ['selectionProducts', selectionId] });
       queryClient.invalidateQueries({ queryKey: ['selections'] });
-    }
+    },
   });
 }
 
@@ -317,7 +314,7 @@ export function useRemoveProducts() {
   return useMutation({
     mutationFn: async ({
       selectionId,
-      supplierProductIds
+      supplierProductIds,
     }: {
       selectionId: string;
       supplierProductIds: string[];
@@ -325,15 +322,15 @@ export function useRemoveProducts() {
       return mutator(`/api/core/selections/${selectionId}/products`, {
         method: 'DELETE',
         body: JSON.stringify({
-          supplier_product_ids: supplierProductIds
-        })
+          supplier_product_ids: supplierProductIds,
+        }),
       });
     },
     onSuccess: (_, { selectionId }) => {
       queryClient.invalidateQueries({ queryKey: ['selectionProducts', selectionId] });
       queryClient.invalidateQueries({ queryKey: ['selections'] });
       queryClient.invalidateQueries({ queryKey: ['nxtSoh'] });
-    }
+    },
   });
 }
 
@@ -349,6 +346,6 @@ export function useDashboardMetrics() {
     queryKey: ['dashboardMetrics'],
     queryFn: () => fetcher('/api/spp/dashboard/metrics'),
     staleTime: 60 * 1000, // 1 minute
-    refetchInterval: 5 * 60 * 1000 // Auto-refetch every 5 minutes
+    refetchInterval: 5 * 60 * 1000, // Auto-refetch every 5 minutes
   });
 }

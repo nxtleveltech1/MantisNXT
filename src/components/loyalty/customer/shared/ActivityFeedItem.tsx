@@ -13,23 +13,10 @@
 'use client';
 
 import { format } from 'date-fns';
-import {
-  TrendingUp,
-  TrendingDown,
-  Gift,
-  AlertCircle,
-  UserPlus,
-  ShoppingBag,
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Gift, AlertCircle, UserPlus, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ActivityType =
-  | 'earn'
-  | 'redeem'
-  | 'expire'
-  | 'referral'
-  | 'bonus'
-  | 'purchase';
+type ActivityType = 'earn' | 'redeem' | 'expire' | 'referral' | 'bonus' | 'purchase';
 
 interface ActivityFeedItemProps {
   type: ActivityType;
@@ -112,7 +99,7 @@ export function ActivityFeedItem({
       {/* Content */}
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-foreground">{description}</p>
+          <p className="text-foreground text-sm font-medium">{description}</p>
           <span
             className={cn(
               'text-sm font-semibold whitespace-nowrap',
@@ -123,14 +110,10 @@ export function ActivityFeedItem({
             {Math.abs(points).toLocaleString()}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className={cn('font-medium', config.color)}>
-            {config.label}
-          </span>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span className={cn('font-medium', config.color)}>{config.label}</span>
           <span>•</span>
-          <time dateTime={date}>
-            {format(new Date(date), 'MMM d, yyyy')}
-          </time>
+          <time dateTime={date}>{format(new Date(date), 'MMM d, yyyy')}</time>
         </div>
       </div>
     </div>

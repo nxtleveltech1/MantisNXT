@@ -5,11 +5,9 @@ import type {
   SupplierRiskScore,
   DemandForecast,
   PriceOptimization,
-  MLPrediction
+  MLPrediction,
 } from './ml-models';
-import {
-  mlModels
-} from './ml-models';
+import { mlModels } from './ml-models';
 
 // Analytics Configuration
 interface AnalyticsConfig {
@@ -25,7 +23,7 @@ const defaultConfig: AnalyticsConfig = {
   retentionPeriod: 365,
   confidenceThreshold: 0.7,
   enableRealTimeProcessing: true,
-  maxConcurrentMLOperations: 5 // Process up to 5 suppliers in parallel
+  maxConcurrentMLOperations: 5, // Process up to 5 suppliers in parallel
 };
 
 // Real-time Analytics Metrics
@@ -108,10 +106,7 @@ export class AnalyticsService {
         ? 'SELECT * FROM public.suppliers WHERE id = $1'
         : 'SELECT * FROM public.suppliers WHERE organization_id = $1';
 
-      const suppliersResult = await this.db.query(
-        suppliersQuery,
-        [supplierId || organizationId]
-      );
+      const suppliersResult = await this.db.query(suppliersQuery, [supplierId || organizationId]);
 
       // Get performance history
       const performanceQuery = `
@@ -122,10 +117,9 @@ export class AnalyticsService {
         ORDER BY sp.evaluation_date DESC
       `;
 
-      const performanceResult = await this.db.query(
-        performanceQuery,
-        [supplierId || organizationId]
-      );
+      const performanceResult = await this.db.query(performanceQuery, [
+        supplierId || organizationId,
+      ]);
 
       const predictions: MLPrediction[] = [];
       const riskScores: SupplierRiskScore[] = [];
@@ -176,11 +170,10 @@ export class AnalyticsService {
         predictions,
         riskScores,
         recommendations,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       return { predictions, riskScores, recommendations };
-
     } catch (error) {
       console.error('Error analyzing supplier performance:', error);
       throw new Error('Failed to analyze supplier performance');
@@ -221,10 +214,7 @@ export class AnalyticsService {
             const itemMovements = movementsResult.rows.filter(m => m.item_id === item.id);
 
             if (itemMovements.length > 0) {
-              const forecast = mlModels.demandForecaster.predictDemand(
-                item.id,
-                itemMovements
-              );
+              const forecast = mlModels.demandForecaster.predictDemand(item.id, itemMovements);
 
               forecast.sku = item.sku;
               forecasts.push(forecast);
@@ -237,7 +227,6 @@ export class AnalyticsService {
       await this.storeDemandForecasts(forecasts);
 
       return forecasts;
-
     } catch (error) {
       console.error('Error forecasting inventory demand:', error);
       throw new Error('Failed to forecast inventory demand');
@@ -245,10 +234,7 @@ export class AnalyticsService {
   }
 
   // OPTIMIZED: Price Optimization Analysis with Parallel Processing
-  async optimizePricing(
-    itemId?: string,
-    organizationId?: string
-  ): Promise<PriceOptimization[]> {
+  async optimizePricing(itemId?: string, organizationId?: string): Promise<PriceOptimization[]> {
     try {
       // Get inventory items with supplier pricing
       const itemsQuery = `
@@ -303,7 +289,6 @@ export class AnalyticsService {
       await this.storePriceOptimizations(optimizations);
 
       return optimizations;
-
     } catch (error) {
       console.error('Error optimizing pricing:', error);
       throw new Error('Failed to optimize pricing');
@@ -360,9 +345,8 @@ export class AnalyticsService {
       return {
         supplierAnomalies,
         inventoryAnomalies,
-        systemAnomalies
+        systemAnomalies,
       };
-
     } catch (error) {
       console.error('Error detecting anomalies:', error);
       throw new Error('Failed to detect anomalies');
@@ -375,19 +359,27 @@ export class AnalyticsService {
 
     try {
       // Get counts from various analytics
-      const [
-        suppliersCount,
-        inventoryCount,
-        anomaliesCount,
-        predictionsCount,
-        optimizationsCount
-      ] = await Promise.all([
-        this.db.query('SELECT COUNT(*) FROM public.suppliers WHERE organization_id = $1', [organizationId]),
-        this.db.query('SELECT COUNT(*) FROM public.inventory_items WHERE organization_id = $1', [organizationId]),
-        this.db.query('SELECT COUNT(*) FROM analytics_anomalies WHERE organization_id = $1 AND detected_at >= NOW() - INTERVAL \'24 hours\'', [organizationId]),
-        this.db.query('SELECT COUNT(*) FROM analytics_predictions WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL \'24 hours\'', [organizationId]),
-        this.db.query('SELECT COUNT(*) FROM analytics_optimizations WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL \'24 hours\'', [organizationId])
-      ]);
+      const [suppliersCount, inventoryCount, anomaliesCount, predictionsCount, optimizationsCount] =
+        await Promise.all([
+          this.db.query('SELECT COUNT(*) FROM public.suppliers WHERE organization_id = $1', [
+            organizationId,
+          ]),
+          this.db.query('SELECT COUNT(*) FROM public.inventory_items WHERE organization_id = $1', [
+            organizationId,
+          ]),
+          this.db.query(
+            "SELECT COUNT(*) FROM analytics_anomalies WHERE organization_id = $1 AND detected_at >= NOW() - INTERVAL '24 hours'",
+            [organizationId]
+          ),
+          this.db.query(
+            "SELECT COUNT(*) FROM analytics_predictions WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
+            [organizationId]
+          ),
+          this.db.query(
+            "SELECT COUNT(*) FROM analytics_optimizations WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
+            [organizationId]
+          ),
+        ]);
 
       const processingTime = Date.now() - startTime;
 
@@ -398,9 +390,8 @@ export class AnalyticsService {
         predictionsGenerated: parseInt(predictionsCount.rows[0].count),
         optimizationsCompleted: parseInt(optimizationsCount.rows[0].count),
         lastUpdate: new Date(),
-        processingTime
+        processingTime,
       };
-
     } catch (error) {
       console.error('Error getting real-time metrics:', error);
       throw new Error('Failed to get real-time metrics');
@@ -414,10 +405,12 @@ export class AnalyticsService {
       const [riskScores, optimizations, anomalies] = await Promise.all([
         this.analyzeSupplierPerformance(undefined, organizationId),
         this.optimizePricing(undefined, organizationId),
-        this.detectAnomalies(organizationId)
+        this.detectAnomalies(organizationId),
       ]);
 
-      const totalSupplierRisk = riskScores.riskScores.reduce((sum, score) => sum + score.riskScore, 0) / riskScores.riskScores.length;
+      const totalSupplierRisk =
+        riskScores.riskScores.reduce((sum, score) => sum + score.riskScore, 0) /
+        riskScores.riskScores.length;
 
       const inventoryOptimizationOpportunities = optimizations.filter(
         opt => Math.abs(opt.expectedProfitIncrease) > 0.05
@@ -426,7 +419,7 @@ export class AnalyticsService {
       const anomaliesRequiringAttention = [
         ...anomalies.supplierAnomalies,
         ...anomalies.inventoryAnomalies,
-        ...anomalies.systemAnomalies
+        ...anomalies.systemAnomalies,
       ].filter(a => a.severity === 'high' || a.severity === 'critical').length;
 
       // Generate recommended actions
@@ -440,11 +433,13 @@ export class AnalyticsService {
         totalSupplierRisk: totalSupplierRisk || 0,
         inventoryOptimizationOpportunities,
         demandForecastAccuracy: 0.85, // Will be calculated from historical accuracy
-        priceOptimizationPotential: optimizations.reduce((sum, opt) => sum + opt.expectedProfitIncrease, 0),
+        priceOptimizationPotential: optimizations.reduce(
+          (sum, opt) => sum + opt.expectedProfitIncrease,
+          0
+        ),
         anomaliesRequiringAttention,
-        recommendedActions
+        recommendedActions,
       };
-
     } catch (error) {
       console.error('Error generating business insights:', error);
       throw new Error('Failed to generate business insights');
@@ -464,7 +459,7 @@ export class AnalyticsService {
       qualityIssues: Math.max(0, 100 - (latestPerformance?.quality_acceptance_rate || 100)),
       financialStability: Math.random() * 30, // Mock financial stability score
       communicationResponse: Math.max(0, (latestPerformance?.response_time_hours || 0) - 24),
-      priceVolatility: Math.random() * 20 // Mock price volatility
+      priceVolatility: Math.random() * 20, // Mock price volatility
     };
 
     const riskScore = Object.values(riskFactors).reduce((sum, factor) => sum + factor, 0) / 5;
@@ -479,7 +474,7 @@ export class AnalyticsService {
       riskScore,
       riskFactors,
       recommendation,
-      confidence: prediction.confidence
+      confidence: prediction.confidence,
     };
   }
 
@@ -532,7 +527,7 @@ export class AnalyticsService {
         severity: row.severity || 'medium',
         description: row.description || 'System anomaly detected',
         confidence: row.confidence_score || 0,
-        detected_at: row.detected_at
+        detected_at: row.detected_at,
       }));
     } catch (error) {
       console.error('Error fetching system anomalies:', error);
@@ -548,26 +543,30 @@ export class AnalyticsService {
     const actions: Array<unknown> = [];
 
     // High-priority supplier actions
-    riskScores.riskScores.filter((r: SupplierRiskScore) => r.riskScore > 70).forEach((supplier: SupplierRiskScore) => {
-      actions.push({
-        type: 'supplier',
-        priority: 'high',
-        action: `Review supplier relationship and consider alternatives`,
-        potentialImpact: 'Reduced supply chain risk',
-        timeframe: 'Within 30 days'
+    riskScores.riskScores
+      .filter((r: SupplierRiskScore) => r.riskScore > 70)
+      .forEach((supplier: SupplierRiskScore) => {
+        actions.push({
+          type: 'supplier',
+          priority: 'high',
+          action: `Review supplier relationship and consider alternatives`,
+          potentialImpact: 'Reduced supply chain risk',
+          timeframe: 'Within 30 days',
+        });
       });
-    });
 
     // Price optimization opportunities
-    optimizations.filter(opt => opt.expectedProfitIncrease > 0.1).forEach(opt => {
-      actions.push({
-        type: 'pricing',
-        priority: 'medium',
-        action: `Optimize pricing for item ${opt.itemId}`,
-        potentialImpact: `${(opt.expectedProfitIncrease * 100).toFixed(1)}% profit increase`,
-        timeframe: 'Within 2 weeks'
+    optimizations
+      .filter(opt => opt.expectedProfitIncrease > 0.1)
+      .forEach(opt => {
+        actions.push({
+          type: 'pricing',
+          priority: 'medium',
+          action: `Optimize pricing for item ${opt.itemId}`,
+          potentialImpact: `${(opt.expectedProfitIncrease * 100).toFixed(1)}% profit increase`,
+          timeframe: 'Within 2 weeks',
+        });
       });
-    });
 
     return actions;
   }
@@ -587,17 +586,20 @@ export class AnalyticsService {
   private async storeDemandForecasts(forecasts: DemandForecast[]): Promise<void> {
     try {
       for (const forecast of forecasts) {
-        await this.db.query(`
+        await this.db.query(
+          `
           INSERT INTO demand_forecasts (item_id, predictions, seasonality, confidence, created_at)
           VALUES ($1, $2, $3, $4, NOW())
           ON CONFLICT (item_id) DO UPDATE SET
           predictions = $2, seasonality = $3, confidence = $4, updated_at = NOW()
-        `, [
-          forecast.itemId,
-          JSON.stringify(forecast.predictions),
-          JSON.stringify(forecast.seasonality),
-          forecast.confidence
-        ]);
+        `,
+          [
+            forecast.itemId,
+            JSON.stringify(forecast.predictions),
+            JSON.stringify(forecast.seasonality),
+            forecast.confidence,
+          ]
+        );
       }
     } catch (error) {
       console.error('Error storing demand forecasts:', error);
@@ -607,16 +609,19 @@ export class AnalyticsService {
   private async storePriceOptimizations(optimizations: PriceOptimization[]): Promise<void> {
     try {
       for (const opt of optimizations) {
-        await this.db.query(`
+        await this.db.query(
+          `
           INSERT INTO price_optimizations (item_id, current_price, optimized_price, expected_profit_increase, recommendation, created_at)
           VALUES ($1, $2, $3, $4, $5, NOW())
-        `, [
-          opt.itemId,
-          opt.currentPrice,
-          opt.optimizedPrice,
-          opt.expectedProfitIncrease,
-          opt.recommendation
-        ]);
+        `,
+          [
+            opt.itemId,
+            opt.currentPrice,
+            opt.optimizedPrice,
+            opt.expectedProfitIncrease,
+            opt.recommendation,
+          ]
+        );
       }
     } catch (error) {
       console.error('Error storing price optimizations:', error);
@@ -626,16 +631,19 @@ export class AnalyticsService {
   private async storeAnomalies(anomalies: unknown[]): Promise<void> {
     try {
       for (const anomaly of anomalies) {
-        await this.db.query(`
+        await this.db.query(
+          `
           INSERT INTO analytics_anomalies (type, severity, description, value, threshold, detected_at)
           VALUES ($1, $2, $3, $4, $5, NOW())
-        `, [
-          anomaly.anomalyType || anomaly.type,
-          anomaly.severity,
-          anomaly.description,
-          anomaly.value,
-          anomaly.threshold
-        ]);
+        `,
+          [
+            anomaly.anomalyType || anomaly.type,
+            anomaly.severity,
+            anomaly.description,
+            anomaly.value,
+            anomaly.threshold,
+          ]
+        );
       }
     } catch (error) {
       console.error('Error storing anomalies:', error);

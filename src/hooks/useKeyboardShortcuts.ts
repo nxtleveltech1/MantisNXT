@@ -29,11 +29,7 @@ export function useKeyboardShortcuts({
     (event: KeyboardEvent) => {
       // Ignore if typing in input fields
       const target = event.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         // Only handle Escape in input fields
         if (event.key === 'Escape' && onEscape) {
           onEscape();
@@ -85,7 +81,8 @@ export function useKeyboardShortcutHints() {
     { key: 'Esc', description: 'Close dialog', mac: 'Esc' },
   ];
 
-  const isMac = typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const isMac =
+    typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   return shortcuts.map(shortcut => ({
     key: isMac ? shortcut.mac : shortcut.key,

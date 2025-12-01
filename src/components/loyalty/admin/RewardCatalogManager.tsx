@@ -1,23 +1,23 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -25,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -33,14 +33,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -48,9 +48,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Search,
   Plus,
@@ -67,11 +67,11 @@ import {
   Percent,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { toast } from 'sonner'
-import { format } from 'date-fns'
-import type { RewardCatalog, RewardType, RewardAnalytics } from '@/types/loyalty'
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import type { RewardCatalog, RewardType, RewardAnalytics } from '@/types/loyalty';
 
 const rewardSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200),
@@ -86,9 +86,9 @@ const rewardSchema = z.object({
   valid_from: z.string().optional(),
   valid_until: z.string().optional().nullable(),
   image_url: z.string().url().optional().nullable().or(z.literal('')),
-})
+});
 
-type RewardFormData = z.infer<typeof rewardSchema>
+type RewardFormData = z.infer<typeof rewardSchema>;
 
 const REWARD_TYPE_ICONS: Record<RewardType, LucideIcon> = {
   points: Gift,
@@ -97,7 +97,7 @@ const REWARD_TYPE_ICONS: Record<RewardType, LucideIcon> = {
   free_shipping: Truck,
   upgrade: ArrowUpCircle,
   gift: Package,
-}
+};
 
 const REWARD_TYPE_COLORS: Record<RewardType, string> = {
   points: 'text-purple-500',
@@ -106,45 +106,45 @@ const REWARD_TYPE_COLORS: Record<RewardType, string> = {
   free_shipping: 'text-orange-500',
   upgrade: 'text-pink-500',
   gift: 'text-yellow-500',
-}
+};
 
 export default function RewardCatalogManager() {
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<RewardType | 'all'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [selectedReward, setSelectedReward] = useState<RewardCatalog | null>(null)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false)
-  const [isAnalyticsDialogOpen, setIsAnalyticsDialogOpen] = useState(false)
-  const [page, setPage] = useState(1)
-  const pageSize = 10
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<RewardType | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [selectedReward, setSelectedReward] = useState<RewardCatalog | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [isAnalyticsDialogOpen, setIsAnalyticsDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Fetch rewards
   const { data: rewards, isLoading } = useQuery({
     queryKey: ['rewards'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/admin/loyalty/rewards')
-      if (!res.ok) throw new Error('Failed to fetch rewards')
-      const response = await res.json()
+      const res = await fetch('/api/v1/admin/loyalty/rewards');
+      if (!res.ok) throw new Error('Failed to fetch rewards');
+      const response = await res.json();
       // API returns paginated response { success: true, data: [...], pagination: {...} }
-      return (response.data || []) as RewardCatalog[]
+      return (response.data || []) as RewardCatalog[];
     },
-  })
+  });
 
   // Fetch analytics for selected reward
   const { data: analytics } = useQuery({
     queryKey: ['reward-analytics', selectedReward?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/admin/loyalty/rewards/${selectedReward!.id}/analytics`)
-      if (!res.ok) throw new Error('Failed to fetch analytics')
-      return res.json() as Promise<RewardAnalytics>
+      const res = await fetch(`/api/v1/admin/loyalty/rewards/${selectedReward!.id}/analytics`);
+      if (!res.ok) throw new Error('Failed to fetch analytics');
+      return res.json() as Promise<RewardAnalytics>;
     },
     enabled: !!selectedReward && isAnalyticsDialogOpen,
-  })
+  });
 
   // Form
   const form = useForm<RewardFormData>({
@@ -163,7 +163,7 @@ export default function RewardCatalogManager() {
       valid_until: null,
       image_url: '',
     },
-  })
+  });
 
   // Create mutation
   const createMutation = useMutation({
@@ -176,28 +176,28 @@ export default function RewardCatalogManager() {
           valid_from: data.valid_from ? new Date(data.valid_from) : undefined,
           valid_until: data.valid_until ? new Date(data.valid_until) : undefined,
         }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to create reward')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create reward');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Reward created successfully')
-      queryClient.invalidateQueries({ queryKey: ['rewards'] })
-      setIsCreateDialogOpen(false)
-      form.reset()
+      toast.success('Reward created successfully');
+      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      setIsCreateDialogOpen(false);
+      form.reset();
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: RewardFormData & { id: string }) => {
-      const { id, ...payload } = data
+      const { id, ...payload } = data;
       const res = await fetch(`/api/v1/admin/loyalty/rewards/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -206,45 +206,45 @@ export default function RewardCatalogManager() {
           valid_from: payload.valid_from ? new Date(payload.valid_from) : undefined,
           valid_until: payload.valid_until ? new Date(payload.valid_until) : undefined,
         }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to update reward')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update reward');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Reward updated successfully')
-      queryClient.invalidateQueries({ queryKey: ['rewards'] })
-      setIsEditDialogOpen(false)
-      setSelectedReward(null)
+      toast.success('Reward updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      setIsEditDialogOpen(false);
+      setSelectedReward(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/v1/admin/loyalty/rewards/${id}`, {
         method: 'DELETE',
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to delete reward')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete reward');
       }
     },
     onSuccess: () => {
-      toast.success('Reward deleted successfully')
-      queryClient.invalidateQueries({ queryKey: ['rewards'] })
-      setIsDeleteDialogOpen(false)
-      setSelectedReward(null)
+      toast.success('Reward deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedReward(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Stock update mutation
   const stockMutation = useMutation({
@@ -253,49 +253,49 @@ export default function RewardCatalogManager() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stock_quantity: quantity, operation: 'set' }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to update stock')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update stock');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Stock updated successfully')
-      queryClient.invalidateQueries({ queryKey: ['rewards'] })
-      setIsStockDialogOpen(false)
-      setSelectedReward(null)
+      toast.success('Stock updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      setIsStockDialogOpen(false);
+      setSelectedReward(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Filtered and paginated rewards
   const filteredRewards = useMemo(() => {
-    if (!rewards) return []
+    if (!rewards) return [];
 
-    return rewards.filter((reward) => {
-      const matchesSearch = reward.name.toLowerCase().includes(search.toLowerCase())
-      const matchesType = typeFilter === 'all' || reward.reward_type === typeFilter
+    return rewards.filter(reward => {
+      const matchesSearch = reward.name.toLowerCase().includes(search.toLowerCase());
+      const matchesType = typeFilter === 'all' || reward.reward_type === typeFilter;
       const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' && reward.is_active) ||
-        (statusFilter === 'inactive' && !reward.is_active)
+        (statusFilter === 'inactive' && !reward.is_active);
 
-      return matchesSearch && matchesType && matchesStatus
-    })
-  }, [rewards, search, typeFilter, statusFilter])
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [rewards, search, typeFilter, statusFilter]);
 
   const paginatedRewards = useMemo(() => {
-    const start = (page - 1) * pageSize
-    return filteredRewards.slice(start, start + pageSize)
-  }, [filteredRewards, page])
+    const start = (page - 1) * pageSize;
+    return filteredRewards.slice(start, start + pageSize);
+  }, [filteredRewards, page]);
 
-  const totalPages = Math.ceil(filteredRewards.length / pageSize)
+  const totalPages = Math.ceil(filteredRewards.length / pageSize);
 
   const handleEdit = (reward: RewardCatalog) => {
-    setSelectedReward(reward)
+    setSelectedReward(reward);
     form.reset({
       name: reward.name,
       description: reward.description || '',
@@ -309,32 +309,32 @@ export default function RewardCatalogManager() {
       valid_from: reward.valid_from ? format(new Date(reward.valid_from), 'yyyy-MM-dd') : undefined,
       valid_until: reward.valid_until ? format(new Date(reward.valid_until), 'yyyy-MM-dd') : null,
       image_url: reward.image_url || '',
-    })
-    setIsEditDialogOpen(true)
-  }
+    });
+    setIsEditDialogOpen(true);
+  };
 
   const handleDelete = (reward: RewardCatalog) => {
-    setSelectedReward(reward)
-    setIsDeleteDialogOpen(true)
-  }
+    setSelectedReward(reward);
+    setIsDeleteDialogOpen(true);
+  };
 
   const handleStockManagement = (reward: RewardCatalog) => {
-    setSelectedReward(reward)
-    setIsStockDialogOpen(true)
-  }
+    setSelectedReward(reward);
+    setIsStockDialogOpen(true);
+  };
 
   const handleViewAnalytics = (reward: RewardCatalog) => {
-    setSelectedReward(reward)
-    setIsAnalyticsDialogOpen(true)
-  }
+    setSelectedReward(reward);
+    setIsAnalyticsDialogOpen(true);
+  };
 
   const onSubmit = (data: RewardFormData) => {
     if (selectedReward) {
-      updateMutation.mutate({ ...data, id: selectedReward.id })
+      updateMutation.mutate({ ...data, id: selectedReward.id });
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate(data);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -353,18 +353,21 @@ export default function RewardCatalogManager() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="w-full md:flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search rewards..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={e => setSearch(e.target.value)}
                   className="pl-9"
                 />
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="w-full sm:w-auto">
-                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as RewardType | 'all')}>
+                <Select
+                  value={typeFilter}
+                  onValueChange={value => setTypeFilter(value as RewardType | 'all')}
+                >
                   <SelectTrigger className="w-full sm:w-44">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
@@ -380,7 +383,10 @@ export default function RewardCatalogManager() {
                 </Select>
               </div>
               <div className="w-full sm:w-auto">
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+                <Select
+                  value={statusFilter}
+                  onValueChange={value => setStatusFilter(value as typeof statusFilter)}
+                >
                   <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
@@ -408,7 +414,7 @@ export default function RewardCatalogManager() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 space-y-4">
+            <div className="space-y-4 p-8">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
@@ -430,14 +436,17 @@ export default function RewardCatalogManager() {
                 <TableBody>
                   {paginatedRewards.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-muted-foreground py-12 text-center text-sm"
+                      >
                         No rewards match your filters
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedRewards.map((reward) => {
-                      const Icon = REWARD_TYPE_ICONS[reward.reward_type]
-                      const lowStock = reward.stock_quantity !== null && reward.stock_quantity < 10
+                    paginatedRewards.map(reward => {
+                      const Icon = REWARD_TYPE_ICONS[reward.reward_type];
+                      const lowStock = reward.stock_quantity !== null && reward.stock_quantity < 10;
 
                       return (
                         <TableRow key={reward.id}>
@@ -447,16 +456,18 @@ export default function RewardCatalogManager() {
                                 <img
                                   src={reward.image_url}
                                   alt={reward.name}
-                                  className="w-10 h-10 rounded object-cover"
+                                  className="h-10 w-10 rounded object-cover"
                                 />
                               )}
                               <div>
-                                <div className="font-medium flex items-center gap-2">
+                                <div className="flex items-center gap-2 font-medium">
                                   {reward.name}
-                                  {reward.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                                  {reward.is_featured && (
+                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                  )}
                                 </div>
                                 {reward.description && (
-                                  <div className="text-sm text-muted-foreground line-clamp-1">
+                                  <div className="text-muted-foreground line-clamp-1 text-sm">
                                     {reward.description}
                                   </div>
                                 )}
@@ -465,12 +476,18 @@ export default function RewardCatalogManager() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Icon className={`h-4 w-4 ${REWARD_TYPE_COLORS[reward.reward_type]}`} />
-                              <span className="capitalize">{reward.reward_type.replace('_', ' ')}</span>
+                              <Icon
+                                className={`h-4 w-4 ${REWARD_TYPE_COLORS[reward.reward_type]}`}
+                              />
+                              <span className="capitalize">
+                                {reward.reward_type.replace('_', ' ')}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{reward.points_required.toLocaleString()} pts</Badge>
+                            <Badge variant="outline">
+                              {reward.points_required.toLocaleString()} pts
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {reward.stock_quantity !== null ? (
@@ -491,22 +508,22 @@ export default function RewardCatalogManager() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="w-4 h-4" />
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleEdit(reward)}>
-                                  <Edit className="w-4 h-4 mr-2" />
+                                  <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
                                 {reward.stock_quantity !== null && (
                                   <DropdownMenuItem onClick={() => handleStockManagement(reward)}>
-                                    <Package className="w-4 h-4 mr-2" />
+                                    <Package className="mr-2 h-4 w-4" />
                                     Manage Stock
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem onClick={() => handleViewAnalytics(reward)}>
-                                  <TrendingUp className="w-4 h-4 mr-2" />
+                                  <TrendingUp className="mr-2 h-4 w-4" />
                                   View Analytics
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
@@ -514,14 +531,14 @@ export default function RewardCatalogManager() {
                                   onClick={() => handleDelete(reward)}
                                   className="text-destructive"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      )
+                      );
                     })
                   )}
                 </TableBody>
@@ -529,10 +546,11 @@ export default function RewardCatalogManager() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between p-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, filteredRewards.length)} of{' '}
-                    {filteredRewards.length} rewards
+                <div className="flex items-center justify-between border-t p-4">
+                  <div className="text-muted-foreground text-sm">
+                    Showing {(page - 1) * pageSize + 1} to{' '}
+                    {Math.min(page * pageSize, filteredRewards.length)} of {filteredRewards.length}{' '}
+                    rewards
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -541,7 +559,7 @@ export default function RewardCatalogManager() {
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -549,7 +567,7 @@ export default function RewardCatalogManager() {
                       onClick={() => setPage(page + 1)}
                       disabled={page === totalPages}
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -560,15 +578,18 @@ export default function RewardCatalogManager() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isCreateDialogOpen || isEditDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setIsCreateDialogOpen(false)
-          setIsEditDialogOpen(false)
-          setSelectedReward(null)
-          form.reset()
-        }
-      }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog
+        open={isCreateDialogOpen || isEditDialogOpen}
+        onOpenChange={open => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setIsEditDialogOpen(false);
+            setSelectedReward(null);
+            form.reset();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedReward ? 'Edit Reward' : 'Create Reward'}</DialogTitle>
             <DialogDescription>
@@ -644,7 +665,7 @@ export default function RewardCatalogManager() {
                           type="number"
                           min="1"
                           {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          onChange={e => field.onChange(parseInt(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -668,7 +689,9 @@ export default function RewardCatalogManager() {
                           placeholder="Optional"
                           {...field}
                           value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          onChange={e =>
+                            field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -689,7 +712,9 @@ export default function RewardCatalogManager() {
                           placeholder="Unlimited"
                           {...field}
                           value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          onChange={e =>
+                            field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -711,7 +736,9 @@ export default function RewardCatalogManager() {
                         placeholder="Unlimited"
                         {...field}
                         value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        onChange={e =>
+                          field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -796,15 +823,18 @@ export default function RewardCatalogManager() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setIsCreateDialogOpen(false)
-                    setIsEditDialogOpen(false)
-                    setSelectedReward(null)
-                    form.reset()
+                    setIsCreateDialogOpen(false);
+                    setIsEditDialogOpen(false);
+                    setSelectedReward(null);
+                    form.reset();
                   }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
                 </Button>
               </DialogFooter>
@@ -819,7 +849,8 @@ export default function RewardCatalogManager() {
           <DialogHeader>
             <DialogTitle>Delete Reward</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{selectedReward?.name}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{selectedReward?.name}&rdquo;? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -858,15 +889,15 @@ export default function RewardCatalogManager() {
                 type="number"
                 min="0"
                 defaultValue={selectedReward?.stock_quantity || 0}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key !== 'Enter' || !selectedReward) {
-                    return
+                    return;
                   }
-                  const input = e.target as HTMLInputElement
+                  const input = e.target as HTMLInputElement;
                   stockMutation.mutate({
                     id: selectedReward.id,
                     quantity: parseInt(input.value, 10),
-                  })
+                  });
                 }}
               />
             </div>
@@ -877,14 +908,14 @@ export default function RewardCatalogManager() {
             </Button>
             <Button
               onClick={() => {
-                const input = document.getElementById('new-stock') as HTMLInputElement | null
+                const input = document.getElementById('new-stock') as HTMLInputElement | null;
                 if (!input || !selectedReward) {
-                  return
+                  return;
                 }
                 stockMutation.mutate({
                   id: selectedReward.id,
                   quantity: parseInt(input.value, 10),
-                })
+                });
               }}
               disabled={stockMutation.isPending}
             >
@@ -908,7 +939,9 @@ export default function RewardCatalogManager() {
                   <CardTitle className="text-sm font-medium">Total Redemptions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics.total_redemptions.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    {analytics.total_redemptions.toLocaleString()}
+                  </div>
                 </CardContent>
               </Card>
               <Card>
@@ -916,7 +949,9 @@ export default function RewardCatalogManager() {
                   <CardTitle className="text-sm font-medium">Unique Customers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics.unique_customers.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    {analytics.unique_customers.toLocaleString()}
+                  </div>
                 </CardContent>
               </Card>
               <Card>
@@ -924,7 +959,9 @@ export default function RewardCatalogManager() {
                   <CardTitle className="text-sm font-medium">Points Spent</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics.total_points_spent.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    {analytics.total_points_spent.toLocaleString()}
+                  </div>
                 </CardContent>
               </Card>
               <Card>
@@ -968,5 +1005,5 @@ export default function RewardCatalogManager() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

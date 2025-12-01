@@ -8,7 +8,7 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -24,14 +24,7 @@ const createRewardSchema = z.object({
   program_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(200),
   description: z.string().optional(),
-  reward_type: z.enum([
-    'points',
-    'discount',
-    'cashback',
-    'free_shipping',
-    'upgrade',
-    'gift',
-  ]),
+  reward_type: z.enum(['points', 'discount', 'cashback', 'free_shipping', 'upgrade', 'gift']),
   points_required: z.number().int().positive(),
   monetary_value: z.number().positive().nullable().optional(),
   max_redemptions_per_customer: z.number().int().positive().nullable().optional(),

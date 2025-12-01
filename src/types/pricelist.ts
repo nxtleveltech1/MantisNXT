@@ -1,18 +1,13 @@
 // Supplier Price List domain types
 
 export type PriceListRequiredField =
-  | "supplierId"
-  | "supplierName"
-  | "sku"
-  | "supplierSku"
-  | "unitCost";
+  | 'supplierId'
+  | 'supplierName'
+  | 'sku'
+  | 'supplierSku'
+  | 'unitCost';
 
-export type PriceListOptionalField =
-  | "currency"
-  | "unit"
-  | "minQty"
-  | "effectiveDate"
-  | "notes";
+export type PriceListOptionalField = 'currency' | 'unit' | 'minQty' | 'effectiveDate' | 'notes';
 
 export type PriceListField = PriceListRequiredField | PriceListOptionalField;
 

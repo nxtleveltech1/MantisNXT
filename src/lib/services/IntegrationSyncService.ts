@@ -4,7 +4,7 @@
  * IntegrationSyncService - Orchestrates sync operations between MantisNXT and external systems
  */
 
-import type { WooCommerceService, WooCommerceProduct} from './WooCommerceService';
+import type { WooCommerceService, WooCommerceProduct } from './WooCommerceService';
 import { CustomerSyncService } from './CustomerSyncService';
 import crypto from 'crypto';
 import { query } from '@/lib/database';
@@ -88,10 +88,7 @@ export class IntegrationSyncService {
             result.recordsProcessed++;
 
             // Check if product already exists in WooCommerce
-            const mapping = await this.mappingService.getMapping(
-              'product',
-              product.id
-            );
+            const mapping = await this.mappingService.getMapping('product', product.id);
 
             const wooProduct: WooCommerceProduct = {
               name: product.name,
@@ -214,7 +211,7 @@ export class IntegrationSyncService {
       const last = lastRow.rows[0]?.last;
       const after = last ? new Date(last).toISOString() : undefined;
       const orders = await wooService.fetchAllPages(
-        (params) => wooService.getOrders({ ...params, ...(after ? { after } : {}) }),
+        params => wooService.getOrders({ ...params, ...(after ? { after } : {}) }),
         { order: 'desc', orderby: 'date' }
       );
 
@@ -297,18 +294,24 @@ export class IntegrationSyncService {
     const { continueOnError = true, dryRun = false } = options;
 
     try {
-      const products = await wooService.fetchAllPages(
-        (params) => wooService.getProducts(params)
-      );
+      const products = await wooService.fetchAllPages(params => wooService.getProducts(params));
 
       for (const p of products) {
         try {
           result.recordsProcessed++;
-          const mapping = await this.mappingService.getMappingByExternalId('product', p.id!.toString());
+          const mapping = await this.mappingService.getMappingByExternalId(
+            'product',
+            p.id!.toString()
+          );
           if (mapping) {
             if (!dryRun) {
               result.recordsUpdated++;
-              await this.mappingService.updateSyncStatus('product', p.id!.toString(), 'completed', p);
+              await this.mappingService.updateSyncStatus(
+                'product',
+                p.id!.toString(),
+                'completed',
+                p
+              );
               await this.mappingService.logSync({
                 entityType: 'product',
                 externalId: p.id!.toString(),
@@ -338,7 +341,8 @@ export class IntegrationSyncService {
               const internalId = prod.rows[0].id;
 
               // Mirror inventory_item (org-scoped) by SKU
-              const stockQty = (p as any).stock_quantity != null ? Number((p as any).stock_quantity) : null;
+              const stockQty =
+                (p as any).stock_quantity != null ? Number((p as any).stock_quantity) : null;
               if (sku && stockQty != null) {
                 await query(
                   `INSERT INTO inventory_item (id, org_id, sku, name, quantity_on_hand, is_active, created_at, updated_at)
@@ -371,7 +375,10 @@ export class IntegrationSyncService {
           }
         } catch (e) {
           result.recordsFailed++;
-          result.errors.push({ externalId: p.id?.toString(), error: e instanceof Error ? e.message : 'Unknown error' });
+          result.errors.push({
+            externalId: p.id?.toString(),
+            error: e instanceof Error ? e.message : 'Unknown error',
+          });
           if (!continueOnError) throw e;
         }
       }
@@ -405,15 +412,23 @@ export class IntegrationSyncService {
     const { continueOnError = true, dryRun = false } = options;
 
     try {
-      const cats = await wooService.fetchAllPages((params) => wooService.getCategories(params));
+      const cats = await wooService.fetchAllPages(params => wooService.getCategories(params));
       for (const c of cats) {
         try {
           result.recordsProcessed++;
-          const mapping = await this.mappingService.getMappingByExternalId('category', c.id!.toString());
+          const mapping = await this.mappingService.getMappingByExternalId(
+            'category',
+            c.id!.toString()
+          );
           if (mapping) {
             if (!dryRun) {
               result.recordsUpdated++;
-              await this.mappingService.updateSyncStatus('category', c.id!.toString(), 'completed', c);
+              await this.mappingService.updateSyncStatus(
+                'category',
+                c.id!.toString(),
+                'completed',
+                c
+              );
               await this.mappingService.logSync({
                 entityType: 'category',
                 externalId: c.id!.toString(),
@@ -449,7 +464,10 @@ export class IntegrationSyncService {
           }
         } catch (e) {
           result.recordsFailed++;
-          result.errors.push({ externalId: c.id?.toString(), error: e instanceof Error ? e.message : 'Unknown error' });
+          result.errors.push({
+            externalId: c.id?.toString(),
+            error: e instanceof Error ? e.message : 'Unknown error',
+          });
           if (!continueOnError) throw e;
         }
       }
@@ -513,7 +531,7 @@ export class IntegrationSyncService {
               o.payment_method || null,
               o.date_created ? new Date(o.date_created) : null,
               o.date_modified ? new Date(o.date_modified) : null,
-              JSON.stringify({})
+              JSON.stringify({}),
             ]
           );
           const orderId = (ins.rows[0] as any).id as string;
@@ -534,14 +552,17 @@ export class IntegrationSyncService {
                 li.subtotal != null ? Number(li.subtotal) : null,
                 li.total != null ? Number(li.total) : null,
                 null,
-                JSON.stringify({})
+                JSON.stringify({}),
               ]
             );
           }
           result.recordsCreated++;
         } catch (e) {
           result.recordsFailed++;
-          result.errors.push({ externalId: r.external_id, error: e instanceof Error ? e.message : 'Unknown error' });
+          result.errors.push({
+            externalId: r.external_id,
+            error: e instanceof Error ? e.message : 'Unknown error',
+          });
         }
       }
       result.success = result.recordsFailed === 0;
@@ -606,7 +627,11 @@ export class IntegrationSyncService {
             const ids: number[] = [];
             for (const [idStr, info] of Object.entries(byId)) {
               const st = (info as any)?.status;
-              if ((includeNew && st === 'new') || (includeUpdated && st === 'updated') || (includeDeleted && st === 'deleted')) {
+              if (
+                (includeNew && st === 'new') ||
+                (includeUpdated && st === 'updated') ||
+                (includeDeleted && st === 'deleted')
+              ) {
                 const n = Number(idStr);
                 if (!Number.isNaN(n)) ids.push(n);
               }
@@ -620,7 +645,7 @@ export class IntegrationSyncService {
           this.orgId,
           this.connectorId,
           { batchSize: 50, batchDelayMs: 2000, maxRetries: 3 },
-          selectedIds ? { selectedIds } : undefined as any
+          selectedIds ? { selectedIds } : (undefined as any)
         );
         const progress = await CustomerSyncService.processQueue(
           wooService,
@@ -678,10 +703,7 @@ export class IntegrationSyncService {
           result.recordsProcessed++;
 
           // Get product mapping
-          const mapping = await this.mappingService.getMapping(
-            'product',
-            item.product_id
-          );
+          const mapping = await this.mappingService.getMapping('product', item.product_id);
 
           if (!mapping) {
             throw new Error(`No mapping found for product ${item.product_id}`);
@@ -691,19 +713,12 @@ export class IntegrationSyncService {
 
           // Update stock in Odoo
           if (!dryRun) {
-            await odooService.updateProductStock(
-              odooProductId,
-              locationId,
-              item.quantity
-            );
+            await odooService.updateProductStock(odooProductId, locationId, item.quantity);
 
             result.recordsUpdated++;
-            await this.mappingService.updateSyncStatus(
-              'inventory',
-              item.id,
-              'completed',
-              { quantity: item.quantity }
-            );
+            await this.mappingService.updateSyncStatus('inventory', item.id, 'completed', {
+              quantity: item.quantity,
+            });
           }
         } catch (error) {
           result.recordsFailed++;
@@ -758,10 +773,7 @@ export class IntegrationSyncService {
           result.recordsProcessed++;
 
           // Check if supplier exists in Odoo
-          const mapping = await this.mappingService.getMapping(
-            'supplier',
-            supplier.id
-          );
+          const mapping = await this.mappingService.getMapping('supplier', supplier.id);
 
           const odooPartner: Partial<OdooPartner> = {
             name: supplier.company_name,
@@ -780,10 +792,7 @@ export class IntegrationSyncService {
           if (!dryRun) {
             if (mapping) {
               // Update existing partner
-              await odooService.updatePartner(
-                parseInt(mapping.externalId),
-                odooPartner
-              );
+              await odooService.updatePartner(parseInt(mapping.externalId), odooPartner);
               result.recordsUpdated++;
             } else {
               // Create new partner
@@ -852,20 +861,14 @@ export class IntegrationSyncService {
           result.recordsProcessed++;
 
           // Get supplier mapping
-          const supplierMapping = await this.mappingService.getMapping(
-            'supplier',
-            po.supplier_id
-          );
+          const supplierMapping = await this.mappingService.getMapping('supplier', po.supplier_id);
 
           if (!supplierMapping) {
             throw new Error(`No mapping found for supplier ${po.supplier_id}`);
           }
 
           // Check if PO exists in Odoo
-          const poMapping = await this.mappingService.getMapping(
-            'purchase_order',
-            po.id
-          );
+          const poMapping = await this.mappingService.getMapping('purchase_order', po.id);
 
           const odooPO: Partial<OdooPurchaseOrder> = {
             partner_id: parseInt(supplierMapping.externalId),
@@ -894,10 +897,7 @@ export class IntegrationSyncService {
           if (!dryRun) {
             if (poMapping) {
               // Update existing PO
-              await odooService.updatePurchaseOrder(
-                parseInt(poMapping.externalId),
-                odooPO
-              );
+              await odooService.updatePurchaseOrder(parseInt(poMapping.externalId), odooPO);
               result.recordsUpdated++;
             } else {
               // Create new PO
@@ -957,10 +957,7 @@ export class IntegrationSyncService {
   /**
    * Retry failed syncs
    */
-  async retryFailedSyncs(
-    entityType: EntityType,
-    maxRetries = 3
-  ): Promise<SyncResult> {
+  async retryFailedSyncs(entityType: EntityType, maxRetries = 3): Promise<SyncResult> {
     const startTime = Date.now();
     const result: SyncResult = {
       success: true,

@@ -57,7 +57,7 @@ class ErrorLogger {
       message: error.message,
       error: sanitized,
       context: this.sanitizeContext(context),
-      metadata: this.sanitizeMetadata(metadata)
+      metadata: this.sanitizeMetadata(metadata),
     };
 
     this.addLog(logEntry);
@@ -85,7 +85,7 @@ class ErrorLogger {
       level: 'warning',
       message,
       context: this.sanitizeContext(context),
-      metadata: this.sanitizeMetadata(metadata)
+      metadata: this.sanitizeMetadata(metadata),
     };
 
     this.addLog(logEntry);
@@ -101,10 +101,7 @@ class ErrorLogger {
   /**
    * Log info
    */
-  logInfo(
-    message: string,
-    metadata?: Record<string, unknown>
-  ): string {
+  logInfo(message: string, metadata?: Record<string, unknown>): string {
     const id = this.generateLogId();
 
     const logEntry: ErrorLogEntry = {
@@ -112,7 +109,7 @@ class ErrorLogger {
       timestamp: new Date().toISOString(),
       level: 'info',
       message,
-      metadata: this.sanitizeMetadata(metadata)
+      metadata: this.sanitizeMetadata(metadata),
     };
 
     // Only add to memory logs, don't send info to external service
@@ -171,7 +168,7 @@ class ErrorLogger {
       info: this.logs.filter(log => log.level === 'info').length,
       recentErrors: this.logs.filter(
         log => log.level === 'error' && new Date(log.timestamp).getTime() > oneHourAgo
-      ).length
+      ).length,
     };
   }
 
@@ -203,26 +200,22 @@ class ErrorLogger {
     const emoji = {
       error: '🚨',
       warning: '⚠️',
-      info: 'ℹ️'
+      info: 'ℹ️',
     }[logEntry.level];
 
     const style = {
       error: 'color: #ef4444; font-weight: bold',
       warning: 'color: #f59e0b; font-weight: bold',
-      info: 'color: #3b82f6'
+      info: 'color: #3b82f6',
     }[logEntry.level];
 
-    console.log(
-      `%c${emoji} [${logEntry.level.toUpperCase()}] ${logEntry.message}`,
-      style,
-      {
-        id: logEntry.id,
-        timestamp: logEntry.timestamp,
-        error: logEntry.error,
-        context: logEntry.context,
-        metadata: logEntry.metadata
-      }
-    );
+    console.log(`%c${emoji} [${logEntry.level.toUpperCase()}] ${logEntry.message}`, style, {
+      id: logEntry.id,
+      timestamp: logEntry.timestamp,
+      error: logEntry.error,
+      context: logEntry.context,
+      metadata: logEntry.metadata,
+    });
   }
 
   private async sendToLoggingService(logEntry: ErrorLogEntry): Promise<void> {
@@ -273,7 +266,9 @@ class ErrorLogger {
     return sanitized;
   }
 
-  private sanitizeMetadata(metadata?: Record<string, unknown>): Record<string, unknown> | undefined {
+  private sanitizeMetadata(
+    metadata?: Record<string, unknown>
+  ): Record<string, unknown> | undefined {
     if (!metadata) return undefined;
 
     // Remove sensitive data from metadata

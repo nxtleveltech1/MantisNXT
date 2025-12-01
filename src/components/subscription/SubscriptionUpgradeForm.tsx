@@ -1,20 +1,35 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react'
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 const subscriptionFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -34,9 +49,9 @@ const subscriptionFormSchema = z.object({
     .regex(/^[0-9]+$/, 'CVC can only contain numbers'),
   plan: z.enum(['starter', 'pro']),
   notes: z.string().optional(),
-})
+});
 
-type SubscriptionFormData = z.infer<typeof subscriptionFormSchema>
+type SubscriptionFormData = z.infer<typeof subscriptionFormSchema>;
 
 const plans = [
   {
@@ -55,12 +70,12 @@ const plans = [
     period: 'per month',
     features: ['Unlimited users', 'All features', 'Priority support', 'Advanced analytics'],
   },
-]
+];
 
 interface SubscriptionUpgradeFormProps {
-  onSuccess?: () => void
-  onCancel?: () => void
-  className?: string
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  className?: string;
 }
 
 export function SubscriptionUpgradeForm({
@@ -68,9 +83,9 @@ export function SubscriptionUpgradeForm({
   onCancel,
   className,
 }: SubscriptionUpgradeFormProps) {
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [success, setSuccess] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState(false);
 
   const form = useForm<SubscriptionFormData>({
     resolver: zodResolver(subscriptionFormSchema),
@@ -83,82 +98,83 @@ export function SubscriptionUpgradeForm({
       plan: 'starter',
       notes: '',
     },
-  })
+  });
 
-  const selectedPlan = plans.find((p) => p.id === form.watch('plan'))
+  const selectedPlan = plans.find(p => p.id === form.watch('plan'));
 
   const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    const matches = v.match(/\d{4,16}/g)
-    const match = (matches && matches[0]) || ''
-    const parts = []
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    const matches = v.match(/\d{4,16}/g);
+    const match = (matches && matches[0]) || '';
+    const parts = [];
 
     for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4))
+      parts.push(match.substring(i, i + 4));
     }
 
     if (parts.length) {
-      return parts.join(' ')
+      return parts.join(' ');
     } else {
-      return value
+      return value;
     }
-  }
+  };
 
   const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
     if (v.length >= 2) {
-      return `${v.slice(0, 2)}/${v.slice(2, 4)}`
+      return `${v.slice(0, 2)}/${v.slice(2, 4)}`;
     }
-    return v
-  }
+    return v;
+  };
 
   const onSubmit = async (data: SubscriptionFormData) => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // In production, this would call your payment API
-      console.log('Subscription data:', data)
+      console.log('Subscription data:', data);
 
-      setSuccess(true)
+      setSuccess(true);
       if (onSuccess) {
         setTimeout(() => {
-          onSuccess()
-        }, 2000)
+          onSuccess();
+        }, 2000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
-      <Card className={cn('border border-border shadow-sm rounded-xl', className)}>
-        <CardHeader className="text-center space-y-4">
+      <Card className={cn('border-border rounded-xl border shadow-sm', className)}>
+        <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="bg-success/10 p-4 rounded-full">
-              <CheckCircle2 className="h-12 w-12 text-success" />
+            <div className="bg-success/10 rounded-full p-4">
+              <CheckCircle2 className="text-success h-12 w-12" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-success">Subscription Upgraded!</CardTitle>
+          <CardTitle className="text-success text-2xl font-bold">Subscription Upgraded!</CardTitle>
           <CardDescription>
-            Your subscription has been successfully upgraded. You now have access to all {selectedPlan?.name} features.
+            Your subscription has been successfully upgraded. You now have access to all{' '}
+            {selectedPlan?.name} features.
           </CardDescription>
         </CardHeader>
       </Card>
-    )
+    );
   }
 
   return (
-    <Card className={cn('border border-border shadow-sm rounded-xl', className)}>
+    <Card className={cn('border-border rounded-xl border shadow-sm', className)}>
       <CardHeader className="space-y-2 pb-4">
-        <CardTitle className="text-2xl font-bold flex items-center gap-2">
-          <CreditCard className="h-6 w-6 text-primary" />
+        <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+          <CreditCard className="text-primary h-6 w-6" />
           Upgrade Subscription
         </CardTitle>
         <CardDescription className="text-sm">
@@ -178,7 +194,7 @@ export function SubscriptionUpgradeForm({
             {/* Personal Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Personal Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="name"
@@ -188,7 +204,7 @@ export function SubscriptionUpgradeForm({
                       <FormControl>
                         <Input
                           placeholder="John Smith"
-                          className="h-11 bg-input border-border rounded-lg"
+                          className="bg-input border-border h-11 rounded-lg"
                           autoComplete="name"
                           {...field}
                         />
@@ -208,7 +224,7 @@ export function SubscriptionUpgradeForm({
                         <Input
                           type="email"
                           placeholder="john@example.com"
-                          className="h-11 bg-input border-border rounded-lg"
+                          className="bg-input border-border h-11 rounded-lg"
                           autoComplete="email"
                           {...field}
                         />
@@ -232,13 +248,13 @@ export function SubscriptionUpgradeForm({
                     <FormControl>
                       <Input
                         placeholder="1234 5678 9012 3456"
-                        className="h-11 bg-input border-border rounded-lg"
+                        className="bg-input border-border h-11 rounded-lg"
                         autoComplete="cc-number"
                         maxLength={19}
                         {...field}
-                        onChange={(e) => {
-                          const formatted = formatCardNumber(e.target.value)
-                          field.onChange(formatted)
+                        onChange={e => {
+                          const formatted = formatCardNumber(e.target.value);
+                          field.onChange(formatted);
                         }}
                       />
                     </FormControl>
@@ -257,13 +273,13 @@ export function SubscriptionUpgradeForm({
                       <FormControl>
                         <Input
                           placeholder="MM/YY"
-                          className="h-11 bg-input border-border rounded-lg"
+                          className="bg-input border-border h-11 rounded-lg"
                           autoComplete="cc-exp"
                           maxLength={5}
                           {...field}
-                          onChange={(e) => {
-                            const formatted = formatExpiryDate(e.target.value)
-                            field.onChange(formatted)
+                          onChange={e => {
+                            const formatted = formatExpiryDate(e.target.value);
+                            field.onChange(formatted);
                           }}
                         />
                       </FormControl>
@@ -281,7 +297,7 @@ export function SubscriptionUpgradeForm({
                       <FormControl>
                         <Input
                           placeholder="123"
-                          className="h-11 bg-input border-border rounded-lg"
+                          className="bg-input border-border h-11 rounded-lg"
                           autoComplete="cc-csc"
                           maxLength={4}
                           type="text"
@@ -310,7 +326,7 @@ export function SubscriptionUpgradeForm({
                         defaultValue={field.value}
                         className="space-y-3"
                       >
-                        {plans.map((plan) => (
+                        {plans.map(plan => (
                           <div
                             key={plan.id}
                             className={cn(
@@ -329,21 +345,19 @@ export function SubscriptionUpgradeForm({
                             <div className="flex-1 space-y-1">
                               <Label
                                 htmlFor={plan.id}
-                                className="text-sm font-semibold cursor-pointer"
+                                className="cursor-pointer text-sm font-semibold"
                               >
                                 {plan.name}
                               </Label>
-                              <p className="text-xs text-muted-foreground">{plan.description}</p>
+                              <p className="text-muted-foreground text-xs">{plan.description}</p>
                               <div className="flex items-baseline gap-1 pt-1">
                                 <span className="text-lg font-bold">{plan.price}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {plan.period}
-                                </span>
+                                <span className="text-muted-foreground text-xs">{plan.period}</span>
                               </div>
-                              <ul className="text-xs text-muted-foreground space-y-1 pt-2">
+                              <ul className="text-muted-foreground space-y-1 pt-2 text-xs">
                                 {plan.features.map((feature, index) => (
                                   <li key={index} className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-3 w-3 text-primary" />
+                                    <CheckCircle2 className="text-primary h-3 w-3" />
                                     {feature}
                                   </li>
                                 ))}
@@ -369,7 +383,7 @@ export function SubscriptionUpgradeForm({
                   <FormControl>
                     <Textarea
                       placeholder="Any special requests or questions?"
-                      className="min-h-[100px] bg-input border-border rounded-lg resize-none"
+                      className="bg-input border-border min-h-[100px] resize-none rounded-lg"
                       {...field}
                     />
                   </FormControl>
@@ -382,14 +396,14 @@ export function SubscriptionUpgradeForm({
             />
 
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row">
               {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="sm:flex-1 h-11 rounded-lg"
+                  className="h-11 rounded-lg sm:flex-1"
                 >
                   Cancel
                 </Button>
@@ -397,7 +411,7 @@ export function SubscriptionUpgradeForm({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="sm:flex-1 h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-lg font-medium sm:flex-1"
               >
                 {isLoading ? (
                   'Processing...'
@@ -413,11 +427,11 @@ export function SubscriptionUpgradeForm({
         </Form>
       </CardContent>
 
-      <CardFooter className="text-center px-6 pb-6">
-        <p className="text-xs text-muted-foreground w-full">
+      <CardFooter className="px-6 pb-6 text-center">
+        <p className="text-muted-foreground w-full text-xs">
           Your payment is secure and encrypted. You can cancel your subscription at any time.
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

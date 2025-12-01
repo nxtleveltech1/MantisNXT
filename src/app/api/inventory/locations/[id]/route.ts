@@ -32,10 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const location = await locationService.getLocationById(id);
 
     if (!location) {
-      return NextResponse.json(
-        { success: false, error: 'Location not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Location not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -79,23 +76,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Check if location exists
     const existing = await locationService.getLocationById(id);
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Location not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Location not found' }, { status: 404 });
     }
 
     // Validate type change
     if (body.type && !['internal', 'supplier', 'consignment'].includes(body.type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid location type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid location type' }, { status: 400 });
     }
 
     // Business rule: supplier_id required for type='supplier'
     const finalType = body.type || existing.type;
-    const finalSupplierId = body.supplier_id !== undefined ? body.supplier_id : existing.supplier_id;
+    const finalSupplierId =
+      body.supplier_id !== undefined ? body.supplier_id : existing.supplier_id;
     if (finalType === 'supplier' && !finalSupplierId) {
       return NextResponse.json(
         { success: false, error: 'supplier_id is required for location type "supplier"' },
@@ -105,11 +97,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Check name uniqueness if name is being changed
     if (body.name && body.name !== existing.name) {
-      const isUnique = await locationService.isLocationNameUnique(
-        body.name,
-        existing.org_id,
-        id
-      );
+      const isUnique = await locationService.isLocationNameUnique(body.name, existing.org_id, id);
       if (!isUnique) {
         return NextResponse.json(
           { success: false, error: 'Location name already exists' },
@@ -194,10 +182,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Check if location exists
     const existing = await locationService.getLocationById(id);
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Location not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Location not found' }, { status: 404 });
     }
 
     // Get hard_delete flag from query params

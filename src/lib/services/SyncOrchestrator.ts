@@ -26,7 +26,15 @@ import { getRateLimiter } from '@/lib/utils/rate-limiter';
 import { ConflictResolver } from './ConflictResolver';
 import { v4 as uuidv4 } from 'uuid';
 
-export type SyncStatus = 'draft' | 'queued' | 'processing' | 'paused' | 'done' | 'partial' | 'failed' | 'cancelled';
+export type SyncStatus =
+  | 'draft'
+  | 'queued'
+  | 'processing'
+  | 'paused'
+  | 'done'
+  | 'partial'
+  | 'failed'
+  | 'cancelled';
 export type EntityType = 'customers' | 'products' | 'orders' | 'inventory' | 'payments';
 export type System = 'woocommerce' | 'odoo';
 
@@ -102,12 +110,7 @@ export class SyncOrchestrator {
   private odooConnectorId?: string;
   private mappingService?: IntegrationMappingService;
 
-  constructor(
-    orgId: string,
-    systems: System[],
-    entityTypes: EntityType[],
-    config: SyncConfig
-  ) {
+  constructor(orgId: string, systems: System[], entityTypes: EntityType[], config: SyncConfig) {
     this.syncId = `sync-${uuidv4()}`;
     this.orgId = orgId;
     this.systems = systems;
@@ -197,9 +200,7 @@ export class SyncOrchestrator {
     for (const entityType of this.entityTypes) {
       if (!this.isRunning) break;
 
-      console.log(
-        `[SyncOrchestrator] Processing ${entityType} for ${system} in org ${this.orgId}`
-      );
+      console.log(`[SyncOrchestrator] Processing ${entityType} for ${system} in org ${this.orgId}`);
 
       // Fetch items to sync
       const items = await this.fetchSyncItems(system, entityType);
@@ -288,7 +289,9 @@ export class SyncOrchestrator {
             );
 
             if (!resolved && action === 'manual') {
-              console.log(`[SyncOrchestrator] Conflict requires manual intervention for item ${item.id}`);
+              console.log(
+                `[SyncOrchestrator] Conflict requires manual intervention for item ${item.id}`
+              );
               await this.conflictResolver.recordConflict({
                 syncId: this.syncId,
                 itemId: item.id,
@@ -379,7 +382,9 @@ export class SyncOrchestrator {
     system: System,
     finalData: Record<string, unknown>
   ): Promise<void> {
-    console.log(`[SyncOrchestrator] Processing item ${item.id}: ${item.entity_type} from ${system}`);
+    console.log(
+      `[SyncOrchestrator] Processing item ${item.id}: ${item.entity_type} from ${system}`
+    );
 
     if (system === 'odoo') {
       await this.processOdooItem(item, finalData);
@@ -462,7 +467,9 @@ export class SyncOrchestrator {
         const partnerPayload = finalData;
         const existing = item.external_id
           ? await map.getMappingByExternalId('customer', String(item.external_id))
-          : (item.local_id ? await map.getMapping('customer', item.local_id) : null);
+          : item.local_id
+            ? await map.getMapping('customer', item.local_id)
+            : null;
 
         if (existing) {
           await svc.updatePartner(parseInt(existing.externalId, 10), partnerPayload);
@@ -483,7 +490,9 @@ export class SyncOrchestrator {
         const productPayload = finalData;
         const existing = item.external_id
           ? await map.getMappingByExternalId('product', String(item.external_id))
-          : (item.local_id ? await map.getMapping('product', item.local_id) : null);
+          : item.local_id
+            ? await map.getMapping('product', item.local_id)
+            : null;
 
         if (existing) {
           await svc.updateProduct(parseInt(existing.externalId, 10), productPayload);
@@ -547,10 +556,7 @@ export class SyncOrchestrator {
     status: 'completed' | 'failed' | 'skipped' | 'pending',
     errorMsg?: string
   ): Promise<void> {
-    const setClauses = [
-      'status = $1',
-      'updated_at = NOW()',
-    ];
+    const setClauses = ['status = $1', 'updated_at = NOW()'];
     const values: unknown[] = [status];
     let paramIndex = 2;
 
@@ -585,10 +591,9 @@ export class SyncOrchestrator {
    * Get current sync status
    */
   async getSyncStatus(): Promise<OrchestrationStatus> {
-    const syncRecord = await query(
-      `SELECT * FROM sync_orchestration WHERE sync_id = $1`,
-      [this.syncId]
-    );
+    const syncRecord = await query(`SELECT * FROM sync_orchestration WHERE sync_id = $1`, [
+      this.syncId,
+    ]);
 
     if (!syncRecord.rows.length) {
       throw new Error(`Sync ${this.syncId} not found`);
@@ -629,14 +634,8 @@ export class SyncOrchestrator {
       [this.syncId]
     );
 
-    const totalItems = Object.values(queues).reduce(
-      (sum, q) => sum + q.total,
-      0
-    );
-    const totalProcessed = Object.values(queues).reduce(
-      (sum, q) => sum + q.processed,
-      0
-    );
+    const totalItems = Object.values(queues).reduce((sum, q) => sum + q.total, 0);
+    const totalProcessed = Object.values(queues).reduce((sum, q) => sum + q.processed, 0);
 
     const elapsedMs = Date.now() - this.startTime;
     const avgTimePerItem = totalProcessed > 0 ? elapsedMs / totalProcessed : 0;
@@ -782,10 +781,7 @@ export class SyncOrchestrator {
   /**
    * Log sync activity for audit trail
    */
-  private async logActivity(
-    action: string,
-    details: Record<string, unknown>
-  ): Promise<void> {
+  private async logActivity(action: string, details: Record<string, unknown>): Promise<void> {
     try {
       await query(
         `INSERT INTO sync_activity_log (sync_id, org_id, action, details, created_at)

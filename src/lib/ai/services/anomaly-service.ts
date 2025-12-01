@@ -162,7 +162,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in detectAnomalies:', error);
-      throw new Error(`Anomaly detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Anomaly detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -271,7 +273,9 @@ export class AnomalyService {
       return { anomalies, total };
     } catch (error) {
       console.error('Error in listAnomalies:', error);
-      throw new Error(`Failed to list anomalies: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to list anomalies: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -320,7 +324,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in getAnomalyById:', error);
-      throw new Error(`Failed to get anomaly: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get anomaly: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -385,7 +391,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in markResolved:', error);
-      throw new Error(`Failed to mark anomaly as resolved: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to mark anomaly as resolved: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -449,7 +457,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in acknowledgeAnomaly:', error);
-      throw new Error(`Failed to acknowledge anomaly: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to acknowledge anomaly: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -514,7 +524,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in markFalsePositive:', error);
-      throw new Error(`Failed to mark as false positive: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to mark as false positive: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -758,7 +770,12 @@ export class AnomalyService {
           daily: row.daily_trends || [],
           weekOverWeek: {
             change: Math.round(weekOverWeekChange * 10) / 10,
-            direction: weekOverWeekChange > 5 ? 'increasing' : weekOverWeekChange < -5 ? 'decreasing' : 'stable',
+            direction:
+              weekOverWeekChange > 5
+                ? 'increasing'
+                : weekOverWeekChange < -5
+                  ? 'decreasing'
+                  : 'stable',
           },
         },
         topAnomalies: row.top_anomalies || [],
@@ -766,7 +783,9 @@ export class AnomalyService {
       };
     } catch (error) {
       console.error('Error in getAnomalyStats:', error);
-      throw new Error(`Failed to get anomaly stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get anomaly stats: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

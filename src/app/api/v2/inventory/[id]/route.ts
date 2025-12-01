@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   return NextResponse.json(
@@ -9,14 +9,13 @@ export async function GET() {
       redirectTo: '/api/inventory',
     },
     { status: 410 }
-  )
+  );
 }
 
 export async function PUT() {
-  return GET()
+  return GET();
 }
 
 export async function DELETE() {
-  return GET()
+  return GET();
 }
-

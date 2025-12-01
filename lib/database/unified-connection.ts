@@ -10,7 +10,7 @@ import {
   withTransaction as enterpriseWithTransaction,
   testConnection as enterpriseTestConnection,
   getPoolStatus as enterpriseGetPoolStatus,
-  closePool as enterpriseClosePool
+  closePool as enterpriseClosePool,
 } from './enterprise-connection-manager';
 
 // Re-export enterprise functions with original API
@@ -25,9 +25,15 @@ export const transaction = withTransaction;
 
 // Pool access (for compatibility)
 export const pool = {
-  get totalCount() { return dbManager.getPoolStatus().total; },
-  get idleCount() { return dbManager.getPoolStatus().idle; },
-  get waitingCount() { return dbManager.getPoolStatus().waiting; },
+  get totalCount() {
+    return dbManager.getPoolStatus().total;
+  },
+  get idleCount() {
+    return dbManager.getPoolStatus().idle;
+  },
+  get waitingCount() {
+    return dbManager.getPoolStatus().waiting;
+  },
 
   // Delegate query method
   query: query,
@@ -36,17 +42,22 @@ export const pool = {
   connect: async (): Promise<PoolClient> => {
     // This is a simplified wrapper - in practice, direct pool access should be avoided
     // Instead, use the query() or withTransaction() methods
-    throw new Error('Direct pool.connect() access deprecated. Use query() or withTransaction() instead.');
+    throw new Error(
+      'Direct pool.connect() access deprecated. Use query() or withTransaction() instead.'
+    );
   },
 
-  end: closePool
+  end: closePool,
 };
 
 /**
  * DatabaseManager class for backwards compatibility
  */
 export class DatabaseManager {
-  async query<T extends QueryResultRow = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> {
+  async query<T extends QueryResultRow = unknown>(
+    text: string,
+    params?: unknown[]
+  ): Promise<{ rows: T[]; rowCount: number }> {
     return query<T>(text, params);
   }
 

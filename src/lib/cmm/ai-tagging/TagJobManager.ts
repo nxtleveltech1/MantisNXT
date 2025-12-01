@@ -8,15 +8,8 @@ import { query as dbQuery } from '@/lib/database/unified-connection';
 import { enrichProductsForCategorization } from '../sip-product-enrichment';
 import { TaggingEngine } from './TaggingEngine';
 import { TagProgressTracker } from './TagProgressTracker';
-import type {
-  Job,
-  JobParams,
-  JobStatus,
-  JobFilters,
-  JobStatus_Detail} from './types';
-import {
-  DEFAULT_JOB_CONFIG,
-} from './types';
+import type { Job, JobParams, JobStatus, JobFilters, JobStatus_Detail } from './types';
+import { DEFAULT_JOB_CONFIG } from './types';
 
 export class TagJobManager {
   private taggingEngine: TaggingEngine;
@@ -24,9 +17,7 @@ export class TagJobManager {
   private activeJobs: Map<string, boolean> = new Map(); // Track running jobs
 
   constructor() {
-    this.taggingEngine = new TaggingEngine(
-      DEFAULT_JOB_CONFIG.default_confidence_threshold
-    );
+    this.taggingEngine = new TaggingEngine(DEFAULT_JOB_CONFIG.default_confidence_threshold);
     this.progressTracker = new TagProgressTracker();
   }
 
@@ -77,7 +68,7 @@ export class TagJobManager {
     console.log(`\n🚀 [TagJobManager] ============================================`);
     console.log(`🚀 [TagJobManager] STARTING JOB PROCESSING: ${jobId}`);
     console.log(`🚀 [TagJobManager] ============================================\n`);
-    
+
     // Check if job is already running
     if (this.activeJobs.get(jobId)) {
       throw new Error(`Job ${jobId} is already running`);
@@ -94,7 +85,9 @@ export class TagJobManager {
       if (!job) {
         throw new Error(`Job ${jobId} not found`);
       }
-      console.log(`[TagJobManager] Job details: status=${job.status}, total_products=${job.total_products}, batch_size=${job.batch_size}`);
+      console.log(
+        `[TagJobManager] Job details: status=${job.status}, total_products=${job.total_products}, batch_size=${job.batch_size}`
+      );
 
       // Validate job status
       if (job.status !== 'queued' && job.status !== 'paused') {
@@ -129,11 +122,7 @@ export class TagJobManager {
           );
 
           // Fetch products for this batch
-          const products = await this.fetchProductsForBatch(
-            job.batch_size,
-            currentOffset,
-            filters
-          );
+          const products = await this.fetchProductsForBatch(job.batch_size, currentOffset, filters);
           console.log(
             `[TagJobManager] Job ${jobId} batch ${batchNumber} fetched ${products.length} products`
           );
@@ -165,9 +154,7 @@ export class TagJobManager {
 
           // Process batch with AI
           const batchStartTime = Date.now();
-          console.log(
-            `[TagJobManager] Job ${jobId} batch ${batchNumber} invoking tagBatch`
-          );
+          console.log(`[TagJobManager] Job ${jobId} batch ${batchNumber} invoking tagBatch`);
           const batchResult = await this.taggingEngine.tagBatch(
             products,
             config,
@@ -197,9 +184,10 @@ export class TagJobManager {
             duration_ms: batchResult.duration_ms,
             tokens_used: batchResult.tokens_used,
             provider_used: batchResult.results[0]?.provider ?? null,
-            error_message: applyResult.errors.length > 0
-              ? `${applyResult.errors.length} products failed to update`
-              : null,
+            error_message:
+              applyResult.errors.length > 0
+                ? `${applyResult.errors.length} products failed to update`
+                : null,
           });
 
           // Update job progress
@@ -209,7 +197,8 @@ export class TagJobManager {
             processed_products: processedSoFar,
             successful_taggings: job.successful_taggings + batchResult.successful,
             failed_taggings: job.failed_taggings + batchResult.failed,
-            skipped_products: job.skipped_products + batchResult.skipped + batchResult.pending_review,
+            skipped_products:
+              job.skipped_products + batchResult.skipped + batchResult.pending_review,
             current_batch_offset: processedSoFar,
             tokens_used: batchResult.tokens_used,
           });
@@ -478,9 +467,7 @@ export class TagJobManager {
     if (productIds.length === 0) return [];
 
     const enriched = await enrichProductsForCategorization(productIds);
-    console.log(
-      `[TagJobManager] fetchProductsForBatch enriched ${enriched.length} products`
-    );
+    console.log(`[TagJobManager] fetchProductsForBatch enriched ${enriched.length} products`);
     return enriched;
   }
 
@@ -669,4 +656,3 @@ export class TagJobManager {
 
 // Singleton instance
 export const tagJobManager = new TagJobManager();
-

@@ -8,11 +8,7 @@
  * - Validation results
  */
 
-import type {
-  ParsedRow,
-  ColumnMappingWithConfidence,
-  BrandDetectionResult,
-} from './types';
+import type { ParsedRow, ColumnMappingWithConfidence, BrandDetectionResult } from './types';
 
 /**
  * Calculate row-level confidence score
@@ -35,14 +31,14 @@ export function calculateRowConfidence(row: Partial<ParsedRow>): number {
   // Required fields (40%)
   const requiredFields = ['supplier_sku', 'name', 'uom', 'price', 'currency'];
   const requiredPresent = requiredFields.filter(
-    (f) => row[f as keyof ParsedRow] != null && String(row[f as keyof ParsedRow]).trim().length > 0
+    f => row[f as keyof ParsedRow] != null && String(row[f as keyof ParsedRow]).trim().length > 0
   ).length;
   score += (requiredPresent / requiredFields.length) * weights.required;
 
   // Optional fields (20%)
   const optionalFields = ['brand', 'pack_size', 'barcode', 'category_raw', 'vat_code'];
   const optionalPresent = optionalFields.filter(
-    (f) => row[f as keyof ParsedRow] != null && String(row[f as keyof ParsedRow]).trim().length > 0
+    f => row[f as keyof ParsedRow] != null && String(row[f as keyof ParsedRow]).trim().length > 0
   ).length;
   score += (optionalPresent / optionalFields.length) * weights.optional;
 
@@ -145,12 +141,10 @@ export function calculateMetadataConfidence(
     const sample = rows.slice(0, sampleSize);
 
     for (const row of sample) {
-      const requiredPresent = requiredFields.filter(
-        (f) => {
-          const mapping = columnMapping.mapping[f];
-          return mapping && row[mapping as keyof ParsedRow] != null;
-        }
-      ).length;
+      const requiredPresent = requiredFields.filter(f => {
+        const mapping = columnMapping.mapping[f];
+        return mapping && row[mapping as keyof ParsedRow] != null;
+      }).length;
       completenessScore += requiredPresent / requiredFields.length;
     }
 
@@ -166,20 +160,20 @@ export function calculateMetadataConfidence(
     let consistencyScore = 1.0;
 
     // Check currency consistency
-    const currencies = new Set(rows.map((r) => r.currency).filter(Boolean));
+    const currencies = new Set(rows.map(r => r.currency).filter(Boolean));
     if (currencies.size > 1) {
       consistencyScore -= 0.3; // Multiple currencies is suspicious
     }
 
     // Check UOM consistency (should have variety but not too much)
-    const uoms = new Set(rows.map((r) => r.uom).filter(Boolean));
+    const uoms = new Set(rows.map(r => r.uom).filter(Boolean));
     const uomRatio = uoms.size / rows.length;
     if (uomRatio > 0.5) {
       consistencyScore -= 0.2; // Too many different UOMs
     }
 
     // Check brand consistency
-    const brands = new Set(rows.map((r) => r.brand).filter(Boolean));
+    const brands = new Set(rows.map(r => r.brand).filter(Boolean));
     if (brands.size > 10 && rows.length < 100) {
       consistencyScore -= 0.1; // Too many brands for small dataset
     }

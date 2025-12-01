@@ -23,7 +23,12 @@ export interface AnomalyDetectionModel {
 
 export interface AnomalyAlert {
   id: string;
-  type: 'supplier_performance' | 'inventory_movement' | 'price_fluctuation' | 'system_performance' | 'demand_pattern';
+  type:
+    | 'supplier_performance'
+    | 'inventory_movement'
+    | 'price_fluctuation'
+    | 'system_performance'
+    | 'demand_pattern';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
@@ -113,14 +118,13 @@ export class StatisticalAnomalyDetector {
 
     this.statistics.mean = this.historicalData.reduce((sum, val) => sum + val, 0) / n;
 
-    const variance = this.historicalData.reduce(
-      (sum, val) => sum + Math.pow(val - this.statistics.mean, 2), 0
-    ) / n;
+    const variance =
+      this.historicalData.reduce((sum, val) => sum + Math.pow(val - this.statistics.mean, 2), 0) /
+      n;
     this.statistics.stdDev = Math.sqrt(variance);
 
-    this.statistics.median = n % 2 === 0
-      ? (sorted[n/2 - 1] + sorted[n/2]) / 2
-      : sorted[Math.floor(n/2)];
+    this.statistics.median =
+      n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
 
     this.statistics.q1 = sorted[Math.floor(n * 0.25)];
     this.statistics.q3 = sorted[Math.floor(n * 0.75)];
@@ -133,7 +137,7 @@ export class StatisticalAnomalyDetector {
 
     // Z-score method
     const zScore = Math.abs((value - this.statistics.mean) / Math.max(this.statistics.stdDev, 0.1));
-    const zThreshold = 2 + (this.model.sensitivity * 1); // 2-3 sigma
+    const zThreshold = 2 + this.model.sensitivity * 1; // 2-3 sigma
 
     // IQR method
     const iqr = this.statistics.q3 - this.statistics.q1;
@@ -144,7 +148,7 @@ export class StatisticalAnomalyDetector {
     // Modified Z-score using median
     const medianDev = Math.abs(value - this.statistics.median);
     const mad = this.calculateMAD();
-    const modifiedZScore = 0.6745 * medianDev / Math.max(mad, 0.1);
+    const modifiedZScore = (0.6745 * medianDev) / Math.max(mad, 0.1);
     const modifiedZThreshold = 3.5;
 
     // Combine methods
@@ -157,7 +161,7 @@ export class StatisticalAnomalyDetector {
     return {
       isAnomaly,
       score: Math.min(1, score),
-      method: `statistical(z:${zScore.toFixed(2)},iqr:${iqrAnomaly},mz:${modifiedZScore.toFixed(2)})`
+      method: `statistical(z:${zScore.toFixed(2)},iqr:${iqrAnomaly},mz:${modifiedZScore.toFixed(2)})`,
     };
   }
 
@@ -169,8 +173,8 @@ export class StatisticalAnomalyDetector {
 
     const n = deviations.length;
     return n % 2 === 0
-      ? (deviations[n/2 - 1] + deviations[n/2]) / 2
-      : deviations[Math.floor(n/2)];
+      ? (deviations[n / 2 - 1] + deviations[n / 2]) / 2
+      : deviations[Math.floor(n / 2)];
   }
 
   updateModel(newData: number[]): void {
@@ -247,7 +251,7 @@ export class IsolationForestDetector {
       left: this.buildTree(leftData, depth + 1),
       right: this.buildTree(rightData, depth + 1),
       isLeaf: false,
-      depth
+      depth,
     };
   }
 
@@ -256,20 +260,21 @@ export class IsolationForestDetector {
       return { isAnomaly: false, score: 0, method: 'not_trained' };
     }
 
-    const avgPathLength = this.trees.reduce((sum, tree) => {
-      return sum + this.pathLength(point, tree.root);
-    }, 0) / this.trees.length;
+    const avgPathLength =
+      this.trees.reduce((sum, tree) => {
+        return sum + this.pathLength(point, tree.root);
+      }, 0) / this.trees.length;
 
     const c = this.cFunction(this.subsampleSize);
     const anomalyScore = Math.pow(2, -avgPathLength / c);
 
-    const threshold = 0.5 + (this.model.sensitivity * 0.3); // 0.5-0.8 threshold
+    const threshold = 0.5 + this.model.sensitivity * 0.3; // 0.5-0.8 threshold
     const isAnomaly = anomalyScore > threshold;
 
     return {
       isAnomaly,
       score: anomalyScore,
-      method: `isolation_forest(avg_path:${avgPathLength.toFixed(2)})`
+      method: `isolation_forest(avg_path:${avgPathLength.toFixed(2)})`,
     };
   }
 
@@ -287,7 +292,7 @@ export class IsolationForestDetector {
 
   private cFunction(n: number): number {
     if (n <= 1) return 0;
-    return 2 * (Math.log(n - 1) + 0.5772156649) - (2 * (n - 1) / n);
+    return 2 * (Math.log(n - 1) + 0.5772156649) - (2 * (n - 1)) / n;
   }
 }
 
@@ -331,8 +336,8 @@ export class LSTMAutoencoderDetector {
       let predicted = sequence[i];
 
       // Add some smoothing based on neighbors
-      if (i > 0) predicted = (predicted + sequence[i-1]) / 2;
-      if (i < sequence.length - 1) predicted = (predicted + sequence[i+1]) / 2;
+      if (i > 0) predicted = (predicted + sequence[i - 1]) / 2;
+      if (i < sequence.length - 1) predicted = (predicted + sequence[i + 1]) / 2;
 
       // Add slight noise to simulate imperfect reconstruction
       predicted += (Math.random() - 0.5) * 0.1 * Math.abs(predicted);
@@ -363,9 +368,12 @@ export class LSTMAutoencoderDetector {
     const error = this.calculateReconstructionError(sequence, reconstructed);
 
     // Calculate threshold based on training errors
-    const meanError = this.reconstructionErrors.reduce((sum, err) => sum + err, 0) / this.reconstructionErrors.length;
+    const meanError =
+      this.reconstructionErrors.reduce((sum, err) => sum + err, 0) /
+      this.reconstructionErrors.length;
     const stdError = Math.sqrt(
-      this.reconstructionErrors.reduce((sum, err) => sum + Math.pow(err - meanError, 2), 0) / this.reconstructionErrors.length
+      this.reconstructionErrors.reduce((sum, err) => sum + Math.pow(err - meanError, 2), 0) /
+        this.reconstructionErrors.length
     );
 
     const threshold = meanError + (2 + this.model.sensitivity * 2) * stdError;
@@ -375,7 +383,7 @@ export class LSTMAutoencoderDetector {
     return {
       isAnomaly,
       score,
-      method: `lstm_autoencoder(error:${error.toFixed(4)},threshold:${threshold.toFixed(4)})`
+      method: `lstm_autoencoder(error:${error.toFixed(4)},threshold:${threshold.toFixed(4)})`,
     };
   }
 }
@@ -417,7 +425,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
           accuracy: parseFloat(row.accuracy),
           falsePositiveRate: parseFloat(row.false_positive_rate),
           parameters: JSON.parse(row.parameters || '{}'),
-          status: row.status
+          status: row.status,
         };
 
         this.models.set(model.id, model);
@@ -428,7 +436,6 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       if (this.models.size === 0) {
         await this.createDefaultModels();
       }
-
     } catch (error) {
       console.error('Error initializing anomaly detection models:', error);
       await this.createDefaultModels();
@@ -443,7 +450,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         targetMetric: 'supplier_performance',
         sensitivity: 0.7,
         windowSize: 50,
-        parameters: {}
+        parameters: {},
       },
       {
         name: 'Inventory Movement Anomaly Detector',
@@ -451,7 +458,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         targetMetric: 'inventory_movement',
         sensitivity: 0.6,
         windowSize: 100,
-        parameters: { numTrees: 100, subsampleSize: 256 }
+        parameters: { numTrees: 100, subsampleSize: 256 },
       },
       {
         name: 'Price Fluctuation Detector',
@@ -459,8 +466,8 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         targetMetric: 'price_fluctuation',
         sensitivity: 0.8,
         windowSize: 30,
-        parameters: { sequenceLength: 10 }
-      }
+        parameters: { sequenceLength: 10 },
+      },
     ];
 
     for (const modelConfig of defaultModels) {
@@ -484,28 +491,38 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       accuracy: 0.85,
       falsePositiveRate: 0.05,
       parameters: config.parameters,
-      status: 'active'
+      status: 'active',
     };
 
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO anomaly_detection_models (
           id, name, type, target_metric, sensitivity, window_size,
           training_data, last_trained, accuracy, false_positive_rate,
           parameters, status, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
-      `, [
-        model.id, model.name, model.type, model.targetMetric,
-        model.sensitivity, model.windowSize, model.trainingData,
-        model.lastTrained, model.accuracy, model.falsePositiveRate,
-        JSON.stringify(model.parameters), model.status
-      ]);
+      `,
+        [
+          model.id,
+          model.name,
+          model.type,
+          model.targetMetric,
+          model.sensitivity,
+          model.windowSize,
+          model.trainingData,
+          model.lastTrained,
+          model.accuracy,
+          model.falsePositiveRate,
+          JSON.stringify(model.parameters),
+          model.status,
+        ]
+      );
 
       this.models.set(modelId, model);
       await this.initializeDetector(model);
 
       return modelId;
-
     } catch (error) {
       console.error('Error creating anomaly detection model:', error);
       throw new Error('Failed to create anomaly detection model');
@@ -552,7 +569,6 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         // For statistical and LSTM models
         detector.train(data);
       }
-
     } catch (error) {
       console.error(`Error training detector for model ${model.id}:`, error);
     }
@@ -636,7 +652,6 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       }
 
       return alerts;
-
     } catch (error) {
       console.error('Error detecting anomalies:', error);
       return [];
@@ -692,7 +707,11 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private async performDetection(detector: unknown, model: AnomalyDetectionModel, dataPoint: unknown): Promise<unknown> {
+  private async performDetection(
+    detector: unknown,
+    model: AnomalyDetectionModel,
+    dataPoint: unknown
+  ): Promise<unknown> {
     let value: number;
     let sequence: number[];
 
@@ -712,12 +731,15 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
     if (model.type === 'lstm') {
       // For LSTM, need sequence data
-      const historicalData = await this.getHistoricalData(model.targetMetric, model.parameters.sequenceLength);
+      const historicalData = await this.getHistoricalData(
+        model.targetMetric,
+        model.parameters.sequenceLength
+      );
       sequence = [...historicalData.slice(0, model.parameters.sequenceLength - 1), value];
       return {
         ...detector.detect(sequence),
         value,
-        dataPoint
+        dataPoint,
       };
     } else if (model.type === 'isolation_forest') {
       // For isolation forest, create feature vector
@@ -725,14 +747,14 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       return {
         ...detector.detect(features),
         value,
-        dataPoint
+        dataPoint,
       };
     } else {
       // For statistical methods
       return {
         ...detector.detect(value),
         value,
-        dataPoint
+        dataPoint,
       };
     }
   }
@@ -767,7 +789,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         algorithm: model.type,
         confidence: detection.score,
         anomalyScore: detection.score,
-        threshold: model.sensitivity
+        threshold: model.sensitivity,
       },
 
       context: {
@@ -777,19 +799,19 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         currentValue: detection.value,
         expectedValue,
         deviation,
-        historicalContext: historicalStats
+        historicalContext: historicalStats,
       },
 
       impact: {
         riskLevel: severity,
         potentialLoss: this.estimatePotentialLoss(model.targetMetric, deviation),
         affectedOperations: this.getAffectedOperations(model.targetMetric),
-        urgency: Math.min(1, detection.score)
+        urgency: Math.min(1, detection.score),
       },
 
       recommendation: this.generateRecommendation(model, detection, severity),
 
-      detectedAt: new Date()
+      detectedAt: new Date(),
     };
 
     return alert;
@@ -797,37 +819,49 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   private getAlertType(targetMetric: string): AnomalyAlert['type'] {
     const mapping: Record<string, AnomalyAlert['type']> = {
-      'supplier_performance': 'supplier_performance',
-      'inventory_movement': 'inventory_movement',
-      'price_fluctuation': 'price_fluctuation'
+      supplier_performance: 'supplier_performance',
+      inventory_movement: 'inventory_movement',
+      price_fluctuation: 'price_fluctuation',
     };
     return mapping[targetMetric] || 'system_performance';
   }
 
   private getEntityId(dataPoint: unknown, targetMetric: string): string {
     switch (targetMetric) {
-      case 'supplier_performance': return dataPoint.supplier_id;
-      case 'inventory_movement': return dataPoint.item_id;
-      case 'price_fluctuation': return dataPoint.item_id;
-      default: return 'unknown';
+      case 'supplier_performance':
+        return dataPoint.supplier_id;
+      case 'inventory_movement':
+        return dataPoint.item_id;
+      case 'price_fluctuation':
+        return dataPoint.item_id;
+      default:
+        return 'unknown';
     }
   }
 
   private getEntityType(targetMetric: string): AnomalyAlert['context']['entityType'] {
     switch (targetMetric) {
-      case 'supplier_performance': return 'supplier';
-      case 'inventory_movement': return 'inventory_item';
-      case 'price_fluctuation': return 'inventory_item';
-      default: return 'system';
+      case 'supplier_performance':
+        return 'supplier';
+      case 'inventory_movement':
+        return 'inventory_item';
+      case 'price_fluctuation':
+        return 'inventory_item';
+      default:
+        return 'system';
     }
   }
 
   private getEntityName(dataPoint: unknown, targetMetric: string): string {
     switch (targetMetric) {
-      case 'supplier_performance': return dataPoint.supplier_name || 'Unknown Supplier';
-      case 'inventory_movement': return dataPoint.item_name || 'Unknown Item';
-      case 'price_fluctuation': return dataPoint.item_name || 'Unknown Item';
-      default: return 'System';
+      case 'supplier_performance':
+        return dataPoint.supplier_name || 'Unknown Supplier';
+      case 'inventory_movement':
+        return dataPoint.item_name || 'Unknown Item';
+      case 'price_fluctuation':
+        return dataPoint.item_name || 'Unknown Item';
+      default:
+        return 'System';
     }
   }
 
@@ -847,15 +881,15 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       min: sorted[0],
       max: sorted[sorted.length - 1],
       mean,
-      stdDev
+      stdDev,
     };
   }
 
   private estimatePotentialLoss(targetMetric: string, deviation: number): number {
     const baseLoss = {
-      'supplier_performance': 10000,
-      'inventory_movement': 5000,
-      'price_fluctuation': 15000
+      supplier_performance: 10000,
+      inventory_movement: 5000,
+      price_fluctuation: 15000,
     };
 
     return (baseLoss[targetMetric] || 1000) * deviation;
@@ -863,17 +897,23 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   private getAffectedOperations(targetMetric: string): string[] {
     const operations: Record<string, string[]> = {
-      'supplier_performance': ['Procurement', 'Quality Control', 'Delivery Schedule'],
-      'inventory_movement': ['Inventory Management', 'Order Fulfillment', 'Demand Planning'],
-      'price_fluctuation': ['Cost Management', 'Pricing Strategy', 'Vendor Negotiations']
+      supplier_performance: ['Procurement', 'Quality Control', 'Delivery Schedule'],
+      inventory_movement: ['Inventory Management', 'Order Fulfillment', 'Demand Planning'],
+      price_fluctuation: ['Cost Management', 'Pricing Strategy', 'Vendor Negotiations'],
     };
 
     return operations[targetMetric] || ['General Operations'];
   }
 
-  private generateAlertDescription(model: AnomalyDetectionModel, detection: unknown, dataPoint: unknown): string {
-    return `Anomaly detected in ${model.targetMetric} with confidence ${(detection.score * 100).toFixed(1)}%. ` +
-           `Current value: ${detection.value}, Detection method: ${detection.method}`;
+  private generateAlertDescription(
+    model: AnomalyDetectionModel,
+    detection: unknown,
+    dataPoint: unknown
+  ): string {
+    return (
+      `Anomaly detected in ${model.targetMetric} with confidence ${(detection.score * 100).toFixed(1)}%. ` +
+      `Current value: ${detection.value}, Detection method: ${detection.method}`
+    );
   }
 
   private generateRecommendation(
@@ -882,50 +922,59 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     severity: string
   ): AnomalyAlert['recommendation'] {
     const urgentActions = {
-      'supplier_performance': 'Review supplier performance metrics and contact supplier',
-      'inventory_movement': 'Investigate unusual inventory movement and verify accuracy',
-      'price_fluctuation': 'Review price changes and validate with supplier'
+      supplier_performance: 'Review supplier performance metrics and contact supplier',
+      inventory_movement: 'Investigate unusual inventory movement and verify accuracy',
+      price_fluctuation: 'Review price changes and validate with supplier',
     };
 
     const steps = [
       'Verify the anomaly is not a false positive',
       'Investigate root cause',
       'Take corrective action if necessary',
-      'Monitor for recurrence'
+      'Monitor for recurrence',
     ];
 
     return {
       action: urgentActions[model.targetMetric] || 'Investigate anomaly',
-      priority: severity === 'critical' ? 'immediate' : severity === 'high' ? 'urgent' : 'scheduled',
+      priority:
+        severity === 'critical' ? 'immediate' : severity === 'high' ? 'urgent' : 'scheduled',
       steps,
       estimatedResolutionTime: severity === 'critical' ? '1-2 hours' : '1-2 days',
       preventiveMeasures: [
         'Implement automated monitoring',
         'Set up early warning thresholds',
-        'Regular performance reviews'
-      ]
+        'Regular performance reviews',
+      ],
     };
   }
 
   private async storeAlert(alert: AnomalyAlert): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO anomaly_alerts (
           id, type, severity, title, description, detection,
           context, impact, recommendation, detected_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      `, [
-        alert.id, alert.type, alert.severity, alert.title, alert.description,
-        JSON.stringify(alert.detection), JSON.stringify(alert.context),
-        JSON.stringify(alert.impact), JSON.stringify(alert.recommendation),
-        alert.detectedAt
-      ]);
+      `,
+        [
+          alert.id,
+          alert.type,
+          alert.severity,
+          alert.title,
+          alert.description,
+          JSON.stringify(alert.detection),
+          JSON.stringify(alert.context),
+          JSON.stringify(alert.impact),
+          JSON.stringify(alert.recommendation),
+          alert.detectedAt,
+        ]
+      );
 
       this.alertHistory.push(alert);
       if (this.alertHistory.length > 1000) {
         this.alertHistory.shift();
       }
-
     } catch (error) {
       console.error('Error storing anomaly alert:', error);
     }
@@ -960,11 +1009,14 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   async acknowledgeAlert(alertId: string, userId: string): Promise<boolean> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE anomaly_alerts
         SET acknowledged_at = NOW(), acknowledged_by = $1
         WHERE id = $2
-      `, [userId, alertId]);
+      `,
+        [userId, alertId]
+      );
 
       const alert = this.alertHistory.find(a => a.id === alertId);
       if (alert) {
@@ -981,11 +1033,14 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   async resolveAlert(alertId: string, resolution: string, userId: string): Promise<boolean> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE anomaly_alerts
         SET resolved_at = NOW(), resolution = $1
         WHERE id = $2
-      `, [resolution, alertId]);
+      `,
+        [resolution, alertId]
+      );
 
       const alert = this.alertHistory.find(a => a.id === alertId);
       if (alert) {
@@ -1023,10 +1078,9 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
       name: model.name,
       accuracy: model.accuracy,
       falsePositiveRate: model.falsePositiveRate,
-      alertsGenerated: this.alertHistory.filter(alert =>
-        alert.detection.modelId === model.id
-      ).length,
-      lastTrained: model.lastTrained
+      alertsGenerated: this.alertHistory.filter(alert => alert.detection.modelId === model.id)
+        .length,
+      lastTrained: model.lastTrained,
     }));
   }
 }
@@ -1036,5 +1090,5 @@ export const realTimeAnomalyDetection = {
   engine: (db: Pool) => new RealTimeAnomalyDetectionEngine(db),
   statisticalDetector: (model: AnomalyDetectionModel) => new StatisticalAnomalyDetector(model),
   isolationForestDetector: (model: AnomalyDetectionModel) => new IsolationForestDetector(model),
-  lstmDetector: (model: AnomalyDetectionModel) => new LSTMAutoencoderDetector(model)
+  lstmDetector: (model: AnomalyDetectionModel) => new LSTMAutoencoderDetector(model),
 };

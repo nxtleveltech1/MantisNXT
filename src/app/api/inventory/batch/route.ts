@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import { z } from 'zod';
@@ -27,17 +27,23 @@ export async function PUT(req: NextRequest) {
     const results: unknown[] = [];
     const errors: unknown[] = [];
     const failFast = body.failFast === true;
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       for (const item of body.items) {
         try {
-          const current = await client.query('SELECT id, stock_qty, reserved_qty FROM inventory_item WHERE id=$1 FOR UPDATE', [item.id]);
+          const current = await client.query(
+            'SELECT id, stock_qty, reserved_qty FROM inventory_item WHERE id=$1 FOR UPDATE',
+            [item.id]
+          );
           if (current.rowCount === 0) throw new Error('NOT_FOUND');
           const before = current.rows[0];
 
           const fields: string[] = [];
           const values: unknown[] = [];
           let idx = 1;
-          const set = (col: string, val: unknown) => { fields.push(`${col} = $${idx++}`); values.push(val); };
+          const set = (col: string, val: unknown) => {
+            fields.push(`${col} = $${idx++}`);
+            values.push(val);
+          };
           if (item.stock_qty !== undefined) set('stock_qty', item.stock_qty);
           if (item.reserved_qty !== undefined) set('reserved_qty', item.reserved_qty);
           if (item.cost_price !== undefined) set('cost_price', item.cost_price);
@@ -50,12 +56,17 @@ export async function PUT(req: NextRequest) {
           values.push(item.id);
           await client.query(sql, values);
 
-          if (body.createMovementOnStockChange && item.stock_qty !== undefined && item.stock_qty !== before.stock_qty) {
+          if (
+            body.createMovementOnStockChange &&
+            item.stock_qty !== undefined &&
+            item.stock_qty !== before.stock_qty
+          ) {
             const delta = Math.abs(Number(item.stock_qty) - Number(before.stock_qty));
             const type = Number(item.stock_qty) > Number(before.stock_qty) ? 'in' : 'out';
             await client.query(
               `INSERT INTO stock_movements (item_id, type, quantity, reason, created_at)
-               VALUES ($1,$2,$3,'batch_update',NOW())`, [item.id, type, delta]
+               VALUES ($1,$2,$3,'batch_update',NOW())`,
+              [item.id, type, delta]
             );
           }
           results.push({ id: item.id, status: 'ok' });
@@ -66,7 +77,10 @@ export async function PUT(req: NextRequest) {
         }
       }
     });
-    return NextResponse.json({ success: errors.length === 0, results, errors }, { status: errors.length ? 207 : 200 });
+    return NextResponse.json(
+      { success: errors.length === 0, results, errors },
+      { status: errors.length ? 207 : 200 }
+    );
   } catch (e: unknown) {
     return NextResponse.json({ success: false, error: e?.message ?? String(e) }, { status: 400 });
   }

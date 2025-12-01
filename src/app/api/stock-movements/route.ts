@@ -1,21 +1,13 @@
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { pool, withTransaction } from "@/lib/database";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { pool, withTransaction } from '@/lib/database';
 
 const CreateStockMovementSchema = z.object({
-  supplierProductId: z
-    .string()
-    .uuid("Valid supplier product ID is required"),
-  locationId: z.string().uuid("Valid location ID is required").optional(),
-  movementType: z.enum([
-    "RECEIPT",
-    "ISSUE",
-    "TRANSFER",
-    "ADJUSTMENT",
-    "RETURN",
-  ]),
-  quantity: z.number().positive("Quantity must be positive"),
+  supplierProductId: z.string().uuid('Valid supplier product ID is required'),
+  locationId: z.string().uuid('Valid location ID is required').optional(),
+  movementType: z.enum(['RECEIPT', 'ISSUE', 'TRANSFER', 'ADJUSTMENT', 'RETURN']),
+  quantity: z.number().positive('Quantity must be positive'),
   referenceDoc: z.string().optional(),
   notes: z.string().optional(),
   performedBy: z.string().optional(),
@@ -24,14 +16,11 @@ const CreateStockMovementSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const supplierProductId = searchParams.get("supplierProductId");
-    const locationId = searchParams.get("locationId");
-    const movementType = searchParams.get("movementType");
-    const limit = Math.min(
-      100,
-      parseInt(searchParams.get("limit") || "50", 10)
-    );
-    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
+    const supplierProductId = searchParams.get('supplierProductId');
+    const locationId = searchParams.get('locationId');
+    const movementType = searchParams.get('movementType');
+    const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
 
     console.log(
       `🔍 Fetching stock movements: supplierProductId=${supplierProductId}, locationId=${locationId}, type=${movementType}`
@@ -71,7 +60,7 @@ export async function GET(request: NextRequest) {
       reference: r.reference,
       notes: r.notes,
       locationId: r.location_id,
-      locationName: r.location_name || "N/A",
+      locationName: r.location_name || 'N/A',
       timestamp: r.timestamp?.toISOString() || new Date().toISOString(),
       createdBy: r.created_by,
       createdAt: r.created_at?.toISOString() || new Date().toISOString(),
@@ -90,11 +79,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (e: unknown) {
-    console.error("❌ Stock movements query failed:", e);
+    console.error('❌ Stock movements query failed:', e);
     return NextResponse.json(
       {
         success: false,
-        error: "STOCK_MOVEMENTS_LIST_FAILED",
+        error: 'STOCK_MOVEMENTS_LIST_FAILED',
         detail: e?.message ?? String(e),
       },
       { status: 500 }
@@ -111,7 +100,7 @@ export async function POST(request: NextRequest) {
       `📦 Creating stock movement: ${validated.movementType} for product ${validated.supplierProductId}`
     );
 
-    const mv = await withTransaction(async (client) => {
+    const mv = await withTransaction(async client => {
       // Using correct table: core.stock_movement (singular)
       const ins = await client.query(
         `INSERT INTO core.stock_movement (
@@ -126,7 +115,7 @@ export async function POST(request: NextRequest) {
           validated.quantity,
           validated.referenceDoc || null,
           validated.notes || null,
-          validated.performedBy || "system",
+          validated.performedBy || 'system',
         ]
       );
 
@@ -143,31 +132,29 @@ export async function POST(request: NextRequest) {
           id: mv.id,
           timestamp: mv.timestamp?.toISOString() || new Date().toISOString(),
         },
-        message: "Stock movement recorded successfully",
+        message: 'Stock movement recorded successfully',
       },
       { status: 201 }
     );
   } catch (e: unknown) {
-    console.error("❌ Stock movement creation failed:", e);
+    console.error('❌ Stock movement creation failed:', e);
 
     if (e instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
-          error: "VALIDATION_FAILED",
-          details: e.errors.map(
-            (err) => `${err.path.join(".")}: ${err.message}`
-          ),
+          error: 'VALIDATION_FAILED',
+          details: e.errors.map(err => `${err.path.join('.')}: ${err.message}`),
         },
         { status: 400 }
       );
     }
 
-    const status = e?.message === "INSUFFICIENT_AVAILABLE" ? 400 : 500;
+    const status = e?.message === 'INSUFFICIENT_AVAILABLE' ? 400 : 500;
     return NextResponse.json(
       {
         success: false,
-        error: "STOCK_MOVEMENTS_CREATE_FAILED",
+        error: 'STOCK_MOVEMENTS_CREATE_FAILED',
         detail: e?.message ?? String(e),
       },
       { status }

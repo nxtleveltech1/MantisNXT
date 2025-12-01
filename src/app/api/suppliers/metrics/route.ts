@@ -1,6 +1,6 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
         0 as total_purchase_value
       FROM core.supplier s
       LEFT JOIN supplier_performance sp ON s.supplier_id = sp.supplier_id
-    `)
+    `);
 
-    const data = result.rows[0]
+    const data = result.rows[0];
 
     const metrics = {
       totalSuppliers: parseInt(data.total_suppliers) || 0,
@@ -29,22 +29,22 @@ export async function GET(request: NextRequest) {
       avgPerformanceRating: parseFloat(data.avg_performance_rating) || 0,
       totalPurchaseValue: parseFloat(data.total_purchase_value) || 0,
       onTimeDeliveryRate: parseFloat(data.on_time_delivery_rate) || 0,
-      qualityAcceptanceRate: parseFloat(data.quality_acceptance_rate) || 0
-    }
+      qualityAcceptanceRate: parseFloat(data.quality_acceptance_rate) || 0,
+    };
 
     return NextResponse.json({
       success: true,
-      data: metrics
-    })
+      data: metrics,
+    });
   } catch (error) {
-    console.error('Metrics API error:', error)
+    console.error('Metrics API error:', error);
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch dashboard metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }

@@ -76,9 +76,7 @@ export class CustomerService {
   static async getCustomers(limit = 50, offset = 0): Promise<{ data: Customer[]; count: number }> {
     try {
       // Get total count
-      const countResult = await query<{ count: string }>(
-        'SELECT COUNT(*) as count FROM customer'
-      );
+      const countResult = await query<{ count: string }>('SELECT COUNT(*) as count FROM customer');
       const count = parseInt(countResult.rows[0]?.count || '0', 10);
 
       // Get customers
@@ -98,10 +96,7 @@ export class CustomerService {
 
   static async getCustomerById(id: string): Promise<Customer | null> {
     try {
-      const result = await query<Customer>(
-        'SELECT * FROM customer WHERE id = $1',
-        [id]
-      );
+      const result = await query<Customer>('SELECT * FROM customer WHERE id = $1', [id]);
 
       return result.rows[0] || null;
     } catch (error) {
@@ -149,7 +144,9 @@ export class CustomerService {
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
           setClauses.push(`${key} = $${paramIndex}`);
-          values.push(key === 'metadata' && typeof value === 'object' ? JSON.stringify(value) : value);
+          values.push(
+            key === 'metadata' && typeof value === 'object' ? JSON.stringify(value) : value
+          );
           paramIndex++;
         }
       });

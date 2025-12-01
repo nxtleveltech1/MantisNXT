@@ -32,7 +32,7 @@ export async function GET() {
   try {
     // Check cache
     const now = Date.now();
-    if (cachedModels && (now - cacheTimestamp) < CACHE_TTL) {
+    if (cachedModels && now - cacheTimestamp < CACHE_TTL) {
       return NextResponse.json({
         data: cachedModels,
         cached: true,
@@ -43,7 +43,7 @@ export async function GET() {
     // Fetch from OpenRouter API (public endpoint, no auth required)
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       cache: 'force-cache',
     });
@@ -56,7 +56,7 @@ export async function GET() {
 
     // Extract model IDs and sort them
     const models = data.data
-      .map((m) => m.id)
+      .map(m => m.id)
       .sort((a, b) => {
         // Sort by provider first, then by model name
         const [providerA] = a.split('/');
@@ -76,7 +76,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[OpenRouter Models API] Error fetching models:', error);
-    
+
     // Return cached data if available, even if expired
     if (cachedModels) {
       return NextResponse.json({
@@ -90,7 +90,7 @@ export async function GET() {
 
     // Return error if no cache available
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch OpenRouter models',
         message: error instanceof Error ? error.message : 'Unknown error',
       },

@@ -14,15 +14,9 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
 } from 'recharts';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -70,7 +64,7 @@ import {
   ShoppingCart,
   DollarSign,
   BarChart3,
-  Settings
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -107,14 +101,14 @@ const severityColors = {
   critical: 'bg-red-500',
   high: 'bg-orange-500',
   medium: 'bg-yellow-500',
-  low: 'bg-blue-500'
+  low: 'bg-blue-500',
 };
 
 const severityIcons = {
   critical: XCircle,
   high: AlertTriangle,
   medium: AlertCircle,
-  low: Info
+  low: Info,
 };
 
 const entityTypeIcons: Record<string, React.ElementType> = {
@@ -124,14 +118,14 @@ const entityTypeIcons: Record<string, React.ElementType> = {
   payment: DollarSign,
   inventory: Database,
   analytics: BarChart3,
-  system: Settings
+  system: Settings,
 };
 
 const chartColors = {
   critical: '#ef4444',
   high: '#f97316',
   medium: '#eab308',
-  low: '#3b82f6'
+  low: '#3b82f6',
 };
 
 export default function AnomalyDetector() {
@@ -146,7 +140,11 @@ export default function AnomalyDetector() {
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Fetch anomalies
-  const { data: anomaliesData, isLoading, refetch } = useQuery({
+  const {
+    data: anomaliesData,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['anomalies', severityFilter, entityTypeFilter, statusFilter, dateRange],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -158,7 +156,7 @@ export default function AnomalyDetector() {
       const response = await fetch(`/api/v1/ai/anomalies?${params}`);
       if (!response.ok) throw new Error('Failed to fetch anomalies');
       return response.json();
-    }
+    },
   });
 
   // Update anomaly status
@@ -167,7 +165,7 @@ export default function AnomalyDetector() {
       const response = await fetch(`/api/v1/ai/anomalies/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, investigation_notes: notes })
+        body: JSON.stringify({ status, investigation_notes: notes }),
       });
       if (!response.ok) throw new Error('Failed to update anomaly status');
       return response.json();
@@ -176,7 +174,7 @@ export default function AnomalyDetector() {
       queryClient.invalidateQueries({ queryKey: ['anomalies'] });
       toast({
         title: 'Success',
-        description: 'Anomaly status updated successfully'
+        description: 'Anomaly status updated successfully',
       });
       setShowDetailModal(false);
     },
@@ -184,16 +182,16 @@ export default function AnomalyDetector() {
       toast({
         title: 'Error',
         description: 'Failed to update anomaly status',
-        variant: 'destructive'
+        variant: 'destructive',
       });
-    }
+    },
   });
 
   // Dismiss anomaly
   const dismissMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/v1/ai/anomalies/${id}/dismiss`, {
-        method: 'POST'
+        method: 'POST',
       });
       if (!response.ok) throw new Error('Failed to dismiss anomaly');
       return response.json();
@@ -202,9 +200,9 @@ export default function AnomalyDetector() {
       queryClient.invalidateQueries({ queryKey: ['anomalies'] });
       toast({
         title: 'Success',
-        description: 'Anomaly dismissed'
+        description: 'Anomaly dismissed',
       });
-    }
+    },
   });
 
   // Filter anomalies based on search
@@ -212,7 +210,8 @@ export default function AnomalyDetector() {
     if (!anomaliesData?.anomalies) return [];
 
     return anomaliesData.anomalies.filter((anomaly: Anomaly) => {
-      const matchesSearch = searchTerm === '' ||
+      const matchesSearch =
+        searchTerm === '' ||
         anomaly.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         anomaly.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         anomaly.entity_id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -253,7 +252,7 @@ export default function AnomalyDetector() {
         trendData.push({
           date: format(date, 'MMM dd'),
           count: dayAnomalies.filter((a: Anomaly) => a.severity === severity).length,
-          severity
+          severity,
         });
       });
     }
@@ -265,7 +264,7 @@ export default function AnomalyDetector() {
       resolved,
       by_severity: bySeverity,
       by_type: byType,
-      trend_data: trendData
+      trend_data: trendData,
     };
   }, [anomaliesData]);
 
@@ -280,7 +279,7 @@ export default function AnomalyDetector() {
       updateStatusMutation.mutate({
         id: selectedAnomaly.id,
         status,
-        notes: investigationNotes
+        notes: investigationNotes,
       });
     }
   };
@@ -288,7 +287,10 @@ export default function AnomalyDetector() {
   const SeverityBadge = ({ severity }: { severity: string }) => {
     const Icon = severityIcons[severity as keyof typeof severityIcons] || Info;
     return (
-      <Badge variant="outline" className={cn('gap-1', severityColors[severity as keyof typeof severityColors])}>
+      <Badge
+        variant="outline"
+        className={cn('gap-1', severityColors[severity as keyof typeof severityColors])}
+      >
         <Icon className="h-3 w-3" />
         {severity.toUpperCase()}
       </Badge>
@@ -300,11 +302,14 @@ export default function AnomalyDetector() {
       active: 'bg-red-500',
       investigating: 'bg-yellow-500',
       resolved: 'bg-green-500',
-      ignored: 'bg-gray-500'
+      ignored: 'bg-gray-500',
     };
 
     return (
-      <Badge variant="outline" className={cn('capitalize', statusStyles[status as keyof typeof statusStyles])}>
+      <Badge
+        variant="outline"
+        className={cn('capitalize', statusStyles[status as keyof typeof statusStyles])}
+      >
         {status}
       </Badge>
     );
@@ -312,8 +317,8 @@ export default function AnomalyDetector() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-64 items-center justify-center">
+        <RefreshCw className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -321,13 +326,13 @@ export default function AnomalyDetector() {
   return (
     <div className="space-y-6">
       {/* Header Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Search anomalies..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -374,20 +379,20 @@ export default function AnomalyDetector() {
         </Select>
 
         <Button onClick={() => refetch()} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="mr-2 h-4 w-4" />
           Refresh
         </Button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Anomalies</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Last {dateRange}</p>
+            <p className="text-muted-foreground text-xs">Last {dateRange}</p>
           </CardContent>
         </Card>
 
@@ -397,8 +402,8 @@ export default function AnomalyDetector() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{stats?.active || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <AlertTriangle className="h-3 w-3 mr-1" />
+            <div className="text-muted-foreground flex items-center text-xs">
+              <AlertTriangle className="mr-1 h-3 w-3" />
               Requires attention
             </div>
           </CardContent>
@@ -410,8 +415,8 @@ export default function AnomalyDetector() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{stats?.investigating || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Clock className="h-3 w-3 mr-1" />
+            <div className="text-muted-foreground flex items-center text-xs">
+              <Clock className="mr-1 h-3 w-3" />
               In progress
             </div>
           </CardContent>
@@ -423,8 +428,8 @@ export default function AnomalyDetector() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats?.resolved || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <div className="text-muted-foreground flex items-center text-xs">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
               Completed
             </div>
           </CardContent>
@@ -432,7 +437,7 @@ export default function AnomalyDetector() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Timeline Chart */}
         <Card>
           <CardHeader>
@@ -477,7 +482,7 @@ export default function AnomalyDetector() {
                   data={Object.entries(stats?.by_severity || {}).map(([severity, count]) => ({
                     name: severity.toUpperCase(),
                     value: count,
-                    fill: chartColors[severity as keyof typeof chartColors]
+                    fill: chartColors[severity as keyof typeof chartColors],
                   }))}
                   cx="50%"
                   cy="50%"
@@ -488,7 +493,10 @@ export default function AnomalyDetector() {
                   dataKey="value"
                 >
                   {Object.entries(stats?.by_severity || {}).map(([severity], index) => (
-                    <Cell key={`cell-${index}`} fill={chartColors[severity as keyof typeof chartColors]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={chartColors[severity as keyof typeof chartColors]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -502,9 +510,7 @@ export default function AnomalyDetector() {
       <Card>
         <CardHeader>
           <CardTitle>Active Anomalies</CardTitle>
-          <CardDescription>
-            {filteredAnomalies.length} anomalies found
-          </CardDescription>
+          <CardDescription>{filteredAnomalies.length} anomalies found</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -523,7 +529,7 @@ export default function AnomalyDetector() {
             <TableBody>
               {filteredAnomalies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-muted-foreground text-center">
                     No anomalies found
                   </TableCell>
                 </TableRow>
@@ -537,15 +543,15 @@ export default function AnomalyDetector() {
                       </TableCell>
                       <TableCell>
                         <div className="max-w-[300px]">
-                          <div className="font-medium truncate">{anomaly.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
+                          <div className="truncate font-medium">{anomaly.title}</div>
+                          <div className="text-muted-foreground truncate text-xs">
                             {anomaly.description}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <EntityIcon className="h-4 w-4 text-muted-foreground" />
+                          <EntityIcon className="text-muted-foreground h-4 w-4" />
                           <span className="text-sm">{anomaly.entity_id}</span>
                         </div>
                       </TableCell>
@@ -601,7 +607,7 @@ export default function AnomalyDetector() {
 
       {/* Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Anomaly Investigation
@@ -627,7 +633,7 @@ export default function AnomalyDetector() {
 
               <div>
                 <Label>Description</Label>
-                <div className="text-sm text-muted-foreground mt-1">
+                <div className="text-muted-foreground mt-1 text-sm">
                   {selectedAnomaly.description}
                 </div>
               </div>
@@ -635,7 +641,7 @@ export default function AnomalyDetector() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Entity Type</Label>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="mt-1 flex items-center gap-2">
                     {(() => {
                       const Icon = entityTypeIcons[selectedAnomaly.entity_type] || Database;
                       return <Icon className="h-4 w-4" />;
@@ -658,9 +664,7 @@ export default function AnomalyDetector() {
                 </div>
                 <div>
                   <Label>Impact Score</Label>
-                  <div className="font-medium">
-                    {selectedAnomaly.impact_score.toFixed(2)}
-                  </div>
+                  <div className="font-medium">{selectedAnomaly.impact_score.toFixed(2)}</div>
                 </div>
                 <div>
                   <Label>Detected</Label>
@@ -673,7 +677,7 @@ export default function AnomalyDetector() {
               {selectedAnomaly.affected_metrics.length > 0 && (
                 <div>
                   <Label>Affected Metrics</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {selectedAnomaly.affected_metrics.map((metric, idx) => (
                       <Badge key={idx} variant="secondary">
                         {metric}
@@ -686,7 +690,7 @@ export default function AnomalyDetector() {
               {selectedAnomaly.suggested_actions.length > 0 && (
                 <div>
                   <Label>Suggested Actions</Label>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
+                  <ul className="text-muted-foreground mt-2 list-inside list-disc space-y-1 text-sm">
                     {selectedAnomaly.suggested_actions.map((action, idx) => (
                       <li key={idx}>{action}</li>
                     ))}
@@ -701,7 +705,7 @@ export default function AnomalyDetector() {
                 <Textarea
                   id="notes"
                   value={investigationNotes}
-                  onChange={(e) => setInvestigationNotes(e.target.value)}
+                  onChange={e => setInvestigationNotes(e.target.value)}
                   placeholder="Add investigation notes..."
                   className="mt-2"
                   rows={4}
@@ -715,26 +719,17 @@ export default function AnomalyDetector() {
               Cancel
             </Button>
             {selectedAnomaly?.status === 'active' && (
-              <Button
-                variant="default"
-                onClick={() => handleStatusUpdate('investigating')}
-              >
+              <Button variant="default" onClick={() => handleStatusUpdate('investigating')}>
                 Start Investigation
               </Button>
             )}
             {selectedAnomaly?.status === 'investigating' && (
-              <Button
-                variant="default"
-                onClick={() => handleStatusUpdate('resolved')}
-              >
+              <Button variant="default" onClick={() => handleStatusUpdate('resolved')}>
                 Mark Resolved
               </Button>
             )}
             {selectedAnomaly?.status !== 'ignored' && (
-              <Button
-                variant="destructive"
-                onClick={() => handleStatusUpdate('ignored')}
-              >
+              <Button variant="destructive" onClick={() => handleStatusUpdate('ignored')}>
                 Ignore
               </Button>
             )}

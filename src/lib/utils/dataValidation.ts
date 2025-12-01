@@ -25,7 +25,14 @@ export interface ValidatedActivityItem {
 // Alert item validation - Updated to match API structure
 export interface ValidatedAlertItem {
   id: string;
-  type: 'low_stock' | 'out_of_stock' | 'expiry_warning' | 'quality_issue' | 'performance_issue' | 'price_change' | 'delivery_delay';
+  type:
+    | 'low_stock'
+    | 'out_of_stock'
+    | 'expiry_warning'
+    | 'quality_issue'
+    | 'performance_issue'
+    | 'price_change'
+    | 'delivery_delay';
   severity: 'low' | 'medium' | 'high' | 'critical' | 'info' | 'warning' | 'error';
   title: string;
   message: string;
@@ -82,19 +89,26 @@ export function isValidAlertItem(item: unknown): item is ValidatedAlertItem {
   }
 
   // Basic required fields
-  const hasRequiredFields = (
+  const hasRequiredFields =
     typeof item.id === 'string' &&
     typeof item.title === 'string' &&
     typeof item.message === 'string' &&
-    safeParseDate(item.createdAt) !== null
-  );
+    safeParseDate(item.createdAt) !== null;
 
   if (!hasRequiredFields) {
     return false;
   }
 
   // Validate type (be more permissive)
-  const validTypes = ['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue', 'price_change', 'delivery_delay'];
+  const validTypes = [
+    'low_stock',
+    'out_of_stock',
+    'expiry_warning',
+    'quality_issue',
+    'performance_issue',
+    'price_change',
+    'delivery_delay',
+  ];
   const hasValidType = typeof item.type === 'string' && validTypes.includes(item.type);
 
   if (!hasValidType) {
@@ -103,16 +117,18 @@ export function isValidAlertItem(item: unknown): item is ValidatedAlertItem {
 
   // Validate severity (be more permissive)
   const validSeverities = ['low', 'medium', 'high', 'critical', 'info', 'warning', 'error'];
-  const hasValidSeverity = typeof item.severity === 'string' && validSeverities.includes(item.severity);
+  const hasValidSeverity =
+    typeof item.severity === 'string' && validSeverities.includes(item.severity);
 
   if (!hasValidSeverity) {
     return false;
   }
 
   // isRead can be boolean, string that can be converted to boolean, or missing (default to false)
-  const hasValidIsRead = item.isRead === undefined ||
-                         typeof item.isRead === 'boolean' ||
-                         (typeof item.isRead === 'string' && ['true', 'false'].includes(item.isRead.toLowerCase()));
+  const hasValidIsRead =
+    item.isRead === undefined ||
+    typeof item.isRead === 'boolean' ||
+    (typeof item.isRead === 'string' && ['true', 'false'].includes(item.isRead.toLowerCase()));
 
   if (!hasValidIsRead) {
     return false;
@@ -164,12 +180,18 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
   }
 
   const validated: ValidatedAlertItem[] = [];
-  const errors: Array<{index: number, item: unknown, error: string}> = [];
+  const errors: Array<{ index: number; item: unknown; error: string }> = [];
 
   items.forEach((item, index) => {
     try {
       if (isValidAlertItem(item)) {
-        const normalized = normalizeTimestamps(item, ['createdAt', 'updatedAt', 'acknowledgedAt', 'resolvedAt', 'snoozedUntil']);
+        const normalized = normalizeTimestamps(item, [
+          'createdAt',
+          'updatedAt',
+          'acknowledgedAt',
+          'resolvedAt',
+          'snoozedUntil',
+        ]);
 
         // Ensure isRead has a default value and is boolean
         const rawIsRead = (item as { isRead?: unknown }).isRead;
@@ -182,7 +204,7 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
 
         const alertItem: ValidatedAlertItem = {
           ...normalized,
-          isRead: normalizedIsRead
+          isRead: normalizedIsRead,
         } as ValidatedAlertItem;
 
         validated.push(alertItem);
@@ -195,7 +217,7 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
           // Detailed error logging for debugging (dev only)
           const missingFields = [];
           if (!item || typeof item !== 'object') {
-            errors.push({index, item, error: 'Item is not an object'});
+            errors.push({ index, item, error: 'Item is not an object' });
             if (process.env.NODE_ENV === 'development') {
               console.warn(`Invalid alert item at index ${index}: Not an object`);
             }
@@ -207,14 +229,24 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
           if (typeof item.message !== 'string') missingFields.push('message (string)');
           if (!safeParseDate(item.createdAt)) missingFields.push('createdAt (valid date)');
 
-          const validTypes = ['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue', 'price_change', 'delivery_delay'];
-          if (!validTypes.includes(item.type)) missingFields.push(`type (one of: ${validTypes.join(', ')})`);
+          const validTypes = [
+            'low_stock',
+            'out_of_stock',
+            'expiry_warning',
+            'quality_issue',
+            'performance_issue',
+            'price_change',
+            'delivery_delay',
+          ];
+          if (!validTypes.includes(item.type))
+            missingFields.push(`type (one of: ${validTypes.join(', ')})`);
 
           const validSeverities = ['low', 'medium', 'high', 'critical', 'info', 'warning', 'error'];
-          if (!validSeverities.includes(item.severity)) missingFields.push(`severity (one of: ${validSeverities.join(', ')})`);
+          if (!validSeverities.includes(item.severity))
+            missingFields.push(`severity (one of: ${validSeverities.join(', ')})`);
 
           const errorMsg = `Missing or invalid fields: ${missingFields.join(', ')}`;
-          errors.push({index, item, error: errorMsg});
+          errors.push({ index, item, error: errorMsg });
 
           if (process.env.NODE_ENV === 'development') {
             console.warn(`Invalid alert item at index ${index}: ${errorMsg}`);
@@ -223,7 +255,7 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      errors.push({index, item, error: errorMsg});
+      errors.push({ index, item, error: errorMsg });
       if (process.env.NODE_ENV === 'development') {
         console.error(`Error validating alert item at index ${index}:`, error);
       }
@@ -232,7 +264,9 @@ export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
 
   // Log summary only in development and only if there are errors
   if (errors.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn(`Alert validation: ${validated.length} valid, ${errors.length} invalid out of ${items.length} total`);
+    console.warn(
+      `Alert validation: ${validated.length} valid, ${errors.length} invalid out of ${items.length} total`
+    );
   }
 
   return validated;
@@ -263,11 +297,21 @@ function attemptFallbackValidation(item: unknown, index: number): ValidatedAlert
       createdAt: safeParseDate(item.createdAt || item.created_at || item.timestamp) || new Date(),
 
       // Copy all optional fields with proper type checking
-      status: ['active', 'acknowledged', 'resolved', 'snoozed'].includes(item.status) ? item.status : 'active',
-      priority: typeof item.priority === 'number' ? item.priority :
-                typeof item.priority === 'string' ? parseInt(item.priority) || undefined : undefined,
-      isActive: typeof item.isActive === 'boolean' ? item.isActive :
-                typeof item.isActive === 'string' ? item.isActive.toLowerCase() === 'true' : true,
+      status: ['active', 'acknowledged', 'resolved', 'snoozed'].includes(item.status)
+        ? item.status
+        : 'active',
+      priority:
+        typeof item.priority === 'number'
+          ? item.priority
+          : typeof item.priority === 'string'
+            ? parseInt(item.priority) || undefined
+            : undefined,
+      isActive:
+        typeof item.isActive === 'boolean'
+          ? item.isActive
+          : typeof item.isActive === 'string'
+            ? item.isActive.toLowerCase() === 'true'
+            : true,
 
       // Item-related fields
       itemId: typeof item.itemId === 'string' ? item.itemId : undefined,
@@ -275,10 +319,18 @@ function attemptFallbackValidation(item: unknown, index: number): ValidatedAlert
       itemSku: typeof item.itemSku === 'string' ? item.itemSku : undefined,
 
       // Numeric fields with proper null handling
-      currentValue: typeof item.currentValue === 'number' ? item.currentValue :
-                    typeof item.currentValue === 'string' ? parseFloat(item.currentValue) || null : null,
-      threshold: typeof item.threshold === 'number' ? item.threshold :
-                 typeof item.threshold === 'string' ? parseFloat(item.threshold) || null : null,
+      currentValue:
+        typeof item.currentValue === 'number'
+          ? item.currentValue
+          : typeof item.currentValue === 'string'
+            ? parseFloat(item.currentValue) || null
+            : null,
+      threshold:
+        typeof item.threshold === 'number'
+          ? item.threshold
+          : typeof item.threshold === 'string'
+            ? parseFloat(item.threshold) || null
+            : null,
 
       // String fields with null handling
       supplierName: typeof item.supplierName === 'string' ? item.supplierName : null,
@@ -297,17 +349,22 @@ function attemptFallbackValidation(item: unknown, index: number): ValidatedAlert
       escalationLevel: typeof item.escalationLevel === 'number' ? item.escalationLevel : 0,
 
       // Context ID fallback
-      contextId: item.contextId || item.itemId || item.id
+      contextId: item.contextId || item.itemId || item.id,
     };
 
     // Validate the repaired item
     if (isValidAlertItem(repaired)) {
-      const normalized = normalizeTimestamps(repaired, ['createdAt', 'updatedAt', 'acknowledgedAt', 'resolvedAt', 'snoozedUntil']);
+      const normalized = normalizeTimestamps(repaired, [
+        'createdAt',
+        'updatedAt',
+        'acknowledgedAt',
+        'resolvedAt',
+        'snoozedUntil',
+      ]);
       return normalized as ValidatedAlertItem;
     } else {
       return null;
     }
-
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(`Fallback validation error for alert ${index}:`, error);
@@ -319,7 +376,10 @@ function attemptFallbackValidation(item: unknown, index: number): ValidatedAlert
 /**
  * Validate API response structure
  */
-export function validateApiResponse<T>(response: unknown, expectedDataType: string): {
+export function validateApiResponse<T>(
+  response: unknown,
+  expectedDataType: string
+): {
   success: boolean;
   data: T | null;
   error?: string;
@@ -332,7 +392,7 @@ export function validateApiResponse<T>(response: unknown, expectedDataType: stri
     return {
       success: false,
       data: null,
-      error: response.error || 'API request failed'
+      error: response.error || 'API request failed',
     };
   }
 
@@ -340,7 +400,7 @@ export function validateApiResponse<T>(response: unknown, expectedDataType: stri
     return {
       success: false,
       data: null,
-      error: `No data in response for ${expectedDataType}`
+      error: `No data in response for ${expectedDataType}`,
     };
   }
 
@@ -350,11 +410,7 @@ export function validateApiResponse<T>(response: unknown, expectedDataType: stri
 /**
  * Safe property access with fallback
  */
-export function safeGet<T>(
-  obj: unknown,
-  path: string,
-  fallback: T
-): T {
+export function safeGet<T>(obj: unknown, path: string, fallback: T): T {
   try {
     const keys = path.split('.');
     let current = obj;
@@ -471,9 +527,12 @@ export function transformAlertItem(rawItem: unknown): unknown {
     ...rawItem,
 
     // Ensure isRead is boolean (API might have different field or string value)
-    isRead: typeof rawItem.isRead === 'boolean' ? rawItem.isRead :
-            typeof rawItem.isRead === 'string' ? rawItem.isRead.toLowerCase() === 'true' :
-            false, // default to false if undefined
+    isRead:
+      typeof rawItem.isRead === 'boolean'
+        ? rawItem.isRead
+        : typeof rawItem.isRead === 'string'
+          ? rawItem.isRead.toLowerCase() === 'true'
+          : false, // default to false if undefined
 
     // Map severity values if needed
     severity: mapSeverityValue(rawItem.severity),
@@ -489,7 +548,12 @@ export function transformAlertItem(rawItem: unknown): unknown {
     createdAt: rawItem.createdAt || rawItem.created_at || rawItem.timestamp || new Date(),
 
     // Transform updatedAt if present
-    updatedAt: rawItem.updatedAt || rawItem.updated_at || rawItem.modifiedAt || rawItem.createdAt || new Date(),
+    updatedAt:
+      rawItem.updatedAt ||
+      rawItem.updated_at ||
+      rawItem.modifiedAt ||
+      rawItem.createdAt ||
+      new Date(),
 
     // Add contextId if missing but we have itemId
     contextId: rawItem.contextId || rawItem.itemId || rawItem.id,
@@ -507,7 +571,7 @@ export function transformAlertItem(rawItem: unknown): unknown {
     resolvedBy: rawItem.resolvedBy || null,
     resolvedAt: rawItem.resolvedAt ? safeParseDate(rawItem.resolvedAt) : null,
     snoozedUntil: rawItem.snoozedUntil ? safeParseDate(rawItem.snoozedUntil) : null,
-    escalationLevel: typeof rawItem.escalationLevel === 'number' ? rawItem.escalationLevel : 0
+    escalationLevel: typeof rawItem.escalationLevel === 'number' ? rawItem.escalationLevel : 0,
   };
 
   return transformed;
@@ -526,22 +590,22 @@ function mapSeverityValue(severity: unknown): string {
   }
 
   const severityMap: Record<string, string> = {
-    'low': 'low',
-    'medium': 'medium',
-    'high': 'high',
-    'critical': 'critical',
-    'info': 'info',
-    'warning': 'warning',
-    'error': 'error',
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    critical: 'critical',
+    info: 'info',
+    warning: 'warning',
+    error: 'error',
     // Handle alternative naming
-    'warn': 'warning',
-    'err': 'error',
-    'crit': 'critical',
+    warn: 'warning',
+    err: 'error',
+    crit: 'critical',
     // Handle numeric severity levels
     '1': 'low',
     '2': 'medium',
     '3': 'high',
-    '4': 'critical'
+    '4': 'critical',
   };
 
   const mapped = severityMap[severity.toLowerCase()];
@@ -569,7 +633,9 @@ export function debugAlertStructure(alerts: unknown[], sampleSize: number = 3): 
     return;
   }
 
-  console.log(`Alert structure debug (showing ${Math.min(sampleSize, alerts.length)} of ${alerts.length} items):`);
+  console.log(
+    `Alert structure debug (showing ${Math.min(sampleSize, alerts.length)} of ${alerts.length} items):`
+  );
 
   alerts.slice(0, sampleSize).forEach((alert, index) => {
     const candidate =
@@ -581,19 +647,28 @@ export function debugAlertStructure(alerts: unknown[], sampleSize: number = 3): 
       hasId: typeof candidate.id === 'string',
       hasType:
         typeof candidate.type === 'string' &&
-        ['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue', 'price_change', 'delivery_delay'].includes(
-          candidate.type
-        ),
+        [
+          'low_stock',
+          'out_of_stock',
+          'expiry_warning',
+          'quality_issue',
+          'performance_issue',
+          'price_change',
+          'delivery_delay',
+        ].includes(candidate.type),
       hasSeverity:
         typeof candidate.severity === 'string' &&
-        ['low', 'medium', 'high', 'critical', 'info', 'warning', 'error'].includes(candidate.severity),
+        ['low', 'medium', 'high', 'critical', 'info', 'warning', 'error'].includes(
+          candidate.severity
+        ),
       hasTitle: typeof candidate.title === 'string',
       hasMessage: typeof candidate.message === 'string',
       hasValidCreatedAt: !!safeParseDate(candidate.createdAt),
       isReadValid:
         candidate.isRead === undefined ||
         typeof candidate.isRead === 'boolean' ||
-        (typeof candidate.isRead === 'string' && ['true', 'false'].includes(candidate.isRead.toLowerCase()))
+        (typeof candidate.isRead === 'string' &&
+          ['true', 'false'].includes(candidate.isRead.toLowerCase())),
     };
 
     console.log(`Alert ${index} (valid=${Object.values(validation).every(v => v)}):`, {
@@ -605,7 +680,7 @@ export function debugAlertStructure(alerts: unknown[], sampleSize: number = 3): 
         typeof candidate.message === 'string'
           ? `${candidate.message.substring(0, 50)}...`
           : candidate.message,
-      validation
+      validation,
     });
   });
 }

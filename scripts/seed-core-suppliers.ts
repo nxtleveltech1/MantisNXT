@@ -69,7 +69,7 @@ const suppliers: SupplierSeed[] = [
 async function seedSuppliers() {
   console.log('🌱 Seeding demo suppliers, products, and inventory (core schema)...');
 
-  await withTransaction(async (client) => {
+  await withTransaction(async client => {
     for (const supplier of suppliers) {
       console.log(`→ Upserting supplier ${supplier.name}`);
 
@@ -240,11 +240,10 @@ async function seedSuppliers() {
 if (require.main === module) {
   seedSuppliers()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Failed to seed suppliers:', error);
       process.exit(1);
     });
 }
 
 export { seedSuppliers };
-

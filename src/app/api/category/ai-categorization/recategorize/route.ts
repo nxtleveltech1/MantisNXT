@@ -5,13 +5,10 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { jobManager } from '@/lib/cmm/ai-categorization';
-import type {
-  RecategorizeRequest,
-  RecategorizeResponse,
-} from '@/lib/cmm/ai-categorization/types';
+import type { RecategorizeRequest, RecategorizeResponse } from '@/lib/cmm/ai-categorization/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,4 +64,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -3,7 +3,7 @@
  * Container that allows switching between multiple chart views
  */
 
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,14 +23,10 @@ export interface FlippableWidgetProps {
   className?: string;
 }
 
-export function FlippableWidget({
-  views,
-  defaultViewId,
-  className,
-}: FlippableWidgetProps) {
+export function FlippableWidget({ views, defaultViewId, className }: FlippableWidgetProps) {
   const [currentViewIndex, setCurrentViewIndex] = useState(() => {
     if (defaultViewId) {
-      const index = views.findIndex((v) => v.id === defaultViewId);
+      const index = views.findIndex(v => v.id === defaultViewId);
       return index >= 0 ? index : 0;
     }
     return 0;
@@ -38,18 +34,16 @@ export function FlippableWidget({
 
   const currentView = views[currentViewIndex];
   return (
-    <Card className={cn('bg-card border border-border rounded-xl shadow-sm', className)}>
+    <Card className={cn('bg-card border-border rounded-xl border shadow-sm', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold truncate">
-              {currentView.title}
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground truncate">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="truncate text-lg font-semibold">{currentView.title}</CardTitle>
+            <CardDescription className="text-muted-foreground truncate text-sm">
               {currentView.description}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 shrink-0 ml-4 flex-wrap justify-end">
+          <div className="ml-4 flex shrink-0 flex-wrap items-center justify-end gap-2">
             {views.map((view, index) => (
               <Button
                 key={view.id}

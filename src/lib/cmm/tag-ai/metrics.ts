@@ -20,4 +20,3 @@ export function mark(event: keyof typeof metrics): void {
     console.log(`[tag-ai:metrics] ${event} -> ${metrics[event]}`);
   }
 }
-

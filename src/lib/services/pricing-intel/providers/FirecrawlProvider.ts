@@ -1,19 +1,19 @@
-import crypto from 'node:crypto'
+import crypto from 'node:crypto';
 
-import { FirecrawlService } from '@/services/web-scraping/FirecrawlService'
-import { ProductDataParser } from '../parsers/ProductDataParser'
-import type { ScrapeRequest, ScrapeResult, ProviderHealth } from '../types'
-import type { ScrapingProvider } from './BaseScrapingProvider'
+import { FirecrawlService } from '@/services/web-scraping/FirecrawlService';
+import { ProductDataParser } from '../parsers/ProductDataParser';
+import type { ScrapeRequest, ScrapeResult, ProviderHealth } from '../types';
+import type { ScrapingProvider } from './BaseScrapingProvider';
 
 export class FirecrawlProvider implements ScrapingProvider {
-  readonly id = 'firecrawl' as const
-  readonly displayName = 'Firecrawl'
-  private client: FirecrawlService
-  private parser: ProductDataParser
+  readonly id = 'firecrawl' as const;
+  readonly displayName = 'Firecrawl';
+  private client: FirecrawlService;
+  private parser: ProductDataParser;
 
   constructor(client?: FirecrawlService) {
-    this.client = client ?? new FirecrawlService()
-    this.parser = new ProductDataParser()
+    this.client = client ?? new FirecrawlService();
+    this.parser = new ProductDataParser();
   }
 
   async health(): Promise<ProviderHealth> {
@@ -22,7 +22,7 @@ export class FirecrawlProvider implements ScrapingProvider {
       status: this.client.isConfigured() ? 'healthy' : 'unavailable',
       lastChecked: Date.now(),
       error: this.client.isConfigured() ? undefined : 'Missing FIRECRAWL_API_KEY',
-    }
+    };
   }
 
   async scrape(request: ScrapeRequest): Promise<ScrapeResult> {
@@ -31,11 +31,11 @@ export class FirecrawlProvider implements ScrapingProvider {
         success: false,
         products: [],
         errors: ['Firecrawl API key not configured'],
-      }
+      };
     }
 
-    const errors: string[] = []
-    const snapshots: ScrapeResult['products'] = []
+    const errors: string[] = [];
+    const snapshots: ScrapeResult['products'] = [];
 
     for (const match of request.products ?? []) {
       try {
@@ -45,20 +45,23 @@ export class FirecrawlProvider implements ScrapingProvider {
           timeout: request.options?.rateLimitMs
             ? Math.max(request.options.rateLimitMs, 5_000)
             : 30_000,
-        })
+        });
 
         if (!result.success || !result.data) {
           errors.push(
-            `Failed to scrape ${match.competitor_product_id}: ${result.error ?? 'Unknown error'}`,
-          )
-          continue
+            `Failed to scrape ${match.competitor_product_id}: ${result.error ?? 'Unknown error'}`
+          );
+          continue;
         }
 
         // Parse structured product data from HTML
-        const html = result.data.html || result.data.rawHtml || ''
+        const html = result.data.html || result.data.rawHtml || '';
         const parsedData = html
-          ? await this.parser.parseFromHTML(html, match.competitor_url ?? request.dataSource.endpoint_url)
-          : null
+          ? await this.parser.parseFromHTML(
+              html,
+              match.competitor_url ?? request.dataSource.endpoint_url
+            )
+          : null;
 
         snapshots.push({
           snapshot_id: crypto.randomUUID(),
@@ -97,19 +100,16 @@ export class FirecrawlProvider implements ScrapingProvider {
           market_share_estimate: null,
           elasticity_signals: {},
           raw_payload: result.data,
-          hash: crypto
-            .createHash('sha256')
-            .update(JSON.stringify(result.data))
-            .digest('hex'),
+          hash: crypto.createHash('sha256').update(JSON.stringify(result.data)).digest('hex'),
           is_anomaly: false,
           created_at: new Date(),
-        })
+        });
       } catch (error) {
         errors.push(
           `Firecrawl error for ${match.competitor_product_id}: ${
             error instanceof Error ? error.message : String(error)
-          }`,
-        )
+          }`
+        );
       }
     }
 
@@ -117,7 +117,6 @@ export class FirecrawlProvider implements ScrapingProvider {
       success: errors.length === 0,
       products: snapshots,
       errors,
-    }
+    };
   }
 }
-

@@ -1,5 +1,10 @@
 export { AIServiceBase } from './base';
-export type { AIServiceBaseOptions, AIServiceRequestOptions, AIServiceResponse, StreamingResult } from './base';
+export type {
+  AIServiceBaseOptions,
+  AIServiceRequestOptions,
+  AIServiceResponse,
+  StreamingResult,
+} from './base';
 export { AITextService } from './text';
 export type {
   AITextServiceOptions,
@@ -106,12 +111,7 @@ export type {
 
 // Alert Management Services
 export { AIAlertService } from './AIAlertService';
-export type {
-  AlertSeverity,
-  AIAlert,
-  CreateAlertData,
-  AlertStats,
-} from './AIAlertService';
+export type { AlertSeverity, AIAlert, CreateAlertData, AlertStats } from './AIAlertService';
 
 // Conversation Services
 export { AIConversationService } from './AIConversationService';
@@ -143,11 +143,7 @@ export type {
 
 // Cache Services
 export { MetricsCacheService } from './MetricsCacheService';
-export type {
-  TimePeriod,
-  CachedMetric,
-  CacheMetricData,
-} from './MetricsCacheService';
+export type { TimePeriod, CachedMetric, CacheMetricData } from './MetricsCacheService';
 
 // Specialized AI Services (Already exist, updated)
 export { DemandForecastingService } from './DemandForecastingService';
@@ -159,20 +155,10 @@ export type {
 } from './DemandForecastingService';
 
 export { AnomalyDetectionService } from './AnomalyDetectionService';
-export type {
-  Anomaly,
-  AnomalyDetectionConfig,
-} from './AnomalyDetectionService';
+export type { Anomaly, AnomalyDetectionConfig } from './AnomalyDetectionService';
 
 export { SupplierScoringService } from './SupplierScoringService';
-export type {
-  SupplierScore,
-  SupplierPerformanceData,
-} from './SupplierScoringService';
+export type { SupplierScore, SupplierPerformanceData } from './SupplierScoringService';
 
 export { AIAssistantService } from './AIAssistantService';
-export type {
-  AssistantContext,
-  AssistantMessage,
-  AssistantResponse,
-} from './AIAssistantService';
+export type { AssistantContext, AssistantMessage, AssistantResponse } from './AIAssistantService';

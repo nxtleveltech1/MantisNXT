@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { CustomerService } from '@/lib/services/CustomerService';
 
@@ -13,14 +13,14 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: tickets
+      data: tickets,
     });
   } catch (error: unknown) {
     console.error('Error in GET /api/v1/customers/[id]/tickets:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch customer tickets'
+        error: error.message || 'Failed to fetch customer tickets',
       },
       { status: 500 }
     );

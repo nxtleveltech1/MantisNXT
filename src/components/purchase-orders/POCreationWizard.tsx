@@ -1,23 +1,29 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Plus,
   Calendar as CalendarIcon,
@@ -25,34 +31,34 @@ import {
   Building2,
   CheckCircle,
   AlertTriangle,
-  X
-} from 'lucide-react'
-import { format } from 'date-fns'
-import { cn, formatCurrency } from '@/lib/utils'
+  X,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { cn, formatCurrency } from '@/lib/utils';
 
 interface POCreationWizardProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
 interface LineItem {
-  id: string
-  productCode: string
-  description: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  category: string
-  deliveryDate?: Date
-  specifications?: string
+  id: string;
+  productCode: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  category: string;
+  deliveryDate?: Date;
+  specifications?: string;
 }
 
 interface Supplier {
-  id: string
-  name: string
-  code: string
-  paymentTerms: string
-  currency: string
+  id: string;
+  name: string;
+  code: string;
+  paymentTerms: string;
+  currency: string;
 }
 
 const mockSuppliers: Supplier[] = [
@@ -61,19 +67,19 @@ const mockSuppliers: Supplier[] = [
     name: 'TechCorp Solutions',
     code: 'TECH001',
     paymentTerms: 'Net 30',
-    currency: 'USD'
+    currency: 'USD',
   },
   {
     id: '2',
     name: 'Global Manufacturing Inc.',
     code: 'GLOB002',
     paymentTerms: 'Net 45',
-    currency: 'EUR'
-  }
-]
+    currency: 'EUR',
+  },
+];
 
 const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) => {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     supplierId: '',
     department: '',
@@ -83,8 +89,8 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
     notes: '',
     paymentTerms: '',
     deliveryTerms: 'FOB Destination',
-    warrantyTerms: '1 Year Standard'
-  })
+    warrantyTerms: '1 Year Standard',
+  });
   const [lineItems, setLineItems] = useState<LineItem[]>([
     {
       id: '1',
@@ -93,34 +99,34 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      category: ''
-    }
-  ])
-  const [supplierSearch, setSupplierSearch] = useState('')
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
+      category: '',
+    },
+  ]);
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [budgetValidation, setBudgetValidation] = useState<{
-    status: 'valid' | 'warning' | 'error'
-    message: string
-    available: number
-    requested: number
-  } | null>(null)
+    status: 'valid' | 'warning' | 'error';
+    message: string;
+    available: number;
+    requested: number;
+  } | null>(null);
 
-  const totalAmount = lineItems.reduce((sum, item) => sum + item.totalPrice, 0)
-  const taxAmount = totalAmount * 0.1 // 10% tax
-  const finalTotal = totalAmount + taxAmount
+  const totalAmount = lineItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const taxAmount = totalAmount * 0.1; // 10% tax
+  const finalTotal = totalAmount + taxAmount;
 
-  const selectedSupplier = mockSuppliers.find(s => s.id === formData.supplierId)
+  const selectedSupplier = mockSuppliers.find(s => s.id === formData.supplierId);
 
   const steps = [
     { number: 1, title: 'Supplier & Basic Info', description: 'Select supplier and basic details' },
     { number: 2, title: 'Line Items', description: 'Add products and services' },
     { number: 3, title: 'Terms & Delivery', description: 'Set terms and delivery details' },
-    { number: 4, title: 'Review & Submit', description: 'Review and validate order' }
-  ]
+    { number: 4, title: 'Review & Submit', description: 'Review and validate order' },
+  ];
 
   const handleInputChange = (field: string, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const addLineItem = () => {
     const newItem: LineItem = {
@@ -130,112 +136,117 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      category: ''
-    }
-    setLineItems(prev => [...prev, newItem])
-  }
+      category: '',
+    };
+    setLineItems(prev => [...prev, newItem]);
+  };
 
   const removeLineItem = (id: string) => {
-    setLineItems(prev => prev.filter(item => item.id !== id))
-  }
+    setLineItems(prev => prev.filter(item => item.id !== id));
+  };
 
   const updateLineItem = (id: string, field: keyof LineItem, value: unknown) => {
-    setLineItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const updated = { ...item, [field]: value }
-        // Recalculate total price when quantity or unit price changes
-        if (field === 'quantity' || field === 'unitPrice') {
-          updated.totalPrice = updated.quantity * updated.unitPrice
+    setLineItems(prev =>
+      prev.map(item => {
+        if (item.id === id) {
+          const updated = { ...item, [field]: value };
+          // Recalculate total price when quantity or unit price changes
+          if (field === 'quantity' || field === 'unitPrice') {
+            updated.totalPrice = updated.quantity * updated.unitPrice;
+          }
+          return updated;
         }
-        return updated
-      }
-      return item
-    }))
-  }
+        return item;
+      })
+    );
+  };
 
   const validateStep = (step: number): boolean => {
-    const errors: string[] = []
+    const errors: string[] = [];
 
     switch (step) {
       case 1:
-        if (!formData.supplierId) errors.push('Supplier is required')
-        if (!formData.department) errors.push('Department is required')
-        break
+        if (!formData.supplierId) errors.push('Supplier is required');
+        if (!formData.department) errors.push('Department is required');
+        break;
       case 2:
-        if (lineItems.length === 0) errors.push('At least one line item is required')
+        if (lineItems.length === 0) errors.push('At least one line item is required');
         lineItems.forEach((item, index) => {
-          if (!item.description) errors.push(`Line item ${index + 1}: Description is required`)
-          if (item.quantity <= 0) errors.push(`Line item ${index + 1}: Quantity must be greater than 0`)
-          if (item.unitPrice <= 0) errors.push(`Line item ${index + 1}: Unit price must be greater than 0`)
-        })
-        break
+          if (!item.description) errors.push(`Line item ${index + 1}: Description is required`);
+          if (item.quantity <= 0)
+            errors.push(`Line item ${index + 1}: Quantity must be greater than 0`);
+          if (item.unitPrice <= 0)
+            errors.push(`Line item ${index + 1}: Unit price must be greater than 0`);
+        });
+        break;
       case 3:
-        if (!formData.paymentTerms) errors.push('Payment terms are required')
-        break
+        if (!formData.paymentTerms) errors.push('Payment terms are required');
+        break;
     }
 
-    setValidationErrors(errors)
-    return errors.length === 0
-  }
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
       if (currentStep === 2) {
         // Validate budget when moving from line items step
-        validateBudget()
+        validateBudget();
       }
-      setCurrentStep(prev => Math.min(prev + 1, 4))
+      setCurrentStep(prev => Math.min(prev + 1, 4));
     }
-  }
+  };
 
   const previousStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1))
-  }
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
 
   const validateBudget = () => {
     // Mock budget validation
-    const availableBudget = 50000
-    const requestedAmount = finalTotal
+    const availableBudget = 50000;
+    const requestedAmount = finalTotal;
 
     if (requestedAmount > availableBudget) {
       setBudgetValidation({
         status: 'error',
         message: 'Requested amount exceeds available budget',
         available: availableBudget,
-        requested: requestedAmount
-      })
+        requested: requestedAmount,
+      });
     } else if (requestedAmount > availableBudget * 0.8) {
       setBudgetValidation({
         status: 'warning',
         message: 'Requested amount is close to budget limit',
         available: availableBudget,
-        requested: requestedAmount
-      })
+        requested: requestedAmount,
+      });
     } else {
       setBudgetValidation({
         status: 'valid',
         message: 'Budget validation passed',
         available: availableBudget,
-        requested: requestedAmount
-      })
+        requested: requestedAmount,
+      });
     }
-  }
+  };
 
   const handleSubmit = () => {
     if (validateStep(4)) {
       // Mock submission
-      onClose()
+      onClose();
     }
-  }
+  };
 
-  const filteredSuppliers = mockSuppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(supplierSearch.toLowerCase()) ||
-    supplier.code.toLowerCase().includes(supplierSearch.toLowerCase())
-  )
+  const filteredSuppliers = mockSuppliers.filter(
+    supplier =>
+      supplier.name.toLowerCase().includes(supplierSearch.toLowerCase()) ||
+      supplier.code.toLowerCase().includes(supplierSearch.toLowerCase())
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Purchase Order</DialogTitle>
           <DialogDescription>
@@ -244,28 +255,24 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-6">
-          {steps.map((step) => (
+        <div className="mb-6 flex items-center justify-between">
+          {steps.map(step => (
             <div key={step.number} className="flex items-center">
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
                   step.number <= currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                 )}
               >
-                {step.number < currentStep ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  step.number
-                )}
+                {step.number < currentStep ? <CheckCircle className="h-4 w-4" /> : step.number}
               </div>
               {step.number < steps.length && (
                 <div
                   className={cn(
-                    "w-16 h-0.5 mx-2",
-                    step.number < currentStep ? "bg-primary" : "bg-muted"
+                    'mx-2 h-0.5 w-16',
+                    step.number < currentStep ? 'bg-primary' : 'bg-muted'
                   )}
                 />
               )}
@@ -278,33 +285,33 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Supplier & Basic Information</h3>
+                <h3 className="mb-4 text-lg font-semibold">Supplier & Basic Information</h3>
 
                 {/* Supplier Selection */}
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="supplier-search">Search Suppliers</Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Search className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
                       <Input
                         id="supplier-search"
                         placeholder="Search by name or code..."
                         value={supplierSearch}
-                        onChange={(e) => setSupplierSearch(e.target.value)}
+                        onChange={e => setSupplierSearch(e.target.value)}
                         className="pl-10"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredSuppliers.map((supplier) => (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {filteredSuppliers.map(supplier => (
                       <Card
                         key={supplier.id}
                         className={cn(
-                          "cursor-pointer transition-colors",
+                          'cursor-pointer transition-colors',
                           formData.supplierId === supplier.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:bg-muted/50"
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted/50'
                         )}
                         onClick={() => handleInputChange('supplierId', supplier.id)}
                       >
@@ -312,13 +319,13 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                           <div className="flex items-start justify-between">
                             <div>
                               <h4 className="font-medium">{supplier.name}</h4>
-                              <p className="text-sm text-muted-foreground">{supplier.code}</p>
-                              <div className="flex items-center gap-2 mt-2">
+                              <p className="text-muted-foreground text-sm">{supplier.code}</p>
+                              <div className="mt-2 flex items-center gap-2">
                                 <Badge variant="secondary">{supplier.paymentTerms}</Badge>
                                 <Badge variant="outline">{supplier.currency}</Badge>
                               </div>
                             </div>
-                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                            <Building2 className="text-muted-foreground h-5 w-5" />
                           </div>
                         </CardContent>
                       </Card>
@@ -329,12 +336,12 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                 <Separator />
 
                 {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <Label htmlFor="department">Department</Label>
                     <Select
                       value={formData.department}
-                      onValueChange={(value) => handleInputChange('department', value)}
+                      onValueChange={value => handleInputChange('department', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select department" />
@@ -353,7 +360,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                     <Label htmlFor="priority">Priority</Label>
                     <Select
                       value={formData.priority}
-                      onValueChange={(value) => handleInputChange('priority', value)}
+                      onValueChange={value => handleInputChange('priority', value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -373,7 +380,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                       id="budget-code"
                       placeholder="e.g., BUDGET-2024-001"
                       value={formData.budgetCode}
-                      onChange={(e) => handleInputChange('budgetCode', e.target.value)}
+                      onChange={e => handleInputChange('budgetCode', e.target.value)}
                     />
                   </div>
 
@@ -393,7 +400,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                         <Calendar
                           mode="single"
                           selected={formData.requestedDeliveryDate}
-                          onSelect={(date) => handleInputChange('requestedDeliveryDate', date)}
+                          onSelect={date => handleInputChange('requestedDeliveryDate', date)}
                           initialFocus
                         />
                       </PopoverContent>
@@ -407,7 +414,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                     id="notes"
                     placeholder="Additional notes or special instructions..."
                     value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    onChange={e => handleInputChange('notes', e.target.value)}
                   />
                 </div>
               </div>
@@ -419,7 +426,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Line Items</h3>
                 <Button onClick={addLineItem} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Item
                 </Button>
               </div>
@@ -431,31 +438,27 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm">Item {index + 1}</CardTitle>
                         {lineItems.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeLineItem(item.id)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => removeLineItem(item.id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <Label>Product Code</Label>
                           <Input
                             placeholder="e.g., LAPTOP-001"
                             value={item.productCode}
-                            onChange={(e) => updateLineItem(item.id, 'productCode', e.target.value)}
+                            onChange={e => updateLineItem(item.id, 'productCode', e.target.value)}
                           />
                         </div>
                         <div>
                           <Label>Category</Label>
                           <Select
                             value={item.category}
-                            onValueChange={(value) => updateLineItem(item.id, 'category', value)}
+                            onValueChange={value => updateLineItem(item.id, 'category', value)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select category" />
@@ -476,18 +479,20 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                         <Textarea
                           placeholder="Detailed description of the item..."
                           value={item.description}
-                          onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                          onChange={e => updateLineItem(item.id, 'description', e.target.value)}
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
                           <Label>Quantity</Label>
                           <Input
                             type="number"
                             min="1"
                             value={item.quantity}
-                            onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                            onChange={e =>
+                              updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)
+                            }
                           />
                         </div>
                         <div>
@@ -497,7 +502,9 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                             min="0"
                             step="0.01"
                             value={item.unitPrice}
-                            onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            onChange={e =>
+                              updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)
+                            }
                           />
                         </div>
                         <div>
@@ -515,7 +522,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                         <Textarea
                           placeholder="Technical specifications or requirements..."
                           value={item.specifications || ''}
-                          onChange={(e) => updateLineItem(item.id, 'specifications', e.target.value)}
+                          onChange={e => updateLineItem(item.id, 'specifications', e.target.value)}
                         />
                       </div>
                     </CardContent>
@@ -553,14 +560,14 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Terms & Delivery</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                   <h4 className="font-medium">Payment Terms</h4>
                   <div>
                     <Label>Payment Terms</Label>
                     <Select
                       value={formData.paymentTerms}
-                      onValueChange={(value) => handleInputChange('paymentTerms', value)}
+                      onValueChange={value => handleInputChange('paymentTerms', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select payment terms" />
@@ -583,7 +590,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                     <Label>Delivery Terms</Label>
                     <Select
                       value={formData.deliveryTerms}
-                      onValueChange={(value) => handleInputChange('deliveryTerms', value)}
+                      onValueChange={value => handleInputChange('deliveryTerms', value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -604,7 +611,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                 <Label>Warranty Terms</Label>
                 <Select
                   value={formData.warrantyTerms}
-                  onValueChange={(value) => handleInputChange('warrantyTerms', value)}
+                  onValueChange={value => handleInputChange('warrantyTerms', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -628,12 +635,14 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
 
               {/* Budget Validation */}
               {budgetValidation && (
-                <Card className={cn(
-                  "border-l-4",
-                  budgetValidation.status === 'valid' && "border-l-green-500",
-                  budgetValidation.status === 'warning' && "border-l-yellow-500",
-                  budgetValidation.status === 'error' && "border-l-red-500"
-                )}>
+                <Card
+                  className={cn(
+                    'border-l-4',
+                    budgetValidation.status === 'valid' && 'border-l-green-500',
+                    budgetValidation.status === 'warning' && 'border-l-yellow-500',
+                    budgetValidation.status === 'error' && 'border-l-red-500'
+                  )}
+                >
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2">
                       {budgetValidation.status === 'valid' && (
@@ -647,9 +656,9 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                       )}
                       <div>
                         <p className="font-medium">{budgetValidation.message}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Available: {formatCurrency(budgetValidation.available)} |
-                          Requested: {formatCurrency(budgetValidation.requested)}
+                        <p className="text-muted-foreground text-sm">
+                          Available: {formatCurrency(budgetValidation.available)} | Requested:{' '}
+                          {formatCurrency(budgetValidation.requested)}
                         </p>
                       </div>
                     </div>
@@ -658,7 +667,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
               )}
 
               {/* Order Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Supplier Information</CardTitle>
@@ -666,10 +675,18 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                   <CardContent>
                     {selectedSupplier && (
                       <div className="space-y-2">
-                        <p><strong>Name:</strong> {selectedSupplier.name}</p>
-                        <p><strong>Code:</strong> {selectedSupplier.code}</p>
-                        <p><strong>Payment Terms:</strong> {selectedSupplier.paymentTerms}</p>
-                        <p><strong>Currency:</strong> {selectedSupplier.currency}</p>
+                        <p>
+                          <strong>Name:</strong> {selectedSupplier.name}
+                        </p>
+                        <p>
+                          <strong>Code:</strong> {selectedSupplier.code}
+                        </p>
+                        <p>
+                          <strong>Payment Terms:</strong> {selectedSupplier.paymentTerms}
+                        </p>
+                        <p>
+                          <strong>Currency:</strong> {selectedSupplier.currency}
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -681,11 +698,22 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <p><strong>Department:</strong> {formData.department}</p>
-                      <p><strong>Priority:</strong> {formData.priority}</p>
-                      <p><strong>Delivery Date:</strong> {format(formData.requestedDeliveryDate, 'PPP')}</p>
-                      <p><strong>Items:</strong> {lineItems.length}</p>
-                      <p><strong>Total:</strong> {formatCurrency(finalTotal)}</p>
+                      <p>
+                        <strong>Department:</strong> {formData.department}
+                      </p>
+                      <p>
+                        <strong>Priority:</strong> {formData.priority}
+                      </p>
+                      <p>
+                        <strong>Delivery Date:</strong>{' '}
+                        {format(formData.requestedDeliveryDate, 'PPP')}
+                      </p>
+                      <p>
+                        <strong>Items:</strong> {lineItems.length}
+                      </p>
+                      <p>
+                        <strong>Total:</strong> {formatCurrency(finalTotal)}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -699,16 +727,21 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
                 <CardContent>
                   <div className="space-y-2">
                     {lineItems.map((item, index) => (
-                      <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between border-b py-2 last:border-b-0"
+                      >
                         <div>
                           <p className="font-medium">{item.description || 'Unnamed Item'}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {item.quantity} × {formatCurrency(item.unitPrice)}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium">{formatCurrency(item.totalPrice)}</p>
-                          <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {item.category}
+                          </Badge>
                         </div>
                       </div>
                     ))}
@@ -724,10 +757,10 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
           <Card className="border-red-200 bg-red-50">
             <CardContent className="pt-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-red-500" />
                 <div>
                   <p className="font-medium text-red-800">Please fix the following errors:</p>
-                  <ul className="list-disc list-inside text-sm text-red-600 mt-1">
+                  <ul className="mt-1 list-inside list-disc text-sm text-red-600">
                     {validationErrors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -739,12 +772,8 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
         )}
 
         {/* Navigation */}
-        <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={previousStep}
-            disabled={currentStep === 1}
-          >
+        <div className="flex justify-between border-t pt-4">
+          <Button variant="outline" onClick={previousStep} disabled={currentStep === 1}>
             Previous
           </Button>
           <div className="flex gap-2">
@@ -752,14 +781,9 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
               Cancel
             </Button>
             {currentStep < 4 ? (
-              <Button onClick={nextStep}>
-                Next
-              </Button>
+              <Button onClick={nextStep}>Next</Button>
             ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={budgetValidation?.status === 'error'}
-              >
+              <Button onClick={handleSubmit} disabled={budgetValidation?.status === 'error'}>
                 Create Purchase Order
               </Button>
             )}
@@ -767,7 +791,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default POCreationWizard
+export default POCreationWizard;

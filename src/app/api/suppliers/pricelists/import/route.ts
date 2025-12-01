@@ -1,14 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
-import type {
-  PriceListUpload,
-  ImportSummary,
-  PriceHistoryEntry
-} from '@/types/pricelist-upload';
-
-
+import type { PriceListUpload, ImportSummary, PriceHistoryEntry } from '@/types/pricelist-upload';
 
 /**
  * POST /api/suppliers/pricelists/import - Execute bulk import from validated upload
@@ -18,19 +12,13 @@ export async function POST(request: NextRequest) {
     const { uploadId, dryRun = false } = await request.json();
 
     if (!uploadId) {
-      return NextResponse.json(
-        { error: 'Upload ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Upload ID is required' }, { status: 400 });
     }
 
     // Get upload record
     const upload = await getUploadRecord(uploadId);
     if (!upload) {
-      return NextResponse.json(
-        { error: 'Upload not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Upload not found' }, { status: 404 });
     }
 
     if (upload.status !== 'validated') {
@@ -47,22 +35,21 @@ export async function POST(request: NextRequest) {
       // Update upload status
       await updateUploadStatus(uploadId, {
         status: 'imported',
-        importedRows: importResult.rowsImported
+        importedRows: importResult.rowsImported,
       });
     }
 
     return NextResponse.json({
       success: true,
       data: importResult,
-      message: dryRun ? 'Dry run completed' : 'Import completed successfully'
+      message: dryRun ? 'Dry run completed' : 'Import completed successfully',
     });
-
   } catch (error) {
     console.error('Import error:', error);
     return NextResponse.json(
       {
         error: 'Import failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -79,7 +66,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let whereClause = 'WHERE status IN (\'imported\', \'failed\')';
+    let whereClause = "WHERE status IN ('imported', 'failed')";
     const params: Array<number | string> = [limit, offset];
 
     if (supplierId) {
@@ -87,8 +74,9 @@ export async function GET(request: NextRequest) {
       params.push(supplierId);
     }
 
-    const imports = await withTransaction(async (client) => {
-      const result = await client.query(`
+    const imports = await withTransaction(async client => {
+      const result = await client.query(
+        `
         SELECT
           id,
           supplier_id,
@@ -106,7 +94,9 @@ export async function GET(request: NextRequest) {
         ${whereClause}
         ORDER BY uploaded_at DESC
         LIMIT $1 OFFSET $2
-      `, params);
+      `,
+        params
+      );
 
       return result.rows;
     });
@@ -123,27 +113,26 @@ export async function GET(request: NextRequest) {
       importedRows: row.imported_rows,
       processingDuration: row.processing_duration,
       uploadedAt: row.uploaded_at,
-      completedAt: row.processing_completed_at
+      completedAt: row.processing_completed_at,
     }));
 
     return NextResponse.json({
       success: true,
-      data: importHistory
+      data: importHistory,
     });
-
   } catch (error) {
     console.error('Error fetching import history:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch import history' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch import history' }, { status: 500 });
   }
 }
 
 /**
  * Execute the actual import process
  */
-async function executeImport(upload: PriceListUpload, dryRun: boolean = false): Promise<ImportSummary> {
+async function executeImport(
+  upload: PriceListUpload,
+  dryRun: boolean = false
+): Promise<ImportSummary> {
   const startTime = Date.now();
   let rowsProcessed = 0;
   let rowsImported = 0;
@@ -158,7 +147,7 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
   let maxPrice = -Infinity;
 
   try {
-    return await withTransaction(async (client) => {
+    return await withTransaction(async client => {
       // Process each valid row from preview data
       for (const previewRow of upload.previewData || []) {
         if (previewRow.validationStatus === 'valid') {
@@ -167,15 +156,23 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
 
           try {
             // Check if product already exists
-            const existingProduct = await client.query(`
+            const existingProduct = await client.query(
+              `
               SELECT id, unit_price FROM supplier_products
               WHERE supplier_id = $1 AND supplier_part_number = $2
-            `, [upload.supplierId, mappedData.supplierPartNumber]);
+            `,
+              [upload.supplierId, mappedData.supplierPartNumber]
+            );
 
             if (!dryRun) {
               if (existingProduct.rows.length > 0) {
                 // Update existing product
-                await updateSupplierProduct(client, existingProduct.rows[0].id, mappedData, upload.id);
+                await updateSupplierProduct(
+                  client,
+                  existingProduct.rows[0].id,
+                  mappedData,
+                  upload.id
+                );
                 productsUpdated++;
 
                 // Add to price history if price changed
@@ -186,7 +183,7 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
                     currency: mappedData.currency || 'USD',
                     effectiveDate: new Date(),
                     source: 'import',
-                    changeReason: `Price updated via bulk import: ${upload.originalFileName}`
+                    changeReason: `Price updated via bulk import: ${upload.originalFileName}`,
                   });
                 }
               } else {
@@ -201,7 +198,7 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
                     currency: mappedData.currency || 'USD',
                     effectiveDate: new Date(),
                     source: 'import',
-                    changeReason: 'Initial price from import'
+                    changeReason: 'Initial price from import',
                   });
                 }
               }
@@ -214,10 +211,13 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
                 );
 
                 if (categoryExists.rows.length === 0) {
-                  await client.query(`
+                  await client.query(
+                    `
                     INSERT INTO categories (id, name, created_at, updated_at)
                     VALUES (gen_random_uuid(), $1, NOW(), NOW())
-                  `, [mappedData.category]);
+                  `,
+                    [mappedData.category]
+                  );
                   categoriesCreated++;
                 }
               }
@@ -232,7 +232,6 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
               minPrice = Math.min(minPrice, mappedData.unitPrice);
               maxPrice = Math.max(maxPrice, mappedData.unitPrice);
             }
-
           } catch (error) {
             console.error(`Failed to import row ${previewRow.rowIndex}:`, error);
             rowsFailed++;
@@ -243,16 +242,14 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
       }
 
       // Calculate quality metrics
-      const dataQualityScore = Math.round(
-        (rowsImported / Math.max(1, rowsProcessed)) * 100
-      );
+      const dataQualityScore = Math.round((rowsImported / Math.max(1, rowsProcessed)) * 100);
 
       const completenessScore = Math.round(
-        ((upload.previewData?.filter(row =>
-          row.mappedData.productName &&
-          row.mappedData.category &&
-          row.mappedData.unitPrice
-        ).length || 0) / Math.max(1, upload.previewData?.length || 1)) * 100
+        ((upload.previewData?.filter(
+          row => row.mappedData.productName && row.mappedData.category && row.mappedData.unitPrice
+        ).length || 0) /
+          Math.max(1, upload.previewData?.length || 1)) *
+          100
       );
 
       // Generate recommendations
@@ -267,7 +264,9 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
         recommendations.push('Many products lack complete information (name, category, price)');
       }
       if (categoriesCreated > 5) {
-        recommendations.push(`${categoriesCreated} new categories created - consider standardizing category names`);
+        recommendations.push(
+          `${categoriesCreated} new categories created - consider standardizing category names`
+        );
       }
 
       const summary: ImportSummary = {
@@ -288,17 +287,16 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
         averagePrice: totalValue / Math.max(1, rowsImported),
         priceRange: {
           min: minPrice === Infinity ? 0 : minPrice,
-          max: maxPrice === -Infinity ? 0 : maxPrice
+          max: maxPrice === -Infinity ? 0 : maxPrice,
         },
         dataQualityScore,
         completenessScore,
         recommendations,
-        completedAt: new Date()
+        completedAt: new Date(),
       };
 
       return summary;
     });
-
   } catch (error) {
     console.error('Import execution failed:', error);
     throw error;
@@ -315,7 +313,8 @@ async function createSupplierProduct(
 ): Promise<string> {
   const productId = randomUUID();
 
-  await client.query(`
+  await client.query(
+    `
     INSERT INTO supplier_products (
       id,
       supplier_id,
@@ -347,30 +346,32 @@ async function createSupplierProduct(
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
       $16, $17, $18, $19, $20, $21, $22, NOW(), NOW(), NOW(), NOW()
     )
-  `, [
-    productId,
-    upload.supplierId,
-    data.supplierPartNumber,
-    data.sku,
-    data.productName,
-    data.description,
-    data.category,
-    data.subcategory,
-    data.brand,
-    data.unitPrice,
-    data.listPrice,
-    data.wholesalePrice,
-    data.retailPrice,
-    data.currency || 'USD',
-    data.availability || 'available',
-    data.minimumOrderQuantity,
-    data.leadTime,
-    data.unit,
-    data.weight,
-    data.barcode,
-    'active',
-    upload.id
-  ]);
+  `,
+    [
+      productId,
+      upload.supplierId,
+      data.supplierPartNumber,
+      data.sku,
+      data.productName,
+      data.description,
+      data.category,
+      data.subcategory,
+      data.brand,
+      data.unitPrice,
+      data.listPrice,
+      data.wholesalePrice,
+      data.retailPrice,
+      data.currency || 'USD',
+      data.availability || 'available',
+      data.minimumOrderQuantity,
+      data.leadTime,
+      data.unit,
+      data.weight,
+      data.barcode,
+      'active',
+      upload.id,
+    ]
+  );
 
   return productId;
 }
@@ -384,7 +385,8 @@ async function updateSupplierProduct(
   data: unknown,
   importSource: string
 ): Promise<void> {
-  await client.query(`
+  await client.query(
+    `
     UPDATE supplier_products SET
       name = COALESCE($2, name),
       description = COALESCE($3, description),
@@ -407,26 +409,28 @@ async function updateSupplierProduct(
       last_imported_at = NOW(),
       last_price_update = CASE WHEN $7 IS NOT NULL THEN NOW() ELSE last_price_update END
     WHERE id = $1
-  `, [
-    productId,
-    data.productName,
-    data.description,
-    data.category,
-    data.subcategory,
-    data.brand,
-    data.unitPrice,
-    data.listPrice,
-    data.wholesalePrice,
-    data.retailPrice,
-    data.currency,
-    data.availability,
-    data.minimumOrderQuantity,
-    data.leadTime,
-    data.unit,
-    data.weight,
-    data.barcode,
-    importSource
-  ]);
+  `,
+    [
+      productId,
+      data.productName,
+      data.description,
+      data.category,
+      data.subcategory,
+      data.brand,
+      data.unitPrice,
+      data.listPrice,
+      data.wholesalePrice,
+      data.retailPrice,
+      data.currency,
+      data.availability,
+      data.minimumOrderQuantity,
+      data.leadTime,
+      data.unit,
+      data.weight,
+      data.barcode,
+      importSource,
+    ]
+  );
 }
 
 /**
@@ -437,7 +441,8 @@ async function addPriceHistoryEntry(
   productId: string,
   historyEntry: PriceHistoryEntry
 ): Promise<void> {
-  await client.query(`
+  await client.query(
+    `
     INSERT INTO supplier_product_price_history (
       id,
       product_id,
@@ -451,14 +456,16 @@ async function addPriceHistoryEntry(
       gen_random_uuid(),
       $1, $2, $3, $4, $5, $6, NOW()
     )
-  `, [
-    productId,
-    historyEntry.price,
-    historyEntry.currency,
-    historyEntry.effectiveDate,
-    historyEntry.source,
-    historyEntry.changeReason
-  ]);
+  `,
+    [
+      productId,
+      historyEntry.price,
+      historyEntry.currency,
+      historyEntry.effectiveDate,
+      historyEntry.source,
+      historyEntry.changeReason,
+    ]
+  );
 }
 
 /**
@@ -466,10 +473,13 @@ async function addPriceHistoryEntry(
  */
 async function getUploadRecord(uploadId: string): Promise<PriceListUpload | null> {
   try {
-    return await withTransaction(async (client) => {
-      const result = await client.query(`
+    return await withTransaction(async client => {
+      const result = await client.query(
+        `
         SELECT * FROM pricelist_uploads WHERE id = $1
-      `, [uploadId]);
+      `,
+        [uploadId]
+      );
 
       if (result.rows.length === 0) {
         return null;
@@ -503,7 +513,7 @@ async function getUploadRecord(uploadId: string): Promise<PriceListUpload | null
         updatedAt: row.updated_at,
         previewData: JSON.parse(row.preview_data || '[]'),
         importConfig: JSON.parse(row.import_config || '{}'),
-        notes: row.notes
+        notes: row.notes,
       };
     });
   } catch (error) {
@@ -533,11 +543,14 @@ async function updateUploadStatus(
   values.push(new Date());
   values.push(uploadId);
 
-  await withTransaction(async (client) => {
-    await client.query(`
+  await withTransaction(async client => {
+    await client.query(
+      `
       UPDATE pricelist_uploads
       SET ${updateFields.join(', ')}
       WHERE id = $${paramCount}
-    `, values);
+    `,
+      values
+    );
   });
 }

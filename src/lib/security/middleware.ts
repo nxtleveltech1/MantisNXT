@@ -43,10 +43,7 @@ export class SecurityMiddleware {
 
   constructor(config: SecurityConfig) {
     this.config = config;
-    this.rateLimiter = new RateLimiter(
-      config.rateLimitRequests,
-      config.rateLimitWindow
-    );
+    this.rateLimiter = new RateLimiter(config.rateLimitRequests, config.rateLimitWindow);
   }
 
   // Main security validation method
@@ -114,7 +111,7 @@ export class SecurityMiddleware {
       reason: blockedCheck?.reason || (riskScore >= 80 ? 'High risk score' : undefined),
       riskScore,
       requiresAdditionalAuth: riskScore > 60 && riskScore < 80,
-      blockedUntil: this.blockedIPs.get(context.ipAddress)
+      blockedUntil: this.blockedIPs.get(context.ipAddress),
     };
   }
 
@@ -126,7 +123,7 @@ export class SecurityMiddleware {
       return {
         passed: false,
         risk: 100,
-        reason: `IP blocked until ${blockedUntil.toISOString()}`
+        reason: `IP blocked until ${blockedUntil.toISOString()}`,
       };
     }
 
@@ -140,7 +137,7 @@ export class SecurityMiddleware {
       return {
         passed: false,
         risk: 80,
-        reason: 'Invalid IP address format'
+        reason: 'Invalid IP address format',
       };
     }
 
@@ -154,7 +151,7 @@ export class SecurityMiddleware {
         return {
           passed: false,
           risk: 90,
-          reason: 'IP address not whitelisted'
+          reason: 'IP address not whitelisted',
         };
       }
     }
@@ -165,7 +162,7 @@ export class SecurityMiddleware {
     return {
       passed: riskScore < 70,
       risk: riskScore,
-      reason: riskScore >= 70 ? 'High-risk IP address' : undefined
+      reason: riskScore >= 70 ? 'High-risk IP address' : undefined,
     };
   }
 
@@ -176,7 +173,7 @@ export class SecurityMiddleware {
     return {
       passed: allowed,
       risk: allowed ? 0 : 60,
-      reason: allowed ? undefined : 'Rate limit exceeded'
+      reason: allowed ? undefined : 'Rate limit exceeded',
     };
   }
 
@@ -186,7 +183,7 @@ export class SecurityMiddleware {
       return {
         passed: false,
         risk: 50,
-        reason: 'Missing or invalid user agent'
+        reason: 'Missing or invalid user agent',
       };
     }
 
@@ -199,7 +196,7 @@ export class SecurityMiddleware {
       /curl/i,
       /wget/i,
       /python/i,
-      /script/i
+      /script/i,
     ];
 
     const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(userAgent));
@@ -207,12 +204,16 @@ export class SecurityMiddleware {
     return {
       passed: !isSuspicious,
       risk: isSuspicious ? 40 : 5,
-      reason: isSuspicious ? 'Suspicious user agent detected' : undefined
+      reason: isSuspicious ? 'Suspicious user agent detected' : undefined,
     };
   }
 
   // Suspicious activity detection
-  private checkSuspiciousActivity(context: SecurityContext): { passed: boolean; risk: number; reason?: string } {
+  private checkSuspiciousActivity(context: SecurityContext): {
+    passed: boolean;
+    risk: number;
+    reason?: string;
+  } {
     const activityScore = this.suspiciousActivity.get(context.ipAddress) || 0;
 
     // Check for multiple failed login attempts
@@ -220,14 +221,14 @@ export class SecurityMiddleware {
       return {
         passed: false,
         risk: 70,
-        reason: 'Multiple suspicious activities detected'
+        reason: 'Multiple suspicious activities detected',
       };
     }
 
     return {
       passed: activityScore < 50,
       risk: Math.min(activityScore, 50),
-      reason: activityScore >= 50 ? 'Suspicious activity pattern' : undefined
+      reason: activityScore >= 50 ? 'Suspicious activity pattern' : undefined,
     };
   }
 
@@ -242,7 +243,7 @@ export class SecurityMiddleware {
     const sqlPatterns = [
       /('|(\\')|(;)|(\\;))/i,
       /(union|select|insert|delete|drop|create|alter)/i,
-      /(or\s+1=1|and\s+1=1)/i
+      /(or\s+1=1|and\s+1=1)/i,
     ];
 
     const requestData = JSON.stringify(request.body || '') + request.path;
@@ -253,13 +254,7 @@ export class SecurityMiddleware {
     }
 
     // Check for XSS patterns
-    const xssPatterns = [
-      /<script/i,
-      /javascript:/i,
-      /onload=/i,
-      /onerror=/i,
-      /<iframe/i
-    ];
+    const xssPatterns = [/<script/i, /javascript:/i, /onload=/i, /onerror=/i, /<iframe/i];
 
     const hasXSSPattern = xssPatterns.some(pattern => pattern.test(requestData));
 
@@ -276,7 +271,7 @@ export class SecurityMiddleware {
     const sensitivePatterns = [
       /\.(env|config|key|pem|p12)$/i,
       /(passwd|shadow|hosts|htaccess)/i,
-      /(database|backup|dump)/i
+      /(database|backup|dump)/i,
     ];
 
     const hasSensitivePattern = sensitivePatterns.some(pattern => pattern.test(request.path));
@@ -288,7 +283,7 @@ export class SecurityMiddleware {
     return {
       passed: riskScore < 60,
       risk: riskScore,
-      reason: riskScore >= 60 ? 'Malicious request pattern detected' : undefined
+      reason: riskScore >= 60 ? 'Malicious request pattern detected' : undefined,
     };
   }
 
@@ -298,43 +293,33 @@ export class SecurityMiddleware {
     context: SecurityContext
   ): { passed: boolean; risk: number; reason?: string } {
     // Define protected paths that require authentication
-    const protectedPaths = [
-      '/admin',
-      '/api',
-      '/dashboard',
-      '/settings',
-      '/profile'
-    ];
+    const protectedPaths = ['/admin', '/api', '/dashboard', '/settings', '/profile'];
 
-    const requiresAuth = protectedPaths.some(protectedPath =>
-      path.startsWith(protectedPath)
-    );
+    const requiresAuth = protectedPaths.some(protectedPath => path.startsWith(protectedPath));
 
     if (requiresAuth && !context.isAuthenticated) {
       return {
         passed: false,
         risk: 30,
-        reason: 'Authentication required for this resource'
+        reason: 'Authentication required for this resource',
       };
     }
 
     // Check for privilege escalation attempts
     const adminPaths = ['/admin', '/api/admin'];
-    const requiresAdmin = adminPaths.some(adminPath =>
-      path.startsWith(adminPath)
-    );
+    const requiresAdmin = adminPaths.some(adminPath => path.startsWith(adminPath));
 
     if (requiresAdmin && !context.permissions.includes('admin')) {
       return {
         passed: false,
         risk: 50,
-        reason: 'Insufficient permissions for this resource'
+        reason: 'Insufficient permissions for this resource',
       };
     }
 
     return {
       passed: true,
-      risk: 0
+      risk: 0,
     };
   }
 
@@ -343,12 +328,7 @@ export class SecurityMiddleware {
     let riskScore = 0;
 
     // Check for private/internal IPs (lower risk)
-    const privateRanges = [
-      '192.168.0.0/16',
-      '10.0.0.0/8',
-      '172.16.0.0/12',
-      '127.0.0.0/8'
-    ];
+    const privateRanges = ['192.168.0.0/16', '10.0.0.0/8', '172.16.0.0/12', '127.0.0.0/8'];
 
     const isPrivate = privateRanges.some(range => isIPInRange(ipAddress, range));
     if (isPrivate) {
@@ -361,7 +341,7 @@ export class SecurityMiddleware {
       '185.220.101.0/24',
       '199.87.154.0/24',
       // VPN/proxy ranges
-      '5.79.70.0/24'
+      '5.79.70.0/24',
     ];
 
     const isMalicious = maliciousRanges.some(range => isIPInRange(ipAddress, range));
@@ -426,7 +406,7 @@ export class SecurityMiddleware {
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self'",
-        "frame-ancestors 'none'"
+        "frame-ancestors 'none'",
       ].join('; '),
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': [
@@ -434,8 +414,8 @@ export class SecurityMiddleware {
         'microphone=()',
         'geolocation=()',
         'payment=()',
-        'usb=()'
-      ].join(', ')
+        'usb=()',
+      ].join(', '),
     };
   }
 
@@ -457,15 +437,16 @@ export class SecurityMiddleware {
     averageRiskScore: number;
   } {
     const suspiciousScores = Array.from(this.suspiciousActivity.values());
-    const averageRiskScore = suspiciousScores.length > 0
-      ? suspiciousScores.reduce((sum, score) => sum + score, 0) / suspiciousScores.length
-      : 0;
+    const averageRiskScore =
+      suspiciousScores.length > 0
+        ? suspiciousScores.reduce((sum, score) => sum + score, 0) / suspiciousScores.length
+        : 0;
 
     return {
       blockedIPs: this.blockedIPs.size,
       suspiciousActivities: this.suspiciousActivity.size,
       rateLimitHits: 0, // Would need to track this in RateLimiter
-      averageRiskScore
+      averageRiskScore,
     };
   }
 
@@ -486,9 +467,6 @@ export class SecurityMiddleware {
   clearSecurityState(): void {
     this.blockedIPs.clear();
     this.suspiciousActivity.clear();
-    this.rateLimiter = new RateLimiter(
-      this.config.rateLimitRequests,
-      this.config.rateLimitWindow
-    );
+    this.rateLimiter = new RateLimiter(this.config.rateLimitRequests, this.config.rateLimitWindow);
   }
 }

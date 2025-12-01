@@ -15,10 +15,9 @@ import type {
   LoyaltyProgramInsert,
   LoyaltyProgramUpdate,
   TierThresholds,
-  TierBenefits} from '@/types/loyalty';
-import {
-  LoyaltyError,
+  TierBenefits,
 } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 export class LoyaltyProgramService {
   /**
@@ -34,12 +33,7 @@ export class LoyaltyProgramService {
     } = {}
   ): Promise<{ data: LoyaltyProgram[]; count: number }> {
     try {
-      const {
-        activeOnly = false,
-        includeDefault = true,
-        limit = 50,
-        offset = 0,
-      } = options;
+      const { activeOnly = false, includeDefault = true, limit = 50, offset = 0 } = options;
 
       const conditions: string[] = ['org_id = $1'];
       const params: unknown[] = [orgId];
@@ -81,31 +75,21 @@ export class LoyaltyProgramService {
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
 
-      const result = await query<LoyaltyProgram>(sql, [
-        ...params,
-        limit,
-        offset,
-      ]);
+      const result = await query<LoyaltyProgram>(sql, [...params, limit, offset]);
 
       return { data: result.rows, count };
     } catch (error) {
       console.error('[LoyaltyProgramService] Error fetching programs:', error);
-      throw new LoyaltyError(
-        'Failed to fetch loyalty programs',
-        'FETCH_PROGRAMS_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch loyalty programs', 'FETCH_PROGRAMS_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get a single loyalty program by ID
    */
-  static async getProgramById(
-    programId: string,
-    orgId: string
-  ): Promise<LoyaltyProgram | null> {
+  static async getProgramById(programId: string, orgId: string): Promise<LoyaltyProgram | null> {
     try {
       const sql = `
         SELECT
@@ -129,21 +113,16 @@ export class LoyaltyProgramService {
       return result.rows[0] || null;
     } catch (error) {
       console.error('[LoyaltyProgramService] Error fetching program:', error);
-      throw new LoyaltyError(
-        'Failed to fetch loyalty program',
-        'FETCH_PROGRAM_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch loyalty program', 'FETCH_PROGRAM_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get the default loyalty program for an organization
    */
-  static async getDefaultProgram(
-    orgId: string
-  ): Promise<LoyaltyProgram | null> {
+  static async getDefaultProgram(orgId: string): Promise<LoyaltyProgram | null> {
     try {
       const sql = `
         SELECT
@@ -169,10 +148,7 @@ export class LoyaltyProgramService {
       const result = await query<LoyaltyProgram>(sql, [orgId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(
-        '[LoyaltyProgramService] Error fetching default program:',
-        error
-      );
+      console.error('[LoyaltyProgramService] Error fetching default program:', error);
       throw new LoyaltyError(
         'Failed to fetch default loyalty program',
         'FETCH_DEFAULT_PROGRAM_ERROR',
@@ -190,7 +166,7 @@ export class LoyaltyProgramService {
     program: LoyaltyProgramInsert
   ): Promise<LoyaltyProgram> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // If setting as default, unset other defaults
         if (program.is_default) {
           await client.query(
@@ -273,12 +249,9 @@ export class LoyaltyProgramService {
       });
     } catch (error) {
       console.error('[LoyaltyProgramService] Error creating program:', error);
-      throw new LoyaltyError(
-        'Failed to create loyalty program',
-        'CREATE_PROGRAM_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to create loyalty program', 'CREATE_PROGRAM_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -291,7 +264,7 @@ export class LoyaltyProgramService {
     updates: LoyaltyProgramUpdate
   ): Promise<LoyaltyProgram> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // If setting as default, unset other defaults
         if (updates.is_default === true) {
           await client.query(
@@ -353,11 +326,7 @@ export class LoyaltyProgramService {
         }
 
         if (setClauses.length === 0) {
-          throw new LoyaltyError(
-            'No fields to update',
-            'NO_UPDATES',
-            400
-          );
+          throw new LoyaltyError('No fields to update', 'NO_UPDATES', 400);
         }
 
         setClauses.push(`updated_at = NOW()`);
@@ -386,11 +355,7 @@ export class LoyaltyProgramService {
         const result = await client.query<LoyaltyProgram>(sql, values);
 
         if (result.rows.length === 0) {
-          throw new LoyaltyError(
-            'Loyalty program not found',
-            'PROGRAM_NOT_FOUND',
-            404
-          );
+          throw new LoyaltyError('Loyalty program not found', 'PROGRAM_NOT_FOUND', 404);
         }
 
         return result.rows[0];
@@ -398,12 +363,9 @@ export class LoyaltyProgramService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyProgramService] Error updating program:', error);
-      throw new LoyaltyError(
-        'Failed to update loyalty program',
-        'UPDATE_PROGRAM_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to update loyalty program', 'UPDATE_PROGRAM_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -416,17 +378,14 @@ export class LoyaltyProgramService {
     hardDelete: boolean = false
   ): Promise<void> {
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         // Check if program has active customers
         const customerCheck = await client.query(
           'SELECT COUNT(*) as count FROM customer_loyalty WHERE program_id = $1',
           [programId]
         );
 
-        const customerCount = parseInt(
-          customerCheck.rows[0]?.count || '0',
-          10
-        );
+        const customerCount = parseInt(customerCheck.rows[0]?.count || '0', 10);
 
         if (customerCount > 0 && hardDelete) {
           throw new LoyaltyError(
@@ -439,10 +398,10 @@ export class LoyaltyProgramService {
 
         if (hardDelete && customerCount === 0) {
           // Hard delete only if no customers
-          await client.query(
-            'DELETE FROM loyalty_program WHERE id = $1 AND org_id = $2',
-            [programId, orgId]
-          );
+          await client.query('DELETE FROM loyalty_program WHERE id = $1 AND org_id = $2', [
+            programId,
+            orgId,
+          ]);
         } else {
           // Soft delete by setting inactive
           const result = await client.query(
@@ -453,23 +412,16 @@ export class LoyaltyProgramService {
           );
 
           if (result.rowCount === 0) {
-            throw new LoyaltyError(
-              'Loyalty program not found',
-              'PROGRAM_NOT_FOUND',
-              404
-            );
+            throw new LoyaltyError('Loyalty program not found', 'PROGRAM_NOT_FOUND', 404);
           }
         }
       });
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyProgramService] Error deleting program:', error);
-      throw new LoyaltyError(
-        'Failed to delete loyalty program',
-        'DELETE_PROGRAM_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to delete loyalty program', 'DELETE_PROGRAM_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -493,11 +445,7 @@ export class LoyaltyProgramService {
       }>(sql, [programId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Loyalty program not found',
-          'PROGRAM_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Loyalty program not found', 'PROGRAM_NOT_FOUND', 404);
       }
 
       return {
@@ -506,16 +454,10 @@ export class LoyaltyProgramService {
       };
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyProgramService] Error fetching tier config:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch tier configuration',
-        'FETCH_TIER_CONFIG_ERROR',
-        500,
-        { error }
-      );
+      console.error('[LoyaltyProgramService] Error fetching tier config:', error);
+      throw new LoyaltyError('Failed to fetch tier configuration', 'FETCH_TIER_CONFIG_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -564,11 +506,7 @@ export class LoyaltyProgramService {
       }>(sql, values);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Loyalty program not found',
-          'PROGRAM_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Loyalty program not found', 'PROGRAM_NOT_FOUND', 404);
       }
 
       return {
@@ -577,10 +515,7 @@ export class LoyaltyProgramService {
       };
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyProgramService] Error updating tier config:',
-        error
-      );
+      console.error('[LoyaltyProgramService] Error updating tier config:', error);
       throw new LoyaltyError(
         'Failed to update tier configuration',
         'UPDATE_TIER_CONFIG_ERROR',
@@ -658,16 +593,10 @@ export class LoyaltyProgramService {
 
       return result.rows[0];
     } catch (error) {
-      console.error(
-        '[LoyaltyProgramService] Error fetching statistics:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch program statistics',
-        'FETCH_STATISTICS_ERROR',
-        500,
-        { error }
-      );
+      console.error('[LoyaltyProgramService] Error fetching statistics:', error);
+      throw new LoyaltyError('Failed to fetch program statistics', 'FETCH_STATISTICS_ERROR', 500, {
+        error,
+      });
     }
   }
 }

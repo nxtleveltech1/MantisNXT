@@ -7,7 +7,6 @@
  * Tracks hit rates, response times, and cache effectiveness.
  */
 
-
 /**
  * Performance metric entry
  */
@@ -76,32 +75,27 @@ export class CachePerformanceMonitor {
    */
   getStats(): CachePerformanceStats {
     const totalQueries = this.metrics.length;
-    const cacheHits = this.metrics.filter((m) => m.cacheHit).length;
+    const cacheHits = this.metrics.filter(m => m.cacheHit).length;
     const cacheMisses = totalQueries - cacheHits;
     const hitRate = totalQueries > 0 ? cacheHits / totalQueries : 0;
 
     const avgResponseTime =
-      totalQueries > 0
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / totalQueries
-        : 0;
+      totalQueries > 0 ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / totalQueries : 0;
 
-    const hitMetrics = this.metrics.filter((m) => m.cacheHit);
-    const missMetrics = this.metrics.filter((m) => !m.cacheHit);
+    const hitMetrics = this.metrics.filter(m => m.cacheHit);
+    const missMetrics = this.metrics.filter(m => !m.cacheHit);
 
     const avgCacheHitTime =
       hitMetrics.length > 0
-        ? hitMetrics.reduce((sum, m) => sum + m.duration, 0) /
-          hitMetrics.length
+        ? hitMetrics.reduce((sum, m) => sum + m.duration, 0) / hitMetrics.length
         : 0;
 
     const avgCacheMissTime =
       missMetrics.length > 0
-        ? missMetrics.reduce((sum, m) => sum + m.duration, 0) /
-          missMetrics.length
+        ? missMetrics.reduce((sum, m) => sum + m.duration, 0) / missMetrics.length
         : 0;
 
-    const improvementFactor =
-      avgCacheMissTime > 0 ? avgCacheMissTime / avgCacheHitTime : 1;
+    const improvementFactor = avgCacheMissTime > 0 ? avgCacheMissTime / avgCacheHitTime : 1;
 
     // Calculate per-query stats
     const queryStats = new Map<
@@ -116,7 +110,7 @@ export class CachePerformanceMonitor {
       }
     >();
 
-    this.metrics.forEach((metric) => {
+    this.metrics.forEach(metric => {
       const existing = queryStats.get(metric.queryKey) || {
         queries: 0,
         hits: 0,
@@ -138,19 +132,15 @@ export class CachePerformanceMonitor {
 
     // Calculate averages for each query
     queryStats.forEach((stats, key) => {
-      const queryMetrics = this.metrics.filter((m) => m.queryKey === key);
-      const hits = queryMetrics.filter((m) => m.cacheHit);
-      const misses = queryMetrics.filter((m) => !m.cacheHit);
+      const queryMetrics = this.metrics.filter(m => m.queryKey === key);
+      const hits = queryMetrics.filter(m => m.cacheHit);
+      const misses = queryMetrics.filter(m => !m.cacheHit);
 
       stats.avgHitTime =
-        hits.length > 0
-          ? hits.reduce((sum, m) => sum + m.duration, 0) / hits.length
-          : 0;
+        hits.length > 0 ? hits.reduce((sum, m) => sum + m.duration, 0) / hits.length : 0;
 
       stats.avgMissTime =
-        misses.length > 0
-          ? misses.reduce((sum, m) => sum + m.duration, 0) / misses.length
-          : 0;
+        misses.length > 0 ? misses.reduce((sum, m) => sum + m.duration, 0) / misses.length : 0;
 
       stats.hitRate = stats.queries > 0 ? stats.hits / stats.queries : 0;
     });

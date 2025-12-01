@@ -71,7 +71,9 @@ export class PreferenceStore extends EventEmitter {
       return preferences;
     } catch (error) {
       console.error('Error fetching user preferences:', error);
-      throw new Error(`Failed to get preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -90,7 +92,7 @@ export class PreferenceStore extends EventEmitter {
     }
 
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         // Get current preferences to track changes
         const currentPrefs = await this.getPreferences(userId, 'default-org'); // TODO: Pass orgId properly
 
@@ -139,7 +141,9 @@ export class PreferenceStore extends EventEmitter {
       });
     } catch (error) {
       console.error('Error setting preference:', error);
-      throw new Error(`Failed to set preference: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to set preference: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -156,7 +160,7 @@ export class PreferenceStore extends EventEmitter {
     }
 
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         // Get current preferences
         const currentPrefs = await this.getPreferences(userId, 'default-org');
 
@@ -215,7 +219,9 @@ export class PreferenceStore extends EventEmitter {
       });
     } catch (error) {
       console.error('Error setting preferences:', error);
-      throw new Error(`Failed to set preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to set preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -254,7 +260,7 @@ export class PreferenceStore extends EventEmitter {
     try {
       const defaults = await this.getDefaults(orgId);
 
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         await client.query(
           `UPDATE ai_user_preferences
            SET expertise_level = $1, response_style = $2, preferences = $3, updated_at = NOW()
@@ -276,7 +282,9 @@ export class PreferenceStore extends EventEmitter {
       });
     } catch (error) {
       console.error('Error resetting preferences:', error);
-      throw new Error(`Failed to reset preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to reset preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -285,17 +293,25 @@ export class PreferenceStore extends EventEmitter {
    */
   async exportPreferences(userId: string, orgId: string = 'default-org'): Promise<string> {
     const preferences = await this.getPreferences(userId, orgId);
-    return JSON.stringify({
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      preferences,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        preferences,
+      },
+      null,
+      2
+    );
   }
 
   /**
    * Import preferences from JSON export
    */
-  async importPreferences(userId: string, data: string, orgId: string = 'default-org'): Promise<void> {
+  async importPreferences(
+    userId: string,
+    data: string,
+    orgId: string = 'default-org'
+  ): Promise<void> {
     try {
       const importData = JSON.parse(data);
 
@@ -314,7 +330,9 @@ export class PreferenceStore extends EventEmitter {
       this.emit('preferencesImported', { userId, orgId, timestamp: new Date() });
     } catch (error) {
       console.error('Error importing preferences:', error);
-      throw new Error(`Failed to import preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to import preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -372,7 +390,9 @@ export class PreferenceStore extends EventEmitter {
       };
     } catch (error) {
       console.error('Error creating default preferences:', error);
-      throw new Error(`Failed to create default preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create default preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

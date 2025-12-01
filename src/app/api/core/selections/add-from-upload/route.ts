@@ -3,7 +3,7 @@
  * Adds all products from a given upload into a selection (status='selected').
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query as dbQuery } from '@/lib/database/unified-connection';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
@@ -58,11 +58,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < productIds.length; i += batchSize) {
       const batch = productIds.slice(i, i + batchSize);
       try {
-        const res = await inventorySelectionService.addProducts(
-          selectionId,
-          batch,
-          selectedBy
-        );
+        const res = await inventorySelectionService.addProducts(selectionId, batch, selectedBy);
         added += res.added;
         if (res.errors.length) errors.push(...res.errors);
       } catch (err) {
@@ -74,9 +70,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[API] add-from-upload error:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to add products from upload' },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add products from upload',
+      },
       { status: 500 }
     );
   }
 }
-

@@ -8,4 +8,3 @@ export { TagJobManager, tagJobManager } from './TagJobManager';
 export { TaggingEngine, taggingEngine } from './TaggingEngine';
 export { TagProgressTracker, tagProgressTracker } from './TagProgressTracker';
 export * from './types';
-

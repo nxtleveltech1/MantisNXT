@@ -61,4 +61,3 @@ describe('extractProviders', () => {
     expect(providers).toHaveLength(0);
   });
 });
-

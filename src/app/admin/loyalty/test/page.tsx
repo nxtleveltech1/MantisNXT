@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 export default function TestPage() {
   return (
@@ -6,5 +6,5 @@ export default function TestPage() {
       <h1 className="text-2xl font-bold">Test Page Works!</h1>
       <p>If you see this, routing is working correctly</p>
     </div>
-  )
+  );
 }

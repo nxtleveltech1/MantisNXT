@@ -23,9 +23,7 @@ function extractOrgId(request: NextRequest): string | null {
     try {
       // Simple JWT decode (without verification for middleware)
       const token = authHeader.substring(7);
-      const payload = JSON.parse(
-        Buffer.from(token.split('.')[1], 'base64').toString()
-      );
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
       if (payload.org_id) {
         return `org:${payload.org_id}`;
       }
@@ -41,40 +39,26 @@ function extractOrgId(request: NextRequest): string | null {
   }
 
   // Fall back to IP address
-  const ip = request.headers.get('x-forwarded-for') ||
-             request.headers.get('x-real-ip') ||
-             request.ip ||
-             'unknown';
+  const ip =
+    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown';
   return `ip:${ip}`;
 }
 
 /**
  * Create middleware for specific endpoints
  */
-export const uploadRateLimit = createRateLimitMiddleware(
-  RateLimitPreset.UPLOAD,
-  extractOrgId
-);
+export const uploadRateLimit = createRateLimitMiddleware(RateLimitPreset.UPLOAD, extractOrgId);
 
-export const extractRateLimit = createRateLimitMiddleware(
-  RateLimitPreset.EXTRACT,
-  extractOrgId
-);
+export const extractRateLimit = createRateLimitMiddleware(RateLimitPreset.EXTRACT, extractOrgId);
 
-export const previewRateLimit = createRateLimitMiddleware(
-  RateLimitPreset.PREVIEW,
-  extractOrgId
-);
+export const previewRateLimit = createRateLimitMiddleware(RateLimitPreset.PREVIEW, extractOrgId);
 
-export const importRateLimit = createRateLimitMiddleware(
-  RateLimitPreset.IMPORT,
-  extractOrgId
-);
+export const importRateLimit = createRateLimitMiddleware(RateLimitPreset.IMPORT, extractOrgId);
 
-export const apiRateLimit = createRateLimitMiddleware(
-  RateLimitPreset.API,
-  extractOrgId
-);
+export const apiRateLimit = createRateLimitMiddleware(RateLimitPreset.API, extractOrgId);
 
 /**
  * Apply rate limiting based on path

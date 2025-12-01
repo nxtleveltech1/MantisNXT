@@ -1,9 +1,19 @@
 // @ts-nocheck
 
-import { AIServiceBase, type AIServiceRequestOptions, type AIServiceResponse } from '@/lib/ai/services/base';
+import {
+  AIServiceBase,
+  type AIServiceRequestOptions,
+  type AIServiceResponse,
+} from '@/lib/ai/services/base';
 import type { EnrichedProduct } from '@/lib/cmm/sip-product-enrichment';
-import { enrichProductForCategorization, enrichProductsForCategorization } from '@/lib/cmm/sip-product-enrichment';
-import { suggestTagsBatch as suggestTagsBatchAI, enrichProductsBatch as enrichProductsBatchAI } from './tag-ai';
+import {
+  enrichProductForCategorization,
+  enrichProductsForCategorization,
+} from '@/lib/cmm/sip-product-enrichment';
+import {
+  suggestTagsBatch as suggestTagsBatchAI,
+  enrichProductsBatch as enrichProductsBatchAI,
+} from './tag-ai';
 import { listCoreTags } from './tag-service-core';
 import { query as dbQuery } from '@/lib/database/unified-connection';
 import type { TagSuggestion, ProductEnrichment } from './tag-ai/parser';
@@ -74,18 +84,13 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
         }));
 
         // Call AI service
-        const suggestions = await suggestTagsBatchAI(
-          enrichedProducts,
-          tagsList,
-          options?.orgId,
-          {
-            batchSize: options?.batchSize,
-            batchDelayMs: options?.batchDelayMs,
-            timeoutMs: options?.timeoutMs,
-            webResearchEnabled: options?.webResearchEnabled,
-            webResearchProvider: options?.webResearchProvider,
-          }
-        );
+        const suggestions = await suggestTagsBatchAI(enrichedProducts, tagsList, options?.orgId, {
+          batchSize: options?.batchSize,
+          batchDelayMs: options?.batchDelayMs,
+          timeoutMs: options?.timeoutMs,
+          webResearchEnabled: options?.webResearchEnabled,
+          webResearchProvider: options?.webResearchProvider,
+        });
 
         return suggestions;
       },
@@ -140,17 +145,12 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
         }));
 
         // Enrich via AI
-        const enrichments = await enrichProductsBatchAI(
-          [product],
-          tagsList,
-          options?.orgId,
-          {
-            batchSize: 1,
-            timeoutMs: options?.timeoutMs,
-            webResearchEnabled: options?.webResearchEnabled ?? true,
-            webResearchProvider: options?.webResearchProvider,
-          }
-        );
+        const enrichments = await enrichProductsBatchAI([product], tagsList, options?.orgId, {
+          batchSize: 1,
+          timeoutMs: options?.timeoutMs,
+          webResearchEnabled: options?.webResearchEnabled ?? true,
+          webResearchProvider: options?.webResearchProvider,
+        });
 
         const enrichment = enrichments.get(productId);
         if (!enrichment) {
@@ -158,7 +158,10 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
         }
 
         // Validate product name is not SKU
-        const correctedName = this.validateProductName(enrichment.product_name, product.supplier_sku);
+        const correctedName = this.validateProductName(
+          enrichment.product_name,
+          product.supplier_sku
+        );
 
         // Align descriptions
         const { shortDescription, fullDescription } = this.alignDescriptions(
@@ -298,15 +301,16 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
       // Short description exists, expand it for full
       return {
         shortDescription: shortDesc,
-        fullDescription: shortDesc.length < 100 ? `${shortDesc}. Additional details available upon request.` : shortDesc,
+        fullDescription:
+          shortDesc.length < 100
+            ? `${shortDesc}. Additional details available upon request.`
+            : shortDesc,
       };
     }
 
     if (fullDesc && !shortDesc) {
       // Full description exists, create short version
-      const short = fullDesc.length > 150
-        ? fullDesc.substring(0, 147) + '...'
-        : fullDesc;
+      const short = fullDesc.length > 150 ? fullDesc.substring(0, 147) + '...' : fullDesc;
       return {
         shortDescription: short,
         fullDescription: fullDesc,
@@ -317,7 +321,7 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
     if (shortDesc && fullDesc) {
       // If short is longer than 200 chars, truncate
       const trimmedShort = shortDesc.length > 200 ? shortDesc.substring(0, 197) + '...' : shortDesc;
-      
+
       // Ensure full description contains key information from short
       if (!fullDesc.toLowerCase().includes(trimmedShort.toLowerCase().substring(0, 20))) {
         // Prepend short to full if they're too different
@@ -392,14 +396,20 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
     // Update metadata in attrs_json
     if (enrichment.metadata) {
       const attrs = currentData.attrs_json || {};
-      attrs.metadata = { ...(attrs.metadata as Record<string, unknown> || {}), ...enrichment.metadata };
+      attrs.metadata = {
+        ...((attrs.metadata as Record<string, unknown>) || {}),
+        ...enrichment.metadata,
+      };
       if (!updates.some(u => u.includes('attrs_json'))) {
         updates.push(`attrs_json = $${paramIndex++}::jsonb`);
         params.push(JSON.stringify(attrs));
       } else {
         // Merge with existing attrs_json update
         const existingIndex = updates.findIndex(u => u.includes('attrs_json'));
-        const existingAttrs = JSON.parse(params[existingIndex] as string) as Record<string, unknown>;
+        const existingAttrs = JSON.parse(params[existingIndex] as string) as Record<
+          string,
+          unknown
+        >;
         Object.assign(existingAttrs, { metadata: attrs.metadata });
         params[existingIndex] = JSON.stringify(existingAttrs);
       }
@@ -447,7 +457,10 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
    */
   async validateTagSuggestions(
     suggestions: TagSuggestion[]
-  ): Promise<{ valid: TagSuggestion[]; invalid: Array<{ suggestion: TagSuggestion; reason: string }> }> {
+  ): Promise<{
+    valid: TagSuggestion[];
+    invalid: Array<{ suggestion: TagSuggestion; reason: string }>;
+  }> {
     const valid: TagSuggestion[] = [];
     const invalid: Array<{ suggestion: TagSuggestion; reason: string }> = [];
 
@@ -502,4 +515,3 @@ export class TagAIService extends AIServiceBase<TagSuggestionOptions> {
     return metadata;
   }
 }
-

@@ -15,7 +15,13 @@
     "cache:full-check": "node cache-monitor.js --validate --verbose && bash cache-recovery.sh --analyze"
   },
   "main": "cache-monitor.js",
-  "keywords": ["nextjs", "webpack", "cache", "monitoring", "recovery"],
+  "keywords": [
+    "nextjs",
+    "webpack",
+    "cache",
+    "monitoring",
+    "recovery"
+  ],
   "author": "MantisNXT Team",
   "license": "MIT",
   "dependencies": {},

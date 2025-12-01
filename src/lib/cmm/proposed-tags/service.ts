@@ -8,11 +8,7 @@ import type {
   ProposedTagRecord,
   RecordTagProposalResult,
 } from './types';
-import {
-  linkProposedTagToProduct,
-  normalizeTagLabel,
-  upsertProposedTag,
-} from './repository';
+import { linkProposedTagToProduct, normalizeTagLabel, upsertProposedTag } from './repository';
 
 export interface RecordTagProposalParams {
   supplierProductId: string;
@@ -87,7 +83,12 @@ export async function recordProposedTagForProduct(
         updated_at = NOW()
       WHERE supplier_product_id = $1
     `,
-    [params.supplierProductId, params.confidence ?? null, params.reasoning ?? null, params.provider ?? null]
+    [
+      params.supplierProductId,
+      params.confidence ?? null,
+      params.reasoning ?? null,
+      params.provider ?? null,
+    ]
   );
 
   return {
@@ -284,8 +285,44 @@ export async function rejectProposedTag(
   return { affected_products: resetProducts.rowCount ?? 0 };
 }
 
+export interface ApproveAllProposedTagsParams {
+  approvedBy?: string | null;
+}
 
+export async function approveAllProposedTags(
+  params: ApproveAllProposedTagsParams
+): Promise<{ approved_count: number; total_affected_products: number }> {
+  // Get all pending proposals
+  const pendingProposals = await query<{
+    tag_proposal_id: string;
+    display_name: string;
+    tag_type: string;
+  }>(
+    `SELECT tag_proposal_id, display_name, tag_type FROM core.ai_tag_proposal WHERE status = 'pending'`
+  );
 
+  let totalAffectedProducts = 0;
+  let approvedCount = 0;
 
+  for (const proposal of pendingProposals.rows) {
+    try {
+      const result = await approveProposedTag({
+        tagProposalId: proposal.tag_proposal_id,
+        approvedBy: params.approvedBy ?? 'api_bulk_approve',
+      });
+      totalAffectedProducts += result.affected_products;
+      approvedCount++;
+    } catch (error) {
+      console.error(
+        `[approveAllProposedTags] Failed to approve proposal ${proposal.tag_proposal_id}:`,
+        error
+      );
+      // Continue with other proposals even if one fails
+    }
+  }
 
-
+  return {
+    approved_count: approvedCount,
+    total_affected_products: totalAffectedProducts,
+  };
+}

@@ -80,11 +80,13 @@ class SyncPreviewHandler {
     const local = localResult.rows;
 
     // Filter by selective sync config
-    const filtered = selective.email ? external.filter((c) => selective.email.includes(c.email)) : external;
+    const filtered = selective.email
+      ? external.filter(c => selective.email.includes(c.email))
+      : external;
 
     // Compute delta
-    const newCount = filtered.filter((e) => !local.find((l) => l.email === e.email)).length;
-    const updatedCount = filtered.filter((e) => local.find((l) => l.email === e.email)).length;
+    const newCount = filtered.filter(e => !local.find(l => l.email === e.email)).length;
+    const updatedCount = filtered.filter(e => local.find(l => l.email === e.email)).length;
     const deletedCount = local.length - updatedCount;
 
     return {
@@ -375,7 +377,7 @@ describe('GET /api/v1/integrations/sync/preview', () => {
     it('should require X-Org-Id header', async () => {
       const request = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
         },
         body: { source: 'woocommerce' },
       };
@@ -389,7 +391,7 @@ describe('GET /api/v1/integrations/sync/preview', () => {
     it('should isolate results by org', async () => {
       const request1 = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
           'x-org-id': 'org-1',
         },
         body: { source: 'woocommerce' },
@@ -397,7 +399,7 @@ describe('GET /api/v1/integrations/sync/preview', () => {
 
       const request2 = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
           'x-org-id': 'org-2',
         },
         body: { source: 'woocommerce' },

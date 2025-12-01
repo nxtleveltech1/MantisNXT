@@ -16,15 +16,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import {
-  Award,
-  Gift,
-  TrendingUp,
-  Users,
-  Clock,
-  ArrowRight,
-  Sparkles,
-} from 'lucide-react';
+import { Award, Gift, TrendingUp, Users, Clock, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,9 +108,7 @@ export function LoyaltyDashboard({
   const { data, isLoading, error } = useQuery({
     queryKey: ['loyalty-summary', customerId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/summary`
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/summary`);
       if (!response.ok) throw new Error('Failed to fetch loyalty summary');
       const json = await response.json();
       return json.data as LoyaltySummary;
@@ -128,8 +118,8 @@ export function LoyaltyDashboard({
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+        <div className="space-y-4 text-center">
+          <div className="border-primary mx-auto h-12 w-12 animate-spin rounded-full border-b-2" />
           <p className="text-muted-foreground">Loading your rewards...</p>
         </div>
       </div>
@@ -146,14 +136,7 @@ export function LoyaltyDashboard({
     );
   }
 
-  const {
-    points,
-    tier_info,
-    value_metrics,
-    engagement,
-    available_rewards,
-    status,
-  } = data;
+  const { points, tier_info, value_metrics, engagement, available_rewards, status } = data;
 
   return (
     <motion.div
@@ -164,19 +147,13 @@ export function LoyaltyDashboard({
     >
       {/* Hero Section - Points Balance */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border-primary/20">
+        <Card className="from-primary/5 via-primary/10 to-primary/5 border-primary/20 bg-gradient-to-br">
           <CardContent className="pt-8 pb-6">
-            <div className="text-center space-y-6">
+            <div className="space-y-6 text-center">
               {/* Points Balance */}
               <div className="space-y-2">
-                <h2 className="text-lg font-medium text-muted-foreground">
-                  Your Points Balance
-                </h2>
-                <PointsDisplay
-                  points={points.balance}
-                  animated
-                  className="justify-center"
-                />
+                <h2 className="text-muted-foreground text-lg font-medium">Your Points Balance</h2>
+                <PointsDisplay points={points.balance} animated className="justify-center" />
                 {points.pending > 0 && (
                   <Badge variant="secondary" className="gap-1">
                     <Clock className="h-3 w-3" />
@@ -191,17 +168,13 @@ export function LoyaltyDashboard({
               </div>
 
               {/* Quick Actions */}
-              <div className="flex flex-wrap gap-3 justify-center">
+              <div className="flex flex-wrap justify-center gap-3">
                 <Button onClick={onBrowseRewards} size="lg" className="gap-2">
                   <Gift className="h-4 w-4" />
                   Browse Rewards
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button
-                  onClick={onViewTransactions}
-                  variant="outline"
-                  size="lg"
-                >
+                <Button onClick={onViewTransactions} variant="outline" size="lg">
                   View Activity
                 </Button>
               </div>
@@ -216,7 +189,7 @@ export function LoyaltyDashboard({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
+                <Sparkles className="text-primary h-5 w-5" />
                 Next Tier: {tier_info.next_tier}
               </CardTitle>
             </CardHeader>
@@ -224,21 +197,18 @@ export function LoyaltyDashboard({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium">
-                    {tier_info.progress_percentage.toFixed(1)}%
-                  </span>
+                  <span className="font-medium">{tier_info.progress_percentage.toFixed(1)}%</span>
                 </div>
-                <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                <div className="bg-muted relative h-3 overflow-hidden rounded-full">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${tier_info.progress_percentage}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 rounded-full"
+                    className="from-primary to-primary/80 absolute inset-y-0 left-0 rounded-full bg-gradient-to-r"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {tier_info.points_to_next_tier.toLocaleString()} points to{' '}
-                  {tier_info.next_tier}
+                <p className="text-muted-foreground text-sm">
+                  {tier_info.points_to_next_tier.toLocaleString()} points to {tier_info.next_tier}
                 </p>
               </div>
             </CardContent>
@@ -252,13 +222,11 @@ export function LoyaltyDashboard({
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-sm font-medium">Total Earned</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {points.total_earned.toLocaleString()}
-                </p>
+                <p className="text-2xl font-bold">{points.total_earned.toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
@@ -266,13 +234,11 @@ export function LoyaltyDashboard({
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2">
                   <Gift className="h-4 w-4" />
                   <span className="text-sm font-medium">Redemptions</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {engagement.total_redemptions}
-                </p>
+                <p className="text-2xl font-bold">{engagement.total_redemptions}</p>
               </div>
             </CardContent>
           </Card>
@@ -280,13 +246,11 @@ export function LoyaltyDashboard({
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <span className="text-sm font-medium">Referrals</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {engagement.successful_referrals}
-                </p>
+                <p className="text-2xl font-bold">{engagement.successful_referrals}</p>
               </div>
             </CardContent>
           </Card>
@@ -294,7 +258,7 @@ export function LoyaltyDashboard({
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2">
                   <Award className="h-4 w-4" />
                   <span className="text-sm font-medium">Rewards Available</span>
                 </div>
@@ -314,20 +278,20 @@ export function LoyaltyDashboard({
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Points Multiplier</p>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-muted-foreground text-sm">Points Multiplier</p>
+                <p className="text-primary text-2xl font-bold">
                   {tier_info.tier_benefits.multiplier}x
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Discount</p>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-muted-foreground text-sm">Discount</p>
+                <p className="text-primary text-2xl font-bold">
                   {tier_info.tier_benefits.discount}%
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Free Shipping</p>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-muted-foreground text-sm">Free Shipping</p>
+                <p className="text-primary text-2xl font-bold">
                   {tier_info.tier_benefits.free_shipping ? 'Yes' : 'No'}
                 </p>
               </div>
@@ -342,15 +306,13 @@ export function LoyaltyDashboard({
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-orange-600 mt-0.5" />
+                <Clock className="mt-0.5 h-5 w-5 text-orange-600" />
                 <div className="space-y-1">
                   <p className="font-medium text-orange-900">
-                    {points.expiring_soon.toLocaleString()} points expiring
-                    soon
+                    {points.expiring_soon.toLocaleString()} points expiring soon
                   </p>
                   <p className="text-sm text-orange-700">
-                    Expires on{' '}
-                    {format(new Date(points.next_expiry_date), 'MMMM d, yyyy')}
+                    Expires on {format(new Date(points.next_expiry_date), 'MMMM d, yyyy')}
                   </p>
                 </div>
               </div>
@@ -363,7 +325,7 @@ export function LoyaltyDashboard({
       <motion.div variants={itemVariants}>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-center text-sm">
               Member since {format(new Date(status.member_since), 'MMMM yyyy')}
             </div>
           </CardContent>

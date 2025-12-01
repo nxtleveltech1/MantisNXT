@@ -1,25 +1,26 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react';
 import type {
   ColumnDef,
   SortingState,
   ColumnFiltersState,
   VisibilityState,
-  RowSelectionState} from '@tanstack/react-table';
+  RowSelectionState,
+} from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   getPaginationRowModel,
-  flexRender
-} from '@tanstack/react-table'
-import type { User } from '@/types/auth'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+  flexRender,
+} from '@tanstack/react-table';
+import type { User } from '@/types/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -27,14 +28,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   ArrowUpDown,
   MoreHorizontal,
@@ -44,16 +45,16 @@ import {
   CheckCircle2,
   XCircle,
   Users,
-} from 'lucide-react'
-import { formatDate, getRoleLabel } from '@/lib/auth/validation'
-import Link from 'next/link'
+} from 'lucide-react';
+import { formatDate, getRoleLabel } from '@/lib/auth/validation';
+import Link from 'next/link';
 
 interface UserTableProps {
-  data: User[]
-  onEdit?: (user: User) => void
-  onDelete?: (user: User) => void
-  onToggleStatus?: (user: User) => void
-  onBulkAction?: (users: User[], action: string) => void
+  data: User[];
+  onEdit?: (user: User) => void;
+  onDelete?: (user: User) => void;
+  onToggleStatus?: (user: User) => void;
+  onBulkAction?: (users: User[], action: string) => void;
 }
 
 export function UserTable({
@@ -63,34 +64,34 @@ export function UserTable({
   onToggleStatus,
   onBulkAction,
 }: UserTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'super_admin':
       case 'admin':
-        return 'destructive'
+        return 'destructive';
       case 'manager':
-        return 'default'
+        return 'default';
       case 'user':
-        return 'secondary'
+        return 'secondary';
       case 'viewer':
-        return 'outline'
+        return 'outline';
       default:
-        return 'secondary'
+        return 'secondary';
     }
-  }
+  };
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -99,14 +100,14 @@ export function UserTable({
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
           />
         ),
         cell: ({ row }) => (
           <Checkbox
             checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            onCheckedChange={value => row.toggleSelected(!!value)}
             aria-label="Select row"
           />
         ),
@@ -124,10 +125,10 @@ export function UserTable({
               User
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          )
+          );
         },
         cell: ({ row }) => {
-          const user = row.original
+          const user = row.original;
           return (
             <div className="flex items-center space-x-3">
               <Avatar>
@@ -135,16 +136,13 @@ export function UserTable({
                 <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <div>
-                <Link
-                  href={`/admin/users/${user.id}`}
-                  className="font-medium hover:underline"
-                >
+                <Link href={`/admin/users/${user.id}`} className="font-medium hover:underline">
                   {user.name}
                 </Link>
-                <div className="text-sm text-muted-foreground">{user.email}</div>
+                <div className="text-muted-foreground text-sm">{user.email}</div>
               </div>
             </div>
-          )
+          );
         },
       },
       {
@@ -158,15 +156,11 @@ export function UserTable({
               Role
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          )
+          );
         },
         cell: ({ row }) => {
-          const role = row.getValue('role') as string
-          return (
-            <Badge variant={getRoleBadgeVariant(role) as unknown}>
-              {getRoleLabel(role)}
-            </Badge>
-          )
+          const role = row.getValue('role') as string;
+          return <Badge variant={getRoleBadgeVariant(role) as unknown}>{getRoleLabel(role)}</Badge>;
         },
       },
       {
@@ -180,14 +174,14 @@ export function UserTable({
               Department
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          )
+          );
         },
       },
       {
         accessorKey: 'is_active',
         header: 'Status',
         cell: ({ row }) => {
-          const isActive = row.getValue('is_active') as boolean
+          const isActive = row.getValue('is_active') as boolean;
           return (
             <div className="flex items-center space-x-2">
               {isActive ? (
@@ -202,22 +196,22 @@ export function UserTable({
                 </>
               )}
             </div>
-          )
+          );
         },
       },
       {
         accessorKey: 'two_factor_enabled',
         header: '2FA',
         cell: ({ row }) => {
-          const enabled = row.getValue('two_factor_enabled') as boolean
+          const enabled = row.getValue('two_factor_enabled') as boolean;
           return enabled ? (
             <div className="flex items-center space-x-1 text-green-600">
               <Shield className="h-4 w-4" />
               <span className="text-sm">Yes</span>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">No</span>
-          )
+            <span className="text-muted-foreground text-sm">No</span>
+          );
         },
       },
       {
@@ -231,15 +225,15 @@ export function UserTable({
               Last Login
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          )
+          );
         },
         cell: ({ row }) => {
-          const lastLogin = row.getValue('last_login') as Date
+          const lastLogin = row.getValue('last_login') as Date;
           return lastLogin ? (
             <span className="text-sm">{formatDate(lastLogin)}</span>
           ) : (
-            <span className="text-sm text-muted-foreground">Never</span>
-          )
+            <span className="text-muted-foreground text-sm">Never</span>
+          );
         },
       },
       {
@@ -253,17 +247,17 @@ export function UserTable({
               Created
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
-          )
+          );
         },
         cell: ({ row }) => {
-          const createdAt = row.getValue('created_at') as Date
-          return <span className="text-sm">{formatDate(createdAt)}</span>
+          const createdAt = row.getValue('created_at') as Date;
+          return <span className="text-sm">{formatDate(createdAt)}</span>;
         },
       },
       {
         id: 'actions',
         cell: ({ row }) => {
-          const user = row.original
+          const user = row.original;
 
           return (
             <DropdownMenu>
@@ -303,22 +297,19 @@ export function UserTable({
                 )}
                 <DropdownMenuSeparator />
                 {onDelete && (
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => onDelete(user)}
-                  >
+                  <DropdownMenuItem className="text-red-600" onClick={() => onDelete(user)}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete User
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )
+          );
         },
       },
     ],
     [onDelete, onToggleStatus]
-  )
+  );
 
   const table = useReactTable({
     data,
@@ -342,20 +333,20 @@ export function UserTable({
         pageSize: 10,
       },
     },
-  })
+  });
 
-  const selectedRows = table.getFilteredSelectedRowModel().rows
-  const selectedUsers = selectedRows.map((row) => row.original)
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedUsers = selectedRows.map(row => row.original);
 
   return (
     <div className="space-y-4">
       {/* Bulk Actions Bar */}
       {selectedRows.length > 0 && onBulkAction && (
-        <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-4">
+        <div className="bg-muted/50 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={table.getIsAllPageRowsSelected()}
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
             />
             <span className="text-sm font-medium">
               {selectedRows.length} user{selectedRows.length !== 1 ? 's' : ''} selected
@@ -398,31 +389,25 @@ export function UserTable({
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+                {headerGroup.headers.map(header => {
                   return (
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
-                  {row.getVisibleCells().map((cell) => (
+              table.getRowModel().rows.map(row => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -442,7 +427,7 @@ export function UserTable({
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
@@ -456,8 +441,7 @@ export function UserTable({
             Previous
           </Button>
           <div className="text-sm">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </div>
           <Button
             variant="outline"
@@ -470,5 +454,5 @@ export function UserTable({
         </div>
       </div>
     </div>
-  )
+  );
 }

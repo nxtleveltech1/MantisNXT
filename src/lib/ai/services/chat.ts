@@ -1,10 +1,6 @@
 // @ts-nocheck
 import { createHash } from 'crypto';
-import type {
-  AIChatMessage,
-  AIChatResult,
-  AIStreamChunk,
-} from '@/types/ai';
+import type { AIChatMessage, AIChatResult, AIStreamChunk } from '@/types/ai';
 import {
   AIServiceBase,
   type AIServiceBaseOptions,
@@ -86,16 +82,19 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
 
   async chat(
     messages: AIChatMessage[],
-    options: ChatRequestOptions = {},
+    options: ChatRequestOptions = {}
   ): Promise<AIServiceResponse<AIChatResult>> {
     const conversationId = options.conversationId;
-    const metadata = this.mergeMetadata(options.metadata, conversationId ? { conversationId } : undefined);
+    const metadata = this.mergeMetadata(
+      options.metadata,
+      conversationId ? { conversationId } : undefined
+    );
 
     const response = await this.executeOperation<AIChatResult>(
       'chat.message',
       async ({ service, runtimeOptions }) => service.chat(messages, runtimeOptions),
       { ...options, metadata },
-      conversationId ? { conversationId } : undefined,
+      conversationId ? { conversationId } : undefined
     );
 
     if (response.success && response.data && conversationId) {
@@ -108,7 +107,7 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
   async continueConversation(
     conversationId: string,
     message: AIChatMessage,
-    options: ChatRequestOptions = {},
+    options: ChatRequestOptions = {}
   ): Promise<AIServiceResponse<AIChatResult>> {
     const conversation = this.requireConversation(conversationId);
     const history = [...conversation.messages, message];
@@ -133,7 +132,7 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
   async streamChat(
     conversationId: string,
     userMessage: AIChatMessage,
-    options: ChatRequestOptions = {},
+    options: ChatRequestOptions = {}
   ): Promise<StreamingResult<AIStreamChunk, { text: string; chunks: number }>> {
     const conversation = this.requireConversation(conversationId);
     const history = [...conversation.messages, userMessage];
@@ -154,15 +153,25 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
       operation: 'chat.stream',
       metadata,
     });
-    await this.notifyEvent('request', {
-      requestId,
-      service: this.serviceName,
-      operation: 'chat.stream',
-      metadata,
-      timestamp: this.getTimestamp(),
-    }, notifyChannel);
+    await this.notifyEvent(
+      'request',
+      {
+        requestId,
+        service: this.serviceName,
+        operation: 'chat.stream',
+        metadata,
+        timestamp: this.getTimestamp(),
+      },
+      notifyChannel
+    );
 
-    const { service, cleanup } = this.createServiceInstance(options, requestId, 'chat.stream', notifyChannel, metadata);
+    const { service, cleanup } = this.createServiceInstance(
+      options,
+      requestId,
+      'chat.stream',
+      notifyChannel,
+      metadata
+    );
     const runtimeOptions = this.buildRuntimeOptions(options);
 
     try {
@@ -186,7 +195,7 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
           }
         },
         aggregate: {
-          onChunk: (chunk) => {
+          onChunk: chunk => {
             aggregate.chunks += 1;
             if (chunk.token) {
               aggregate.text += chunk.token;
@@ -233,12 +242,14 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
   private appendAssistantResponse(
     conversationId: string,
     userMessages: AIChatMessage[],
-    result: AIChatResult,
+    result: AIChatResult
   ): void {
     const conversation = this.requireConversation(conversationId);
     conversation.messages.push(...userMessages);
 
-    const assistantMessage: AIChatMessage = result.messages?.find((message) => message.role === 'assistant') ?? {
+    const assistantMessage: AIChatMessage = result.messages?.find(
+      message => message.role === 'assistant'
+    ) ?? {
       role: 'assistant',
       content: result.text,
     };
@@ -271,7 +282,7 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
   private cloneConversation(conversation: ConversationState): ConversationState {
     return {
       id: conversation.id,
-      messages: conversation.messages.map((message) => ({ ...message })),
+      messages: conversation.messages.map(message => ({ ...message })),
       metadata: { ...conversation.metadata },
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
@@ -280,9 +291,7 @@ export class AIChatService extends AIServiceBase<ChatRequestOptions> {
   }
 
   private serializeMessages(messages: AIChatMessage[]): string {
-    return messages
-      .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
-      .join('\n');
+    return messages.map(message => `${message.role.toUpperCase()}: ${message.content}`).join('\n');
   }
 
   private generateConversationId(seed: string): string {

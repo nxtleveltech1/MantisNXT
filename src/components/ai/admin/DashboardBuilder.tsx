@@ -20,7 +20,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-
 import { Switch } from '@/components/ui/switch';
 import {
   LayoutDashboard,
@@ -143,7 +142,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
       }
       return response.json();
     },
-    onSuccess: (responseData) => {
+    onSuccess: responseData => {
       queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
       setSelectedDashboardId(responseData.data.id);
       setIsCreating(false);
@@ -204,7 +203,13 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
 
   // Share dashboard
   const shareDashboardMutation = useMutation({
-    mutationFn: async ({ dashboardId, makePublic }: { dashboardId: string; makePublic: boolean }) => {
+    mutationFn: async ({
+      dashboardId,
+      makePublic,
+    }: {
+      dashboardId: string;
+      makePublic: boolean;
+    }) => {
       const response = await fetch(`/api/v1/ai/dashboards/${dashboardId}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,7 +343,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
     setLayout(newLayout);
   };
 
-  const selectedDashboard = dashboards.find((d) => d.id === selectedDashboardId);
+  const selectedDashboard = dashboards.find(d => d.id === selectedDashboardId);
 
   // Initialize layout when dashboard is selected
   useEffect(() => {
@@ -352,7 +357,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -382,7 +387,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                   <Input
                     id="name"
                     value={newDashboard.name}
-                    onChange={(e) => setNewDashboard({ ...newDashboard, name: e.target.value })}
+                    onChange={e => setNewDashboard({ ...newDashboard, name: e.target.value })}
                     placeholder="My Dashboard"
                   />
                 </div>
@@ -391,7 +396,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                   <Textarea
                     id="description"
                     value={newDashboard.description}
-                    onChange={(e) =>
+                    onChange={e =>
                       setNewDashboard({ ...newDashboard, description: e.target.value })
                     }
                     placeholder="Dashboard description..."
@@ -403,7 +408,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                   <Switch
                     id="public"
                     checked={newDashboard.isPublic}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={checked =>
                       setNewDashboard({ ...newDashboard, isPublic: checked })
                     }
                   />
@@ -426,9 +431,9 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
         <ScrollArea className="h-[calc(100vh-350px)]">
           <div className="space-y-2">
             {dashboards.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No dashboards yet</p>
+              <p className="text-muted-foreground text-sm">No dashboards yet</p>
             ) : (
-              dashboards.map((dashboard) => (
+              dashboards.map(dashboard => (
                 <Card
                   key={dashboard.id}
                   className={`cursor-pointer transition-colors ${
@@ -443,12 +448,12 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                       <div className="flex-1">
                         <h4 className="font-medium">{dashboard.name}</h4>
                         {dashboard.description && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-muted-foreground mt-1 text-xs">
                             {dashboard.description}
                           </p>
                         )}
                       </div>
-                      <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                      <LayoutDashboard className="text-muted-foreground h-4 w-4" />
                     </div>
                   </CardContent>
                 </Card>
@@ -463,7 +468,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
             <h3 className="text-sm font-semibold">Widget Library</h3>
             <ScrollArea className="h-64">
               <div className="space-y-2">
-                {WIDGET_LIBRARY.map((widget) => {
+                {WIDGET_LIBRARY.map(widget => {
                   const Icon = widget.icon;
                   return (
                     <Button
@@ -491,7 +496,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
               <div>
                 <h2 className="text-2xl font-bold">{selectedDashboard.name}</h2>
                 {selectedDashboard.description && (
-                  <p className="text-sm text-muted-foreground">{selectedDashboard.description}</p>
+                  <p className="text-muted-foreground text-sm">{selectedDashboard.description}</p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -508,10 +513,7 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                   <Share2 className="mr-2 h-4 w-4" />
                   {selectedDashboard.is_shared ? 'Make Private' : 'Share'}
                 </Button>
-                <Button
-                  onClick={handleSaveLayout}
-                  disabled={updateDashboardMutation.isPending}
-                >
+                <Button onClick={handleSaveLayout} disabled={updateDashboardMutation.isPending}>
                   {updateDashboardMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -537,11 +539,11 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
             <Card className="min-h-[600px]">
               <CardContent className="p-4">
                 {layout.length === 0 ? (
-                  <div className="flex items-center justify-center h-[500px]">
+                  <div className="flex h-[500px] items-center justify-center">
                     <div className="text-center">
-                      <LayoutDashboard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Empty Dashboard</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <LayoutDashboard className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                      <h3 className="mb-2 text-lg font-medium">Empty Dashboard</h3>
+                      <p className="text-muted-foreground mb-4 text-sm">
                         Add widgets from the library to get started
                       </p>
                     </div>
@@ -557,24 +559,27 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
                     draggableHandle=".drag-handle"
                     compactType="vertical"
                   >
-                    {layout.map((item) => (
-                      <div key={item.i} className="bg-white border-2 border-dashed border-muted rounded-lg">
+                    {layout.map(item => (
+                      <div
+                        key={item.i}
+                        className="border-muted rounded-lg border-2 border-dashed bg-white"
+                      >
                         <Card className="h-full">
-                          <CardHeader className="p-3 flex flex-row items-center justify-between space-y-0">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
                             <div className="flex items-center gap-2">
-                              <GripVertical className="h-4 w-4 drag-handle cursor-move text-muted-foreground" />
+                              <GripVertical className="drag-handle text-muted-foreground h-4 w-4 cursor-move" />
                               <CardTitle className="text-sm">Widget {item.i}</CardTitle>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setLayout(layout.filter((l) => l.i !== item.i))}
+                              onClick={() => setLayout(layout.filter(l => l.i !== item.i))}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="text-destructive h-4 w-4" />
                             </Button>
                           </CardHeader>
                           <CardContent className="p-3">
-                            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                            <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
                               Configure this widget
                             </div>
                           </CardContent>
@@ -587,10 +592,10 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
             </Card>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <div className="text-center">
-              <LayoutDashboard className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">No Dashboard Selected</h3>
+              <LayoutDashboard className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+              <h3 className="mb-2 text-xl font-medium">No Dashboard Selected</h3>
               <p className="text-muted-foreground mb-4">
                 Select a dashboard from the sidebar or create a new one
               </p>

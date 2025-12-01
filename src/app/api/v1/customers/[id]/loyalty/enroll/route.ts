@@ -7,14 +7,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  authorizeCustomerAccess,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, authorizeCustomerAccess, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for enrollment
 const enrollSchema = z.object({
@@ -35,7 +31,6 @@ export async function POST(
 
     // Authorization - Customer access check
     await authorizeCustomerAccess(user, id);
-
 
     // Parse body
     const body = await request.json().catch(() => ({}));

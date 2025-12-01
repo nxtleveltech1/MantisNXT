@@ -31,17 +31,23 @@ export abstract class BaseOptimizer {
   /**
    * Main optimization method - must be implemented by subclasses
    */
-  abstract optimize(product: ProductData, run: OptimizationRun): Promise<OptimizationRecommendation | null>;
+  abstract optimize(
+    product: ProductData,
+    run: OptimizationRun
+  ): Promise<OptimizationRecommendation | null>;
 
   /**
    * Calculate confidence score based on data quality and constraints
    */
-  protected calculateConfidence(product: ProductData, dataQuality: {
-    hasCost: boolean;
-    hasCompetitorData: boolean;
-    hasHistoricalData: boolean;
-    hasSalesData: boolean;
-  }): number {
+  protected calculateConfidence(
+    product: ProductData,
+    dataQuality: {
+      hasCost: boolean;
+      hasCompetitorData: boolean;
+      hasHistoricalData: boolean;
+      hasSalesData: boolean;
+    }
+  ): number {
     let confidence = 50; // Base confidence
 
     if (dataQuality.hasCost) confidence += 15;
@@ -109,7 +115,7 @@ export abstract class BaseOptimizer {
 
     // Apply the ending to the new price
     const wholeDollars = Math.floor(price);
-    return wholeDollars + (closestEnding / 100);
+    return wholeDollars + closestEnding / 100;
   }
 
   /**
@@ -133,17 +139,13 @@ export abstract class BaseOptimizer {
     const currentCost = product.cost || 0;
 
     const priceChangeAmount = recommendedPrice - currentPrice;
-    const priceChangePercent = currentPrice > 0
-      ? (priceChangeAmount / currentPrice) * 100
-      : 0;
+    const priceChangePercent = currentPrice > 0 ? (priceChangeAmount / currentPrice) * 100 : 0;
 
-    const currentMarginPercent = currentCost > 0
-      ? ((currentPrice - currentCost) / currentCost) * 100
-      : 0;
+    const currentMarginPercent =
+      currentCost > 0 ? ((currentPrice - currentCost) / currentCost) * 100 : 0;
 
-    const recommendedMarginPercent = currentCost > 0
-      ? ((recommendedPrice - currentCost) / currentCost) * 100
-      : 0;
+    const recommendedMarginPercent =
+      currentCost > 0 ? ((recommendedPrice - currentCost) / currentCost) * 100 : 0;
 
     return {
       recommendation_id: uuidv4(),

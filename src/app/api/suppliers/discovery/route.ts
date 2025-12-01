@@ -3,7 +3,7 @@
  * Endpoint: /api/suppliers/discovery
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supplierDiscoveryEngine } from '@/lib/supplier-discovery/engine';
@@ -11,20 +11,22 @@ import { supplierDiscoveryEngine } from '@/lib/supplier-discovery/engine';
 // Request validation schema
 const discoveryRequestSchema = z.object({
   supplierName: z.string().min(2, 'Supplier name must be at least 2 characters'),
-  additionalContext: z.object({
-    industry: z.string().optional(),
-    region: z.string().optional(),
-    website: z.string().url().optional()
-  }).optional()
+  additionalContext: z
+    .object({
+      industry: z.string().optional(),
+      region: z.string().optional(),
+      website: z.string().url().optional(),
+    })
+    .optional(),
 });
 
 const bulkDiscoveryRequestSchema = z.object({
-  suppliers: z.array(discoveryRequestSchema).min(1).max(10) // Limit bulk requests
+  suppliers: z.array(discoveryRequestSchema).min(1).max(10), // Limit bulk requests
 });
 
 const refreshRequestSchema = z.object({
   supplierName: z.string().min(2),
-  additionalContext: z.any().optional()
+  additionalContext: z.any().optional(),
 });
 
 /**
@@ -49,7 +51,9 @@ export async function POST(request: NextRequest) {
     const result = await supplierDiscoveryEngine.discoverSupplier(validatedData);
 
     // Log result
-    console.log(`API: Discovery completed for ${validatedData.supplierName}: ${result.success ? 'SUCCESS' : 'FAILED'}`);
+    console.log(
+      `API: Discovery completed for ${validatedData.supplierName}: ${result.success ? 'SUCCESS' : 'FAILED'}`
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -58,9 +62,9 @@ export async function POST(request: NextRequest) {
         metadata: {
           processingTime: result.processingTime,
           sourcesUsed: result.sourcesUsed,
-          confidence: result.data?.confidence.overall || 0
+          confidence: result.data?.confidence.overall || 0,
         },
-        message: 'Supplier information discovered successfully'
+        message: 'Supplier information discovered successfully',
       });
     } else {
       return NextResponse.json(
@@ -69,13 +73,12 @@ export async function POST(request: NextRequest) {
           error: result.error,
           metadata: {
             processingTime: result.processingTime,
-            sourcesUsed: result.sourcesUsed
-          }
+            sourcesUsed: result.sourcesUsed,
+          },
         },
         { status: 404 }
       );
     }
-
   } catch (error) {
     console.error('Supplier discovery API error:', error);
 
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 400 }
       );
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -120,7 +123,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Perform bulk discovery
-    const results = await supplierDiscoveryEngine.discoverMultipleSuppliers(validatedData.suppliers);
+    const results = await supplierDiscoveryEngine.discoverMultipleSuppliers(
+      validatedData.suppliers
+    );
 
     // Calculate summary statistics
     const successful = results.filter(r => r.success).length;
@@ -138,11 +143,10 @@ export async function PUT(request: NextRequest) {
         successful,
         failed,
         totalProcessingTime,
-        averageProcessingTime
+        averageProcessingTime,
       },
-      message: `Bulk discovery completed: ${successful}/${results.length} successful`
+      message: `Bulk discovery completed: ${successful}/${results.length} successful`,
     });
-
   } catch (error) {
     console.error('Bulk supplier discovery API error:', error);
 
@@ -151,7 +155,7 @@ export async function PUT(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 400 }
       );
@@ -161,7 +165,7 @@ export async function PUT(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -192,7 +196,9 @@ export async function PATCH(request: NextRequest) {
       validatedData.additionalContext
     );
 
-    console.log(`API: Refresh completed for ${validatedData.supplierName}: ${result.success ? 'SUCCESS' : 'FAILED'}`);
+    console.log(
+      `API: Refresh completed for ${validatedData.supplierName}: ${result.success ? 'SUCCESS' : 'FAILED'}`
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -202,9 +208,9 @@ export async function PATCH(request: NextRequest) {
           processingTime: result.processingTime,
           sourcesUsed: result.sourcesUsed,
           confidence: result.data?.confidence.overall || 0,
-          refreshed: true
+          refreshed: true,
         },
-        message: 'Supplier data refreshed successfully'
+        message: 'Supplier data refreshed successfully',
       });
     } else {
       return NextResponse.json(
@@ -214,13 +220,12 @@ export async function PATCH(request: NextRequest) {
           metadata: {
             processingTime: result.processingTime,
             sourcesUsed: result.sourcesUsed,
-            refreshed: false
-          }
+            refreshed: false,
+          },
         },
         { status: 404 }
       );
     }
-
   } catch (error) {
     console.error('Supplier refresh API error:', error);
 
@@ -229,7 +234,7 @@ export async function PATCH(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 400 }
       );
@@ -239,7 +244,7 @@ export async function PATCH(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

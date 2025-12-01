@@ -1,85 +1,70 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { User, Lock, Bell, Eye, Shield, CheckCircle2 } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { User, Lock, Bell, Eye, Shield, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import type { User as UserType } from '@/types/auth'
+import { authProvider } from '@/lib/auth/mock-provider';
+import type { User as UserType } from '@/types/auth';
 
 export default function AccountSettingsPage() {
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoading(true)
-        const currentUser = await authProvider.getCurrentUser()
+        setIsLoading(true);
+        const currentUser = await authProvider.getCurrentUser();
         if (!currentUser) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        setUser(currentUser)
+        setUser(currentUser);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user')
+        setError(err instanceof Error ? err.message : 'Failed to load user');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    loadUser()
-  }, [router])
+    };
+    loadUser();
+  }, [router]);
 
   if (isLoading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Settings' },
-        ]}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Settings' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Settings' },
-        ]}
-      >
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Settings' }]}>
         <Alert variant="destructive">
           <AlertDescription>Failed to load user data</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: 'Account', href: '/account' },
-        { label: 'Settings' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Settings' }]}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Account Settings</h1>
@@ -104,19 +89,19 @@ export default function AccountSettingsPage() {
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList>
             <TabsTrigger value="profile">
-              <User className="h-4 w-4 mr-2" />
+              <User className="mr-2 h-4 w-4" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="security">
-              <Lock className="h-4 w-4 mr-2" />
+              <Lock className="mr-2 h-4 w-4" />
               Security
             </TabsTrigger>
             <TabsTrigger value="preferences">
-              <Bell className="h-4 w-4 mr-2" />
+              <Bell className="mr-2 h-4 w-4" />
               Preferences
             </TabsTrigger>
             <TabsTrigger value="privacy">
-              <Eye className="h-4 w-4 mr-2" />
+              <Eye className="mr-2 h-4 w-4" />
               Privacy
             </TabsTrigger>
           </TabsList>
@@ -130,7 +115,7 @@ export default function AccountSettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input id="name" defaultValue={user.name} />
@@ -138,7 +123,7 @@ export default function AccountSettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" defaultValue={user.email} disabled />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Email cannot be changed. Contact administrator.
                     </p>
                   </div>
@@ -169,23 +154,23 @@ export default function AccountSettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Password</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="mb-2 text-lg font-semibold">Password</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">
                       Change your password to keep your account secure
                     </p>
                     <Link href="/account/security">
                       <Button variant="outline">
-                        <Lock className="h-4 w-4 mr-2" />
+                        <Lock className="mr-2 h-4 w-4" />
                         Change Password
                       </Button>
                     </Link>
                   </div>
 
                   <div className="border-t pt-4">
-                    <h3 className="text-lg font-semibold mb-2">Two-Factor Authentication</h3>
+                    <h3 className="mb-2 text-lg font-semibold">Two-Factor Authentication</h3>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {user.two_factor_enabled
                             ? '2FA is enabled on your account'
                             : 'Add an extra layer of security to your account'}
@@ -195,7 +180,7 @@ export default function AccountSettingsPage() {
                         {user.two_factor_enabled ? (
                           <Shield className="h-5 w-5 text-green-500" />
                         ) : (
-                          <Shield className="h-5 w-5 text-muted-foreground" />
+                          <Shield className="text-muted-foreground h-5 w-5" />
                         )}
                         <Button variant="outline" size="sm">
                           {user.two_factor_enabled ? 'Manage 2FA' : 'Enable 2FA'}
@@ -205,13 +190,13 @@ export default function AccountSettingsPage() {
                   </div>
 
                   <div className="border-t pt-4">
-                    <h3 className="text-lg font-semibold mb-2">Active Sessions</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="mb-2 text-lg font-semibold">Active Sessions</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">
                       Manage devices that are currently signed in to your account
                     </p>
                     <Link href="/account/security">
                       <Button variant="outline">
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye className="mr-2 h-4 w-4" />
                         View Active Sessions
                       </Button>
                     </Link>
@@ -232,7 +217,7 @@ export default function AccountSettingsPage() {
               <CardContent>
                 <Link href="/account/preferences">
                   <Button variant="outline">
-                    <Bell className="h-4 w-4 mr-2" />
+                    <Bell className="mr-2 h-4 w-4" />
                     Manage Preferences
                   </Button>
                 </Link>
@@ -244,16 +229,14 @@ export default function AccountSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Privacy Settings</CardTitle>
-                <CardDescription>
-                  Control who can see your profile information
-                </CardDescription>
+                <CardDescription>Control who can see your profile information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="profile-visibility">Profile Visibility</Label>
                   <select
                     id="profile-visibility"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                     defaultValue="organization"
                   >
                     <option value="public">Public</option>
@@ -270,6 +253,5 @@ export default function AccountSettingsPage() {
         </Tabs>
       </div>
     </AppLayout>
-  )
+  );
 }
-

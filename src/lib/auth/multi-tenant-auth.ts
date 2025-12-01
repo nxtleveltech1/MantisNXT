@@ -106,18 +106,20 @@ export class MultiTenantAuth extends EventEmitter {
       if (userResult.rows.length === 0) {
         return {
           success: false,
-          error: 'Invalid email or password'
+          error: 'Invalid email or password',
         };
       }
 
       const userData = userResult.rows[0];
 
       // Verify organization domain if provided
-      if (credentials.organizationDomain &&
-          userData.organization_domain !== credentials.organizationDomain) {
+      if (
+        credentials.organizationDomain &&
+        userData.organization_domain !== credentials.organizationDomain
+      ) {
         return {
           success: false,
-          error: 'Invalid organization domain'
+          error: 'Invalid organization domain',
         };
       }
 
@@ -125,7 +127,7 @@ export class MultiTenantAuth extends EventEmitter {
       if (userData.org_status !== 'active') {
         return {
           success: false,
-          error: 'Organization is not active'
+          error: 'Organization is not active',
         };
       }
 
@@ -136,7 +138,7 @@ export class MultiTenantAuth extends EventEmitter {
         await this.logAuthEvent('login_failed', userData.id, userData.organization_id);
         return {
           success: false,
-          error: 'Invalid email or password'
+          error: 'Invalid email or password',
         };
       }
 
@@ -163,7 +165,7 @@ export class MultiTenantAuth extends EventEmitter {
         status: userData.status,
         lastLogin: userData.last_login,
         createdAt: userData.created_at,
-        updatedAt: userData.updated_at
+        updatedAt: userData.updated_at,
       };
 
       // Create organization object
@@ -174,21 +176,18 @@ export class MultiTenantAuth extends EventEmitter {
         status: userData.org_status,
         plan: userData.org_plan,
         settings: userData.org_settings || {},
-        createdAt: userData.org_created_at
+        createdAt: userData.org_created_at,
       };
 
       // Create session
       const session = await this.createSession(user, credentials.rememberMe);
 
       // Update last login
-      await db.query(
-        'UPDATE users SET last_login = NOW() WHERE id = $1',
-        [user.id]
-      );
+      await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
 
       // Log successful login
       await this.logAuthEvent('login_success', user.id, user.organizationId, {
-        sessionId: session.id
+        sessionId: session.id,
       });
 
       // Emit authentication event
@@ -200,14 +199,13 @@ export class MultiTenantAuth extends EventEmitter {
         organization,
         session,
         token: session.token,
-        refreshToken: session.refreshToken
+        refreshToken: session.refreshToken,
       };
-
     } catch (error) {
       console.error('❌ Login error:', error);
       return {
         success: false,
-        error: 'Authentication failed'
+        error: 'Authentication failed',
       };
     }
   }
@@ -231,18 +229,16 @@ export class MultiTenantAuth extends EventEmitter {
         userId: user.id,
         organizationId: user.organizationId,
         sessionId,
-        permissions: user.permissions
+        permissions: user.permissions,
       },
       this.jwtSecret,
       { expiresIn: this.tokenExpiry }
     );
 
     // Create refresh token
-    const refreshToken = sign(
-      { userId: user.id, sessionId, type: 'refresh' },
-      this.jwtSecret,
-      { expiresIn: this.refreshTokenExpiry }
-    );
+    const refreshToken = sign({ userId: user.id, sessionId, type: 'refresh' }, this.jwtSecret, {
+      expiresIn: this.refreshTokenExpiry,
+    });
 
     // Store session in database
     const sessionQuery = `
@@ -260,7 +256,7 @@ export class MultiTenantAuth extends EventEmitter {
       user.organizationId,
       tokenHash,
       refreshTokenHash,
-      expiresAt.toISOString()
+      expiresAt.toISOString(),
     ]);
 
     const sessionData = sessionResult.rows[0];
@@ -273,7 +269,7 @@ export class MultiTenantAuth extends EventEmitter {
       refreshToken,
       expiresAt: sessionData.expires_at,
       createdAt: sessionData.created_at,
-      lastAccessed: sessionData.last_accessed
+      lastAccessed: sessionData.last_accessed,
     };
   }
 
@@ -300,7 +296,7 @@ export class MultiTenantAuth extends EventEmitter {
       if (sessionResult.rows.length === 0) {
         return {
           success: false,
-          error: 'Invalid or expired session'
+          error: 'Invalid or expired session',
         };
       }
 
@@ -310,15 +306,14 @@ export class MultiTenantAuth extends EventEmitter {
       if (sessionData.user_status !== 'active' || sessionData.org_status !== 'active') {
         return {
           success: false,
-          error: 'User or organization is not active'
+          error: 'User or organization is not active',
         };
       }
 
       // Update last accessed
-      await db.query(
-        'UPDATE auth_sessions SET last_accessed = NOW() WHERE id = $1',
-        [decoded.sessionId]
-      );
+      await db.query('UPDATE auth_sessions SET last_accessed = NOW() WHERE id = $1', [
+        decoded.sessionId,
+      ]);
 
       // Get user permissions
       const permissionsQuery = `
@@ -341,18 +336,17 @@ export class MultiTenantAuth extends EventEmitter {
         permissions,
         status: sessionData.user_status,
         createdAt: sessionData.user_created_at,
-        updatedAt: sessionData.user_updated_at
+        updatedAt: sessionData.user_updated_at,
       };
 
       return {
         success: true,
-        user
+        user,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: 'Invalid token'
+        error: 'Invalid token',
       };
     }
   }
@@ -368,7 +362,7 @@ export class MultiTenantAuth extends EventEmitter {
       if (decoded.type !== 'refresh') {
         return {
           success: false,
-          error: 'Invalid refresh token'
+          error: 'Invalid refresh token',
         };
       }
 
@@ -387,7 +381,7 @@ export class MultiTenantAuth extends EventEmitter {
       if (sessionResult.rows.length === 0) {
         return {
           success: false,
-          error: 'Invalid or expired session'
+          error: 'Invalid or expired session',
         };
       }
 
@@ -397,7 +391,7 @@ export class MultiTenantAuth extends EventEmitter {
       if (sessionData.status !== 'active' || sessionData.org_status !== 'active') {
         return {
           success: false,
-          error: 'User or organization is not active'
+          error: 'User or organization is not active',
         };
       }
 
@@ -419,7 +413,7 @@ export class MultiTenantAuth extends EventEmitter {
           userId: decoded.userId,
           organizationId: sessionData.organization_id,
           sessionId: decoded.sessionId,
-          permissions
+          permissions,
         },
         this.jwtSecret,
         { expiresIn: this.tokenExpiry }
@@ -441,19 +435,18 @@ export class MultiTenantAuth extends EventEmitter {
         permissions,
         status: sessionData.status,
         createdAt: sessionData.created_at,
-        updatedAt: sessionData.updated_at
+        updatedAt: sessionData.updated_at,
       };
 
       return {
         success: true,
         user,
-        token: newToken
+        token: newToken,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: 'Failed to refresh token'
+        error: 'Failed to refresh token',
       };
     }
   }
@@ -480,12 +473,11 @@ export class MultiTenantAuth extends EventEmitter {
       }
 
       return { success: true };
-
     } catch (error) {
       console.error('❌ Logout error:', error);
       return {
         success: false,
-        error: 'Failed to logout'
+        error: 'Failed to logout',
       };
     }
   }
@@ -536,9 +528,7 @@ export class MultiTenantAuth extends EventEmitter {
    */
   async cleanupExpiredSessions(): Promise<void> {
     try {
-      const result = await db.query(
-        'DELETE FROM auth_sessions WHERE expires_at < NOW()'
-      );
+      const result = await db.query('DELETE FROM auth_sessions WHERE expires_at < NOW()');
 
       if (result.rowCount && result.rowCount > 0) {
         console.log(`🧹 Cleaned up ${result.rowCount} expired sessions`);
@@ -569,7 +559,7 @@ export class MultiTenantAuth extends EventEmitter {
       createdAt: row.created_at,
       lastAccessed: row.last_accessed,
       ipAddress: row.ip_address,
-      userAgent: row.user_agent
+      userAgent: row.user_agent,
     }));
   }
 }
@@ -578,8 +568,11 @@ export class MultiTenantAuth extends EventEmitter {
 export const multiTenantAuth = new MultiTenantAuth();
 
 // Cleanup expired sessions every hour
-setInterval(() => {
-  multiTenantAuth.cleanupExpiredSessions();
-}, 60 * 60 * 1000);
+setInterval(
+  () => {
+    multiTenantAuth.cleanupExpiredSessions();
+  },
+  60 * 60 * 1000
+);
 
 export default multiTenantAuth;

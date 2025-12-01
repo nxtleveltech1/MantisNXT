@@ -1,45 +1,70 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import type { Resolver } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, UserPlus, AlertCircle, Building2, CheckCircle2 } from 'lucide-react'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import type { Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, UserPlus, AlertCircle, Building2, CheckCircle2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import { registerFormSchema, type RegisterFormData } from '@/lib/auth/validation'
-import type { RegistrationData } from '@/types/auth'
-import { SOUTH_AFRICAN_PROVINCES, BEE_LEVELS } from '@/types/auth'
+import { authProvider } from '@/lib/auth/mock-provider';
+import { registerFormSchema, type RegisterFormData } from '@/lib/auth/validation';
+import type { RegistrationData } from '@/types/auth';
+import { SOUTH_AFRICAN_PROVINCES, BEE_LEVELS } from '@/types/auth';
 
 const steps = [
   { id: 'company', title: 'Company Information', description: 'Tell us about your business' },
   { id: 'admin', title: 'Administrator Account', description: 'Create your admin account' },
   { id: 'address', title: 'Business Address', description: 'Where is your business located?' },
   { id: 'terms', title: 'Terms & Agreements', description: 'Review and accept our terms' },
-]
+];
 
 export default function RegisterPage() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const router = useRouter()
+  const router = useRouter();
 
   const form = useForm<RegisterFormData, unknown, RegisterFormData>({
-    resolver: zodResolver(registerFormSchema) as Resolver<RegisterFormData, unknown, RegisterFormData>,
+    resolver: zodResolver(registerFormSchema) as Resolver<
+      RegisterFormData,
+      unknown,
+      RegisterFormData
+    >,
     defaultValues: {
       organization_name: '',
       organization_legal_name: '',
@@ -60,94 +85,105 @@ export default function RegisterPage() {
         city: '',
         province: 'gauteng',
         postal_code: '',
-        country: 'South Africa'
+        country: 'South Africa',
       },
       terms_accepted: false,
       privacy_accepted: false,
-      marketing_consent: false
-    }
-  })
+      marketing_consent: false,
+    },
+  });
 
   const nextStep = async () => {
-    const currentStepFields = getCurrentStepFields()
-    const isValid = await form.trigger(currentStepFields)
+    const currentStepFields = getCurrentStepFields();
+    const isValid = await form.trigger(currentStepFields);
 
     if (isValid && currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const getCurrentStepFields = (): (keyof RegisterFormData)[] => {
     switch (currentStep) {
       case 0:
-        return ['organization_name', 'organization_legal_name', 'registration_number', 'vat_number', 'bee_level', 'province', 'industry']
+        return [
+          'organization_name',
+          'organization_legal_name',
+          'registration_number',
+          'vat_number',
+          'bee_level',
+          'province',
+          'industry',
+        ];
       case 1:
-        return ['name', 'email', 'password', 'confirm_password', 'phone', 'id_number']
+        return ['name', 'email', 'password', 'confirm_password', 'phone', 'id_number'];
       case 2:
-        return ['address']
+        return ['address'];
       case 3:
-        return ['terms_accepted', 'privacy_accepted']
+        return ['terms_accepted', 'privacy_accepted'];
       default:
-        return []
+        return [];
     }
-  }
+  };
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
-      const result = await authProvider.register(data as RegistrationData)
+      const result = await authProvider.register(data as RegistrationData);
 
       if (result.success) {
-        setSuccess(true)
+        setSuccess(true);
         setTimeout(() => {
-          router.push('/auth/verify-email?email=' + encodeURIComponent(data.email))
-        }, 2000)
+          router.push('/auth/verify-email?email=' + encodeURIComponent(data.email));
+        }, 2000);
       } else {
-        setError(result.message || 'Registration failed')
+        setError(result.message || 'Registration failed');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8">
           <Card>
             <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="bg-green-100 p-3 rounded-full">
+              <div className="mb-4 flex justify-center">
+                <div className="rounded-full bg-green-100 p-3">
                   <CheckCircle2 className="h-12 w-12 text-green-600" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-green-800">Registration Successful!</CardTitle>
+              <CardTitle className="text-2xl font-bold text-green-800">
+                Registration Successful!
+              </CardTitle>
               <CardDescription>
-                Your account has been created successfully. You will be redirected to verify your email address.
+                Your account has been created successfully. You will be redirected to verify your
+                email address.
               </CardDescription>
             </CardHeader>
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-lg">
+    <div className="min-h-screen bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="rounded-lg bg-blue-600 p-3">
               <Building2 className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -162,20 +198,24 @@ export default function RegisterPage() {
               {steps.map((step, index) => (
                 <li key={step.id} className="flex-1">
                   <div className={`flex items-center ${index !== steps.length - 1 ? 'pb-0' : ''}`}>
-                    <div className={`flex items-center text-sm font-medium ${
-                      index < currentStep
-                        ? 'text-blue-600'
-                        : index === currentStep
-                        ? 'text-blue-600'
-                        : 'text-gray-500'
-                    }`}>
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
+                    <div
+                      className={`flex items-center text-sm font-medium ${
                         index < currentStep
-                          ? 'bg-blue-600 border-blue-600 text-white'
+                          ? 'text-blue-600'
                           : index === currentStep
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-gray-300 text-gray-500'
-                      }`}>
+                            ? 'text-blue-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
+                          index < currentStep
+                            ? 'border-blue-600 bg-blue-600 text-white'
+                            : index === currentStep
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-gray-300 text-gray-500'
+                        }`}
+                      >
                         {index < currentStep ? (
                           <CheckCircle2 className="h-5 w-5" />
                         ) : (
@@ -185,9 +225,11 @@ export default function RegisterPage() {
                       <span className="ml-3 hidden sm:block">{step.title}</span>
                     </div>
                     {index !== steps.length - 1 && (
-                      <div className={`hidden sm:block flex-1 h-0.5 ml-4 ${
-                        index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                      }`} />
+                      <div
+                        className={`ml-4 hidden h-0.5 flex-1 sm:block ${
+                          index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      />
                     )}
                   </div>
                 </li>
@@ -214,7 +256,7 @@ export default function RegisterPage() {
                 {/* Step 0: Company Information */}
                 {currentStep === 0 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="organization_name"
@@ -279,15 +321,23 @@ export default function RegisterPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>BEE Level</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                            <Select
+                              onValueChange={value => field.onChange(parseInt(value))}
+                              defaultValue={field.value.toString()}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select BEE Level" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {BEE_LEVELS.map((level) => (
-                                  <SelectItem key={level.value} value={level.value.replace('level_', '').replace('non_compliant', '9')}>
+                                {BEE_LEVELS.map(level => (
+                                  <SelectItem
+                                    key={level.value}
+                                    value={level.value
+                                      .replace('level_', '')
+                                      .replace('non_compliant', '9')}
+                                  >
                                     {level.label} ({level.points} points)
                                   </SelectItem>
                                 ))}
@@ -311,7 +361,7 @@ export default function RegisterPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {SOUTH_AFRICAN_PROVINCES.map((province) => (
+                                {SOUTH_AFRICAN_PROVINCES.map(province => (
                                   <SelectItem key={province.value} value={province.value}>
                                     {province.label}
                                   </SelectItem>
@@ -331,7 +381,10 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel>Industry</FormLabel>
                           <FormControl>
-                            <Input placeholder="Manufacturing, Technology, Construction, etc." {...field} />
+                            <Input
+                              placeholder="Manufacturing, Technology, Construction, etc."
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -343,7 +396,7 @@ export default function RegisterPage() {
                 {/* Step 1: Administrator Account */}
                 {currentStep === 1 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="name"
@@ -418,7 +471,7 @@ export default function RegisterPage() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
@@ -454,7 +507,7 @@ export default function RegisterPage() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                 >
                                   {showConfirmPassword ? (
@@ -490,7 +543,7 @@ export default function RegisterPage() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="address.suburb"
@@ -532,7 +585,7 @@ export default function RegisterPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {SOUTH_AFRICAN_PROVINCES.map((province) => (
+                                {SOUTH_AFRICAN_PROVINCES.map(province => (
                                   <SelectItem key={province.value} value={province.value}>
                                     {province.label}
                                   </SelectItem>
@@ -569,12 +622,9 @@ export default function RegisterPage() {
                         control={form.control}
                         name="terms_accepted"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel>
@@ -592,12 +642,9 @@ export default function RegisterPage() {
                         control={form.control}
                         name="privacy_accepted"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel>
@@ -615,12 +662,9 @@ export default function RegisterPage() {
                         control={form.control}
                         name="marketing_consent"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel>
@@ -632,12 +676,15 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-blue-800 mb-2">What happens next?</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
+                    <div className="rounded-lg bg-blue-50 p-4">
+                      <h4 className="mb-2 font-semibold text-blue-800">What happens next?</h4>
+                      <ul className="space-y-1 text-sm text-blue-700">
                         <li>• We&apos;ll send you an email verification link</li>
                         <li>• Your account will be activated after email verification</li>
-                        <li>• You can start inviting team members and setting up your procurement process</li>
+                        <li>
+                          • You can start inviting team members and setting up your procurement
+                          process
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -678,10 +725,7 @@ export default function RegisterPage() {
             <div className="w-full">
               <div className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link
-                  href="/auth/login"
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
+                <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
                   Sign in here
                 </Link>
               </div>
@@ -690,5 +734,5 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -86,7 +86,9 @@ interface Deferred<T> {
   reject: (reason?: unknown) => void;
 }
 
-export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceRequestOptions> extends EventEmitter {
+export class AIServiceBase<
+  TOptions extends AIServiceRequestOptions = AIServiceRequestOptions,
+> extends EventEmitter {
   protected readonly serviceName: string;
   protected readonly defaultProvider?: AIProviderId;
   protected readonly defaultDisableFallback?: boolean;
@@ -108,9 +110,12 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
 
   protected async executeOperation<T>(
     operation: string,
-    executor: (context: { service: AIService; runtimeOptions?: AIProviderRuntimeOptions }) => Promise<T>,
+    executor: (context: {
+      service: AIService;
+      runtimeOptions?: AIProviderRuntimeOptions;
+    }) => Promise<T>,
     options?: TOptions,
-    eventMetadata?: Record<string, unknown>,
+    eventMetadata?: Record<string, unknown>
   ): Promise<AIServiceResponse<T>> {
     const requestId = options?.requestId ?? this.generateRequestId();
     const notifyChannel = options?.notifyChannel ?? this.notifyChannel;
@@ -123,15 +128,25 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
       operation,
       metadata,
     });
-    await this.notifyEvent('request', {
-      requestId,
-      service: this.serviceName,
-      operation,
-      metadata,
-      timestamp: this.getTimestamp(),
-    }, notifyChannel);
+    await this.notifyEvent(
+      'request',
+      {
+        requestId,
+        service: this.serviceName,
+        operation,
+        metadata,
+        timestamp: this.getTimestamp(),
+      },
+      notifyChannel
+    );
 
-    const { service, cleanup } = this.createServiceInstance(options, requestId, operation, notifyChannel, metadata);
+    const { service, cleanup } = this.createServiceInstance(
+      options,
+      requestId,
+      operation,
+      notifyChannel,
+      metadata
+    );
     const runtimeOptions = this.buildRuntimeOptions(options);
 
     try {
@@ -185,7 +200,7 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
 
   protected createStreamingResult<TChunk, TResult>(
     iterator: AsyncIterable<TChunk>,
-    context: StreamingContext<TChunk, TResult>,
+    context: StreamingContext<TChunk, TResult>
   ): StreamingResult<TChunk, TResult> {
     const deferred = this.createDeferred<AIServiceResponse<TResult>>();
     const self = this;
@@ -302,7 +317,15 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
       return undefined;
     }
 
-    const { provider: _provider, requestId: _requestId, notifyChannel: _notifyChannel, disableFallback: _disableFallback, tags: _tags, rethrowOnError: _rethrowOnError, ...runtime } = options;
+    const {
+      provider: _provider,
+      requestId: _requestId,
+      notifyChannel: _notifyChannel,
+      disableFallback: _disableFallback,
+      tags: _tags,
+      rethrowOnError: _rethrowOnError,
+      ...runtime
+    } = options;
     const cleaned: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(runtime)) {
       if (value !== undefined) {
@@ -317,7 +340,7 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
     requestId: string,
     operation: string,
     notifyChannel: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): { service: AIService; cleanup: () => void } {
     const provider = options?.provider ?? this.defaultProvider;
     const disableFallback = options?.disableFallback ?? this.defaultDisableFallback;
@@ -346,7 +369,7 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
     requestId: string,
     operation: string,
     notifyChannel: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void {
     const payload: AIUsageEventEnvelope = {
       ...event,
@@ -403,12 +426,18 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
         return (result as unknown).usage as AIUsageMetrics;
       }
       if ('results' in result && Array.isArray((result as unknown).results)) {
-        return this.combineUsage(((result as unknown).results as unknown[]).map((item) => item?.usage as AIUsageMetrics | undefined));
+        return this.combineUsage(
+          ((result as unknown).results as unknown[]).map(
+            item => item?.usage as AIUsageMetrics | undefined
+          )
+        );
       }
     }
 
     if (Array.isArray(result)) {
-      return this.combineUsage(result.map((item) => (item as unknown)?.usage as AIUsageMetrics | undefined));
+      return this.combineUsage(
+        result.map(item => (item as unknown)?.usage as AIUsageMetrics | undefined)
+      );
     }
 
     return undefined;
@@ -467,7 +496,10 @@ export class AIServiceBase<TOptions extends AIServiceRequestOptions = AIServiceR
     metadata?: Record<string, unknown>;
     context?: Record<string, unknown>;
   }): AIServiceResponse<T> {
-    const message = params.error instanceof Error ? params.error.message : String(params.error ?? 'Unknown error');
+    const message =
+      params.error instanceof Error
+        ? params.error.message
+        : String(params.error ?? 'Unknown error');
     return {
       success: false,
       error: message,

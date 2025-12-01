@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import React from "react"
-import { useParams } from "next/navigation"
-import AppLayout from '@/components/layout/AppLayout'
-import CustomerLoyaltyProfile from "@/components/loyalty/admin/CustomerLoyaltyProfile"
+import React from 'react';
+import { useParams } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import CustomerLoyaltyProfile from '@/components/loyalty/admin/CustomerLoyaltyProfile';
 
 /**
  * Customer Loyalty Profile Admin Page
@@ -12,14 +12,14 @@ import CustomerLoyaltyProfile from "@/components/loyalty/admin/CustomerLoyaltyPr
  * Allows admins to view and manage customer-specific loyalty data.
  */
 export default function CustomerLoyaltyProfilePage() {
-  const params = useParams()
-  const customerId = params?.id as string
+  const params = useParams();
+  const customerId = params?.id as string;
 
   return (
     <AppLayout
       breadcrumbs={[
-        { label: "Loyalty & Rewards", href: "/admin/loyalty" },
-        { label: "Customers", href: "/admin/loyalty/customers" },
+        { label: 'Loyalty & Rewards', href: '/admin/loyalty' },
+        { label: 'Customers', href: '/admin/loyalty/customers' },
         { label: `Customer ${customerId}` },
       ]}
     >
@@ -34,5 +34,5 @@ export default function CustomerLoyaltyProfilePage() {
         <CustomerLoyaltyProfile customerId={customerId} />
       </div>
     </AppLayout>
-  )
+  );
 }

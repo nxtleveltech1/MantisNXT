@@ -18,32 +18,37 @@
  * }
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 import { z } from 'zod';
 
-const AnalyzeRequestSchema = z.object({
-  table: z.string().optional().describe('Table name to analyze'),
-  query: z.string().optional().describe('Custom SQL query'),
-  focus: z.enum(['trends', 'patterns', 'risks', 'opportunities', 'all']).optional().default('all'),
-}).refine(data => data.table || data.query, {
-  message: 'Either table or query must be provided',
-});
+const AnalyzeRequestSchema = z
+  .object({
+    table: z.string().optional().describe('Table name to analyze'),
+    query: z.string().optional().describe('Custom SQL query'),
+    focus: z
+      .enum(['trends', 'patterns', 'risks', 'opportunities', 'all'])
+      .optional()
+      .default('all'),
+  })
+  .refine(data => data.table || data.query, {
+    message: 'Either table or query must be provided',
+  });
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedInput = AnalyzeRequestSchema.parse(body)
+    const body = await request.json();
+    const validatedInput = AnalyzeRequestSchema.parse(body);
 
     const execResult = await executeWithOptionalAsync(request, async () => {
-      const started = Date.now()
+      const started = Date.now();
       const analysis = await aiDatabase.analyzeData({
         table: validatedInput.table,
         query: validatedInput.query,
         focus: validatedInput.focus,
-      })
+      });
 
       return {
         success: true,
@@ -59,8 +64,8 @@ export async function POST(request: NextRequest) {
           data_source: validatedInput.table || 'custom_query',
         },
         timestamp: new Date().toISOString(),
-      }
-    })
+      };
+    });
 
     if (execResult.queued) {
       return NextResponse.json(
@@ -70,12 +75,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('Data analysis error:', error)
+    console.error('Data analysis error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
           details: error.issues,
         },
         { status: 400 }
-      )
+      );
     }
 
     return NextResponse.json(
@@ -95,9 +100,10 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function GET(request: NextRequest) {
+}
+export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/analyze',
     method: 'POST',
@@ -113,21 +119,21 @@ export async function POST(request: NextRequest) {
         request: {
           table: 'inventory_items',
           focus: 'trends',
-        }
+        },
       },
       {
         description: 'Find risks in supplier data',
         request: {
           table: 'suppliers',
           focus: 'risks',
-        }
+        },
       },
       {
         description: 'Analyze custom query',
         request: {
-          query: 'SELECT * FROM purchase_orders WHERE status = \'pending\'',
+          query: "SELECT * FROM purchase_orders WHERE status = 'pending'",
           focus: 'all',
-        }
+        },
       },
     ],
     insight_categories: [

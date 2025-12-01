@@ -29,16 +29,24 @@ interface ErrorStateProps {
   className?: string;
 }
 
-export function ConnectionError({ onRetry, className }: { onRetry?: () => void; className?: string }) {
+export function ConnectionError({
+  onRetry,
+  className,
+}: {
+  onRetry?: () => void;
+  className?: string;
+}) {
   return (
     <Alert variant="destructive" className={cn('border-red-200', className)}>
       <WifiOff className="h-4 w-4" />
       <AlertTitle>Connection Failed</AlertTitle>
       <AlertDescription className="mt-2">
-        <p className="mb-3">Unable to connect to the database. Please check your connection and try again.</p>
+        <p className="mb-3">
+          Unable to connect to the database. Please check your connection and try again.
+        </p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry Connection
           </Button>
         )}
@@ -52,11 +60,11 @@ export function ValidationError({ message, onRetry, className }: ErrorStateProps
     <Alert variant="destructive" className={cn('border-amber-200 bg-amber-50', className)}>
       <AlertTriangle className="h-4 w-4 text-amber-700" />
       <AlertTitle className="text-amber-900">Validation Error</AlertTitle>
-      <AlertDescription className="text-amber-800 mt-2">
+      <AlertDescription className="mt-2 text-amber-800">
         <p className="mb-3">{message}</p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
         )}
@@ -71,22 +79,32 @@ export function PermissionError({ className }: { className?: string }) {
       <ShieldAlert className="h-4 w-4" />
       <AlertTitle>Permission Denied</AlertTitle>
       <AlertDescription className="mt-2">
-        <p>You don&apos;t have permission to perform this action. Please contact your administrator.</p>
+        <p>
+          You don&apos;t have permission to perform this action. Please contact your administrator.
+        </p>
       </AlertDescription>
     </Alert>
   );
 }
 
-export function DatabaseError({ onRetry, className }: { onRetry?: () => void; className?: string }) {
+export function DatabaseError({
+  onRetry,
+  className,
+}: {
+  onRetry?: () => void;
+  className?: string;
+}) {
   return (
     <Alert variant="destructive" className={cn('border-red-200', className)}>
       <Database className="h-4 w-4" />
       <AlertTitle>Database Error</AlertTitle>
       <AlertDescription className="mt-2">
-        <p className="mb-3">A database error occurred. This has been logged and our team has been notified.</p>
+        <p className="mb-3">
+          A database error occurred. This has been logged and our team has been notified.
+        </p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         )}
@@ -101,7 +119,7 @@ export function EmptyState({
   message,
   action,
   actionLabel,
-  className
+  className,
 }: {
   icon?: React.ElementType;
   title: string;
@@ -111,12 +129,14 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center py-16 px-4 text-center', className)}>
-      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-        <Icon className="h-8 w-8 text-muted-foreground" />
+    <div
+      className={cn('flex flex-col items-center justify-center px-4 py-16 text-center', className)}
+    >
+      <div className="bg-muted mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <Icon className="text-muted-foreground h-8 w-8" />
       </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-md mb-6">{message}</p>
+      <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+      <p className="text-muted-foreground mb-6 max-w-md text-sm">{message}</p>
       {action && actionLabel && (
         <Button onClick={action} variant="outline">
           {actionLabel}
@@ -173,7 +193,7 @@ export function NoStockDataState() {
 export function UploadFailedState({
   error,
   onRetry,
-  onCancel
+  onCancel,
 }: {
   error: string;
   onRetry: () => void;
@@ -182,16 +202,16 @@ export function UploadFailedState({
   return (
     <Card className="border-destructive">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
+        <CardTitle className="text-destructive flex items-center gap-2">
           <FileX className="h-5 w-5" />
           Upload Failed
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground text-sm">{error}</p>
         <div className="flex items-center gap-2">
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
           <Button onClick={onCancel} variant="ghost" size="sm">
@@ -206,7 +226,7 @@ export function UploadFailedState({
 export function MergeFailedState({
   errors,
   onRetry,
-  onCancel
+  onCancel,
 }: {
   errors: string[];
   onRetry: () => void;
@@ -215,23 +235,25 @@ export function MergeFailedState({
   return (
     <Card className="border-destructive">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
+        <CardTitle className="text-destructive flex items-center gap-2">
           <AlertCircle className="h-5 w-5" />
           Merge Failed
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground mb-2">
+        <p className="text-muted-foreground mb-2 text-sm">
           The following errors occurred during merge:
         </p>
-        <ul className="list-disc list-inside space-y-1 text-sm">
+        <ul className="list-inside list-disc space-y-1 text-sm">
           {errors.map((error, i) => (
-            <li key={i} className="text-destructive">{error}</li>
+            <li key={i} className="text-destructive">
+              {error}
+            </li>
           ))}
         </ul>
         <div className="flex items-center gap-2 pt-2">
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry Merge
           </Button>
           <Button onClick={onCancel} variant="ghost" size="sm">
@@ -243,20 +265,26 @@ export function MergeFailedState({
   );
 }
 
-export function GenericError({ title, message, onRetry, retryLabel = 'Retry', className }: ErrorStateProps) {
+export function GenericError({
+  title,
+  message,
+  onRetry,
+  retryLabel = 'Retry',
+  className,
+}: ErrorStateProps) {
   return (
     <Card className={cn('border-destructive', className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
+        <CardTitle className="text-destructive flex items-center gap-2">
           <AlertCircle className="h-5 w-5" />
           {title || 'Error'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-muted-foreground text-sm">{message}</p>
         {onRetry && (
           <Button onClick={onRetry} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             {retryLabel}
           </Button>
         )}
@@ -267,9 +295,9 @@ export function GenericError({ title, message, onRetry, retryLabel = 'Retry', cl
 
 export function InlineError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive">
+    <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md p-3">
       <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      <p className="text-sm flex-1">{message}</p>
+      <p className="flex-1 text-sm">{message}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="ghost" size="sm" className="flex-shrink-0">
           <RefreshCw className="h-4 w-4" />

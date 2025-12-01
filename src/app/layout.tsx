@@ -1,21 +1,17 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { Providers } from './providers'
-import '@/lib/fetch-interceptor'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
+import '@/lib/fetch-interceptor';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-})
+});
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-ZA" suppressHydrationWarning className={inter.variable}>
       <head>
@@ -38,7 +34,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-inter antialiased theme-transition">
+      <body className="font-inter theme-transition antialiased">
         <Providers>{children}</Providers>
         <script
           dangerouslySetInnerHTML={{
@@ -52,5 +48,5 @@ export default function RootLayout({
         />
       </body>
     </html>
-  )
+  );
 }

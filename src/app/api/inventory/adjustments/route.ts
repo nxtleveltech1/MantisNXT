@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ const AdjustmentSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = AdjustmentSchema.parse(await req.json());
-    const res = await withTransaction(async (client) => {
+    const res = await withTransaction(async client => {
       // Get current stock from stock_on_hand
       const it = await client.query(
         `SELECT soh.soh_id, soh.qty, soh.supplier_product_id
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
           Math.abs(Number(body.delta)),
           body.reason,
           body.reason,
-          body.performedBy || 'system'
+          body.performedBy || 'system',
         ]
       );
 
@@ -68,4 +68,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: e?.message ?? String(e) }, { status: code });
   }
 }
-

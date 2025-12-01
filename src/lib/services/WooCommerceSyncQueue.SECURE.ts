@@ -75,9 +75,7 @@ function validateIntRange(
   const num = Math.floor(value);
 
   if (num < min || num > max) {
-    throw new Error(
-      `${paramName} must be between ${min} and ${max}, got ${value}`
-    );
+    throw new Error(`${paramName} must be between ${min} and ${max}, got ${value}`);
   }
 
   return num;
@@ -182,7 +180,14 @@ export class WooCommerceSyncQueue {
       ON CONFLICT (queue_id, woo_customer_id)
       DO UPDATE SET updated_at = NOW()
       RETURNING id`,
-      [queueId, orgId, wooCustomerId, JSON.stringify(customerData), sanitizedExternalId, idempotencyToken]
+      [
+        queueId,
+        orgId,
+        wooCustomerId,
+        JSON.stringify(customerData),
+        sanitizedExternalId,
+        idempotencyToken,
+      ]
     );
 
     if (!result.rows.length) {
@@ -253,10 +258,7 @@ export class WooCommerceSyncQueue {
    * - Validates all UUIDs
    * - Org_id isolation (could be enforced with RLS)
    */
-  static async markLinesProcessing(
-    lineIds: string[],
-    orgId: string
-  ): Promise<void> {
+  static async markLinesProcessing(lineIds: string[], orgId: string): Promise<void> {
     if (!lineIds.length) return;
 
     validateUUID(orgId, 'orgId');
@@ -421,11 +423,12 @@ export class WooCommerceSyncQueue {
     return {
       ...queue,
       progress,
-      processingCount: queue.total_count
-        - queue.draft_count
-        - queue.done_count
-        - queue.failed_count
-        - queue.cancelled_count,
+      processingCount:
+        queue.total_count -
+        queue.draft_count -
+        queue.done_count -
+        queue.failed_count -
+        queue.cancelled_count,
     };
   }
 
@@ -471,11 +474,7 @@ export class WooCommerceSyncQueue {
    * - Org_id isolation enforced
    * - User context required for audit
    */
-  static async forceDone(
-    queueId: string,
-    orgId: string,
-    userId: string
-  ): Promise<number> {
+  static async forceDone(queueId: string, orgId: string, userId: string): Promise<number> {
     validateUUID(queueId, 'queueId');
     validateUUID(orgId, 'orgId');
     validateUUID(userId, 'userId');
@@ -722,10 +721,7 @@ export class WooCommerceSyncQueue {
    * - Retention days clamped to reasonable range (1-365)
    * - CRITICAL: Uses parameterized query, NOT string interpolation
    */
-  static async cleanupOldQueues(
-    orgId: string,
-    retentionDays: number = 30
-  ): Promise<number> {
+  static async cleanupOldQueues(orgId: string, retentionDays: number = 30): Promise<number> {
     validateUUID(orgId, 'orgId');
 
     // Validate and clamp retention days (prevents any manipulation)

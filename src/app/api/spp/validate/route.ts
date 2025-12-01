@@ -5,8 +5,8 @@
  * ExtractionJobQueue and ExtractionWorker for real extraction with progress tracking.
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { supplier_id } = uploadResult.rows[0];
-
 
     const supplierOrgResult = await query<{
       org_id: string | null;

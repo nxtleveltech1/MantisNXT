@@ -9,7 +9,7 @@
  * Date: 2025-10-09
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { SchemaContractValidator } from '@/lib/db/schema-contract';
 
@@ -39,10 +39,7 @@ export function createSchemaValidator<T extends (...args: unknown[]) => unknown>
     logViolations?: boolean; // Log violations (default: true)
   } = {}
 ): T {
-  const {
-    strict = process.env.NODE_ENV === 'production',
-    logViolations = true,
-  } = options;
+  const { strict = process.env.NODE_ENV === 'production', logViolations = true } = options;
 
   return ((...args: Parameters<T>): ReturnType<T> => {
     // Extract SQL query from arguments (first string argument)
@@ -65,11 +62,7 @@ export function createSchemaValidator<T extends (...args: unknown[]) => unknown>
         }
 
         if (strict) {
-          throw new SchemaViolationError(
-            'Query contains unqualified table names',
-            sql,
-            tableRefs
-          );
+          throw new SchemaViolationError('Query contains unqualified table names', sql, tableRefs);
         }
       }
     }

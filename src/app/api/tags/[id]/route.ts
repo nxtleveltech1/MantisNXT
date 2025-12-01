@@ -1,34 +1,31 @@
-import { NextResponse } from "next/server"
-import { getSchemaMode } from "@/lib/cmm/db"
-import { getCoreTag, updateCoreTag, deleteCoreTag } from "@/lib/cmm/tag-service-core"
+import { NextResponse } from 'next/server';
+import { getSchemaMode } from '@/lib/cmm/db';
+import { getCoreTag, updateCoreTag, deleteCoreTag } from '@/lib/cmm/tag-service-core';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const schemaMode = await getSchemaMode()
+    const schemaMode = await getSchemaMode();
 
-    if (schemaMode === "none") {
+    if (schemaMode === 'none') {
       return NextResponse.json(
         {
           success: false,
-          message: "Tag service unavailable (no schema detected).",
+          message: 'Tag service unavailable (no schema detected).',
         },
-        { status: 503 },
-      )
+        { status: 503 }
+      );
     }
 
-    if (schemaMode === "core") {
-      const tag = await getCoreTag(params.id)
+    if (schemaMode === 'core') {
+      const tag = await getCoreTag(params.id);
       if (!tag) {
         return NextResponse.json(
           {
             success: false,
-            message: "Tag not found",
+            message: 'Tag not found',
           },
-          { status: 404 },
-        )
+          { status: 404 }
+        );
       }
 
       return NextResponse.json({
@@ -47,49 +44,46 @@ export async function GET(
           updated_at: tag.updated_at,
           product_count: tag.product_count,
         },
-      })
+      });
     }
 
     return NextResponse.json(
       {
         success: false,
-        message: "Legacy mode not supported for single tag retrieval",
+        message: 'Legacy mode not supported for single tag retrieval',
       },
-      { status: 501 },
-    )
+      { status: 501 }
+    );
   } catch (error) {
-    console.error("Tag fetch error:", error)
+    console.error('Tag fetch error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to fetch tag",
+        message: error instanceof Error ? error.message : 'Failed to fetch tag',
       },
-      { status: 500 },
-    )
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json()
-    const { name, type, description, color, icon, parent_tag_id, metadata, is_active } = body
+    const body = await request.json();
+    const { name, type, description, color, icon, parent_tag_id, metadata, is_active } = body;
 
-    const schemaMode = await getSchemaMode()
+    const schemaMode = await getSchemaMode();
 
-    if (schemaMode === "none") {
+    if (schemaMode === 'none') {
       return NextResponse.json(
         {
           success: false,
-          message: "Tag service unavailable (no schema detected).",
+          message: 'Tag service unavailable (no schema detected).',
         },
-        { status: 503 },
-      )
+        { status: 503 }
+      );
     }
 
-    if (schemaMode === "core") {
+    if (schemaMode === 'core') {
       const tag = await updateCoreTag(params.id, {
         name,
         type,
@@ -99,7 +93,7 @@ export async function PUT(
         parent_tag_id,
         metadata,
         is_active,
-      })
+      });
       return NextResponse.json({
         success: true,
         tag: {
@@ -107,72 +101,68 @@ export async function PUT(
           name: tag.name,
           type: tag.type,
         },
-      })
+      });
     }
 
     return NextResponse.json(
       {
         success: false,
-        message: "Update not supported in legacy mode",
+        message: 'Update not supported in legacy mode',
       },
-      { status: 501 },
-    )
+      { status: 501 }
+    );
   } catch (error) {
-    console.error("Tag update error:", error)
+    console.error('Tag update error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to update tag",
+        message: error instanceof Error ? error.message : 'Failed to update tag',
       },
-      { status: 500 },
-    )
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { searchParams } = new URL(request.url)
-    const cascade = searchParams.get("cascade") === "true"
+    const { searchParams } = new URL(request.url);
+    const cascade = searchParams.get('cascade') === 'true';
 
-    const schemaMode = await getSchemaMode()
+    const schemaMode = await getSchemaMode();
 
-    if (schemaMode === "none") {
+    if (schemaMode === 'none') {
       return NextResponse.json(
         {
           success: false,
-          message: "Tag service unavailable (no schema detected).",
+          message: 'Tag service unavailable (no schema detected).',
         },
-        { status: 503 },
-      )
+        { status: 503 }
+      );
     }
 
-    if (schemaMode === "core") {
-      const result = await deleteCoreTag(params.id, cascade)
+    if (schemaMode === 'core') {
+      const result = await deleteCoreTag(params.id, cascade);
       return NextResponse.json({
         success: true,
-        message: `Tag deleted${result.assignmentsRemoved > 0 ? ` (${result.assignmentsRemoved} assignments removed)` : ""}`,
-      })
+        message: `Tag deleted${result.assignmentsRemoved > 0 ? ` (${result.assignmentsRemoved} assignments removed)` : ''}`,
+      });
     }
 
     return NextResponse.json(
       {
         success: false,
-        message: "Delete not supported in legacy mode",
+        message: 'Delete not supported in legacy mode',
       },
-      { status: 501 },
-    )
+      { status: 501 }
+    );
   } catch (error) {
-    console.error("Tag deletion error:", error)
+    console.error('Tag deletion error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to delete tag",
+        message: error instanceof Error ? error.message : 'Failed to delete tag',
       },
-      { status: 500 },
-    )
+      { status: 500 }
+    );
   }
 }
-

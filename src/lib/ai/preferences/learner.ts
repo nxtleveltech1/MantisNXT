@@ -83,7 +83,8 @@ export class Learner {
     const suggestions: PreferenceSuggestion[] = [];
 
     for (const pattern of patterns) {
-      if (pattern.confidence > 0.7) { // Only suggest high-confidence adaptations
+      if (pattern.confidence > 0.7) {
+        // Only suggest high-confidence adaptations
         const suggestion = await this.generateSuggestionFromPattern(userId, pattern);
         if (suggestion) {
           suggestions.push(suggestion);
@@ -102,7 +103,8 @@ export class Learner {
       const suggestions = await this.suggestAdaptation(userId);
 
       for (const suggestion of suggestions) {
-        if (suggestion.confidence > 0.8) { // Only auto-apply very high confidence suggestions
+        if (suggestion.confidence > 0.8) {
+          // Only auto-apply very high confidence suggestions
           await preferenceManager.setPreference(
             userId,
             suggestion.category,
@@ -142,13 +144,12 @@ export class Learner {
    */
   async resetLearning(userId: string): Promise<void> {
     try {
-      await query(
-        `DELETE FROM ai_learning_signals WHERE user_id = $1`,
-        [userId]
-      );
+      await query(`DELETE FROM ai_learning_signals WHERE user_id = $1`, [userId]);
     } catch (error) {
       console.error('Error resetting learning data:', error);
-      throw new Error(`Failed to reset learning: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to reset learning: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -357,7 +358,10 @@ export class Learner {
   /**
    * Generate insights from patterns
    */
-  private async generateInsights(userId: string, patterns: InteractionPattern[]): Promise<Record<string, unknown>> {
+  private async generateInsights(
+    userId: string,
+    patterns: InteractionPattern[]
+  ): Promise<Record<string, unknown>> {
     const insights: Record<string, unknown> = {
       totalPatterns: patterns.length,
       highConfidencePatterns: patterns.filter(p => p.confidence > 0.8).length,
@@ -381,7 +385,7 @@ export class Learner {
       }
     }
 
-    const sorted = Object.entries(categoryCounts).sort(([,a], [,b]) => b - a);
+    const sorted = Object.entries(categoryCounts).sort(([, a], [, b]) => b - a);
     return sorted[0]?.[0] || 'communication';
   }
 

@@ -1,17 +1,17 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { withAuth } from '@/middleware/api-auth'
-import { getOrSet, makeKey } from '@/lib/cache/responseCache'
-import { pool } from '@/lib/database/unified-connection'
+import { withAuth } from '@/middleware/api-auth';
+import { getOrSet, makeKey } from '@/lib/cache/responseCache';
+import { pool } from '@/lib/database/unified-connection';
 
 export const GET = withAuth(async (request: NextRequest) => {
-  const cacheKey = makeKey(request.url)
+  const cacheKey = makeKey(request.url);
 
   try {
     const payload = await getOrSet(cacheKey, async () => {
-      const searchParams = request.nextUrl.searchParams
-      const organizationId = searchParams.get('organizationId') || '1'
+      const searchParams = request.nextUrl.searchParams;
+      const organizationId = searchParams.get('organizationId') || '1';
 
       const [
         suppliersResult,
@@ -21,18 +21,25 @@ export const GET = withAuth(async (request: NextRequest) => {
         inventoryValueResult,
         supplierMetricsResult,
       ] = await Promise.all([
-        pool.query<{ count: string }>('SELECT COUNT(*) as count FROM core.supplier WHERE active = $1', [true]),
+        pool.query<{ count: string }>(
+          'SELECT COUNT(*) as count FROM core.supplier WHERE active = $1',
+          [true]
+        ),
         pool.query<{ count: string }>('SELECT COUNT(*) as count FROM core.stock_on_hand'),
         pool.query<{ count: string }>(
           'SELECT COUNT(*) as count FROM core.stock_on_hand WHERE qty <= 10 AND qty > 0'
         ),
-        pool.query<{ out_of_stock: string }>('SELECT COUNT(*) as out_of_stock FROM core.stock_on_hand WHERE qty = 0'),
-        pool.query<{ total_value: string }>('SELECT COALESCE(SUM(qty * unit_cost), 0) as total_value FROM core.stock_on_hand'),
+        pool.query<{ out_of_stock: string }>(
+          'SELECT COUNT(*) as out_of_stock FROM core.stock_on_hand WHERE qty = 0'
+        ),
+        pool.query<{ total_value: string }>(
+          'SELECT COALESCE(SUM(qty * unit_cost), 0) as total_value FROM core.stock_on_hand'
+        ),
         pool.query<{
-          total_suppliers: string
-          active_suppliers: string
-          preferred_suppliers: string
-          avg_performance_score: string
+          total_suppliers: string;
+          active_suppliers: string;
+          preferred_suppliers: string;
+          avg_performance_score: string;
         }>(
           `
             SELECT
@@ -43,11 +50,11 @@ export const GET = withAuth(async (request: NextRequest) => {
             FROM core.supplier
           `
         ),
-      ])
+      ]);
 
-      const totalInventoryValue = Number(inventoryValueResult.rows[0]?.total_value ?? 0)
-      const outOfStockCount = Number(outOfStockResult.rows[0]?.out_of_stock ?? 0)
-      const supplierMetrics = supplierMetricsResult.rows[0] ?? {}
+      const totalInventoryValue = Number(inventoryValueResult.rows[0]?.total_value ?? 0);
+      const outOfStockCount = Number(outOfStockResult.rows[0]?.out_of_stock ?? 0);
+      const supplierMetrics = supplierMetricsResult.rows[0] ?? {};
 
       return {
         success: true,
@@ -92,7 +99,10 @@ export const GET = withAuth(async (request: NextRequest) => {
               metric: 'Stock Accuracy',
               value: Math.max(
                 85,
-                100 - (outOfStockCount / Math.max(1, Number(inventoryCountResult.rows[0]?.count ?? 1))) * 100
+                100 -
+                  (outOfStockCount /
+                    Math.max(1, Number(inventoryCountResult.rows[0]?.count ?? 1))) *
+                    100
               ),
               change: '+0.3%',
               trend: 'up',
@@ -101,12 +111,12 @@ export const GET = withAuth(async (request: NextRequest) => {
         },
         meta: { organizationId },
         timestamp: new Date().toISOString(),
-      }
-    })
+      };
+    });
 
-    return NextResponse.json(payload)
+    return NextResponse.json(payload);
   } catch (error) {
-    console.error('Dashboard API error:', error)
+    console.error('Dashboard API error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -114,6 +124,6 @@ export const GET = withAuth(async (request: NextRequest) => {
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-})
+});

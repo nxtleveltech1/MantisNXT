@@ -12,4 +12,3 @@ export interface InventoryItem {
   backorderable: boolean;
   updatedAt: string;
 }
-

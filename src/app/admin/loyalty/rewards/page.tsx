@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import RewardCatalogManager from "@/components/loyalty/admin/RewardCatalogManager"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import RewardCatalogManager from '@/components/loyalty/admin/RewardCatalogManager';
 
 /**
  * Rewards Catalog Admin Page
@@ -14,14 +14,11 @@ export default function RewardCatalogPage() {
   return (
     <AppLayout
       title="Loyalty & Rewards"
-      breadcrumbs={[
-        { label: "Loyalty & Rewards", href: "/admin/loyalty" },
-        { label: "Rewards" },
-      ]}
+      breadcrumbs={[{ label: 'Loyalty & Rewards', href: '/admin/loyalty' }, { label: 'Rewards' }]}
     >
       <div className="mx-auto w-full space-y-6 xl:max-w-7xl">
         <RewardCatalogManager />
       </div>
     </AppLayout>
-  )
+  );
 }

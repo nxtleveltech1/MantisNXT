@@ -7,7 +7,7 @@
  * To activate: Rename this file to route.ts (backup current route.ts first)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { generateObject } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
@@ -21,10 +21,12 @@ const SupplierLocationSchema = z.object({
   country: z.string().describe('Country where supplier is located'),
   region: z.string().optional().describe('State/province/region'),
   city: z.string().optional().describe('City'),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }).optional(),
+  coordinates: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
 });
 
 const CapacityInfoSchema = z.object({
@@ -64,23 +66,29 @@ const DiscoveredSupplierSchema = z.object({
   qualityScore: z.number().min(0).max(1).optional().describe('Quality assessment score'),
 
   // Certifications and compliance
-  certifications: z.array(z.object({
-    name: z.string(),
-    issuingBody: z.string().optional(),
-    expiryDate: z.string().optional(),
-    verified: z.boolean(),
-  })).describe('Industry certifications'),
+  certifications: z
+    .array(
+      z.object({
+        name: z.string(),
+        issuingBody: z.string().optional(),
+        expiryDate: z.string().optional(),
+        verified: z.boolean(),
+      })
+    )
+    .describe('Industry certifications'),
 
   // Capacity
   capacity: CapacityInfoSchema.optional(),
 
   // Pricing (if available)
-  pricingIndicator: z.object({
-    range: z.enum(['budget', 'moderate', 'premium']),
-    currency: z.string(),
-    estimatedUnitCost: z.number().optional(),
-    priceCompetitiveness: z.enum(['below_market', 'market_rate', 'above_market']).optional(),
-  }).optional(),
+  pricingIndicator: z
+    .object({
+      range: z.enum(['budget', 'moderate', 'premium']),
+      currency: z.string(),
+      estimatedUnitCost: z.number().optional(),
+      priceCompetitiveness: z.enum(['below_market', 'market_rate', 'above_market']).optional(),
+    })
+    .optional(),
 
   // Contact and details
   contactInfo: ContactInfoSchema.optional(),
@@ -108,12 +116,14 @@ const SupplierDiscoveryResponseSchema = z.object({
     searchStrategy: z.string().describe('Strategy used for discovery'),
     limitations: z.array(z.string()).optional().describe('Known limitations of this search'),
   }),
-  marketInsights: z.object({
-    averageRiskScore: z.number(),
-    pricingTrend: z.enum(['increasing', 'stable', 'decreasing']).optional(),
-    competitiveLandscape: z.string().describe('Brief market overview'),
-    recommendations: z.array(z.string()).describe('Strategic recommendations'),
-  }).optional(),
+  marketInsights: z
+    .object({
+      averageRiskScore: z.number(),
+      pricingTrend: z.enum(['increasing', 'stable', 'decreasing']).optional(),
+      competitiveLandscape: z.string().describe('Brief market overview'),
+      recommendations: z.array(z.string()).describe('Strategic recommendations'),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -126,27 +136,35 @@ const DiscoveryRequestSchema = z.object({
     category: z.array(z.string()).min(1).max(10),
     location: z.string().optional(),
     certifications: z.array(z.string()).optional(),
-    capacity: z.object({
-      min: z.number().min(0),
-      max: z.number().min(0),
-    }).optional(),
-    priceRange: z.object({
-      min: z.number().min(0),
-      max: z.number().min(0),
-      currency: z.string().default('USD'),
-    }).optional(),
+    capacity: z
+      .object({
+        min: z.number().min(0),
+        max: z.number().min(0),
+      })
+      .optional(),
+    priceRange: z
+      .object({
+        min: z.number().min(0),
+        max: z.number().min(0),
+        currency: z.string().default('USD'),
+      })
+      .optional(),
   }),
-  filters: z.object({
-    existingSuppliers: z.boolean().optional(),
-    verified: z.boolean().optional(),
-    riskLevel: z.enum(['low', 'medium', 'high']).optional(),
-    minYearsInBusiness: z.number().optional(),
-  }).optional(),
-  options: z.object({
-    maxResults: z.number().min(1).max(50).default(10),
-    includeMarketInsights: z.boolean().default(true),
-    detailLevel: z.enum(['basic', 'standard', 'comprehensive']).default('standard'),
-  }).optional(),
+  filters: z
+    .object({
+      existingSuppliers: z.boolean().optional(),
+      verified: z.boolean().optional(),
+      riskLevel: z.enum(['low', 'medium', 'high']).optional(),
+      minYearsInBusiness: z.number().optional(),
+    })
+    .optional(),
+  options: z
+    .object({
+      maxResults: z.number().min(1).max(50).default(10),
+      includeMarketInsights: z.boolean().default(true),
+      detailLevel: z.enum(['basic', 'standard', 'comprehensive']).default('standard'),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -227,7 +245,7 @@ function buildSupplierDiscoveryPrompt(request: z.infer<typeof DiscoveryRequestSc
     '- Only include suppliers you are confident exist and match requirements',
     '- Provide evidence-based scores (confidence, risk, quality)',
     '- Highlight both strengths and potential concerns',
-    '- Include actionable insights for procurement decisions',
+    '- Include actionable insights for procurement decisions'
   );
 
   // Detail level
@@ -238,7 +256,10 @@ function buildSupplierDiscoveryPrompt(request: z.infer<typeof DiscoveryRequestSc
       'Provide comprehensive details including business metrics, market positioning, and strategic recommendations.'
     );
   } else if (detailLevel === 'basic') {
-    parts.push('', 'Provide essential information only: name, location, scores, and brief analysis.');
+    parts.push(
+      '',
+      'Provide essential information only: name, location, scores, and brief analysis.'
+    );
   }
 
   // Max results
@@ -294,10 +315,16 @@ export async function POST(request: NextRequest) {
       temperature: 0.2,
     });
 
-    const usage = (result.usage ?? {}) as { promptTokens?: number; completionTokens?: number; totalTokens?: number; inputTokens?: number; outputTokens?: number }
-    const promptTokens = usage.promptTokens ?? usage.inputTokens ?? 0
-    const completionTokens = usage.completionTokens ?? usage.outputTokens ?? 0
-    const totalTokens = usage.totalTokens ?? (promptTokens + completionTokens)
+    const usage = (result.usage ?? {}) as {
+      promptTokens?: number;
+      completionTokens?: number;
+      totalTokens?: number;
+      inputTokens?: number;
+      outputTokens?: number;
+    };
+    const promptTokens = usage.promptTokens ?? usage.inputTokens ?? 0;
+    const completionTokens = usage.completionTokens ?? usage.outputTokens ?? 0;
+    const totalTokens = usage.totalTokens ?? promptTokens + completionTokens;
 
     console.log('✅ Discovery complete:', {
       suppliersFound: result.object.suppliers.length,
@@ -311,20 +338,20 @@ export async function POST(request: NextRequest) {
     // Filter by risk level
     if (validatedRequest.filters?.riskLevel) {
       const maxRisk = calculateRiskThreshold(validatedRequest.filters.riskLevel);
-      filteredSuppliers = filteredSuppliers.filter((s) => s.riskScore <= maxRisk);
+      filteredSuppliers = filteredSuppliers.filter(s => s.riskScore <= maxRisk);
     }
 
     // Filter by verification status
     if (validatedRequest.filters?.verified) {
-      filteredSuppliers = filteredSuppliers.filter((s) =>
-        s.certifications.some((cert) => cert.verified)
+      filteredSuppliers = filteredSuppliers.filter(s =>
+        s.certifications.some(cert => cert.verified)
       );
     }
 
     // Filter by years in business
     if (validatedRequest.filters?.minYearsInBusiness) {
       filteredSuppliers = filteredSuppliers.filter(
-        (s) => (s.yearsInBusiness || 0) >= validatedRequest.filters!.minYearsInBusiness!
+        s => (s.yearsInBusiness || 0) >= validatedRequest.filters!.minYearsInBusiness!
       );
     }
 

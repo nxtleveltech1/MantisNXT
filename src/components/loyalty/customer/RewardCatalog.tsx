@@ -19,17 +19,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Grid3x3,
-  List,
-  Gift,
-  Check,
-  AlertCircle,
-  Search,
-  Filter,
-  X,
-  Sparkles,
-} from 'lucide-react';
+import { Grid3x3, List, Gift, Check, AlertCircle, Search, Filter, X, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -73,10 +63,7 @@ interface Reward {
   terms?: string;
 }
 
-export function RewardCatalog({
-  customerId,
-  currentPoints,
-}: RewardCatalogProps) {
+export function RewardCatalog({ customerId, currentPoints }: RewardCatalogProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRewardType, setSelectedRewardType] = useState<string>('all');
@@ -89,12 +76,7 @@ export function RewardCatalog({
 
   // Fetch rewards
   const { data, isLoading } = useQuery({
-    queryKey: [
-      'available-rewards',
-      customerId,
-      selectedRewardType,
-      maxPoints[0],
-    ],
+    queryKey: ['available-rewards', customerId, selectedRewardType, maxPoints[0]],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedRewardType !== 'all') {
@@ -114,18 +96,15 @@ export function RewardCatalog({
   // Redeem mutation
   const redeemMutation = useMutation({
     mutationFn: async (rewardId: string) => {
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/rewards/redeem`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reward_id: rewardId }),
-        }
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/rewards/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reward_id: rewardId }),
+      });
       if (!response.ok) throw new Error('Failed to redeem reward');
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({
         queryKey: ['available-rewards', customerId],
       });
@@ -146,7 +125,7 @@ export function RewardCatalog({
 
   // Filter and sort rewards
   const filteredRewards = (data || [])
-    .filter((reward) => {
+    .filter(reward => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
@@ -188,14 +167,12 @@ export function RewardCatalog({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Reward Catalog</h2>
           <p className="text-muted-foreground">
             You have{' '}
-            <span className="font-semibold text-primary">
-              {currentPoints.toLocaleString()}
-            </span>{' '}
+            <span className="text-primary font-semibold">{currentPoints.toLocaleString()}</span>{' '}
             points to spend
           </p>
         </div>
@@ -220,14 +197,14 @@ export function RewardCatalog({
 
       {/* Search and Filters */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 placeholder="Search rewards..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
@@ -252,10 +229,7 @@ export function RewardCatalog({
               >
                 <div className="space-y-2">
                   <Label>Reward Type</Label>
-                  <Select
-                    value={selectedRewardType}
-                    onValueChange={setSelectedRewardType}
-                  >
+                  <Select value={selectedRewardType} onValueChange={setSelectedRewardType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -276,12 +250,8 @@ export function RewardCatalog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="points_asc">
-                        Points: Low to High
-                      </SelectItem>
-                      <SelectItem value="points_desc">
-                        Points: High to Low
-                      </SelectItem>
+                      <SelectItem value="points_asc">Points: Low to High</SelectItem>
+                      <SelectItem value="points_desc">Points: High to Low</SelectItem>
                       <SelectItem value="name">Name</SelectItem>
                     </SelectContent>
                   </Select>
@@ -306,18 +276,18 @@ export function RewardCatalog({
       {/* Rewards Grid/List */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <div className="space-y-4 text-center">
+            <div className="border-primary mx-auto h-12 w-12 animate-spin rounded-full border-b-2" />
             <p className="text-muted-foreground">Loading rewards...</p>
           </div>
         </div>
       ) : filteredRewards.length === 0 ? (
         <Card>
-          <CardContent className="pt-12 pb-12 text-center space-y-4">
-            <Gift className="h-12 w-12 text-muted-foreground mx-auto" />
+          <CardContent className="space-y-4 pt-12 pb-12 text-center">
+            <Gift className="text-muted-foreground mx-auto h-12 w-12" />
             <div>
               <p className="font-medium">No rewards found</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Try adjusting your filters or search query
               </p>
             </div>
@@ -327,9 +297,7 @@ export function RewardCatalog({
         <div
           className={cn(
             'grid gap-4',
-            viewMode === 'grid'
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : 'grid-cols-1'
+            viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
           )}
         >
           {filteredRewards.map((reward, index) => (
@@ -346,42 +314,33 @@ export function RewardCatalog({
                 )}
               >
                 <CardContent className="pt-6">
-                  <div
-                    className={cn(
-                      'space-y-4',
-                      viewMode === 'list' && 'flex gap-4 items-start'
-                    )}
-                  >
+                  <div className={cn('space-y-4', viewMode === 'list' && 'flex items-start gap-4')}>
                     {/* Image placeholder */}
                     <div
                       className={cn(
-                        'bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center',
-                        viewMode === 'grid'
-                          ? 'aspect-video'
-                          : 'w-32 h-32 shrink-0'
+                        'from-primary/10 to-primary/5 flex items-center justify-center rounded-lg bg-gradient-to-br',
+                        viewMode === 'grid' ? 'aspect-video' : 'h-32 w-32 shrink-0'
                       )}
                     >
-                      <Gift className="h-12 w-12 text-primary" />
+                      <Gift className="text-primary h-12 w-12" />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 space-y-3">
                       <div className="space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold line-clamp-2">
-                            {reward.name}
-                          </h3>
+                          <h3 className="line-clamp-2 font-semibold">{reward.name}</h3>
                           {reward.is_featured && (
                             <Badge
                               variant="secondary"
-                              className="shrink-0 gap-1 bg-primary/10 text-primary"
+                              className="bg-primary/10 text-primary shrink-0 gap-1"
                             >
                               <Sparkles className="h-3 w-3" />
                               Featured
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-muted-foreground line-clamp-2 text-sm">
                           {reward.description}
                         </p>
                       </div>
@@ -394,9 +353,7 @@ export function RewardCatalog({
                             variant="compact"
                             className="text-2xl"
                           />
-                          <p className="text-xs text-muted-foreground">
-                            points
-                          </p>
+                          <p className="text-muted-foreground text-xs">points</p>
                         </div>
 
                         {reward.stock_quantity !== undefined && (
@@ -420,9 +377,7 @@ export function RewardCatalog({
                         {reward.points_cost > currentPoints ? (
                           <>
                             <AlertCircle className="h-4 w-4" />
-                            Need{' '}
-                            {(reward.points_cost - currentPoints).toLocaleString()}{' '}
-                            more
+                            Need {(reward.points_cost - currentPoints).toLocaleString()} more
                           </>
                         ) : reward.stock_quantity === 0 ? (
                           'Out of Stock'
@@ -443,49 +398,38 @@ export function RewardCatalog({
       )}
 
       {/* Redemption Confirmation Dialog */}
-      <Dialog
-        open={!!selectedReward}
-        onOpenChange={(open) => !open && setSelectedReward(null)}
-      >
+      <Dialog open={!!selectedReward} onOpenChange={open => !open && setSelectedReward(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Redemption</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to redeem this reward?
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to redeem this reward?</DialogDescription>
           </DialogHeader>
 
           {selectedReward && (
             <div className="space-y-4">
               <Card>
-                <CardContent className="pt-6 space-y-3">
+                <CardContent className="space-y-3 pt-6">
                   <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 p-3 rounded-lg">
-                      <Gift className="h-6 w-6 text-primary" />
+                    <div className="bg-primary/10 rounded-lg p-3">
+                      <Gift className="text-primary h-6 w-6" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{selectedReward.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedReward.description}
-                      </p>
+                      <p className="text-muted-foreground text-sm">{selectedReward.description}</p>
                     </div>
                   </div>
 
                   <Separator />
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Points Cost
-                    </span>
-                    <span className="text-lg font-bold text-primary">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Points Cost</span>
+                    <span className="text-primary text-lg font-bold">
                       {selectedReward.points_cost.toLocaleString()}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Your Balance After
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Your Balance After</span>
                     <span className="text-lg font-semibold">
                       {(currentPoints - selectedReward.points_cost).toLocaleString()}
                     </span>
@@ -494,8 +438,8 @@ export function RewardCatalog({
               </Card>
 
               {selectedReward.terms && (
-                <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-                  <p className="font-medium mb-1">Terms & Conditions:</p>
+                <div className="text-muted-foreground bg-muted rounded-lg p-3 text-xs">
+                  <p className="mb-1 font-medium">Terms & Conditions:</p>
                   <p>{selectedReward.terms}</p>
                 </div>
               )}
@@ -510,14 +454,10 @@ export function RewardCatalog({
             >
               Cancel
             </Button>
-            <Button
-              onClick={confirmRedeem}
-              disabled={redeemMutation.isPending}
-              className="gap-2"
-            >
+            <Button onClick={confirmRedeem} disabled={redeemMutation.isPending} className="gap-2">
               {redeemMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
                   Redeeming...
                 </>
               ) : (

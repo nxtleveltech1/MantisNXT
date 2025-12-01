@@ -1,23 +1,36 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   CURRENCY_DEFINITIONS,
   VAT_RATES,
   DEFAULT_CURRENCY_CONFIG,
   currencyManager,
-  type CurrencyConfig
-} from '@/lib/config/currency-config'
+  type CurrencyConfig,
+} from '@/lib/config/currency-config';
 import {
   DollarSign,
   Globe,
@@ -29,76 +42,76 @@ import {
   Calculator,
   Eye,
   Edit,
-  Plus
-} from 'lucide-react'
-import AppLayout from '@/components/layout/AppLayout'
+  Plus,
+} from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
 
 export default function CurrencySettingsPage() {
-  const [config, setConfig] = useState<CurrencyConfig>(DEFAULT_CURRENCY_CONFIG)
-  const [isModified, setIsModified] = useState(false)
-  const [activeTab, setActiveTab] = useState('general')
-  const [previewAmount, setPreviewAmount] = useState(1234.56)
-  const [isSaving, setIsSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [config, setConfig] = useState<CurrencyConfig>(DEFAULT_CURRENCY_CONFIG);
+  const [isModified, setIsModified] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const [previewAmount, setPreviewAmount] = useState(1234.56);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Load current configuration
   useEffect(() => {
-    const currentConfig = currencyManager.getConfig()
-    setConfig(currentConfig)
-  }, [])
+    const currentConfig = currencyManager.getConfig();
+    setConfig(currentConfig);
+  }, []);
 
   // Update configuration
   const updateConfig = (updates: Partial<CurrencyConfig>) => {
-    const newConfig = { ...config, ...updates }
-    setConfig(newConfig)
-    setIsModified(true)
-    currencyManager.updateConfig(updates)
-  }
+    const newConfig = { ...config, ...updates };
+    setConfig(newConfig);
+    setIsModified(true);
+    currencyManager.updateConfig(updates);
+  };
 
   // Save configuration
   const saveConfiguration = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // In a real application, this would save to database/API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsModified(false)
-      setLastSaved(new Date())
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsModified(false);
+      setLastSaved(new Date());
     } catch (error) {
-      console.error('Failed to save configuration:', error)
+      console.error('Failed to save configuration:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Reset to defaults
   const resetToDefaults = () => {
-    setConfig(DEFAULT_CURRENCY_CONFIG)
-    currencyManager.updateConfig(DEFAULT_CURRENCY_CONFIG)
-    setIsModified(true)
-  }
+    setConfig(DEFAULT_CURRENCY_CONFIG);
+    currencyManager.updateConfig(DEFAULT_CURRENCY_CONFIG);
+    setIsModified(true);
+  };
 
   // Get currency preview
   const getCurrencyPreview = () => {
     try {
       return currencyManager.formatCurrency(previewAmount, config.primary, {
         includeVAT: true,
-        showVATBreakdown: config.showVATBreakdown
-      })
+        showVATBreakdown: config.showVATBreakdown,
+      });
     } catch {
-      return 'Invalid configuration'
+      return 'Invalid configuration';
     }
-  }
+  };
 
   // Get VAT calculation preview
   const getVATPreview = () => {
     try {
-      return currencyManager.calculateVAT(previewAmount, config.primary)
+      return currencyManager.calculateVAT(previewAmount, config.primary);
     } catch {
-      return { exclusive: 0, vat: 0, inclusive: 0, rate: 0 }
+      return { exclusive: 0, vat: 0, inclusive: 0, rate: 0 };
     }
-  }
+  };
 
-  const vatPreview = getVATPreview()
+  const vatPreview = getVATPreview();
 
   return (
     <AppLayout>
@@ -113,23 +126,16 @@ export default function CurrencySettingsPage() {
           </div>
           <div className="flex items-center gap-3">
             {lastSaved && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Last saved: {lastSaved.toLocaleTimeString()}
               </p>
             )}
-            <Button
-              variant="outline"
-              onClick={resetToDefaults}
-              disabled={isSaving}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={resetToDefaults} disabled={isSaving}>
+              <RotateCcw className="mr-2 h-4 w-4" />
               Reset to Defaults
             </Button>
-            <Button
-              onClick={saveConfiguration}
-              disabled={!isModified || isSaving}
-            >
-              <Save className="h-4 w-4 mr-2" />
+            <Button onClick={saveConfiguration} disabled={!isModified || isSaving}>
+              <Save className="mr-2 h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -142,7 +148,8 @@ export default function CurrencySettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  You have unsaved changes. Click &quot;Save Changes&quot; to apply your configuration.
+                  You have unsaved changes. Click &quot;Save Changes&quot; to apply your
+                  configuration.
                 </p>
               </div>
             </CardContent>
@@ -160,7 +167,7 @@ export default function CurrencySettingsPage() {
 
           {/* General Settings */}
           <TabsContent value="general" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Primary Currency */}
               <Card>
                 <CardHeader>
@@ -174,7 +181,7 @@ export default function CurrencySettingsPage() {
                     <Label htmlFor="primary-currency">Base Currency</Label>
                     <Select
                       value={config.primary}
-                      onValueChange={(value) => updateConfig({ primary: value })}
+                      onValueChange={value => updateConfig({ primary: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -191,7 +198,7 @@ export default function CurrencySettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       The primary currency used throughout the application
                     </p>
                   </div>
@@ -201,10 +208,10 @@ export default function CurrencySettingsPage() {
                     <Input
                       id="locale"
                       value={config.locale}
-                      onChange={(e) => updateConfig({ locale: e.target.value })}
+                      onChange={e => updateConfig({ locale: e.target.value })}
                       placeholder="en-ZA"
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Locale for number and date formatting
                     </p>
                   </div>
@@ -227,14 +234,12 @@ export default function CurrencySettingsPage() {
                       type="number"
                       step="0.01"
                       value={previewAmount}
-                      onChange={(e) => setPreviewAmount(parseFloat(e.target.value) || 0)}
+                      onChange={e => setPreviewAmount(parseFloat(e.target.value) || 0)}
                     />
                   </div>
 
-                  <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-center">
-                      {getCurrencyPreview()}
-                    </div>
+                  <div className="space-y-3 rounded-lg bg-gray-50 p-4">
+                    <div className="text-center text-2xl font-bold">{getCurrencyPreview()}</div>
 
                     <Separator />
 
@@ -275,13 +280,13 @@ export default function CurrencySettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label>Enable Multi-Currency</Label>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Allow transactions and reporting in multiple currencies
                     </p>
                   </div>
                   <Switch
                     checked={config.enableMultiCurrency}
-                    onCheckedChange={(checked) => updateConfig({ enableMultiCurrency: checked })}
+                    onCheckedChange={checked => updateConfig({ enableMultiCurrency: checked })}
                   />
                 </div>
 
@@ -292,14 +297,16 @@ export default function CurrencySettingsPage() {
                       {Object.entries(CURRENCY_DEFINITIONS).map(([code, def]) => (
                         <Badge
                           key={code}
-                          variant={config.supportedCurrencies.includes(code) ? "default" : "secondary"}
+                          variant={
+                            config.supportedCurrencies.includes(code) ? 'default' : 'secondary'
+                          }
                           className="cursor-pointer"
                           onClick={() => {
-                            const isIncluded = config.supportedCurrencies.includes(code)
+                            const isIncluded = config.supportedCurrencies.includes(code);
                             const newCurrencies = isIncluded
                               ? config.supportedCurrencies.filter(c => c !== code)
-                              : [...config.supportedCurrencies, code]
-                            updateConfig({ supportedCurrencies: newCurrencies })
+                              : [...config.supportedCurrencies, code];
+                            updateConfig({ supportedCurrencies: newCurrencies });
                           }}
                         >
                           {def.symbol} {code}
@@ -314,7 +321,7 @@ export default function CurrencySettingsPage() {
 
           {/* Formatting Settings */}
           <TabsContent value="formatting" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Number Formatting</CardTitle>
@@ -329,14 +336,18 @@ export default function CurrencySettingsPage() {
                         min="0"
                         max="4"
                         value={config.decimalPlaces}
-                        onChange={(e) => updateConfig({ decimalPlaces: parseInt(e.target.value) || 2 })}
+                        onChange={e =>
+                          updateConfig({ decimalPlaces: parseInt(e.target.value) || 2 })
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="symbol-position">Symbol Position</Label>
                       <Select
                         value={config.position}
-                        onValueChange={(value: 'before' | 'after') => updateConfig({ position: value })}
+                        onValueChange={(value: 'before' | 'after') =>
+                          updateConfig({ position: value })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -355,7 +366,7 @@ export default function CurrencySettingsPage() {
                       <Input
                         id="thousands-separator"
                         value={config.thousandsSeparator}
-                        onChange={(e) => updateConfig({ thousandsSeparator: e.target.value })}
+                        onChange={e => updateConfig({ thousandsSeparator: e.target.value })}
                         maxLength={1}
                       />
                     </div>
@@ -364,7 +375,7 @@ export default function CurrencySettingsPage() {
                       <Input
                         id="decimal-separator"
                         value={config.decimalSeparator}
-                        onChange={(e) => updateConfig({ decimalSeparator: e.target.value })}
+                        onChange={e => updateConfig({ decimalSeparator: e.target.value })}
                         maxLength={1}
                       />
                     </div>
@@ -380,13 +391,13 @@ export default function CurrencySettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label>Show VAT Breakdown</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Display VAT amounts in invoices and quotes
                       </p>
                     </div>
                     <Switch
                       checked={config.showVATBreakdown}
-                      onCheckedChange={(checked) => updateConfig({ showVATBreakdown: checked })}
+                      onCheckedChange={checked => updateConfig({ showVATBreakdown: checked })}
                     />
                   </div>
 
@@ -395,10 +406,10 @@ export default function CurrencySettingsPage() {
                     <Input
                       id="currency-symbol"
                       value={config.symbol}
-                      onChange={(e) => updateConfig({ symbol: e.target.value })}
+                      onChange={e => updateConfig({ symbol: e.target.value })}
                       maxLength={3}
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Symbol displayed with currency amounts
                     </p>
                   </div>
@@ -417,7 +428,7 @@ export default function CurrencySettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="vat-rate">VAT Rate (%)</Label>
@@ -428,15 +439,17 @@ export default function CurrencySettingsPage() {
                         min="0"
                         max="100"
                         value={config.vatRate * 100}
-                        onChange={(e) => updateConfig({ vatRate: parseFloat(e.target.value) / 100 || 0 })}
+                        onChange={e =>
+                          updateConfig({ vatRate: parseFloat(e.target.value) / 100 || 0 })
+                        }
                       />
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         South African standard VAT rate is 15%
                       </p>
                     </div>
 
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">VAT Information</h4>
+                    <div className="rounded-lg bg-blue-50 p-4">
+                      <h4 className="mb-2 font-medium text-blue-900">VAT Information</h4>
                       <div className="space-y-1 text-sm text-blue-800">
                         <p>Current Rate: {(config.vatRate * 100).toFixed(2)}%</p>
                         <p>On R1,000: R{(1000 * config.vatRate).toFixed(2)} VAT</p>
@@ -449,16 +462,24 @@ export default function CurrencySettingsPage() {
                     <h4 className="font-medium">Standard VAT Rates by Region</h4>
                     <div className="space-y-2">
                       {Object.entries(VAT_RATES).map(([currency, info]) => (
-                        <div key={currency} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div
+                          key={currency}
+                          className="flex items-center justify-between rounded bg-gray-50 p-2"
+                        >
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-sm">
-                              {CURRENCY_DEFINITIONS[currency as keyof typeof CURRENCY_DEFINITIONS]?.symbol}
+                              {
+                                CURRENCY_DEFINITIONS[currency as keyof typeof CURRENCY_DEFINITIONS]
+                                  ?.symbol
+                              }
                             </span>
                             <span className="text-sm">{currency}</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium">{(info.rate * 100).toFixed(1)}%</div>
-                            <div className="text-xs text-muted-foreground">{info.name}</div>
+                            <div className="text-sm font-medium">
+                              {(info.rate * 100).toFixed(1)}%
+                            </div>
+                            <div className="text-muted-foreground text-xs">{info.name}</div>
                           </div>
                         </div>
                       ))}
@@ -482,7 +503,7 @@ export default function CurrencySettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label>Auto-Update Exchange Rates</Label>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Automatically fetch current exchange rates from external services
                     </p>
                   </div>
@@ -505,42 +526,42 @@ export default function CurrencySettingsPage() {
                       {Object.entries(CURRENCY_DEFINITIONS)
                         .filter(([code]) => code !== 'ZAR')
                         .map(([code, def]) => (
-                        <TableRow key={code}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono">{def.symbol}</span>
-                              <span>{code}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono">
-                            {code === 'USD' && '18.50'}
-                            {code === 'EUR' && '20.20'}
-                            {code === 'GBP' && '23.10'}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            2 hours ago
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">External API</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          <TableRow key={code}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono">{def.symbol}</span>
+                                <span>{code}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              {code === 'USD' && '18.50'}
+                              {code === 'EUR' && '20.20'}
+                              {code === 'GBP' && '23.10'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              2 hours ago
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">External API</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Refresh Rates
                   </Button>
                   <Button variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Custom Rate
                   </Button>
                 </div>
@@ -550,5 +571,5 @@ export default function CurrencySettingsPage() {
         </Tabs>
       </div>
     </AppLayout>
-  )
+  );
 }

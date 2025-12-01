@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import AIMetricsMonitor from "@/components/ai/admin/AIMetricsMonitor"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import AIMetricsMonitor from '@/components/ai/admin/AIMetricsMonitor';
 
 /**
  * AI Metrics Monitor Admin Page
@@ -13,13 +13,8 @@ import AIMetricsMonitor from "@/components/ai/admin/AIMetricsMonitor"
  */
 export default function AIMetricsPage() {
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Metrics" },
-      ]}
-    >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+    <AppLayout breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Metrics' }]}>
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Metrics Monitor</h1>
           <p className="text-muted-foreground">
@@ -30,5 +25,5 @@ export default function AIMetricsPage() {
         <AIMetricsMonitor />
       </div>
     </AppLayout>
-  )
+  );
 }

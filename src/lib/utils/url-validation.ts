@@ -12,7 +12,7 @@ export function isSafeUrl(url: string | null | undefined): boolean {
   }
 
   const trimmedUrl = url.trim().toLowerCase();
-  
+
   // Block dangerous protocols
   const dangerousProtocols = [
     'javascript:',
@@ -36,7 +36,7 @@ export function isSafeUrl(url: string | null | undefined): boolean {
 
   // Allow common safe protocols
   const safeProtocols = ['http:', 'https:', 'ftp:', 'ftps:', 'mailto:', 'tel:', 'sms:'];
-  
+
   // If it doesn't start with a protocol, assume it's a domain (safe)
   if (!trimmedUrl.includes(':')) {
     return true;
@@ -56,7 +56,7 @@ export function sanitizeUrl(url: string | null | undefined): string | null {
   }
 
   const trimmedUrl = url.trim();
-  
+
   if (!isSafeUrl(trimmedUrl)) {
     return null;
   }

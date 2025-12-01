@@ -162,7 +162,13 @@ export interface StructuredData {
 }
 
 export interface DiscoverySource {
-  type: 'web_search' | 'website_scraping' | 'social_media' | 'business_directory' | 'government_registry' | 'news_article';
+  type:
+    | 'web_search'
+    | 'website_scraping'
+    | 'social_media'
+    | 'business_directory'
+    | 'government_registry'
+    | 'news_article';
   url: string;
   name: string;
   reliability: number; // 0-1
@@ -401,5 +407,5 @@ export type {
   DiscoverySession,
   WebAddressInput,
   BulkDiscoveryRequest,
-  BulkDiscoveryResponse
+  BulkDiscoveryResponse,
 };

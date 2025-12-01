@@ -335,7 +335,8 @@ export async function getSupplierDiscoveryConfigFromAPI(): Promise<SupplierDisco
 
       // Find active AI extraction provider (or first enabled AI extraction provider)
       const aiProviders = providerInstances.filter(
-        (i: unknown) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
+        (i: unknown) =>
+          i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
       );
       const activeAI = activeProviderInstanceId
         ? aiProviders.find((i: unknown) => i?.id === activeProviderInstanceId)
@@ -431,7 +432,8 @@ export async function getSupplierDiscoveryConfigFromAPI(): Promise<SupplierDisco
 
       // Collect ALL enabled AI providers for aggregation (API version)
       const apiAiProviders = providerInstances.filter(
-        (i: unknown) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
+        (i: unknown) =>
+          i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
       );
       config.aiProviders = apiAiProviders
         .map((instance: unknown) => ({

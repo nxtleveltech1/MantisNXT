@@ -216,7 +216,7 @@ export class PermissionResolver extends EventEmitter {
     const levelHierarchy: Record<AccessLevel, number> = {
       'read-only': 1,
       'read-write-approval': 2,
-      'autonomous': 3,
+      autonomous: 3,
     };
 
     return levelHierarchy[required] >= levelHierarchy[requested];

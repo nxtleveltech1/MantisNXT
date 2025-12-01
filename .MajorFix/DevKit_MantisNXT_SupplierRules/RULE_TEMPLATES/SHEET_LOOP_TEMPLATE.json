@@ -29,9 +29,6 @@
       "detect_keywords": ["ex", "excl", "incl", "nett"],
       "ratio_tolerance": 0.02
     },
-    "warnings": [
-      "stock_on_order",
-      "category"
-    ]
+    "warnings": ["stock_on_order", "category"]
   }
 }

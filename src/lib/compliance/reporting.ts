@@ -40,7 +40,6 @@ export interface BEECertificateVerification {
 }
 
 export class ComplianceReporting {
-
   // POPIA Compliance Report
   static generatePOPIAReport(
     personalInfo: PersonalInformation[],
@@ -54,14 +53,12 @@ export class ComplianceReporting {
     const riskFactors = [
       breaches.length > 0 ? 20 : 0,
       popiaReport.summary.expiredRecords > 0 ? 15 : 0,
-      popiaReport.summary.complianceScore < 80 ? 25 : 0
+      popiaReport.summary.complianceScore < 80 ? 25 : 0,
     ];
 
     const totalRisk = riskFactors.reduce((sum, risk) => sum + risk, 0);
     const riskLevel: 'low' | 'medium' | 'high' | 'critical' =
-      totalRisk >= 40 ? 'critical' :
-      totalRisk >= 25 ? 'high' :
-      totalRisk >= 15 ? 'medium' : 'low';
+      totalRisk >= 40 ? 'critical' : totalRisk >= 25 ? 'high' : totalRisk >= 15 ? 'medium' : 'low';
 
     return {
       id: `popia_${Date.now()}`,
@@ -72,14 +69,14 @@ export class ComplianceReporting {
       summary: {
         ...popiaReport.summary,
         dataBreaches: breaches.length,
-        highRiskProcessing: personalInfo.filter(p =>
-          p.dataType === 'biometric' || p.dataType === 'health'
-        ).length
+        highRiskProcessing: personalInfo.filter(
+          p => p.dataType === 'biometric' || p.dataType === 'health'
+        ).length,
       },
       details: popiaReport.details,
       recommendations: popiaReport.recommendations,
       riskLevel,
-      complianceScore: popiaReport.summary.complianceScore
+      complianceScore: popiaReport.summary.complianceScore,
     };
   }
 
@@ -92,13 +89,11 @@ export class ComplianceReporting {
   ): ComplianceReport {
     const beeReport = FinancialCompliance.generateBEEReport(beeSpends, period);
 
-    const expiredCertificates = certificates.filter(c =>
-      c.expiryDate < new Date() && c.verificationStatus !== 'expired'
+    const expiredCertificates = certificates.filter(
+      c => c.expiryDate < new Date() && c.verificationStatus !== 'expired'
     );
 
-    const unverifiedCertificates = certificates.filter(c =>
-      c.verificationStatus === 'pending'
-    );
+    const unverifiedCertificates = certificates.filter(c => c.verificationStatus === 'pending');
 
     const recommendations = [...beeReport.recommendations];
 
@@ -107,20 +102,26 @@ export class ComplianceReporting {
     }
 
     if (unverifiedCertificates.length > 0) {
-      recommendations.push(`${unverifiedCertificates.length} BEE certificates require verification`);
+      recommendations.push(
+        `${unverifiedCertificates.length} BEE certificates require verification`
+      );
     }
 
     const riskLevel: 'low' | 'medium' | 'high' | 'critical' =
-      beeReport.beePercentage < 50 ? 'critical' :
-      beeReport.beePercentage < 60 ? 'high' :
-      beeReport.beePercentage < 70 ? 'medium' : 'low';
+      beeReport.beePercentage < 50
+        ? 'critical'
+        : beeReport.beePercentage < 60
+          ? 'high'
+          : beeReport.beePercentage < 70
+            ? 'medium'
+            : 'low';
 
     return {
       id: `bee_${Date.now()}`,
       reportType: 'bee',
       period: {
         startDate: new Date(`${period}-01-01`),
-        endDate: new Date(`${period}-12-31`)
+        endDate: new Date(`${period}-12-31`),
       },
       generatedAt: new Date(),
       generatedBy,
@@ -128,7 +129,7 @@ export class ComplianceReporting {
         ...beeReport,
         totalCertificates: certificates.length,
         expiredCertificates: expiredCertificates.length,
-        unverifiedCertificates: unverifiedCertificates.length
+        unverifiedCertificates: unverifiedCertificates.length,
       },
       details: {
         breakdown: beeReport.breakdown,
@@ -136,13 +137,13 @@ export class ComplianceReporting {
           verified: certificates.filter(c => c.verificationStatus === 'verified').length,
           pending: unverifiedCertificates.length,
           expired: expiredCertificates.length,
-          invalid: certificates.filter(c => c.verificationStatus === 'invalid').length
+          invalid: certificates.filter(c => c.verificationStatus === 'invalid').length,
         },
-        topSuppliers: this.getTopBEESuppliers(beeSpends, 10)
+        topSuppliers: this.getTopBEESuppliers(beeSpends, 10),
       },
       recommendations,
       riskLevel,
-      complianceScore: Math.min(100, beeReport.recognizedPercentage)
+      complianceScore: Math.min(100, beeReport.recognizedPercentage),
     };
   }
 
@@ -169,18 +170,20 @@ export class ComplianceReporting {
       recommendations.push('VAT refund due - ensure timely submission to SARS');
     }
 
-    const complianceScore = Math.max(0, 100 - (invalidTransactions.length / transactions.length) * 100);
+    const complianceScore = Math.max(
+      0,
+      100 - (invalidTransactions.length / transactions.length) * 100
+    );
 
     const riskLevel: 'low' | 'medium' | 'high' | 'critical' =
-      complianceScore < 70 ? 'high' :
-      complianceScore < 85 ? 'medium' : 'low';
+      complianceScore < 70 ? 'high' : complianceScore < 85 ? 'medium' : 'low';
 
     return {
       id: `vat_${Date.now()}`,
       reportType: 'vat',
       period: {
         startDate: new Date(period.year, period.month - 1, 1),
-        endDate: new Date(period.year, period.month, 0)
+        endDate: new Date(period.year, period.month, 0),
       },
       generatedAt: new Date(),
       generatedBy,
@@ -188,7 +191,7 @@ export class ComplianceReporting {
         ...vatReturn,
         totalTransactions: transactions.length,
         invalidTransactions: invalidTransactions.length,
-        validationRate: complianceScore
+        validationRate: complianceScore,
       },
       details: {
         categoryBreakdown: vatReturn.summary,
@@ -196,12 +199,12 @@ export class ComplianceReporting {
           id: t.id,
           invoiceNumber: t.invoiceNumber,
           amount: t.grossAmount,
-          issues: FinancialCompliance.validateVATInvoice(t).errors
-        }))
+          issues: FinancialCompliance.validateVATInvoice(t).errors,
+        })),
       },
       recommendations,
       riskLevel,
-      complianceScore
+      complianceScore,
     };
   }
 
@@ -218,11 +221,18 @@ export class ComplianceReporting {
     );
 
     const riskLevel: 'low' | 'medium' | 'high' | 'critical' =
-      auditReport.suspiciousActivity.length > 10 ? 'critical' :
-      auditReport.suspiciousActivity.length > 5 ? 'high' :
-      auditReport.suspiciousActivity.length > 0 ? 'medium' : 'low';
+      auditReport.suspiciousActivity.length > 10
+        ? 'critical'
+        : auditReport.suspiciousActivity.length > 5
+          ? 'high'
+          : auditReport.suspiciousActivity.length > 0
+            ? 'medium'
+            : 'low';
 
-    const complianceScore = Math.max(0, 100 - (auditReport.suspiciousActivity.length / auditReport.totalActions) * 100);
+    const complianceScore = Math.max(
+      0,
+      100 - (auditReport.suspiciousActivity.length / auditReport.totalActions) * 100
+    );
 
     return {
       id: `audit_${Date.now()}`,
@@ -232,7 +242,7 @@ export class ComplianceReporting {
       generatedBy,
       summary: {
         ...auditReport,
-        riskScore: auditReport.suspiciousActivity.length
+        riskScore: auditReport.suspiciousActivity.length,
       },
       details: {
         userActivity: auditReport.userActivity,
@@ -243,12 +253,12 @@ export class ComplianceReporting {
           userId: activity.userId,
           action: activity.action,
           entityType: activity.entityType,
-          riskFactors: this.assessActivityRisk(activity)
-        }))
+          riskFactors: this.assessActivityRisk(activity),
+        })),
       },
       recommendations: this.generateAuditRecommendations(auditReport),
       riskLevel,
-      complianceScore
+      complianceScore,
     };
   }
 
@@ -263,42 +273,52 @@ export class ComplianceReporting {
     period: { startDate: Date; endDate: Date },
     generatedBy: string
   ): ComplianceReport {
-    const popiaReport = this.generatePOPIAReport(personalInfo, consents, breaches, period, generatedBy);
+    const popiaReport = this.generatePOPIAReport(
+      personalInfo,
+      consents,
+      breaches,
+      period,
+      generatedBy
+    );
     const vatReport = this.generateVATReport(
-      vatTransactions.filter(t =>
-        t.transactionDate >= period.startDate && t.transactionDate <= period.endDate
+      vatTransactions.filter(
+        t => t.transactionDate >= period.startDate && t.transactionDate <= period.endDate
       ),
       { month: period.startDate.getMonth() + 1, year: period.startDate.getFullYear() },
       generatedBy
     );
     const beeReport = this.generateBEEReport(
-      beeSpends.filter(s =>
-        s.spendDate >= period.startDate && s.spendDate <= period.endDate
-      ),
+      beeSpends.filter(s => s.spendDate >= period.startDate && s.spendDate <= period.endDate),
       [], // BEE certificates would need to be passed separately
       period.startDate.getFullYear().toString(),
       generatedBy
     );
     const auditReport = this.generateAuditReport(auditTrail, period, generatedBy);
 
-    const overallComplianceScore = (
+    const overallComplianceScore =
       popiaReport.complianceScore * 0.3 +
       vatReport.complianceScore * 0.25 +
       beeReport.complianceScore * 0.25 +
-      auditReport.complianceScore * 0.2
-    );
+      auditReport.complianceScore * 0.2;
 
-    const highestRiskLevel = [popiaReport.riskLevel, vatReport.riskLevel, beeReport.riskLevel, auditReport.riskLevel]
-      .reduce((highest, current) => {
+    const highestRiskLevel = [
+      popiaReport.riskLevel,
+      vatReport.riskLevel,
+      beeReport.riskLevel,
+      auditReport.riskLevel,
+    ].reduce(
+      (highest, current) => {
         const levels = { low: 1, medium: 2, high: 3, critical: 4 };
         return levels[current] > levels[highest] ? current : highest;
-      }, 'low' as 'low' | 'medium' | 'high' | 'critical');
+      },
+      'low' as 'low' | 'medium' | 'high' | 'critical'
+    );
 
     const allRecommendations = [
       ...popiaReport.recommendations,
       ...vatReport.recommendations,
       ...beeReport.recommendations,
-      ...auditReport.recommendations
+      ...auditReport.recommendations,
     ];
 
     return {
@@ -314,21 +334,22 @@ export class ComplianceReporting {
         beeCompliance: beeReport.complianceScore,
         auditCompliance: auditReport.complianceScore,
         totalRecommendations: allRecommendations.length,
-        criticalIssues: allRecommendations.filter(r =>
-          r.toLowerCase().includes('critical') ||
-          r.toLowerCase().includes('urgent') ||
-          r.toLowerCase().includes('overdue')
-        ).length
+        criticalIssues: allRecommendations.filter(
+          r =>
+            r.toLowerCase().includes('critical') ||
+            r.toLowerCase().includes('urgent') ||
+            r.toLowerCase().includes('overdue')
+        ).length,
       },
       details: {
         popia: popiaReport.summary,
         vat: vatReport.summary,
         bee: beeReport.summary,
-        audit: auditReport.summary
+        audit: auditReport.summary,
       },
       recommendations: allRecommendations,
       riskLevel: highestRiskLevel,
-      complianceScore: overallComplianceScore
+      complianceScore: overallComplianceScore,
     };
   }
 
@@ -337,11 +358,12 @@ export class ComplianceReporting {
     certificate: BEECertificateVerification
   ): Promise<{ verified: boolean; details: unknown; errors?: string[] }> {
     // In a real implementation, this would integrate with SANAS or B-BBEE verification services
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
-        const isValid = certificate.expiryDate > new Date() &&
-                       certificate.beeLevel >= 1 &&
-                       certificate.beeLevel <= 8;
+        const isValid =
+          certificate.expiryDate > new Date() &&
+          certificate.beeLevel >= 1 &&
+          certificate.beeLevel <= 8;
 
         resolve({
           verified: isValid,
@@ -349,19 +371,16 @@ export class ComplianceReporting {
             certificateNumber: certificate.certificateNumber,
             issuer: certificate.issuedBy,
             level: certificate.beeLevel,
-            status: isValid ? 'verified' : 'invalid'
+            status: isValid ? 'verified' : 'invalid',
           },
-          errors: isValid ? undefined : ['Certificate expired or invalid level']
+          errors: isValid ? undefined : ['Certificate expired or invalid level'],
         });
       }, 1000); // Simulate API call delay
     });
   }
 
   // Export compliance report to various formats
-  static exportReport(
-    report: ComplianceReport,
-    format: 'json' | 'csv' | 'pdf'
-  ): string {
+  static exportReport(report: ComplianceReport, format: 'json' | 'csv' | 'pdf'): string {
     switch (format) {
       case 'json':
         return JSON.stringify(report, null, 2);
@@ -379,20 +398,23 @@ export class ComplianceReporting {
 
   // Helper methods
   private static getTopBEESuppliers(spends: BEESpend[], limit: number = 10): unknown[] {
-    const supplierTotals = spends.reduce((acc, spend) => {
-      if (!acc[spend.supplierId]) {
-        acc[spend.supplierId] = {
-          supplierId: spend.supplierId,
-          supplierName: spend.supplierName,
-          totalSpend: 0,
-          beeLevel: spend.supplierBEELevel,
-          recognition: 0
-        };
-      }
-      acc[spend.supplierId].totalSpend += spend.spendAmount;
-      acc[spend.supplierId].recognition += spend.spendAmount * spend.recognitionLevel / 100;
-      return acc;
-    }, {} as Record<string, unknown>);
+    const supplierTotals = spends.reduce(
+      (acc, spend) => {
+        if (!acc[spend.supplierId]) {
+          acc[spend.supplierId] = {
+            supplierId: spend.supplierId,
+            supplierName: spend.supplierName,
+            totalSpend: 0,
+            beeLevel: spend.supplierBEELevel,
+            recognition: 0,
+          };
+        }
+        acc[spend.supplierId].totalSpend += spend.spendAmount;
+        acc[spend.supplierId].recognition += (spend.spendAmount * spend.recognitionLevel) / 100;
+        return acc;
+      },
+      {} as Record<string, unknown>
+    );
 
     return Object.values(supplierTotals)
       .sort((a: unknown, b: unknown) => b.totalSpend - a.totalSpend)
@@ -432,7 +454,9 @@ export class ComplianceReporting {
 
     const deletions = auditReport.actionBreakdown.delete || 0;
     if (deletions > auditReport.totalActions * 0.1) {
-      recommendations.push('High volume of deletions detected - implement additional approval workflows');
+      recommendations.push(
+        'High volume of deletions detected - implement additional approval workflows'
+      );
     }
 
     return recommendations;
@@ -449,12 +473,10 @@ export class ComplianceReporting {
       ['Generated By', report.generatedBy],
       ['Compliance Score', report.complianceScore.toString()],
       ['Risk Level', report.riskLevel],
-      ['Recommendations', report.recommendations.join('; ')]
+      ['Recommendations', report.recommendations.join('; ')],
     ];
 
-    return [headers, ...rows]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
+    return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
   }
 
   private static generatePDFContent(report: ComplianceReport): string {

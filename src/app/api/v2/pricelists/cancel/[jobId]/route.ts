@@ -5,10 +5,7 @@ interface Params {
   jobId: string;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<Params> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<Params> }) {
   try {
     const { jobId } = await params;
     const success = await extractionQueue.cancelJob(jobId);
@@ -26,17 +23,13 @@ export async function POST(
         data: {
           job_id: jobId,
           status: 'cancelled',
-          cancelled_at: new Date().toISOString()
-        }
+          cancelled_at: new Date().toISOString(),
+        },
       },
       { status: 200 }
     );
-
   } catch (error: any) {
     console.error('[Cancel API] Error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

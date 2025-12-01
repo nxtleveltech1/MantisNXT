@@ -14,7 +14,7 @@ config({ path: resolve(process.cwd(), '.env.local') });
 async function verifyMigration() {
   const pool = new Pool({
     connectionString: process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
@@ -40,7 +40,9 @@ async function verifyMigration() {
       if (columnResult.rows.length > 0) {
         const col = columnResult.rows[0];
         console.log(`✅ Column Name: ${col.column_name}`);
-        console.log(`   Data Type: ${col.data_type}${col.character_maximum_length ? `(${col.character_maximum_length})` : ''}`);
+        console.log(
+          `   Data Type: ${col.data_type}${col.character_maximum_length ? `(${col.character_maximum_length})` : ''}`
+        );
         console.log(`   Default: ${col.column_default || 'NULL'}`);
         console.log(`   Nullable: ${col.is_nullable}`);
       } else {
@@ -79,11 +81,9 @@ async function verifyMigration() {
       console.log(`   Rows with created_by: ${testResult.rows[0].count}`);
 
       console.log('\n✅ Migration verification complete!');
-
     } finally {
       client.release();
     }
-
   } catch (error) {
     console.error('❌ Verification failed:', error);
     throw error;
@@ -94,7 +94,7 @@ async function verifyMigration() {
 
 verifyMigration()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error('💥 Verification failed:', error.message);
     process.exit(1);
   });

@@ -1,47 +1,47 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Save, CheckCircle2, Bell, Globe, Palette, Eye } from 'lucide-react'
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Save, CheckCircle2, Bell, Globe, Palette, Eye } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import type { User as UserType } from '@/types/auth'
+import { authProvider } from '@/lib/auth/mock-provider';
+import type { User as UserType } from '@/types/auth';
 
 interface PreferencesFormData {
-  language: string
-  timezone: string
-  date_format: string
-  currency: string
-  theme: 'light' | 'dark' | 'auto'
-  email_notifications: boolean
-  sms_notifications: boolean
-  push_notifications: boolean
-  digest_frequency: string
-  profile_visibility: string
-  show_email: boolean
-  show_phone: boolean
+  language: string;
+  timezone: string;
+  date_format: string;
+  currency: string;
+  theme: 'light' | 'dark' | 'auto';
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  digest_frequency: string;
+  profile_visibility: string;
+  show_email: boolean;
+  show_phone: boolean;
 }
 
 export default function AccountPreferencesPage() {
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const [preferences, setPreferences] = useState<PreferencesFormData>({
     language: 'en',
@@ -56,18 +56,18 @@ export default function AccountPreferencesPage() {
     profile_visibility: 'organization',
     show_email: false,
     show_phone: false,
-  })
+  });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoading(true)
-        const currentUser = await authProvider.getCurrentUser()
+        setIsLoading(true);
+        const currentUser = await authProvider.getCurrentUser();
         if (!currentUser) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        setUser(currentUser)
+        setUser(currentUser);
         if (currentUser.preferences) {
           setPreferences({
             language: currentUser.preferences.language || 'en',
@@ -75,35 +75,31 @@ export default function AccountPreferencesPage() {
             date_format: currentUser.preferences.date_format || 'dd/mm/yyyy',
             currency: currentUser.preferences.currency || 'ZAR',
             theme: currentUser.preferences.theme || 'light',
-            email_notifications:
-              currentUser.preferences.notifications?.email_notifications ?? true,
-            sms_notifications:
-              currentUser.preferences.notifications?.sms_notifications ?? false,
-            push_notifications:
-              currentUser.preferences.notifications?.push_notifications ?? true,
-            digest_frequency:
-              currentUser.preferences.notifications?.digest_frequency || 'daily',
+            email_notifications: currentUser.preferences.notifications?.email_notifications ?? true,
+            sms_notifications: currentUser.preferences.notifications?.sms_notifications ?? false,
+            push_notifications: currentUser.preferences.notifications?.push_notifications ?? true,
+            digest_frequency: currentUser.preferences.notifications?.digest_frequency || 'daily',
             profile_visibility: 'organization',
             show_email: false,
             show_phone: false,
-          })
+          });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user')
+        setError(err instanceof Error ? err.message : 'Failed to load user');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    loadUser()
-  }, [router])
+    };
+    loadUser();
+  }, [router]);
 
   const handleSave = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      setIsSaving(true)
-      setError(null)
-      setSuccess(null)
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
 
       const response = await fetch('/api/v1/users/me/preferences', {
         method: 'PUT',
@@ -134,59 +130,44 @@ export default function AccountPreferencesPage() {
             screenReaderOptimized: false,
           },
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to save preferences')
+        throw new Error(result.message || 'Failed to save preferences');
       }
 
-      setSuccess('Preferences saved successfully')
+      setSuccess('Preferences saved successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save preferences')
+      setError(err instanceof Error ? err.message : 'Failed to save preferences');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Preferences' },
-        ]}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Preferences' },
-        ]}
-      >
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
         <Alert variant="destructive">
           <AlertDescription>Failed to load user data</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: 'Account', href: '/account' },
-        { label: 'Preferences' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Preferences</h1>
@@ -208,7 +189,7 @@ export default function AccountPreferencesPage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -222,9 +203,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="language">Language</Label>
                 <Select
                   value={preferences.language}
-                  onValueChange={(value) =>
-                    setPreferences({ ...preferences, language: value })
-                  }
+                  onValueChange={value => setPreferences({ ...preferences, language: value })}
                 >
                   <SelectTrigger id="language">
                     <SelectValue />
@@ -242,9 +221,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="timezone">Timezone</Label>
                 <Select
                   value={preferences.timezone}
-                  onValueChange={(value) =>
-                    setPreferences({ ...preferences, timezone: value })
-                  }
+                  onValueChange={value => setPreferences({ ...preferences, timezone: value })}
                 >
                   <SelectTrigger id="timezone">
                     <SelectValue />
@@ -260,9 +237,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="date_format">Date Format</Label>
                 <Select
                   value={preferences.date_format}
-                  onValueChange={(value) =>
-                    setPreferences({ ...preferences, date_format: value })
-                  }
+                  onValueChange={value => setPreferences({ ...preferences, date_format: value })}
                 >
                   <SelectTrigger id="date_format">
                     <SelectValue />
@@ -279,9 +254,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="currency">Currency</Label>
                 <Select
                   value={preferences.currency}
-                  onValueChange={(value) =>
-                    setPreferences({ ...preferences, currency: value })
-                  }
+                  onValueChange={value => setPreferences({ ...preferences, currency: value })}
                 >
                   <SelectTrigger id="currency">
                     <SelectValue />
@@ -339,14 +312,12 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="email_notifications">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications via email
-                  </p>
+                  <p className="text-muted-foreground text-sm">Receive notifications via email</p>
                 </div>
                 <Checkbox
                   id="email_notifications"
                   checked={preferences.email_notifications}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     setPreferences({
                       ...preferences,
                       email_notifications: checked as boolean,
@@ -358,14 +329,12 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="sms_notifications">SMS Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications via SMS
-                  </p>
+                  <p className="text-muted-foreground text-sm">Receive notifications via SMS</p>
                 </div>
                 <Checkbox
                   id="sms_notifications"
                   checked={preferences.sms_notifications}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     setPreferences({
                       ...preferences,
                       sms_notifications: checked as boolean,
@@ -377,14 +346,14 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="push_notifications">Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Receive push notifications in browser
                   </p>
                 </div>
                 <Checkbox
                   id="push_notifications"
                   checked={preferences.push_notifications}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     setPreferences({
                       ...preferences,
                       push_notifications: checked as boolean,
@@ -397,7 +366,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="digest_frequency">Notification Digest</Label>
                 <Select
                   value={preferences.digest_frequency}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setPreferences({ ...preferences, digest_frequency: value })
                   }
                 >
@@ -428,7 +397,7 @@ export default function AccountPreferencesPage() {
                 <Label htmlFor="profile_visibility">Profile Visibility</Label>
                 <Select
                   value={preferences.profile_visibility}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setPreferences({ ...preferences, profile_visibility: value })
                   }
                 >
@@ -446,14 +415,14 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show_email">Show Email</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Allow others to see your email address
                   </p>
                 </div>
                 <Checkbox
                   id="show_email"
                   checked={preferences.show_email}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     setPreferences({ ...preferences, show_email: checked as boolean })
                   }
                 />
@@ -462,14 +431,14 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show_phone">Show Phone</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Allow others to see your phone number
                   </p>
                 </div>
                 <Checkbox
                   id="show_phone"
                   checked={preferences.show_phone}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     setPreferences({ ...preferences, show_phone: checked as boolean })
                   }
                 />
@@ -480,12 +449,11 @@ export default function AccountPreferencesPage() {
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={isSaving}>
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="mr-2 h-4 w-4" />
             {isSaving ? 'Saving...' : 'Save Preferences'}
           </Button>
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }
-

@@ -7,13 +7,9 @@
  * @date 2025-11-04
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 import { loyaltyAnalytics } from '@/lib/loyalty/ai-analytics-service';
 
 // GET - Predict tier movements with AI

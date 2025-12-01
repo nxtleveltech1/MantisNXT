@@ -5,7 +5,7 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { tagJobManager } from '@/lib/cmm/ai-tagging';
 
@@ -54,4 +54,3 @@ export async function POST(
     );
   }
 }
-

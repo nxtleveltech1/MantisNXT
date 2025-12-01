@@ -42,10 +42,7 @@ export class Planner {
   /**
    * Create an execution plan from user intent
    */
-  public async createPlan(
-    intent: string,
-    session: OrchestratorSession
-  ): Promise<ExecutionPlan> {
+  public async createPlan(intent: string, session: OrchestratorSession): Promise<ExecutionPlan> {
     // Analyze the user intent
     const intentAnalysis = await this.analyzeIntent(intent);
 
@@ -71,7 +68,9 @@ export class Planner {
     // Validate the plan
     const validation = await this.validatePlan(plan);
     if (!validation.isValid) {
-      throw new Error(`Plan validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(
+        `Plan validation failed: ${validation.errors.map(e => e.message).join(', ')}`
+      );
     }
 
     return executionPlanSchema.parse(plan);
@@ -105,7 +104,6 @@ export class Planner {
             result,
             executionTimeMs: Date.now() - stepStartTime,
           });
-
         } catch (error) {
           const stepError = {
             stepId: step.id,
@@ -147,7 +145,6 @@ export class Planner {
         totalExecutionTimeMs: Date.now() - startTime,
         rollbackExecuted,
       });
-
     } catch (error) {
       // Execute rollback on critical failure
       if (!rollbackExecuted) {
@@ -192,7 +189,11 @@ export class Planner {
       confidence = 0.8;
       requiresTools = true;
       suggestedTools.push('create_product', 'create_supplier');
-    } else if (message.includes('update') || message.includes('change') || message.includes('modify')) {
+    } else if (
+      message.includes('update') ||
+      message.includes('change') ||
+      message.includes('modify')
+    ) {
       primaryIntent = 'update_entity';
       confidence = 0.8;
       requiresTools = true;
@@ -202,14 +203,22 @@ export class Planner {
       confidence = 0.8;
       requiresTools = true;
       suggestedTools.push('delete_product', 'archive_supplier');
-    } else if (message.includes('analyze') || message.includes('report') || message.includes('dashboard')) {
+    } else if (
+      message.includes('analyze') ||
+      message.includes('report') ||
+      message.includes('dashboard')
+    ) {
       primaryIntent = 'generate_report';
       confidence = 0.8;
       requiresPlanning = true;
       requiresTools = true;
       estimatedComplexity = 'medium';
       suggestedTools.push('query_analytics', 'generate_report');
-    } else if (message.includes('inventory') || message.includes('stock') || message.includes('quantity')) {
+    } else if (
+      message.includes('inventory') ||
+      message.includes('stock') ||
+      message.includes('quantity')
+    ) {
       primaryIntent = 'inventory_management';
       confidence = 0.8;
       requiresTools = true;
@@ -255,9 +264,27 @@ export class Planner {
       case 'create_entity':
         steps.push(
           this.createStep('validate_input', 'Validate input data', undefined, [], 1),
-          this.createStep('check_permissions', 'Check user permissions', undefined, ['validate_input'], 2),
-          this.createStep('create_entity', 'Create the entity', intentAnalysis.suggestedTools[0], ['check_permissions'], 3),
-          this.createStep('verify_creation', 'Verify entity was created successfully', 'query_entity', ['create_entity'], 4)
+          this.createStep(
+            'check_permissions',
+            'Check user permissions',
+            undefined,
+            ['validate_input'],
+            2
+          ),
+          this.createStep(
+            'create_entity',
+            'Create the entity',
+            intentAnalysis.suggestedTools[0],
+            ['check_permissions'],
+            3
+          ),
+          this.createStep(
+            'verify_creation',
+            'Verify entity was created successfully',
+            'query_entity',
+            ['create_entity'],
+            4
+          )
         );
         break;
 
@@ -265,33 +292,87 @@ export class Planner {
         steps.push(
           this.createStep('find_entity', 'Find existing entity', 'query_entity', [], 1),
           this.createStep('validate_update', 'Validate update data', undefined, ['find_entity'], 2),
-          this.createStep('update_entity', 'Update the entity', intentAnalysis.suggestedTools[0], ['validate_update'], 3),
-          this.createStep('verify_update', 'Verify entity was updated', 'query_entity', ['update_entity'], 4)
+          this.createStep(
+            'update_entity',
+            'Update the entity',
+            intentAnalysis.suggestedTools[0],
+            ['validate_update'],
+            3
+          ),
+          this.createStep(
+            'verify_update',
+            'Verify entity was updated',
+            'query_entity',
+            ['update_entity'],
+            4
+          )
         );
         break;
 
       case 'generate_report':
         steps.push(
           this.createStep('gather_data', 'Gather required data', 'query_analytics', [], 1),
-          this.createStep('process_data', 'Process and analyze data', undefined, ['gather_data'], 2),
+          this.createStep(
+            'process_data',
+            'Process and analyze data',
+            undefined,
+            ['gather_data'],
+            2
+          ),
           this.createStep('format_report', 'Format report output', undefined, ['process_data'], 3),
-          this.createStep('validate_report', 'Validate report completeness', undefined, ['format_report'], 4)
+          this.createStep(
+            'validate_report',
+            'Validate report completeness',
+            undefined,
+            ['format_report'],
+            4
+          )
         );
         break;
 
       case 'inventory_management':
         steps.push(
-          this.createStep('check_current_stock', 'Check current inventory levels', 'check_inventory', [], 1),
-          this.createStep('analyze_demand', 'Analyze demand patterns', 'query_analytics', ['check_current_stock'], 2),
-          this.createStep('calculate_reorder', 'Calculate reorder quantities', undefined, ['analyze_demand'], 3),
-          this.createStep('update_inventory', 'Update inventory records', 'update_stock', ['calculate_reorder'], 4)
+          this.createStep(
+            'check_current_stock',
+            'Check current inventory levels',
+            'check_inventory',
+            [],
+            1
+          ),
+          this.createStep(
+            'analyze_demand',
+            'Analyze demand patterns',
+            'query_analytics',
+            ['check_current_stock'],
+            2
+          ),
+          this.createStep(
+            'calculate_reorder',
+            'Calculate reorder quantities',
+            undefined,
+            ['analyze_demand'],
+            3
+          ),
+          this.createStep(
+            'update_inventory',
+            'Update inventory records',
+            'update_stock',
+            ['calculate_reorder'],
+            4
+          )
         );
         break;
 
       default:
         // Generic single-step plan
         steps.push(
-          this.createStep('execute_query', 'Execute user request', intentAnalysis.suggestedTools[0], [], 1)
+          this.createStep(
+            'execute_query',
+            'Execute user request',
+            intentAnalysis.suggestedTools[0],
+            [],
+            1
+          )
         );
     }
 
@@ -386,10 +467,7 @@ export class Planner {
   /**
    * Execute a single plan step
    */
-  private async executeStep(
-    step: PlanStep,
-    executor: ToolExecutor
-  ): Promise<unknown> {
+  private async executeStep(step: PlanStep, executor: ToolExecutor): Promise<unknown> {
     if (!step.toolName) {
       // Non-tool step - just return success
       return { status: 'completed', stepId: step.id };
@@ -481,13 +559,15 @@ export class Planner {
     return steps
       .filter(step => step.toolName) // Only tool-based steps need rollback
       .reverse()
-      .map(step => this.createStep(
-        `rollback_${step.id}`,
-        `Rollback ${step.description}`,
-        `rollback_${step.toolName}`, // Assumes rollback tools exist
-        [],
-        1 // High priority for rollback
-      ));
+      .map(step =>
+        this.createStep(
+          `rollback_${step.id}`,
+          `Rollback ${step.description}`,
+          `rollback_${step.toolName}`, // Assumes rollback tools exist
+          [],
+          1 // High priority for rollback
+        )
+      );
   }
 
   /**

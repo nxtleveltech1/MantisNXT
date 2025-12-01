@@ -5,17 +5,13 @@
  * Handles extracting structured data from various websites
  */
 
-import type { Browser} from 'puppeteer';
+import type { Browser } from 'puppeteer';
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
 import crypto from 'crypto';
-import type {
-  ScrapingTarget,
-  WebsiteContent,
-  ExtractedDataField} from './enhanced-types';
-
+import type { ScrapingTarget, WebsiteContent, ExtractedDataField } from './enhanced-types';
 
 import { DISCOVERY_CONFIG } from './config';
 
@@ -52,12 +48,13 @@ export class WebScrapingService {
     this.axiosInstance = axios.create({
       timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache'
-      }
+        'Cache-Control': 'no-cache',
+      },
     });
 
     this.initializeSelectors();
@@ -66,38 +63,23 @@ export class WebScrapingService {
   private initializeSelectors(): void {
     // Common selectors for business websites
     this.businessSelectors = {
-      companyName: [
-        'h1',
-        '.company-name',
-        '.business-name',
-        '.site-title',
-        'title'
-      ],
+      companyName: ['h1', '.company-name', '.business-name', '.site-title', 'title'],
       address: [
         '.address',
         '.business-address',
         '.contact-address',
         '[itemprop="address"]',
-        '.location'
+        '.location',
       ],
       phone: [
         '.phone',
         '.telephone',
         '.contact-phone',
         '[itemprop="telephone"]',
-        'a[href^="tel:"]'
+        'a[href^="tel:"]',
       ],
-      email: [
-        '.email',
-        '.contact-email',
-        '[itemprop="email"]',
-        'a[href^="mailto:"]'
-      ],
-      website: [
-        '.website',
-        '.url',
-        '[itemprop="url"]'
-      ]
+      email: ['.email', '.contact-email', '[itemprop="email"]', 'a[href^="mailto:"]'],
+      website: ['.website', '.url', '[itemprop="url"]'],
     };
 
     // Social media selectors
@@ -105,7 +87,7 @@ export class WebScrapingService {
       linkedin: 'a[href*="linkedin.com/company"]',
       facebook: 'a[href*="facebook.com"]',
       twitter: 'a[href*="twitter.com"]',
-      instagram: 'a[href*="instagram.com"]'
+      instagram: 'a[href*="instagram.com"]',
     };
 
     // Business directory specific selectors
@@ -115,15 +97,15 @@ export class WebScrapingService {
         address: '.listing-address',
         phone: '.listing-phone',
         website: '.listing-website',
-        category: '.listing-category'
+        category: '.listing-category',
       },
       brabys: {
         name: '.business-name',
         address: '.address',
         phone: '.phone',
         website: '.website',
-        category: '.category'
-      }
+        category: '.category',
+      },
     };
   }
 
@@ -144,8 +126,8 @@ export class WebScrapingService {
           '--disable-gpu',
           '--window-size=1920x1080',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ]
+          '--disable-features=VizDisplayCompositor',
+        ],
       });
       console.log('Browser initialized for web scraping');
     } catch (error) {
@@ -169,7 +151,7 @@ export class WebScrapingService {
    */
   async extractWebsiteContent(url: string): Promise<WebsiteContent> {
     const startTime = Date.now();
-    
+
     try {
       // Check rate limiting
       if (this.activeScrapingCount >= this.maxConcurrentScraping) {
@@ -180,7 +162,7 @@ export class WebScrapingService {
 
       // Determine content type and extraction method
       const contentType = await this.detectContentType(url);
-      
+
       let content: string;
       let method: 'cheerio' | 'puppeteer' | 'api';
       let status: 'success' | 'failed' | 'timeout' = 'success';
@@ -212,9 +194,8 @@ export class WebScrapingService {
         responseTime,
         status,
         contentType: 'text',
-        wordCount: content.split(/\s+/).length
+        wordCount: content.split(/\s+/).length,
       };
-
     } catch (error) {
       console.error(`Failed to extract content from ${url}:`, error);
       return {
@@ -227,7 +208,7 @@ export class WebScrapingService {
         responseTime: Date.now() - startTime,
         status: 'failed',
         contentType: 'text',
-        wordCount: 0
+        wordCount: 0,
       };
     } finally {
       this.activeScrapingCount--;
@@ -251,7 +232,7 @@ export class WebScrapingService {
     }
 
     const page = await this.browser!.newPage();
-    
+
     try {
       // Set user agent and viewport
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
@@ -260,7 +241,7 @@ export class WebScrapingService {
       // Navigate to page
       await page.goto(url, {
         waitUntil: 'networkidle2',
-        timeout: DISCOVERY_CONFIG.TIMEOUT_MS
+        timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       });
 
       // Wait for dynamic content
@@ -284,7 +265,7 @@ export class WebScrapingService {
     try {
       const response = await this.axiosInstance.get(url);
       const content = response.data.toLowerCase();
-      
+
       // Check for common indicators of dynamic content
       const dynamicIndicators = [
         'react',
@@ -296,12 +277,10 @@ export class WebScrapingService {
         '__next',
         'ng-',
         'v-',
-        'data-react'
+        'data-react',
       ];
 
-      const hasDynamicIndicators = dynamicIndicators.some(indicator => 
-        content.includes(indicator)
-      );
+      const hasDynamicIndicators = dynamicIndicators.some(indicator => content.includes(indicator));
 
       return hasDynamicIndicators ? 'dynamic' : 'static';
     } catch {
@@ -363,7 +342,7 @@ export class WebScrapingService {
             confidence: 0.9,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
           break;
         }
@@ -381,7 +360,7 @@ export class WebScrapingService {
         } else {
           category = element.first().text().trim();
         }
-        
+
         if (category) {
           fields.push({
             fieldName: 'industry',
@@ -389,7 +368,7 @@ export class WebScrapingService {
             confidence: 0.7,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
           break;
         }
@@ -415,7 +394,7 @@ export class WebScrapingService {
         } else {
           phone = element.text().trim();
         }
-        
+
         if (phone && this.isValidPhone(phone)) {
           fields.push({
             fieldName: 'phone',
@@ -423,7 +402,7 @@ export class WebScrapingService {
             confidence: 0.8,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
           break;
         }
@@ -440,7 +419,7 @@ export class WebScrapingService {
         } else {
           email = element.text().trim();
         }
-        
+
         if (email && this.isValidEmail(email)) {
           fields.push({
             fieldName: 'email',
@@ -448,7 +427,7 @@ export class WebScrapingService {
             confidence: 0.8,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
           break;
         }
@@ -467,7 +446,7 @@ export class WebScrapingService {
             confidence: 0.7,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
           break;
         }
@@ -482,7 +461,9 @@ export class WebScrapingService {
    */
   private extractSocialMediaLinks($: cheerio.CheerioAPI): ExtractedDataField[] {
     const fields: ExtractedDataField[] = [];
-    const socialLinks = $('a[href*="linkedin.com"], a[href*="facebook.com"], a[href*="twitter.com"], a[href*="instagram.com"]');
+    const socialLinks = $(
+      'a[href*="linkedin.com"], a[href*="facebook.com"], a[href*="twitter.com"], a[href*="instagram.com"]'
+    );
 
     socialLinks.each((index, element) => {
       const href = $(element).attr('href');
@@ -495,7 +476,7 @@ export class WebScrapingService {
             confidence: 0.6,
             extractionMethod: 'selector',
             sourceElement: 'a[href*="social"]',
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
         }
       }
@@ -519,7 +500,7 @@ export class WebScrapingService {
         confidence: 0.5,
         extractionMethod: 'selector',
         sourceElement: 'meta[name="description"]',
-        validation: { isValid: true }
+        validation: { isValid: true },
       });
     }
 
@@ -532,7 +513,7 @@ export class WebScrapingService {
         confidence: 0.4,
         extractionMethod: 'selector',
         sourceElement: 'meta[name="keywords"]',
-        validation: { isValid: true }
+        validation: { isValid: true },
       });
     }
 
@@ -542,7 +523,10 @@ export class WebScrapingService {
   /**
    * Extract data from business directory sites
    */
-  async extractFromDirectory(url: string, directory: 'yellowpages' | 'brabys'): Promise<ExtractedDataField[]> {
+  async extractFromDirectory(
+    url: string,
+    directory: 'yellowpages' | 'brabys'
+  ): Promise<ExtractedDataField[]> {
     try {
       const response = await this.axiosInstance.get(url);
       const $ = cheerio.load(response.data);
@@ -560,7 +544,7 @@ export class WebScrapingService {
               confidence: 0.8,
               extractionMethod: 'selector',
               sourceElement: selector,
-              validation: { isValid: true }
+              validation: { isValid: true },
             });
           }
         }
@@ -580,12 +564,12 @@ export class WebScrapingService {
     try {
       if (target.method === 'POST') {
         const response = await this.axiosInstance.post(target.url, target.payload, {
-          headers: target.headers
+          headers: target.headers,
         });
         const $ = cheerio.load(response.data);
         return this.extractUsingSelectors($, target.extractSelectors);
       } else {
-        return this.extractWebsiteContent(target.url).then(content => 
+        return this.extractWebsiteContent(target.url).then(content =>
           this.extractStructuredData(content)
         );
       }
@@ -598,7 +582,10 @@ export class WebScrapingService {
   /**
    * Extract using specific selectors
    */
-  private extractUsingSelectors($: cheerio.CheerioAPI, selectors: Record<string, string>): ExtractedDataField[] {
+  private extractUsingSelectors(
+    $: cheerio.CheerioAPI,
+    selectors: Record<string, string>
+  ): ExtractedDataField[] {
     const fields: ExtractedDataField[] = [];
 
     for (const [fieldName, selector] of Object.entries(selectors)) {
@@ -612,7 +599,7 @@ export class WebScrapingService {
             confidence: 0.7,
             extractionMethod: 'selector',
             sourceElement: selector,
-            validation: { isValid: true }
+            validation: { isValid: true },
           });
         }
       }
@@ -683,8 +670,8 @@ export class WebScrapingService {
       availableSelectors: {
         business: Object.keys(this.businessSelectors).length,
         social: Object.keys(this.socialSelectors).length,
-        directory: Object.keys(this.directorySelectors).length
-      }
+        directory: Object.keys(this.directorySelectors).length,
+      },
     };
   }
 }

@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { useEffect, useCallback, useReducer } from 'react'
+import { useEffect, useCallback, useReducer } from 'react';
 import type {
   AISupplierState,
   AISupplierAction,
   UseAISupplierOptions,
-  UseAISupplierReturn
-} from '@/types/ai-supplier'
+  UseAISupplierReturn,
+} from '@/types/ai-supplier';
 
 // Initial state
 const initialAISupplierState: AISupplierState = {
@@ -36,7 +36,7 @@ const initialAISupplierState: AISupplierState = {
   chatMessages: [],
   isTyping: false,
   chatContext: {
-    preferences: {}
+    preferences: {},
   },
 
   aiConfig: {
@@ -46,18 +46,18 @@ const initialAISupplierState: AISupplierState = {
     alertThresholds: {
       risk_score: 75,
       confidence_threshold: 70,
-      anomaly_severity: 3
+      anomaly_severity: 3,
     },
-    modelVersions: {}
+    modelVersions: {},
   },
 
   performanceMetrics: {
     apiLatency: 0,
     modelAccuracy: {},
     userSatisfaction: 0,
-    usageStatistics: {}
-  }
-}
+    usageStatistics: {},
+  },
+};
 
 // Reducer function
 function aiSupplierReducer(state: AISupplierState, action: AISupplierAction): AISupplierState {
@@ -66,45 +66,45 @@ function aiSupplierReducer(state: AISupplierState, action: AISupplierAction): AI
       return {
         ...state,
         recommendationsLoading: true,
-        recommendationsError: null
-      }
+        recommendationsError: null,
+      };
 
     case 'FETCH_RECOMMENDATIONS_SUCCESS':
       return {
         ...state,
         recommendations: action.payload,
         recommendationsLoading: false,
-        recommendationsError: null
-      }
+        recommendationsError: null,
+      };
 
     case 'FETCH_RECOMMENDATIONS_ERROR':
       return {
         ...state,
         recommendationsLoading: false,
-        recommendationsError: action.payload
-      }
+        recommendationsError: action.payload,
+      };
 
     case 'FETCH_INSIGHTS_START':
       return {
         ...state,
         insightsLoading: true,
-        insightsError: null
-      }
+        insightsError: null,
+      };
 
     case 'FETCH_INSIGHTS_SUCCESS':
       return {
         ...state,
         insights: action.payload,
         insightsLoading: false,
-        insightsError: null
-      }
+        insightsError: null,
+      };
 
     case 'FETCH_INSIGHTS_ERROR':
       return {
         ...state,
         insightsLoading: false,
-        insightsError: action.payload
-      }
+        insightsError: action.payload,
+      };
 
     case 'ADD_CHAT_MESSAGE':
       return {
@@ -116,25 +116,25 @@ function aiSupplierReducer(state: AISupplierState, action: AISupplierAction): AI
             role: action.payload.role,
             content: action.payload.content,
             timestamp: new Date(),
-            metadata: action.payload.metadata
-          }
-        ]
-      }
+            metadata: action.payload.metadata,
+          },
+        ],
+      };
 
     case 'SET_TYPING':
       return {
         ...state,
-        isTyping: action.payload
-      }
+        isTyping: action.payload,
+      };
 
     case 'UPDATE_AI_CONFIG':
       return {
         ...state,
         aiConfig: {
           ...state.aiConfig,
-          ...action.payload
-        }
-      }
+          ...action.payload,
+        },
+      };
 
     case 'BOOKMARK_INSIGHT':
       return {
@@ -143,8 +143,8 @@ function aiSupplierReducer(state: AISupplierState, action: AISupplierAction): AI
           insight.id === action.payload.insightId
             ? { ...insight, isBookmarked: action.payload.bookmarked }
             : insight
-        )
-      }
+        ),
+      };
 
     case 'PROVIDE_INSIGHT_FEEDBACK':
       return {
@@ -156,33 +156,35 @@ function aiSupplierReducer(state: AISupplierState, action: AISupplierAction): AI
                 userFeedback: {
                   ...insight.userFeedback,
                   [action.payload.feedback === 'helpful' ? 'helpful' : 'notHelpful']:
-                    (insight.userFeedback?.[action.payload.feedback === 'helpful' ? 'helpful' : 'notHelpful'] ?? 0) + 1
-                }
+                    (insight.userFeedback?.[
+                      action.payload.feedback === 'helpful' ? 'helpful' : 'notHelpful'
+                    ] ?? 0) + 1,
+                },
               }
             : insight
-        )
-      }
+        ),
+      };
 
     case 'CLEAR_RECOMMENDATIONS':
       return {
         ...state,
-        recommendations: []
-      }
+        recommendations: [],
+      };
 
     case 'CLEAR_INSIGHTS':
       return {
         ...state,
-        insights: []
-      }
+        insights: [],
+      };
 
     case 'CLEAR_CHAT':
       return {
         ...state,
-        chatMessages: []
-      }
+        chatMessages: [],
+      };
 
     default:
-      return state
+      return state;
   }
 }
 
@@ -191,305 +193,317 @@ export function useAISupplier(options: UseAISupplierOptions = {}): UseAISupplier
     supplierId,
     autoFetch = true,
     enableRealTimeUpdates = false,
-    analysisDepth = 'standard'
-  } = options
+    analysisDepth = 'standard',
+  } = options;
 
   const [state, dispatch] = useReducer(aiSupplierReducer, {
     ...initialAISupplierState,
     aiConfig: {
       ...initialAISupplierState.aiConfig,
-      analysisDepth
+      analysisDepth,
     },
     chatContext: {
       ...initialAISupplierState.chatContext,
-      supplierId
-    }
-  })
+      supplierId,
+    },
+  });
 
   // Fetch AI recommendations
-  const fetchRecommendations = useCallback(async (
-    query?: string,
-    filters?: Record<string, unknown>
-  ) => {
-    dispatch({ type: 'FETCH_RECOMMENDATIONS_START' })
+  const fetchRecommendations = useCallback(
+    async (query?: string, filters?: Record<string, unknown>) => {
+      dispatch({ type: 'FETCH_RECOMMENDATIONS_START' });
 
-    try {
-      const response = await fetch('/api/ai/suppliers/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: query || '',
-          filters: filters || {},
-          analysisDepth: state.aiConfig.analysisDepth,
-          includeMarketIntelligence: true,
-          includePredictiveAnalysis: true,
-          supplierId
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const { recommendations } = await response.json()
-      dispatch({
-        type: 'FETCH_RECOMMENDATIONS_SUCCESS',
-        payload: recommendations || []
-      })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch recommendations'
-      dispatch({
-        type: 'FETCH_RECOMMENDATIONS_ERROR',
-        payload: errorMessage
-      })
-      console.error('AI recommendations error:', error)
-    }
-  }, [state.aiConfig.analysisDepth, supplierId])
-
-  // Fetch AI insights
-  const fetchInsights = useCallback(async (
-    targetSupplierId?: string,
-    categories?: string[]
-  ) => {
-    dispatch({ type: 'FETCH_INSIGHTS_START' })
-
-    try {
-      const response = await fetch('/api/ai/suppliers/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: targetSupplierId || supplierId,
-          categories: categories || ['all'],
-          analysisDepth: state.aiConfig.analysisDepth,
-          includeMarketContext: true,
-          includeRiskAssessment: true
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const { insights } = await response.json()
-      dispatch({
-        type: 'FETCH_INSIGHTS_SUCCESS',
-        payload: insights || []
-      })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch insights'
-      dispatch({
-        type: 'FETCH_INSIGHTS_ERROR',
-        payload: errorMessage
-      })
-      console.error('AI insights error:', error)
-    }
-  }, [supplierId, state.aiConfig.analysisDepth])
-
-  // Send chat message
-  const sendChatMessage = useCallback(async (message: string) => {
-    if (!message.trim()) return
-
-    // Add user message to chat
-    dispatch({
-      type: 'ADD_CHAT_MESSAGE',
-      payload: { role: 'user', content: message.trim() }
-    })
-
-    dispatch({ type: 'SET_TYPING', payload: true })
-
-    try {
-      const response = await fetch('/api/ai/suppliers/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: message.trim(),
-          context: {
+      try {
+        const response = await fetch('/api/ai/suppliers/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: query || '',
+            filters: filters || {},
+            analysisDepth: state.aiConfig.analysisDepth,
+            includeMarketIntelligence: true,
+            includePredictiveAnalysis: true,
             supplierId,
-            conversationHistory: state.chatMessages.slice(-5),
-            preferences: state.chatContext.preferences,
-            analysisDepth: state.aiConfig.analysisDepth
-          }
-        })
-      })
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const { response: aiResponse, metadata, suggestions } = await response.json()
-
-      // Add AI response to chat
-      dispatch({
-        type: 'ADD_CHAT_MESSAGE',
-        payload: {
-          role: 'assistant',
-          content: aiResponse,
-          metadata: {
-            ...metadata,
-            suggestions,
-            confidence: metadata?.confidence || 95,
-            processingTime: metadata?.processingTime || 0
-          }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      })
 
-      // If the response includes new insights or recommendations, update them
-      if (metadata?.newInsights) {
-        dispatch({
-          type: 'FETCH_INSIGHTS_SUCCESS',
-          payload: [...state.insights, ...metadata.newInsights]
-        })
-      }
-
-      if (metadata?.newRecommendations) {
+        const { recommendations } = await response.json();
         dispatch({
           type: 'FETCH_RECOMMENDATIONS_SUCCESS',
-          payload: [...state.recommendations, ...metadata.newRecommendations]
-        })
+          payload: recommendations || [],
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to fetch recommendations';
+        dispatch({
+          type: 'FETCH_RECOMMENDATIONS_ERROR',
+          payload: errorMessage,
+        });
+        console.error('AI recommendations error:', error);
       }
+    },
+    [state.aiConfig.analysisDepth, supplierId]
+  );
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message'
+  // Fetch AI insights
+  const fetchInsights = useCallback(
+    async (targetSupplierId?: string, categories?: string[]) => {
+      dispatch({ type: 'FETCH_INSIGHTS_START' });
+
+      try {
+        const response = await fetch('/api/ai/suppliers/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            supplierId: targetSupplierId || supplierId,
+            categories: categories || ['all'],
+            analysisDepth: state.aiConfig.analysisDepth,
+            includeMarketContext: true,
+            includeRiskAssessment: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const { insights } = await response.json();
+        dispatch({
+          type: 'FETCH_INSIGHTS_SUCCESS',
+          payload: insights || [],
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch insights';
+        dispatch({
+          type: 'FETCH_INSIGHTS_ERROR',
+          payload: errorMessage,
+        });
+        console.error('AI insights error:', error);
+      }
+    },
+    [supplierId, state.aiConfig.analysisDepth]
+  );
+
+  // Send chat message
+  const sendChatMessage = useCallback(
+    async (message: string) => {
+      if (!message.trim()) return;
+
+      // Add user message to chat
       dispatch({
         type: 'ADD_CHAT_MESSAGE',
-        payload: {
-          role: 'assistant',
-          content: `I apologize, but I encountered an error: ${errorMessage}. Please try again.`,
-          metadata: { type: 'error' }
+        payload: { role: 'user', content: message.trim() },
+      });
+
+      dispatch({ type: 'SET_TYPING', payload: true });
+
+      try {
+        const response = await fetch('/api/ai/suppliers/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: message.trim(),
+            context: {
+              supplierId,
+              conversationHistory: state.chatMessages.slice(-5),
+              preferences: state.chatContext.preferences,
+              analysisDepth: state.aiConfig.analysisDepth,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      })
-      console.error('Chat message error:', error)
-    } finally {
-      dispatch({ type: 'SET_TYPING', payload: false })
-    }
-  }, [supplierId, state.chatMessages, state.chatContext.preferences, state.aiConfig.analysisDepth, state.insights, state.recommendations])
+
+        const { response: aiResponse, metadata, suggestions } = await response.json();
+
+        // Add AI response to chat
+        dispatch({
+          type: 'ADD_CHAT_MESSAGE',
+          payload: {
+            role: 'assistant',
+            content: aiResponse,
+            metadata: {
+              ...metadata,
+              suggestions,
+              confidence: metadata?.confidence || 95,
+              processingTime: metadata?.processingTime || 0,
+            },
+          },
+        });
+
+        // If the response includes new insights or recommendations, update them
+        if (metadata?.newInsights) {
+          dispatch({
+            type: 'FETCH_INSIGHTS_SUCCESS',
+            payload: [...state.insights, ...metadata.newInsights],
+          });
+        }
+
+        if (metadata?.newRecommendations) {
+          dispatch({
+            type: 'FETCH_RECOMMENDATIONS_SUCCESS',
+            payload: [...state.recommendations, ...metadata.newRecommendations],
+          });
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+        dispatch({
+          type: 'ADD_CHAT_MESSAGE',
+          payload: {
+            role: 'assistant',
+            content: `I apologize, but I encountered an error: ${errorMessage}. Please try again.`,
+            metadata: { type: 'error' },
+          },
+        });
+        console.error('Chat message error:', error);
+      } finally {
+        dispatch({ type: 'SET_TYPING', payload: false });
+      }
+    },
+    [
+      supplierId,
+      state.chatMessages,
+      state.chatContext.preferences,
+      state.aiConfig.analysisDepth,
+      state.insights,
+      state.recommendations,
+    ]
+  );
 
   // Bookmark insight
-  const bookmarkInsight = useCallback(async (insightId: string) => {
-    const insight = state.insights.find(i => i.id === insightId)
-    if (!insight) return
+  const bookmarkInsight = useCallback(
+    async (insightId: string) => {
+      const insight = state.insights.find(i => i.id === insightId);
+      if (!insight) return;
 
-    const newBookmarkState = !insight.isBookmarked
+      const newBookmarkState = !insight.isBookmarked;
 
-    // Optimistically update UI
-    dispatch({
-      type: 'BOOKMARK_INSIGHT',
-      payload: { insightId, bookmarked: newBookmarkState }
-    })
+      // Optimistically update UI
+      dispatch({
+        type: 'BOOKMARK_INSIGHT',
+        payload: { insightId, bookmarked: newBookmarkState },
+      });
 
-    try {
-      const response = await fetch('/api/ai/suppliers/insights/bookmark', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          insightId,
-          bookmarked: newBookmarkState,
-          userId: 'current-user' // Replace with actual user ID
-        })
-      })
+      try {
+        const response = await fetch('/api/ai/suppliers/insights/bookmark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insightId,
+            bookmarked: newBookmarkState,
+            userId: 'current-user', // Replace with actual user ID
+          }),
+        });
 
-      if (!response.ok) {
-        // Revert on failure
-        dispatch({
-          type: 'BOOKMARK_INSIGHT',
-          payload: { insightId, bookmarked: !newBookmarkState }
-        })
-        throw new Error('Failed to bookmark insight')
+        if (!response.ok) {
+          // Revert on failure
+          dispatch({
+            type: 'BOOKMARK_INSIGHT',
+            payload: { insightId, bookmarked: !newBookmarkState },
+          });
+          throw new Error('Failed to bookmark insight');
+        }
+      } catch (error) {
+        console.error('Bookmark error:', error);
       }
-    } catch (error) {
-      console.error('Bookmark error:', error)
-    }
-  }, [state.insights])
+    },
+    [state.insights]
+  );
 
   // Provide insight feedback
-  const provideInsightFeedback = useCallback(async (
-    insightId: string,
-    feedback: 'helpful' | 'notHelpful'
-  ) => {
-    // Optimistically update UI
-    dispatch({
-      type: 'PROVIDE_INSIGHT_FEEDBACK',
-      payload: { insightId, feedback }
-    })
+  const provideInsightFeedback = useCallback(
+    async (insightId: string, feedback: 'helpful' | 'notHelpful') => {
+      // Optimistically update UI
+      dispatch({
+        type: 'PROVIDE_INSIGHT_FEEDBACK',
+        payload: { insightId, feedback },
+      });
 
-    try {
-      const response = await fetch('/api/ai/suppliers/insights/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          insightId,
-          feedback,
-          userId: 'current-user' // Replace with actual user ID
-        })
-      })
+      try {
+        const response = await fetch('/api/ai/suppliers/insights/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insightId,
+            feedback,
+            userId: 'current-user', // Replace with actual user ID
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to provide feedback')
+        if (!response.ok) {
+          throw new Error('Failed to provide feedback');
+        }
+      } catch (error) {
+        console.error('Feedback error:', error);
+        // Could implement revert logic here if needed
       }
-    } catch (error) {
-      console.error('Feedback error:', error)
-      // Could implement revert logic here if needed
-    }
-  }, [])
+    },
+    []
+  );
 
   // Clear functions
   const clearRecommendations = useCallback(() => {
-    dispatch({ type: 'CLEAR_RECOMMENDATIONS' })
-  }, [])
+    dispatch({ type: 'CLEAR_RECOMMENDATIONS' });
+  }, []);
 
   const clearInsights = useCallback(() => {
-    dispatch({ type: 'CLEAR_INSIGHTS' })
-  }, [])
+    dispatch({ type: 'CLEAR_INSIGHTS' });
+  }, []);
 
   const clearChat = useCallback(() => {
-    dispatch({ type: 'CLEAR_CHAT' })
-  }, [])
+    dispatch({ type: 'CLEAR_CHAT' });
+  }, []);
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
-    const promises = []
+    const promises = [];
 
     if (state.aiConfig.enabledFeatures.includes('recommendations')) {
-      promises.push(fetchRecommendations())
+      promises.push(fetchRecommendations());
     }
 
     if (state.aiConfig.enabledFeatures.includes('insights')) {
-      promises.push(fetchInsights())
+      promises.push(fetchInsights());
     }
 
-    await Promise.allSettled(promises)
-  }, [
-    fetchRecommendations,
-    fetchInsights,
-    state.aiConfig.enabledFeatures
-  ])
+    await Promise.allSettled(promises);
+  }, [fetchRecommendations, fetchInsights, state.aiConfig.enabledFeatures]);
 
   // Auto-fetch on mount and when supplierId changes
   useEffect(() => {
     if (autoFetch && supplierId) {
-      refreshAll()
+      refreshAll();
     }
-  }, [autoFetch, supplierId, refreshAll])
+  }, [autoFetch, supplierId, refreshAll]);
 
   // Real-time updates via WebSocket or polling
   useEffect(() => {
-    if (!enableRealTimeUpdates || !supplierId) return
+    if (!enableRealTimeUpdates || !supplierId) return;
 
-    let intervalId: NodeJS.Timeout
+    let intervalId: NodeJS.Timeout;
 
     if (state.aiConfig.autoRefresh) {
       // Poll for updates every 5 minutes
-      intervalId = setInterval(() => {
-        refreshAll()
-      }, 5 * 60 * 1000)
+      intervalId = setInterval(
+        () => {
+          refreshAll();
+        },
+        5 * 60 * 1000
+      );
     }
 
     return () => {
       if (intervalId) {
-        clearInterval(intervalId)
+        clearInterval(intervalId);
       }
-    }
-  }, [enableRealTimeUpdates, supplierId, state.aiConfig.autoRefresh, refreshAll])
+    };
+  }, [enableRealTimeUpdates, supplierId, state.aiConfig.autoRefresh, refreshAll]);
 
   // Initialize welcome message for chat
   useEffect(() => {
@@ -505,15 +519,15 @@ export function useAISupplier(options: UseAISupplierOptions = {}): UseAISupplier
 • **Recommendations** - Data-driven supplier optimization suggestions
 • **Q&A** - Answer specific questions about your suppliers
 
-${supplierId ? 'I can see we\'re focusing on a specific supplier. ' : ''}What would you like to explore today?`,
+${supplierId ? "I can see we're focusing on a specific supplier. " : ''}What would you like to explore today?`,
           metadata: {
             type: 'welcome',
-            actionable: false
-          }
-        }
-      })
+            actionable: false,
+          },
+        },
+      });
     }
-  }, [state.chatMessages.length, state.aiConfig.enabledFeatures, supplierId])
+  }, [state.chatMessages.length, state.aiConfig.enabledFeatures, supplierId]);
 
   return {
     state,
@@ -525,38 +539,45 @@ ${supplierId ? 'I can see we\'re focusing on a specific supplier. ' : ''}What wo
     clearRecommendations,
     clearInsights,
     clearChat,
-    refreshAll
-  }
+    refreshAll,
+  };
 }
 
 // Specialized hooks for specific use cases
 export function useAISupplierRecommendations(query?: string, filters?: Record<string, unknown>) {
   const { state, fetchRecommendations, clearRecommendations } = useAISupplier({
-    autoFetch: false
-  })
+    autoFetch: false,
+  });
 
-  const search = useCallback(async (searchQuery?: string, searchFilters?: Record<string, unknown>) => {
-    await fetchRecommendations(searchQuery || query, searchFilters || filters)
-  }, [fetchRecommendations, query, filters])
+  const search = useCallback(
+    async (searchQuery?: string, searchFilters?: Record<string, unknown>) => {
+      await fetchRecommendations(searchQuery || query, searchFilters || filters);
+    },
+    [fetchRecommendations, query, filters]
+  );
 
   return {
     recommendations: state.recommendations,
     loading: state.recommendationsLoading,
     error: state.recommendationsError,
     search,
-    clear: clearRecommendations
-  }
+    clear: clearRecommendations,
+  };
 }
 
 export function useAISupplierInsights(supplierId?: string, categories?: string[]) {
-  const { state, fetchInsights, clearInsights, bookmarkInsight, provideInsightFeedback } = useAISupplier({
-    supplierId,
-    autoFetch: !!supplierId
-  })
+  const { state, fetchInsights, clearInsights, bookmarkInsight, provideInsightFeedback } =
+    useAISupplier({
+      supplierId,
+      autoFetch: !!supplierId,
+    });
 
-  const refreshInsights = useCallback(async (newCategories?: string[]) => {
-    await fetchInsights(supplierId, newCategories || categories)
-  }, [fetchInsights, supplierId, categories])
+  const refreshInsights = useCallback(
+    async (newCategories?: string[]) => {
+      await fetchInsights(supplierId, newCategories || categories);
+    },
+    [fetchInsights, supplierId, categories]
+  );
 
   return {
     insights: state.insights,
@@ -565,20 +586,20 @@ export function useAISupplierInsights(supplierId?: string, categories?: string[]
     refresh: refreshInsights,
     clear: clearInsights,
     bookmark: bookmarkInsight,
-    provideFeedback: provideInsightFeedback
-  }
+    provideFeedback: provideInsightFeedback,
+  };
 }
 
 export function useAISupplierChat(supplierId?: string) {
   const { state, sendChatMessage, clearChat } = useAISupplier({
     supplierId,
-    autoFetch: false
-  })
+    autoFetch: false,
+  });
 
   return {
     messages: state.chatMessages,
     isTyping: state.isTyping,
     sendMessage: sendChatMessage,
-    clearChat
-  }
+    clearChat,
+  };
 }

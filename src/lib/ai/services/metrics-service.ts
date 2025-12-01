@@ -15,10 +15,7 @@
 
 import { db } from '@/lib/database';
 import { MetricsCalculator } from '@/lib/analytics/MetricsCalculator';
-import type {
-  MetricType,
-  TimePeriod,
-} from '@/lib/analytics/MetricsCalculator';
+import type { MetricType, TimePeriod } from '@/lib/analytics/MetricsCalculator';
 
 // ============================================================================
 // Types & Interfaces
@@ -131,11 +128,7 @@ export class AIMetricsService {
 
     switch (metricType) {
       case 'sales':
-        return await MetricsCalculator.calculateSalesMetrics(
-          orgId,
-          startDate,
-          endDate
-        );
+        return await MetricsCalculator.calculateSalesMetrics(orgId, startDate, endDate);
 
       case 'inventory':
         return await MetricsCalculator.calculateInventoryMetrics(orgId);
@@ -197,10 +190,7 @@ export class AIMetricsService {
    * @param metricType - Type of metric to invalidate (optional, invalidates all if not provided)
    * @returns Number of cache entries invalidated
    */
-  static async invalidateMetricCache(
-    orgId: string,
-    metricType?: MetricType
-  ): Promise<number> {
+  static async invalidateMetricCache(orgId: string, metricType?: MetricType): Promise<number> {
     if (metricType) {
       const result = await db.query(
         `
@@ -262,10 +252,7 @@ export class AIMetricsService {
    * @param timeRange - Optional time range
    * @returns Comprehensive metrics summary
    */
-  static async getMetricsSummary(
-    orgId: string,
-    timeRange?: TimeRange
-  ): Promise<MetricsSummary> {
+  static async getMetricsSummary(orgId: string, timeRange?: TimeRange): Promise<MetricsSummary> {
     const range = timeRange || this.getTimeRangeForPeriod('daily');
 
     // Get AI service health metrics
@@ -282,7 +269,7 @@ export class AIMetricsService {
     let activeAlerts = 0;
     const byService: Record<string, unknown> = {};
 
-    aiHealthResult.rows.forEach((row) => {
+    aiHealthResult.rows.forEach(row => {
       const predictions = parseInt(row.total_predictions || '0');
       const confidence = parseFloat(row.avg_confidence || '0');
       const alerts = parseInt(row.active_alerts || '0');
@@ -299,9 +286,7 @@ export class AIMetricsService {
       };
     });
 
-    const averageAccuracy = totalPredictions > 0
-      ? totalConfidence / totalPredictions
-      : 0;
+    const averageAccuracy = totalPredictions > 0 ? totalConfidence / totalPredictions : 0;
 
     // Get resolved alerts count
     const resolvedAlertsResult = await db.query(
@@ -336,13 +321,15 @@ export class AIMetricsService {
     const previousPredictions = parseInt(previousHealthResult.rows[0]?.predictions || '0');
     const previousConfidence = parseFloat(previousHealthResult.rows[0]?.avg_confidence || '0');
 
-    const predictionChange = previousPredictions > 0
-      ? ((totalPredictions - previousPredictions) / previousPredictions) * 100
-      : 0;
+    const predictionChange =
+      previousPredictions > 0
+        ? ((totalPredictions - previousPredictions) / previousPredictions) * 100
+        : 0;
 
-    const accuracyChange = previousConfidence > 0
-      ? ((averageAccuracy - previousConfidence) / previousConfidence) * 100
-      : 0;
+    const accuracyChange =
+      previousConfidence > 0
+        ? ((averageAccuracy - previousConfidence) / previousConfidence) * 100
+        : 0;
 
     const now = new Date();
     const cacheExpires = new Date(now.getTime() + DEFAULT_CACHE_TTL * 1000);
@@ -358,7 +345,8 @@ export class AIMetricsService {
       trends: {
         predictions: {
           change: predictionChange,
-          direction: predictionChange > 0 ? 'increasing' : predictionChange < 0 ? 'decreasing' : 'stable',
+          direction:
+            predictionChange > 0 ? 'increasing' : predictionChange < 0 ? 'decreasing' : 'stable',
         },
         accuracy: {
           change: accuracyChange,
@@ -544,9 +532,10 @@ export class AIMetricsService {
       activeCustomers: parseInt(row.active_customers || '0'),
       totalOrders: parseInt(row.total_orders || '0'),
       avgOrderValue: parseFloat(row.avg_order_value || '0'),
-      retentionRate: row.total_customers > 0
-        ? (parseInt(row.active_customers || '0') / parseInt(row.total_customers || '1')) * 100
-        : 0,
+      retentionRate:
+        row.total_customers > 0
+          ? (parseInt(row.active_customers || '0') / parseInt(row.total_customers || '1')) * 100
+          : 0,
     };
   }
 

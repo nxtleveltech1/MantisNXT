@@ -1,16 +1,22 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
-import { Progress } from '@/components/ui/progress'
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import {
   Calculator,
   Shield,
@@ -24,9 +30,9 @@ import {
   CheckCircle,
   CreditCard,
   Receipt,
-  Calendar
-} from 'lucide-react'
-import AppLayout from '@/components/layout/AppLayout'
+  Calendar,
+} from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface FinancialSettings {
   vat: {
@@ -95,7 +101,7 @@ const BEE_SCORECARD = {
   management: { weight: 15, threshold: [0, 3, 6, 9, 12, 15] },
   skillsDevelopment: { weight: 20, threshold: [0, 4, 8, 12, 16, 20] },
   enterpriseSupplierDevelopment: { weight: 25, threshold: [0, 5, 10, 15, 20, 25] },
-  socioEconomicDevelopment: { weight: 15, threshold: [0, 3, 6, 9, 12, 15] }
+  socioEconomicDevelopment: { weight: 15, threshold: [0, 3, 6, 9, 12, 15] },
 };
 
 // Default South African financial settings
@@ -105,7 +111,7 @@ const DEFAULT_FINANCIAL_SETTINGS: FinancialSettings = {
     rate: 0.15, // 15% SA VAT
     registrationNumber: '',
     vendorNumber: '',
-    threshold: 1000000 // R1M VAT registration threshold
+    threshold: 1000000, // R1M VAT registration threshold
   },
   bee: {
     enabled: false,
@@ -117,113 +123,116 @@ const DEFAULT_FINANCIAL_SETTINGS: FinancialSettings = {
       management: 0,
       skillsDevelopment: 0,
       enterpriseSupplierDevelopment: 0,
-      socioEconomicDevelopment: 0
-    }
+      socioEconomicDevelopment: 0,
+    },
   },
   paymentTerms: {
     standard: 30, // 30 days
     earlyPaymentDiscount: {
       enabled: false,
       days: 10,
-      discountPercentage: 2
+      discountPercentage: 2,
     },
     latePaymentPenalty: {
       enabled: true,
       days: 30,
-      penaltyPercentage: 2
-    }
+      penaltyPercentage: 2,
+    },
   },
   approvalLimits: {
-    user: 10000,      // R10K
+    user: 10000, // R10K
     supervisor: 50000, // R50K
-    manager: 250000,   // R250K
+    manager: 250000, // R250K
     director: 1000000, // R1M
-    board: 5000000     // R5M
+    board: 5000000, // R5M
   },
   budgetControls: {
     enforceApprovals: true,
     allowOverspend: false,
     overspendThreshold: 10, // 10%
-    requireJustification: true
+    requireJustification: true,
   },
   compliance: {
     popi: true,
     fica: true,
     beeCompliance: false,
     taxCompliance: true,
-    auditTrail: true
+    auditTrail: true,
   },
   fiscalYear: {
     startMonth: 3, // March (SA tax year)
-    endMonth: 2,   // February
-    taxYear: '2024/2025'
-  }
+    endMonth: 2, // February
+    taxYear: '2024/2025',
+  },
 };
 
 export default function FinancialSettingsPage() {
-  const [settings, setSettings] = useState<FinancialSettings>(DEFAULT_FINANCIAL_SETTINGS)
-  const [isModified, setIsModified] = useState(false)
-  const [activeTab, setActiveTab] = useState('vat')
-  const [isSaving, setIsSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [settings, setSettings] = useState<FinancialSettings>(DEFAULT_FINANCIAL_SETTINGS);
+  const [isModified, setIsModified] = useState(false);
+  const [activeTab, setActiveTab] = useState('vat');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Update settings
   const updateSettings = (updates: Partial<FinancialSettings>) => {
-    const newSettings = { ...settings, ...updates }
-    setSettings(newSettings)
-    setIsModified(true)
-  }
+    const newSettings = { ...settings, ...updates };
+    setSettings(newSettings);
+    setIsModified(true);
+  };
 
   // Update nested settings
   const updateNestedSettings = (section: keyof FinancialSettings, updates: unknown) => {
     setSettings(prev => ({
       ...prev,
-      [section]: { ...prev[section], ...updates }
-    }))
-    setIsModified(true)
-  }
+      [section]: { ...prev[section], ...updates },
+    }));
+    setIsModified(true);
+  };
 
   // Save settings
   const saveSettings = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // In a real application, this would save to database/API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsModified(false)
-      setLastSaved(new Date())
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsModified(false);
+      setLastSaved(new Date());
     } catch (error) {
-      console.error('Failed to save settings:', error)
+      console.error('Failed to save settings:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Reset to defaults
   const resetToDefaults = () => {
-    setSettings(DEFAULT_FINANCIAL_SETTINGS)
-    setIsModified(true)
-  }
+    setSettings(DEFAULT_FINANCIAL_SETTINGS);
+    setIsModified(true);
+  };
 
   // Calculate BEE level
   const calculateBEELevel = () => {
-    const { scoreElements } = settings.bee
+    const { scoreElements } = settings.bee;
     const totalScore = Object.entries(scoreElements).reduce((sum, [key, value]) => {
-      const element = BEE_SCORECARD[key as keyof typeof BEE_SCORECARD]
-      return sum + value
-    }, 0)
+      const element = BEE_SCORECARD[key as keyof typeof BEE_SCORECARD];
+      return sum + value;
+    }, 0);
 
-    if (totalScore >= 90) return 1
-    if (totalScore >= 75) return 2
-    if (totalScore >= 60) return 3
-    if (totalScore >= 45) return 4
-    if (totalScore >= 40) return 5
-    if (totalScore >= 35) return 6
-    if (totalScore >= 30) return 7
-    return 8
-  }
+    if (totalScore >= 90) return 1;
+    if (totalScore >= 75) return 2;
+    if (totalScore >= 60) return 3;
+    if (totalScore >= 45) return 4;
+    if (totalScore >= 40) return 5;
+    if (totalScore >= 35) return 6;
+    if (totalScore >= 30) return 7;
+    return 8;
+  };
 
-  const beeLevel = calculateBEELevel()
-  const totalBEEScore = Object.entries(settings.bee.scoreElements).reduce((sum, [, value]) => sum + value, 0)
+  const beeLevel = calculateBEELevel();
+  const totalBEEScore = Object.entries(settings.bee.scoreElements).reduce(
+    (sum, [, value]) => sum + value,
+    0
+  );
 
   return (
     <AppLayout>
@@ -238,23 +247,16 @@ export default function FinancialSettingsPage() {
           </div>
           <div className="flex items-center gap-3">
             {lastSaved && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Last saved: {lastSaved.toLocaleTimeString()}
               </p>
             )}
-            <Button
-              variant="outline"
-              onClick={resetToDefaults}
-              disabled={isSaving}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={resetToDefaults} disabled={isSaving}>
+              <RotateCcw className="mr-2 h-4 w-4" />
               Reset to Defaults
             </Button>
-            <Button
-              onClick={saveSettings}
-              disabled={!isModified || isSaving}
-            >
-              <Save className="h-4 w-4 mr-2" />
+            <Button onClick={saveSettings} disabled={!isModified || isSaving}>
+              <Save className="mr-2 h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -267,7 +269,8 @@ export default function FinancialSettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  You have unsaved changes. Click &quot;Save Changes&quot; to apply your configuration.
+                  You have unsaved changes. Click &quot;Save Changes&quot; to apply your
+                  configuration.
                 </p>
               </div>
             </CardContent>
@@ -286,7 +289,7 @@ export default function FinancialSettingsPage() {
 
           {/* VAT Settings */}
           <TabsContent value="vat" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -298,13 +301,13 @@ export default function FinancialSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label>VAT Registered</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Enable VAT calculations and reporting
                       </p>
                     </div>
                     <Switch
                       checked={settings.vat.enabled}
-                      onCheckedChange={(checked) => updateNestedSettings('vat', { enabled: checked })}
+                      onCheckedChange={checked => updateNestedSettings('vat', { enabled: checked })}
                     />
                   </div>
 
@@ -319,9 +322,13 @@ export default function FinancialSettingsPage() {
                           min="0"
                           max="100"
                           value={settings.vat.rate * 100}
-                          onChange={(e) => updateNestedSettings('vat', { rate: parseFloat(e.target.value) / 100 || 0 })}
+                          onChange={e =>
+                            updateNestedSettings('vat', {
+                              rate: parseFloat(e.target.value) / 100 || 0,
+                            })
+                          }
                         />
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           South African standard VAT rate is 15%
                         </p>
                       </div>
@@ -331,10 +338,12 @@ export default function FinancialSettingsPage() {
                         <Input
                           id="vat-reg"
                           value={settings.vat.registrationNumber}
-                          onChange={(e) => updateNestedSettings('vat', { registrationNumber: e.target.value })}
+                          onChange={e =>
+                            updateNestedSettings('vat', { registrationNumber: e.target.value })
+                          }
                           placeholder="4123456789"
                         />
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           10-digit VAT registration number starting with 4
                         </p>
                       </div>
@@ -344,7 +353,9 @@ export default function FinancialSettingsPage() {
                         <Input
                           id="vendor-number"
                           value={settings.vat.vendorNumber}
-                          onChange={(e) => updateNestedSettings('vat', { vendorNumber: e.target.value })}
+                          onChange={e =>
+                            updateNestedSettings('vat', { vendorNumber: e.target.value })
+                          }
                           placeholder="VAT vendor number"
                         />
                       </div>
@@ -367,15 +378,17 @@ export default function FinancialSettingsPage() {
                       id="vat-threshold"
                       type="number"
                       value={settings.vat.threshold}
-                      onChange={(e) => updateNestedSettings('vat', { threshold: parseFloat(e.target.value) || 0 })}
+                      onChange={e =>
+                        updateNestedSettings('vat', { threshold: parseFloat(e.target.value) || 0 })
+                      }
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Current SA threshold: R1,000,000 per 12 months
                     </p>
                   </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">VAT Information</h4>
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <h4 className="mb-2 font-medium text-blue-900">VAT Information</h4>
                     <div className="space-y-1 text-sm text-blue-800">
                       <p>Current Rate: {(settings.vat.rate * 100).toFixed(2)}%</p>
                       <p>Status: {settings.vat.enabled ? 'VAT Registered' : 'Non-VAT'}</p>
@@ -386,8 +399,8 @@ export default function FinancialSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">VAT Calculation Example</h4>
+                  <div className="rounded-lg bg-green-50 p-4">
+                    <h4 className="mb-2 font-medium text-green-900">VAT Calculation Example</h4>
                     <div className="space-y-1 text-sm text-green-800">
                       <div className="flex justify-between">
                         <span>Amount (exclusive):</span>
@@ -411,7 +424,7 @@ export default function FinancialSettingsPage() {
 
           {/* BEE Settings */}
           <TabsContent value="bee" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -423,13 +436,11 @@ export default function FinancialSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label>BEE Compliant</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Enable BEE scorecard tracking
-                      </p>
+                      <p className="text-muted-foreground text-sm">Enable BEE scorecard tracking</p>
                     </div>
                     <Switch
                       checked={settings.bee.enabled}
-                      onCheckedChange={(checked) => updateNestedSettings('bee', { enabled: checked })}
+                      onCheckedChange={checked => updateNestedSettings('bee', { enabled: checked })}
                     />
                   </div>
 
@@ -440,7 +451,9 @@ export default function FinancialSettingsPage() {
                         <Input
                           id="bee-cert"
                           value={settings.bee.certificateNumber}
-                          onChange={(e) => updateNestedSettings('bee', { certificateNumber: e.target.value })}
+                          onChange={e =>
+                            updateNestedSettings('bee', { certificateNumber: e.target.value })
+                          }
                           placeholder="BEE certificate number"
                         />
                       </div>
@@ -451,14 +464,16 @@ export default function FinancialSettingsPage() {
                           id="bee-expiry"
                           type="date"
                           value={settings.bee.expiryDate}
-                          onChange={(e) => updateNestedSettings('bee', { expiryDate: e.target.value })}
+                          onChange={e =>
+                            updateNestedSettings('bee', { expiryDate: e.target.value })
+                          }
                         />
                       </div>
 
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
+                      <div className="rounded-lg bg-green-50 p-4">
+                        <div className="mb-2 flex items-center justify-between">
                           <h4 className="font-medium text-green-900">Current BEE Level</h4>
-                          <Badge variant={beeLevel <= 4 ? "default" : "secondary"}>
+                          <Badge variant={beeLevel <= 4 ? 'default' : 'secondary'}>
                             Level {beeLevel}
                           </Badge>
                         </div>
@@ -482,16 +497,17 @@ export default function FinancialSettingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {Object.entries(BEE_SCORECARD).map(([key, config]) => {
-                      const currentScore = settings.bee.scoreElements[key as keyof typeof settings.bee.scoreElements]
-                      const percentage = (currentScore / config.weight) * 100
+                      const currentScore =
+                        settings.bee.scoreElements[key as keyof typeof settings.bee.scoreElements];
+                      const percentage = (currentScore / config.weight) * 100;
 
                       return (
                         <div key={key} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Label className="capitalize text-sm">
+                            <Label className="text-sm capitalize">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </Label>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground text-sm">
                               {currentScore}/{config.weight}
                             </span>
                           </div>
@@ -501,14 +517,17 @@ export default function FinancialSettingsPage() {
                             max={config.weight}
                             step="0.1"
                             value={currentScore}
-                            onChange={(e) => {
-                              const value = Math.min(config.weight, Math.max(0, parseFloat(e.target.value) || 0))
+                            onChange={e => {
+                              const value = Math.min(
+                                config.weight,
+                                Math.max(0, parseFloat(e.target.value) || 0)
+                              );
                               updateNestedSettings('bee', {
                                 scoreElements: {
                                   ...settings.bee.scoreElements,
-                                  [key]: value
-                                }
-                              })
+                                  [key]: value,
+                                },
+                              });
                             }}
                           />
                           <Progress value={percentage} className="h-1" />
@@ -523,7 +542,7 @@ export default function FinancialSettingsPage() {
 
           {/* Payment Terms */}
           <TabsContent value="payments" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -540,9 +559,13 @@ export default function FinancialSettingsPage() {
                       min="0"
                       max="365"
                       value={settings.paymentTerms.standard}
-                      onChange={(e) => updateNestedSettings('paymentTerms', { standard: parseInt(e.target.value) || 30 })}
+                      onChange={e =>
+                        updateNestedSettings('paymentTerms', {
+                          standard: parseInt(e.target.value) || 30,
+                        })
+                      }
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Default payment terms for new suppliers
                     </p>
                   </div>
@@ -553,15 +576,20 @@ export default function FinancialSettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Early Payment Discount</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Offer discount for early payment
                         </p>
                       </div>
                       <Switch
                         checked={settings.paymentTerms.earlyPaymentDiscount.enabled}
-                        onCheckedChange={(checked) => updateNestedSettings('paymentTerms', {
-                          earlyPaymentDiscount: { ...settings.paymentTerms.earlyPaymentDiscount, enabled: checked }
-                        })}
+                        onCheckedChange={checked =>
+                          updateNestedSettings('paymentTerms', {
+                            earlyPaymentDiscount: {
+                              ...settings.paymentTerms.earlyPaymentDiscount,
+                              enabled: checked,
+                            },
+                          })
+                        }
                       />
                     </div>
 
@@ -575,12 +603,14 @@ export default function FinancialSettingsPage() {
                             min="1"
                             max="30"
                             value={settings.paymentTerms.earlyPaymentDiscount.days}
-                            onChange={(e) => updateNestedSettings('paymentTerms', {
-                              earlyPaymentDiscount: {
-                                ...settings.paymentTerms.earlyPaymentDiscount,
-                                days: parseInt(e.target.value) || 10
-                              }
-                            })}
+                            onChange={e =>
+                              updateNestedSettings('paymentTerms', {
+                                earlyPaymentDiscount: {
+                                  ...settings.paymentTerms.earlyPaymentDiscount,
+                                  days: parseInt(e.target.value) || 10,
+                                },
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -592,12 +622,14 @@ export default function FinancialSettingsPage() {
                             max="10"
                             step="0.1"
                             value={settings.paymentTerms.earlyPaymentDiscount.discountPercentage}
-                            onChange={(e) => updateNestedSettings('paymentTerms', {
-                              earlyPaymentDiscount: {
-                                ...settings.paymentTerms.earlyPaymentDiscount,
-                                discountPercentage: parseFloat(e.target.value) || 2
-                              }
-                            })}
+                            onChange={e =>
+                              updateNestedSettings('paymentTerms', {
+                                earlyPaymentDiscount: {
+                                  ...settings.paymentTerms.earlyPaymentDiscount,
+                                  discountPercentage: parseFloat(e.target.value) || 2,
+                                },
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -610,15 +642,20 @@ export default function FinancialSettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Late Payment Penalty</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Charge penalty for late payments
                         </p>
                       </div>
                       <Switch
                         checked={settings.paymentTerms.latePaymentPenalty.enabled}
-                        onCheckedChange={(checked) => updateNestedSettings('paymentTerms', {
-                          latePaymentPenalty: { ...settings.paymentTerms.latePaymentPenalty, enabled: checked }
-                        })}
+                        onCheckedChange={checked =>
+                          updateNestedSettings('paymentTerms', {
+                            latePaymentPenalty: {
+                              ...settings.paymentTerms.latePaymentPenalty,
+                              enabled: checked,
+                            },
+                          })
+                        }
                       />
                     </div>
 
@@ -632,12 +669,14 @@ export default function FinancialSettingsPage() {
                             min="0"
                             max="90"
                             value={settings.paymentTerms.latePaymentPenalty.days}
-                            onChange={(e) => updateNestedSettings('paymentTerms', {
-                              latePaymentPenalty: {
-                                ...settings.paymentTerms.latePaymentPenalty,
-                                days: parseInt(e.target.value) || 30
-                              }
-                            })}
+                            onChange={e =>
+                              updateNestedSettings('paymentTerms', {
+                                latePaymentPenalty: {
+                                  ...settings.paymentTerms.latePaymentPenalty,
+                                  days: parseInt(e.target.value) || 30,
+                                },
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -649,12 +688,14 @@ export default function FinancialSettingsPage() {
                             max="20"
                             step="0.1"
                             value={settings.paymentTerms.latePaymentPenalty.penaltyPercentage}
-                            onChange={(e) => updateNestedSettings('paymentTerms', {
-                              latePaymentPenalty: {
-                                ...settings.paymentTerms.latePaymentPenalty,
-                                penaltyPercentage: parseFloat(e.target.value) || 2
-                              }
-                            })}
+                            onChange={e =>
+                              updateNestedSettings('paymentTerms', {
+                                latePaymentPenalty: {
+                                  ...settings.paymentTerms.latePaymentPenalty,
+                                  penaltyPercentage: parseFloat(e.target.value) || 2,
+                                },
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -671,8 +712,8 @@ export default function FinancialSettingsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-3">Payment Schedule</h4>
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <h4 className="mb-3 font-medium text-blue-900">Payment Schedule</h4>
                     <div className="space-y-2 text-sm text-blue-800">
                       <div className="flex justify-between">
                         <span>Standard Terms:</span>
@@ -683,8 +724,9 @@ export default function FinancialSettingsPage() {
                         <div className="flex justify-between">
                           <span>Early Payment:</span>
                           <span>
-                            {settings.paymentTerms.earlyPaymentDiscount.days} days
-                            ({settings.paymentTerms.earlyPaymentDiscount.discountPercentage}% discount)
+                            {settings.paymentTerms.earlyPaymentDiscount.days} days (
+                            {settings.paymentTerms.earlyPaymentDiscount.discountPercentage}%
+                            discount)
                           </span>
                         </div>
                       )}
@@ -693,21 +735,30 @@ export default function FinancialSettingsPage() {
                         <div className="flex justify-between">
                           <span>Late Payment:</span>
                           <span>
-                            After {settings.paymentTerms.latePaymentPenalty.days} days
-                            ({settings.paymentTerms.latePaymentPenalty.penaltyPercentage}% penalty)
+                            After {settings.paymentTerms.latePaymentPenalty.days} days (
+                            {settings.paymentTerms.latePaymentPenalty.penaltyPercentage}% penalty)
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-3">Example: R10,000 Invoice</h4>
+                  <div className="rounded-lg bg-green-50 p-4">
+                    <h4 className="mb-3 font-medium text-green-900">Example: R10,000 Invoice</h4>
                     <div className="space-y-2 text-sm text-green-800">
                       {settings.paymentTerms.earlyPaymentDiscount.enabled && (
                         <div className="flex justify-between">
-                          <span>Early ({settings.paymentTerms.earlyPaymentDiscount.days} days):</span>
-                          <span>R{(10000 * (1 - settings.paymentTerms.earlyPaymentDiscount.discountPercentage / 100)).toFixed(2)}</span>
+                          <span>
+                            Early ({settings.paymentTerms.earlyPaymentDiscount.days} days):
+                          </span>
+                          <span>
+                            R
+                            {(
+                              10000 *
+                              (1 -
+                                settings.paymentTerms.earlyPaymentDiscount.discountPercentage / 100)
+                            ).toFixed(2)}
+                          </span>
                         </div>
                       )}
 
@@ -718,8 +769,16 @@ export default function FinancialSettingsPage() {
 
                       {settings.paymentTerms.latePaymentPenalty.enabled && (
                         <div className="flex justify-between">
-                          <span>Late (after {settings.paymentTerms.latePaymentPenalty.days} days):</span>
-                          <span>R{(10000 * (1 + settings.paymentTerms.latePaymentPenalty.penaltyPercentage / 100)).toFixed(2)}</span>
+                          <span>
+                            Late (after {settings.paymentTerms.latePaymentPenalty.days} days):
+                          </span>
+                          <span>
+                            R
+                            {(
+                              10000 *
+                              (1 + settings.paymentTerms.latePaymentPenalty.penaltyPercentage / 100)
+                            ).toFixed(2)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -739,7 +798,7 @@ export default function FinancialSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div className="space-y-4">
                     <h4 className="font-medium">Approval Limits (ZAR)</h4>
 
@@ -752,11 +811,13 @@ export default function FinancialSettingsPage() {
                           id={role}
                           type="number"
                           value={limit}
-                          onChange={(e) => updateNestedSettings('approvalLimits', {
-                            [role]: parseFloat(e.target.value) || 0
-                          })}
+                          onChange={e =>
+                            updateNestedSettings('approvalLimits', {
+                              [role]: parseFloat(e.target.value) || 0,
+                            })
+                          }
                         />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           Current: R{limit.toLocaleString()}
                         </p>
                       </div>
@@ -769,26 +830,30 @@ export default function FinancialSettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Enforce Approvals</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Require approval workflow for purchases
                         </p>
                       </div>
                       <Switch
                         checked={settings.budgetControls.enforceApprovals}
-                        onCheckedChange={(checked) => updateNestedSettings('budgetControls', { enforceApprovals: checked })}
+                        onCheckedChange={checked =>
+                          updateNestedSettings('budgetControls', { enforceApprovals: checked })
+                        }
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Allow Overspend</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Permit spending above budget limits
                         </p>
                       </div>
                       <Switch
                         checked={settings.budgetControls.allowOverspend}
-                        onCheckedChange={(checked) => updateNestedSettings('budgetControls', { allowOverspend: checked })}
+                        onCheckedChange={checked =>
+                          updateNestedSettings('budgetControls', { allowOverspend: checked })
+                        }
                       />
                     </div>
 
@@ -801,9 +866,11 @@ export default function FinancialSettingsPage() {
                           min="0"
                           max="100"
                           value={settings.budgetControls.overspendThreshold}
-                          onChange={(e) => updateNestedSettings('budgetControls', {
-                            overspendThreshold: parseFloat(e.target.value) || 10
-                          })}
+                          onChange={e =>
+                            updateNestedSettings('budgetControls', {
+                              overspendThreshold: parseFloat(e.target.value) || 10,
+                            })
+                          }
                         />
                       </div>
                     )}
@@ -811,13 +878,15 @@ export default function FinancialSettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Require Justification</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Mandate reason for high-value purchases
                         </p>
                       </div>
                       <Switch
                         checked={settings.budgetControls.requireJustification}
-                        onCheckedChange={(checked) => updateNestedSettings('budgetControls', { requireJustification: checked })}
+                        onCheckedChange={checked =>
+                          updateNestedSettings('budgetControls', { requireJustification: checked })
+                        }
                       />
                     </div>
                   </div>
@@ -825,29 +894,32 @@ export default function FinancialSettingsPage() {
 
                 <Separator />
 
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-3">Approval Flow Visualization</h4>
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <h4 className="mb-3 font-medium">Approval Flow Visualization</h4>
                   <div className="space-y-2">
                     {Object.entries(settings.approvalLimits)
                       .sort(([, a], [, b]) => a - b)
                       .map(([role, limit], index, arr) => (
-                      <div key={role} className="flex items-center justify-between p-2 bg-white rounded border">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-blue-500" />
-                          <span className="capitalize font-medium">
-                            {role.replace(/([A-Z])/g, ' $1').trim()}
-                          </span>
+                        <div
+                          key={role}
+                          className="flex items-center justify-between rounded border bg-white p-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full bg-blue-500" />
+                            <span className="font-medium capitalize">
+                              {role.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">R{limit.toLocaleString()}</div>
+                            {index < arr.length - 1 && (
+                              <div className="text-muted-foreground text-xs">
+                                Up to R{arr[index + 1][1].toLocaleString()}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">R{limit.toLocaleString()}</div>
-                          {index < arr.length - 1 && (
-                            <div className="text-xs text-muted-foreground">
-                              Up to R{arr[index + 1][1].toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </CardContent>
@@ -856,7 +928,7 @@ export default function FinancialSettingsPage() {
 
           {/* Compliance */}
           <TabsContent value="compliance" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -871,31 +943,33 @@ export default function FinancialSettingsPage() {
                       fica: 'FICA Compliance',
                       beeCompliance: 'BEE Compliance Tracking',
                       taxCompliance: 'Tax Compliance Monitoring',
-                      auditTrail: 'Full Audit Trail'
-                    }
+                      auditTrail: 'Full Audit Trail',
+                    };
 
                     const descriptions = {
                       popi: 'Protection of Personal Information Act compliance',
                       fica: 'Financial Intelligence Centre Act requirements',
                       beeCompliance: 'Broad-Based Black Economic Empowerment tracking',
                       taxCompliance: 'VAT and tax compliance monitoring',
-                      auditTrail: 'Comprehensive audit logging and trail'
-                    }
+                      auditTrail: 'Comprehensive audit logging and trail',
+                    };
 
                     return (
                       <div key={key} className="flex items-center justify-between">
                         <div className="space-y-1">
                           <Label>{labels[key as keyof typeof labels]}</Label>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {descriptions[key as keyof typeof descriptions]}
                           </p>
                         </div>
                         <Switch
                           checked={enabled}
-                          onCheckedChange={(checked) => updateNestedSettings('compliance', { [key]: checked })}
+                          onCheckedChange={checked =>
+                            updateNestedSettings('compliance', { [key]: checked })
+                          }
                         />
                       </div>
-                    )
+                    );
                   })}
                 </CardContent>
               </Card>
@@ -913,12 +987,12 @@ export default function FinancialSettingsPage() {
                     <Input
                       id="tax-year"
                       value={settings.fiscalYear.taxYear}
-                      onChange={(e) => updateNestedSettings('fiscalYear', { taxYear: e.target.value })}
+                      onChange={e =>
+                        updateNestedSettings('fiscalYear', { taxYear: e.target.value })
+                      }
                       placeholder="2024/2025"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      South African tax year format
-                    </p>
+                    <p className="text-muted-foreground text-sm">South African tax year format</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -926,7 +1000,9 @@ export default function FinancialSettingsPage() {
                       <Label htmlFor="start-month">Start Month</Label>
                       <Select
                         value={settings.fiscalYear.startMonth.toString()}
-                        onValueChange={(value) => updateNestedSettings('fiscalYear', { startMonth: parseInt(value) })}
+                        onValueChange={value =>
+                          updateNestedSettings('fiscalYear', { startMonth: parseInt(value) })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -945,7 +1021,9 @@ export default function FinancialSettingsPage() {
                       <Label htmlFor="end-month">End Month</Label>
                       <Select
                         value={settings.fiscalYear.endMonth.toString()}
-                        onValueChange={(value) => updateNestedSettings('fiscalYear', { endMonth: parseInt(value) })}
+                        onValueChange={value =>
+                          updateNestedSettings('fiscalYear', { endMonth: parseInt(value) })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -961,13 +1039,22 @@ export default function FinancialSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">South African Tax Year</h4>
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <h4 className="mb-2 font-medium text-blue-900">South African Tax Year</h4>
                     <div className="space-y-1 text-sm text-blue-800">
                       <p>Standard: 1 March - 28/29 February</p>
                       <p>Current: {settings.fiscalYear.taxYear}</p>
                       <p>
-                        Your Year: {new Date(2024, settings.fiscalYear.startMonth - 1).toLocaleDateString('en-ZA', { month: 'long' })} - {new Date(2024, settings.fiscalYear.endMonth - 1).toLocaleDateString('en-ZA', { month: 'long' })}
+                        Your Year:{' '}
+                        {new Date(2024, settings.fiscalYear.startMonth - 1).toLocaleDateString(
+                          'en-ZA',
+                          { month: 'long' }
+                        )}{' '}
+                        -{' '}
+                        {new Date(2024, settings.fiscalYear.endMonth - 1).toLocaleDateString(
+                          'en-ZA',
+                          { month: 'long' }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -981,27 +1068,33 @@ export default function FinancialSettingsPage() {
                 <CardTitle>Compliance Status Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                   {Object.entries(settings.compliance).map(([key, enabled]) => {
                     const labels = {
                       popi: 'POPI',
                       fica: 'FICA',
                       beeCompliance: 'BEE',
                       taxCompliance: 'Tax',
-                      auditTrail: 'Audit'
-                    }
+                      auditTrail: 'Audit',
+                    };
 
                     return (
                       <div key={key} className="text-center">
-                        <div className={`p-3 rounded-lg ${enabled ? 'bg-green-50' : 'bg-gray-50'}`}>
-                          <CheckCircle className={`h-6 w-6 mx-auto mb-2 ${enabled ? 'text-green-600' : 'text-gray-400'}`} />
-                          <div className="text-sm font-medium">{labels[key as keyof typeof labels]}</div>
-                          <div className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`rounded-lg p-3 ${enabled ? 'bg-green-50' : 'bg-gray-50'}`}>
+                          <CheckCircle
+                            className={`mx-auto mb-2 h-6 w-6 ${enabled ? 'text-green-600' : 'text-gray-400'}`}
+                          />
+                          <div className="text-sm font-medium">
+                            {labels[key as keyof typeof labels]}
+                          </div>
+                          <div
+                            className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}
+                          >
                             {enabled ? 'Enabled' : 'Disabled'}
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>

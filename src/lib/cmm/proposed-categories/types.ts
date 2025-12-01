@@ -59,5 +59,3 @@ export interface RecordProposalResult {
   productLink: ProposedCategoryProductRecord;
   nextStatus: CategorizationStatus;
 }
-
-

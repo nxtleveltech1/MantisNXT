@@ -36,7 +36,7 @@ export function computeOptimalBatchSize(
   isEnrichment = false
 ): number {
   const providerLimits = getProviderTokenLimits(provider);
-  
+
   const sampleSize = Math.min(products.length, 10);
   const sampleProducts = products.slice(0, sampleSize);
   const totalSampleTokens = sampleProducts.reduce((sum, p) => sum + estimateProductTokens(p), 0);
@@ -44,7 +44,9 @@ export function computeOptimalBatchSize(
 
   // For enrichment, we need more tokens due to web research context and longer output
   const contextMultiplier = isEnrichment ? 1.5 : 1.0;
-  const outputTokens = isEnrichment ? ESTIMATED_ENRICHMENT_OUTPUT_TOKENS : ESTIMATED_TAG_SUGGESTION_OUTPUT_TOKENS;
+  const outputTokens = isEnrichment
+    ? ESTIMATED_ENRICHMENT_OUTPUT_TOKENS
+    : ESTIMATED_TAG_SUGGESTION_OUTPUT_TOKENS;
 
   const maxProductsContext = calculateMaxProductsPerBatch(
     providerLimits.contextWindow,
@@ -54,9 +56,7 @@ export function computeOptimalBatchSize(
   );
   const maxByOutputTokens = Math.max(
     1,
-    Math.floor(
-      (providerLimits.outputLimit * OUTPUT_SAFETY_MARGIN) / Math.max(outputTokens, 1)
-    )
+    Math.floor((providerLimits.outputLimit * OUTPUT_SAFETY_MARGIN) / Math.max(outputTokens, 1))
   );
 
   const contextConstrainedMax = Math.max(
@@ -75,8 +75,10 @@ export async function processTagBatchesAcrossProviders(
   options: BatcherOptions = {}
 ): Promise<Map<string, TagSuggestion[]>> {
   const results = new Map<string, TagSuggestion[]>();
-  console.log(`[batcher] Starting tag batch process: providers=${providers.length}, products=${products.length}`);
-  
+  console.log(
+    `[batcher] Starting tag batch process: providers=${providers.length}, products=${products.length}`
+  );
+
   if (products.length === 0) {
     return results;
   }
@@ -160,7 +162,7 @@ export async function processTagBatchesAcrossProviders(
             const midPoint = Math.ceil(batch.length / 2);
             const batch1 = batch.slice(0, midPoint);
             const batch2 = batch.slice(midPoint);
-            
+
             // Retry with smaller batches
             try {
               const result1 = await suggestTagsBatch(provider, batch1, existingTags, {
@@ -174,7 +176,7 @@ export async function processTagBatchesAcrossProviders(
             } catch (e1) {
               console.error(`[batcher] Split batch 1 failed:`, e1);
             }
-            
+
             try {
               const result2 = await suggestTagsBatch(provider, batch2, existingTags, {
                 timeoutMs: providerTimeout,
@@ -219,7 +221,7 @@ export async function processTagBatchesAcrossProviders(
           const timedOut = msg.startsWith('AI request timeout:');
           const isTruncation = msg.includes('truncated') || msg.includes('length');
           console.error(`[batcher] Provider ${provider.provider} batch failed:`, e);
-          
+
           if (timedOut) {
             mark('providerTimeouts');
             if (failFastOnFirstTimeout) {
@@ -232,7 +234,7 @@ export async function processTagBatchesAcrossProviders(
             );
             mark('truncationRetries');
           }
-          
+
           mark('batchesFailed');
         }
       })();
@@ -257,7 +259,9 @@ export async function processEnrichmentBatches(
   options: BatcherOptions = {}
 ): Promise<Map<string, ProductEnrichment>> {
   const results = new Map<string, ProductEnrichment>();
-  console.log(`[batcher] Starting enrichment batch process: providers=${providers.length}, products=${products.length}`);
+  console.log(
+    `[batcher] Starting enrichment batch process: providers=${providers.length}, products=${products.length}`
+  );
 
   if (products.length === 0) {
     return results;
@@ -272,7 +276,8 @@ export async function processEnrichmentBatches(
 
   const startTime = Date.now();
   const baseTimeout = options.timeoutMs ?? 60000; // Longer timeout for enrichment
-  const overallTimeoutMs = options.overallTimeoutMs ?? Math.max(baseTimeout * batches.length, 300000); // 5min max
+  const overallTimeoutMs =
+    options.overallTimeoutMs ?? Math.max(baseTimeout * batches.length, 300000); // 5min max
   const deadline = startTime + overallTimeoutMs;
 
   // Process batches sequentially with delay (enrichment is more resource-intensive)
@@ -320,4 +325,3 @@ export async function processEnrichmentBatches(
   console.log(`[batcher] Completed enrichment processing: results count=${results.size}`);
   return results;
 }
-

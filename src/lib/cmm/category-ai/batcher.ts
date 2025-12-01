@@ -103,7 +103,9 @@ export async function processBatchesAcrossProviders(
       provider?: string;
     }
   >();
-  console.log(`[batcher] Starting batch process: providers=${providers.length}, products=${products.length}`);
+  console.log(
+    `[batcher] Starting batch process: providers=${providers.length}, products=${products.length}`
+  );
   if (products.length === 0) {
     console.log('[batcher] No products supplied; returning empty result');
     return results;
@@ -187,7 +189,9 @@ export async function processBatchesAcrossProviders(
       const batchPromise = (async () => {
         // Check deadline at start of async function
         if (Date.now() >= deadline) {
-          console.warn(`[batcher] Deadline reached before processing batch for provider ${provider.provider}`);
+          console.warn(
+            `[batcher] Deadline reached before processing batch for provider ${provider.provider}`
+          );
           return;
         }
 
@@ -216,7 +220,9 @@ export async function processBatchesAcrossProviders(
 
           const parsed: z.infer<typeof BatchCategorySuggestionSchema> | null = providerResult;
           if (!parsed?.suggestions || parsed.suggestions.length === 0) {
-            console.warn(`[batcher] Provider ${provider.provider} returned no suggestions for batch`);
+            console.warn(
+              `[batcher] Provider ${provider.provider} returned no suggestions for batch`
+            );
             return;
           }
 
@@ -267,8 +273,8 @@ export async function processBatchesAcrossProviders(
               reasoning: suggestion.reasoning ?? null,
               alternatives,
               provider: provider.provider ?? null,
-              proposed_category_name: category ? null : proposedName ?? null,
-              proposedCategoryName: category ? null : proposedName ?? null,
+              proposed_category_name: category ? null : (proposedName ?? null),
+              proposedCategoryName: category ? null : (proposedName ?? null),
             };
             if (!existing || (existing.confidence ?? 0) < nextConfidence) {
               results.set(productId, next);

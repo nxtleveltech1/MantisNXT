@@ -30,10 +30,10 @@ import type {
   NewProductAlert,
   UploadActivity,
   APIResponse,
-  SelectionWorkflowRequest
-} from '@/types/supplier-portfolio'
+  SelectionWorkflowRequest,
+} from '@/types/supplier-portfolio';
 
-const API_BASE = '/api'
+const API_BASE = '/api';
 
 /**
  * Enhanced API error with retry capabilities
@@ -45,8 +45,8 @@ export class APIError extends Error {
     public details?: unknown,
     public isRetryable: boolean = false
   ) {
-    super(message)
-    this.name = 'APIError'
+    super(message);
+    this.name = 'APIError';
   }
 }
 
@@ -59,7 +59,7 @@ class SupplierPortfolioAPIClient {
     options?: RequestInit,
     retryCount: number = 3
   ): Promise<APIResponse<T>> {
-    let lastError: Error | null = null
+    let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < retryCount; attempt++) {
       try {
@@ -69,9 +69,9 @@ class SupplierPortfolioAPIClient {
             'Content-Type': 'application/json',
             ...options?.headers,
           },
-        })
+        });
 
-        const data = await response.json()
+        const data = await response.json();
 
         if (!response.ok) {
           const error = new APIError(
@@ -79,58 +79,58 @@ class SupplierPortfolioAPIClient {
             response.status,
             data.details,
             this.isRetryableStatus(response.status)
-          )
+          );
 
           // Retry on transient failures
           if (error.isRetryable && attempt < retryCount - 1) {
-            await this.delay(this.getBackoffDelay(attempt))
-            continue
+            await this.delay(this.getBackoffDelay(attempt));
+            continue;
           }
 
           return {
             success: false,
             error: error.message,
-          }
+          };
         }
 
-        return data
+        return data;
       } catch (error) {
-        lastError = error as Error
+        lastError = error as Error;
 
         // Network errors are retryable
         if (attempt < retryCount - 1) {
-          await this.delay(this.getBackoffDelay(attempt))
-          continue
+          await this.delay(this.getBackoffDelay(attempt));
+          continue;
         }
       }
     }
 
-    console.error('API request failed after retries:', lastError)
+    console.error('API request failed after retries:', lastError);
     return {
       success: false,
       error: lastError instanceof Error ? lastError.message : 'Unknown error occurred',
-    }
+    };
   }
 
   /**
    * Check if HTTP status code indicates a retryable error
    */
   private isRetryableStatus(status: number): boolean {
-    return status === 408 || status === 429 || status >= 500
+    return status === 408 || status === 429 || status >= 500;
   }
 
   /**
    * Calculate exponential backoff delay
    */
   private getBackoffDelay(attempt: number): number {
-    return Math.min(1000 * Math.pow(2, attempt), 10000)
+    return Math.min(1000 * Math.pow(2, attempt), 10000);
   }
 
   /**
    * Delay helper for retry logic
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // ============================================
@@ -160,15 +160,17 @@ class SupplierPortfolioAPIClient {
       ...(filters.price_min && { price_min: filters.price_min.toString() }),
       ...(filters.price_max && { price_max: filters.price_max.toString() }),
       ...(filters.has_price_change && { has_price_change: 'true' }),
-      ...(filters.price_change_direction && { price_change_direction: filters.price_change_direction }),
+      ...(filters.price_change_direction && {
+        price_change_direction: filters.price_change_direction,
+      }),
       ...(filters.search && { search: filters.search }),
       ...(filters.is_selected !== undefined && { is_selected: filters.is_selected.toString() }),
       ...(filters.selection_id && { selection_id: filters.selection_id }),
-    })
+    });
 
     return this.fetchJSON<PaginatedResponse<ProductTableBySupplier>>(
       `${API_BASE}/core/suppliers/products?${params}`
-    )
+    );
   }
 
   /**
@@ -182,16 +184,13 @@ class SupplierPortfolioAPIClient {
     filters: Omit<SupplierProductFilters, 'supplier_id'> = {},
     pagination: PaginationParams = { page: 1, page_size: 100 }
   ): Promise<APIResponse<PaginatedResponse<ProductTableBySupplier>>> {
-    return this.getSupplierProducts(
-      { ...filters, supplier_id: supplierId },
-      pagination
-    )
+    return this.getSupplierProducts({ ...filters, supplier_id: supplierId }, pagination);
   }
 
   async getSupplierProduct(supplier_product_id: string): Promise<APIResponse<SupplierProduct>> {
     return this.fetchJSON<SupplierProduct>(
       `${API_BASE}/core/suppliers/products/${supplier_product_id}`
-    )
+    );
   }
 
   async updateSupplierProduct(
@@ -204,42 +203,42 @@ class SupplierPortfolioAPIClient {
         method: 'PATCH',
         body: JSON.stringify(data),
       }
-    )
+    );
   }
 
-  async assignCategory(assignment: BulkCategoryAssignment): Promise<APIResponse<BulkOperationResult>> {
+  async assignCategory(
+    assignment: BulkCategoryAssignment
+  ): Promise<APIResponse<BulkOperationResult>> {
     return this.fetchJSON<BulkOperationResult>(
       `${API_BASE}/core/suppliers/products/bulk/assign-category`,
       {
         method: 'POST',
         body: JSON.stringify(assignment),
       }
-    )
+    );
   }
 
   async getPriceHistory(supplier_product_id: string): Promise<APIResponse<unknown[]>> {
     return this.fetchJSON<unknown[]>(
       `${API_BASE}/core/suppliers/products/${supplier_product_id}/price-history`
-    )
+    );
   }
 
   // ============================================
   // Inventory Selection Interface (ISI)
   // ============================================
 
-  async getSelections(status?: 'draft' | 'active' | 'archived'): Promise<APIResponse<InventorySelection[]>> {
-    const params = new URLSearchParams()
-    if (status) params.set('status', status)
+  async getSelections(
+    status?: 'draft' | 'active' | 'archived'
+  ): Promise<APIResponse<InventorySelection[]>> {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
 
-    return this.fetchJSON<InventorySelection[]>(
-      `${API_BASE}/core/selections?${params}`
-    )
+    return this.fetchJSON<InventorySelection[]>(`${API_BASE}/core/selections?${params}`);
   }
 
   async getSelection(selection_id: string): Promise<APIResponse<InventorySelection>> {
-    return this.fetchJSON<InventorySelection>(
-      `${API_BASE}/core/selections/${selection_id}`
-    )
+    return this.fetchJSON<InventorySelection>(`${API_BASE}/core/selections/${selection_id}`);
   }
 
   /**
@@ -254,31 +253,25 @@ class SupplierPortfolioAPIClient {
     description: string | undefined,
     createdBy: string
   ): Promise<APIResponse<InventorySelection>> {
-    return this.fetchJSON<InventorySelection>(
-      `${API_BASE}/core/selections`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          selection_name: name,
-          description,
-          created_by: createdBy,
-          status: 'draft'
-        }),
-      }
-    )
+    return this.fetchJSON<InventorySelection>(`${API_BASE}/core/selections`, {
+      method: 'POST',
+      body: JSON.stringify({
+        selection_name: name,
+        description,
+        created_by: createdBy,
+        status: 'draft',
+      }),
+    });
   }
 
   async updateSelection(
     selection_id: string,
     data: Partial<InventorySelection>
   ): Promise<APIResponse<InventorySelection>> {
-    return this.fetchJSON<InventorySelection>(
-      `${API_BASE}/core/selections/${selection_id}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      }
-    )
+    return this.fetchJSON<InventorySelection>(`${API_BASE}/core/selections/${selection_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 
   /**
@@ -291,13 +284,13 @@ class SupplierPortfolioAPIClient {
     selectionId: string,
     filters?: { supplier_id?: string; category_id?: string }
   ): Promise<APIResponse<InventorySelectedItem[]>> {
-    const params = new URLSearchParams()
-    if (filters?.supplier_id) params.set('supplier_id', filters.supplier_id)
-    if (filters?.category_id) params.set('category_id', filters.category_id)
+    const params = new URLSearchParams();
+    if (filters?.supplier_id) params.set('supplier_id', filters.supplier_id);
+    if (filters?.category_id) params.set('category_id', filters.category_id);
 
     return this.fetchJSON<InventorySelectedItem[]>(
       `${API_BASE}/core/selections/${selectionId}/items?${params}`
-    )
+    );
   }
 
   /**
@@ -305,24 +298,25 @@ class SupplierPortfolioAPIClient {
    * @param request - Workflow request with action and product IDs
    * @returns Operation result with success/failure counts
    */
-  async executeWorkflow(request: SelectionWorkflowRequest): Promise<APIResponse<BulkOperationResult>> {
-    return this.fetchJSON<BulkOperationResult>(
-      `${API_BASE}/core/selections/workflow`,
-      {
-        method: 'POST',
-        body: JSON.stringify(request),
-      }
-    )
+  async executeWorkflow(
+    request: SelectionWorkflowRequest
+  ): Promise<APIResponse<BulkOperationResult>> {
+    return this.fetchJSON<BulkOperationResult>(`${API_BASE}/core/selections/workflow`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 
-  async bulkSelectProducts(operation: BulkSelectionOperation): Promise<APIResponse<BulkOperationResult>> {
+  async bulkSelectProducts(
+    operation: BulkSelectionOperation
+  ): Promise<APIResponse<BulkOperationResult>> {
     return this.fetchJSON<BulkOperationResult>(
       `${API_BASE}/core/selections/${operation.selection_id}/bulk`,
       {
         method: 'POST',
         body: JSON.stringify(operation),
       }
-    )
+    );
   }
 
   /**
@@ -336,7 +330,7 @@ class SupplierPortfolioAPIClient {
       {
         method: 'POST',
       }
-    )
+    );
   }
 
   async archiveSelection(selection_id: string): Promise<APIResponse<InventorySelection>> {
@@ -345,7 +339,7 @@ class SupplierPortfolioAPIClient {
       {
         method: 'POST',
       }
-    )
+    );
   }
 
   /**
@@ -357,10 +351,7 @@ class SupplierPortfolioAPIClient {
     filters: SupplierProductFilters = {},
     pagination: PaginationParams = { page: 1, page_size: 50 }
   ): Promise<APIResponse<PaginatedResponse<ProductTableBySupplier>>> {
-    return this.getSupplierProducts(
-      { ...filters, is_selected: true },
-      pagination
-    )
+    return this.getSupplierProducts({ ...filters, is_selected: true }, pagination);
   }
 
   // ============================================
@@ -378,7 +369,7 @@ class SupplierPortfolioAPIClient {
     pagination: PaginationParams = { page: 1, page_size: 50 }
   ): Promise<APIResponse<PaginatedResponse<SOHBySupplier>>> {
     // CRITICAL: Default to selected_only: true
-    const safeFilters = { ...filters, selected_only: filters.selected_only ?? true }
+    const safeFilters = { ...filters, selected_only: filters.selected_only ?? true };
 
     const params = new URLSearchParams({
       page: pagination.page.toString(),
@@ -391,11 +382,9 @@ class SupplierPortfolioAPIClient {
       ...(safeFilters.max_qty && { max_qty: safeFilters.max_qty.toString() }),
       ...(safeFilters.min_value && { min_value: safeFilters.min_value.toString() }),
       ...(safeFilters.search && { search: safeFilters.search }),
-    })
+    });
 
-    return this.fetchJSON<PaginatedResponse<SOHBySupplier>>(
-      `${API_BASE}/serve/soh?${params}`
-    )
+    return this.fetchJSON<PaginatedResponse<SOHBySupplier>>(`${API_BASE}/serve/soh?${params}`);
   }
 
   /**
@@ -405,11 +394,13 @@ class SupplierPortfolioAPIClient {
    * @returns SOH data aggregated across suppliers
    */
   async getSohRolledUp(
-    filters: Pick<SOHFilters, 'category_id' | 'min_qty' | 'min_value' | 'search'> & { selected_only?: boolean } = { selected_only: true },
+    filters: Pick<SOHFilters, 'category_id' | 'min_qty' | 'min_value' | 'search'> & {
+      selected_only?: boolean;
+    } = { selected_only: true },
     pagination: PaginationParams = { page: 1, page_size: 50 }
   ): Promise<APIResponse<PaginatedResponse<SOHRolledUp>>> {
     // CRITICAL: Default to selected_only: true
-    const safeFilters = { ...filters, selected_only: filters.selected_only ?? true }
+    const safeFilters = { ...filters, selected_only: filters.selected_only ?? true };
 
     const params = new URLSearchParams({
       page: pagination.page.toString(),
@@ -419,11 +410,11 @@ class SupplierPortfolioAPIClient {
       ...(safeFilters.min_qty && { min_qty: safeFilters.min_qty.toString() }),
       ...(safeFilters.min_value && { min_value: safeFilters.min_value.toString() }),
       ...(safeFilters.search && { search: safeFilters.search }),
-    })
+    });
 
     return this.fetchJSON<PaginatedResponse<SOHRolledUp>>(
       `${API_BASE}/serve/soh/rolled-up?${params}`
-    )
+    );
   }
 
   /**
@@ -435,18 +426,22 @@ class SupplierPortfolioAPIClient {
   async getInventoryValue(
     supplierIds?: string[],
     selectedOnly: boolean = true
-  ): Promise<APIResponse<{ total_value: number; currency: string; supplier_breakdown?: Array<{ supplier_id: string; value: number }> }>> {
+  ): Promise<
+    APIResponse<{
+      total_value: number;
+      currency: string;
+      supplier_breakdown?: Array<{ supplier_id: string; value: number }>;
+    }>
+  > {
     const params = new URLSearchParams({
-      selected_only: selectedOnly.toString()
-    })
+      selected_only: selectedOnly.toString(),
+    });
 
     if (supplierIds && supplierIds.length > 0) {
-      params.set('supplier_ids', supplierIds.join(','))
+      params.set('supplier_ids', supplierIds.join(','));
     }
 
-    return this.fetchJSON(
-      `${API_BASE}/serve/soh/value?${params}`
-    )
+    return this.fetchJSON(`${API_BASE}/serve/soh/value?${params}`);
   }
 
   /**
@@ -457,10 +452,10 @@ class SupplierPortfolioAPIClient {
    */
   async exportSohReport(
     request: {
-      supplier_ids?: string[]
-      location_ids?: string[]
-      selected_only?: boolean
-      group_by?: 'supplier' | 'product' | 'location'
+      supplier_ids?: string[];
+      location_ids?: string[];
+      selected_only?: boolean;
+      group_by?: 'supplier' | 'product' | 'location';
     },
     format: 'xlsx' | 'csv' = 'xlsx'
   ): Promise<Blob> {
@@ -470,10 +465,10 @@ class SupplierPortfolioAPIClient {
       ...(request.supplier_ids && { supplier_ids: request.supplier_ids.join(',') }),
       ...(request.location_ids && { location_ids: request.location_ids.join(',') }),
       ...(request.group_by && { group_by: request.group_by }),
-    })
+    });
 
-    const response = await fetch(`${API_BASE}/serve/soh/export?${params}`)
-    return response.blob()
+    const response = await fetch(`${API_BASE}/serve/soh/export?${params}`);
+    return response.blob();
   }
 
   // ============================================
@@ -491,34 +486,34 @@ class SupplierPortfolioAPIClient {
     file: File,
     supplierId: string,
     options: {
-      valid_from?: Date
-      valid_to?: Date | null
-      currency?: string
-      auto_validate?: boolean
-      auto_merge?: boolean
+      valid_from?: Date;
+      valid_to?: Date | null;
+      currency?: string;
+      auto_validate?: boolean;
+      auto_merge?: boolean;
     } = {}
   ): Promise<APIResponse<SPPPricelistUpload>> {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('supplier_id', supplierId)
-    if (options.valid_from) formData.append('valid_from', options.valid_from.toISOString())
-    if (options.valid_to) formData.append('valid_to', options.valid_to.toISOString())
-    if (options.currency) formData.append('currency', options.currency)
-    if (options.auto_validate) formData.append('auto_validate', 'true')
-    if (options.auto_merge) formData.append('auto_merge', 'true')
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('supplier_id', supplierId);
+    if (options.valid_from) formData.append('valid_from', options.valid_from.toISOString());
+    if (options.valid_to) formData.append('valid_to', options.valid_to.toISOString());
+    if (options.currency) formData.append('currency', options.currency);
+    if (options.auto_validate) formData.append('auto_validate', 'true');
+    if (options.auto_merge) formData.append('auto_merge', 'true');
 
     try {
       const response = await fetch(`${API_BASE}/spp/upload`, {
         method: 'POST',
         body: formData,
-      })
+      });
 
-      return await response.json()
+      return await response.json();
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Upload failed',
-      }
+      };
     }
   }
 
@@ -533,7 +528,7 @@ class SupplierPortfolioAPIClient {
       {
         method: 'POST',
       }
-    )
+    );
   }
 
   /**
@@ -541,13 +536,15 @@ class SupplierPortfolioAPIClient {
    * @param uploadId - Upload UUID
    * @returns Merge result with counts of created/updated products
    */
-  async mergePricelist(uploadId: string): Promise<APIResponse<{ merged: boolean; message: string }>> {
+  async mergePricelist(
+    uploadId: string
+  ): Promise<APIResponse<{ merged: boolean; message: string }>> {
     return this.fetchJSON<{ merged: boolean; message: string }>(
       `${API_BASE}/spp/merge?upload_id=${uploadId}`,
       {
         method: 'POST',
       }
-    )
+    );
   }
 
   /**
@@ -562,30 +559,30 @@ class SupplierPortfolioAPIClient {
     maxAttempts: number = 30,
     intervalMs: number = 2000
   ): Promise<APIResponse<SPPPricelistUpload>> {
-    let attempts = 0
+    let attempts = 0;
 
     while (attempts < maxAttempts) {
       const response = await this.fetchJSON<SPPPricelistUpload>(
         `${API_BASE}/spp/upload?upload_id=${uploadId}`
-      )
+      );
 
       if (!response.success) {
-        return response
+        return response;
       }
 
-      const status = response.data?.status
+      const status = response.data?.status;
       if (status === 'merged' || status === 'served' || status === 'error') {
-        return response
+        return response;
       }
 
-      attempts++
-      await this.delay(intervalMs)
+      attempts++;
+      await this.delay(intervalMs);
     }
 
     return {
       success: false,
-      error: 'Upload status polling timeout'
-    }
+      error: 'Upload status polling timeout',
+    };
   }
 
   /**
@@ -598,27 +595,20 @@ class SupplierPortfolioAPIClient {
     supplierId?: string,
     limit: number = 50
   ): Promise<APIResponse<SPPPricelistUpload[]>> {
-    const params = new URLSearchParams({ limit: limit.toString() })
-    if (supplierId) params.set('supplier_id', supplierId)
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (supplierId) params.set('supplier_id', supplierId);
 
-    return this.fetchJSON<SPPPricelistUpload[]>(
-      `${API_BASE}/spp/upload?${params}`
-    )
+    return this.fetchJSON<SPPPricelistUpload[]>(`${API_BASE}/spp/upload?${params}`);
   }
 
   async getPricelistUpload(upload_id: string): Promise<APIResponse<SPPPricelistUpload>> {
-    return this.fetchJSON<SPPPricelistUpload>(
-      `${API_BASE}/spp/upload?upload_id=${upload_id}`
-    )
+    return this.fetchJSON<SPPPricelistUpload>(`${API_BASE}/spp/upload?upload_id=${upload_id}`);
   }
 
   async deletePricelistUpload(upload_id: string): Promise<APIResponse<{ deleted: boolean }>> {
-    return this.fetchJSON<{ deleted: boolean }>(
-      `${API_BASE}/spp/upload?upload_id=${upload_id}`,
-      {
-        method: 'DELETE',
-      }
-    )
+    return this.fetchJSON<{ deleted: boolean }>(`${API_BASE}/spp/upload?upload_id=${upload_id}`, {
+      method: 'DELETE',
+    });
   }
 
   // ============================================
@@ -630,29 +620,27 @@ class SupplierPortfolioAPIClient {
    * @returns Dashboard metrics summary
    */
   async getDashboardMetrics(): Promise<APIResponse<DashboardMetrics>> {
-    return this.fetchJSON<DashboardMetrics>(
-      `${API_BASE}/dashboard/supplier-portfolio/metrics`
-    )
+    return this.fetchJSON<DashboardMetrics>(`${API_BASE}/dashboard/supplier-portfolio/metrics`);
   }
 
   async getPriceChangeAlerts(
     days: number = 7,
     severity?: 'major' | 'moderate' | 'minor'
   ): Promise<APIResponse<PriceChangeAlert[]>> {
-    const params = new URLSearchParams({ days: days.toString() })
-    if (severity) params.set('severity', severity)
+    const params = new URLSearchParams({ days: days.toString() });
+    if (severity) params.set('severity', severity);
 
     return this.fetchJSON<PriceChangeAlert[]>(
       `${API_BASE}/dashboard/supplier-portfolio/price-changes?${params}`
-    )
+    );
   }
 
   async getNewProductAlerts(days: number = 7): Promise<APIResponse<NewProductAlert[]>> {
-    const params = new URLSearchParams({ days: days.toString() })
+    const params = new URLSearchParams({ days: days.toString() });
 
     return this.fetchJSON<NewProductAlert[]>(
       `${API_BASE}/dashboard/supplier-portfolio/new-products?${params}`
-    )
+    );
   }
 
   /**
@@ -661,19 +649,21 @@ class SupplierPortfolioAPIClient {
    * @returns Recent upload activities
    */
   async getRecentActivity(limit: number = 10): Promise<APIResponse<UploadActivity[]>> {
-    const params = new URLSearchParams({ limit: limit.toString() })
+    const params = new URLSearchParams({ limit: limit.toString() });
 
     return this.fetchJSON<UploadActivity[]>(
       `${API_BASE}/dashboard/supplier-portfolio/uploads?${params}`
-    )
+    );
   }
 
   // ============================================
   // Categories and Mapping
   // ============================================
 
-  async getCategories(): Promise<APIResponse<Array<{ category_id: string; name: string; parent_id: string | null }>>> {
-    return this.fetchJSON(`${API_BASE}/categories`)
+  async getCategories(): Promise<
+    APIResponse<Array<{ category_id: string; name: string; parent_id: string | null }>>
+  > {
+    return this.fetchJSON(`${API_BASE}/categories`);
   }
 
   async mapSupplierCategory(
@@ -688,21 +678,25 @@ class SupplierPortfolioAPIClient {
         supplier_category_raw,
         category_id,
       }),
-    })
+    });
   }
 
-  async getUnmappedCategories(supplier_id?: string): Promise<APIResponse<Array<{
-    supplier_id: string
-    category_raw: string
-    product_count: number
-  }>>> {
-    const params = new URLSearchParams()
-    if (supplier_id) params.set('supplier_id', supplier_id)
+  async getUnmappedCategories(supplier_id?: string): Promise<
+    APIResponse<
+      Array<{
+        supplier_id: string;
+        category_raw: string;
+        product_count: number;
+      }>
+    >
+  > {
+    const params = new URLSearchParams();
+    if (supplier_id) params.set('supplier_id', supplier_id);
 
-    return this.fetchJSON(`${API_BASE}/categories/unmapped?${params}`)
+    return this.fetchJSON(`${API_BASE}/categories/unmapped?${params}`);
   }
 }
 
 // Export singleton instance
-export const supplierPortfolioAPI = new SupplierPortfolioAPIClient()
-export { SupplierPortfolioAPIClient, APIError }
+export const supplierPortfolioAPI = new SupplierPortfolioAPIClient();
+export { SupplierPortfolioAPIClient, APIError };

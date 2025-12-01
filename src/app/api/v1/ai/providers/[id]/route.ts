@@ -5,13 +5,15 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
+import {
+  authenticateRequest,
+  handleAIError,
+  successResponse,
+  noContentResponse,
+} from '@/lib/ai/api-utils';
 import { deleteProviderRegistry, updateProviderRegistry } from '../_store';
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);
@@ -35,10 +37,7 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);
@@ -48,5 +47,3 @@ export async function DELETE(
     return handleAIError(error);
   }
 }
-
-

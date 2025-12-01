@@ -54,7 +54,8 @@ export interface SyncStatistics {
 }
 
 export class IntegrationService {
-  private static ENCRYPTION_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || 'default-key-change-in-production';
+  private static ENCRYPTION_KEY =
+    process.env.INTEGRATION_ENCRYPTION_KEY || 'default-key-change-in-production';
 
   /**
    * Encrypt credentials using AES-256-CBC
@@ -107,7 +108,7 @@ export class IntegrationService {
         encryptedCredentials,
         'configuring',
         input.sync_frequency_minutes || 60,
-        input.created_by
+        input.created_by,
       ]
     );
 
@@ -239,10 +240,7 @@ export class IntegrationService {
    * Delete connector
    */
   static async deleteConnector(connectorId: string): Promise<void> {
-    await query(
-      'DELETE FROM integration_connector WHERE id = $1',
-      [connectorId]
-    );
+    await query('DELETE FROM integration_connector WHERE id = $1', [connectorId]);
   }
 
   /**
@@ -281,11 +279,7 @@ export class IntegrationService {
     status: 'success' | 'error',
     errorMessage?: string
   ): Promise<void> {
-    const setClauses = [
-      'last_sync_at = NOW()',
-      'last_sync_status = $1',
-      'updated_at = NOW()'
-    ];
+    const setClauses = ['last_sync_at = NOW()', 'last_sync_status = $1', 'updated_at = NOW()'];
     const values: unknown[] = [status];
     let paramIndex = 2;
 
@@ -358,8 +352,8 @@ export class IntegrationService {
         const connectionResult = await odooService.testConnection();
         return {
           success: connectionResult.success,
-          message: connectionResult.success 
-            ? `Connection successful${connectionResult.version ? ` - Odoo ${connectionResult.version.server_version || connectionResult.version.server_serie || ''}` : ''}` 
+          message: connectionResult.success
+            ? `Connection successful${connectionResult.version ? ` - Odoo ${connectionResult.version.server_version || connectionResult.version.server_serie || ''}` : ''}`
             : connectionResult.error || 'Connection failed',
         };
       } else {

@@ -1,19 +1,16 @@
-"use client"
+'use client';
 
-import React, { useState, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-
-import {
-  TooltipProvider,
-} from "@/components/ui/tooltip"
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   Search,
   Globe,
@@ -34,77 +31,80 @@ import {
   ArrowRight,
   Zap,
   Package,
-  Layers
-} from "lucide-react"
+  Layers,
+} from 'lucide-react';
 
 interface WebSearchResult {
-  id: string
-  url: string
-  title: string
-  description: string
-  companyName?: string
-  industry?: string
-  location?: string
-  contactEmail?: string
-  contactPhone?: string
-  employees?: string
-  founded?: string
-  confidence: number
-  source: string
-  services?: string[]
-  products?: string[]
-  certifications?: string[]
-  tags?: string[]
-  categories?: string[]
-  brands?: string[]
+  id: string;
+  url: string;
+  title: string;
+  description: string;
+  companyName?: string;
+  industry?: string;
+  location?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  employees?: string;
+  founded?: string;
+  confidence: number;
+  source: string;
+  services?: string[];
+  products?: string[];
+  certifications?: string[];
+  tags?: string[];
+  categories?: string[];
+  brands?: string[];
   addresses?: {
-    type: string
-    street: string
-    city: string
-    country: string
-    postalCode?: string
-  }[]
+    type: string;
+    street: string;
+    city: string;
+    country: string;
+    postalCode?: string;
+  }[];
   socialMedia?: {
-    linkedin?: string
-    twitter?: string
-    facebook?: string
-  }
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+  };
 }
 
 interface WebSupplierDiscoveryProps {
-  onDataFound: (data: unknown) => void
-  initialQuery?: string
+  onDataFound: (data: unknown) => void;
+  initialQuery?: string;
 }
 
 const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
   onDataFound,
-  initialQuery = ""
+  initialQuery = '',
 }) => {
-  const [searchQuery, setSearchQuery] = useState(initialQuery)
-  const [websiteUrl, setWebsiteUrl] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchResults, setSearchResults] = useState<WebSearchResult[]>([])
-  const [selectedResult, setSelectedResult] = useState<WebSearchResult | null>(null)
-  const [extractionProgress, setExtractionProgress] = useState(0)
-  const [currentStep, setCurrentStep] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [searchType, setSearchType] = useState<'query' | 'website'>('query')
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<WebSearchResult[]>([]);
+  const [selectedResult, setSelectedResult] = useState<WebSearchResult | null>(null);
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<'query' | 'website'>('query');
 
   // Web search and extraction
   const performWebSearch = useCallback(async () => {
     if (!searchQuery.trim() && !websiteUrl.trim()) {
-      setError("Please enter either a search query or website URL")
-      return
+      setError('Please enter either a search query or website URL');
+      return;
     }
 
-    setIsSearching(true)
-    setError(null)
-    setExtractionProgress(0)
-    setSearchResults([])
+    setIsSearching(true);
+    setError(null);
+    setExtractionProgress(0);
+    setSearchResults([]);
 
     try {
-      const endpoint = searchType === 'website' ? '/api/ai/suppliers/extract-from-website' : '/api/ai/suppliers/web-search'
-      const payload = searchType === 'website' ? { url: websiteUrl } : { query: searchQuery }
+      const endpoint =
+        searchType === 'website'
+          ? '/api/ai/suppliers/extract-from-website'
+          : '/api/ai/suppliers/web-search';
+      const payload = searchType === 'website' ? { url: websiteUrl } : { query: searchQuery };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -112,55 +112,61 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+        throw new Error(`API error: ${response.status}`);
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       console.log('🔍 API Response received:', {
         success: result.success,
         dataLength: result.data?.length || 0,
         error: result.error,
-        hasData: !!(result.data && result.data.length > 0)
-      })
+        hasData: !!(result.data && result.data.length > 0),
+      });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to perform web search')
+        throw new Error(result.error || 'Failed to perform web search');
       }
 
       // Enhanced data validation
       if (!result.data || result.data.length === 0) {
-        console.log('⚠️ No data in API response')
-        throw new Error('No supplier data found on website')
+        console.log('⚠️ No data in API response');
+        throw new Error('No supplier data found on website');
       }
 
-      console.log('✅ Raw API data received:', result.data)
+      console.log('✅ Raw API data received:', result.data);
 
       // Simulate progressive extraction
       const steps = [
-        "Analyzing web content...",
-        "Extracting company information...",
-        "Parsing contact details...",
-        "Identifying business data...",
-        "Validating extracted information...",
-        "Preparing results..."
-      ]
+        'Analyzing web content...',
+        'Extracting company information...',
+        'Parsing contact details...',
+        'Identifying business data...',
+        'Validating extracted information...',
+        'Preparing results...',
+      ];
 
       for (let i = 0; i < steps.length; i++) {
-        setCurrentStep(steps[i])
-        setExtractionProgress((i + 1) / steps.length * 100)
-        await new Promise(resolve => setTimeout(resolve, 500)) // Faster for demo
+        setCurrentStep(steps[i]);
+        setExtractionProgress(((i + 1) / steps.length) * 100);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Faster for demo
       }
 
       // Ensure data is in the correct format
       const formattedResults = result.data.map((item: unknown, index: number) => ({
         id: item.id || `search_${Date.now()}_${index}`,
-        url: item.url || `https://www.${(item.companyName || 'company').toLowerCase().replace(/\s+/g, '')}.com`,
-        title: item.title || `${item.companyName || 'Unknown Company'} - ${item.industry || 'Professional Services'}`,
-        description: item.description || `${item.companyName || 'Company'} provides ${item.services?.slice(0, 3).join(', ') || 'professional services'}`,
+        url:
+          item.url ||
+          `https://www.${(item.companyName || 'company').toLowerCase().replace(/\s+/g, '')}.com`,
+        title:
+          item.title ||
+          `${item.companyName || 'Unknown Company'} - ${item.industry || 'Professional Services'}`,
+        description:
+          item.description ||
+          `${item.companyName || 'Company'} provides ${item.services?.slice(0, 3).join(', ') || 'professional services'}`,
         companyName: item.companyName,
         industry: item.industry,
         location: item.location,
@@ -177,55 +183,58 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
         categories: item.categories || [],
         brands: item.brands || [],
         addresses: item.addresses || [],
-        socialMedia: item.socialMedia || {}
-      }))
+        socialMedia: item.socialMedia || {},
+      }));
 
-      console.log('📊 Formatted search results:', formattedResults)
-      setSearchResults(formattedResults)
-      
+      console.log('📊 Formatted search results:', formattedResults);
+      setSearchResults(formattedResults);
+
       // Auto-select first result if available
       if (formattedResults && formattedResults.length > 0) {
-        setSelectedResult(formattedResults[0])
+        setSelectedResult(formattedResults[0]);
       }
-
     } catch (err) {
-      console.error('Web search error:', err)
-      setError(err instanceof Error ? err.message : "Failed to search web. Please try again.")
+      console.error('Web search error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to search web. Please try again.');
     } finally {
-      setIsSearching(false)
-      setExtractionProgress(0)
-      setCurrentStep("")
+      setIsSearching(false);
+      setExtractionProgress(0);
+      setCurrentStep('');
     }
-  }, [searchQuery, websiteUrl, searchType])
+  }, [searchQuery, websiteUrl, searchType]);
 
   const selectResult = (result: WebSearchResult) => {
-    setSelectedResult(result)
-    onDataFound(result)
-  }
+    setSelectedResult(result);
+    onDataFound(result);
+  };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
+    navigator.clipboard.writeText(text);
+  };
 
   const formatConfidence = (confidence: number) => {
-    if (confidence >= 90) return { color: "text-green-600", label: "Very High" }
-    if (confidence >= 70) return { color: "text-blue-600", label: "High" }
-    if (confidence >= 50) return { color: "text-yellow-600", label: "Medium" }
-    return { color: "text-red-600", label: "Low" }
-  }
+    if (confidence >= 90) return { color: 'text-green-600', label: 'Very High' };
+    if (confidence >= 70) return { color: 'text-blue-600', label: 'High' };
+    if (confidence >= 50) return { color: 'text-yellow-600', label: 'Medium' };
+    return { color: 'text-red-600', label: 'Low' };
+  };
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
         {/* Search Type Selection */}
-        <Tabs value={searchType} onValueChange={(value) => setSearchType(value as 'query' | 'website')} className="space-y-3">
-          <div className="p-1.5 bg-muted rounded-lg">
-            <TabsList className="grid w-full grid-cols-2 h-auto p-0.5 bg-transparent">
-              <TabsTrigger value="query" className="flex items-center gap-2 h-9">
+        <Tabs
+          value={searchType}
+          onValueChange={value => setSearchType(value as 'query' | 'website')}
+          className="space-y-3"
+        >
+          <div className="bg-muted rounded-lg p-1.5">
+            <TabsList className="grid h-auto w-full grid-cols-2 bg-transparent p-0.5">
+              <TabsTrigger value="query" className="flex h-9 items-center gap-2">
                 <Search className="h-4 w-4" />
                 Search Query
               </TabsTrigger>
-              <TabsTrigger value="website" className="flex items-center gap-2 h-9">
+              <TabsTrigger value="website" className="flex h-9 items-center gap-2">
                 <Globe className="h-4 w-4" />
                 Website URL
               </TabsTrigger>
@@ -233,7 +242,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
           </div>
 
           {/* Search Query Tab */}
-          <TabsContent value="query" className="space-y-4 mt-3">
+          <TabsContent value="query" className="mt-3 space-y-4">
             <Card className="gap-2">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -243,13 +252,13 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
               </CardHeader>
               <CardContent className="space-y-4 pt-2">
                 <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <div className="relative flex-1">
+                    <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="Enter company name, industry, or keywords..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !isSearching && performWebSearch()}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && !isSearching && performWebSearch()}
                       className="pl-10"
                     />
                   </div>
@@ -260,28 +269,29 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                   >
                     {isSearching ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Searching...
                       </>
                     ) : (
                       <>
-                        <Search className="h-4 w-4 mr-2" />
+                        <Search className="mr-2 h-4 w-4" />
                         Search Web
                       </>
                     )}
                   </Button>
                 </div>
-                
+
                 <div className="text-sm text-gray-600">
-                  <Lightbulb className="h-4 w-4 inline mr-1" />
-                  Try searches like: &ldquo;technology suppliers in South Africa&rdquo;, &ldquo;manufacturing companies Europe&rdquo;, or specific company names
+                  <Lightbulb className="mr-1 inline h-4 w-4" />
+                  Try searches like: &ldquo;technology suppliers in South Africa&rdquo;,
+                  &ldquo;manufacturing companies Europe&rdquo;, or specific company names
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Website URL Tab */}
-          <TabsContent value="website" className="space-y-4 mt-3">
+          <TabsContent value="website" className="mt-3 space-y-4">
             <Card className="gap-2">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -291,13 +301,13 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
               </CardHeader>
               <CardContent className="space-y-4 pt-2">
                 <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <div className="relative flex-1">
+                    <Globe className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="https://company-website.com"
                       value={websiteUrl}
-                      onChange={(e) => setWebsiteUrl(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !isSearching && performWebSearch()}
+                      onChange={e => setWebsiteUrl(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && !isSearching && performWebSearch()}
                       className="pl-10"
                       type="url"
                     />
@@ -309,20 +319,20 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                   >
                     {isSearching ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Extracting...
                       </>
                     ) : (
                       <>
-                        <Zap className="h-4 w-4 mr-2" />
+                        <Zap className="mr-2 h-4 w-4" />
                         Extract Data
                       </>
                     )}
                   </Button>
                 </div>
-                
+
                 <div className="text-sm text-gray-600">
-                  <Globe className="h-4 w-4 inline mr-1" />
+                  <Globe className="mr-1 inline h-4 w-4" />
                   Enter a company website URL to automatically extract supplier information
                 </div>
               </CardContent>
@@ -337,7 +347,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                  <span className="font-medium">{currentStep || "Starting discovery..."}</span>
+                  <span className="font-medium">{currentStep || 'Starting discovery...'}</span>
                 </div>
                 <Progress value={extractionProgress} className="h-2" />
                 <div className="text-sm text-gray-600">
@@ -355,14 +365,9 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              <div className="font-semibold mb-1">Discovery Failed</div>
+              <div className="mb-1 font-semibold">Discovery Failed</div>
               <div>{error}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setError(null)}
-              >
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setError(null)}>
                 Dismiss
               </Button>
             </AlertDescription>
@@ -373,16 +378,9 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
         {searchResults.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                Discovery Results ({searchResults.length})
-              </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={performWebSearch}
-                disabled={isSearching}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
+              <h3 className="text-lg font-semibold">Discovery Results ({searchResults.length})</h3>
+              <Button variant="outline" size="sm" onClick={performWebSearch} disabled={isSearching}>
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             </div>
@@ -390,9 +388,9 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
             <div className="grid gap-4">
               <AnimatePresence>
                 {searchResults.map((result, index) => {
-                  const confidence = formatConfidence(result.confidence)
-                  const isSelected = selectedResult?.id === result.id
-                  
+                  const confidence = formatConfidence(result.confidence);
+                  const isSelected = selectedResult?.id === result.id;
+
                   return (
                     <motion.div
                       key={result.id}
@@ -401,23 +399,25 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <Card className={`cursor-pointer transition-all ${
-                        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-                      }`}>
+                      <Card
+                        className={`cursor-pointer transition-all ${
+                          isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : 'hover:shadow-md'
+                        }`}
+                      >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 space-y-2">
                               <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg">
+                                <div className="rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 p-2">
                                   <Building2 className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                  <h4 className="font-semibold text-lg">
+                                  <h4 className="text-lg font-semibold">
                                     {result.companyName || result.title || 'Unknown Company'}
                                   </h4>
                                   <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Globe className="h-3 w-3" />
-                                    <span className="truncate max-w-[200px]">{result.url}</span>
+                                    <span className="max-w-[200px] truncate">{result.url}</span>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -435,14 +435,12 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                                 <Badge variant="outline" className={confidence.color}>
                                   {confidence.label} Confidence ({result.confidence}%)
                                 </Badge>
-                                <Badge variant="secondary">
-                                  {result.source}
-                                </Badge>
+                                <Badge variant="secondary">{result.source}</Badge>
                               </div>
 
                               {/* Extracted Data Preview */}
                               {result.description && (
-                                <p className="text-sm text-gray-600 line-clamp-2">
+                                <p className="line-clamp-2 text-sm text-gray-600">
                                   {result.description}
                                 </p>
                               )}
@@ -483,7 +481,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                                 onClick={() => selectResult(result)}
                                 className="bg-gradient-to-r from-blue-600 to-indigo-600"
                               >
-                                <ArrowRight className="h-4 w-4 mr-1" />
+                                <ArrowRight className="mr-1 h-4 w-4" />
                                 Use Data
                               </Button>
                             </div>
@@ -491,7 +489,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                         </CardContent>
                       </Card>
                     </motion.div>
-                  )
+                  );
                 })}
               </AnimatePresence>
             </div>
@@ -500,10 +498,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
 
         {/* Selected Result Details */}
         {selectedResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card className="border-2 border-green-200 bg-green-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-700">
@@ -512,10 +507,10 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Company Information */}
                   <div className="space-y-3">
-                    <h4 className="font-medium flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 font-medium">
                       <Building2 className="h-4 w-4" />
                       Company Information
                     </h4>
@@ -567,7 +562,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
 
                   {/* Contact Information */}
                   <div className="space-y-3">
-                    <h4 className="font-medium flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 font-medium">
                       <Phone className="h-4 w-4" />
                       Contact Information
                     </h4>
@@ -613,7 +608,9 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Website:</span>
                         <div className="flex items-center gap-1">
-                          <span className="font-medium truncate max-w-[150px]">{selectedResult.url}</span>
+                          <span className="max-w-[150px] truncate font-medium">
+                            {selectedResult.url}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -630,10 +627,10 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
 
                 {/* Categories and Brands */}
                 {(selectedResult.categories?.length || selectedResult.brands?.length) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {selectedResult.categories && selectedResult.categories.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-medium flex items-center gap-2">
+                        <h4 className="flex items-center gap-2 font-medium">
                           <Layers className="h-4 w-4" />
                           Categories
                         </h4>
@@ -648,7 +645,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                     )}
                     {selectedResult.brands && selectedResult.brands.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-medium flex items-center gap-2">
+                        <h4 className="flex items-center gap-2 font-medium">
                           <Sparkles className="h-4 w-4" />
                           Brands
                         </h4>
@@ -666,10 +663,10 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
 
                 {/* Services and Products */}
                 {(selectedResult.services?.length || selectedResult.products?.length) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {selectedResult.services && selectedResult.services.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-medium flex items-center gap-2">
+                        <h4 className="flex items-center gap-2 font-medium">
                           <Tag className="h-4 w-4" />
                           Services
                         </h4>
@@ -684,7 +681,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                     )}
                     {selectedResult.products && selectedResult.products.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-medium flex items-center gap-2">
+                        <h4 className="flex items-center gap-2 font-medium">
                           <Package className="h-4 w-4" />
                           Products
                         </h4>
@@ -703,21 +700,23 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                 {/* Addresses */}
                 {selectedResult.addresses && selectedResult.addresses.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 font-medium">
                       <MapPin className="h-4 w-4" />
                       Addresses
                     </h4>
                     <div className="space-y-2">
                       {selectedResult.addresses.map((address, index) => (
-                        <div key={index} className="p-3 bg-white rounded-lg border">
-                          <div className="flex items-center gap-2 mb-1">
+                        <div key={index} className="rounded-lg border bg-white p-3">
+                          <div className="mb-1 flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
                               {address.type}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-700">
                             <div>{address.street}</div>
-                            <div>{address.city}, {address.country} {address.postalCode}</div>
+                            <div>
+                              {address.city}, {address.country} {address.postalCode}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -732,7 +731,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                     size="lg"
                     className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                   >
-                    <ArrowRight className="h-4 w-4 mr-2" />
+                    <ArrowRight className="mr-2 h-4 w-4" />
                     Use This Data for Supplier Creation
                   </Button>
                 </div>
@@ -742,7 +741,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
         )}
       </div>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default WebSupplierDiscovery
+export default WebSupplierDiscovery;

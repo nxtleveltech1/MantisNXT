@@ -1,23 +1,23 @@
-import { notFound } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import EnhancedSupplierForm from '@/components/suppliers/EnhancedSupplierForm'
-import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
-import { SupplierService } from '@/lib/suppliers/services/SupplierService'
-import { CacheInvalidator } from '@/lib/cache/invalidation'
-import type { UpdateSupplierData } from '@/lib/suppliers/types/SupplierDomain'
-import AppLayout from '@/components/layout/AppLayout'
+import { notFound } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+import EnhancedSupplierForm from '@/components/suppliers/EnhancedSupplierForm';
+import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository';
+import { SupplierService } from '@/lib/suppliers/services/SupplierService';
+import { CacheInvalidator } from '@/lib/cache/invalidation';
+import type { UpdateSupplierData } from '@/lib/suppliers/types/SupplierDomain';
+import AppLayout from '@/components/layout/AppLayout';
 
-const repository = new PostgreSQLSupplierRepository()
-const supplierService = new SupplierService(repository)
+const repository = new PostgreSQLSupplierRepository();
+const supplierService = new SupplierService(repository);
 
 // Fetch supplier data with ALL fields from database
 async function getSupplier(id: string) {
   try {
     // Use the full repository service to get complete supplier data
-    const supplier = await supplierService.getSupplierById(id)
+    const supplier = await supplierService.getSupplierById(id);
 
     if (!supplier) {
-      return null
+      return null;
     }
 
     // Map the full supplier object to match the form's expected structure
@@ -54,85 +54,91 @@ async function getSupplier(id: string) {
         paymentTerms: supplier.financial?.paymentTerms || 'Net 30',
         currency: supplier.financial?.currency || 'ZAR',
       },
-      contacts: supplier.contacts && supplier.contacts.length > 0 
-        ? supplier.contacts.map((c: unknown) => ({
-            id: c.id || '',
-            type: c.type || 'primary',
-            name: c.name || '',
-            title: c.title || '',
-            email: c.email || '',
-            phone: c.phone || '',
-            mobile: c.mobile || '',
-            department: c.department || '',
-            isPrimary: c.isPrimary || false,
-            isActive: c.isActive !== false,
-          }))
-        : [{
-            id: '',
-            type: 'primary' as const,
-            name: '',
-            title: '',
-            email: '',
-            phone: '',
-            mobile: '',
-            department: '',
-            isPrimary: true,
-            isActive: true,
-          }],
-      addresses: supplier.addresses && supplier.addresses.length > 0
-        ? supplier.addresses.map((a: unknown) => ({
-            id: a.id || '',
-            type: a.type || 'headquarters',
-            name: a.name || '',
-            addressLine1: a.addressLine1 || '',
-            addressLine2: a.addressLine2 || '',
-            city: a.city || '',
-            state: a.state || '',
-            postalCode: a.postalCode || '',
-            country: a.country || 'South Africa',
-            isPrimary: a.isPrimary || false,
-            isActive: a.isActive !== false,
-          }))
-        : [{
-            id: '',
-            type: 'headquarters' as const,
-            name: '',
-            addressLine1: '',
-            addressLine2: '',
-            city: '',
-            state: '',
-            postalCode: '',
-            country: 'South Africa',
-            isPrimary: true,
-            isActive: true,
-          }],
+      contacts:
+        supplier.contacts && supplier.contacts.length > 0
+          ? supplier.contacts.map((c: unknown) => ({
+              id: c.id || '',
+              type: c.type || 'primary',
+              name: c.name || '',
+              title: c.title || '',
+              email: c.email || '',
+              phone: c.phone || '',
+              mobile: c.mobile || '',
+              department: c.department || '',
+              isPrimary: c.isPrimary || false,
+              isActive: c.isActive !== false,
+            }))
+          : [
+              {
+                id: '',
+                type: 'primary' as const,
+                name: '',
+                title: '',
+                email: '',
+                phone: '',
+                mobile: '',
+                department: '',
+                isPrimary: true,
+                isActive: true,
+              },
+            ],
+      addresses:
+        supplier.addresses && supplier.addresses.length > 0
+          ? supplier.addresses.map((a: unknown) => ({
+              id: a.id || '',
+              type: a.type || 'headquarters',
+              name: a.name || '',
+              addressLine1: a.addressLine1 || '',
+              addressLine2: a.addressLine2 || '',
+              city: a.city || '',
+              state: a.state || '',
+              postalCode: a.postalCode || '',
+              country: a.country || 'South Africa',
+              isPrimary: a.isPrimary || false,
+              isActive: a.isActive !== false,
+            }))
+          : [
+              {
+                id: '',
+                type: 'headquarters' as const,
+                name: '',
+                addressLine1: '',
+                addressLine2: '',
+                city: '',
+                state: '',
+                postalCode: '',
+                country: 'South Africa',
+                isPrimary: true,
+                isActive: true,
+              },
+            ],
       notes: supplier.notes || '',
-    }
+    };
   } catch (error) {
-    console.error('Failed to fetch supplier:', error)
-    return null
+    console.error('Failed to fetch supplier:', error);
+    return null;
   }
 }
 
 interface EditSupplierPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 export default async function EditSupplierPage({ params }: EditSupplierPageProps) {
   // In Next.js 13+, params is a Promise and must be awaited
-  const { id } = await params
-  
-  const supplier = await getSupplier(id)
+  const { id } = await params;
+
+  const supplier = await getSupplier(id);
 
   if (!supplier) {
-    notFound()
+    notFound();
   }
 
   const handleSubmit = async (data: unknown) => {
-    'use server'
-    
+    'use server';
+
     try {
       // Transform form data to UpdateSupplierData format
       const updateData: UpdateSupplierData = {
@@ -144,14 +150,16 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
         subcategory: data.subcategory,
         tags: data.tags || [],
         brands: data.brands || [],
-        businessInfo: data.businessInfo ? {
-          legalName: data.businessInfo.legalName,
-          website: data.businessInfo.website,
-          foundedYear: data.businessInfo.foundedYear,
-          employeeCount: data.businessInfo.employeeCount,
-          annualRevenue: data.businessInfo.annualRevenue,
-          currency: data.businessInfo.currency,
-        } : undefined,
+        businessInfo: data.businessInfo
+          ? {
+              legalName: data.businessInfo.legalName,
+              website: data.businessInfo.website,
+              foundedYear: data.businessInfo.foundedYear,
+              employeeCount: data.businessInfo.employeeCount,
+              annualRevenue: data.businessInfo.annualRevenue,
+              currency: data.businessInfo.currency,
+            }
+          : undefined,
         contacts: data.contacts?.map((c: unknown) => ({
           type: c.type,
           name: c.name,
@@ -176,41 +184,38 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
           isActive: a.isActive !== false,
         })),
         notes: data.notes,
-      }
+      };
 
       // Validate and update using the service
-      const validation = await supplierService.validateSupplierUpdate(id, updateData)
+      const validation = await supplierService.validateSupplierUpdate(id, updateData);
       if (!validation.isValid) {
-        const errors = validation.errors.map(e => e.message).join(', ')
-        throw new Error(`Validation failed: ${errors}`)
+        const errors = validation.errors.map(e => e.message).join(', ');
+        throw new Error(`Validation failed: ${errors}`);
       }
 
-      const updatedSupplier = await supplierService.updateSupplier(id, updateData)
-      
+      const updatedSupplier = await supplierService.updateSupplier(id, updateData);
+
       // Invalidate cache to ensure fresh data
-      CacheInvalidator.invalidateSupplier(id, updatedSupplier.name)
-      revalidatePath('/suppliers')
-      revalidatePath(`/suppliers/${id}`)
-      
+      CacheInvalidator.invalidateSupplier(id, updatedSupplier.name);
+      revalidatePath('/suppliers');
+      revalidatePath(`/suppliers/${id}`);
+
       // Return successfully - form will handle redirect
     } catch (error) {
-      console.error('Failed to update supplier:', error)
-      throw error
+      console.error('Failed to update supplier:', error);
+      throw error;
     }
-  }
+  };
 
-          return (
-            <AppLayout
-              title="Edit Supplier"
-              breadcrumbs={[
-                { label: 'Suppliers', href: '/suppliers' },
-                { label: supplier.name || 'Edit Supplier' },
-              ]}
-            >
-              <EnhancedSupplierForm
-                supplier={supplier}
-                onSubmit={handleSubmit}
-              />
-            </AppLayout>
-          )
+  return (
+    <AppLayout
+      title="Edit Supplier"
+      breadcrumbs={[
+        { label: 'Suppliers', href: '/suppliers' },
+        { label: supplier.name || 'Edit Supplier' },
+      ]}
+    >
+      <EnhancedSupplierForm supplier={supplier} onSubmit={handleSubmit} />
+    </AppLayout>
+  );
 }

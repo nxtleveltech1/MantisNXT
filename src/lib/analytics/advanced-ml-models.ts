@@ -3,7 +3,7 @@
 // Implements sophisticated ML algorithms for intelligent analytics
 
 import type { Pool } from 'pg';
-import type { SupplierPerformance} from '@/types';
+import type { SupplierPerformance } from '@/types';
 
 // Advanced ML Types
 export interface NeuralNetworkPrediction {
@@ -30,7 +30,7 @@ export interface TimeSeriesForecast {
   accuracy: {
     mape: number; // Mean Absolute Percentage Error
     rmse: number; // Root Mean Square Error
-    mae: number;  // Mean Absolute Error
+    mae: number; // Mean Absolute Error
   };
   modelMetadata: {
     algorithm: string;
@@ -194,9 +194,8 @@ export class AdvancedSupplierPredictor {
         features: this.featuresToObject(features),
         modelType: 'regression',
         explanation,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-
     } catch (error) {
       console.error('Advanced supplier prediction error:', error);
       throw new Error('Failed to predict supplier performance');
@@ -221,7 +220,7 @@ export class AdvancedSupplierPredictor {
       this.calculateImprovement(recent, older),
       this.calculateConsistency(history),
       this.calculateRecentPerformance(recent),
-      this.calculateRiskIndicator(history)
+      this.calculateRiskIndicator(history),
     ];
   }
 
@@ -232,38 +231,43 @@ export class AdvancedSupplierPredictor {
       this.featureScaling.std = new Array(features.length).fill(1);
     }
 
-    return features.map((feature, i) =>
-      (feature - this.featureScaling.mean[i]) / Math.max(this.featureScaling.std[i], 0.01)
+    return features.map(
+      (feature, i) =>
+        (feature - this.featureScaling.mean[i]) / Math.max(this.featureScaling.std[i], 0.01)
     );
   }
 
   private calculateAdvancedConfidence(history: SupplierPerformance[], features: number[]): number {
     const dataQuality = Math.min(1, history.length / 10);
-    const featureQuality = features.reduce((sum, f) => sum + (isNaN(f) ? 0 : 1), 0) / features.length;
+    const featureQuality =
+      features.reduce((sum, f) => sum + (isNaN(f) ? 0 : 1), 0) / features.length;
     const performanceConsistency = this.calculateConsistency(history);
 
-    return (dataQuality * 0.4) + (featureQuality * 0.3) + (performanceConsistency * 0.3);
+    return dataQuality * 0.4 + featureQuality * 0.3 + performanceConsistency * 0.3;
   }
 
-  private calculateUncertaintyBounds(prediction: number, confidence: number): { lower: number; upper: number } {
+  private calculateUncertaintyBounds(
+    prediction: number,
+    confidence: number
+  ): { lower: number; upper: number } {
     const uncertainty = (1 - confidence) * 0.3; // Max 30% uncertainty
     return {
       lower: Math.max(0, prediction - uncertainty),
-      upper: Math.min(1, prediction + uncertainty)
+      upper: Math.min(1, prediction + uncertainty),
     };
   }
 
   private generateExplanation(features: number[], prediction: number): string[] {
     const explanations: string[] = [];
 
-    if (features[0] < 0.85) explanations.push("Delivery performance is below optimal levels");
-    if (features[1] < 0.90) explanations.push("Quality issues detected in recent performance");
-    if (features[2] < -0.1) explanations.push("Declining performance trend identified");
-    if (features[3] > 0.3) explanations.push("High performance volatility observed");
-    if (features[6] > 0.1) explanations.push("Recent improvement in performance metrics");
+    if (features[0] < 0.85) explanations.push('Delivery performance is below optimal levels');
+    if (features[1] < 0.9) explanations.push('Quality issues detected in recent performance');
+    if (features[2] < -0.1) explanations.push('Declining performance trend identified');
+    if (features[3] > 0.3) explanations.push('High performance volatility observed');
+    if (features[6] > 0.1) explanations.push('Recent improvement in performance metrics');
 
     if (explanations.length === 0) {
-      explanations.push("Performance metrics are within acceptable ranges");
+      explanations.push('Performance metrics are within acceptable ranges');
     }
 
     return explanations;
@@ -279,7 +283,7 @@ export class AdvancedSupplierPredictor {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, idx) => sum + (idx * val), 0);
+    const sumXY = values.reduce((sum, val, idx) => sum + idx * val, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
     return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
   }
@@ -296,7 +300,10 @@ export class AdvancedSupplierPredictor {
     return 0; // Placeholder for more complex seasonality analysis
   }
 
-  private calculateImprovement(recent: SupplierPerformance[], older: SupplierPerformance[]): number {
+  private calculateImprovement(
+    recent: SupplierPerformance[],
+    older: SupplierPerformance[]
+  ): number {
     if (recent.length === 0 || older.length === 0) return 0;
     const recentAvg = this.calculateAverage(recent.map(h => h.overallRating));
     const olderAvg = this.calculateAverage(older.map(h => h.overallRating));
@@ -338,7 +345,7 @@ export class AdvancedSupplierPredictor {
       improvement: features[6],
       consistency: features[7],
       recentPerformance: features[8],
-      riskIndicator: features[9]
+      riskIndicator: features[9],
     };
   }
 }
@@ -351,10 +358,7 @@ export class TimeSeriesForecaster {
     this.db = database;
   }
 
-  async forecastDemand(
-    itemId: string,
-    horizon: number = 30
-  ): Promise<TimeSeriesForecast> {
+  async forecastDemand(itemId: string, horizon: number = 30): Promise<TimeSeriesForecast> {
     try {
       // Get historical demand data
       const historicalData = await this.getHistoricalDemand(itemId);
@@ -394,18 +398,19 @@ export class TimeSeriesForecaster {
           parameters: {
             armaOrder: { p: 2, q: 2 },
             seasonalPeriod: 7,
-            polynomialDegree: 3
-          }
-        }
+            polynomialDegree: 3,
+          },
+        },
       };
-
     } catch (error) {
       console.error('Time series forecasting error:', error);
       throw new Error('Failed to generate demand forecast');
     }
   }
 
-  private async getHistoricalDemand(itemId: string): Promise<Array<{ date: Date; demand: number }>> {
+  private async getHistoricalDemand(
+    itemId: string
+  ): Promise<Array<{ date: Date; demand: number }>> {
     const query = `
       SELECT DATE(timestamp) as date, SUM(quantity) as demand
       FROM stock_movements
@@ -418,7 +423,7 @@ export class TimeSeriesForecaster {
     const result = await this.db.query(query, [itemId]);
     return result.rows.map(row => ({
       date: new Date(row.date),
-      demand: parseFloat(row.demand)
+      demand: parseFloat(row.demand),
     }));
   }
 
@@ -435,9 +440,7 @@ export class TimeSeriesForecaster {
     const seasonal = this.extractSeasonality(detrended, 7);
 
     // Residual
-    const residual = values.map((val, i) =>
-      val - (trend[i] || 0) - (seasonal[i % 7] || 0)
-    );
+    const residual = values.map((val, i) => val - (trend[i] || 0) - (seasonal[i % 7] || 0));
 
     return { trend, seasonal, residual };
   }
@@ -463,12 +466,13 @@ export class TimeSeriesForecaster {
       counts[periodIndex]++;
     });
 
-    return seasonal.map((sum, i) => counts[i] > 0 ? sum / counts[i] : 0);
+    return seasonal.map((sum, i) => (counts[i] > 0 ? sum / counts[i] : 0));
   }
 
   private armaForecast(trendData: number[], horizon: number): number[] {
     // Simplified ARMA(2,2) model
-    const p = 2, q = 2;
+    const p = 2,
+      q = 2;
     const forecast: number[] = [];
     const data = [...trendData];
 
@@ -498,7 +502,10 @@ export class TimeSeriesForecaster {
     return forecast;
   }
 
-  private polynomialTrendForecast(data: Array<{ date: Date; demand: number }>, horizon: number): number[] {
+  private polynomialTrendForecast(
+    data: Array<{ date: Date; demand: number }>,
+    horizon: number
+  ): number[] {
     // Fit polynomial trend
     const x = data.map((_, i) => i);
     const y = data.map(d => d.demand);
@@ -548,7 +555,7 @@ export class TimeSeriesForecaster {
       const armaComponent = arma[h] || 0;
 
       // Weighted combination
-      const predicted = (trendComponent * 0.4) + (seasonalComponent * 0.3) + (armaComponent * 0.3);
+      const predicted = trendComponent * 0.4 + seasonalComponent * 0.3 + armaComponent * 0.3;
 
       // Uncertainty bounds (±20%)
       const uncertainty = predicted * 0.2;
@@ -559,7 +566,7 @@ export class TimeSeriesForecaster {
         lowerBound: Math.max(0, predicted - uncertainty),
         upperBound: predicted + uncertainty,
         seasonalComponent,
-        trendComponent
+        trendComponent,
       });
     }
 
@@ -579,7 +586,9 @@ export class TimeSeriesForecaster {
       return { mape: 0, rmse: 0, mae: 0 };
     }
 
-    let mapeSum = 0, rmseSum = 0, maeSum = 0;
+    let mapeSum = 0,
+      rmseSum = 0,
+      maeSum = 0;
 
     for (let i = 0; i < Math.min(validation.length, testPredictions.length); i++) {
       const actual = validation[i].demand;
@@ -595,7 +604,7 @@ export class TimeSeriesForecaster {
     return {
       mape: (mapeSum / n) * 100,
       rmse: Math.sqrt(rmseSum / n),
-      mae: maeSum / n
+      mae: maeSum / n,
     };
   }
 }
@@ -618,7 +627,7 @@ export class EnsemblePredictor {
       name,
       predictor,
       weight,
-      performance: 0.5 // Initial performance
+      performance: 0.5, // Initial performance
     });
   }
 
@@ -632,7 +641,7 @@ export class EnsemblePredictor {
           name: model.name,
           prediction: prediction.prediction || prediction,
           weight: model.weight,
-          confidence: prediction.confidence || 0.8
+          confidence: prediction.confidence || 0.8,
         });
       } catch (error) {
         console.error(`Model ${model.name} prediction failed:`, error);
@@ -640,28 +649,30 @@ export class EnsemblePredictor {
           name: model.name,
           prediction: 0.5,
           weight: 0,
-          confidence: 0
+          confidence: 0,
         });
       }
     }
 
     // Calculate weighted average
     const totalWeight = predictions.reduce((sum, p) => sum + p.weight * p.confidence, 0);
-    const finalPrediction = predictions.reduce(
-      (sum, p) => sum + (p.prediction * p.weight * p.confidence), 0
-    ) / Math.max(totalWeight, 0.1);
+    const finalPrediction =
+      predictions.reduce((sum, p) => sum + p.prediction * p.weight * p.confidence, 0) /
+      Math.max(totalWeight, 0.1);
 
     // Calculate consensus (agreement between models)
     const predictionValues = predictions.map(p => p.prediction);
     const mean = predictionValues.reduce((sum, val) => sum + val, 0) / predictionValues.length;
-    const variance = predictionValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / predictionValues.length;
+    const variance =
+      predictionValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
+      predictionValues.length;
     const consensus = Math.max(0, 1 - Math.sqrt(variance));
 
     return {
       models: predictions,
       finalPrediction,
       consensus,
-      explanation: this.generateEnsembleExplanation(predictions, consensus)
+      explanation: this.generateEnsembleExplanation(predictions, consensus),
     };
   }
 
@@ -694,7 +705,7 @@ export const advancedMLModels = {
   supplierPredictor: (db: Pool) => new AdvancedSupplierPredictor(db),
   timeSeriesForecaster: (db: Pool) => new TimeSeriesForecaster(db),
   ensemblePredictor: () => new EnsemblePredictor(),
-  neuralNetwork: (layers: number[]) => new NeuralNetwork(layers)
+  neuralNetwork: (layers: number[]) => new NeuralNetwork(layers),
 };
 
 // Export individual classes for direct import

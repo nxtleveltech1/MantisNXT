@@ -3,7 +3,7 @@
  * Multiple chart views for category-based inventory analysis
  */
 
-"use client";
+'use client';
 
 import React from 'react';
 import {
@@ -43,8 +43,8 @@ const CHART_COLORS = [
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-        <p className="font-medium text-sm mb-1">{label}</p>
+      <div className="bg-card border-border rounded-lg border p-3 shadow-lg">
+        <p className="mb-1 text-sm font-medium">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {formatCurrency(entry.value)}
@@ -58,20 +58,20 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // Loading skeleton
 const LoadingSkeleton = () => (
-  <div className="w-full h-[300px] flex items-center justify-center">
-    <div className="text-center space-y-2">
-      <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-      <p className="text-sm text-muted-foreground">Loading data...</p>
+  <div className="flex h-[300px] w-full items-center justify-center">
+    <div className="space-y-2 text-center">
+      <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+      <p className="text-muted-foreground text-sm">Loading data...</p>
     </div>
   </div>
 );
 
 // Error display
 const ErrorDisplay = ({ message }: { message: string }) => (
-  <div className="w-full h-[300px] flex items-center justify-center">
-    <div className="text-center space-y-2">
+  <div className="flex h-[300px] w-full items-center justify-center">
+    <div className="space-y-2 text-center">
       <p className="text-sm text-red-600">Error loading data</p>
-      <p className="text-xs text-muted-foreground">{message}</p>
+      <p className="text-muted-foreground text-xs">{message}</p>
     </div>
   </div>
 );
@@ -100,15 +100,15 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
       <div className="grid grid-cols-3 gap-4 text-center">
         <div>
           <div className="text-2xl font-bold">{data.summary.totalCategories}</div>
-          <div className="text-xs text-muted-foreground">Categories</div>
+          <div className="text-muted-foreground text-xs">Categories</div>
         </div>
         <div>
           <div className="text-2xl font-bold">{formatCurrency(data.summary.totalValue)}</div>
-          <div className="text-xs text-muted-foreground">Total Value</div>
+          <div className="text-muted-foreground text-xs">Total Value</div>
         </div>
         <div>
           <div className="text-2xl font-bold">{data.summary.totalProducts.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">Products</div>
+          <div className="text-muted-foreground text-xs">Products</div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -131,7 +131,7 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
           <YAxis
             tick={{ fontSize: 12 }}
             stroke="hsl(var(--muted-foreground))"
-            tickFormatter={(value) => formatCurrency(value)}
+            tickFormatter={value => formatCurrency(value)}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
@@ -172,11 +172,11 @@ export function ProductCountBarChart({ dateRange = 'month' }: { dateRange?: stri
       <div className="grid grid-cols-2 gap-4 text-center">
         <div>
           <div className="text-2xl font-bold">{data.summary.totalProducts.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">Total Products</div>
+          <div className="text-muted-foreground text-xs">Total Products</div>
         </div>
         <div>
           <div className="text-2xl font-bold">{data.summary.topCategory}</div>
-          <div className="text-xs text-muted-foreground">Top Category</div>
+          <div className="text-muted-foreground text-xs">Top Category</div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -192,7 +192,12 @@ export function ProductCountBarChart({ dateRange = 'month' }: { dateRange?: stri
           />
           <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
           <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="productCount" name="Products" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+          <Bar
+            dataKey="productCount"
+            name="Products"
+            fill="hsl(var(--chart-3))"
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -212,11 +217,11 @@ export function SalesByCategoryPieChart() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
         <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
           📦 WooCommerce Integration Required
         </p>
-        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+        <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
           This widget will display sales data once WooCommerce is connected. Mock data shown below.
         </p>
       </div>
@@ -269,12 +274,13 @@ export function SalesTimelineChart({ period = 'week' }: { period?: 'day' | 'week
 
   return (
     <div className="space-y-4">
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
         <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
           📦 WooCommerce Integration Required
         </p>
-        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-          This widget will display sales timeline once WooCommerce is connected. Mock data shown below.
+        <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+          This widget will display sales timeline once WooCommerce is connected. Mock data shown
+          below.
         </p>
       </div>
       <ResponsiveContainer width="100%" height={300}>

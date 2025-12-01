@@ -71,9 +71,8 @@ export class CursorPaginator<T = unknown> {
         });
       }
 
-      const whereClause = whereConditions.length > 0
-        ? `WHERE ${whereConditions.join(' AND ')}`
-        : '';
+      const whereClause =
+        whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
       const query = `
         SELECT *
@@ -129,9 +128,7 @@ export class CursorPaginator<T = unknown> {
       });
     }
 
-    const whereClause = whereConditions.length > 0
-      ? `WHERE ${whereConditions.join(' AND ')}`
-      : '';
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const query = `SELECT COUNT(*) as total FROM ${this.table} ${whereClause}`;
     const result = await this.pool.query(query, values);
@@ -169,7 +166,9 @@ export class BatchProcessor<TInput, TOutput> {
     const batches = this.createBatches(items, config.batchSize);
     const totalBatches = batches.length;
 
-    console.log(`🚀 Processing ${items.length} items in ${totalBatches} batches (size: ${config.batchSize}, concurrency: ${config.maxConcurrency})`);
+    console.log(
+      `🚀 Processing ${items.length} items in ${totalBatches} batches (size: ${config.batchSize}, concurrency: ${config.maxConcurrency})`
+    );
 
     const results: TOutput[] = [];
     const errors: Array<{ batch: number; error: Error }> = [];
@@ -209,7 +208,9 @@ export class BatchProcessor<TInput, TOutput> {
 
     const duration = Date.now() - startTime;
 
-    console.log(`✅ Batch processing complete: ${processed} processed, ${failed} failed in ${duration}ms`);
+    console.log(
+      `✅ Batch processing complete: ${processed} processed, ${failed} failed in ${duration}ms`
+    );
     console.log(`   Throughput: ${Math.round((items.length / duration) * 1000)} items/sec`);
 
     return {
@@ -271,7 +272,9 @@ export class BatchProcessor<TInput, TOutput> {
 
         if (attempt < config.retryAttempts) {
           const delay = config.retryDelay * Math.pow(2, attempt);
-          console.warn(`⚠️ Batch ${batchIndex} failed (attempt ${attempt + 1}), retrying in ${delay}ms...`);
+          console.warn(
+            `⚠️ Batch ${batchIndex} failed (attempt ${attempt + 1}), retrying in ${delay}ms...`
+          );
           await this.sleep(delay);
         }
       }
@@ -306,17 +309,14 @@ export async function validateAlertsInBatches(
   alerts: unknown[],
   validator: (items: unknown[]) => unknown[]
 ): Promise<unknown[]> {
-  const processor = new BatchProcessor(
-    async (batch) => validator(batch),
-    {
-      batchSize: 500,
-      maxConcurrency: 4,
-      onProgress: (processed, total) => {
-        const percentage = Math.round((processed / total) * 100);
-        console.log(`📊 Alert validation progress: ${processed}/${total} (${percentage}%)`);
-      },
-    }
-  );
+  const processor = new BatchProcessor(async batch => validator(batch), {
+    batchSize: 500,
+    maxConcurrency: 4,
+    onProgress: (processed, total) => {
+      const percentage = Math.round((processed / total) * 100);
+      console.log(`📊 Alert validation progress: ${processed}/${total} (${percentage}%)`);
+    },
+  });
 
   const result = await processor.process(alerts);
 

@@ -8,7 +8,7 @@
  * - Application metrics
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getDbMetrics } from '@/lib/database/connection-pool';
 import { sessionStore } from '@/lib/cache/redis-session-store';

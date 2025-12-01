@@ -17,9 +17,7 @@
         "type": "includes",
         "threshold": 0.6
       },
-      "drop_right": [
-        "sku"
-      ],
+      "drop_right": ["sku"],
       "output_map": {
         "sku": { "sheet": "left", "column": "Part#" },
         "description": { "sheet": "left", "column": "Product Title" },
@@ -32,13 +30,7 @@
       "rate": 0.15,
       "mode": "ex"
     },
-    "hard_requirements": [
-      "sku",
-      "description",
-      "priceExVat"
-    ],
-    "warnings": [
-      "category"
-    ]
+    "hard_requirements": ["sku", "description", "priceExVat"],
+    "warnings": ["category"]
   }
 }

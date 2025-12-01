@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AuthContext } from '@/middleware/auth';
 import { withAuth } from '@/middleware/auth';
@@ -148,4 +148,3 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
     );
   }
 });
-

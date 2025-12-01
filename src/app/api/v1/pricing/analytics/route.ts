@@ -9,7 +9,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PriceAnalyticsService } from '@/lib/services/PriceAnalyticsService';
 
@@ -29,11 +29,7 @@ export async function GET(request: NextRequest) {
         const trendDays = parseInt(searchParams.get('days') || '90');
         const categoryId = searchParams.get('category_id') || undefined;
         const brandId = searchParams.get('brand_id') || undefined;
-        const trends = await PriceAnalyticsService.getPriceTrends(
-          categoryId,
-          brandId,
-          trendDays
-        );
+        const trends = await PriceAnalyticsService.getPriceTrends(categoryId, brandId, trendDays);
         return NextResponse.json({ success: true, data: trends });
       }
 
@@ -68,9 +64,6 @@ export async function GET(request: NextRequest) {
         );
     }
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

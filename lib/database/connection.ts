@@ -12,7 +12,7 @@ import {
   getPoolStatus as unifiedGetPoolStatus,
   closePool as unifiedClosePool,
   DatabaseManager as UnifiedDatabaseManager,
-  db as unifiedDb
+  db as unifiedDb,
 } from './unified-connection';
 
 // Re-export everything with the same interface

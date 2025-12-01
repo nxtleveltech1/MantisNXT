@@ -394,7 +394,7 @@ export class SyncProgressTracker {
   private notifySubscribers(jobId: string, data: unknown): void {
     const listeners = this.subscribers.get(jobId);
     if (listeners) {
-      listeners.forEach((listener) => {
+      listeners.forEach(listener => {
         try {
           listener(data);
         } catch (error) {
@@ -415,7 +415,7 @@ export class SyncProgressTracker {
       [orgId]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       jobId: row.id,
       orgId: row.org_id,
       totalItems: row.total_items,
@@ -452,19 +452,22 @@ export class SyncProgressTracker {
     }
 
     // Cleanup after 5 minutes
-    const timer = setTimeout(async () => {
-      try {
-        const cacheKey = this.getCacheKey(jobId);
-        const redis = await this.ensureRedis();
-        if (redis) {
-          await redis.del(cacheKey);
+    const timer = setTimeout(
+      async () => {
+        try {
+          const cacheKey = this.getCacheKey(jobId);
+          const redis = await this.ensureRedis();
+          if (redis) {
+            await redis.del(cacheKey);
+          }
+        } catch (error) {
+          console.error('Cleanup error for job', jobId, ':', error);
+        } finally {
+          this.cleanupTimers.delete(jobId);
         }
-      } catch (error) {
-        console.error('Cleanup error for job', jobId, ':', error);
-      } finally {
-        this.cleanupTimers.delete(jobId);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
 
     this.cleanupTimers.set(jobId, timer);
   }
@@ -478,7 +481,7 @@ export class SyncProgressTracker {
     memoryEstimateKb: number;
   } {
     let totalSubscribers = 0;
-    this.subscribers.forEach((listeners) => {
+    this.subscribers.forEach(listeners => {
       totalSubscribers += listeners.size;
     });
 
@@ -503,8 +506,8 @@ export class SyncProgressTracker {
    */
   async shutdown(): Promise<void> {
     // Clear all timers
-    this.updateTimers.forEach((timer) => clearInterval(timer));
-    this.cleanupTimers.forEach((timer) => clearTimeout(timer));
+    this.updateTimers.forEach(timer => clearInterval(timer));
+    this.cleanupTimers.forEach(timer => clearTimeout(timer));
 
     // Clear subscribers
     this.subscribers.clear();

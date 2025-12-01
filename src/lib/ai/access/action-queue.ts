@@ -4,18 +4,14 @@
  */
 
 import { EventEmitter } from 'events';
-import {
-  PendingAction,
-  ApprovalResponse,
-  QueueStats,
-  AccessEvent,
-} from './types';
+import { PendingAction, ApprovalResponse, QueueStats, AccessEvent } from './types';
 
 export class ActionQueue extends EventEmitter {
   private queue = new Map<string, PendingAction>();
   private cleanupInterval: NodeJS.Timeout | null = null;
 
-  constructor(private maxAgeMs: number = 24 * 60 * 60 * 1000) { // 24 hours default
+  constructor(private maxAgeMs: number = 24 * 60 * 60 * 1000) {
+    // 24 hours default
     super();
     this.startCleanupInterval();
   }
@@ -170,7 +166,7 @@ export class ActionQueue extends EventEmitter {
     let expiredCount = 0;
 
     for (const [actionId, action] of this.queue.entries()) {
-      if (action.status === 'pending' && (now - action.requestedAt.getTime()) > cutoff) {
+      if (action.status === 'pending' && now - action.requestedAt.getTime() > cutoff) {
         this.markExpired(actionId);
         expiredCount++;
       }
@@ -193,15 +189,15 @@ export class ActionQueue extends EventEmitter {
       .filter(a => a.approvedAt && a.requestedAt)
       .map(a => a.approvedAt!.getTime() - a.requestedAt.getTime());
 
-    const averageWaitTime = waitTimes.length > 0
-      ? waitTimes.reduce((sum, time) => sum + time, 0) / waitTimes.length
-      : 0;
+    const averageWaitTime =
+      waitTimes.length > 0 ? waitTimes.reduce((sum, time) => sum + time, 0) / waitTimes.length : 0;
 
-    const oldestPending = pendingActions.length > 0
-      ? pendingActions.reduce((oldest, current) =>
-          current.requestedAt < oldest.requestedAt ? current : oldest
-        ).requestedAt
-      : undefined;
+    const oldestPending =
+      pendingActions.length > 0
+        ? pendingActions.reduce((oldest, current) =>
+            current.requestedAt < oldest.requestedAt ? current : oldest
+          ).requestedAt
+        : undefined;
 
     return {
       totalPending: pendingActions.length,
@@ -216,7 +212,8 @@ export class ActionQueue extends EventEmitter {
   /**
    * Remove completed actions from queue (for memory management)
    */
-  cleanupCompleted(maxAge: number = 7 * 24 * 60 * 60 * 1000): number { // 7 days default
+  cleanupCompleted(maxAge: number = 7 * 24 * 60 * 60 * 1000): number {
+    // 7 days default
     const cutoff = Date.now() - maxAge;
     let removedCount = 0;
 
@@ -258,14 +255,17 @@ export class ActionQueue extends EventEmitter {
    */
   private startCleanupInterval(): void {
     // Clean up every hour
-    this.cleanupInterval = setInterval(() => {
-      const expired = this.expireOldActions();
-      const cleaned = this.cleanupCompleted();
+    this.cleanupInterval = setInterval(
+      () => {
+        const expired = this.expireOldActions();
+        const cleaned = this.cleanupCompleted();
 
-      if (expired > 0 || cleaned > 0) {
-        this.emit('cleanup', { expired, cleaned, timestamp: new Date() });
-      }
-    }, 60 * 60 * 1000); // 1 hour
+        if (expired > 0 || cleaned > 0) {
+          this.emit('cleanup', { expired, cleaned, timestamp: new Date() });
+        }
+      },
+      60 * 60 * 1000
+    ); // 1 hour
   }
 
   /**

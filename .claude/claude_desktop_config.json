@@ -2,11 +2,7 @@
   "mcpServers": {
     "neon": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@neondatabase/mcp-server-neon",
-        "start"
-      ]
+      "args": ["-y", "@neondatabase/mcp-server-neon", "start"]
     }
   }
 }

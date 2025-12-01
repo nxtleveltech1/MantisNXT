@@ -1,6 +1,6 @@
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { inventorySelectionService } from "@/lib/services/InventorySelectionService";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 
 /**
  * GET /api/core/selections/active
@@ -8,8 +8,7 @@ import { inventorySelectionService } from "@/lib/services/InventorySelectionServ
  */
 export async function GET(request: NextRequest) {
   try {
-    const activeSelection =
-      await inventorySelectionService.getActiveSelection();
+    const activeSelection = await inventorySelectionService.getActiveSelection();
 
     if (activeSelection) {
       return NextResponse.json({
@@ -21,16 +20,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: null,
-        message: "No active selection found",
+        message: 'No active selection found',
       });
     }
   } catch (error) {
-    console.error("Error fetching active selection:", error);
+    console.error('Error fetching active selection:', error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch active selection",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch active selection',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

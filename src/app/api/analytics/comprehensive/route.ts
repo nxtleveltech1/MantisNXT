@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createAnalyticsService } from '@/lib/analytics/analytics-integration';
 
@@ -21,10 +21,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'dashboard';
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
     // Get or create analytics service
@@ -86,23 +83,22 @@ export async function GET(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json(
-          { error: `Unknown analytics type: ${type}` },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: `Unknown analytics type: ${type}` }, { status: 400 });
     }
 
     return NextResponse.json({
       success: true,
       data: response,
       timestamp: new Date().toISOString(),
-      organizationId
+      organizationId,
     });
-
   } catch (error) {
     console.error('Analytics API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -118,17 +114,11 @@ export async function POST(request: NextRequest) {
     const { organizationId, action, params = {} } = body;
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
     if (!action) {
-      return NextResponse.json(
-        { error: 'Action is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Action is required' }, { status: 400 });
     }
 
     // Get or create analytics service
@@ -145,10 +135,7 @@ export async function POST(request: NextRequest) {
       case 'optimize': {
         const { type: optType, ...optParams } = params;
         if (!optType) {
-          return NextResponse.json(
-            { error: 'Optimization type is required' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Optimization type is required' }, { status: 400 });
         }
         response = await analyticsService.executeOptimization(optType, optParams);
         break;
@@ -157,10 +144,7 @@ export async function POST(request: NextRequest) {
       case 'updateConfig': {
         const { config } = params;
         if (!config) {
-          return NextResponse.json(
-            { error: 'Configuration is required' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Configuration is required' }, { status: 400 });
         }
         await analyticsService.updateConfig(config);
         response = { success: true, message: 'Configuration updated' };
@@ -179,10 +163,7 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}` },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -190,13 +171,15 @@ export async function POST(request: NextRequest) {
       data: response,
       timestamp: new Date().toISOString(),
       organizationId,
-      action
+      action,
     });
-
   } catch (error) {
     console.error('Analytics API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -212,17 +195,11 @@ export async function PUT(request: NextRequest) {
     const { organizationId, config } = body;
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
     if (!config) {
-      return NextResponse.json(
-        { error: 'Configuration is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Configuration is required' }, { status: 400 });
     }
 
     // Get analytics service
@@ -240,13 +217,15 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: 'Analytics configuration updated successfully',
       timestamp: new Date().toISOString(),
-      organizationId
+      organizationId,
     });
-
   } catch (error) {
     console.error('Analytics configuration update error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -262,10 +241,7 @@ export async function DELETE(request: NextRequest) {
     const organizationId = searchParams.get('organizationId');
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
     // Get and shutdown analytics service
@@ -279,13 +255,15 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Analytics service shutdown and removed',
       timestamp: new Date().toISOString(),
-      organizationId
+      organizationId,
     });
-
   } catch (error) {
     console.error('Analytics service removal error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

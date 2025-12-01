@@ -28,81 +28,109 @@ import { aiDatabase } from '@/lib/ai/database-integration';
 
 const ChurnPredictionSchema = z.object({
   overall_churn_risk: z.number().min(0).max(1).describe('Overall churn risk score (0-1)'),
-  at_risk_customers: z.array(z.object({
-    customer_id: z.string().uuid(),
-    churn_probability: z.number().min(0).max(1),
-    risk_level: z.enum(['low', 'medium', 'high', 'critical']),
-    primary_risk_factors: z.array(z.string()),
-    days_since_last_activity: z.number(),
-    recommended_interventions: z.array(z.string()),
-    estimated_lifetime_value: z.number(),
-  })).describe('List of at-risk customers'),
-  churn_factors: z.array(z.object({
-    factor: z.string(),
-    importance: z.number().min(0).max(1),
-    description: z.string(),
-  })).describe('Key factors contributing to churn'),
+  at_risk_customers: z
+    .array(
+      z.object({
+        customer_id: z.string().uuid(),
+        churn_probability: z.number().min(0).max(1),
+        risk_level: z.enum(['low', 'medium', 'high', 'critical']),
+        primary_risk_factors: z.array(z.string()),
+        days_since_last_activity: z.number(),
+        recommended_interventions: z.array(z.string()),
+        estimated_lifetime_value: z.number(),
+      })
+    )
+    .describe('List of at-risk customers'),
+  churn_factors: z
+    .array(
+      z.object({
+        factor: z.string(),
+        importance: z.number().min(0).max(1),
+        description: z.string(),
+      })
+    )
+    .describe('Key factors contributing to churn'),
   retention_recommendations: z.array(z.string()).describe('Program-level retention strategies'),
 });
 
 const EngagementScoringSchema = z.object({
-  overall_engagement_score: z.number().min(0).max(100).describe('Overall program engagement (0-100)'),
+  overall_engagement_score: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe('Overall program engagement (0-100)'),
   engagement_distribution: z.object({
     highly_engaged: z.number().describe('Percentage highly engaged'),
     moderately_engaged: z.number().describe('Percentage moderately engaged'),
     low_engagement: z.number().describe('Percentage low engagement'),
     dormant: z.number().describe('Percentage dormant'),
   }),
-  top_engaged_customers: z.array(z.object({
-    customer_id: z.string().uuid(),
-    engagement_score: z.number().min(0).max(100),
-    key_behaviors: z.array(z.string()),
-    lifetime_value: z.number(),
-  })),
-  engagement_drivers: z.array(z.object({
-    driver: z.string(),
-    impact: z.number().min(-1).max(1),
-    description: z.string(),
-  })),
+  top_engaged_customers: z.array(
+    z.object({
+      customer_id: z.string().uuid(),
+      engagement_score: z.number().min(0).max(100),
+      key_behaviors: z.array(z.string()),
+      lifetime_value: z.number(),
+    })
+  ),
+  engagement_drivers: z.array(
+    z.object({
+      driver: z.string(),
+      impact: z.number().min(-1).max(1),
+      description: z.string(),
+    })
+  ),
   improvement_opportunities: z.array(z.string()),
 });
 
 const RewardOptimizationSchema = z.object({
-  catalog_effectiveness_score: z.number().min(0).max(100).describe('Overall catalog effectiveness (0-100)'),
-  reward_performance: z.array(z.object({
-    reward_id: z.string().uuid(),
-    reward_name: z.string(),
-    redemption_rate: z.number(),
-    popularity_score: z.number().min(0).max(100),
-    roi_score: z.number(),
-    performance_category: z.enum(['star', 'strong', 'average', 'underperforming', 'dead']),
-    recommendations: z.array(z.string()),
-  })),
-  optimization_suggestions: z.array(z.object({
-    category: z.enum(['pricing', 'inventory', 'promotion', 'removal', 'new_reward']),
-    priority: z.enum(['low', 'medium', 'high', 'critical']),
-    suggestion: z.string(),
-    expected_impact: z.string(),
-  })),
-  trending_preferences: z.array(z.object({
-    category: z.string(),
-    growth_rate: z.number(),
-    description: z.string(),
-  })),
+  catalog_effectiveness_score: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe('Overall catalog effectiveness (0-100)'),
+  reward_performance: z.array(
+    z.object({
+      reward_id: z.string().uuid(),
+      reward_name: z.string(),
+      redemption_rate: z.number(),
+      popularity_score: z.number().min(0).max(100),
+      roi_score: z.number(),
+      performance_category: z.enum(['star', 'strong', 'average', 'underperforming', 'dead']),
+      recommendations: z.array(z.string()),
+    })
+  ),
+  optimization_suggestions: z.array(
+    z.object({
+      category: z.enum(['pricing', 'inventory', 'promotion', 'removal', 'new_reward']),
+      priority: z.enum(['low', 'medium', 'high', 'critical']),
+      suggestion: z.string(),
+      expected_impact: z.string(),
+    })
+  ),
+  trending_preferences: z.array(
+    z.object({
+      category: z.string(),
+      growth_rate: z.number(),
+      description: z.string(),
+    })
+  ),
 });
 
 const TierMovementPredictionSchema = z.object({
   tier_health_score: z.number().min(0).max(100).describe('Overall tier system health (0-100)'),
-  predicted_movements: z.array(z.object({
-    customer_id: z.string().uuid(),
-    current_tier: z.string(),
-    predicted_tier: z.string(),
-    movement_type: z.enum(['upgrade', 'downgrade', 'stable']),
-    probability: z.number().min(0).max(1),
-    estimated_days_to_change: z.number(),
-    key_factors: z.array(z.string()),
-    recommended_actions: z.array(z.string()),
-  })),
+  predicted_movements: z.array(
+    z.object({
+      customer_id: z.string().uuid(),
+      current_tier: z.string(),
+      predicted_tier: z.string(),
+      movement_type: z.enum(['upgrade', 'downgrade', 'stable']),
+      probability: z.number().min(0).max(1),
+      estimated_days_to_change: z.number(),
+      key_factors: z.array(z.string()),
+      recommended_actions: z.array(z.string()),
+    })
+  ),
   tier_distribution_forecast: z.object({
     current: z.record(z.number()),
     predicted_30_days: z.record(z.number()),
@@ -121,25 +149,29 @@ const ROIAnalysisSchema = z.object({
     average_order_value_increase: z.number(),
     net_profit_impact: z.number(),
   }),
-  roi_by_tier: z.array(z.object({
-    tier: z.string(),
-    roi: z.number(),
-    member_count: z.number(),
-    avg_lifetime_value: z.number(),
-    cost_per_member: z.number(),
-  })),
+  roi_by_tier: z.array(
+    z.object({
+      tier: z.string(),
+      roi: z.number(),
+      member_count: z.number(),
+      avg_lifetime_value: z.number(),
+      cost_per_member: z.number(),
+    })
+  ),
   cost_efficiency_metrics: z.object({
     cost_per_point_issued: z.number(),
     cost_per_redemption: z.number(),
     cost_per_active_member: z.number(),
     points_liability: z.number(),
   }),
-  insights: z.array(z.object({
-    category: z.enum(['opportunity', 'risk', 'efficiency', 'growth']),
-    title: z.string(),
-    description: z.string(),
-    financial_impact: z.string(),
-  })),
+  insights: z.array(
+    z.object({
+      category: z.enum(['opportunity', 'risk', 'efficiency', 'growth']),
+      title: z.string(),
+      description: z.string(),
+      financial_impact: z.string(),
+    })
+  ),
   optimization_recommendations: z.array(z.string()),
 });
 
@@ -241,9 +273,10 @@ export class LoyaltyAnalyticsService {
     const previousMembersResult = await query(previousMembersQuery, previousMembersParams);
     const previousMembers = previousMembersResult.rows[0].previous_members || 0;
 
-    const growthRate = previousMembers > 0
-      ? ((overview.total_members - previousMembers) / previousMembers * 100)
-      : 0;
+    const growthRate =
+      previousMembers > 0
+        ? ((overview.total_members - previousMembers) / previousMembers) * 100
+        : 0;
 
     // Get points metrics
     const pointsQuery = `
@@ -300,9 +333,8 @@ export class LoyaltyAnalyticsService {
     const engagementResult = await query(engagementQuery, pointsParams);
     const engagement = engagementResult.rows[0];
 
-    const redemptionRate = points.total_earned > 0
-      ? (points.total_redeemed / points.total_earned * 100)
-      : 0;
+    const redemptionRate =
+      points.total_earned > 0 ? (points.total_redeemed / points.total_earned) * 100 : 0;
 
     // Get redemption status counts
     const redemptionsQuery = `
@@ -395,7 +427,9 @@ export class LoyaltyAnalyticsService {
         avg_points_per_member: parseFloat((engagement.avg_points || 0).toFixed(0)),
         avg_transactions_per_member: parseFloat((engagement.avg_transactions || 0).toFixed(1)),
         redemption_rate: parseFloat(redemptionRate.toFixed(1)),
-        avg_time_to_first_redemption_days: parseFloat((engagement.avg_days_to_first_redemption || 0).toFixed(0)),
+        avg_time_to_first_redemption_days: parseFloat(
+          (engagement.avg_days_to_first_redemption || 0).toFixed(0)
+        ),
       },
       redemptions: {
         total_redemptions: parseInt(redemptions.total) || 0,

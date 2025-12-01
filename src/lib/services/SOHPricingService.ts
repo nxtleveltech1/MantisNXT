@@ -128,10 +128,7 @@ export class SOHPricingService {
       default_margin_percent: number;
       min_margin_percent: number;
       max_price_increase_percent: number;
-    }>(
-      `SELECT * FROM get_pricing_automation_config($1)`,
-      [org_id]
-    );
+    }>(`SELECT * FROM get_pricing_automation_config($1)`, [org_id]);
 
     if (result.rows.length === 0) {
       // Return defaults if no config exists

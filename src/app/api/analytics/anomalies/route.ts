@@ -3,7 +3,7 @@
  * Now powered by AI Anomaly Detection Service
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 import { anomalyService } from '@/lib/ai/services/anomaly-service';
@@ -22,10 +22,13 @@ export async function GET(request: NextRequest) {
     const severity = searchParams.get('severity') as unknown;
 
     if (!organizationId) {
-      return NextResponse.json({
-        success: false,
-        error: 'organizationId is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'organizationId is required',
+        },
+        { status: 400 }
+      );
     }
 
     const orgId = parseInt(organizationId);
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
           timestamp: new Date().toISOString(),
           organizationId: orgId,
           aiPowered: true,
-        }
+        },
       });
     }
 
@@ -91,13 +94,10 @@ export async function GET(request: NextRequest) {
 
     const [inventoryResult, supplierResult] = await Promise.all([
       pool.query(inventoryAnomaliesQuery, [Math.floor(limit / 2)]),
-      pool.query(supplierAnomaliesQuery, [Math.floor(limit / 2)])
+      pool.query(supplierAnomaliesQuery, [Math.floor(limit / 2)]),
     ]);
 
-    const anomalies = [
-      ...inventoryResult.rows,
-      ...supplierResult.rows
-    ].slice(0, limit);
+    const anomalies = [...inventoryResult.rows, ...supplierResult.rows].slice(0, limit);
 
     console.log(`✅ Found ${anomalies.length} anomalies`);
 
@@ -109,17 +109,19 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString(),
         organizationId: orgId,
         aiPowered: false,
-      }
+      },
     });
-
   } catch (error) {
     console.error('❌ Anomalies API error:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch anomalies',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch anomalies',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -133,10 +135,13 @@ export async function POST(request: NextRequest) {
     const { organizationId, entityType, entityId, checkTypes, sensitivity } = body;
 
     if (!organizationId) {
-      return NextResponse.json({
-        success: false,
-        error: 'organizationId is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'organizationId is required',
+        },
+        { status: 400 }
+      );
     }
 
     console.log(`🤖 Running AI anomaly detection for org: ${organizationId}`);
@@ -153,14 +158,16 @@ export async function POST(request: NextRequest) {
       success: true,
       data: result,
     });
-
   } catch (error) {
     console.error('❌ AI Anomaly detection error:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to detect anomalies',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to detect anomalies',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

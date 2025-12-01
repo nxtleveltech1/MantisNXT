@@ -3,12 +3,9 @@
  * GET /api/v1/ai/forecasts/metrics - Get accuracy metrics by horizon
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest } from '@/lib/ai/api-utils';
 import type { ForecastHorizon } from '@/lib/ai/services/forecast-service';
 import { demandForecastService } from '@/lib/ai/services/forecast-service';
 
@@ -41,13 +38,19 @@ export async function GET(request: NextRequest) {
     );
 
     // Calculate overall summary if multiple horizons returned
-    const summary = metrics.length > 1 ? {
-      total_forecasts: metrics.reduce((sum, m) => sum + m.total_forecasts, 0),
-      total_with_actuals: metrics.reduce((sum, m) => sum + m.forecasts_with_actuals, 0),
-      overall_average_accuracy: metrics.reduce((sum, m) => sum + m.average_accuracy, 0) / metrics.length,
-      overall_mape: metrics.reduce((sum, m) => sum + m.mean_absolute_percentage_error, 0) / metrics.length,
-      horizons_analyzed: metrics.length,
-    } : null;
+    const summary =
+      metrics.length > 1
+        ? {
+            total_forecasts: metrics.reduce((sum, m) => sum + m.total_forecasts, 0),
+            total_with_actuals: metrics.reduce((sum, m) => sum + m.forecasts_with_actuals, 0),
+            overall_average_accuracy:
+              metrics.reduce((sum, m) => sum + m.average_accuracy, 0) / metrics.length,
+            overall_mape:
+              metrics.reduce((sum, m) => sum + m.mean_absolute_percentage_error, 0) /
+              metrics.length,
+            horizons_analyzed: metrics.length,
+          }
+        : null;
 
     return NextResponse.json({
       success: true,
@@ -55,9 +58,7 @@ export async function GET(request: NextRequest) {
         summary,
         by_horizon: metrics,
       },
-      message: horizon
-        ? `Metrics for ${horizon} horizon`
-        : 'Metrics for all horizons',
+      message: horizon ? `Metrics for ${horizon} horizon` : 'Metrics for all horizons',
     });
   } catch (error) {
     return handleAIError(error);

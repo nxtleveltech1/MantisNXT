@@ -38,15 +38,10 @@ interface MigrationResult {
 
 class CriticalFixesDeployer {
   private pool: Pool;
-  private migrations = [
-    '005_fix_analytics_sequences.sql',
-    '006_add_supplier_contact_person.sql',
-  ];
+  private migrations = ['005_fix_analytics_sequences.sql', '006_add_supplier_contact_person.sql'];
 
   constructor() {
-    const connectionString =
-      process.env.NEON_SPP_DATABASE_URL ||
-      process.env.DATABASE_URL;
+    const connectionString = process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL;
 
     if (!connectionString) {
       throw new Error(
@@ -70,7 +65,9 @@ class CriticalFixesDeployer {
   private async testConnection(): Promise<boolean> {
     try {
       const client = await this.pool.connect();
-      const result = await client.query('SELECT NOW() as current_time, current_database() as db_name');
+      const result = await client.query(
+        'SELECT NOW() as current_time, current_database() as db_name'
+      );
       client.release();
 
       this.log('\n✓ Database Connection Verified', 'green');
@@ -293,7 +290,9 @@ async function main() {
     await deployer.deploy();
   } catch (error) {
     console.error('\n' + colors.red + '✗ Deployment failed:', colors.reset);
-    console.error(colors.red + (error instanceof Error ? error.message : String(error)) + colors.reset);
+    console.error(
+      colors.red + (error instanceof Error ? error.message : String(error)) + colors.reset
+    );
     process.exit(1);
   } finally {
     await deployer.close();

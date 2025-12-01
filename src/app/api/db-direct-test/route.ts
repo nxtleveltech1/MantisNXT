@@ -27,7 +27,7 @@ export async function GET() {
     const tableTests = await Promise.allSettled([
       pool.query('SELECT COUNT(*) as count FROM public.suppliers LIMIT 1'),
       pool.query('SELECT COUNT(*) as count FROM public.inventory_items LIMIT 1'),
-      pool.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1')
+      pool.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1'),
     ]);
 
     return Response.json({
@@ -37,38 +37,42 @@ export async function GET() {
       connection: {
         host: process.env.DB_HOST || 'localhost',
         database: process.env.DB_NAME || 'mantis_dev',
-        connected: true
+        connected: true,
       },
       health_check: {
         current_time: healthResult.rows[0].current_time,
-        postgres_version: healthResult.rows[0].pg_version
+        postgres_version: healthResult.rows[0].pg_version,
       },
       table_access: {
-        suppliers: tableTests[0].status === 'fulfilled' ?
-          { status: 'accessible', count: tableTests[0].value.rows[0].count } :
-          { status: 'error', error: tableTests[0].reason?.message },
-        inventory_items: tableTests[1].status === 'fulfilled' ?
-          { status: 'accessible', count: tableTests[1].value.rows[0].count } :
-          { status: 'error', error: tableTests[1].reason?.message },
-        purchase_orders: tableTests[2].status === 'fulfilled' ?
-          { status: 'accessible', count: tableTests[2].value.rows[0].count } :
-          { status: 'error', error: tableTests[2].reason?.message }
-      }
+        suppliers:
+          tableTests[0].status === 'fulfilled'
+            ? { status: 'accessible', count: tableTests[0].value.rows[0].count }
+            : { status: 'error', error: tableTests[0].reason?.message },
+        inventory_items:
+          tableTests[1].status === 'fulfilled'
+            ? { status: 'accessible', count: tableTests[1].value.rows[0].count }
+            : { status: 'error', error: tableTests[1].reason?.message },
+        purchase_orders:
+          tableTests[2].status === 'fulfilled'
+            ? { status: 'accessible', count: tableTests[2].value.rows[0].count }
+            : { status: 'error', error: tableTests[2].reason?.message },
+      },
     });
-
   } catch (error) {
-    return Response.json({
-      success: false,
-      status: 'database_error',
-      error: error instanceof Error ? error.message : 'Unknown database error',
-      timestamp: new Date().toISOString(),
-      connection: {
-        host: process.env.DB_HOST || 'localhost',
-        database: process.env.DB_NAME || 'mantis_dev',
-        connected: false
-      }
-    }, { status: 503 });
-
+    return Response.json(
+      {
+        success: false,
+        status: 'database_error',
+        error: error instanceof Error ? error.message : 'Unknown database error',
+        timestamp: new Date().toISOString(),
+        connection: {
+          host: process.env.DB_HOST || 'localhost',
+          database: process.env.DB_NAME || 'mantis_dev',
+          connected: false,
+        },
+      },
+      { status: 503 }
+    );
   } finally {
     // Clean up connection
     if (pool) {
@@ -82,10 +86,13 @@ export async function GET() {
 }
 
 export async function POST() {
-  return Response.json({
-    message: 'Database connection test - use GET method for health check',
-    endpoints: {
-      health_check: 'GET /api/db-direct-test'
-    }
-  }, { status: 405 });
+  return Response.json(
+    {
+      message: 'Database connection test - use GET method for health check',
+      endpoints: {
+        health_check: 'GET /api/db-direct-test',
+      },
+    },
+    { status: 405 }
+  );
 }

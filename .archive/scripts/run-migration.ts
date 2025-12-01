@@ -17,7 +17,7 @@ async function runMigration(migrationFile: string) {
 
   const pool = new Pool({
     connectionString,
-    ssl: connectionString?.includes('sslmode=require') ? { rejectUnauthorized: false } : false
+    ssl: connectionString?.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
   });
 
   try {
@@ -55,11 +55,9 @@ async function runMigration(migrationFile: string) {
       } else {
         console.log(`⚠️  Warning: created_by column not found in verification`);
       }
-
     } finally {
       client.release();
     }
-
   } catch (error) {
     console.error(`❌ Migration failed:`, error);
     throw error;
@@ -76,7 +74,7 @@ runMigration(migrationFile)
     console.log(`\n🎉 Migration process completed successfully!`);
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     console.error(`\n💥 Migration process failed:`, error.message);
     process.exit(1);
   });

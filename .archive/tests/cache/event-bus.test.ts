@@ -184,15 +184,9 @@ describe('CacheEventBus', () => {
       eventBus.on('inventory.updated', listener);
       eventBus.on('supplier.created', listener);
 
-      await eventBus.emit(
-        createInvalidationEvent('inventory.updated', { entityId: '1' })
-      );
-      await eventBus.emit(
-        createInvalidationEvent('inventory.updated', { entityId: '2' })
-      );
-      await eventBus.emit(
-        createInvalidationEvent('supplier.created', { entityId: '3' })
-      );
+      await eventBus.emit(createInvalidationEvent('inventory.updated', { entityId: '1' }));
+      await eventBus.emit(createInvalidationEvent('inventory.updated', { entityId: '2' }));
+      await eventBus.emit(createInvalidationEvent('supplier.created', { entityId: '3' }));
 
       const stats = eventBus.getStats();
 
@@ -218,9 +212,7 @@ describe('CacheEventBus', () => {
       const listener = jest.fn();
       eventBus.on('inventory.updated', listener);
 
-      await eventBus.emit(
-        createInvalidationEvent('inventory.updated', { entityId: '1' })
-      );
+      await eventBus.emit(createInvalidationEvent('inventory.updated', { entityId: '1' }));
 
       let stats = eventBus.getStats();
       expect(stats.totalEvents).toBe(1);

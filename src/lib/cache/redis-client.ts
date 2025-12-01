@@ -52,7 +52,7 @@ class RedisClientManager {
       this.client = createClient({
         url: redisUrl,
         socket: {
-          reconnectStrategy: (retries) => {
+          reconnectStrategy: retries => {
             if (retries > this.MAX_RETRIES) {
               console.error(`Redis: Max reconnection attempts (${this.MAX_RETRIES}) reached`);
               return new Error('Max reconnection attempts reached');
@@ -66,7 +66,7 @@ class RedisClientManager {
       });
 
       // Event handlers
-      this.client.on('error', (err) => {
+      this.client.on('error', err => {
         console.error('Redis Client Error:', err);
       });
 
@@ -136,7 +136,7 @@ class RedisClientManager {
     } catch (error) {
       return {
         healthy: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

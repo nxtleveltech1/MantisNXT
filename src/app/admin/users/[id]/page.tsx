@@ -1,34 +1,34 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import type { User } from '@/types/auth'
-import { authProvider } from '@/lib/auth/mock-provider'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { updateUserFormSchema } from '@/lib/auth/validation'
-import type { z } from 'zod'
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import type { User } from '@/types/auth';
+import { authProvider } from '@/lib/auth/mock-provider';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { updateUserFormSchema } from '@/lib/auth/validation';
+import type { z } from 'zod';
 
-type UpdateUserFormData = z.infer<typeof updateUserFormSchema>
+type UpdateUserFormData = z.infer<typeof updateUserFormSchema>;
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   User as UserIcon,
   Mail,
@@ -44,21 +44,21 @@ import {
   Clock,
   Activity,
   Lock,
-} from 'lucide-react'
-import { USER_ROLES, EMPLOYMENT_EQUITY_OPTIONS } from '@/types/auth'
-import { formatDate } from '@/lib/auth/validation'
+} from 'lucide-react';
+import { USER_ROLES, EMPLOYMENT_EQUITY_OPTIONS } from '@/types/auth';
+import { formatDate } from '@/lib/auth/validation';
 
 export default function UserProfilePage() {
-  const params = useParams()
-  const router = useRouter()
-  const userId = params?.id as string
+  const params = useParams();
+  const router = useRouter();
+  const userId = params?.id as string;
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const {
     register,
@@ -69,27 +69,27 @@ export default function UserProfilePage() {
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(updateUserFormSchema),
-  })
+  });
 
   const loadUser = useCallback(async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch(`/api/v1/admin/users/${userId}`)
-      const result = await response.json()
+      setIsLoading(true);
+      const response = await fetch(`/api/v1/admin/users/${userId}`);
+      const result = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
         if (response.status === 404) {
-          setError('User not found')
-          return
+          setError('User not found');
+          return;
         }
-        throw new Error(result.message || 'Failed to load user')
+        throw new Error(result.message || 'Failed to load user');
       }
 
-      const foundUser = result.data
+      const foundUser = result.data;
       // Transform API response to match User type
       const userData: User = {
         id: foundUser.id,
@@ -122,9 +122,9 @@ export default function UserProfilePage() {
         password_changed_at: new Date(),
         id_number: '',
         employment_equity: undefined,
-      }
+      };
 
-      setUser(userData)
+      setUser(userData);
       reset({
         name: userData.name,
         email: userData.email,
@@ -132,28 +132,28 @@ export default function UserProfilePage() {
         department: userData.department,
         phone: userData.phone,
         is_active: userData.is_active,
-        permissions: userData.permissions.map((p) => p.id),
+        permissions: userData.permissions.map(p => p.id),
         id_number: userData.id_number || '',
         employment_equity: userData.employment_equity,
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load user')
+      setError(err instanceof Error ? err.message : 'Failed to load user');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [reset, router, userId])
+  }, [reset, router, userId]);
 
   useEffect(() => {
-    loadUser()
-  }, [loadUser])
+    loadUser();
+  }, [loadUser]);
 
   const onSubmit = async (data: UpdateUserFormData) => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      setIsSaving(true)
-      setError(null)
-      setSuccess(null)
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
 
       const response = await fetch(`/api/v1/admin/users/${userId}`, {
         method: 'PUT',
@@ -168,54 +168,52 @@ export default function UserProfilePage() {
           department: data.department,
           isActive: data.is_active,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to update user')
+        throw new Error(result.message || 'Failed to update user');
       }
 
-      setSuccess('User updated successfully')
-      setIsEditing(false)
-      await loadUser()
+      setSuccess('User updated successfully');
+      setIsEditing(false);
+      await loadUser();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user')
+      setError(err instanceof Error ? err.message : 'Failed to update user');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!user) return
+    if (!user) return;
 
     if (
-      !window.confirm(
-        `Are you sure you want to delete ${user.name}? This action cannot be undone.`
-      )
+      !window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)
     ) {
-      return
+      return;
     }
 
     try {
       const response = await fetch(`/api/v1/admin/users/${userId}`, {
         method: 'DELETE',
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to delete user')
+        throw new Error(result.message || 'Failed to delete user');
       }
 
-      router.push('/admin/users')
+      router.push('/admin/users');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete user')
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
     }
-  }
+  };
 
   const toggleStatus = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
       const response = await fetch(`/api/v1/admin/users/${userId}`, {
@@ -226,19 +224,19 @@ export default function UserProfilePage() {
         body: JSON.stringify({
           isActive: !user.is_active,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to update user status')
+        throw new Error(result.message || 'Failed to update user status');
       }
 
-      await loadUser()
+      await loadUser();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user status')
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -249,11 +247,11 @@ export default function UserProfilePage() {
           { label: 'Loading...' },
         ]}
       >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
@@ -269,16 +267,16 @@ export default function UserProfilePage() {
           <AlertDescription>User not found</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   return (
     <AppLayout
@@ -290,18 +288,18 @@ export default function UserProfilePage() {
     >
       <div className="space-y-6">
         {/* Header with User Info */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={user.profile_image} />
-              <AvatarFallback className="text-lg">
-                {getInitials(user.name)}
-              </AvatarFallback>
+              <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-3xl font-bold">{user.name}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline">{USER_ROLES.find((r) => r.value === user.role)?.label}</Badge>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant="outline">
+                  {USER_ROLES.find(r => r.value === user.role)?.label}
+                </Badge>
                 <Badge variant={user.is_active ? 'default' : 'destructive'}>
                   {user.is_active ? 'Active' : 'Inactive'}
                 </Badge>
@@ -322,19 +320,15 @@ export default function UserProfilePage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setIsEditing(false)
-                    reset()
+                    setIsEditing(false);
+                    reset();
                   }}
                   disabled={isSaving}
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={isSaving || !isDirty}
-                >
+                <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={isSaving || !isDirty}>
                   {isSaving ? (
                     <>
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -342,7 +336,7 @@ export default function UserProfilePage() {
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                       Save Changes
                     </>
                   )}
@@ -351,7 +345,7 @@ export default function UserProfilePage() {
             ) : (
               <>
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Button>
                 <Button
@@ -361,18 +355,18 @@ export default function UserProfilePage() {
                 >
                   {user.is_active ? (
                     <>
-                      <XCircle className="h-4 w-4 mr-2" />
+                      <XCircle className="mr-2 h-4 w-4" />
                       Deactivate
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
                       Activate
                     </>
                   )}
                 </Button>
                 <Button variant="destructive" size="sm" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </Button>
               </>
@@ -397,19 +391,19 @@ export default function UserProfilePage() {
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList>
             <TabsTrigger value="profile">
-              <UserIcon className="h-4 w-4 mr-2" />
+              <UserIcon className="mr-2 h-4 w-4" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="permissions">
-              <Shield className="h-4 w-4 mr-2" />
+              <Shield className="mr-2 h-4 w-4" />
               Permissions
             </TabsTrigger>
             <TabsTrigger value="activity">
-              <Activity className="h-4 w-4 mr-2" />
+              <Activity className="mr-2 h-4 w-4" />
               Activity
             </TabsTrigger>
             <TabsTrigger value="security">
-              <Lock className="h-4 w-4 mr-2" />
+              <Lock className="mr-2 h-4 w-4" />
               Security
             </TabsTrigger>
           </TabsList>
@@ -420,12 +414,10 @@ export default function UserProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Profile Information</CardTitle>
-                  <CardDescription>
-                    Basic user information and contact details
-                  </CardDescription>
+                  <CardDescription>Basic user information and contact details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
@@ -434,15 +426,13 @@ export default function UserProfilePage() {
                         disabled={!isEditing}
                         className={errors.name ? 'border-red-500' : ''}
                       />
-                      {errors.name && (
-                        <p className="text-sm text-red-600">{errors.name.message}</p>
-                      )}
+                      {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
                       <div className="flex items-center">
-                        <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <Mail className="text-muted-foreground mr-2 h-4 w-4" />
                         <Input
                           id="email"
                           type="email"
@@ -459,7 +449,7 @@ export default function UserProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <div className="flex items-center">
-                        <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <Phone className="text-muted-foreground mr-2 h-4 w-4" />
                         <Input
                           id="phone"
                           {...register('phone')}
@@ -476,7 +466,7 @@ export default function UserProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="department">Department</Label>
                       <div className="flex items-center">
-                        <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <Building2 className="text-muted-foreground mr-2 h-4 w-4" />
                         <Input
                           id="department"
                           {...register('department')}
@@ -493,30 +483,30 @@ export default function UserProfilePage() {
                       <Label htmlFor="role">Role</Label>
                       <Select
                         value={watch('role')}
-                        onValueChange={(value) => setValue('role', value as unknown, { shouldDirty: true })}
+                        onValueChange={value =>
+                          setValue('role', value as unknown, { shouldDirty: true })
+                        }
                         disabled={!isEditing}
                       >
                         <SelectTrigger id="role">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {USER_ROLES.map((role) => (
+                          {USER_ROLES.map(role => (
                             <SelectItem key={role.value} value={role.value}>
                               {role.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.role && (
-                        <p className="text-sm text-red-600">{errors.role.message}</p>
-                      )}
+                      {errors.role && <p className="text-sm text-red-600">{errors.role.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="employment_equity">Employment Equity</Label>
                       <Select
                         value={watch('employment_equity') || ''}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setValue('employment_equity', value as unknown, { shouldDirty: true })
                         }
                         disabled={!isEditing}
@@ -525,7 +515,7 @@ export default function UserProfilePage() {
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
-                          {EMPLOYMENT_EQUITY_OPTIONS.map((option) => (
+                          {EMPLOYMENT_EQUITY_OPTIONS.map(option => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
@@ -552,7 +542,7 @@ export default function UserProfilePage() {
                       <Switch
                         id="is_active"
                         checked={watch('is_active')}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={checked =>
                           setValue('is_active', checked, { shouldDirty: true })
                         }
                         disabled={!isEditing}
@@ -563,7 +553,7 @@ export default function UserProfilePage() {
 
                   <Separator />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                     <div>
                       <span className="text-muted-foreground">Created:</span>
                       <span className="ml-2 font-medium">{formatDate(user.created_at)}</span>
@@ -576,9 +566,7 @@ export default function UserProfilePage() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Email Verified:</span>
-                      <span className="ml-2 font-medium">
-                        {user.email_verified ? 'Yes' : 'No'}
-                      </span>
+                      <span className="ml-2 font-medium">{user.email_verified ? 'Yes' : 'No'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Password Changed:</span>
@@ -597,26 +585,24 @@ export default function UserProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle>User Permissions</CardTitle>
-                <CardDescription>
-                  Manage permissions and access controls
-                </CardDescription>
+                <CardDescription>Manage permissions and access controls</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {user.permissions.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
+                    <p className="text-muted-foreground py-8 text-center">
                       No permissions assigned
                     </p>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {user.permissions.map((permission) => (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {user.permissions.map(permission => (
                         <div
                           key={permission.id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
+                          className="flex items-center justify-between rounded-lg border p-4"
                         >
                           <div>
                             <p className="font-medium">{permission.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {permission.resource} - {permission.action}
                             </p>
                           </div>
@@ -639,16 +625,16 @@ export default function UserProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex items-center space-x-4 rounded-lg border p-4">
+                    <Clock className="text-muted-foreground h-5 w-5" />
                     <div className="flex-1">
                       <p className="font-medium">Last Login</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {user.last_login ? formatDate(user.last_login) : 'Never logged in'}
                       </p>
                     </div>
                   </div>
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-muted-foreground py-8 text-center">
                     <p>Activity tracking coming soon</p>
                   </div>
                 </div>
@@ -661,17 +647,15 @@ export default function UserProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Security Settings</CardTitle>
-                <CardDescription>
-                  Authentication and security configuration
-                </CardDescription>
+                <CardDescription>Authentication and security configuration</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center justify-between rounded-lg border p-4">
                   <div className="flex items-center space-x-4">
-                    <Shield className="h-5 w-5 text-muted-foreground" />
+                    <Shield className="text-muted-foreground h-5 w-5" />
                     <div>
                       <p className="font-medium">Two-Factor Authentication</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {user.two_factor_enabled ? 'Enabled' : 'Disabled'}
                       </p>
                     </div>
@@ -681,12 +665,12 @@ export default function UserProfilePage() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center justify-between rounded-lg border p-4">
                   <div className="flex items-center space-x-4">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <Mail className="text-muted-foreground h-5 w-5" />
                     <div>
                       <p className="font-medium">Email Verification</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {user.email_verified ? 'Verified' : 'Not Verified'}
                       </p>
                     </div>
@@ -710,5 +694,5 @@ export default function UserProfilePage() {
         </Tabs>
       </div>
     </AppLayout>
-  )
+  );
 }

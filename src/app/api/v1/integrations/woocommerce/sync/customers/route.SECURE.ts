@@ -18,7 +18,7 @@
  * Date: 2025-11-06
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { authenticateRequest, authorizeUser, AuthError } from '@/lib/auth/middleware';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
@@ -202,9 +202,7 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     if (!rateLimiter.isAllowed(authUser.organizationId)) {
       const resetTime = rateLimiter.getResetTime(authUser.organizationId);
-      console.warn(
-        `[${requestId}] Rate limit exceeded for org ${authUser.organizationId}`
-      );
+      console.warn(`[${requestId}] Rate limit exceeded for org ${authUser.organizationId}`);
       return NextResponse.json(
         {
           success: false,
@@ -218,9 +216,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
-            'Retry-After': Math.ceil(
-              (resetTime.getTime() - Date.now()) / 1000
-            ).toString(),
+            'Retry-After': Math.ceil((resetTime.getTime() - Date.now()) / 1000).toString(),
           },
         }
       );
@@ -233,9 +229,7 @@ export async function POST(request: NextRequest) {
       await authorizeUser(authUser, 'sync:manage');
     } catch (error) {
       if (error instanceof AuthError) {
-        console.warn(
-          `[${requestId}] Authorization failed for user ${authUser.userId}`
-        );
+        console.warn(`[${requestId}] Authorization failed for user ${authUser.userId}`);
         return NextResponse.json(
           {
             success: false,
@@ -312,9 +306,7 @@ export async function POST(request: NextRequest) {
         validatedBody.config.url
       );
     } catch (error: unknown) {
-      console.error(
-        `[${requestId}] Failed to retrieve credentials: ${error.message}`
-      );
+      console.error(`[${requestId}] Failed to retrieve credentials: ${error.message}`);
       return NextResponse.json(
         {
           success: false,
@@ -407,9 +399,7 @@ export async function POST(request: NextRequest) {
       // FORCE COMPLETE QUEUE
       const progress = await CustomerSyncService.forceDone(validatedBody.queue_id);
 
-      console.warn(
-        `[${requestId}] Queue forced to completion by user ${authUser.userId}`
-      );
+      console.warn(`[${requestId}] Queue forced to completion by user ${authUser.userId}`);
 
       return NextResponse.json({
         success: true,
@@ -440,8 +430,8 @@ export async function POST(request: NextRequest) {
 
     const queueId = await CustomerSyncService.startSync(
       wooService,
-      authUser.organizationId,  // From JWT
-      authUser.userId,           // From JWT
+      authUser.organizationId, // From JWT
+      authUser.userId, // From JWT
       {
         batchSize: validatedBody.options?.batchSize || 50,
         batchDelayMs: validatedBody.options?.batchDelayMs || 2000,
@@ -464,31 +454,25 @@ export async function POST(request: NextRequest) {
 
     Promise.race([
       // Process queue
-      CustomerSyncService.processQueue(
-        wooService,
-        queueId,
-        authUser.organizationId,
-        {
-          batchSize: validatedBody.options?.batchSize || 50,
-          batchDelayMs: validatedBody.options?.batchDelayMs || 2000,
-          maxRetries: validatedBody.options?.maxRetries || 3,
-        }
-      ),
+      CustomerSyncService.processQueue(wooService, queueId, authUser.organizationId, {
+        batchSize: validatedBody.options?.batchSize || 50,
+        batchDelayMs: validatedBody.options?.batchDelayMs || 2000,
+        maxRetries: validatedBody.options?.maxRetries || 3,
+      }),
       // Timeout
-      new Promise((_, reject) =>
-        (timeoutHandle = setTimeout(
-          () => reject(new Error('Sync operation timeout')),
-          SYNC_TIMEOUT_MS
-        ))
+      new Promise(
+        (_, reject) =>
+          (timeoutHandle = setTimeout(
+            () => reject(new Error('Sync operation timeout')),
+            SYNC_TIMEOUT_MS
+          ))
       ),
     ])
       .then(() => {
         console.info(`[${requestId}] Sync completed for queue ${queueId}`);
       })
-      .catch((error) => {
-        console.error(
-          `[${requestId}] Sync error for queue ${queueId}: ${error.message}`
-        );
+      .catch(error => {
+        console.error(`[${requestId}] Sync error for queue ${queueId}: ${error.message}`);
         // Log error to activity log (not exposing details to client)
         WooCommerceSyncQueue.logActivity(
           queueId,
@@ -531,13 +515,10 @@ export async function POST(request: NextRequest) {
           'X-RateLimit-Remaining': rateLimiter
             .getRemainingRequests(authUser.organizationId)
             .toString(),
-          'X-RateLimit-Reset': rateLimiter
-            .getResetTime(authUser.organizationId)
-            .toISOString(),
+          'X-RateLimit-Reset': rateLimiter.getResetTime(authUser.organizationId).toISOString(),
         },
       }
     );
-
   } catch (error: unknown) {
     console.error(`[${requestId}] Unhandled error:`, {
       message: error.message,

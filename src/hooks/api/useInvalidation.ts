@@ -29,99 +29,56 @@ export function useInvalidation() {
   );
 
   const invalidateInventoryCreated = useCallback(
-    async (payload: {
-      entityId?: string;
-      supplierId?: string;
-      category?: string;
-    }) => {
+    async (payload: { entityId?: string; supplierId?: string; category?: string }) => {
       return triggerCacheInvalidation('inventory.created', payload);
     },
     []
   );
 
   const invalidateInventoryDeleted = useCallback(
-    async (payload: {
-      entityId?: string;
-      supplierId?: string;
-    }) => {
+    async (payload: { entityId?: string; supplierId?: string }) => {
       return triggerCacheInvalidation('inventory.deleted', payload);
     },
     []
   );
 
-  const invalidateInventoryBulk = useCallback(
-    async (payload: {
-      entityIds?: string[];
-    }) => {
-      return triggerCacheInvalidation('inventory.bulk_updated', payload);
-    },
-    []
-  );
+  const invalidateInventoryBulk = useCallback(async (payload: { entityIds?: string[] }) => {
+    return triggerCacheInvalidation('inventory.bulk_updated', payload);
+  }, []);
 
-  const invalidateStockMovement = useCallback(
-    async (payload: {
-      entityId?: string;
-    }) => {
-      return triggerCacheInvalidation('inventory.stock_movement', payload);
-    },
-    []
-  );
+  const invalidateStockMovement = useCallback(async (payload: { entityId?: string }) => {
+    return triggerCacheInvalidation('inventory.stock_movement', payload);
+  }, []);
 
-  const invalidateSupplier = useCallback(
-    async (payload: {
-      entityId?: string;
-    }) => {
-      return triggerCacheInvalidation('supplier.updated', payload);
-    },
-    []
-  );
+  const invalidateSupplier = useCallback(async (payload: { entityId?: string }) => {
+    return triggerCacheInvalidation('supplier.updated', payload);
+  }, []);
 
-  const invalidateSupplierCreated = useCallback(
-    async (payload: {
-      entityId?: string;
-    }) => {
-      return triggerCacheInvalidation('supplier.created', payload);
-    },
-    []
-  );
+  const invalidateSupplierCreated = useCallback(async (payload: { entityId?: string }) => {
+    return triggerCacheInvalidation('supplier.created', payload);
+  }, []);
 
-  const invalidateSupplierDeleted = useCallback(
-    async (payload: {
-      entityId?: string;
-    }) => {
-      return triggerCacheInvalidation('supplier.deleted', payload);
-    },
-    []
-  );
+  const invalidateSupplierDeleted = useCallback(async (payload: { entityId?: string }) => {
+    return triggerCacheInvalidation('supplier.deleted', payload);
+  }, []);
 
   const invalidateProduct = useCallback(
-    async (payload: {
-      entityId?: string;
-      supplierId?: string;
-    }) => {
+    async (payload: { entityId?: string; supplierId?: string }) => {
       return triggerCacheInvalidation('product.updated', payload);
     },
     []
   );
 
   const invalidateProductCreated = useCallback(
-    async (payload: {
-      entityId?: string;
-      supplierId?: string;
-    }) => {
+    async (payload: { entityId?: string; supplierId?: string }) => {
       return triggerCacheInvalidation('product.created', payload);
     },
     []
   );
 
-  const invalidateProductDeleted = useCallback(
-    async (payload: {
-      entityId?: string;
-    }) => {
-      return triggerCacheInvalidation('product.deleted', payload);
-    },
-    []
-  );
+  const invalidateProductDeleted = useCallback(async (payload: { entityId?: string }) => {
+    return triggerCacheInvalidation('product.deleted', payload);
+  }, []);
 
   const invalidateAnalytics = useCallback(async () => {
     return triggerCacheInvalidation('analytics.new', {});
@@ -202,8 +159,7 @@ export function useManualInvalidation() {
  * Common pattern: onSuccess callback triggers invalidation
  */
 export function useMutationInvalidation() {
-  const { invalidateInventory, invalidateSupplier, invalidateAnalytics } =
-    useInvalidation();
+  const { invalidateInventory, invalidateSupplier, invalidateAnalytics } = useInvalidation();
 
   /**
    * Get onSuccess callback for inventory mutations

@@ -33,7 +33,12 @@ export interface RecommendationCriteria {
 
 export interface IntelligentRecommendation {
   id: string;
-  type: 'supplier_selection' | 'inventory_optimization' | 'procurement_strategy' | 'cost_reduction' | 'risk_mitigation';
+  type:
+    | 'supplier_selection'
+    | 'inventory_optimization'
+    | 'procurement_strategy'
+    | 'cost_reduction'
+    | 'risk_mitigation';
   priority: 'critical' | 'high' | 'medium' | 'low';
   title: string;
   description: string;
@@ -155,25 +160,27 @@ export class MultiCriteriaDecisionEngine {
             id: item.supplierId,
             type: 'supplier',
             weight: 1 / (index + 1),
-            score: item.score
+            score: item.score,
           })),
           totalScore: optimization.ranking[0]?.score || 0,
-          constraintsSatisfied: this.checkConstraints(optimization.ranking[0], criteria.constraints),
-          tradeoffs: this.calculateTradeoffs(optimization.ranking[0], criteria.weights)
+          constraintsSatisfied: this.checkConstraints(
+            optimization.ranking[0],
+            criteria.constraints
+          ),
+          tradeoffs: this.calculateTradeoffs(optimization.ranking[0], criteria.weights),
         },
         alternatives: optimization.ranking.slice(1, 4).map((item, index) => ({
           rank: index + 2,
           score: item.score,
           description: `Alternative supplier with different strength profile`,
-          keyDifferences: this.identifyKeyDifferences(optimization.ranking[0], item)
+          keyDifferences: this.identifyKeyDifferences(optimization.ranking[0], item),
         })),
         sensitivity: {
           criticalFactors: this.identifyCriticalFactors(optimization, criteria.weights),
           robustness: this.calculateRobustness(optimization),
-          recommendations: this.generateSensitivityRecommendations(optimization)
-        }
+          recommendations: this.generateSensitivityRecommendations(optimization),
+        },
       };
-
     } catch (error) {
       console.error('Supplier evaluation error:', error);
       throw new Error('Failed to evaluate suppliers');
@@ -204,7 +211,10 @@ export class MultiCriteriaDecisionEngine {
     return result.rows;
   }
 
-  private async evaluateSupplier(supplier: unknown, criteria: RecommendationCriteria): Promise<unknown> {
+  private async evaluateSupplier(
+    supplier: unknown,
+    criteria: RecommendationCriteria
+  ): Promise<unknown> {
     // Normalize scores to 0-1 scale
     const scores = {
       cost: this.normalizeCostScore(supplier.cost_competitiveness || 50),
@@ -212,14 +222,14 @@ export class MultiCriteriaDecisionEngine {
       delivery: this.normalizeDeliveryScore(supplier.on_time_delivery_rate || 80),
       sustainability: this.normalizeSustainabilityScore(supplier.sustainability_score || 50),
       risk: this.normalizeRiskScore(100 - (supplier.financial_risk || 50)),
-      innovation: this.normalizeInnovationScore(supplier.innovation_score || 50)
+      innovation: this.normalizeInnovationScore(supplier.innovation_score || 50),
     };
 
     return {
       supplierId: supplier.id,
       name: supplier.name,
       scores,
-      rawData: supplier
+      rawData: supplier,
     };
   }
 
@@ -250,30 +260,35 @@ export class MultiCriteriaDecisionEngine {
     );
 
     // Step 5: Calculate distances and closeness coefficients
-    const ranking = suppliers.map((supplier, supplierIndex) => {
-      const distanceToIdeal = Math.sqrt(
-        weightedMatrix[supplierIndex].reduce((sum, value, index) =>
-          sum + Math.pow(value - idealSolution[index], 2), 0
-        )
-      );
+    const ranking = suppliers
+      .map((supplier, supplierIndex) => {
+        const distanceToIdeal = Math.sqrt(
+          weightedMatrix[supplierIndex].reduce(
+            (sum, value, index) => sum + Math.pow(value - idealSolution[index], 2),
+            0
+          )
+        );
 
-      const distanceToNegativeIdeal = Math.sqrt(
-        weightedMatrix[supplierIndex].reduce((sum, value, index) =>
-          sum + Math.pow(value - negativeIdealSolution[index], 2), 0
-        )
-      );
+        const distanceToNegativeIdeal = Math.sqrt(
+          weightedMatrix[supplierIndex].reduce(
+            (sum, value, index) => sum + Math.pow(value - negativeIdealSolution[index], 2),
+            0
+          )
+        );
 
-      const closenessCoefficient = distanceToNegativeIdeal / (distanceToIdeal + distanceToNegativeIdeal);
+        const closenessCoefficient =
+          distanceToNegativeIdeal / (distanceToIdeal + distanceToNegativeIdeal);
 
-      return {
-        supplierId: supplier.supplierId,
-        name: supplier.name,
-        score: closenessCoefficient,
-        scores: supplier.scores,
-        distanceToIdeal,
-        distanceToNegativeIdeal
-      };
-    }).sort((a, b) => b.score - a.score);
+        return {
+          supplierId: supplier.supplierId,
+          name: supplier.name,
+          score: closenessCoefficient,
+          scores: supplier.scores,
+          distanceToIdeal,
+          distanceToNegativeIdeal,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
 
     return { ranking, idealSolution, negativeIdealSolution };
   }
@@ -283,9 +298,7 @@ export class MultiCriteriaDecisionEngine {
       Math.sqrt(matrix.reduce((sum, row) => sum + Math.pow(row[colIndex], 2), 0))
     );
 
-    return matrix.map(row =>
-      row.map((value, colIndex) => value / columnSums[colIndex])
-    );
+    return matrix.map(row => row.map((value, colIndex) => value / columnSums[colIndex]));
   }
 
   // Normalization functions for different criteria
@@ -322,14 +335,17 @@ export class MultiCriteriaDecisionEngine {
       return false;
     }
 
-    if (constraints.maxRisk && (1 - bestOption.scores.risk) > constraints.maxRisk) {
+    if (constraints.maxRisk && 1 - bestOption.scores.risk > constraints.maxRisk) {
       return false;
     }
 
     return true;
   }
 
-  private calculateTradeoffs(option: unknown, weights: MultiCriteriaWeights): Record<string, number> {
+  private calculateTradeoffs(
+    option: unknown,
+    weights: MultiCriteriaWeights
+  ): Record<string, number> {
     const tradeoffs: Record<string, number> = {};
 
     Object.keys(weights).forEach(criterion => {
@@ -378,7 +394,9 @@ export class MultiCriteriaDecisionEngine {
     if (optimization.ranking.length > 1) {
       const scoreDiff = optimization.ranking[0].score - optimization.ranking[1].score;
       if (scoreDiff < 0.1) {
-        recommendations.push('Consider evaluating additional criteria to differentiate top candidates');
+        recommendations.push(
+          'Consider evaluating additional criteria to differentiate top candidates'
+        );
       }
     }
 
@@ -422,7 +440,10 @@ export class IntelligentRecommendationEngine {
       }
 
       if (context.scope === 'procurement' || context.scope === 'all') {
-        const procurementRecs = await this.generateProcurementRecommendations(organizationId, context);
+        const procurementRecs = await this.generateProcurementRecommendations(
+          organizationId,
+          context
+        );
         recommendations.push(...procurementRecs);
       }
 
@@ -435,7 +456,6 @@ export class IntelligentRecommendationEngine {
           return bScore - aScore;
         })
         .slice(0, 20); // Limit to top 20 recommendations
-
     } catch (error) {
       console.error('Recommendation generation error:', error);
       throw new Error('Failed to generate recommendations');
@@ -472,48 +492,50 @@ export class IntelligentRecommendationEngine {
         rationale: [
           `Overall rating: ${supplier.overall_rating || 'N/A'}/100`,
           `On-time delivery: ${supplier.on_time_delivery_rate || 'N/A'}%`,
-          `Quality acceptance: ${supplier.quality_acceptance_rate || 'N/A'}%`
+          `Quality acceptance: ${supplier.quality_acceptance_rate || 'N/A'}%`,
         ],
 
         recommendation: {
           action: 'Implement supplier improvement program or find alternatives',
-          targets: [{
-            id: supplier.id,
-            type: 'supplier',
-            name: supplier.name,
-            currentScore: supplier.overall_rating || 0,
-            recommendedScore: 85
-          }],
+          targets: [
+            {
+              id: supplier.id,
+              type: 'supplier',
+              name: supplier.name,
+              currentScore: supplier.overall_rating || 0,
+              recommendedScore: 85,
+            },
+          ],
           alternatives: [
             {
               option: 'Supplier development program',
               score: 0.7,
-              tradeoffs: ['Time investment required', 'Potential for improvement']
+              tradeoffs: ['Time investment required', 'Potential for improvement'],
             },
             {
               option: 'Find alternative suppliers',
               score: 0.8,
-              tradeoffs: ['Switching costs', 'Reduced risk']
-            }
-          ]
+              tradeoffs: ['Switching costs', 'Reduced risk'],
+            },
+          ],
         },
 
         impact: {
           financial: {
             costSavings: this.estimateCostSavings(supplier),
             revenueIncrease: 0,
-            roi: 2.5
+            roi: 2.5,
           },
           operational: {
             efficiencyGain: 0.15,
             riskReduction: 0.3,
-            qualityImprovement: 0.2
+            qualityImprovement: 0.2,
           },
           strategic: {
             competitiveAdvantage: 'Improved supply chain reliability',
             futureValue: 0.8,
-            alignment: 0.9
-          }
+            alignment: 0.9,
+          },
         },
 
         implementation: {
@@ -526,37 +548,37 @@ export class IntelligentRecommendationEngine {
               action: 'Conduct detailed supplier audit',
               owner: 'procurement_manager',
               duration: '2 weeks',
-              dependencies: []
+              dependencies: [],
             },
             {
               step: 2,
               action: 'Develop improvement plan or source alternatives',
               owner: 'procurement_team',
               duration: '4 weeks',
-              dependencies: ['Step 1']
+              dependencies: ['Step 1'],
             },
             {
               step: 3,
               action: 'Implement changes and monitor progress',
               owner: 'procurement_manager',
               duration: '12 weeks',
-              dependencies: ['Step 2']
-            }
+              dependencies: ['Step 2'],
+            },
           ],
           risks: [
             {
               risk: 'Supplier may not improve',
               probability: 0.3,
               impact: 0.7,
-              mitigation: 'Have backup suppliers ready'
-            }
-          ]
+              mitigation: 'Have backup suppliers ready',
+            },
+          ],
         },
 
         confidence: 0.85,
         validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       recommendations.push(recommendation);
@@ -634,19 +656,21 @@ export class IntelligentRecommendationEngine {
           `Current stock: ${item.current_stock} units`,
           `Reorder point: ${item.reorder_point} units`,
           `30-day demand: ${item.demand_30d || 0} units`,
-          `Daily demand: ${(item.avg_daily_demand || 0).toFixed(1)} units`
+          `Daily demand: ${(item.avg_daily_demand || 0).toFixed(1)} units`,
         ],
 
         recommendation: {
           action,
-          targets: [{
-            id: item.id,
-            type: 'item',
-            name: item.name,
-            currentScore: this.calculateInventoryScore(item),
-            recommendedScore: 85
-          }],
-          alternatives: this.generateInventoryAlternatives(item)
+          targets: [
+            {
+              id: item.id,
+              type: 'item',
+              name: item.name,
+              currentScore: this.calculateInventoryScore(item),
+              recommendedScore: 85,
+            },
+          ],
+          alternatives: this.generateInventoryAlternatives(item),
         },
 
         impact: this.calculateInventoryImpact(item),
@@ -661,15 +685,15 @@ export class IntelligentRecommendationEngine {
               risk: 'Supplier lead time delays',
               probability: 0.2,
               impact: 0.6,
-              mitigation: 'Use expedited shipping if necessary'
-            }
-          ]
+              mitigation: 'Use expedited shipping if necessary',
+            },
+          ],
         },
 
         confidence: 0.9,
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       recommendations.push(recommendation);
@@ -718,48 +742,50 @@ export class IntelligentRecommendationEngine {
           rationale: [
             `${category.supplier_count} suppliers in category`,
             `Total spend: $${parseFloat(category.total_spend).toLocaleString()}`,
-            `${category.order_count} orders in last 6 months`
+            `${category.order_count} orders in last 6 months`,
           ],
 
           recommendation: {
             action: 'Consolidate to 2-3 preferred suppliers',
-            targets: [{
-              id: category.category,
-              type: 'category',
-              name: category.category,
-              currentScore: 50,
-              recommendedScore: 80
-            }],
+            targets: [
+              {
+                id: category.category,
+                type: 'category',
+                name: category.category,
+                currentScore: 50,
+                recommendedScore: 80,
+              },
+            ],
             alternatives: [
               {
                 option: 'Negotiate volume discounts with top 2 suppliers',
                 score: 0.8,
-                tradeoffs: ['Higher dependency risk', 'Significant cost savings']
+                tradeoffs: ['Higher dependency risk', 'Significant cost savings'],
               },
               {
                 option: 'Strategic partnership with 1 primary supplier',
                 score: 0.9,
-                tradeoffs: ['Innovation benefits', 'Single point of failure']
-              }
-            ]
+                tradeoffs: ['Innovation benefits', 'Single point of failure'],
+              },
+            ],
           },
 
           impact: {
             financial: {
               costSavings: parseFloat(category.total_spend) * 0.08, // 8% savings
               revenueIncrease: 0,
-              roi: 4.2
+              roi: 4.2,
             },
             operational: {
               efficiencyGain: 0.25,
               riskReduction: -0.1, // Slight increase in risk
-              qualityImprovement: 0.1
+              qualityImprovement: 0.1,
             },
             strategic: {
               competitiveAdvantage: 'Stronger supplier relationships',
               futureValue: 0.7,
-              alignment: 0.8
-            }
+              alignment: 0.8,
+            },
           },
 
           implementation: {
@@ -772,37 +798,37 @@ export class IntelligentRecommendationEngine {
                 action: 'Analyze supplier performance and spend',
                 owner: 'procurement_analyst',
                 duration: '3 weeks',
-                dependencies: []
+                dependencies: [],
               },
               {
                 step: 2,
                 action: 'Negotiate with preferred suppliers',
                 owner: 'procurement_manager',
                 duration: '6 weeks',
-                dependencies: ['Step 1']
+                dependencies: ['Step 1'],
               },
               {
                 step: 3,
                 action: 'Transition orders to consolidated suppliers',
                 owner: 'procurement_team',
                 duration: '8 weeks',
-                dependencies: ['Step 2']
-              }
+                dependencies: ['Step 2'],
+              },
             ],
             risks: [
               {
                 risk: 'Supplier capacity constraints',
                 probability: 0.3,
                 impact: 0.5,
-                mitigation: 'Verify capacity before commitment'
-              }
-            ]
+                mitigation: 'Verify capacity before commitment',
+              },
+            ],
           },
 
           confidence: 0.75,
           validUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         };
 
         recommendations.push(recommendation);
@@ -833,23 +859,23 @@ export class IntelligentRecommendationEngine {
       alternatives.push({
         option: 'Standard reorder',
         score: 0.8,
-        tradeoffs: ['Normal lead time', 'Standard pricing']
+        tradeoffs: ['Normal lead time', 'Standard pricing'],
       });
       alternatives.push({
         option: 'Expedited reorder',
         score: 0.9,
-        tradeoffs: ['Higher cost', 'Faster delivery']
+        tradeoffs: ['Higher cost', 'Faster delivery'],
       });
     } else {
       alternatives.push({
         option: 'Promotional pricing',
         score: 0.7,
-        tradeoffs: ['Reduced margin', 'Faster inventory turnover']
+        tradeoffs: ['Reduced margin', 'Faster inventory turnover'],
       });
       alternatives.push({
         option: 'Suspend reorders temporarily',
         score: 0.8,
-        tradeoffs: ['Risk of stockout', 'Improved cash flow']
+        tradeoffs: ['Risk of stockout', 'Improved cash flow'],
       });
     }
 
@@ -864,18 +890,18 @@ export class IntelligentRecommendationEngine {
       financial: {
         costSavings: item.current_stock === 0 ? 0 : stockValue * 0.05,
         revenueIncrease: item.current_stock === 0 ? dailyDemandValue * 7 : 0,
-        roi: 2.0
+        roi: 2.0,
       },
       operational: {
         efficiencyGain: 0.1,
         riskReduction: item.current_stock === 0 ? 0.8 : 0.2,
-        qualityImprovement: 0
+        qualityImprovement: 0,
       },
       strategic: {
         competitiveAdvantage: 'Improved service levels',
         futureValue: 0.6,
-        alignment: 0.9
-      }
+        alignment: 0.9,
+      },
     };
   }
 
@@ -886,8 +912,8 @@ export class IntelligentRecommendationEngine {
         action: 'Review current inventory levels and demand forecast',
         owner: 'inventory_manager',
         duration: '1 day',
-        dependencies: []
-      }
+        dependencies: [],
+      },
     ];
 
     if (item.current_stock <= item.reorder_point) {
@@ -896,14 +922,14 @@ export class IntelligentRecommendationEngine {
         action: 'Create and approve purchase order',
         owner: 'purchasing_agent',
         duration: '1-2 days',
-        dependencies: ['Step 1']
+        dependencies: ['Step 1'],
       });
       baseSteps.push({
         step: 3,
         action: 'Monitor delivery and update inventory',
         owner: 'warehouse_manager',
         duration: '3-7 days',
-        dependencies: ['Step 2']
+        dependencies: ['Step 2'],
       });
     } else {
       baseSteps.push({
@@ -911,7 +937,7 @@ export class IntelligentRecommendationEngine {
         action: 'Implement inventory reduction strategy',
         owner: 'inventory_manager',
         duration: '2-4 weeks',
-        dependencies: ['Step 1']
+        dependencies: ['Step 1'],
       });
     }
 
@@ -920,10 +946,13 @@ export class IntelligentRecommendationEngine {
 
   async getRecommendationById(recommendationId: string): Promise<IntelligentRecommendation | null> {
     try {
-      const result = await this.db.query(`
+      const result = await this.db.query(
+        `
         SELECT * FROM intelligent_recommendations
         WHERE id = $1
-      `, [recommendationId]);
+      `,
+        [recommendationId]
+      );
 
       if (result.rows.length === 0) return null;
 
@@ -941,9 +970,8 @@ export class IntelligentRecommendationEngine {
         confidence: parseFloat(row.confidence),
         validUntil: new Date(row.valid_until),
         createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at)
+        updatedAt: new Date(row.updated_at),
       };
-
     } catch (error) {
       console.error('Error fetching recommendation:', error);
       return null;
@@ -957,11 +985,14 @@ export class IntelligentRecommendationEngine {
     notes?: string
   ): Promise<boolean> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE intelligent_recommendations
         SET status = $1, updated_by = $2, updated_at = NOW(), notes = $3
         WHERE id = $4
-      `, [status, userId, notes, recommendationId]);
+      `,
+        [status, userId, notes, recommendationId]
+      );
 
       return true;
     } catch (error) {
@@ -974,5 +1005,5 @@ export class IntelligentRecommendationEngine {
 // Export intelligent recommendation engine
 export const intelligentRecommendations = {
   engine: (db: Pool) => new IntelligentRecommendationEngine(db),
-  decisionEngine: (db: Pool) => new MultiCriteriaDecisionEngine(db)
+  decisionEngine: (db: Pool) => new MultiCriteriaDecisionEngine(db),
 };

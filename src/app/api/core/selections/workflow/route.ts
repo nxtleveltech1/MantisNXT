@@ -2,7 +2,7 @@
  * POST /api/core/selections/workflow - Execute selection workflow (select/deselect/approve)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 import { SelectionWorkflowRequestSchema } from '@/types/nxt-spp';
@@ -15,11 +15,14 @@ export async function POST(request: NextRequest) {
 
     const result = await inventorySelectionService.executeWorkflow(validated);
 
-    return NextResponse.json({
-      ...result
-    }, {
-      status: result.success ? 200 : 500
-    });
+    return NextResponse.json(
+      {
+        ...result,
+      },
+      {
+        status: result.success ? 200 : 500,
+      }
+    );
   } catch (error) {
     console.error('Selection workflow error:', error);
 
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues
+          details: error.issues,
         },
         { status: 400 }
       );
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Workflow execution failed'
+        error: error instanceof Error ? error.message : 'Workflow execution failed',
       },
       { status: 500 }
     );

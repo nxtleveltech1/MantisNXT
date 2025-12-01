@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Filter by conversationId if provided
     let filteredResults = allResults;
     if (conversationId) {
-      filteredResults = allResults.filter((result) => result.conversationId === conversationId);
+      filteredResults = allResults.filter(result => result.conversationId === conversationId);
     }
 
     // Apply pagination

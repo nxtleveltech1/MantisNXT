@@ -210,5 +210,3 @@ export function getEndpointMetrics(
 }
 
 export default APIMonitor;
-
-

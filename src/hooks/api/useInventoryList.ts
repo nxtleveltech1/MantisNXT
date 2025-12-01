@@ -116,9 +116,7 @@ export interface InventoryItem {
 /**
  * Fetch inventory list from API
  */
-async function fetchInventoryList(
-  filters?: InventoryFilters
-): Promise<InventoryListData> {
+async function fetchInventoryList(filters?: InventoryFilters): Promise<InventoryListData> {
   const params = new URLSearchParams();
 
   if (filters) {
@@ -173,9 +171,7 @@ const CACHE_POLICY = {
  * });
  * ```
  */
-export function useInventoryList(
-  filters?: InventoryFilters
-): UseQueryResult<InventoryListData> {
+export function useInventoryList(filters?: InventoryFilters): UseQueryResult<InventoryListData> {
   return useQuery({
     queryKey: QueryKeys.inventoryList(filters),
     queryFn: () => fetchInventoryList(filters),

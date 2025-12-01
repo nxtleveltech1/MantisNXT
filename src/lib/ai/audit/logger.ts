@@ -411,7 +411,9 @@ export class AuditLogger {
     this.buffer = [];
 
     try {
-      const values = events.map(event => `(
+      const values = events
+        .map(
+          event => `(
         $${events.indexOf(event) * 12 + 1},
         $${events.indexOf(event) * 12 + 2},
         $${events.indexOf(event) * 12 + 3},
@@ -424,7 +426,9 @@ export class AuditLogger {
         $${events.indexOf(event) * 12 + 10},
         $${events.indexOf(event) * 12 + 11},
         $${events.indexOf(event) * 12 + 12}
-      )`).join(', ');
+      )`
+        )
+        .join(', ');
 
       const params = events.flatMap(event => [
         event.id,

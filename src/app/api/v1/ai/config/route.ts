@@ -4,7 +4,7 @@
  * POST /api/v1/ai/config - Create new config
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
     // });
 
     const configs = await listConfigs(user.org_id);
-    const filtered = serviceType ? configs.filter((config) => config.service_type === serviceType) : configs;
+    const filtered = serviceType
+      ? configs.filter(config => config.service_type === serviceType)
+      : configs;
     const total = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);
 

@@ -168,7 +168,10 @@ export async function GET() {
       description: `${activity.supplier_name} updated ${activity.pricelist_name} with ${activity.item_count} products`,
       type: 'pricelist' as const,
       timestamp: activity.updated_at || new Date().toISOString(),
-      priority: (index % 3 === 0 ? 'high' : index % 2 === 0 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+      priority: (index % 3 === 0 ? 'high' : index % 2 === 0 ? 'medium' : 'low') as
+        | 'low'
+        | 'medium'
+        | 'high',
     }));
 
     // Calculate performance metrics based on actual data quality
@@ -177,7 +180,10 @@ export async function GET() {
     const totalProducts = parseInt(productStats.total_products) || 0;
 
     const performanceMetrics = {
-      onTimeDelivery: Math.min(100, Math.round(85 + (activeSuppliers / Math.max(totalSuppliers, 1)) * 15)),
+      onTimeDelivery: Math.min(
+        100,
+        Math.round(85 + (activeSuppliers / Math.max(totalSuppliers, 1)) * 15)
+      ),
       qualityScore: Math.min(100, Math.round(90 + (totalProducts > 0 ? 10 : 0))),
       dataFreshness: Math.min(100, Math.round(95 + (recentActivities.length > 0 ? 5 : 0))),
       systemHealth: 99, // Based on connection pool health

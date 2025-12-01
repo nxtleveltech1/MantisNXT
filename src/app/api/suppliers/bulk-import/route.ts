@@ -1,13 +1,10 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import type { BulkImportProgress } from '@/lib/upload/transaction-manager';
 import { TransactionManager } from '@/lib/upload/transaction-manager';
 import { UploadErrorHandler } from '@/lib/upload/error-handler';
-import type {
-  BulkImportJob,
-  PriceListUpload
-} from '@/types/pricelist-upload';
+import type { BulkImportJob, PriceListUpload } from '@/types/pricelist-upload';
 
 /**
  * POST /api/suppliers/bulk-import - Create and execute bulk import job
@@ -15,12 +12,7 @@ import type {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      uploadIds,
-      batchSize = 50,
-      validateBeforeImport = true,
-      stopOnError = false
-    } = body;
+    const { uploadIds, batchSize = 50, validateBeforeImport = true, stopOnError = false } = body;
 
     // Validation
     if (!uploadIds || !Array.isArray(uploadIds) || uploadIds.length === 0) {
@@ -42,10 +34,13 @@ export async function POST(request: NextRequest) {
     // Validate that all uploads exist and are ready for import
     const validationResults = await validateUploadsForBulkImport(uploadIds);
     if (!validationResults.valid) {
-      return NextResponse.json({
-        error: 'Some uploads are not ready for import',
-        details: validationResults.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Some uploads are not ready for import',
+          details: validationResults.errors,
+        },
+        { status: 400 }
+      );
     }
 
     // Create and execute bulk import job
@@ -56,21 +51,19 @@ export async function POST(request: NextRequest) {
       onProgress: (progress: BulkImportProgress) => {
         // In a real application, this would send progress updates via WebSocket
         // or server-sent events to the client
-        console.log(`Bulk import progress: ${progress.percentage}% (${progress.uploadsProcessed}/${progress.totalUploads})`);
-      }
+        console.log(
+          `Bulk import progress: ${progress.percentage}% (${progress.uploadsProcessed}/${progress.totalUploads})`
+        );
+      },
     });
 
     return NextResponse.json({
       success: true,
       data: job,
-      message: `Bulk import job created and ${job.status === 'completed' ? 'completed' : 'started'}`
+      message: `Bulk import job created and ${job.status === 'completed' ? 'completed' : 'started'}`,
     });
-
   } catch (error) {
-    return UploadErrorHandler.createApiErrorResponse(
-      error,
-      { operation: 'bulk_import_create' }
-    );
+    return UploadErrorHandler.createApiErrorResponse(error, { operation: 'bulk_import_create' });
   }
 }
 
@@ -89,30 +82,23 @@ export async function GET(request: NextRequest) {
       // Get specific job status
       const job = await getBulkImportJob(jobId);
       if (!job) {
-        return NextResponse.json(
-          { error: 'Bulk import job not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Bulk import job not found' }, { status: 404 });
       }
 
       return NextResponse.json({
         success: true,
-        data: job
+        data: job,
       });
     } else {
       // Get job history
       const jobs = await getBulkImportHistory(limit, offset, status);
       return NextResponse.json({
         success: true,
-        data: jobs
+        data: jobs,
       });
     }
-
   } catch (error) {
-    return UploadErrorHandler.createApiErrorResponse(
-      error,
-      { operation: 'bulk_import_get' }
-    );
+    return UploadErrorHandler.createApiErrorResponse(error, { operation: 'bulk_import_get' });
   }
 }
 
@@ -125,18 +111,12 @@ export async function PUT(request: NextRequest) {
     const { jobId, action } = body;
 
     if (!jobId) {
-      return NextResponse.json(
-        { error: 'Job ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     const job = await getBulkImportJob(jobId);
     if (!job) {
-      return NextResponse.json(
-        { error: 'Bulk import job not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Bulk import job not found' }, { status: 404 });
     }
 
     switch (action) {
@@ -151,42 +131,29 @@ export async function PUT(request: NextRequest) {
         await cancelBulkImportJob(jobId);
         return NextResponse.json({
           success: true,
-          message: 'Bulk import job cancelled successfully'
+          message: 'Bulk import job cancelled successfully',
         });
 
       case 'retry': {
         if (job.status !== 'failed') {
-          return NextResponse.json(
-            { error: 'Can only retry failed jobs' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Can only retry failed jobs' }, { status: 400 });
         }
 
         // Create new job with failed uploads
-        const retryJob = await TransactionManager.executeBulkImport(
-          job.results.failed,
-          job.config
-        );
+        const retryJob = await TransactionManager.executeBulkImport(job.results.failed, job.config);
 
         return NextResponse.json({
           success: true,
           data: retryJob,
-          message: 'Retry job created successfully'
+          message: 'Retry job created successfully',
         });
       }
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
-
   } catch (error) {
-    return UploadErrorHandler.createApiErrorResponse(
-      error,
-      { operation: 'bulk_import_update' }
-    );
+    return UploadErrorHandler.createApiErrorResponse(error, { operation: 'bulk_import_update' });
   }
 }
 
@@ -203,40 +170,29 @@ export async function DELETE(request: NextRequest) {
       // Delete specific job
       const job = await getBulkImportJob(jobId);
       if (!job) {
-        return NextResponse.json(
-          { error: 'Bulk import job not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Bulk import job not found' }, { status: 404 });
       }
 
       if (['pending', 'processing'].includes(job.status)) {
-        return NextResponse.json(
-          { error: 'Cannot delete active job' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Cannot delete active job' }, { status: 400 });
       }
 
       await deleteBulkImportJob(jobId);
       return NextResponse.json({
         success: true,
-        message: 'Bulk import job deleted successfully'
+        message: 'Bulk import job deleted successfully',
       });
-
     } else {
       // Delete old completed jobs
       const deletedCount = await deleteOldBulkImportJobs(olderThanDays);
       return NextResponse.json({
         success: true,
         data: { deletedCount },
-        message: `Deleted ${deletedCount} old bulk import jobs`
+        message: `Deleted ${deletedCount} old bulk import jobs`,
       });
     }
-
   } catch (error) {
-    return UploadErrorHandler.createApiErrorResponse(
-      error,
-      { operation: 'bulk_import_delete' }
-    );
+    return UploadErrorHandler.createApiErrorResponse(error, { operation: 'bulk_import_delete' });
   }
 }
 
@@ -252,14 +208,17 @@ async function validateUploadsForBulkImport(uploadIds: string[]): Promise<{
   const uploads: PriceListUpload[] = [];
 
   try {
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       for (const uploadId of uploadIds) {
-        const result = await client.query(`
+        const result = await client.query(
+          `
           SELECT id, supplier_id, supplier_name, original_file_name,
                  status, validation_status, total_rows, valid_rows
           FROM pricelist_uploads
           WHERE id = $1
-        `, [uploadId]);
+        `,
+          [uploadId]
+        );
 
         if (result.rows.length === 0) {
           errors.push(`Upload ${uploadId} not found`);
@@ -297,19 +256,20 @@ async function validateUploadsForBulkImport(uploadIds: string[]): Promise<{
           status: upload.status,
           validationStatus: upload.validation_status,
           totalRows: upload.total_rows,
-          validRows: upload.valid_rows
+          validRows: upload.valid_rows,
         } as PriceListUpload);
       }
     });
-
   } catch (error) {
-    errors.push(`Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    errors.push(
+      `Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    uploads
+    uploads,
   };
 }
 
@@ -318,10 +278,13 @@ async function validateUploadsForBulkImport(uploadIds: string[]): Promise<{
  */
 async function getBulkImportJob(jobId: string): Promise<BulkImportJob | null> {
   try {
-    return await withTransaction(async (client) => {
-      const result = await client.query(`
+    return await withTransaction(async client => {
+      const result = await client.query(
+        `
         SELECT * FROM bulk_import_jobs WHERE id = $1
-      `, [jobId]);
+      `,
+        [jobId]
+      );
 
       if (result.rows.length === 0) {
         return null;
@@ -336,33 +299,32 @@ async function getBulkImportJob(jobId: string): Promise<BulkImportJob | null> {
           batchSize: row.batch_size,
           parallelProcessing: row.parallel_processing,
           validateBeforeImport: row.validate_before_import,
-          stopOnError: row.stop_on_error
+          stopOnError: row.stop_on_error,
         },
         progress: {
           uploadsProcessed: row.uploads_processed,
           totalUploads: row.total_uploads,
           currentUpload: row.current_upload_id,
           currentPhase: row.current_phase,
-          percentage: row.percentage
+          percentage: row.percentage,
         },
         results: {
           successful: row.successful_uploads,
           failed: row.failed_uploads,
           totalRowsProcessed: row.total_rows_processed,
-          totalRowsImported: row.total_rows_imported
+          totalRowsImported: row.total_rows_imported,
         },
         createdBy: row.created_by,
         createdAt: row.created_at,
         startedAt: row.started_at,
         completedAt: row.completed_at,
-        duration: row.duration
+        duration: row.duration,
       };
     });
-
   } catch (error) {
     await UploadErrorHandler.handleError(error, {
       operation: 'get_bulk_import_job',
-      additionalData: { jobId }
+      additionalData: { jobId },
     });
     return null;
   }
@@ -377,7 +339,7 @@ async function getBulkImportHistory(
   status?: string | null
 ): Promise<BulkImportJob[]> {
   try {
-    return await withTransaction(async (client) => {
+    return await withTransaction(async client => {
       let whereClause = '';
       const params: Array<number | string> = [limit, offset];
 
@@ -386,7 +348,8 @@ async function getBulkImportHistory(
         params.push(status);
       }
 
-      const result = await client.query(`
+      const result = await client.query(
+        `
         SELECT
           id, upload_ids, status, batch_size, uploads_processed,
           total_uploads, percentage, successful_uploads, failed_uploads,
@@ -396,41 +359,45 @@ async function getBulkImportHistory(
         ${whereClause}
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2
-      `, params);
+      `,
+        params
+      );
 
-      return result.rows.map(row => ({
-        id: String(row.id),
-        uploads: Array.isArray(row.upload_ids) ? row.upload_ids : [],
-        status: row.status,
-        config: {
-          batchSize: Number(row.batch_size) || 0,
-          parallelProcessing: true,
-          validateBeforeImport: true,
-          stopOnError: false
-        },
-        progress: {
-          uploadsProcessed: Number(row.uploads_processed) || 0,
-          totalUploads: Number(row.total_uploads) || 0,
-          currentPhase: 'cleanup',
-          percentage: Number(row.percentage) || 0
-        },
-        results: {
-          successful: Array.isArray(row.successful_uploads) ? row.successful_uploads : [],
-          failed: Array.isArray(row.failed_uploads) ? row.failed_uploads : [],
-          totalRowsProcessed: Number(row.total_rows_processed) || 0,
-          totalRowsImported: Number(row.total_rows_imported) || 0
-        },
-        createdBy: String(row.created_by),
-        createdAt: row.created_at,
-        startedAt: row.started_at ?? undefined,
-        completedAt: row.completed_at ?? undefined,
-        duration: row.duration ?? undefined
-      } as BulkImportJob));
+      return result.rows.map(
+        row =>
+          ({
+            id: String(row.id),
+            uploads: Array.isArray(row.upload_ids) ? row.upload_ids : [],
+            status: row.status,
+            config: {
+              batchSize: Number(row.batch_size) || 0,
+              parallelProcessing: true,
+              validateBeforeImport: true,
+              stopOnError: false,
+            },
+            progress: {
+              uploadsProcessed: Number(row.uploads_processed) || 0,
+              totalUploads: Number(row.total_uploads) || 0,
+              currentPhase: 'cleanup',
+              percentage: Number(row.percentage) || 0,
+            },
+            results: {
+              successful: Array.isArray(row.successful_uploads) ? row.successful_uploads : [],
+              failed: Array.isArray(row.failed_uploads) ? row.failed_uploads : [],
+              totalRowsProcessed: Number(row.total_rows_processed) || 0,
+              totalRowsImported: Number(row.total_rows_imported) || 0,
+            },
+            createdBy: String(row.created_by),
+            createdAt: row.created_at,
+            startedAt: row.started_at ?? undefined,
+            completedAt: row.completed_at ?? undefined,
+            duration: row.duration ?? undefined,
+          }) as BulkImportJob
+      );
     });
-
   } catch (error) {
     await UploadErrorHandler.handleError(error, {
-      operation: 'get_bulk_import_history'
+      operation: 'get_bulk_import_history',
     });
     return [];
   }
@@ -440,12 +407,15 @@ async function getBulkImportHistory(
  * Cancel bulk import job
  */
 async function cancelBulkImportJob(jobId: string): Promise<void> {
-  await withTransaction(async (client) => {
-    await client.query(`
+  await withTransaction(async client => {
+    await client.query(
+      `
       UPDATE bulk_import_jobs
       SET status = 'cancelled', completed_at = NOW()
       WHERE id = $1
-    `, [jobId]);
+    `,
+      [jobId]
+    );
   });
 }
 
@@ -453,7 +423,7 @@ async function cancelBulkImportJob(jobId: string): Promise<void> {
  * Delete bulk import job
  */
 async function deleteBulkImportJob(jobId: string): Promise<void> {
-  await withTransaction(async (client) => {
+  await withTransaction(async client => {
     await client.query('DELETE FROM bulk_import_jobs WHERE id = $1', [jobId]);
   });
 }
@@ -462,7 +432,7 @@ async function deleteBulkImportJob(jobId: string): Promise<void> {
  * Delete old bulk import jobs
  */
 async function deleteOldBulkImportJobs(olderThanDays: number): Promise<number> {
-  const result = await withTransaction(async (client) => {
+  const result = await withTransaction(async client => {
     const deleteResult = await client.query(`
       DELETE FROM bulk_import_jobs
       WHERE status IN ('completed', 'failed', 'cancelled')

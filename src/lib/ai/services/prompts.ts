@@ -118,10 +118,13 @@ export class PromptManager {
   private readonly metrics = new Map<string, PromptPerformanceMetrics>();
 
   constructor(initialTemplates: PromptTemplateInput[] = DEFAULT_TEMPLATES) {
-    initialTemplates.forEach((template) => this.registerTemplate(template, { overwrite: false }));
+    initialTemplates.forEach(template => this.registerTemplate(template, { overwrite: false }));
   }
 
-  registerTemplate(template: PromptTemplateInput, options: { overwrite?: boolean } = {}): PromptTemplate {
+  registerTemplate(
+    template: PromptTemplateInput,
+    options: { overwrite?: boolean } = {}
+  ): PromptTemplate {
     const existing = this.templates.get(template.id);
     if (existing && !options.overwrite) {
       throw new Error(`Prompt template '${template.id}' already exists.`);
@@ -173,7 +176,7 @@ export class PromptManager {
   }
 
   listTemplates(): PromptTemplate[] {
-    return Array.from(this.templates.values()).map((template) => ({ ...template }));
+    return Array.from(this.templates.values()).map(template => ({ ...template }));
   }
 
   getTemplate(id: string): PromptTemplate {
@@ -190,7 +193,9 @@ export class PromptManager {
 
   renderTemplate(id: string, options: RenderPromptOptions = {}): PromptRenderResult {
     const template = this.getTemplate(id);
-    const variant = options.variantId ? template.variants?.[options.variantId] : this.selectVariantForABTest(template);
+    const variant = options.variantId
+      ? template.variants?.[options.variantId]
+      : this.selectVariantForABTest(template);
     const source = variant?.template ?? template.template;
     const sanitized = options.sanitize === false ? source : this.sanitizePrompt(source);
     const prompt = this.applyVariables(sanitized, options.variables, options.context);
@@ -217,7 +222,7 @@ export class PromptManager {
     if (prompt.length > 8000) {
       issues.push('Prompt exceeds recommended length (8000 characters).');
     }
-    FORBIDDEN_PATTERNS.forEach((pattern) => {
+    FORBIDDEN_PATTERNS.forEach(pattern => {
       if (pattern.test(prompt)) {
         issues.push(`Prompt contains discouraged pattern: ${pattern.source}`);
       }
@@ -235,7 +240,7 @@ export class PromptManager {
 
   recordPerformance(
     id: string,
-    outcome: { success: boolean; tokensUsed?: number; variantId?: string; provider?: AIProviderId },
+    outcome: { success: boolean; tokensUsed?: number; variantId?: string; provider?: AIProviderId }
   ): void {
     const metrics = this.ensureMetrics(id);
     metrics.usage += 1;
@@ -291,19 +296,21 @@ export class PromptManager {
   }
 
   listTemplatesByTag(tag: string): PromptTemplate[] {
-    return this.listTemplates().filter((template) => template.tags.includes(tag));
+    return this.listTemplates().filter(template => template.tags.includes(tag));
   }
 
   generateAdaptivePrompt(
     baseId: string,
-    signal: { context: Record<string, unknown>; emphasis?: string[] },
+    signal: { context: Record<string, unknown>; emphasis?: string[] }
   ): PromptRenderResult {
     const template = this.getTemplate(baseId);
     const contextBlock = Object.entries(signal.context)
       .map(([key, value]) => `${key}: ${value}`)
       .join('\n');
-    const emphasis = signal.emphasis?.length ? `
-Focus priorities: ${signal.emphasis.join(', ')}` : '';
+    const emphasis = signal.emphasis?.length
+      ? `
+Focus priorities: ${signal.emphasis.join(', ')}`
+      : '';
     const prompt = `${template.template}
 
 Context:
@@ -320,7 +327,7 @@ ${contextBlock}${emphasis}`;
   private applyVariables(
     template: string,
     variables: Record<string, string | number | boolean> = {},
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ): string {
     let prompt = template;
     Object.entries(variables).forEach(([key, value]) => {
@@ -330,7 +337,9 @@ ${contextBlock}${emphasis}`;
 
     if (context && Object.keys(context).length > 0) {
       const contextLines = Object.entries(context)
-        .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+        .map(
+          ([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`
+        )
         .join('\n');
       prompt = `${prompt.trim()}
 
@@ -377,7 +386,7 @@ ${contextLines}`;
   }
 
   private bumpVersion(current: string): string {
-    const [major, minor, patch] = current.split('.').map((value) => parseInt(value || '0', 10));
+    const [major, minor, patch] = current.split('.').map(value => parseInt(value || '0', 10));
     const nextPatch = Number.isFinite(patch) ? patch + 1 : 0;
     return `${major}.${minor}.${nextPatch}`;
   }
@@ -387,7 +396,10 @@ ${contextLines}`;
   }
 
   generateTemplateId(name: string): string {
-    const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const normalized = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
     return `${normalized}-${crypto.randomBytes(2).toString('hex')}`;
   }
 }

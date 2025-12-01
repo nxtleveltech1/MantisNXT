@@ -9,10 +9,7 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import type {
-  RewardRedemption,
-  RedeemRewardResult,
-  RedemptionStatus} from '@/types/loyalty';
+import type { RewardRedemption, RedeemRewardResult, RedemptionStatus } from '@/types/loyalty';
 import {
   LoyaltyError,
   InsufficientPointsError,
@@ -73,11 +70,7 @@ export class RewardRedemptionService {
       );
 
       if (customerCheck.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer not found in organization',
-          'CUSTOMER_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer not found in organization', 'CUSTOMER_NOT_FOUND', 404);
       }
 
       // Verify reward belongs to org
@@ -87,14 +80,10 @@ export class RewardRedemptionService {
       );
 
       if (rewardCheck.rows.length === 0) {
-        throw new LoyaltyError(
-          'Reward not found in organization',
-          'REWARD_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Reward not found in organization', 'REWARD_NOT_FOUND', 404);
       }
 
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Call database function for redemption
         const sql = `
           SELECT
@@ -116,20 +105,13 @@ export class RewardRedemptionService {
         if (!dbResult.success) {
           // Map error messages to specific error types
           if (dbResult.error_message?.includes('Insufficient points')) {
-            const match = dbResult.error_message.match(
-              /Required: (\d+), Available: (\d+)/
-            );
+            const match = dbResult.error_message.match(/Required: (\d+), Available: (\d+)/);
             if (match) {
-              throw new InsufficientPointsError(
-                parseInt(match[1]),
-                parseInt(match[2])
-              );
+              throw new InsufficientPointsError(parseInt(match[1]), parseInt(match[2]));
             }
           } else if (dbResult.error_message?.includes('out of stock')) {
             throw new RewardNotAvailableError('Out of stock');
-          } else if (
-            dbResult.error_message?.includes('Maximum redemptions')
-          ) {
+          } else if (dbResult.error_message?.includes('Maximum redemptions')) {
             throw new RedemptionLimitReachedError(0);
           }
 
@@ -140,10 +122,7 @@ export class RewardRedemptionService {
         }
 
         // Fetch the complete redemption record
-        const redemption = await this.getRedemptionById(
-          dbResult.redemption_id!,
-          orgId
-        );
+        const redemption = await this.getRedemptionById(dbResult.redemption_id!, orgId);
 
         return {
           success: true,
@@ -154,16 +133,8 @@ export class RewardRedemptionService {
       });
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error redeeming reward:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to redeem reward',
-        'REDEEM_REWARD_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error redeeming reward:', error);
+      throw new LoyaltyError('Failed to redeem reward', 'REDEEM_REWARD_ERROR', 500, { error });
     }
   }
 
@@ -193,21 +164,13 @@ export class RewardRedemptionService {
         [redemptionId, orgId]
       );
 
-      console.log(
-        `[RewardRedemptionService] Redemption ${redemptionId} approved by ${approverId}`
-      );
+      console.log(`[RewardRedemptionService] Redemption ${redemptionId} approved by ${approverId}`);
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error approving redemption:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to approve redemption',
-        'APPROVE_REDEMPTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error approving redemption:', error);
+      throw new LoyaltyError('Failed to approve redemption', 'APPROVE_REDEMPTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -247,16 +210,10 @@ export class RewardRedemptionService {
       );
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error fulfilling redemption:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fulfill redemption',
-        'FULFILL_REDEMPTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error fulfilling redemption:', error);
+      throw new LoyaltyError('Failed to fulfill redemption', 'FULFILL_REDEMPTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -269,23 +226,15 @@ export class RewardRedemptionService {
     orgId: string
   ): Promise<void> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         const redemption = await this.getRedemptionById(redemptionId, orgId);
 
         if (redemption.status === 'fulfilled') {
-          throw new LoyaltyError(
-            'Cannot cancel fulfilled redemption',
-            'INVALID_STATUS',
-            400
-          );
+          throw new LoyaltyError('Cannot cancel fulfilled redemption', 'INVALID_STATUS', 400);
         }
 
         if (redemption.status === 'cancelled') {
-          throw new LoyaltyError(
-            'Redemption already cancelled',
-            'ALREADY_CANCELLED',
-            400
-          );
+          throw new LoyaltyError('Redemption already cancelled', 'ALREADY_CANCELLED', 400);
         }
 
         // Update redemption status
@@ -354,32 +303,21 @@ export class RewardRedemptionService {
           [redemptionId]
         );
 
-        console.log(
-          `[RewardRedemptionService] Redemption ${redemptionId} cancelled: ${reason}`
-        );
+        console.log(`[RewardRedemptionService] Redemption ${redemptionId} cancelled: ${reason}`);
       });
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error cancelling redemption:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to cancel redemption',
-        'CANCEL_REDEMPTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error cancelling redemption:', error);
+      throw new LoyaltyError('Failed to cancel redemption', 'CANCEL_REDEMPTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get redemption by ID
    */
-  static async getRedemptionById(
-    redemptionId: string,
-    orgId: string
-  ): Promise<RewardRedemption> {
+  static async getRedemptionById(redemptionId: string, orgId: string): Promise<RewardRedemption> {
     try {
       const sql = `
         SELECT
@@ -404,26 +342,16 @@ export class RewardRedemptionService {
       const result = await query<RewardRedemption>(sql, [redemptionId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Redemption not found',
-          'REDEMPTION_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Redemption not found', 'REDEMPTION_NOT_FOUND', 404);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error fetching redemption:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch redemption',
-        'FETCH_REDEMPTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error fetching redemption:', error);
+      throw new LoyaltyError('Failed to fetch redemption', 'FETCH_REDEMPTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -445,11 +373,7 @@ export class RewardRedemptionService {
       );
 
       if (customerCheck.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer not found in organization',
-          'CUSTOMER_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer not found in organization', 'CUSTOMER_NOT_FOUND', 404);
       }
 
       const sql = `
@@ -474,20 +398,12 @@ export class RewardRedemptionService {
         LIMIT $3 OFFSET $4
       `;
 
-      const result = await query<RewardRedemption>(sql, [
-        customerId,
-        orgId,
-        limit,
-        offset,
-      ]);
+      const result = await query<RewardRedemption>(sql, [customerId, orgId, limit, offset]);
 
       return result.rows;
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardRedemptionService] Error fetching customer redemptions:',
-        error
-      );
+      console.error('[RewardRedemptionService] Error fetching customer redemptions:', error);
       throw new LoyaltyError(
         'Failed to fetch customer redemptions',
         'FETCH_CUSTOMER_REDEMPTIONS_ERROR',
@@ -533,10 +449,7 @@ export class RewardRedemptionService {
 
       return result.rows;
     } catch (error) {
-      console.error(
-        '[RewardRedemptionService] Error fetching pending redemptions:',
-        error
-      );
+      console.error('[RewardRedemptionService] Error fetching pending redemptions:', error);
       throw new LoyaltyError(
         'Failed to fetch pending redemptions',
         'FETCH_PENDING_REDEMPTIONS_ERROR',
@@ -579,19 +492,11 @@ export class RewardRedemptionService {
         LIMIT $3 OFFSET $4
       `;
 
-      const result = await query<RewardRedemption>(sql, [
-        orgId,
-        status,
-        limit,
-        offset,
-      ]);
+      const result = await query<RewardRedemption>(sql, [orgId, status, limit, offset]);
 
       return result.rows;
     } catch (error) {
-      console.error(
-        '[RewardRedemptionService] Error fetching redemptions by status:',
-        error
-      );
+      console.error('[RewardRedemptionService] Error fetching redemptions by status:', error);
       throw new LoyaltyError(
         'Failed to fetch redemptions by status',
         'FETCH_BY_STATUS_ERROR',
@@ -649,12 +554,7 @@ export class RewardRedemptionService {
 
     for (let i = 0; i < redemptionIds.length; i++) {
       try {
-        await this.fulfillRedemption(
-          redemptionIds[i],
-          fulfillerId,
-          orgId,
-          notes
-        );
+        await this.fulfillRedemption(redemptionIds[i], fulfillerId, orgId, notes);
         result.success++;
       } catch (error) {
         result.failed++;
@@ -742,16 +642,10 @@ export class RewardRedemptionService {
         totalMonetaryValue: Number(row.total_monetary_value || 0),
       };
     } catch (error) {
-      console.error(
-        '[RewardRedemptionService] Error fetching redemption stats:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch redemption statistics',
-        'FETCH_STATS_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardRedemptionService] Error fetching redemption stats:', error);
+      throw new LoyaltyError('Failed to fetch redemption statistics', 'FETCH_STATS_ERROR', 500, {
+        error,
+      });
     }
   }
 }

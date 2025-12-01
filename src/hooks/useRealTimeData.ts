@@ -66,9 +66,10 @@ export function useRealTimeData<T = unknown>(
     }
 
     try {
-      const wsUrl = process.env.NODE_ENV === 'production'
-        ? `wss://${window.location.host}/ws`
-        : `ws://localhost:3001`;
+      const wsUrl =
+        process.env.NODE_ENV === 'production'
+          ? `wss://${window.location.host}/ws`
+          : `ws://localhost:3001`;
 
       wsRef.current = new WebSocket(wsUrl);
 
@@ -84,7 +85,7 @@ export function useRealTimeData<T = unknown>(
         }
       };
 
-      wsRef.current.onmessage = (event) => {
+      wsRef.current.onmessage = event => {
         try {
           const message: RealTimeMessage = JSON.parse(event.data);
           handleMessage(message);
@@ -94,7 +95,7 @@ export function useRealTimeData<T = unknown>(
         }
       };
 
-      wsRef.current.onclose = (event) => {
+      wsRef.current.onclose = event => {
         console.log('🔌 Disconnected from real-time server');
         setConnected(false);
 
@@ -104,12 +105,11 @@ export function useRealTimeData<T = unknown>(
         }
       };
 
-      wsRef.current.onerror = (event) => {
+      wsRef.current.onerror = event => {
         console.error('❌ WebSocket error:', event);
         setError('Connection error');
         setConnected(false);
       };
-
     } catch (err) {
       console.error('❌ Failed to connect to WebSocket:', err);
       setError('Failed to connect');
@@ -143,30 +143,33 @@ export function useRealTimeData<T = unknown>(
   /**
    * Handle incoming WebSocket messages
    */
-  const handleMessage = useCallback((message: RealTimeMessage) => {
-    switch (message.type) {
-      case 'data':
-        if (message.data?.operation) {
-          handleDataUpdate(message.data);
-        } else {
-          console.log('📡 Server message:', message.data);
-        }
-        break;
+  const handleMessage = useCallback(
+    (message: RealTimeMessage) => {
+      switch (message.type) {
+        case 'data':
+          if (message.data?.operation) {
+            handleDataUpdate(message.data);
+          } else {
+            console.log('📡 Server message:', message.data);
+          }
+          break;
 
-      case 'error':
-        console.error('❌ Server error:', message.data?.error);
-        setError(message.data?.error || 'Unknown server error');
-        break;
+        case 'error':
+          console.error('❌ Server error:', message.data?.error);
+          setError(message.data?.error || 'Unknown server error');
+          break;
 
-      case 'heartbeat':
-        // Update last seen timestamp
-        setLastUpdate(message.timestamp);
-        break;
+        case 'heartbeat':
+          // Update last seen timestamp
+          setLastUpdate(message.timestamp);
+          break;
 
-      default:
-        console.log('📡 Unknown message type:', message.type);
-    }
-  }, [handleDataUpdate]);
+        default:
+          console.log('📡 Unknown message type:', message.type);
+      }
+    },
+    [handleDataUpdate]
+  );
 
   /**
    * Handle real-time data updates
@@ -178,7 +181,7 @@ export function useRealTimeData<T = unknown>(
       return;
     }
 
-    setData((prevData) => {
+    setData(prevData => {
       let newData = [...prevData];
 
       switch (operation) {
@@ -229,10 +232,10 @@ export function useRealTimeData<T = unknown>(
       data: {
         organizationId: config.organizationId,
         userId: config.userId,
-        filters: config.filters || {}
+        filters: config.filters || {},
       },
       timestamp: new Date().toISOString(),
-      clientId: 'web-client'
+      clientId: 'web-client',
     };
 
     wsRef.current.send(JSON.stringify(message));
@@ -251,7 +254,7 @@ export function useRealTimeData<T = unknown>(
       type: 'unsubscribe',
       table: table || configRef.current?.table,
       timestamp: new Date().toISOString(),
-      clientId: 'web-client'
+      clientId: 'web-client',
     };
 
     wsRef.current.send(JSON.stringify(message));
@@ -291,7 +294,6 @@ export function useRealTimeData<T = unknown>(
       } else {
         throw new Error(result.error || 'Failed to fetch data');
       }
-
     } catch (err) {
       console.error('❌ Error refreshing data:', err);
       setError(err instanceof Error ? err.message : 'Failed to refresh data');
@@ -312,7 +314,7 @@ export function useRealTimeData<T = unknown>(
     const message = {
       ...messageData,
       timestamp: new Date().toISOString(),
-      clientId: 'web-client'
+      clientId: 'web-client',
     };
 
     wsRef.current.send(JSON.stringify(message));
@@ -352,158 +354,156 @@ export function useRealTimeData<T = unknown>(
     subscribe,
     unsubscribe,
     refresh,
-    sendMessage
+    sendMessage,
   };
 }
 
 // Enhanced supplier data hook with real-time updates
 export const useRealTimeSuppliers = (filters = {}) => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Real-time updates via WebSocket
   useRealTimeData({
     table: 'suppliers',
     filters,
-    autoReconnect: true
-  })
+    autoReconnect: true,
+  });
 
   return useQuery({
     queryKey: ['suppliers', filters],
     queryFn: async () => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          params.append(key, value.join(','))
+          params.append(key, value.join(','));
         } else if (value !== undefined && value !== null) {
-          params.append(key, String(value))
+          params.append(key, String(value));
         }
-      })
+      });
 
-      const response = await fetch(`/api/suppliers?${params.toString()}`)
+      const response = await fetch(`/api/suppliers?${params.toString()}`);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
-    keepPreviousData: true
-  })
-}
+    keepPreviousData: true,
+  });
+};
 
 // Enhanced inventory hook with real-time updates
 export const useRealTimeInventory = (filters = {}) => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Real-time inventory updates
   useRealTimeData({
     table: 'inventory_items',
     filters,
-    autoReconnect: true
-  })
+    autoReconnect: true,
+  });
 
   return useQuery({
     queryKey: ['inventory', filters],
     queryFn: async () => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          params.append(key, value.join(','))
+          params.append(key, value.join(','));
         } else if (value !== undefined && value !== null) {
-          params.append(key, String(value))
+          params.append(key, String(value));
         }
-      })
+      });
 
-      const response = await fetch(`/api/inventory?${params.toString()}`)
+      const response = await fetch(`/api/inventory?${params.toString()}`);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
     staleTime: 30 * 1000, // 30 seconds (more frequent for inventory)
     cacheTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 60 * 1000, // Refetch every minute
-    keepPreviousData: true
-  })
-}
+    keepPreviousData: true,
+  });
+};
 
 // Real-time dashboard metrics
 export const useRealTimeDashboard = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Real-time dashboard updates
   const dashboardData = useRealTimeData({
     table: 'dashboard_metrics',
-    autoReconnect: true
-  })
+    autoReconnect: true,
+  });
 
   const metricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const response = await fetch('/api/analytics/dashboard')
+      const response = await fetch('/api/analytics/dashboard');
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return response.json()
+      return response.json();
     },
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes
-  })
+  });
 
   const activityQuery = useQuery({
     queryKey: ['recent-activity'],
     queryFn: async () => {
-      const response = await fetch('/api/activities/recent')
+      const response = await fetch('/api/activities/recent');
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return response.json()
+      return response.json();
     },
     staleTime: 30 * 1000, // 30 seconds
-  })
+  });
 
   return {
     metrics: metricsQuery.data,
     activities: activityQuery.data,
     loading: metricsQuery.isLoading || activityQuery.isLoading,
     error: metricsQuery.error || activityQuery.error,
-    realTimeData: dashboardData
-  }
-}
+    realTimeData: dashboardData,
+  };
+};
 
 // Price list data integration
 export const usePriceLists = (supplierId?: string) => {
   return useQuery({
     queryKey: ['price-lists', supplierId],
     queryFn: async () => {
-      const url = supplierId
-        ? `/api/suppliers/${supplierId}/pricelists`
-        : '/api/pricelists'
+      const url = supplierId ? `/api/suppliers/${supplierId}/pricelists` : '/api/pricelists';
 
-      const response = await fetch(url)
+      const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
     enabled: !!supplierId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    keepPreviousData: true
-  })
-}
+    keepPreviousData: true,
+  });
+};
 
 // Optimistic updates for mutations
 export const useSupplierMutations = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const createSupplier = useMutation({
     mutationFn: async (supplierData: unknown) => {
@@ -511,69 +511,70 @@ export const useSupplierMutations = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(supplierData),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Update all relevant queries
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: [data.data, ...(old?.data || [])]
-      }))
+        data: [data.data, ...(old?.data || [])],
+      }));
 
       // Invalidate related queries
-      queryClient.invalidateQueries(['dashboard-metrics'])
+      queryClient.invalidateQueries(['dashboard-metrics']);
     },
-  })
+  });
 
   const updateSupplier = useMutation({
-    mutationFn: async ({ id, data: supplierData }: { id: string, data: unknown }) => {
+    mutationFn: async ({ id, data: supplierData }: { id: string; data: unknown }) => {
       const response = await fetch(`/api/suppliers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(supplierData),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
     onMutate: async ({ id, data: newData }) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries(['suppliers'])
+      await queryClient.cancelQueries(['suppliers']);
 
       // Snapshot previous value
-      const previousSuppliers = queryClient.getQueryData(['suppliers'])
+      const previousSuppliers = queryClient.getQueryData(['suppliers']);
 
       // Optimistically update
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: unknown) =>
-          supplier.id === id ? { ...supplier, ...newData } : supplier
-        ) || []
-      }))
+        data:
+          old?.data?.map((supplier: unknown) =>
+            supplier.id === id ? { ...supplier, ...newData } : supplier
+          ) || [],
+      }));
 
-      return { previousSuppliers }
+      return { previousSuppliers };
     },
     onError: (err, variables, context) => {
       // Rollback on error
-      queryClient.setQueryData(['suppliers'], context?.previousSuppliers)
+      queryClient.setQueryData(['suppliers'], context?.previousSuppliers);
     },
     onSettled: () => {
       // Always refetch after error or success
-      queryClient.invalidateQueries(['suppliers'])
+      queryClient.invalidateQueries(['suppliers']);
     },
-  })
+  });
 
-  return { createSupplier, updateSupplier }
-}
+  return { createSupplier, updateSupplier };
+};
 
 // Infinite scroll for large datasets
 export const useInfiniteSuppliers = (filters = {}) => {
@@ -586,24 +587,24 @@ export const useInfiniteSuppliers = (filters = {}) => {
         ...Object.fromEntries(
           Object.entries(filters).map(([key, value]) => [
             key,
-            Array.isArray(value) ? value.join(',') : String(value)
+            Array.isArray(value) ? value.join(',') : String(value),
           ])
-        )
-      })
+        ),
+      });
 
-      const response = await fetch(`/api/suppliers?${params.toString()}`)
+      const response = await fetch(`/api/suppliers?${params.toString()}`);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json()
+      return response.json();
     },
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination?.hasNext ? (lastPage.pagination.page + 1) : undefined,
+    getNextPageParam: lastPage =>
+      lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
     keepPreviousData: true,
     staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
+  });
+};
 
 export default useRealTimeData;

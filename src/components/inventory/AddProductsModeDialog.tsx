@@ -1,23 +1,27 @@
-"use client"
+'use client';
 
-import React from 'react'
+import React from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Plus, Package } from 'lucide-react'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Plus, Package } from 'lucide-react';
 
 interface AddProductsModeDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onChoose: (mode: 'single' | 'multi') => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChoose: (mode: 'single' | 'multi') => void;
 }
 
-export default function AddProductsModeDialog({ open, onOpenChange, onChoose }: AddProductsModeDialogProps) {
+export default function AddProductsModeDialog({
+  open,
+  onOpenChange,
+  onChoose,
+}: AddProductsModeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -28,30 +32,40 @@ export default function AddProductsModeDialog({ open, onOpenChange, onChoose }: 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border rounded-lg p-6 hover:shadow-sm transition cursor-pointer" onClick={() => onChoose('single')}>
-            <div className="flex items-center mb-3">
-              <Plus className="h-5 w-5 text-blue-600 mr-2" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div
+            className="cursor-pointer rounded-lg border p-6 transition hover:shadow-sm"
+            onClick={() => onChoose('single')}
+          >
+            <div className="mb-3 flex items-center">
+              <Plus className="mr-2 h-5 w-5 text-blue-600" />
               <h3 className="font-semibold">Add Singular Product</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 text-sm">
               Create a single product by entering details manually.
             </p>
-            <Button className="w-full" onClick={() => onChoose('single')}>Add Single Product</Button>
+            <Button className="w-full" onClick={() => onChoose('single')}>
+              Add Single Product
+            </Button>
           </div>
 
-          <div className="border rounded-lg p-6 hover:shadow-sm transition cursor-pointer" onClick={() => onChoose('multi')}>
-            <div className="flex items-center mb-3">
-              <Package className="h-5 w-5 text-green-600 mr-2" />
+          <div
+            className="cursor-pointer rounded-lg border p-6 transition hover:shadow-sm"
+            onClick={() => onChoose('multi')}
+          >
+            <div className="mb-3 flex items-center">
+              <Package className="mr-2 h-5 w-5 text-green-600" />
               <h3 className="font-semibold">Add Multiple Products</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 text-sm">
               Browse supplier portfolio, filter, select, and set quantities.
             </p>
-            <Button className="w-full" variant="secondary" onClick={() => onChoose('multi')}>Select Multiple Products</Button>
+            <Button className="w-full" variant="secondary" onClick={() => onChoose('multi')}>
+              Select Multiple Products
+            </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

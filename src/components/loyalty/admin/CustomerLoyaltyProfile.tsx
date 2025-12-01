@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -37,24 +37,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Trophy,
-  Gift,
-  CreditCard,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Clock,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { format } from 'date-fns'
+} from '@/components/ui/select';
+import { Trophy, Gift, CreditCard, ArrowUpCircle, ArrowDownCircle, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 import type {
   CustomerLoyalty,
   LoyaltyTransaction,
@@ -63,15 +56,15 @@ import type {
   RedemptionStatus,
   LoyaltyTier,
   TierBenefit,
-} from '@/types/loyalty'
+} from '@/types/loyalty';
 
 const adjustmentSchema = z.object({
   points_amount: z.number().min(1, 'Amount is required'),
   transaction_type: z.enum(['adjust', 'bonus']),
   description: z.string().min(1, 'Description is required'),
-})
+});
 
-type AdjustmentFormData = z.infer<typeof adjustmentSchema>
+type AdjustmentFormData = z.infer<typeof adjustmentSchema>;
 
 const TIER_COLORS: Record<LoyaltyTier, string> = {
   bronze: 'bg-amber-600',
@@ -79,7 +72,7 @@ const TIER_COLORS: Record<LoyaltyTier, string> = {
   gold: 'bg-yellow-500',
   platinum: 'bg-blue-400',
   diamond: 'bg-purple-500',
-}
+};
 
 const TRANSACTION_ICONS: Record<TransactionType, unknown> = {
   earn: ArrowUpCircle,
@@ -87,7 +80,7 @@ const TRANSACTION_ICONS: Record<TransactionType, unknown> = {
   expire: Clock,
   adjust: CreditCard,
   bonus: Gift,
-}
+};
 
 const STATUS_COLORS: Record<RedemptionStatus, string> = {
   pending: 'bg-yellow-500',
@@ -95,56 +88,56 @@ const STATUS_COLORS: Record<RedemptionStatus, string> = {
   fulfilled: 'bg-green-500',
   cancelled: 'bg-red-500',
   expired: 'bg-gray-500',
-}
+};
 
 interface CustomerLoyaltyProfileProps {
-  customerId: string
+  customerId: string;
 }
 
 export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyProfileProps) {
-  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false)
-  const queryClient = useQueryClient()
+  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch customer loyalty data
   const { data: loyalty, isLoading: loyaltyLoading } = useQuery({
     queryKey: ['customer-loyalty', customerId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}`)
-      if (!res.ok) throw new Error('Failed to fetch customer loyalty')
-      return res.json() as Promise<CustomerLoyalty & { tier_benefits: TierBenefit }>
+      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}`);
+      if (!res.ok) throw new Error('Failed to fetch customer loyalty');
+      return res.json() as Promise<CustomerLoyalty & { tier_benefits: TierBenefit }>;
     },
-  })
+  });
 
   // Fetch transactions
   const { data: transactions, isLoading: transactionsLoading } = useQuery({
     queryKey: ['loyalty-transactions', customerId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}/transactions`)
-      if (!res.ok) throw new Error('Failed to fetch transactions')
-      return res.json() as Promise<LoyaltyTransaction[]>
+      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}/transactions`);
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json() as Promise<LoyaltyTransaction[]>;
     },
-  })
+  });
 
   // Fetch redemptions
   const { data: redemptions, isLoading: redemptionsLoading } = useQuery({
     queryKey: ['customer-redemptions', customerId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}/redemptions`)
-      if (!res.ok) throw new Error('Failed to fetch redemptions')
-      return res.json() as Promise<(RewardRedemption & { reward_name?: string })[]>
+      const res = await fetch(`/api/v1/admin/loyalty/customers/${customerId}/redemptions`);
+      if (!res.ok) throw new Error('Failed to fetch redemptions');
+      return res.json() as Promise<(RewardRedemption & { reward_name?: string })[]>;
     },
-  })
+  });
 
   // Fetch program details
   const { data: program } = useQuery({
     queryKey: ['loyalty-program', loyalty?.program_id],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/admin/loyalty/programs/${loyalty!.program_id}`)
-      if (!res.ok) throw new Error('Failed to fetch program')
-      return res.json()
+      const res = await fetch(`/api/v1/admin/loyalty/programs/${loyalty!.program_id}`);
+      if (!res.ok) throw new Error('Failed to fetch program');
+      return res.json();
     },
     enabled: !!loyalty?.program_id,
-  })
+  });
 
   // Form
   const form = useForm<AdjustmentFormData>({
@@ -154,7 +147,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
       transaction_type: 'adjust',
       description: '',
     },
-  })
+  });
 
   // Adjustment mutation
   const adjustMutation = useMutation({
@@ -163,35 +156,35 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to adjust points')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to adjust points');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Points adjusted successfully')
-      queryClient.invalidateQueries({ queryKey: ['customer-loyalty', customerId] })
-      queryClient.invalidateQueries({ queryKey: ['loyalty-transactions', customerId] })
-      setIsAdjustDialogOpen(false)
-      form.reset()
+      toast.success('Points adjusted successfully');
+      queryClient.invalidateQueries({ queryKey: ['customer-loyalty', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['loyalty-transactions', customerId] });
+      setIsAdjustDialogOpen(false);
+      form.reset();
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   const onSubmit = (data: AdjustmentFormData) => {
-    adjustMutation.mutate(data)
-  }
+    adjustMutation.mutate(data);
+  };
 
   // Calculate tier progress
   const tierProgress = React.useMemo(() => {
-    if (!loyalty || !program) return { current: 0, next: 0, progress: 0, nextTier: null }
+    if (!loyalty || !program) return { current: 0, next: 0, progress: 0, nextTier: null };
 
-    const tiers: LoyaltyTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond']
-    const currentIndex = tiers.indexOf(loyalty.current_tier)
+    const tiers: LoyaltyTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+    const currentIndex = tiers.indexOf(loyalty.current_tier);
 
     if (currentIndex === tiers.length - 1) {
       // Already at highest tier
@@ -200,23 +193,23 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         next: program.tier_thresholds[loyalty.current_tier],
         progress: 100,
         nextTier: null,
-      }
+      };
     }
 
-    const nextTier = tiers[currentIndex + 1]
-    const currentThreshold = program.tier_thresholds[loyalty.current_tier]
-    const nextThreshold = program.tier_thresholds[nextTier]
-    const pointsInTier = loyalty.total_points_earned - currentThreshold
-    const tierRange = nextThreshold - currentThreshold
-    const progress = (pointsInTier / tierRange) * 100
+    const nextTier = tiers[currentIndex + 1];
+    const currentThreshold = program.tier_thresholds[loyalty.current_tier];
+    const nextThreshold = program.tier_thresholds[nextTier];
+    const pointsInTier = loyalty.total_points_earned - currentThreshold;
+    const tierRange = nextThreshold - currentThreshold;
+    const progress = (pointsInTier / tierRange) * 100;
 
     return {
       current: currentThreshold,
       next: nextThreshold,
       progress: Math.min(progress, 100),
       nextTier,
-    }
-  }, [loyalty, program])
+    };
+  }, [loyalty, program]);
 
   if (loyaltyLoading) {
     return (
@@ -224,17 +217,17 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-96 w-full" />
       </div>
-    )
+    );
   }
 
   if (!loyalty) {
     return (
       <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
+        <CardContent className="text-muted-foreground py-12 text-center">
           No loyalty data found for this customer
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -245,7 +238,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
           <CardTitle className="flex items-center justify-between">
             <span>Loyalty Summary</span>
             <Button size="sm" onClick={() => setIsAdjustDialogOpen(true)}>
-              <CreditCard className="w-4 h-4 mr-2" />
+              <CreditCard className="mr-2 h-4 w-4" />
               Adjust Points
             </Button>
           </CardTitle>
@@ -253,19 +246,20 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         <CardContent className="space-y-6">
           {/* Tier Badge */}
           <div className="flex items-center gap-4">
-            <div className={`p-4 rounded-full ${TIER_COLORS[loyalty.current_tier]}`}>
-              <Trophy className="w-8 h-8 text-white" />
+            <div className={`rounded-full p-4 ${TIER_COLORS[loyalty.current_tier]}`}>
+              <Trophy className="h-8 w-8 text-white" />
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="mb-1 flex items-center gap-2">
                 <h3 className="text-2xl font-bold capitalize">{loyalty.current_tier} Tier</h3>
                 <Badge variant="outline">
                   Since {format(new Date(loyalty.tier_qualified_date), 'MMM yyyy')}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {loyalty.tier_benefits?.multiplier}x points multiplier
-                {loyalty.tier_benefits?.discount && ` • ${loyalty.tier_benefits.discount}% discount`}
+                {loyalty.tier_benefits?.discount &&
+                  ` • ${loyalty.tier_benefits.discount}% discount`}
               </p>
             </div>
           </div>
@@ -276,11 +270,12 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Progress to {tierProgress.nextTier}</span>
                 <span className="font-medium">
-                  {loyalty.total_points_earned.toLocaleString()} / {tierProgress.next.toLocaleString()} pts
+                  {loyalty.total_points_earned.toLocaleString()} /{' '}
+                  {tierProgress.next.toLocaleString()} pts
                 </span>
               </div>
               <Progress value={tierProgress.progress} className="h-2" />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {(tierProgress.next - loyalty.total_points_earned).toLocaleString()} points to go
               </p>
             </div>
@@ -291,37 +286,37 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Points Balance</p>
+              <p className="text-muted-foreground text-sm">Points Balance</p>
               <p className="text-2xl font-bold">{loyalty.points_balance.toLocaleString()}</p>
               {loyalty.points_pending > 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   +{loyalty.points_pending.toLocaleString()} pending
                 </p>
               )}
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Earned</p>
+              <p className="text-muted-foreground text-sm">Total Earned</p>
               <p className="text-2xl font-bold">{loyalty.total_points_earned.toLocaleString()}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Redeemed</p>
+              <p className="text-muted-foreground text-sm">Total Redeemed</p>
               <p className="text-2xl font-bold">{loyalty.total_points_redeemed.toLocaleString()}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Lifetime Value</p>
+              <p className="text-muted-foreground text-sm">Lifetime Value</p>
               <p className="text-2xl font-bold">${loyalty.lifetime_value.toLocaleString()}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Referrals</p>
+              <p className="text-muted-foreground text-sm">Referrals</p>
               <p className="text-2xl font-bold">{loyalty.referral_count}</p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Member Since</p>
+              <p className="text-muted-foreground text-sm">Member Since</p>
               <p className="text-lg font-semibold">
                 {format(new Date(loyalty.created_at), 'MMM yyyy')}
               </p>
@@ -330,15 +325,11 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
 
           {/* Tier Benefits */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-sm">Current Benefits</h4>
+            <h4 className="text-sm font-semibold">Current Benefits</h4>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">
-                {loyalty.tier_benefits?.multiplier}x Points
-              </Badge>
+              <Badge variant="secondary">{loyalty.tier_benefits?.multiplier}x Points</Badge>
               {loyalty.tier_benefits?.discount && (
-                <Badge variant="secondary">
-                  {loyalty.tier_benefits.discount}% Discount
-                </Badge>
+                <Badge variant="secondary">{loyalty.tier_benefits.discount}% Discount</Badge>
               )}
               {loyalty.tier_benefits?.free_shipping && (
                 <Badge variant="secondary">Free Shipping</Badge>
@@ -368,7 +359,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
               ))}
             </div>
           ) : !transactions || transactions.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No transactions yet</p>
+            <p className="text-muted-foreground py-8 text-center">No transactions yet</p>
           ) : (
             <Table>
               <TableHeader>
@@ -380,16 +371,18 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.slice(0, 10).map((transaction) => {
-                  const Icon = TRANSACTION_ICONS[transaction.transaction_type]
-                  const isPositive = ['earn', 'adjust', 'bonus'].includes(transaction.transaction_type)
+                {transactions.slice(0, 10).map(transaction => {
+                  const Icon = TRANSACTION_ICONS[transaction.transaction_type];
+                  const isPositive = ['earn', 'adjust', 'bonus'].includes(
+                    transaction.transaction_type
+                  );
 
                   return (
                     <TableRow key={transaction.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Icon
-                            className={`w-4 h-4 ${isPositive ? 'text-green-600' : 'text-red-600'}`}
+                            className={`h-4 w-4 ${isPositive ? 'text-green-600' : 'text-red-600'}`}
                           />
                           <span className="capitalize">{transaction.transaction_type}</span>
                         </div>
@@ -405,12 +398,12 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
                         <div className="text-sm">
                           {format(new Date(transaction.created_at), 'MMM dd, yyyy')}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {format(new Date(transaction.created_at), 'HH:mm')}
                         </div>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
@@ -432,7 +425,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
               ))}
             </div>
           ) : !redemptions || redemptions.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No redemptions yet</p>
+            <p className="text-muted-foreground py-8 text-center">No redemptions yet</p>
           ) : (
             <Table>
               <TableHeader>
@@ -445,13 +438,13 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {redemptions.map((redemption) => (
+                {redemptions.map(redemption => (
                   <TableRow key={redemption.id}>
                     <TableCell className="font-medium">
                       {redemption.reward_name || 'Unknown Reward'}
                     </TableCell>
                     <TableCell>
-                      <code className="px-2 py-1 bg-muted rounded text-xs font-mono">
+                      <code className="bg-muted rounded px-2 py-1 font-mono text-xs">
                         {redemption.redemption_code}
                       </code>
                     </TableCell>
@@ -460,7 +453,9 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[redemption.status]}`} />
+                        <div
+                          className={`h-2 w-2 rounded-full ${STATUS_COLORS[redemption.status]}`}
+                        />
                         <span className="capitalize">{redemption.status}</span>
                       </div>
                     </TableCell>
@@ -482,9 +477,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adjust Points</DialogTitle>
-            <DialogDescription>
-              Manually adjust customer points balance
-            </DialogDescription>
+            <DialogDescription>Manually adjust customer points balance</DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
@@ -522,7 +515,7 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
                         type="number"
                         placeholder="Enter points amount"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={e => field.onChange(parseInt(e.target.value))}
                       />
                     </FormControl>
                     <FormDescription>
@@ -568,5 +561,5 @@ export default function CustomerLoyaltyProfile({ customerId }: CustomerLoyaltyPr
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

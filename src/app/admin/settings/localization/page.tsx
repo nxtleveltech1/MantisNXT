@@ -1,13 +1,19 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Globe,
   Clock,
@@ -18,19 +24,19 @@ import {
   CheckCircle,
   AlertTriangle,
   Languages,
-  MapPin
-} from "lucide-react"
+  MapPin,
+} from 'lucide-react';
 
 interface LocalizationSettings {
-  language: string
-  country: string
-  timezone: string
-  dateFormat: string
-  timeFormat: string
-  currency: string
-  numberFormat: string
-  firstDayOfWeek: string
-  rtlSupport: boolean
+  language: string;
+  country: string;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  currency: string;
+  numberFormat: string;
+  firstDayOfWeek: string;
+  rtlSupport: boolean;
 }
 
 const languages = [
@@ -44,8 +50,8 @@ const languages = [
   { code: 've', name: 'Venda', native: 'Tshivenda' },
   { code: 'ts', name: 'Tsonga', native: 'Xitsonga' },
   { code: 'nr', name: 'Ndebele', native: 'isiNdebele' },
-  { code: 'nso', name: 'Northern Sotho', native: 'Sepedi' }
-]
+  { code: 'nso', name: 'Northern Sotho', native: 'Sepedi' },
+];
 
 const timezones = [
   'Africa/Johannesburg',
@@ -54,29 +60,29 @@ const timezones = [
   'Africa/Gaborone',
   'Africa/Maseru',
   'Africa/Mbabane',
-  'Africa/Windhoek'
-]
+  'Africa/Windhoek',
+];
 
 const dateFormats = [
   { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (31/12/2023)', example: '31/12/2023' },
   { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (12/31/2023)', example: '12/31/2023' },
   { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2023-12-31)', example: '2023-12-31' },
   { value: 'DD-MM-YYYY', label: 'DD-MM-YYYY (31-12-2023)', example: '31-12-2023' },
-  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (31.12.2023)', example: '31.12.2023' }
-]
+  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (31.12.2023)', example: '31.12.2023' },
+];
 
 const timeFormats = [
   { value: '24', label: '24-hour (23:59)', example: '14:30' },
-  { value: '12', label: '12-hour (11:59 PM)', example: '2:30 PM' }
-]
+  { value: '12', label: '12-hour (11:59 PM)', example: '2:30 PM' },
+];
 
 const numberFormats = [
   { value: 'en-ZA', label: 'South African (1,234.56)', example: '1,234.56' },
   { value: 'en-US', label: 'US (1,234.56)', example: '1,234.56' },
   { value: 'en-GB', label: 'UK (1,234.56)', example: '1,234.56' },
   { value: 'de-DE', label: 'German (1.234,56)', example: '1.234,56' },
-  { value: 'fr-FR', label: 'French (1 234,56)', example: '1 234,56' }
-]
+  { value: 'fr-FR', label: 'French (1 234,56)', example: '1 234,56' },
+];
 
 export default function LocalizationPage() {
   const [settings, setSettings] = useState<LocalizationSettings>({
@@ -88,31 +94,31 @@ export default function LocalizationPage() {
     currency: 'ZAR',
     numberFormat: 'en-ZA',
     firstDayOfWeek: 'monday',
-    rtlSupport: false
-  })
+    rtlSupport: false,
+  });
 
-  const [hasChanges, setHasChanges] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleInputChange = (field: keyof LocalizationSettings, value: string | boolean) => {
-    setSettings(prev => ({ ...prev, [field]: value }))
-    setHasChanges(true)
-  }
+    setSettings(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setHasChanges(false)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setHasChanges(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to save settings:', error)
+      console.error('Failed to save settings:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleReset = () => {
     setSettings({
@@ -124,59 +130,59 @@ export default function LocalizationPage() {
       currency: 'ZAR',
       numberFormat: 'en-ZA',
       firstDayOfWeek: 'monday',
-      rtlSupport: false
-    })
-    setHasChanges(false)
-  }
+      rtlSupport: false,
+    });
+    setHasChanges(false);
+  };
 
   const getCurrentTime = () => {
-    const now = new Date()
-    const timeZone = settings.timezone
+    const now = new Date();
+    const timeZone = settings.timezone;
 
     if (settings.timeFormat === '12') {
       return now.toLocaleTimeString('en-US', {
         timeZone,
         hour12: true,
         hour: 'numeric',
-        minute: '2-digit'
-      })
+        minute: '2-digit',
+      });
     }
 
     return now.toLocaleTimeString('en-GB', {
       timeZone,
       hour12: false,
       hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+      minute: '2-digit',
+    });
+  };
 
   const getCurrentDate = () => {
-    const now = new Date()
-    const day = now.getDate().toString().padStart(2, '0')
-    const month = (now.getMonth() + 1).toString().padStart(2, '0')
-    const year = now.getFullYear()
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear();
 
     switch (settings.dateFormat) {
       case 'MM/DD/YYYY':
-        return `${month}/${day}/${year}`
+        return `${month}/${day}/${year}`;
       case 'YYYY-MM-DD':
-        return `${year}-${month}-${day}`
+        return `${year}-${month}-${day}`;
       case 'DD-MM-YYYY':
-        return `${day}-${month}-${year}`
+        return `${day}-${month}-${year}`;
       case 'DD.MM.YYYY':
-        return `${day}.${month}.${year}`
+        return `${day}.${month}.${year}`;
       default:
-        return `${day}/${month}/${year}`
+        return `${day}/${month}/${year}`;
     }
-  }
+  };
 
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat(settings.numberFormat, {
       style: 'currency',
       currency: settings.currency,
-    })
-    return formatter.format(amount)
-  }
+    });
+    return formatter.format(amount);
+  };
 
   return (
     <div className="space-y-6">
@@ -184,30 +190,23 @@ export default function LocalizationPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Localization Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             Configure language, timezone, and regional preferences
           </p>
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
-              <AlertTriangle className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-600">
+              <AlertTriangle className="mr-1 h-3 w-3" />
               Unsaved Changes
             </Badge>
           )}
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={!hasChanges || isLoading}
-          >
-            <Undo2 className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleReset} disabled={!hasChanges || isLoading}>
+            <Undo2 className="mr-2 h-4 w-4" />
             Reset
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isLoading}
-          >
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={!hasChanges || isLoading}>
+            <Save className="mr-2 h-4 w-4" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
@@ -215,7 +214,7 @@ export default function LocalizationPage() {
 
       {/* Success Alert */}
       {showSuccess && (
-        <Alert className="bg-green-50 border-green-200">
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             Localization settings saved successfully!
@@ -223,7 +222,7 @@ export default function LocalizationPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Language & Region */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -233,18 +232,18 @@ export default function LocalizationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Default Language</Label>
                 <Select
                   value={settings.language}
-                  onValueChange={(value) => handleInputChange('language', value)}
+                  onValueChange={value => handleInputChange('language', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {languages.map((lang) => (
+                    {languages.map(lang => (
                       <SelectItem key={lang.code} value={lang.code}>
                         <div className="flex items-center gap-2">
                           <span>{lang.name}</span>
@@ -260,22 +259,20 @@ export default function LocalizationPage() {
                 <Label htmlFor="timezone">Timezone</Label>
                 <Select
                   value={settings.timezone}
-                  onValueChange={(value) => handleInputChange('timezone', value)}
+                  onValueChange={value => handleInputChange('timezone', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {timezones.map((tz) => (
+                    {timezones.map(tz => (
                       <SelectItem key={tz} value={tz}>
                         {tz.replace('Africa/', '').replace('_', ' ')}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">
-                  Current time: {getCurrentTime()}
-                </p>
+                <p className="text-xs text-gray-500">Current time: {getCurrentTime()}</p>
               </div>
             </div>
 
@@ -283,54 +280,50 @@ export default function LocalizationPage() {
 
             {/* Date & Time Formats */}
             <div className="space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 font-medium">
                 <Calendar className="h-4 w-4" />
                 Date & Time Formats
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Date Format</Label>
                   <Select
                     value={settings.dateFormat}
-                    onValueChange={(value) => handleInputChange('dateFormat', value)}
+                    onValueChange={value => handleInputChange('dateFormat', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {dateFormats.map((format) => (
+                      {dateFormats.map(format => (
                         <SelectItem key={format.value} value={format.value}>
                           {format.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500">
-                    Preview: {getCurrentDate()}
-                  </p>
+                  <p className="text-xs text-gray-500">Preview: {getCurrentDate()}</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Time Format</Label>
                   <Select
                     value={settings.timeFormat}
-                    onValueChange={(value) => handleInputChange('timeFormat', value)}
+                    onValueChange={value => handleInputChange('timeFormat', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeFormats.map((format) => (
+                      {timeFormats.map(format => (
                         <SelectItem key={format.value} value={format.value}>
                           {format.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500">
-                    Preview: {getCurrentTime()}
-                  </p>
+                  <p className="text-xs text-gray-500">Preview: {getCurrentTime()}</p>
                 </div>
               </div>
 
@@ -338,7 +331,7 @@ export default function LocalizationPage() {
                 <Label>First Day of Week</Label>
                 <Select
                   value={settings.firstDayOfWeek}
-                  onValueChange={(value) => handleInputChange('firstDayOfWeek', value)}
+                  onValueChange={value => handleInputChange('firstDayOfWeek', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -355,17 +348,17 @@ export default function LocalizationPage() {
 
             {/* Currency & Numbers */}
             <div className="space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 font-medium">
                 <DollarSign className="h-4 w-4" />
                 Currency & Number Formats
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Currency</Label>
                   <Select
                     value={settings.currency}
-                    onValueChange={(value) => handleInputChange('currency', value)}
+                    onValueChange={value => handleInputChange('currency', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -379,22 +372,20 @@ export default function LocalizationPage() {
                       <SelectItem value="NAD">NAD - Namibian Dollar</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500">
-                    Preview: {formatCurrency(1234.56)}
-                  </p>
+                  <p className="text-xs text-gray-500">Preview: {formatCurrency(1234.56)}</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Number Format</Label>
                   <Select
                     value={settings.numberFormat}
-                    onValueChange={(value) => handleInputChange('numberFormat', value)}
+                    onValueChange={value => handleInputChange('numberFormat', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {numberFormats.map((format) => (
+                      {numberFormats.map(format => (
                         <SelectItem key={format.value} value={format.value}>
                           {format.label}
                         </SelectItem>
@@ -416,7 +407,7 @@ export default function LocalizationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+            <div className="space-y-3 rounded-lg bg-gray-50 p-4">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-500" />
                 <span className="text-sm">
@@ -445,11 +436,19 @@ export default function LocalizationPage() {
             {/* Sample Data */}
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Sample Purchase Order</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Date:</strong> {getCurrentDate()}</p>
-                <p><strong>Time:</strong> {getCurrentTime()}</p>
-                <p><strong>Amount:</strong> {formatCurrency(15750.25)}</p>
-                <p><strong>Quantity:</strong> {(1250).toLocaleString(settings.numberFormat)}</p>
+              <div className="space-y-1 text-sm">
+                <p>
+                  <strong>Date:</strong> {getCurrentDate()}
+                </p>
+                <p>
+                  <strong>Time:</strong> {getCurrentTime()}
+                </p>
+                <p>
+                  <strong>Amount:</strong> {formatCurrency(15750.25)}
+                </p>
+                <p>
+                  <strong>Quantity:</strong> {(1250).toLocaleString(settings.numberFormat)}
+                </p>
               </div>
             </div>
 
@@ -459,8 +458,8 @@ export default function LocalizationPage() {
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Selected Language</h4>
               <div className="text-sm text-gray-600">
-                {languages.find(l => l.code === settings.language)?.name}
-                ({languages.find(l => l.code === settings.language)?.native})
+                {languages.find(l => l.code === settings.language)?.name}(
+                {languages.find(l => l.code === settings.language)?.native})
               </div>
               <Badge variant="outline" className="text-xs">
                 {settings.language.toUpperCase()}
@@ -470,5 +469,5 @@ export default function LocalizationPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

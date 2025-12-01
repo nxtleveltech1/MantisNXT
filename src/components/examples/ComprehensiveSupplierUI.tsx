@@ -10,7 +10,11 @@ import type { ColumnDef } from '../ui/data-table/EnhancedDataTable';
 import EnhancedDataTable from '../ui/data-table/EnhancedDataTable';
 import { DataTableLoader } from '../ui/loading/LoadingStates';
 import { AccessibilityProvider } from '../ui/accessibility/AccessibilityProvider';
-import { UnifiedSearch, createProductSearchConfig, createSupplierSearchConfig } from '../ui/search/UnifiedSearchSystem';
+import {
+  UnifiedSearch,
+  createProductSearchConfig,
+  createSupplierSearchConfig,
+} from '../ui/search/UnifiedSearchSystem';
 import { DataFreshnessDashboard } from '../ui/indicators/DataFreshnessIndicators';
 import { designTokens } from '../ui/design-system';
 
@@ -60,7 +64,7 @@ const generateMockProducts = (count: number): Product[] => {
     { id: '2', name: 'Global Supplies Ltd', code: 'GLOB002' },
     { id: '3', name: 'Premium Parts Co', code: 'PREM003' },
     { id: '4', name: 'Industrial Materials', code: 'INDL004' },
-    { id: '5', name: 'Digital Systems Inc', code: 'DIGI005' }
+    { id: '5', name: 'Digital Systems Inc', code: 'DIGI005' },
   ];
 
   return Array.from({ length: count }, (_, i) => ({
@@ -73,21 +77,30 @@ const generateMockProducts = (count: number): Product[] => {
     stock: Math.floor(Math.random() * 500),
     supplier: suppliers[i % suppliers.length],
     lastUpdated: new Date(Date.now() - Math.random() * 86400000 * 30), // Random within 30 days
-    status: Math.random() > 0.1 ? 'active' : (Math.random() > 0.5 ? 'inactive' : 'pending') as 'active' | 'inactive' | 'pending',
+    status:
+      Math.random() > 0.1
+        ? 'active'
+        : ((Math.random() > 0.5 ? 'inactive' : 'pending') as 'active' | 'inactive' | 'pending'),
     trends: {
       priceChange: (Math.random() - 0.5) * 20,
       demandChange: (Math.random() - 0.5) * 50,
-      stockMovement: Math.floor((Math.random() - 0.5) * 100)
+      stockMovement: Math.floor((Math.random() - 0.5) * 100),
     },
-    imageUrl: `https://picsum.photos/400/300?random=${i + 1}`
+    imageUrl: `https://picsum.photos/400/300?random=${i + 1}`,
   }));
 };
 
 const generateMockSuppliers = (count: number): Supplier[] => {
   const categories = ['Technology', 'Manufacturing', 'Services', 'Retail', 'Industrial'];
   const names = [
-    'TechCorp Solutions', 'Global Supplies Ltd', 'Premium Parts Co', 'Industrial Materials',
-    'Digital Systems Inc', 'Advanced Manufacturing', 'Quality Components', 'Smart Solutions'
+    'TechCorp Solutions',
+    'Global Supplies Ltd',
+    'Premium Parts Co',
+    'Industrial Materials',
+    'Digital Systems Inc',
+    'Advanced Manufacturing',
+    'Quality Components',
+    'Smart Solutions',
   ];
 
   return Array.from({ length: count }, (_, i) => ({
@@ -98,16 +111,22 @@ const generateMockSuppliers = (count: number): Supplier[] => {
     email: `contact${i + 1}@${names[i % names.length].toLowerCase().replace(/\s+/g, '')}.com`,
     phone: `+1-555-${String(Math.floor(Math.random() * 9000) + 1000)}`,
     category: categories[i % categories.length],
-    status: Math.random() > 0.1 ? 'active' : (Math.random() > 0.5 ? 'inactive' : 'pending') as 'active' | 'inactive' | 'pending',
+    status:
+      Math.random() > 0.1
+        ? 'active'
+        : ((Math.random() > 0.5 ? 'inactive' : 'pending') as 'active' | 'inactive' | 'pending'),
     createdAt: new Date(Date.now() - Math.random() * 86400000 * 365), // Random within year
     productsCount: Math.floor(Math.random() * 100) + 1,
-    lastOrderDate: Math.random() > 0.3 ? new Date(Date.now() - Math.random() * 86400000 * 90) : undefined
+    lastOrderDate:
+      Math.random() > 0.3 ? new Date(Date.now() - Math.random() * 86400000 * 90) : undefined,
   }));
 };
 
 // Main comprehensive component
 export const ComprehensiveSupplierUI: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'products' | 'suppliers' | 'upload' | 'analytics'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'suppliers' | 'upload' | 'analytics'>(
+    'products'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<unknown[]>([]);
 
@@ -116,69 +135,72 @@ export const ComprehensiveSupplierUI: React.FC = () => {
   const mockSuppliers = useMemo(() => generateMockSuppliers(25), []);
 
   // Data freshness info
-  const dataFreshnessItems = useMemo(() => [
-    {
-      id: 'products',
-      name: 'Product Catalog',
-      freshnessInfo: {
-        lastUpdated: new Date(Date.now() - 120000), // 2 minutes ago
-        syncStatus: 'synced' as const,
-        freshnessLevel: 'fresh' as const,
-        changesSinceLastView: 3,
-        confidence: 0.95,
-        dataSource: 'Primary Database',
-        recentChanges: [
-          {
-            id: '1',
-            type: 'price_changed' as const,
-            field: 'price',
-            timestamp: new Date(Date.now() - 60000),
-            severity: 'medium' as const
-          },
-          {
-            id: '2',
-            type: 'stock_changed' as const,
-            field: 'stock',
-            timestamp: new Date(Date.now() - 180000),
-            severity: 'high' as const
-          }
-        ]
-      }
-    },
-    {
-      id: 'suppliers',
-      name: 'Supplier Data',
-      freshnessInfo: {
-        lastUpdated: new Date(Date.now() - 300000), // 5 minutes ago
-        syncStatus: 'synced' as const,
-        freshnessLevel: 'fresh' as const,
-        changesSinceLastView: 1,
-        confidence: 0.98,
-        dataSource: 'Supplier API',
-        recentChanges: [
-          {
-            id: '3',
-            type: 'updated' as const,
-            field: 'contact_info',
-            timestamp: new Date(Date.now() - 300000),
-            severity: 'low' as const
-          }
-        ]
-      }
-    },
-    {
-      id: 'pricelists',
-      name: 'Price Lists',
-      freshnessInfo: {
-        lastUpdated: new Date(Date.now() - 1800000), // 30 minutes ago
-        syncStatus: 'synced' as const,
-        freshnessLevel: 'stale' as const,
-        changesSinceLastView: 0,
-        confidence: 0.85,
-        dataSource: 'File Uploads'
-      }
-    }
-  ], []);
+  const dataFreshnessItems = useMemo(
+    () => [
+      {
+        id: 'products',
+        name: 'Product Catalog',
+        freshnessInfo: {
+          lastUpdated: new Date(Date.now() - 120000), // 2 minutes ago
+          syncStatus: 'synced' as const,
+          freshnessLevel: 'fresh' as const,
+          changesSinceLastView: 3,
+          confidence: 0.95,
+          dataSource: 'Primary Database',
+          recentChanges: [
+            {
+              id: '1',
+              type: 'price_changed' as const,
+              field: 'price',
+              timestamp: new Date(Date.now() - 60000),
+              severity: 'medium' as const,
+            },
+            {
+              id: '2',
+              type: 'stock_changed' as const,
+              field: 'stock',
+              timestamp: new Date(Date.now() - 180000),
+              severity: 'high' as const,
+            },
+          ],
+        },
+      },
+      {
+        id: 'suppliers',
+        name: 'Supplier Data',
+        freshnessInfo: {
+          lastUpdated: new Date(Date.now() - 300000), // 5 minutes ago
+          syncStatus: 'synced' as const,
+          freshnessLevel: 'fresh' as const,
+          changesSinceLastView: 1,
+          confidence: 0.98,
+          dataSource: 'Supplier API',
+          recentChanges: [
+            {
+              id: '3',
+              type: 'updated' as const,
+              field: 'contact_info',
+              timestamp: new Date(Date.now() - 300000),
+              severity: 'low' as const,
+            },
+          ],
+        },
+      },
+      {
+        id: 'pricelists',
+        name: 'Price Lists',
+        freshnessInfo: {
+          lastUpdated: new Date(Date.now() - 1800000), // 30 minutes ago
+          syncStatus: 'synced' as const,
+          freshnessLevel: 'stale' as const,
+          changesSinceLastView: 0,
+          confidence: 0.85,
+          dataSource: 'File Uploads',
+        },
+      },
+    ],
+    []
+  );
 
   // Column definitions for data table
   const productColumns: ColumnDef<Product>[] = [
@@ -189,7 +211,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 120
+      width: 120,
     },
     {
       id: 'name',
@@ -198,7 +220,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 200
+      width: 200,
     },
     {
       id: 'category',
@@ -207,7 +229,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'badge',
       sortable: true,
       filterable: true,
-      width: 120
+      width: 120,
     },
     {
       id: 'price',
@@ -218,8 +240,8 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       filterable: true,
       width: 100,
       metadata: {
-        currency: 'USD'
-      }
+        currency: 'USD',
+      },
     },
     {
       id: 'stock',
@@ -228,7 +250,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'number',
       sortable: true,
       filterable: true,
-      width: 80
+      width: 80,
     },
     {
       id: 'supplier',
@@ -238,7 +260,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       sortable: true,
       filterable: true,
       width: 150,
-      accessor: (row) => row.supplier.name
+      accessor: row => row.supplier.name,
     },
     {
       id: 'status',
@@ -247,7 +269,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'badge',
       sortable: true,
       filterable: true,
-      width: 100
+      width: 100,
     },
     {
       id: 'lastUpdated',
@@ -257,11 +279,11 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       sortable: true,
       filterable: true,
       width: 160,
-      accessor: (row) => row.lastUpdated,
+      accessor: row => row.lastUpdated,
       metadata: {
-        dateFormat: 'MMM dd, yyyy'
-      }
-    }
+        dateFormat: 'MMM dd, yyyy',
+      },
+    },
   ];
 
   const supplierColumns: ColumnDef<Supplier>[] = [
@@ -272,7 +294,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 100
+      width: 100,
     },
     {
       id: 'name',
@@ -281,7 +303,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 200
+      width: 200,
     },
     {
       id: 'contactPerson',
@@ -290,7 +312,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 150
+      width: 150,
     },
     {
       id: 'email',
@@ -299,7 +321,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'text',
       sortable: true,
       filterable: true,
-      width: 200
+      width: 200,
     },
     {
       id: 'category',
@@ -308,7 +330,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'badge',
       sortable: true,
       filterable: true,
-      width: 120
+      width: 120,
     },
     {
       id: 'productsCount',
@@ -317,7 +339,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'number',
       sortable: true,
       filterable: true,
-      width: 100
+      width: 100,
     },
     {
       id: 'status',
@@ -326,7 +348,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       type: 'badge',
       sortable: true,
       filterable: true,
-      width: 100
+      width: 100,
     },
     {
       id: 'createdAt',
@@ -336,11 +358,11 @@ export const ComprehensiveSupplierUI: React.FC = () => {
       sortable: true,
       filterable: true,
       width: 140,
-      accessor: (row) => row.createdAt,
+      accessor: row => row.createdAt,
       metadata: {
-        dateFormat: 'MMM dd, yyyy'
-      }
-    }
+        dateFormat: 'MMM dd, yyyy',
+      },
+    },
   ];
 
   // Search configurations
@@ -440,9 +462,10 @@ export const ComprehensiveSupplierUI: React.FC = () => {
         <div className="header">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold mb-2">Supplier & Product Management</h1>
+              <h1 className="mb-2 text-2xl font-bold">Supplier & Product Management</h1>
               <p className="text-muted-foreground">
-                Comprehensive interface with advanced search, real-time updates, and accessibility features
+                Comprehensive interface with advanced search, real-time updates, and accessibility
+                features
               </p>
             </div>
 
@@ -460,28 +483,28 @@ export const ComprehensiveSupplierUI: React.FC = () => {
               className={`nav-tab ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => setActiveTab('products')}
             >
-              <Package className="w-4 h-4" />
+              <Package className="h-4 w-4" />
               Product Catalog
             </button>
             <button
               className={`nav-tab ${activeTab === 'suppliers' ? 'active' : ''}`}
               onClick={() => setActiveTab('suppliers')}
             >
-              <Search className="w-4 h-4" />
+              <Search className="h-4 w-4" />
               Suppliers
             </button>
             <button
               className={`nav-tab ${activeTab === 'upload' ? 'active' : ''}`}
               onClick={() => setActiveTab('upload')}
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="h-4 w-4" />
               Price List Upload
             </button>
             <button
               className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
               onClick={() => setActiveTab('analytics')}
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="h-4 w-4" />
               Data Analytics
             </button>
           </div>
@@ -516,8 +539,8 @@ export const ComprehensiveSupplierUI: React.FC = () => {
               <div className="data-section">
                 <ProductCatalogGrid
                   products={searchResults.length > 0 ? searchResults : mockProducts}
-                  onProductSelect={(product) => console.log('Selected product:', product)}
-                  onProductUpdate={(product) => console.log('Update product:', product)}
+                  onProductSelect={product => console.log('Selected product:', product)}
+                  onProductUpdate={product => console.log('Update product:', product)}
                   viewMode="grid"
                   enableVirtualization={true}
                   pageSize={20}
@@ -556,7 +579,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
                       pageSize: 25,
                       pageSizeOptions: [10, 25, 50, 100],
                       showInfo: true,
-                      showSizeSelector: true
+                      showSizeSelector: true,
                     }}
                     selection={{ enabled: true, mode: 'multiple', showSelectAll: true }}
                     actions={{
@@ -566,15 +589,15 @@ export const ComprehensiveSupplierUI: React.FC = () => {
                           id: 'view',
                           label: 'View',
                           icon: Eye,
-                          handler: (supplier: Supplier) => console.log('View', supplier)
+                          handler: (supplier: Supplier) => console.log('View', supplier),
                         },
                         {
                           id: 'edit',
                           label: 'Edit',
                           icon: Settings,
-                          handler: (supplier: Supplier) => console.log('Edit', supplier)
-                        }
-                      ]
+                          handler: (supplier: Supplier) => console.log('Edit', supplier),
+                        },
+                      ],
                     }}
                   />
                 </div>
@@ -602,14 +625,14 @@ export const ComprehensiveSupplierUI: React.FC = () => {
             <div className="space-y-6">
               <div className="data-section">
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Product Analytics</h3>
+                  <h3 className="mb-4 text-lg font-semibold">Product Analytics</h3>
                   <EnhancedDataTable<Product>
                     data={mockProducts}
                     columns={productColumns}
                     sorting={{
                       enabled: true,
                       multiSort: true,
-                      defaultSort: [{ column: 'price', direction: 'desc', priority: 0 }]
+                      defaultSort: [{ column: 'price', direction: 'desc', priority: 0 }],
                     }}
                     grouping={{ enabled: true, defaultGroupBy: 'category', showAggregates: true }}
                     pagination={{
@@ -617,7 +640,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
                       pageSize: 50,
                       pageSizeOptions: [25, 50, 100, 200],
                       showInfo: true,
-                      showSizeSelector: true
+                      showSizeSelector: true,
                     }}
                     selection={{ enabled: true, mode: 'multiple', showSelectAll: true }}
                     actions={{
@@ -627,15 +650,15 @@ export const ComprehensiveSupplierUI: React.FC = () => {
                           id: 'view',
                           label: 'View',
                           icon: Eye,
-                          handler: (product: Product) => console.log('View', product)
+                          handler: (product: Product) => console.log('View', product),
                         },
                         {
                           id: 'edit',
                           label: 'Edit',
                           icon: Settings,
-                          handler: (product: Product) => console.log('Edit', product)
-                        }
-                      ]
+                          handler: (product: Product) => console.log('Edit', product),
+                        },
+                      ],
                     }}
                   />
                 </div>

@@ -12,39 +12,43 @@
  * }
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 import { z } from 'zod';
 
-const AnomalyRequestSchema = z.object({
-  table: z.string().optional().describe('Table name to check'),
-  query: z.string().optional().describe('Custom SQL query'),
-  checks: z.array(z.enum(['data_quality', 'statistical', 'business_rule', 'security'])).optional(),
-}).refine(data => data.table || data.query, {
-  message: 'Either table or query must be provided',
-});
+const AnomalyRequestSchema = z
+  .object({
+    table: z.string().optional().describe('Table name to check'),
+    query: z.string().optional().describe('Custom SQL query'),
+    checks: z
+      .array(z.enum(['data_quality', 'statistical', 'business_rule', 'security']))
+      .optional(),
+  })
+  .refine(data => data.table || data.query, {
+    message: 'Either table or query must be provided',
+  });
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedInput = AnomalyRequestSchema.parse(body)
+    const body = await request.json();
+    const validatedInput = AnomalyRequestSchema.parse(body);
 
     const execResult = await executeWithOptionalAsync(request, async () => {
-      const startTime = Date.now()
+      const startTime = Date.now();
       const detection = await aiDatabase.detectAnomalies({
         table: validatedInput.table,
         query: validatedInput.query,
         checks: validatedInput.checks,
-      })
+      });
 
       const categorized = {
         critical: detection.anomalies.filter(a => a.severity === 'critical'),
         high: detection.anomalies.filter(a => a.severity === 'high'),
         medium: detection.anomalies.filter(a => a.severity === 'medium'),
         low: detection.anomalies.filter(a => a.severity === 'low'),
-      }
+      };
 
       return {
         success: true,
@@ -66,8 +70,8 @@ export async function POST(request: NextRequest) {
           checks_performed: validatedInput.checks || ['all'],
         },
         timestamp: new Date().toISOString(),
-      }
-    })
+      };
+    });
 
     if (execResult.queued) {
       return NextResponse.json(
@@ -77,12 +81,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('Anomaly detection error:', error)
+    console.error('Anomaly detection error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -92,7 +96,7 @@ export async function POST(request: NextRequest) {
           details: error.issues,
         },
         { status: 400 }
-      )
+      );
     }
 
     return NextResponse.json(
@@ -102,9 +106,10 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function GET(request: NextRequest) {
+}
+export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/anomalies',
     method: 'POST',
@@ -127,14 +132,14 @@ export async function POST(request: NextRequest) {
         request: {
           table: 'inventory_items',
           checks: ['data_quality', 'statistical'],
-        }
+        },
       },
       {
         description: 'Full anomaly scan on suppliers',
         request: {
           table: 'suppliers',
           checks: ['data_quality', 'statistical', 'business_rule', 'security'],
-        }
+        },
       },
     ],
   });

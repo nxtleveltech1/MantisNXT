@@ -120,13 +120,19 @@ export class CLIProviderExecutor {
             });
 
             if (versionCheck.success) {
-              console.log(`[CLIProviderExecutor] Gemini version check succeeded:`, versionCheck.stdout);
+              console.log(
+                `[CLIProviderExecutor] Gemini version check succeeded:`,
+                versionCheck.stdout
+              );
               result = versionCheck;
             } else {
               // npm shows it's installed, extract version from npm output
               const versionMatch = npmCheck.stdout.match(/@google\/gemini-cli@([\d.]+)/);
               const extractedVersion = versionMatch ? versionMatch[1] : '0.17.1';
-              console.log(`[CLIProviderExecutor] Gemini version extracted from npm:`, extractedVersion);
+              console.log(
+                `[CLIProviderExecutor] Gemini version extracted from npm:`,
+                extractedVersion
+              );
               result = {
                 success: true,
                 exitCode: 0,

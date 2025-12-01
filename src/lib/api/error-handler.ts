@@ -5,7 +5,12 @@
  */
 
 import { NextResponse } from 'next/server';
-import { classifyError, getUserFriendlyError, sanitizeError, ErrorType } from '@/lib/errors/error-messages';
+import {
+  classifyError,
+  getUserFriendlyError,
+  sanitizeError,
+  ErrorType,
+} from '@/lib/errors/error-messages';
 
 export interface ApiError {
   success: false;
@@ -46,12 +51,15 @@ function generateErrorId(): string {
 /**
  * Log error to console and external service (production)
  */
-async function logError(error: Error, context: {
-  endpoint: string;
-  method: string;
-  errorId: string;
-  userId?: string;
-}) {
+async function logError(
+  error: Error,
+  context: {
+    endpoint: string;
+    method: string;
+    errorId: string;
+    userId?: string;
+  }
+) {
   const sanitized = sanitizeError(error);
 
   // Always log to console in development
@@ -59,14 +67,14 @@ async function logError(error: Error, context: {
     console.error('🚨 API Error:', {
       ...context,
       ...sanitized,
-      stack: error.stack
+      stack: error.stack,
     });
   } else {
     // Production: Log without stack trace to console
     console.error('API Error:', {
       ...context,
       type: sanitized.type,
-      severity: sanitized.severity
+      severity: sanitized.severity,
     });
   }
 
@@ -75,7 +83,6 @@ async function logError(error: Error, context: {
     try {
       // Example: Send to error tracking service
       // await errorTrackingService.capture(error, context);
-
       // For now, we'll just log internally
       // In production, replace this with actual error tracking service
     } catch (loggingError) {
@@ -118,12 +125,12 @@ export async function handleApiError(
       message: userFriendlyError.description,
       userAction: userFriendlyError.userAction,
       errorId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     },
     meta: {
       retryable: userFriendlyError.retryable,
-      severity: userFriendlyError.severity
-    }
+      severity: userFriendlyError.severity,
+    },
   };
 
   return NextResponse.json(errorResponse, { status: statusCode });
@@ -154,7 +161,7 @@ function getHttpStatusCode(errorType: ErrorType): number {
     [ErrorType.TIMESTAMP_ERROR]: 500,
     [ErrorType.DATE_FORMAT_ERROR]: 400,
     [ErrorType.UNKNOWN_ERROR]: 500,
-    [ErrorType.RATE_LIMIT]: 429
+    [ErrorType.RATE_LIMIT]: 429,
   };
 
   return statusMap[errorType] || 500;
@@ -173,7 +180,7 @@ export function withErrorHandler<T = unknown>(
     } catch (error) {
       return handleApiError(error, {
         endpoint,
-        method: request.method
+        method: request.method,
       });
     }
   };
@@ -196,8 +203,8 @@ export function createSuccessResponse<T = unknown>(
     data,
     meta: {
       timestamp: new Date().toISOString(),
-      ...meta
-    }
+      ...meta,
+    },
   };
 
   return NextResponse.json(response);
@@ -206,10 +213,7 @@ export function createSuccessResponse<T = unknown>(
 /**
  * Validate request parameters
  */
-export function validateParams(
-  params: Record<string, unknown>,
-  required: string[]
-): void {
+export function validateParams(params: Record<string, unknown>, required: string[]): void {
   const missing = required.filter(key => !params[key]);
 
   if (missing.length > 0) {
@@ -240,9 +244,7 @@ export function isDatabaseError(error: Error): boolean {
 export function isTimeoutError(error: Error): boolean {
   const message = error.message.toLowerCase();
   return (
-    message.includes('timeout') ||
-    message.includes('timed out') ||
-    message.includes('ETIMEDOUT')
+    message.includes('timeout') || message.includes('timed out') || message.includes('ETIMEDOUT')
   );
 }
 
@@ -280,7 +282,7 @@ export function isPgRetryableError(error: unknown): boolean {
     '08003', // connection_does_not_exist
     '08006', // connection_failure
     '53300', // too_many_connections
-    '57P03'  // cannot_connect_now
+    '57P03', // cannot_connect_now
   ];
 
   return code ? retryableCodes.includes(code) : false;

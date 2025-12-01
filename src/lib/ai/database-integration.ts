@@ -31,57 +31,80 @@ const SQLQuerySchema = z.object({
 
 const DataAnalysisSchema = z.object({
   summary: z.string().describe('High-level summary of findings'),
-  insights: z.array(z.object({
-    category: z.string().describe('Category: trend, pattern, risk, opportunity'),
-    title: z.string().describe('Insight title'),
-    description: z.string().describe('Detailed description'),
-    impact: z.enum(['low', 'medium', 'high', 'critical']).describe('Business impact level'),
-    actionable: z.boolean().describe('Can immediate action be taken?'),
-    recommendation: z.string().optional().describe('Recommended action'),
-  })).describe('Specific insights discovered'),
-  metrics: z.object({
-    total_records: z.number(),
-    data_quality_score: z.number().min(0).max(1),
-    completeness: z.number().min(0).max(1),
-    anomalies_found: z.number(),
-  }).describe('Data quality metrics'),
-  visualizations: z.array(z.object({
-    type: z.enum(['line', 'bar', 'pie', 'scatter', 'heatmap']),
-    title: z.string(),
-    data_query: z.string().describe('SQL to fetch visualization data'),
-  })).optional().describe('Recommended visualizations'),
+  insights: z
+    .array(
+      z.object({
+        category: z.string().describe('Category: trend, pattern, risk, opportunity'),
+        title: z.string().describe('Insight title'),
+        description: z.string().describe('Detailed description'),
+        impact: z.enum(['low', 'medium', 'high', 'critical']).describe('Business impact level'),
+        actionable: z.boolean().describe('Can immediate action be taken?'),
+        recommendation: z.string().optional().describe('Recommended action'),
+      })
+    )
+    .describe('Specific insights discovered'),
+  metrics: z
+    .object({
+      total_records: z.number(),
+      data_quality_score: z.number().min(0).max(1),
+      completeness: z.number().min(0).max(1),
+      anomalies_found: z.number(),
+    })
+    .describe('Data quality metrics'),
+  visualizations: z
+    .array(
+      z.object({
+        type: z.enum(['line', 'bar', 'pie', 'scatter', 'heatmap']),
+        title: z.string(),
+        data_query: z.string().describe('SQL to fetch visualization data'),
+      })
+    )
+    .optional()
+    .describe('Recommended visualizations'),
 });
 
 const AnomalyDetectionSchema = z.object({
-  anomalies: z.array(z.object({
-    id: z.string().describe('Unique anomaly identifier'),
-    type: z.enum(['data_quality', 'statistical', 'business_rule', 'security']),
-    severity: z.enum(['low', 'medium', 'high', 'critical']),
-    title: z.string().describe('Anomaly title'),
-    description: z.string().describe('Detailed description'),
-    affected_records: z.number().describe('Number of records affected'),
-    detection_method: z.string().describe('How this was detected'),
-    suggested_fix: z.string().optional().describe('Recommended fix'),
-    sql_to_fix: z.string().optional().describe('SQL to fix the issue'),
-  })).describe('List of detected anomalies'),
+  anomalies: z
+    .array(
+      z.object({
+        id: z.string().describe('Unique anomaly identifier'),
+        type: z.enum(['data_quality', 'statistical', 'business_rule', 'security']),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        title: z.string().describe('Anomaly title'),
+        description: z.string().describe('Detailed description'),
+        affected_records: z.number().describe('Number of records affected'),
+        detection_method: z.string().describe('How this was detected'),
+        suggested_fix: z.string().optional().describe('Recommended fix'),
+        sql_to_fix: z.string().optional().describe('SQL to fix the issue'),
+      })
+    )
+    .describe('List of detected anomalies'),
   overall_health_score: z.number().min(0).max(1).describe('Overall data health (1 = perfect)'),
   recommendations: z.array(z.string()).describe('General recommendations'),
 });
 
 const PredictionSchema = z.object({
   prediction_type: z.string().describe('Type of prediction'),
-  predictions: z.array(z.object({
-    date: z.string().describe('Prediction date'),
-    value: z.number().describe('Predicted value'),
-    confidence: z.number().min(0).max(1).describe('Confidence level'),
-    lower_bound: z.number().optional(),
-    upper_bound: z.number().optional(),
-  })).describe('Time-series predictions'),
-  factors: z.array(z.object({
-    name: z.string(),
-    impact: z.number().describe('Impact on prediction (-1 to 1)'),
-    description: z.string(),
-  })).describe('Factors influencing predictions'),
+  predictions: z
+    .array(
+      z.object({
+        date: z.string().describe('Prediction date'),
+        value: z.number().describe('Predicted value'),
+        confidence: z.number().min(0).max(1).describe('Confidence level'),
+        lower_bound: z.number().optional(),
+        upper_bound: z.number().optional(),
+      })
+    )
+    .describe('Time-series predictions'),
+  factors: z
+    .array(
+      z.object({
+        name: z.string(),
+        impact: z.number().describe('Impact on prediction (-1 to 1)'),
+        description: z.string(),
+      })
+    )
+    .describe('Factors influencing predictions'),
   confidence: z.number().min(0).max(1).describe('Overall confidence'),
   recommendations: z.array(z.string()).describe('Action recommendations'),
 });
@@ -167,7 +190,9 @@ Return a valid SQL query that answers the user's question.`,
       return result.object;
     } catch (error) {
       console.error('Error in naturalLanguageToSQL:', error);
-      throw new Error(`Failed to convert query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to convert query: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -188,7 +213,9 @@ Return a valid SQL query that answers the user's question.`,
 
     // Safety check
     if (sqlResult.safety_score < 0.8) {
-      throw new Error(`Query rejected for safety reasons (score: ${sqlResult.safety_score}). This query might modify data or pose security risks.`);
+      throw new Error(
+        `Query rejected for safety reasons (score: ${sqlResult.safety_score}). This query might modify data or pose security risks.`
+      );
     }
 
     // Execute query
@@ -269,7 +296,9 @@ Focus on business value and actionable insights.`,
       return analysis.object;
     } catch (error) {
       console.error('Error in analyzeData:', error);
-      throw new Error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -339,7 +368,9 @@ Calculate overall health score (1.0 = perfect).`,
       return detection.object;
     } catch (error) {
       console.error('Error in detectAnomalies:', error);
-      throw new Error(`Anomaly detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Anomaly detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -468,7 +499,9 @@ Use statistical patterns, seasonality, and trends to make accurate predictions.`
       return prediction.object;
     } catch (error) {
       console.error('Error in generatePredictions:', error);
-      throw new Error(`Prediction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Prediction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -502,10 +535,13 @@ Provide real-time analysis as you think through the data.`,
     execution_time_ms: number;
   }): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_query_history (user_query, generated_sql, result_count, execution_time_ms)
         VALUES ($1, $2, $3, $4)
-      `, [data.user_query, data.generated_sql, data.result_count, data.execution_time_ms]);
+      `,
+        [data.user_query, data.generated_sql, data.result_count, data.execution_time_ms]
+      );
     } catch (error) {
       console.error('Failed to log query history:', error);
       // Don't throw - logging failure shouldn't break the query
@@ -518,10 +554,13 @@ Provide real-time analysis as you think through the data.`,
     insights: unknown;
   }): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_insights (analysis_type, input_data, insights, created_at)
         VALUES ($1, $2, $3, NOW())
-      `, [data.analysis_type, JSON.stringify(data.input_data), JSON.stringify(data.insights)]);
+      `,
+        [data.analysis_type, JSON.stringify(data.input_data), JSON.stringify(data.insights)]
+      );
     } catch (error) {
       console.error('Failed to store insights:', error);
     }
@@ -537,10 +576,21 @@ Provide real-time analysis as you think through the data.`,
     suggested_fix?: string;
   }): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_data_anomalies (anomaly_type, severity, title, description, affected_records, detection_method, suggested_fix, detected_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      `, [data.type, data.severity, data.title, data.description, data.affected_records, data.detection_method, data.suggested_fix || null]);
+      `,
+        [
+          data.type,
+          data.severity,
+          data.title,
+          data.description,
+          data.affected_records,
+          data.detection_method,
+          data.suggested_fix || null,
+        ]
+      );
     } catch (error) {
       console.error('Failed to store anomaly:', error);
     }
@@ -554,10 +604,19 @@ Provide real-time analysis as you think through the data.`,
     expires_at: Date;
   }): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_predictions (prediction_type, target_id, predictions, confidence, expires_at, created_at)
         VALUES ($1, $2, $3, $4, $5, NOW())
-      `, [data.prediction_type, data.target_id || null, JSON.stringify(data.predictions), data.confidence, data.expires_at]);
+      `,
+        [
+          data.prediction_type,
+          data.target_id || null,
+          JSON.stringify(data.predictions),
+          data.confidence,
+          data.expires_at,
+        ]
+      );
     } catch (error) {
       console.error('Failed to cache prediction:', error);
     }

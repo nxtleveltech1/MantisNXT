@@ -90,16 +90,12 @@ export const SERVE_VIEWS = {
 /**
  * Type-safe table name union
  */
-export type CoreTableName = typeof CORE_TABLES[keyof typeof CORE_TABLES];
-export type PublicViewName = typeof PUBLIC_VIEWS[keyof typeof PUBLIC_VIEWS];
-export type SppTableName = typeof SPP_TABLES[keyof typeof SPP_TABLES];
-export type ServeViewName = typeof SERVE_VIEWS[keyof typeof SERVE_VIEWS];
+export type CoreTableName = (typeof CORE_TABLES)[keyof typeof CORE_TABLES];
+export type PublicViewName = (typeof PUBLIC_VIEWS)[keyof typeof PUBLIC_VIEWS];
+export type SppTableName = (typeof SPP_TABLES)[keyof typeof SPP_TABLES];
+export type ServeViewName = (typeof SERVE_VIEWS)[keyof typeof SERVE_VIEWS];
 
-export type QualifiedTableName =
-  | CoreTableName
-  | PublicViewName
-  | SppTableName
-  | ServeViewName;
+export type QualifiedTableName = CoreTableName | PublicViewName | SppTableName | ServeViewName;
 
 /**
  * Schema Contract Validator

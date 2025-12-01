@@ -4,10 +4,10 @@
  */
 
 // South African VAT rate (15%)
-export const VAT_RATE = 0.15
+export const VAT_RATE = 0.15;
 
 // Exchange rate helper (for import tracking)
-export const DEFAULT_USD_TO_ZAR_RATE = 18.75 // Approximate rate - should be fetched from API in production
+export const DEFAULT_USD_TO_ZAR_RATE = 18.75; // Approximate rate - should be fetched from API in production
 
 /**
  * Format amount as South African Rand currency
@@ -17,22 +17,22 @@ export const formatZAR = (amount: number): string => {
     style: 'currency',
     currency: 'ZAR',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount)
-}
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
 
 /**
  * Format large amounts with compact notation (K, M notation)
  */
 export const formatCompactZAR = (amount: number): string => {
   if (amount >= 1000000) {
-    return `R${(amount/1000000).toFixed(1)}M`
+    return `R${(amount / 1000000).toFixed(1)}M`;
   }
   if (amount >= 1000) {
-    return `R${(amount/1000).toFixed(1)}K`
+    return `R${(amount / 1000).toFixed(1)}K`;
   }
-  return formatZAR(amount)
-}
+  return formatZAR(amount);
+};
 
 /**
  * Format ZAR without currency symbol (for inputs)
@@ -40,121 +40,127 @@ export const formatCompactZAR = (amount: number): string => {
 export const formatZARNumber = (amount: number): string => {
   return new Intl.NumberFormat('en-ZA', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount)
-}
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
 
 /**
  * Calculate VAT amount
  */
 export const calculateVAT = (amount: number): number => {
-  return amount * VAT_RATE
-}
+  return amount * VAT_RATE;
+};
 
 /**
  * Add VAT to amount (VAT inclusive)
  */
 export const addVAT = (amount: number): number => {
-  return amount * (1 + VAT_RATE)
-}
+  return amount * (1 + VAT_RATE);
+};
 
 /**
  * Remove VAT from amount (extract VAT exclusive amount)
  */
 export const removeVAT = (amountIncVAT: number): number => {
-  return amountIncVAT / (1 + VAT_RATE)
-}
+  return amountIncVAT / (1 + VAT_RATE);
+};
 
 /**
  * Format amount with VAT breakdown
  */
-export const formatZARWithVAT = (amount: number, isVATInclusive: boolean = true): {
-  total: string
-  vatExclusive: string
-  vatAmount: string
-  vatInclusive: string
+export const formatZARWithVAT = (
+  amount: number,
+  isVATInclusive: boolean = true
+): {
+  total: string;
+  vatExclusive: string;
+  vatAmount: string;
+  vatInclusive: string;
 } => {
   if (isVATInclusive) {
-    const vatExclusive = removeVAT(amount)
-    const vatAmount = amount - vatExclusive
+    const vatExclusive = removeVAT(amount);
+    const vatAmount = amount - vatExclusive;
     return {
       total: formatZAR(amount),
       vatExclusive: formatZAR(vatExclusive),
       vatAmount: formatZAR(vatAmount),
-      vatInclusive: formatZAR(amount)
-    }
+      vatInclusive: formatZAR(amount),
+    };
   } else {
-    const vatAmount = calculateVAT(amount)
-    const vatInclusive = amount + vatAmount
+    const vatAmount = calculateVAT(amount);
+    const vatInclusive = amount + vatAmount;
     return {
       total: formatZAR(vatInclusive),
       vatExclusive: formatZAR(amount),
       vatAmount: formatZAR(vatAmount),
-      vatInclusive: formatZAR(vatInclusive)
-    }
+      vatInclusive: formatZAR(vatInclusive),
+    };
   }
-}
+};
 
 /**
  * Convert USD to ZAR (for import tracking)
  */
-export const convertUSDToZAR = (usdAmount: number, exchangeRate: number = DEFAULT_USD_TO_ZAR_RATE): number => {
-  return usdAmount * exchangeRate
-}
+export const convertUSDToZAR = (
+  usdAmount: number,
+  exchangeRate: number = DEFAULT_USD_TO_ZAR_RATE
+): number => {
+  return usdAmount * exchangeRate;
+};
 
 /**
  * Format South African date (DD/MM/YYYY)
  */
 export const formatSADate = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-ZA', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
-  })
-}
+    year: 'numeric',
+  });
+};
 
 /**
  * Format South African date and time
  */
 export const formatSADateTime = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-ZA', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+    minute: '2-digit',
+  });
+};
 
 /**
  * Check if date is within South African financial year (1 March - 28 February)
  */
 export const isCurrentSAFinancialYear = (date: Date | string): boolean => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  const currentYear = new Date().getFullYear()
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const currentYear = new Date().getFullYear();
 
   // SA financial year runs from 1 March to 28/29 February
-  const currentFYStart = new Date(currentYear, 2, 1) // March 1st
-  const currentFYEnd = new Date(currentYear + 1, 1, 28) // February 28th next year
+  const currentFYStart = new Date(currentYear, 2, 1); // March 1st
+  const currentFYEnd = new Date(currentYear + 1, 1, 28); // February 28th next year
 
-  return dateObj >= currentFYStart && dateObj <= currentFYEnd
-}
+  return dateObj >= currentFYStart && dateObj <= currentFYEnd;
+};
 
 /**
  * Get current South African financial year string
  */
 export const getCurrentSAFinancialYear = (): string => {
-  const now = new Date()
-  const currentYear = now.getFullYear()
+  const now = new Date();
+  const currentYear = now.getFullYear();
 
   // If we're in Jan/Feb, we're in the FY that started previous March
-  const fyStartYear = now.getMonth() < 2 ? currentYear - 1 : currentYear
-  const fyEndYear = fyStartYear + 1
+  const fyStartYear = now.getMonth() < 2 ? currentYear - 1 : currentYear;
+  const fyEndYear = fyStartYear + 1;
 
-  return `${fyStartYear}/${fyEndYear.toString().slice(-2)}`
-}
+  return `${fyStartYear}/${fyEndYear.toString().slice(-2)}`;
+};
 
 /**
  * BEE (Black Economic Empowerment) spend categories
@@ -165,7 +171,7 @@ export enum BEECategory {
   WOMEN_OWNED = 'women_owned',
   YOUTH_OWNED = 'youth_owned',
   LOCAL_SUPPLIER = 'local_supplier',
-  INTERNATIONAL = 'international'
+  INTERNATIONAL = 'international',
 }
 
 /**
@@ -178,10 +184,10 @@ export const getBEECategoryName = (category: BEECategory): string => {
     [BEECategory.WOMEN_OWNED]: 'Women Owned',
     [BEECategory.YOUTH_OWNED]: 'Youth Owned',
     [BEECategory.LOCAL_SUPPLIER]: 'Local Supplier',
-    [BEECategory.INTERNATIONAL]: 'International'
-  }
-  return names[category]
-}
+    [BEECategory.INTERNATIONAL]: 'International',
+  };
+  return names[category];
+};
 
 /**
  * South African provinces for spend distribution
@@ -195,7 +201,7 @@ export enum SAProvince {
   MPUMALANGA = 'MP',
   NORTH_WEST = 'NW',
   FREE_STATE = 'FS',
-  NORTHERN_CAPE = 'NC'
+  NORTHERN_CAPE = 'NC',
 }
 
 /**
@@ -211,7 +217,7 @@ export const getProvinceName = (province: SAProvince): string => {
     [SAProvince.MPUMALANGA]: 'Mpumalanga',
     [SAProvince.NORTH_WEST]: 'North West',
     [SAProvince.FREE_STATE]: 'Free State',
-    [SAProvince.NORTHERN_CAPE]: 'Northern Cape'
-  }
-  return names[province]
-}
+    [SAProvince.NORTHERN_CAPE]: 'Northern Cape',
+  };
+  return names[province];
+};

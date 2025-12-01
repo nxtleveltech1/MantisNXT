@@ -52,9 +52,7 @@ export interface AnalyticsOverviewData {
 /**
  * Fetch analytics overview from API
  */
-async function fetchAnalyticsOverview(
-  filters?: AnalyticsFilters
-): Promise<AnalyticsOverviewData> {
+async function fetchAnalyticsOverview(filters?: AnalyticsFilters): Promise<AnalyticsOverviewData> {
   const params = new URLSearchParams();
 
   if (filters?.organizationId) {

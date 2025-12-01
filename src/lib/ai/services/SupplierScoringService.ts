@@ -59,7 +59,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
   async calculateScore(
     orgId: string,
     supplierId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<SupplierScore>> {
     return this.executeOperation(
       'supplier.score',
@@ -87,7 +87,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
           supplier,
           performanceData,
           categories,
-          overallScore,
+          overallScore
         );
 
         // Determine risk level
@@ -120,7 +120,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
         };
       },
       options,
-      { supplierId },
+      { supplierId }
     );
   }
 
@@ -130,7 +130,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
   async batchScore(
     orgId: string,
     supplierIds: string[],
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<SupplierScore[]>> {
     return this.executeOperation(
       'supplier.batch_score',
@@ -151,7 +151,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
         return scores;
       },
       options,
-      { supplierCount: supplierIds.length },
+      { supplierCount: supplierIds.length }
     );
   }
 
@@ -160,7 +160,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
    */
   private async getSupplierPerformance(
     orgId: string,
-    supplierId: string,
+    supplierId: string
   ): Promise<SupplierPerformanceData> {
     const result = await db.query(
       `
@@ -191,7 +191,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
       FROM delivery_metrics dm
       CROSS JOIN quality_metrics qm
       `,
-      [supplierId],
+      [supplierId]
     );
 
     const row = result.rows[0] || {};
@@ -223,10 +223,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
    * Get supplier basic info
    */
   private async getSupplierInfo(supplierId: string): Promise<{ name: string }> {
-    const result = await db.query(
-      `SELECT name FROM public.suppliers WHERE id = $1`,
-      [supplierId],
-    );
+    const result = await db.query(`SELECT name FROM public.suppliers WHERE id = $1`, [supplierId]);
     return result.rows[0] || { name: 'Unknown' };
   }
 
@@ -238,10 +235,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
     const deliverySpeedWeight = 0.3;
 
     const onTimeScore = data.deliveryMetrics.onTimeDeliveryRate * 100;
-    const deliverySpeedScore = Math.max(
-      0,
-      100 - (data.deliveryMetrics.avgDeliveryDays - 7) * 5,
-    );
+    const deliverySpeedScore = Math.max(0, 100 - (data.deliveryMetrics.avgDeliveryDays - 7) * 5);
 
     return Math.round(onTimeScore * onTimeWeight + deliverySpeedScore * deliverySpeedWeight);
   }
@@ -270,7 +264,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
   private calculateResponsivenessScore(data: SupplierPerformanceData): number {
     const responseTimeScore = Math.max(
       0,
-      100 - (data.responsiveness.avgResponseTimeHours - 24) * 2,
+      100 - (data.responsiveness.avgResponseTimeHours - 24) * 2
     );
     const communicationScore = (data.responsiveness.communicationRating / 5) * 100;
 
@@ -316,7 +310,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
     supplier: unknown,
     data: SupplierPerformanceData,
     categories: SupplierScore['categories'],
-    overallScore: number,
+    overallScore: number
   ): Promise<{ recommendations: string[]; model?: string }> {
     const prompt = `
 Analyze the following supplier performance and provide actionable recommendations:
@@ -367,7 +361,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
    */
   private getFallbackRecommendations(
     categories: SupplierScore['categories'],
-    overallScore: number,
+    overallScore: number
   ): string[] {
     const recommendations: string[] = [];
 
@@ -397,7 +391,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
    */
   private determineRiskLevel(
     overallScore: number,
-    categories: SupplierScore['categories'],
+    categories: SupplierScore['categories']
   ): 'low' | 'medium' | 'high' | 'critical' {
     if (overallScore < 50 || categories.reliability < 40 || categories.quality < 40) {
       return 'critical';
@@ -416,7 +410,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
    */
   private async getScoreTrends(
     orgId: string,
-    supplierId: string,
+    supplierId: string
   ): Promise<SupplierScore['trends']> {
     const result = await db.query(
       `
@@ -438,7 +432,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
       FROM scores
       LIMIT 1
       `,
-      [orgId, supplierId],
+      [orgId, supplierId]
     );
 
     const row = result.rows[0] || {};
@@ -471,7 +465,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
         supplierId,
         JSON.stringify(data),
         data.overallScore / 100, // Normalize to 0-1
-      ],
+      ]
     );
   }
 }

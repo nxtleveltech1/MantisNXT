@@ -1,59 +1,71 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { AlertCircle, CheckCircle, Info, XCircle, RefreshCw, Download, Eye, ArrowRight, X, ChevronDown, ChevronUp } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import React, { useState } from 'react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Info,
+  XCircle,
+  RefreshCw,
+  Download,
+  Eye,
+  ArrowRight,
+  X,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Error and feedback interfaces from the error manager
 interface UserFeedback {
-  type: 'success' | 'error' | 'warning' | 'info'
-  title: string
-  message: string
-  details?: string[]
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  details?: string[];
   actions?: {
-    label: string
-    action: string
-    variant?: 'primary' | 'secondary' | 'destructive'
-  }[]
-  dismissible?: boolean
-  persistent?: boolean
-  correlationId?: string
+    label: string;
+    action: string;
+    variant?: 'primary' | 'secondary' | 'destructive';
+  }[];
+  dismissible?: boolean;
+  persistent?: boolean;
+  correlationId?: string;
 }
 
 interface ErrorStatistics {
-  totalErrors: number
-  errorsBySeverity: Record<string, number>
-  errorsByCategory: Record<string, number>
-  mostCommonErrors: { code: string; count: number; message: string }[]
-  affectedRows: number[]
-  recoveryRate: number
+  totalErrors: number;
+  errorsBySeverity: Record<string, number>;
+  errorsByCategory: Record<string, number>;
+  mostCommonErrors: { code: string; count: number; message: string }[];
+  affectedRows: number[];
+  recoveryRate: number;
 }
 
 interface UploadProgress {
-  totalRows: number
-  processedRows: number
-  validRows: number
-  errorRows: number
-  warningRows: number
-  skippedRows: number
+  totalRows: number;
+  processedRows: number;
+  validRows: number;
+  errorRows: number;
+  warningRows: number;
+  skippedRows: number;
 }
 
 interface UploadFeedbackSystemProps {
-  sessionId: string
-  feedback: UserFeedback[]
-  statistics?: ErrorStatistics
-  progress?: UploadProgress
-  status?: string
-  onAction?: (action: string, parameters?: unknown) => void
-  onDismiss?: (feedbackId: string) => void
-  className?: string
+  sessionId: string;
+  feedback: UserFeedback[];
+  statistics?: ErrorStatistics;
+  progress?: UploadProgress;
+  status?: string;
+  onAction?: (action: string, parameters?: unknown) => void;
+  onDismiss?: (feedbackId: string) => void;
+  className?: string;
 }
 
 export function UploadFeedbackSystem({
@@ -64,82 +76,82 @@ export function UploadFeedbackSystem({
   status,
   onAction,
   onDismiss,
-  className = ''
+  className = '',
 }: UploadFeedbackSystemProps) {
-  const [dismissedFeedback, setDismissedFeedback] = useState<Set<string>>(new Set())
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [showAllErrors, setShowAllErrors] = useState(false)
+  const [dismissedFeedback, setDismissedFeedback] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   // Filter out dismissed feedback
-  const activeFeedback = feedback.filter(f =>
-    !f.dismissible || !dismissedFeedback.has(f.correlationId || f.title)
-  )
+  const activeFeedback = feedback.filter(
+    f => !f.dismissible || !dismissedFeedback.has(f.correlationId || f.title)
+  );
 
   const handleDismiss = (feedbackItem: UserFeedback) => {
-    const id = feedbackItem.correlationId || feedbackItem.title
-    setDismissedFeedback(prev => new Set([...prev, id]))
-    onDismiss?.(id)
-  }
+    const id = feedbackItem.correlationId || feedbackItem.title;
+    setDismissedFeedback(prev => new Set([...prev, id]));
+    onDismiss?.(id);
+  };
 
   const handleAction = (action: string, parameters?: unknown) => {
-    onAction?.(action, parameters)
-  }
+    onAction?.(action, parameters);
+  };
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
-      const newSet = new Set(prev)
+      const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
+        newSet.delete(sectionId);
       } else {
-        newSet.add(sectionId)
+        newSet.add(sectionId);
       }
-      return newSet
-    })
-  }
+      return newSet;
+    });
+  };
 
   const getFeedbackIcon = (type: UserFeedback['type']) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return <XCircle className="h-5 w-5 text-red-500" />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
-  }
+  };
 
   const getAlertVariant = (type: UserFeedback['type']) => {
     switch (type) {
       case 'error':
-        return 'destructive'
+        return 'destructive';
       case 'warning':
-        return 'default'
+        return 'default';
       default:
-        return 'default'
+        return 'default';
     }
-  }
+  };
 
   const calculateProgressPercentage = () => {
-    if (!progress || progress.totalRows === 0) return 0
-    return Math.round((progress.processedRows / progress.totalRows) * 100)
-  }
+    if (!progress || progress.totalRows === 0) return 0;
+    return Math.round((progress.processedRows / progress.totalRows) * 100);
+  };
 
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'completed':
-        return 'text-green-600'
+        return 'text-green-600';
       case 'failed':
-        return 'text-red-600'
+        return 'text-red-600';
       case 'processing':
       case 'validating':
       case 'importing':
-        return 'text-blue-600'
+        return 'text-blue-600';
       default:
-        return 'text-gray-600'
+        return 'text-gray-600';
     }
-  }
+  };
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -160,25 +172,25 @@ export function UploadFeedbackSystem({
           <CardContent className="space-y-4">
             <Progress value={calculateProgressPercentage()} className="w-full" />
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-5">
               <div className="text-center">
-                <div className="font-semibold text-lg text-blue-600">{progress.totalRows}</div>
+                <div className="text-lg font-semibold text-blue-600">{progress.totalRows}</div>
                 <div className="text-gray-600">Total Rows</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-green-600">{progress.validRows}</div>
+                <div className="text-lg font-semibold text-green-600">{progress.validRows}</div>
                 <div className="text-gray-600">Valid</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-red-600">{progress.errorRows}</div>
+                <div className="text-lg font-semibold text-red-600">{progress.errorRows}</div>
                 <div className="text-gray-600">Errors</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-yellow-600">{progress.warningRows}</div>
+                <div className="text-lg font-semibold text-yellow-600">{progress.warningRows}</div>
                 <div className="text-gray-600">Warnings</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-gray-600">{progress.skippedRows}</div>
+                <div className="text-lg font-semibold text-gray-600">{progress.skippedRows}</div>
                 <div className="text-gray-600">Skipped</div>
               </div>
             </div>
@@ -191,15 +203,11 @@ export function UploadFeedbackSystem({
         {activeFeedback.map((feedbackItem, index) => (
           <Alert key={index} variant={getAlertVariant(feedbackItem.type)}>
             <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3 flex-1">
+              <div className="flex flex-1 items-start gap-3">
                 {getFeedbackIcon(feedbackItem.type)}
                 <div className="flex-1">
-                  <AlertTitle className="flex items-center gap-2">
-                    {feedbackItem.title}
-                  </AlertTitle>
-                  <AlertDescription className="mt-2">
-                    {feedbackItem.message}
-                  </AlertDescription>
+                  <AlertTitle className="flex items-center gap-2">{feedbackItem.title}</AlertTitle>
+                  <AlertDescription className="mt-2">{feedbackItem.message}</AlertDescription>
 
                   {/* Details Section */}
                   {feedbackItem.details && feedbackItem.details.length > 0 && (
@@ -213,22 +221,25 @@ export function UploadFeedbackSystem({
                         ) : (
                           <ChevronDown className="h-4 w-4" />
                         )}
-                        View Details ({feedbackItem.details.length} item{feedbackItem.details.length !== 1 ? 's' : ''})
+                        View Details ({feedbackItem.details.length} item
+                        {feedbackItem.details.length !== 1 ? 's' : ''})
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2">
-                        <ScrollArea className="h-32 w-full rounded border p-2 bg-gray-50">
+                        <ScrollArea className="h-32 w-full rounded border bg-gray-50 p-2">
                           <ul className="space-y-1 text-sm">
-                            {feedbackItem.details.slice(0, showAllErrors ? undefined : 10).map((detail, detailIndex) => (
-                              <li key={detailIndex} className="text-gray-700">
-                                • {detail}
-                              </li>
-                            ))}
+                            {feedbackItem.details
+                              .slice(0, showAllErrors ? undefined : 10)
+                              .map((detail, detailIndex) => (
+                                <li key={detailIndex} className="text-gray-700">
+                                  • {detail}
+                                </li>
+                              ))}
                             {!showAllErrors && feedbackItem.details.length > 10 && (
                               <li>
                                 <Button
                                   variant="link"
                                   size="sm"
-                                  className="p-0 h-auto text-blue-600"
+                                  className="h-auto p-0 text-blue-600"
                                   onClick={() => setShowAllErrors(true)}
                                 >
                                   Show {feedbackItem.details.length - 10} more...
@@ -243,18 +254,23 @@ export function UploadFeedbackSystem({
 
                   {/* Action Buttons */}
                   {feedbackItem.actions && feedbackItem.actions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {feedbackItem.actions.map((action, actionIndex) => (
                         <Button
                           key={actionIndex}
-                          variant={action.variant === 'primary' ? 'default' :
-                                   action.variant === 'destructive' ? 'destructive' : 'outline'}
+                          variant={
+                            action.variant === 'primary'
+                              ? 'default'
+                              : action.variant === 'destructive'
+                                ? 'destructive'
+                                : 'outline'
+                          }
                           size="sm"
                           onClick={() => handleAction(action.action)}
                           className="text-xs"
                         >
                           {action.label}
-                          <ArrowRight className="h-3 w-3 ml-1" />
+                          <ArrowRight className="ml-1 h-3 w-3" />
                         </Button>
                       ))}
                     </div>
@@ -286,27 +302,33 @@ export function UploadFeedbackSystem({
               <AlertCircle className="h-5 w-5 text-red-500" />
               Error Analysis
             </CardTitle>
-            <CardDescription>
-              Detailed breakdown of errors and validation issues
-            </CardDescription>
+            <CardDescription>Detailed breakdown of errors and validation issues</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Error Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-red-50 rounded-lg">
-                <div className="font-semibold text-lg text-red-600">{statistics.errorsBySeverity.critical || 0}</div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg bg-red-50 p-3 text-center">
+                <div className="text-lg font-semibold text-red-600">
+                  {statistics.errorsBySeverity.critical || 0}
+                </div>
                 <div className="text-sm text-gray-600">Critical</div>
               </div>
-              <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <div className="font-semibold text-lg text-orange-600">{statistics.errorsBySeverity.error || 0}</div>
+              <div className="rounded-lg bg-orange-50 p-3 text-center">
+                <div className="text-lg font-semibold text-orange-600">
+                  {statistics.errorsBySeverity.error || 0}
+                </div>
                 <div className="text-sm text-gray-600">Errors</div>
               </div>
-              <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <div className="font-semibold text-lg text-yellow-600">{statistics.errorsBySeverity.warning || 0}</div>
+              <div className="rounded-lg bg-yellow-50 p-3 text-center">
+                <div className="text-lg font-semibold text-yellow-600">
+                  {statistics.errorsBySeverity.warning || 0}
+                </div>
                 <div className="text-sm text-gray-600">Warnings</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="font-semibold text-lg text-blue-600">{statistics.errorsBySeverity.info || 0}</div>
+              <div className="rounded-lg bg-blue-50 p-3 text-center">
+                <div className="text-lg font-semibold text-blue-600">
+                  {statistics.errorsBySeverity.info || 0}
+                </div>
                 <div className="text-sm text-gray-600">Info</div>
               </div>
             </div>
@@ -316,10 +338,13 @@ export function UploadFeedbackSystem({
             {/* Most Common Errors */}
             {statistics.mostCommonErrors.length > 0 && (
               <div>
-                <h4 className="font-semibold mb-2">Most Common Issues</h4>
+                <h4 className="mb-2 font-semibold">Most Common Issues</h4>
                 <div className="space-y-2">
                   {statistics.mostCommonErrors.slice(0, 5).map((error, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between rounded bg-gray-50 p-2"
+                    >
                       <span className="text-sm text-gray-700">{error.message}</span>
                       <Badge variant="outline">{error.count} occurrences</Badge>
                     </div>
@@ -331,16 +356,17 @@ export function UploadFeedbackSystem({
             {/* Affected Rows */}
             {statistics.affectedRows.length > 0 && (
               <div>
-                <h4 className="font-semibold mb-2">Affected Rows</h4>
+                <h4 className="mb-2 font-semibold">Affected Rows</h4>
                 <div className="text-sm text-gray-600">
                   Rows with issues: {statistics.affectedRows.slice(0, 20).join(', ')}
-                  {statistics.affectedRows.length > 20 && ` and ${statistics.affectedRows.length - 20} more...`}
+                  {statistics.affectedRows.length > 20 &&
+                    ` and ${statistics.affectedRows.length - 20} more...`}
                 </div>
               </div>
             )}
 
             {/* Recovery Rate */}
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between rounded-lg bg-green-50 p-3">
               <span className="font-medium text-green-800">Recovery Rate</span>
               <span className="font-semibold text-green-600">
                 {Math.round(statistics.recoveryRate * 100)}%
@@ -354,7 +380,7 @@ export function UploadFeedbackSystem({
                 size="sm"
                 onClick={() => handleAction('download_error_report')}
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Download Error Report
               </Button>
               <Button
@@ -362,7 +388,7 @@ export function UploadFeedbackSystem({
                 size="sm"
                 onClick={() => handleAction('view_error_details')}
               >
-                <Eye className="h-4 w-4 mr-2" />
+                <Eye className="mr-2 h-4 w-4" />
                 View All Details
               </Button>
             </div>
@@ -371,17 +397,20 @@ export function UploadFeedbackSystem({
       )}
 
       {/* Success State */}
-      {feedback.length === 0 && (!progress || progress.errorRows === 0) && status === 'completed' && (
-        <Alert>
-          <CheckCircle className="h-5 w-5 text-green-500" />
-          <AlertTitle>Upload Completed Successfully</AlertTitle>
-          <AlertDescription>
-            All records were processed without errors. Your pricelist has been successfully imported.
-          </AlertDescription>
-        </Alert>
-      )}
+      {feedback.length === 0 &&
+        (!progress || progress.errorRows === 0) &&
+        status === 'completed' && (
+          <Alert>
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <AlertTitle>Upload Completed Successfully</AlertTitle>
+            <AlertDescription>
+              All records were processed without errors. Your pricelist has been successfully
+              imported.
+            </AlertDescription>
+          </Alert>
+        )}
     </div>
-  )
+  );
 }
 
-export default UploadFeedbackSystem
+export default UploadFeedbackSystem;

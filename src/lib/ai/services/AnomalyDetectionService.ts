@@ -39,7 +39,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
   async detectInventoryAnomalies(
     orgId: string,
     config?: AnomalyDetectionConfig,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Anomaly[]>> {
     return this.executeOperation(
       'anomaly.inventory',
@@ -59,7 +59,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
           const aiRecommendations = await this.getAIRecommendations(
             service,
             runtimeOptions,
-            anomaly,
+            anomaly
           );
           anomaly.recommendations = aiRecommendations;
         }
@@ -70,7 +70,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
         return anomalies;
       },
       options,
-      { orgId, configSensitivity: config?.sensitivity || 'medium' },
+      { orgId, configSensitivity: config?.sensitivity || 'medium' }
     );
   }
 
@@ -79,7 +79,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
    */
   async detectPricingAnomalies(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Anomaly[]>> {
     return this.executeOperation(
       'anomaly.pricing',
@@ -108,10 +108,10 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
           FROM price_stats
           WHERE ABS(price - avg_price) / NULLIF(stddev_price, 0) > 2
           `,
-          [orgId],
+          [orgId]
         );
 
-        const anomalies: Anomaly[] = result.rows.map((row) => ({
+        const anomalies: Anomaly[] = result.rows.map(row => ({
           id: `price_${row.id}_${Date.now()}`,
           type: 'price_deviation',
           severity: parseFloat(row.z_score) > 3 ? 'critical' : 'warning',
@@ -136,7 +136,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
           anomaly.recommendations = await this.getAIRecommendations(
             service,
             runtimeOptions,
-            anomaly,
+            anomaly
           );
         }
 
@@ -145,7 +145,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
         return anomalies;
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -154,7 +154,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
    */
   async detectSupplierAnomalies(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Anomaly[]>> {
     return this.executeOperation(
       'anomaly.supplier',
@@ -179,10 +179,10 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
           FROM supplier_metrics
           WHERE on_time_rate < 0.7 OR avg_delivery_days > 14
           `,
-          [orgId],
+          [orgId]
         );
 
-        const anomalies: Anomaly[] = result.rows.map((row) => {
+        const anomalies: Anomaly[] = result.rows.map(row => {
           const onTimeRate = parseFloat(row.on_time_rate);
           const avgDays = parseFloat(row.avg_delivery_days);
 
@@ -212,7 +212,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
           anomaly.recommendations = await this.getAIRecommendations(
             service,
             runtimeOptions,
-            anomaly,
+            anomaly
           );
         }
 
@@ -221,7 +221,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
         return anomalies;
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -231,7 +231,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
   async detectAll(
     orgId: string,
     config?: AnomalyDetectionConfig,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Anomaly[]>> {
     return this.executeOperation(
       'anomaly.all',
@@ -256,7 +256,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
         return allAnomalies;
       },
       options,
-      { orgId, categories: config?.categories?.join(',') },
+      { orgId, categories: config?.categories?.join(',') }
     );
   }
 
@@ -286,17 +286,18 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
          OR quantity >= max_stock_level * 1.5
          OR ABS(quantity - avg_quantity) / NULLIF(stddev_quantity, 0) > 3
       `,
-      [orgId],
+      [orgId]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       id: `stock_${row.id}_${Date.now()}`,
       type: 'stock_level',
       severity: row.quantity <= row.reorder_point ? 'critical' : 'warning',
       title: `Stock level anomaly for ${row.name}`,
-      message: row.quantity <= row.reorder_point
-        ? `Stock below reorder point (${row.quantity} <= ${row.reorder_point})`
-        : `Unusual stock level detected (Z-score: ${parseFloat(row.z_score).toFixed(2)})`,
+      message:
+        row.quantity <= row.reorder_point
+          ? `Stock below reorder point (${row.quantity} <= ${row.reorder_point})`
+          : `Unusual stock level detected (Z-score: ${parseFloat(row.z_score).toFixed(2)})`,
       affectedEntity: {
         type: 'product',
         id: row.id,
@@ -348,10 +349,10 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
       ORDER BY z_score DESC
       LIMIT 10
       `,
-      [orgId],
+      [orgId]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       id: `movement_${row.id}_${Date.now()}`,
       type: 'unusual_movement',
       severity: parseFloat(row.z_score) > 3.5 ? 'critical' : 'warning',
@@ -378,7 +379,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
   private async getAIRecommendations(
     service: unknown,
     runtimeOptions: unknown,
-    anomaly: Anomaly,
+    anomaly: Anomaly
   ): Promise<string[]> {
     const prompt = `
 Analyze this anomaly and provide 2-3 specific, actionable recommendations:
@@ -464,7 +465,7 @@ Respond with a JSON array of recommendations:
           anomaly.affectedEntity.type,
           anomaly.affectedEntity.id,
           JSON.stringify({ metrics: anomaly.metrics }),
-        ],
+        ]
       );
 
       // Store in ai_prediction table for tracking
@@ -497,7 +498,7 @@ Respond with a JSON array of recommendations:
             title: anomaly.title,
             detectedAt: anomaly.detectedAt,
           }),
-        ],
+        ]
       );
     }
   }
@@ -510,7 +511,7 @@ Respond with a JSON array of recommendations:
     const zScore = anomaly.metrics.zScore || anomaly.metrics.z_score || 0;
 
     if (zScore > 3.5) return 0.95;
-    if (zScore > 3.0) return 0.90;
+    if (zScore > 3.0) return 0.9;
     if (zScore > 2.5) return 0.85;
     if (zScore > 2.0) return 0.75;
 
@@ -518,13 +519,13 @@ Respond with a JSON array of recommendations:
     switch (anomaly.severity) {
       case 'urgent':
       case 'critical':
-        return 0.90;
+        return 0.9;
       case 'warning':
         return 0.75;
       case 'info':
-        return 0.60;
+        return 0.6;
       default:
-        return 0.70;
+        return 0.7;
     }
   }
 }

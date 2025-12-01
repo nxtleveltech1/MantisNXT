@@ -3,7 +3,7 @@
  * Advanced predictive modeling for supplier and procurement metrics
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
@@ -13,9 +13,9 @@ const predictiveAnalytics = new PredictiveAnalyticsService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    const validationError = validatePredictiveRequest(body)
+    const validationError = validatePredictiveRequest(body);
     if (validationError) {
       return NextResponse.json(
         {
@@ -24,20 +24,20 @@ export async function POST(request: NextRequest) {
           details: validationError,
         },
         { status: 400 }
-      )
+      );
     }
 
     const executePrediction = async () => {
-      console.log('?? Generating predictive analytics for:', body.metrics)
+      console.log('?? Generating predictive analytics for:', body.metrics);
 
       const result = await predictiveAnalytics.generatePredictions({
         supplierId: body.supplierId,
         category: body.category,
         timeHorizon: body.timeHorizon,
         metrics: body.metrics,
-      })
+      });
 
-      console.log(`✅ Generated predictions for ${body.metrics.length} metrics`)
+      console.log(`✅ Generated predictions for ${body.metrics.length} metrics`);
 
       return {
         success: true,
@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
           },
           timestamp: new Date().toISOString(),
         },
-      }
-    }
+      };
+    };
 
-    const execResult = await executeWithOptionalAsync(request, executePrediction)
+    const execResult = await executeWithOptionalAsync(request, executePrediction);
     if (execResult.queued) {
       return NextResponse.json(
         {
@@ -64,12 +64,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('? Predictive analytics generation failed:', error)
+    console.error('? Predictive analytics generation failed:', error);
 
     return NextResponse.json(
       {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         code: 'PREDICTIVE_ANALYTICS_ERROR',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -90,17 +90,23 @@ export async function GET(request: NextRequest) {
     const months = parseInt(searchParams.get('months') || '6');
 
     if (!supplierId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Supplier ID is required for performance forecasting'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Supplier ID is required for performance forecasting',
+        },
+        { status: 400 }
+      );
     }
 
     if (months < 1 || months > 24) {
-      return NextResponse.json({
-        success: false,
-        error: 'Forecast period must be between 1 and 24 months'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forecast period must be between 1 and 24 months',
+        },
+        { status: 400 }
+      );
     }
 
     console.log(`📈 Forecasting supplier performance for ${months} months:`, supplierId);
@@ -116,18 +122,20 @@ export async function GET(request: NextRequest) {
         performanceForecast: forecast.performanceForecast,
         riskTrend: forecast.riskTrend,
         recommendations: forecast.recommendations,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Supplier performance forecasting failed:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Supplier performance forecasting failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Supplier performance forecasting failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 

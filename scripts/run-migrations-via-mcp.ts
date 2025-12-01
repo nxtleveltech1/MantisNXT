@@ -162,9 +162,9 @@ async function execSql(
   statements: string[],
   label: string
 ) {
-  const params: Record<string, unknown> = { 
-    projectId, 
-    branchId
+  const params: Record<string, unknown> = {
+    projectId,
+    branchId,
   };
   if (databaseName) params.databaseName = databaseName;
 

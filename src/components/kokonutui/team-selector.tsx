@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,9 +10,9 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { AnimatePresence, motion, type Variants } from "motion/react";
-import Image from "next/image";
-import { useState } from "react";
+import { AnimatePresence, motion, type Variants } from 'motion/react';
+import Image from 'next/image';
+import { useState } from 'react';
 
 const MAX_TEAM_SIZE = 4;
 
@@ -24,28 +24,28 @@ type TeamMember = {
 
 const TEAM_MEMBERS: TeamMember[] = [
   {
-    id: "member-1",
+    id: 'member-1',
     avatarUrl:
-      "https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-01.png",
-    name: "Team Member 1",
+      'https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-01.png',
+    name: 'Team Member 1',
   },
   {
-    id: "member-2",
+    id: 'member-2',
     avatarUrl:
-      "https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-02.png",
-    name: "Team Member 2",
+      'https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-02.png',
+    name: 'Team Member 2',
   },
   {
-    id: "member-3",
+    id: 'member-3',
     avatarUrl:
-      "https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-03.png",
-    name: "Team Member 3",
+      'https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-03.png',
+    name: 'Team Member 3',
   },
   {
-    id: "member-4",
+    id: 'member-4',
     avatarUrl:
-      "https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-04.png",
-    name: "Team Member 4",
+      'https://bykuknqwpctcjrowysyf.supabase.co/storage/v1/object/public/assets/avatar-04.png',
+    name: 'Team Member 4',
   },
 ] as const;
 
@@ -81,7 +81,7 @@ const animations = {
       scale: 1,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 400,
         damping: 25,
       },
@@ -98,7 +98,7 @@ interface TeamSelectorProps {
 export default function TeamSelector({
   defaultValue = 1,
   onChange,
-  className = "",
+  className = '',
 }: TeamSelectorProps) {
   const [peopleCount, setPeopleCount] = useState(defaultValue);
   const [isVibrating, setIsVibrating] = useState(false);
@@ -130,13 +130,10 @@ export default function TeamSelector({
     setTimeout(() => setIsVibrating(false), 300);
   };
 
-  const handleKeyDown = (
-    e: React.KeyboardEvent,
-    action: "increment" | "decrement"
-  ) => {
-    if (e.key === "Enter" || e.key === " ") {
+  const handleKeyDown = (e: React.KeyboardEvent, action: 'increment' | 'decrement') => {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      action === "increment" ? handleIncrement(e) : handleDecrement(e);
+      action === 'increment' ? handleIncrement(e) : handleDecrement(e);
     }
   };
 
@@ -156,7 +153,7 @@ export default function TeamSelector({
       >
         <Image
           alt={member.name}
-          className="rounded-full border-[0.5px] border-white/10 bg-gradient-to-b from-white/5 to-white/20 object-cover shadow-[0_8px_28px_-6px/0.2] backdrop-blur-sm transition-all duration-300 ease-fluid hover:shadow-[0_12px_32px_-8px/0.3] dark:border-white/5 dark:from-white/5 dark:to-black/20 dark:shadow-[0_8px_28px_-6px/0.3] dark:hover:shadow-[0_12px_32px_-8px/0.4]"
+          className="ease-fluid rounded-full border-[0.5px] border-white/10 bg-gradient-to-b from-white/5 to-white/20 object-cover shadow-[0_8px_28px_-6px/0.2] backdrop-blur-sm transition-all duration-300 hover:shadow-[0_12px_32px_-8px/0.3] dark:border-white/5 dark:from-white/5 dark:to-black/20 dark:shadow-[0_8px_28px_-6px/0.3] dark:hover:shadow-[0_12px_32px_-8px/0.4]"
           height={96}
           src={member.avatarUrl}
           width={96}
@@ -179,26 +176,26 @@ export default function TeamSelector({
         </div>
 
         <motion.div
-          animate={isVibrating ? "animate" : "initial"}
+          animate={isVibrating ? 'animate' : 'initial'}
           className="mt-8 flex items-center justify-center gap-8"
           initial="initial"
           variants={isVibrating ? animations.vibration : undefined}
         >
           <button
             aria-label="Decrease team size"
-            className="h-12 w-12 rounded-full border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50 text-zinc-900 shadow-[0_2px_8px_-2px/0.1] transition-all duration-200 ease-fluid hover:border-zinc-300 hover:shadow-[0_4px_12px_-4px/0.2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:from-zinc-50 active:to-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:from-white disabled:active:to-zinc-50 disabled:hover:border-zinc-200/80 disabled:hover:shadow-[0_2px_8px_-2px/0.1] dark:border-zinc-700/80 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-100 dark:shadow-[0_2px_8px_-2px/0.3] dark:active:from-zinc-900 dark:active:to-zinc-800 dark:disabled:active:from-zinc-800 dark:disabled:active:to-zinc-900 dark:focus-visible:ring-zinc-400/30 dark:focus-visible:ring-offset-zinc-900 dark:hover:border-zinc-600 dark:hover:shadow-[0_4px_12px_-4px/0.4] dark:disabled:hover:border-zinc-700/80 dark:disabled:hover:shadow-[0_2px_8px_-2px/0.3]"
+            className="ease-fluid h-12 w-12 rounded-full border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50 text-zinc-900 shadow-[0_2px_8px_-2px/0.1] transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_4px_12px_-4px/0.2] focus-visible:ring-2 focus-visible:ring-zinc-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none active:from-zinc-50 active:to-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-zinc-200/80 disabled:hover:shadow-[0_2px_8px_-2px/0.1] disabled:active:from-white disabled:active:to-zinc-50 dark:border-zinc-700/80 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-100 dark:shadow-[0_2px_8px_-2px/0.3] dark:hover:border-zinc-600 dark:hover:shadow-[0_4px_12px_-4px/0.4] dark:focus-visible:ring-zinc-400/30 dark:focus-visible:ring-offset-zinc-900 dark:active:from-zinc-900 dark:active:to-zinc-800 dark:disabled:hover:border-zinc-700/80 dark:disabled:hover:shadow-[0_2px_8px_-2px/0.3] dark:disabled:active:from-zinc-800 dark:disabled:active:to-zinc-900"
             disabled={peopleCount <= 1}
             onClick={handleDecrement}
-            onKeyDown={(e) => handleKeyDown(e, "decrement")}
+            onKeyDown={e => handleKeyDown(e, 'decrement')}
             type="button"
           >
-            <span className="select-none font-medium text-2xl">-</span>
+            <span className="text-2xl font-medium select-none">-</span>
           </button>
 
           <motion.output
             animate="animate"
             aria-label={`Current team size: ${peopleCount}`}
-            className="select-none bg-gradient-to-b from-zinc-800 to-zinc-600 bg-clip-text font-medium text-2xl text-transparent dark:from-zinc-200 dark:to-zinc-400"
+            className="bg-gradient-to-b from-zinc-800 to-zinc-600 bg-clip-text text-2xl font-medium text-transparent select-none dark:from-zinc-200 dark:to-zinc-400"
             initial="initial"
             key={peopleCount}
             variants={animations.number}
@@ -208,13 +205,13 @@ export default function TeamSelector({
 
           <button
             aria-label="Increase team size"
-            className="h-12 w-12 rounded-full border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50 text-zinc-900 shadow-[0_2px_8px_-2px/0.1] transition-all duration-200 ease-fluid hover:border-zinc-300 hover:shadow-[0_4px_12px_-4px/0.2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:from-zinc-50 active:to-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:from-white disabled:active:to-zinc-50 disabled:hover:border-zinc-200/80 disabled:hover:shadow-[0_2px_8px_-2px/0.1] dark:border-zinc-700/80 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-100 dark:shadow-[0_2px_8px_-2px/0.3] dark:active:from-zinc-900 dark:active:to-zinc-800 dark:disabled:active:from-zinc-800 dark:disabled:active:to-zinc-900 dark:focus-visible:ring-zinc-400/30 dark:focus-visible:ring-offset-zinc-900 dark:hover:border-zinc-600 dark:hover:shadow-[0_4px_12px_-4px/0.4] dark:disabled:hover:border-zinc-700/80 dark:disabled:hover:shadow-[0_2px_8px_-2px/0.3]"
+            className="ease-fluid h-12 w-12 rounded-full border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50 text-zinc-900 shadow-[0_2px_8px_-2px/0.1] transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_4px_12px_-4px/0.2] focus-visible:ring-2 focus-visible:ring-zinc-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none active:from-zinc-50 active:to-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-zinc-200/80 disabled:hover:shadow-[0_2px_8px_-2px/0.1] disabled:active:from-white disabled:active:to-zinc-50 dark:border-zinc-700/80 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-100 dark:shadow-[0_2px_8px_-2px/0.3] dark:hover:border-zinc-600 dark:hover:shadow-[0_4px_12px_-4px/0.4] dark:focus-visible:ring-zinc-400/30 dark:focus-visible:ring-offset-zinc-900 dark:active:from-zinc-900 dark:active:to-zinc-800 dark:disabled:hover:border-zinc-700/80 dark:disabled:hover:shadow-[0_2px_8px_-2px/0.3] dark:disabled:active:from-zinc-800 dark:disabled:active:to-zinc-900"
             disabled={peopleCount >= MAX_TEAM_SIZE}
             onClick={handleIncrement}
-            onKeyDown={(e) => handleKeyDown(e, "increment")}
+            onKeyDown={e => handleKeyDown(e, 'increment')}
             type="button"
           >
-            <span className="select-none font-medium text-2xl">+</span>
+            <span className="text-2xl font-medium select-none">+</span>
           </button>
         </motion.div>
       </fieldset>

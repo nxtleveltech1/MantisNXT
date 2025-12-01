@@ -13,7 +13,14 @@ import type {
 import { z } from 'zod';
 import { resolveSecret, clearSecretCache } from './secrets';
 
-const PROVIDERS: AIProviderId[] = ['openai', 'anthropic', 'vercel', 'openai-compatible', 'google', 'firecrawl'];
+const PROVIDERS: AIProviderId[] = [
+  'openai',
+  'anthropic',
+  'vercel',
+  'openai-compatible',
+  'google',
+  'firecrawl',
+];
 
 const DEFAULT_MODELS: Record<AIProviderId, AIProviderModels> = {
   openai: {
@@ -67,7 +74,14 @@ const DEFAULT_LIMITS: Record<AIProviderId, AIProviderLimits> = {
   firecrawl: { maxTokens: 0, maxRequestsPerMinute: 60, concurrency: 2 }, // Not an LLM provider
 };
 
-const ProviderIdSchema = z.enum(['openai', 'anthropic', 'vercel', 'openai-compatible', 'google', 'firecrawl']);
+const ProviderIdSchema = z.enum([
+  'openai',
+  'anthropic',
+  'vercel',
+  'openai-compatible',
+  'google',
+  'firecrawl',
+]);
 
 const ProviderCredentialsSchema = z.object({
   apiKey: z.string().min(1).optional(),
@@ -195,7 +209,8 @@ const ProviderConfigSchema = z
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['credentials', 'apiKey'],
-                message: 'Google AI (Developer API) requires an API key (GEMINI_API_KEY or GOOGLE_API_KEY).',
+                message:
+                  'Google AI (Developer API) requires an API key (GEMINI_API_KEY or GOOGLE_API_KEY).',
               });
             }
           }
@@ -328,19 +343,21 @@ const buildCredentials = (
     case 'openai': {
       const useCLI = parseBoolean(env.OPENAI_USE_CLI, false);
       const useOAuth = parseBoolean(env.OPENAI_USE_OAUTH, false);
-      
+
       if (useCLI) {
         // CLI mode - use OpenAI Codex CLI
         const apiKey = resolveSecret(env, 'OPENAI_API_KEY');
-        
+
         return {
-          apiKey: (!useOAuth) ? apiKey : undefined,
+          apiKey: !useOAuth ? apiKey : undefined,
           baseUrl: env.OPENAI_BASE_URL,
           organization: env.OPENAI_ORGANIZATION,
           project: env.OPENAI_PROJECT,
           useCLI: true,
           cliCommand: env.OPENAI_CLI_COMMAND || 'codex',
-          cliArgs: env.OPENAI_CLI_ARGS ? env.OPENAI_CLI_ARGS.split(',').map(s => s.trim()) : undefined,
+          cliArgs: env.OPENAI_CLI_ARGS
+            ? env.OPENAI_CLI_ARGS.split(',').map(s => s.trim())
+            : undefined,
           useOAuth: useOAuth || !apiKey,
           cliWorkingDirectory: env.OPENAI_CLI_WORKING_DIR,
         };
@@ -375,20 +392,22 @@ const buildCredentials = (
       const useVertexAI = parseBoolean(env.GOOGLE_GENAI_USE_VERTEXAI, false);
       const useGCloudADC = parseBoolean(env.GOOGLE_GENAI_USE_GCLOUD_ADC, false);
       const useOAuth = parseBoolean(env.GOOGLE_GENAI_USE_OAUTH, false);
-      
+
       if (useCLI) {
         // CLI mode - use Gemini CLI
         const apiKey = resolveSecret(env, 'GOOGLE_API_KEY') || resolveSecret(env, 'GEMINI_API_KEY');
         const project = env.GOOGLE_CLOUD_PROJECT;
-        
+
         return {
           // Don't require API key if using OAuth or gcloud ADC
-          apiKey: (!useOAuth && !useGCloudADC) ? apiKey : undefined,
+          apiKey: !useOAuth && !useGCloudADC ? apiKey : undefined,
           project: useGCloudADC || useOAuth ? project : undefined,
-          location: useGCloudADC ? (env.GOOGLE_CLOUD_LOCATION || 'us-central1') : undefined,
+          location: useGCloudADC ? env.GOOGLE_CLOUD_LOCATION || 'us-central1' : undefined,
           useCLI: true,
           cliCommand: env.GOOGLE_GENAI_CLI_COMMAND || 'gemini',
-          cliArgs: env.GOOGLE_GENAI_CLI_ARGS ? env.GOOGLE_GENAI_CLI_ARGS.split(',').map(s => s.trim()) : undefined,
+          cliArgs: env.GOOGLE_GENAI_CLI_ARGS
+            ? env.GOOGLE_GENAI_CLI_ARGS.split(',').map(s => s.trim())
+            : undefined,
           useOAuth: useOAuth || (!apiKey && !useGCloudADC && project),
           useGCloudADC: useGCloudADC || (!apiKey && !useOAuth && project),
           cliWorkingDirectory: env.GOOGLE_GENAI_CLI_WORKING_DIR,
@@ -446,10 +465,10 @@ const isProviderConfigured = (
       if (credentials.useCLI) {
         // CLI mode can work with OAuth, gcloud ADC, or API key
         return Boolean(
-          credentials.useOAuth || 
-          credentials.useGCloudADC || 
-          credentials.apiKey ||
-          credentials.project // gcloud ADC uses project
+          credentials.useOAuth ||
+            credentials.useGCloudADC ||
+            credentials.apiKey ||
+            credentials.project // gcloud ADC uses project
         );
       }
       // Vertex AI mode: check for project; Developer API mode: check for apiKey

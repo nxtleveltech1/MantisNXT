@@ -1,8 +1,8 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
-import type { MarketIntelAlert, MarketIntelSnapshot } from './types'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
+import type { MarketIntelAlert, MarketIntelSnapshot } from './types';
 
-const ALERT_TABLE = PRICING_TABLES.MARKET_INTEL_ALERT
+const ALERT_TABLE = PRICING_TABLES.MARKET_INTEL_ALERT;
 
 export class AlertService {
   async list(orgId: string, status?: string): Promise<MarketIntelAlert[]> {
@@ -15,9 +15,9 @@ export class AlertService {
         ORDER BY detected_at DESC
         LIMIT 500
       `,
-      status ? [orgId, status] : [orgId],
-    )
-    return result.rows
+      status ? [orgId, status] : [orgId]
+    );
+    return result.rows;
   }
 
   async acknowledge(orgId: string, alertId: string, userId?: string): Promise<void> {
@@ -29,8 +29,8 @@ export class AlertService {
             acknowledged_by = $3
         WHERE org_id = $1 AND alert_id = $2
       `,
-      [orgId, alertId, userId ?? null],
-    )
+      [orgId, alertId, userId ?? null]
+    );
   }
 
   async resolve(orgId: string, alertId: string, remediationStatus = 'completed'): Promise<void> {
@@ -42,15 +42,15 @@ export class AlertService {
             acknowledged_at = COALESCE(acknowledged_at, NOW())
         WHERE org_id = $1 AND alert_id = $2
       `,
-      [orgId, alertId, remediationStatus],
-    )
+      [orgId, alertId, remediationStatus]
+    );
   }
 
   async evaluateSnapshot(orgId: string, snapshot: MarketIntelSnapshot): Promise<void> {
-    const pricing = snapshot.pricing as Record<string, unknown>
-    const pricePosition = snapshot.price_position as Record<string, unknown>
+    const pricing = snapshot.pricing as Record<string, unknown>;
+    const pricePosition = snapshot.price_position as Record<string, unknown>;
 
-    const alerts: Array<Partial<MarketIntelAlert>> = []
+    const alerts: Array<Partial<MarketIntelAlert>> = [];
 
     if (typeof pricePosition?.rank === 'number' && pricePosition.rank === 1) {
       alerts.push({
@@ -60,7 +60,7 @@ export class AlertService {
           rank: pricePosition.rank,
           spread: pricePosition.spread,
         },
-      })
+      });
     }
 
     if (pricing?.map_price && pricing.sale_price && pricing.sale_price < pricing.map_price) {
@@ -71,16 +71,16 @@ export class AlertService {
           sale_price: pricing.sale_price,
           map_price: pricing.map_price,
         },
-      })
+      });
     }
 
     if (!alerts.length) {
-      return
+      return;
     }
 
-    const values: string[] = []
-    const params: unknown[] = []
-    let idx = 1
+    const values: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
 
     for (const alert of alerts) {
       values.push(
@@ -95,8 +95,8 @@ export class AlertService {
           $${idx++},
           $${idx++},
           $${idx++}
-        )`,
-      )
+        )`
+      );
       params.push(
         orgId,
         snapshot.competitor_id,
@@ -106,8 +106,8 @@ export class AlertService {
         JSON.stringify(alert.threshold_config ?? {}),
         new Date(),
         JSON.stringify(alert.details ?? {}),
-        alert.remediation_status ?? 'pending',
-      )
+        alert.remediation_status ?? 'pending'
+      );
     }
 
     await query(
@@ -126,27 +126,27 @@ export class AlertService {
         )
         VALUES ${values.join(', ')}
       `,
-      params,
-    )
+      params
+    );
   }
 
   async configureAlert(
     orgId: string,
     config: {
-      alertType: string
-      severity: 'low' | 'medium' | 'high' | 'critical'
-      thresholdConfig: Record<string, unknown>
-      enabled: boolean
+      alertType: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      thresholdConfig: Record<string, unknown>;
+      enabled: boolean;
     }
   ): Promise<void> {
     // Store alert configuration - in a real implementation, this might be stored in a separate table
     // For now, we'll use the alert table's threshold_config column as a configuration store
     // This is a simplified implementation - production would have a dedicated alert_config table
-    
+
     // When evaluating snapshots, this service will check stored configurations
     // For now, we'll just validate the configuration structure
     if (!config.alertType || !config.severity) {
-      throw new Error('Invalid alert configuration')
+      throw new Error('Invalid alert configuration');
     }
 
     // In production, you'd INSERT/UPDATE an alert_config table here
@@ -154,4 +154,3 @@ export class AlertService {
     // This method validates and accepts the configuration
   }
 }
-

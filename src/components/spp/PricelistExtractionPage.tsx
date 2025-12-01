@@ -29,7 +29,7 @@ export function PricelistExtractionPage({ supplier_id, org_id }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-org-id': org_id
+          'x-org-id': org_id,
         },
         body: JSON.stringify({
           upload_id: uploadId,
@@ -37,9 +37,9 @@ export function PricelistExtractionPage({ supplier_id, org_id }: Props) {
             auto_detect_columns: true,
             skip_empty_rows: true,
             skip_sku_as_brand: true,
-            currency: 'ZAR'
-          }
-        })
+            currency: 'ZAR',
+          },
+        }),
       });
 
       const data = await response.json();
@@ -77,16 +77,16 @@ export function PricelistExtractionPage({ supplier_id, org_id }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-org-id': org_id
+          'x-org-id': org_id,
         },
         body: JSON.stringify({
           skip_invalid_rows: false,
           validation_strategy: 'strict',
           conflict_resolution: {
             on_duplicate_sku: 'update',
-            preserve_manual_edits: true
-          }
-        })
+            preserve_manual_edits: true,
+          },
+        }),
       });
 
       const data = await response.json();
@@ -110,10 +110,7 @@ export function PricelistExtractionPage({ supplier_id, org_id }: Props) {
       )}
 
       {step === 'extract' && job_id && (
-        <UploadStatusPoller
-          jobId={job_id}
-          onComplete={handleExtractionComplete}
-        />
+        <UploadStatusPoller jobId={job_id} onComplete={handleExtractionComplete} />
       )}
 
       {step === 'preview' && extractionData && (

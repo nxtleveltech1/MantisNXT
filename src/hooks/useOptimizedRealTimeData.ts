@@ -31,7 +31,7 @@ export function useOptimizedRealTimeData<T = unknown>({
   maxRetries = 3,
   retryDelayMs = 2000,
   onError,
-  onUpdate
+  onUpdate,
 }: OptimizedRealTimeDataOptions) {
   const [state, setState] = useState<RealTimeDataState<T>>({
     data: null,
@@ -39,7 +39,7 @@ export function useOptimizedRealTimeData<T = unknown>({
     loading: false,
     error: null,
     lastUpdate: null,
-    retryCount: 0
+    retryCount: 0,
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -51,24 +51,27 @@ export function useOptimizedRealTimeData<T = unknown>({
   /**
    * Debounced update handler to prevent excessive re-renders
    */
-  const debouncedUpdate = useCallback((data: T) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+  const debouncedUpdate = useCallback(
+    (data: T) => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
 
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isUnmountedRef.current) return;
+      debounceTimeoutRef.current = setTimeout(() => {
+        if (isUnmountedRef.current) return;
 
-      setState(prev => ({
-        ...prev,
-        data,
-        lastUpdate: new Date(),
-        error: null
-      }));
+        setState(prev => ({
+          ...prev,
+          data,
+          lastUpdate: new Date(),
+          error: null,
+        }));
 
-      onUpdate?.(data);
-    }, debounceMs);
-  }, [debounceMs, onUpdate]);
+        onUpdate?.(data);
+      }, debounceMs);
+    },
+    [debounceMs, onUpdate]
+  );
 
   /**
    * Schedule reconnection with exponential backoff
@@ -82,7 +85,9 @@ export function useOptimizedRealTimeData<T = unknown>({
 
     reconnectTimeoutRef.current = setTimeout(() => {
       if (isUnmountedRef.current) return;
-      console.log(`🔄 Attempting to reconnect to table: ${table} (attempt ${state.retryCount + 1})`);
+      console.log(
+        `🔄 Attempting to reconnect to table: ${table} (attempt ${state.retryCount + 1})`
+      );
       connectRef.current();
     }, delay);
   }, [autoReconnect, retryDelayMs, state.retryCount, table]);
@@ -115,13 +120,13 @@ export function useOptimizedRealTimeData<T = unknown>({
           connected: true,
           loading: false,
           retryCount: 0,
-          error: null
+          error: null,
         }));
 
         console.log(`✅ Connected to real-time data for table: ${table}`);
       };
 
-      wsRef.current.onmessage = (event) => {
+      wsRef.current.onmessage = event => {
         if (isUnmountedRef.current) return;
 
         try {
@@ -131,12 +136,12 @@ export function useOptimizedRealTimeData<T = unknown>({
           console.error('❌ Error parsing WebSocket message:', err);
           setState(prev => ({
             ...prev,
-            error: 'Failed to parse real-time data'
+            error: 'Failed to parse real-time data',
           }));
         }
       };
 
-      wsRef.current.onclose = (event) => {
+      wsRef.current.onclose = event => {
         if (isUnmountedRef.current) return;
 
         setState(prev => ({ ...prev, connected: false, loading: false }));
@@ -152,7 +157,7 @@ export function useOptimizedRealTimeData<T = unknown>({
         }
       };
 
-      wsRef.current.onerror = (error) => {
+      wsRef.current.onerror = error => {
         if (isUnmountedRef.current) return;
 
         const errorMsg = `WebSocket error for table ${table}`;
@@ -162,12 +167,11 @@ export function useOptimizedRealTimeData<T = unknown>({
           ...prev,
           connected: false,
           loading: false,
-          error: errorMsg
+          error: errorMsg,
         }));
 
         onError?.(new Error(errorMsg));
       };
-
     } catch (err) {
       const errorMsg = `Failed to connect to real-time data for table ${table}`;
       console.error('❌', errorMsg, err);
@@ -176,12 +180,20 @@ export function useOptimizedRealTimeData<T = unknown>({
         ...prev,
         connected: false,
         loading: false,
-        error: errorMsg
+        error: errorMsg,
       }));
 
       onError?.(err instanceof Error ? err : new Error(errorMsg));
     }
-  }, [autoReconnect, debouncedUpdate, maxRetries, onError, scheduleReconnect, state.retryCount, table]);
+  }, [
+    autoReconnect,
+    debouncedUpdate,
+    maxRetries,
+    onError,
+    scheduleReconnect,
+    state.retryCount,
+    table,
+  ]);
 
   useEffect(() => {
     connectRef.current = connect;
@@ -246,6 +258,6 @@ export function useOptimizedRealTimeData<T = unknown>({
     reconnect,
     disconnect,
     isRetrying: state.retryCount > 0 && state.retryCount < maxRetries,
-    canRetry: state.retryCount < maxRetries
+    canRetry: state.retryCount < maxRetries,
   };
 }

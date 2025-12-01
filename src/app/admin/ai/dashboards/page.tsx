@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import DashboardBuilder from '@/components/ai/admin/DashboardBuilder';
 
 /**
  * AI Dashboards Admin Page
@@ -12,13 +12,8 @@ import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
  */
 export default function DashboardsPage() {
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Dashboards" },
-      ]}
-    >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+    <AppLayout breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Dashboards' }]}>
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard Builder</h1>
           <p className="text-muted-foreground">
@@ -29,5 +24,5 @@ export default function DashboardsPage() {
         <DashboardBuilder />
       </div>
     </AppLayout>
-  )
+  );
 }

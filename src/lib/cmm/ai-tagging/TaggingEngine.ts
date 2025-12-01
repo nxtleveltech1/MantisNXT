@@ -10,11 +10,7 @@ import { listCoreTags } from '../tag-service-core';
 import { assignCoreTag } from '../tag-service-core';
 import { recordProposedTagForProduct } from '../proposed-tags';
 import type { EnrichedProduct } from '../sip-product-enrichment';
-import type {
-  BatchResult,
-  TaggingResult,
-  TaggingStatus,
-  JobConfig} from './types';
+import type { BatchResult, TaggingResult, TaggingStatus, JobConfig } from './types';
 
 export class TaggingEngine {
   private confidenceThreshold: number;
@@ -59,20 +55,15 @@ export class TaggingEngine {
       console.log(
         `[TaggingEngine] Requesting AI tag suggestions for ${products.length} products (provider batch size=${providerBatchSize}, timeout=${providerTimeoutMs}ms)`
       );
-      const suggestions = await suggestTagsBatch(
-        products,
-        tagsList,
-        orgId,
-        {
-          batchSize: providerBatchSize,
-          batchDelayMs: config.batch_delay_ms || 0,
-          timeoutMs: providerTimeoutMs,
-          overallTimeoutMs,
-          maxBatches,
-        }
-      );
+      const suggestions = await suggestTagsBatch(products, tagsList, orgId, {
+        batchSize: providerBatchSize,
+        batchDelayMs: config.batch_delay_ms || 0,
+        timeoutMs: providerTimeoutMs,
+        overallTimeoutMs,
+        maxBatches,
+      });
       console.log(`[TaggingEngine] Received ${suggestions.size} AI tag suggestions`);
-      
+
       if (suggestions.size === 0) {
         console.warn(`[TaggingEngine] No AI suggestions received for ${products.length} products. This may indicate:
           - AI provider is not configured or not enabled
@@ -86,7 +77,9 @@ export class TaggingEngine {
         try {
           const productSuggestions = suggestions.get(product.supplier_product_id) || [];
           if (productSuggestions.length === 0) {
-            console.debug(`[TaggingEngine] No suggestions for product ${product.supplier_product_id} (${product.name_from_supplier})`);
+            console.debug(
+              `[TaggingEngine] No suggestions for product ${product.supplier_product_id} (${product.name_from_supplier})`
+            );
           }
           const result = await this.processProduct(
             product,
@@ -206,7 +199,7 @@ export class TaggingEngine {
 
     // Filter suggestions by confidence threshold
     const validSuggestions = suggestions.filter(s => (s.confidence || 0) >= threshold);
-    
+
     if (validSuggestions.length === 0) {
       return {
         supplier_product_id: product.supplier_product_id,
@@ -222,20 +215,21 @@ export class TaggingEngine {
     }
 
     // Get average confidence from valid suggestions
-    const avgConfidence = validSuggestions.reduce((sum, s) => sum + (s.confidence || 0), 0) / validSuggestions.length;
+    const avgConfidence =
+      validSuggestions.reduce((sum, s) => sum + (s.confidence || 0), 0) / validSuggestions.length;
     const provider = validSuggestions[0]?.provider ?? null;
-    const reasoning = validSuggestions.map(s => s.reasoning).filter(Boolean).join('; ') || null;
+    const reasoning =
+      validSuggestions
+        .map(s => s.reasoning)
+        .filter(Boolean)
+        .join('; ') || null;
 
     const knownIdSet = existingTagIds ?? new Set<string>();
     const knownSuggestions = validSuggestions.filter(
       s => s.tag_id && knownIdSet.has(s.tag_id.toLowerCase())
     );
     const recognizedTagIds = Array.from(
-      new Set(
-        knownSuggestions
-          .map(s => s.tag_id)
-          .filter((id): id is string => Boolean(id))
-      )
+      new Set(knownSuggestions.map(s => s.tag_id).filter((id): id is string => Boolean(id)))
     );
 
     const newSuggestions = validSuggestions.filter(
@@ -288,7 +282,8 @@ export class TaggingEngine {
             console.error('[TaggingEngine] Failed to update product status after proposal error', {
               productId: product.supplier_product_id,
               originalError: errorMessage,
-              statusUpdateError: statusUpdateError instanceof Error ? statusUpdateError.message : 'Unknown error',
+              statusUpdateError:
+                statusUpdateError instanceof Error ? statusUpdateError.message : 'Unknown error',
             });
           }
 
@@ -312,12 +307,7 @@ export class TaggingEngine {
     }
 
     // Check if we should apply these tags
-    const shouldApply = await this.shouldRetag(
-      product,
-      avgConfidence,
-      threshold,
-      forceRetag
-    );
+    const shouldApply = await this.shouldRetag(product, avgConfidence, threshold, forceRetag);
 
     if (!shouldApply.apply) {
       return {
@@ -348,7 +338,7 @@ export class TaggingEngine {
 
   /**
    * Determine if a product should be (re)tagged based on smart logic
-   * 
+   *
    * Re-tagging rules:
    * 1. If product has no tags: always tag
    * 2. If product has tags and ai_tag_confidence exists: only if newConfidence > ai_tag_confidence
@@ -468,7 +458,12 @@ export class TaggingEngine {
       }
 
       // Handle successful taggings
-      if (result.status === 'completed' && result.success && result.tag_ids && result.tag_ids.length > 0) {
+      if (
+        result.status === 'completed' &&
+        result.success &&
+        result.tag_ids &&
+        result.tag_ids.length > 0
+      ) {
         try {
           await this.updateProductTagging({
             supplier_product_id: result.supplier_product_id,
@@ -518,7 +513,7 @@ export class TaggingEngine {
     // First, get current tags to preserve them (unless force_retag)
     // For now, we'll add new tags without removing existing ones
     // (This can be made configurable later)
-    
+
     // Update product tagging metadata
     const sql = `
       UPDATE core.supplier_product
@@ -546,7 +541,10 @@ export class TaggingEngine {
       try {
         await assignCoreTag(params.supplier_product_id, tagId, { assignedBy: 'ai_tagging' });
       } catch (error) {
-        console.error(`Failed to assign tag ${tagId} to product ${params.supplier_product_id}:`, error);
+        console.error(
+          `Failed to assign tag ${tagId} to product ${params.supplier_product_id}:`,
+          error
+        );
         // Continue with other tags even if one fails
       }
     }
@@ -665,4 +663,3 @@ export class TaggingEngine {
 
 // Singleton instance
 export const taggingEngine = new TaggingEngine();
-

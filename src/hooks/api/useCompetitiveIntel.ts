@@ -81,7 +81,10 @@ async function fetchCompetitor(id: string, orgId?: string): Promise<CompetitorPr
   return data.data;
 }
 
-async function fetchCompetitorSources(competitorId: string, orgId?: string): Promise<CompetitorDataSource[]> {
+async function fetchCompetitorSources(
+  competitorId: string,
+  orgId?: string
+): Promise<CompetitorDataSource[]> {
   const params = orgId ? `?orgId=${orgId}` : '';
   const response = await fetch(`${API_BASE}/competitors/${competitorId}/sources${params}`);
   if (!response.ok) {
@@ -140,7 +143,13 @@ export function useCreateCompetitor() {
 export function useUpdateCompetitor() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateCompetitorInput> & { orgId?: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateCompetitorInput> & { orgId?: string };
+    }) => {
       const response = await fetch(`${API_BASE}/competitors/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -274,4 +283,3 @@ export function useCreateScrapingJob() {
     },
   });
 }
-

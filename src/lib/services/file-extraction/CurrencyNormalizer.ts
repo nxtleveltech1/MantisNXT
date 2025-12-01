@@ -121,7 +121,10 @@ export function parsePrice(
 
   // Remove currency symbols and codes
   str = str.replace(/[R$€£¥₹₽₩฿₪₦₵]/g, '');
-  str = str.replace(/\b(ZAR|USD|EUR|GBP|JPY|INR|AUD|CAD|SEK|CHF|PLN|RUB|KRW|THB|ILS|NGN|GHS)\b/gi, '');
+  str = str.replace(
+    /\b(ZAR|USD|EUR|GBP|JPY|INR|AUD|CAD|SEK|CHF|PLN|RUB|KRW|THB|ILS|NGN|GHS)\b/gi,
+    ''
+  );
   str = str.trim();
 
   // Determine format by analyzing separators

@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * AI Chat Interface - Vercel AI SDK v5 Integration
@@ -12,20 +12,15 @@
  * - Responsive design with accessibility
  */
 
-import React, { useState, useEffect, useRef } from "react"
-import { useChat } from 'ai/react'
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import React, { useState, useEffect, useRef } from 'react';
+import { useChat } from 'ai/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Brain,
   Send,
@@ -47,33 +42,33 @@ import {
   ShieldCheck,
   Maximize2,
   Minimize2,
-} from "lucide-react"
+} from 'lucide-react';
 
 // Types
 interface ChatAction {
-  id: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  action: string
-  data?: unknown
-  variant?: 'default' | 'primary' | 'secondary' | 'destructive'
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  action: string;
+  data?: unknown;
+  variant?: 'default' | 'primary' | 'secondary' | 'destructive';
 }
 
 interface QuickPrompt {
-  id: string
-  text: string
-  category: string
-  icon: React.ComponentType<{ className?: string }>
-  description: string
+  id: string;
+  text: string;
+  category: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
 }
 
 interface AIChatInterfaceV5Props {
-  onActionTrigger?: (action: ChatAction) => void
-  compactMode?: boolean
-  enableVoice?: boolean
-  enableFileUpload?: boolean
-  apiEndpoint?: string
-  conversationId?: string
+  onActionTrigger?: (action: ChatAction) => void;
+  compactMode?: boolean;
+  enableVoice?: boolean;
+  enableFileUpload?: boolean;
+  apiEndpoint?: string;
+  conversationId?: string;
 }
 
 const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
@@ -97,21 +92,21 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
   } = useChat({
     api: apiEndpoint,
     id: conversationId,
-    onError: (error) => {
-      console.error('Chat error:', error)
-      setError(error.message)
+    onError: error => {
+      console.error('Chat error:', error);
+      setError(error.message);
     },
-  })
+  });
 
   // Local state
-  const [isExpanded, setIsExpanded] = useState(!compactMode)
-  const [error, setError] = useState<string | null>(null)
-  const [isListening, setIsListening] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(!compactMode);
+  const [error, setError] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const speechRecognition = useRef<unknown>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const speechRecognition = useRef<unknown>(null);
 
   // Quick prompts for common queries
   const quickPrompts: QuickPrompt[] = [
@@ -120,96 +115,96 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
       text: 'Analyze our top suppliers performance',
       category: 'Analysis',
       icon: BarChart3,
-      description: 'Get comprehensive supplier performance analytics'
+      description: 'Get comprehensive supplier performance analytics',
     },
     {
       id: 'cost_optimization',
       text: 'Find cost optimization opportunities',
       category: 'Optimization',
       icon: DollarSign,
-      description: 'Identify potential savings in procurement'
+      description: 'Identify potential savings in procurement',
     },
     {
       id: 'risk_assessment',
       text: 'Show current supply chain risks',
       category: 'Risk',
       icon: AlertTriangle,
-      description: 'Review and assess supply chain vulnerabilities'
+      description: 'Review and assess supply chain vulnerabilities',
     },
     {
       id: 'market_trends',
       text: 'What are the latest market trends?',
       category: 'Intelligence',
       icon: TrendingUp,
-      description: 'Get current market intelligence and trends'
+      description: 'Get current market intelligence and trends',
     },
     {
       id: 'supplier_recommendation',
       text: 'Recommend new suppliers for technology products',
       category: 'Discovery',
       icon: Building2,
-      description: 'AI-powered supplier discovery and recommendations'
+      description: 'AI-powered supplier discovery and recommendations',
     },
     {
       id: 'compliance_check',
       text: 'Check compliance status across suppliers',
       category: 'Compliance',
       icon: ShieldCheck,
-      description: 'Review supplier compliance and certifications'
-    }
-  ]
+      description: 'Review supplier compliance and certifications',
+    },
+  ];
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Initialize speech recognition
   useEffect(() => {
     if (enableVoice && 'webkitSpeechRecognition' in window) {
-      speechRecognition.current = new (window as unknown).webkitSpeechRecognition()
-      speechRecognition.current.continuous = false
-      speechRecognition.current.interimResults = false
-      speechRecognition.current.lang = 'en-US'
+      speechRecognition.current = new (window as unknown).webkitSpeechRecognition();
+      speechRecognition.current.continuous = false;
+      speechRecognition.current.interimResults = false;
+      speechRecognition.current.lang = 'en-US';
 
       speechRecognition.current.onresult = (event: unknown) => {
-        const transcript = event.results[0][0].transcript
-        handleInputChange({ target: { value: transcript } } as unknown)
-        setIsListening(false)
-      }
+        const transcript = event.results[0][0].transcript;
+        handleInputChange({ target: { value: transcript } } as unknown);
+        setIsListening(false);
+      };
 
       speechRecognition.current.onerror = () => {
-        setIsListening(false)
-        setError("Voice recognition error. Please try again.")
-      }
+        setIsListening(false);
+        setError('Voice recognition error. Please try again.');
+      };
     }
-  }, [enableVoice, handleInputChange])
+  }, [enableVoice, handleInputChange]);
 
   // Clear error after chat error is resolved
   useEffect(() => {
     if (chatError) {
-      setError(chatError.message)
+      setError(chatError.message);
     }
-  }, [chatError])
+  }, [chatError]);
 
   // Handle quick prompt selection
   const handleQuickPrompt = (prompt: QuickPrompt) => {
-    handleInputChange({ target: { value: prompt.text } } as unknown)
-    inputRef.current?.focus()
-  }
+    handleInputChange({ target: { value: prompt.text } } as unknown);
+    inputRef.current?.focus();
+  };
 
   // Handle voice input
   const toggleVoiceInput = () => {
-    if (!speechRecognition.current) return
+    if (!speechRecognition.current) return;
 
     if (isListening) {
-      speechRecognition.current.stop()
-      setIsListening(false)
+      speechRecognition.current.stop();
+      setIsListening(false);
     } else {
-      speechRecognition.current.start()
-      setIsListening(true)
+      speechRecognition.current.start();
+      setIsListening(true);
     }
-  }
+  };
 
   // Handle message reactions (feedback)
   const handleReaction = (messageId: string, reaction: 'helpful' | 'notHelpful') => {
@@ -222,41 +217,44 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
         reaction,
         conversationId,
       }),
-    }).catch(err => console.error('Failed to submit feedback:', err))
-  }
+    }).catch(err => console.error('Failed to submit feedback:', err));
+  };
 
   // Copy message to clipboard
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
         // Could show toast notification here
-        console.log('Copied to clipboard')
+        console.log('Copied to clipboard');
       })
-      .catch(err => console.error('Failed to copy:', err))
-  }
+      .catch(err => console.error('Failed to copy:', err));
+  };
 
   return (
     <TooltipProvider>
-      <div className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden`}>
+      <div
+        className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900`}
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-4">
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-4 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                className="rounded-lg bg-white/20 p-2 backdrop-blur-sm"
               >
                 <Brain className="h-5 w-5" />
               </motion.div>
               <div>
-                <h2 className="font-bold text-lg">AI Assistant</h2>
-                <p className="text-indigo-100 text-sm">Procurement Intelligence</p>
+                <h2 className="text-lg font-bold">AI Assistant</h2>
+                <p className="text-sm text-indigo-100">Procurement Intelligence</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Sparkles className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="border-white/30 bg-white/20 text-white">
+                <Sparkles className="mr-1 h-3 w-3" />
                 {isLoading ? 'Thinking...' : 'Online'}
               </Badge>
               <Button
@@ -274,18 +272,18 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
 
         {/* Error Alert */}
         {error && (
-          <Alert className="m-4 border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+          <Alert className="m-4 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
             <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
             <AlertDescription className="text-red-800 dark:text-red-300">
-              <div className="font-semibold mb-1">Error</div>
+              <div className="mb-1 font-semibold">Error</div>
               <div>{error}</div>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-2"
                 onClick={() => {
-                  setError(null)
-                  reload()
+                  setError(null);
+                  reload();
                 }}
               >
                 Retry
@@ -295,23 +293,24 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-8"
+                  className="py-8 text-center"
                 >
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mb-4">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20">
                     <Brain className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
                     Hello! I&apos;m your AI procurement assistant.
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    I can help you with supplier analysis, cost optimization, market intelligence, and much more.
+                    I can help you with supplier analysis, cost optimization, market intelligence,
+                    and much more.
                   </p>
                 </motion.div>
               )}
@@ -326,13 +325,15 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                     transition={{ delay: index * 0.05 }}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[80%] ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl rounded-tr-sm'
-                        : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm'
-                    } p-4 shadow-lg`}>
+                    <div
+                      className={`max-w-[80%] ${
+                        message.role === 'user'
+                          ? 'rounded-2xl rounded-tr-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                          : 'rounded-2xl rounded-tl-sm bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                      } p-4 shadow-lg`}
+                    >
                       {/* Message Header */}
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="mb-2 flex items-center gap-2">
                         {message.role === 'user' ? (
                           <User className="h-4 w-4" />
                         ) : (
@@ -344,13 +345,13 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                       </div>
 
                       {/* Message Content */}
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
                       </div>
 
                       {/* Message Actions (AI messages only) */}
                       {message.role === 'assistant' && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">
                           <div className="flex gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -413,24 +414,26 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                     exit={{ opacity: 0, y: -10 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-sm p-4 shadow-lg">
+                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 p-4 shadow-lg dark:bg-gray-800">
                       <div className="flex items-center gap-2">
                         <Bot className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                         <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
+                          {[0, 1, 2].map(i => (
                             <motion.div
                               key={i}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{
                                 duration: 1,
                                 repeat: Infinity,
-                                delay: i * 0.2
+                                delay: i * 0.2,
                               }}
-                              className="w-2 h-2 bg-indigo-400 dark:bg-indigo-500 rounded-full"
+                              className="h-2 w-2 rounded-full bg-indigo-400 dark:bg-indigo-500"
                             />
                           ))}
                         </div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">AI is thinking...</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          AI is thinking...
+                        </span>
                       </div>
                     </div>
                   </motion.div>
@@ -443,21 +446,25 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
 
           {/* Quick Prompts (when no conversation yet) */}
           {messages.length === 0 && (
-            <div className="p-4 border-t dark:border-gray-700">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Start:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {quickPrompts.slice(0, 4).map((prompt) => (
+            <div className="border-t p-4 dark:border-gray-700">
+              <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Quick Start:
+              </h3>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                {quickPrompts.slice(0, 4).map(prompt => (
                   <Button
                     key={prompt.id}
                     variant="outline"
                     size="sm"
                     onClick={() => handleQuickPrompt(prompt)}
-                    className="justify-start text-left h-auto py-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+                    className="h-auto justify-start py-2 text-left dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
                   >
-                    <prompt.icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <prompt.icon className="mr-2 h-4 w-4 flex-shrink-0" />
                     <div>
-                      <div className="font-medium text-xs">{prompt.text}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{prompt.description}</div>
+                      <div className="text-xs font-medium">{prompt.text}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {prompt.description}
+                      </div>
                     </div>
                   </Button>
                 ))}
@@ -466,19 +473,19 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
           )}
 
           {/* Input Area */}
-          <div className="p-4 border-t bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+          <div className="border-t bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
             <form onSubmit={handleSubmit} className="flex gap-2">
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <Input
                   ref={inputRef}
                   placeholder="Ask me anything about procurement, suppliers, or analytics..."
                   value={input}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className="pr-20 py-6 text-sm border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-400 dark:focus:border-indigo-500 rounded-xl"
+                  className="rounded-xl border-2 border-gray-200 py-6 pr-20 text-sm focus:border-indigo-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500"
                   aria-label="Chat message input"
                 />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
+                <div className="absolute top-1/2 right-2 flex -translate-y-1/2 transform gap-1">
                   {enableVoice && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -491,7 +498,11 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                           className={`h-8 w-8 p-0 ${isListening ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}
                           aria-label="Voice input"
                         >
-                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          {isListening ? (
+                            <MicOff className="h-4 w-4" />
+                          ) : (
+                            <Mic className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Voice input</TooltipContent>
@@ -505,7 +516,7 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                           variant="ghost"
                           size="sm"
                           disabled={isLoading}
-                          className="h-8 w-8 p-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                           aria-label="Attach file"
                         >
                           <Paperclip className="h-4 w-4" />
@@ -519,7 +530,7 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
               <Button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="px-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50"
                 aria-label="Send message"
               >
                 {isLoading ? (
@@ -529,14 +540,14 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                 )}
               </Button>
             </form>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+            <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
               AI assistant may make mistakes. Verify important information.
             </p>
           </div>
         </div>
       </div>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default AIChatInterfaceV5
+export default AIChatInterfaceV5;

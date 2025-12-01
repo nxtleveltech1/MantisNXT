@@ -3,5 +3,3 @@ import { redirect } from 'next/navigation';
 export default function LegacyPricingRulesRedirectPage() {
   redirect('/pricing-optimization/rules');
 }
-
-

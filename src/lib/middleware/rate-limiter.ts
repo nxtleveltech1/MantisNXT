@@ -11,7 +11,7 @@
  * - Custom limits per route
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getRedisClient } from '@/lib/cache/redis-client';
 
@@ -254,10 +254,7 @@ export const rateLimiters = {
 /**
  * Helper to add rate limit headers to response
  */
-export function addRateLimitHeaders(
-  response: NextResponse,
-  info: RateLimitInfo
-): NextResponse {
+export function addRateLimitHeaders(response: NextResponse, info: RateLimitInfo): NextResponse {
   response.headers.set('X-RateLimit-Limit', info.limit.toString());
   response.headers.set('X-RateLimit-Remaining', info.remaining.toString());
   response.headers.set('X-RateLimit-Reset', info.reset.toString());
@@ -270,7 +267,7 @@ export function addRateLimitHeaders(
 export function createIpRateLimiter(config?: Partial<RateLimitConfig>) {
   return createRateLimiter({
     ...config,
-    keyGenerator: (req) => {
+    keyGenerator: req => {
       const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
       return ip;
     },
@@ -283,7 +280,7 @@ export function createIpRateLimiter(config?: Partial<RateLimitConfig>) {
 export function createUserRateLimiter(config?: Partial<RateLimitConfig>) {
   return createRateLimiter({
     ...config,
-    keyGenerator: (req) => {
+    keyGenerator: req => {
       // Extract user ID from token or session
       const userId = req.headers.get('x-user-id') || 'anonymous';
       return `user:${userId}`;

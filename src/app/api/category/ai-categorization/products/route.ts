@@ -5,7 +5,7 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query as dbQuery } from '@/lib/database/unified-connection';
 import type {
@@ -186,4 +186,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

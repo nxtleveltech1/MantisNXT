@@ -9,7 +9,12 @@ import EventEmitter from 'events';
 export interface OptimizationWorkflow {
   id: string;
   name: string;
-  type: 'inventory_reordering' | 'supplier_selection' | 'price_negotiation' | 'cost_optimization' | 'risk_mitigation';
+  type:
+    | 'inventory_reordering'
+    | 'supplier_selection'
+    | 'price_negotiation'
+    | 'cost_optimization'
+    | 'risk_mitigation';
   status: 'active' | 'paused' | 'completed' | 'failed';
 
   trigger: {
@@ -56,7 +61,12 @@ export interface OptimizationWorkflow {
 
 export interface DecisionSupportCase {
   id: string;
-  type: 'supplier_evaluation' | 'inventory_decision' | 'contract_renewal' | 'budget_allocation' | 'risk_assessment';
+  type:
+    | 'supplier_evaluation'
+    | 'inventory_decision'
+    | 'contract_renewal'
+    | 'budget_allocation'
+    | 'risk_assessment';
   title: string;
   description: string;
 
@@ -234,20 +244,19 @@ export class AutomatedInventoryOptimizer {
       return {
         workflowId: 'inventory_optimization',
         executionId,
-        status: successCount === actions.length ? 'success' :
-               successCount > 0 ? 'partial' : 'failed',
+        status:
+          successCount === actions.length ? 'success' : successCount > 0 ? 'partial' : 'failed',
         actions,
         metrics: {
           totalCostSavings,
           timeToExecution: executionTime,
           itemsProcessed: items.length,
-          successRate: items.length > 0 ? successCount / items.length : 0
+          successRate: items.length > 0 ? successCount / items.length : 0,
         },
         recommendations: this.generateInventoryRecommendations(actions),
         executedAt: new Date(),
-        completedAt: new Date()
+        completedAt: new Date(),
       };
-
     } catch (error) {
       console.error('Inventory optimization error:', error);
       throw new Error('Failed to optimize inventory levels');
@@ -264,7 +273,7 @@ export class AutomatedInventoryOptimizer {
     const safetyStock = Math.ceil(zScore * demandVolatility * Math.sqrt(leadTime));
 
     // Calculate reorder point
-    const optimalReorderPoint = Math.ceil((dailyDemand * leadTime) + safetyStock);
+    const optimalReorderPoint = Math.ceil(dailyDemand * leadTime + safetyStock);
 
     // Calculate optimal order quantity (EOQ)
     const annualDemand = dailyDemand * 365;
@@ -290,8 +299,8 @@ export class AutomatedInventoryOptimizer {
       improvementPotential: this.calculateImprovement(item, {
         optimalReorderPoint,
         optimalMaxStock,
-        optimalOrderQuantity
-      })
+        optimalOrderQuantity,
+      }),
     };
   }
 
@@ -319,7 +328,7 @@ export class AutomatedInventoryOptimizer {
         await this.createPurchaseOrder(item, optimization.optimalOrderQuantity);
         details = {
           orderQuantity: optimization.optimalOrderQuantity,
-          urgency: 'critical'
+          urgency: 'critical',
         };
       } else if (item.current_stock <= item.reorder_point) {
         // Regular reorder
@@ -327,7 +336,7 @@ export class AutomatedInventoryOptimizer {
         await this.createPurchaseOrder(item, optimization.optimalOrderQuantity);
         details = {
           orderQuantity: optimization.optimalOrderQuantity,
-          urgency: 'normal'
+          urgency: 'normal',
         };
       } else if (item.current_stock > item.max_stock * 1.5) {
         // Excess inventory
@@ -335,7 +344,7 @@ export class AutomatedInventoryOptimizer {
         await this.createPromotionRecommendation(item);
         details = {
           excessQuantity: item.current_stock - optimization.optimalMaxStock,
-          recommendation: 'promotional_pricing'
+          recommendation: 'promotional_pricing',
         };
       }
 
@@ -351,9 +360,8 @@ export class AutomatedInventoryOptimizer {
         action: `Optimized inventory for ${item.name}`,
         result: actionResult,
         details,
-        benefit: optimization.improvementPotential
+        benefit: optimization.improvementPotential,
       };
-
     } catch (error) {
       console.error(`Error executing inventory action for item ${item.id}:`, error);
       return {
@@ -361,27 +369,33 @@ export class AutomatedInventoryOptimizer {
         target: item.id,
         action: `Failed to optimize ${item.name}`,
         result: 'failed',
-        details: { error: error.message }
+        details: { error: error.message },
       };
     }
   }
 
   private async createPurchaseOrder(item: unknown, quantity: number): Promise<void> {
     // Simulate PO creation
-    await this.db.query(`
+    await this.db.query(
+      `
       INSERT INTO purchase_orders (
         item_id, quantity, unit_price, total_amount, status, created_at
       ) VALUES ($1, $2, $3, $4, 'pending', NOW())
-    `, [item.id, quantity, item.unit_cost, quantity * item.unit_cost]);
+    `,
+      [item.id, quantity, item.unit_cost, quantity * item.unit_cost]
+    );
   }
 
   private async createPromotionRecommendation(item: unknown): Promise<void> {
     // Create promotion recommendation
-    await this.db.query(`
+    await this.db.query(
+      `
       INSERT INTO promotion_recommendations (
         item_id, type, discount_percentage, reason, created_at
       ) VALUES ($1, 'excess_inventory', 15, 'Reduce excess stock', NOW())
-    `, [item.id]);
+    `,
+      [item.id]
+    );
   }
 
   private async updateInventoryParameters(_itemId: string, _optimization: unknown): Promise<void> {
@@ -397,7 +411,7 @@ export class AutomatedInventoryOptimizer {
       recommendations.push({
         type: 'warning',
         message: `${failedActions.length} inventory actions failed. Review item configurations.`,
-        action: 'review_failed_optimizations'
+        action: 'review_failed_optimizations',
       });
     }
 
@@ -406,7 +420,7 @@ export class AutomatedInventoryOptimizer {
       recommendations.push({
         type: 'warning',
         message: `${emergencyOrders.length} items required emergency reordering. Consider improving demand forecasting.`,
-        action: 'improve_demand_forecasting'
+        action: 'improve_demand_forecasting',
       });
     }
 
@@ -415,7 +429,7 @@ export class AutomatedInventoryOptimizer {
       recommendations.push({
         type: 'opportunity',
         message: `Inventory optimization generated $${totalSavings.toLocaleString()} in potential savings.`,
-        action: 'continue_optimization'
+        action: 'continue_optimization',
       });
     }
 
@@ -473,20 +487,19 @@ export class AutomatedSupplierSelector {
       return {
         workflowId: 'supplier_optimization',
         executionId,
-        status: successCount === actions.length ? 'success' :
-               successCount > 0 ? 'partial' : 'failed',
+        status:
+          successCount === actions.length ? 'success' : successCount > 0 ? 'partial' : 'failed',
         actions,
         metrics: {
           totalCostSavings,
           timeToExecution: Date.now() - startTime,
           itemsProcessed: items.length,
-          successRate: items.length > 0 ? successCount / items.length : 0
+          successRate: items.length > 0 ? successCount / items.length : 0,
         },
         recommendations: this.generateSupplierRecommendations(actions),
         executedAt: new Date(),
-        completedAt: new Date()
+        completedAt: new Date(),
       };
-
     } catch (error) {
       console.error('Supplier optimization error:', error);
       throw new Error('Failed to optimize supplier selection');
@@ -526,12 +539,11 @@ export class AutomatedSupplierSelector {
       const qualityAcceptanceScore = (supplier.quality_acceptance_rate || 85) / 100;
 
       // Weighted composite score
-      const compositeScore = (
+      const compositeScore =
         priceScore * 0.3 +
         qualityScore * 0.25 +
         deliveryScore * 0.25 +
-        qualityAcceptanceScore * 0.2
-      );
+        qualityAcceptanceScore * 0.2;
 
       return {
         ...supplier,
@@ -540,8 +552,8 @@ export class AutomatedSupplierSelector {
           quality: qualityScore,
           delivery: deliveryScore,
           qualityAcceptance: qualityAcceptanceScore,
-          composite: compositeScore
-        }
+          composite: compositeScore,
+        },
       };
     });
 
@@ -558,7 +570,7 @@ export class AutomatedSupplierSelector {
       alternatives: scoredAlternatives.slice(0, 3), // Top 3 alternatives
       potentialSavings,
       qualityImprovement: (bestOption.overall_rating || 70) - (item.current_supplier_rating || 70),
-      reason: `Better composite score: ${(bestOption.scores.composite * 100).toFixed(1)}%`
+      reason: `Better composite score: ${(bestOption.scores.composite * 100).toFixed(1)}%`,
     };
   }
 
@@ -572,7 +584,7 @@ export class AutomatedSupplierSelector {
     if (minPrice === maxPrice) return 1;
 
     // Lower price = higher score
-    return 1 - ((price - minPrice) / (maxPrice - minPrice));
+    return 1 - (price - minPrice) / (maxPrice - minPrice);
   }
 
   private async executeSupplierChange(item: unknown, optimization: unknown): Promise<unknown> {
@@ -583,7 +595,7 @@ export class AutomatedSupplierSelector {
           target: item.id,
           action: `No better supplier found for ${item.name}`,
           result: 'success',
-          details: { reason: optimization.reason }
+          details: { reason: optimization.reason },
         };
       }
 
@@ -601,12 +613,11 @@ export class AutomatedSupplierSelector {
           newSupplier: newSupplier.name,
           oldPrice: item.current_price,
           newPrice: newSupplier.unit_price,
-          qualityImprovement: optimization.qualityImprovement
+          qualityImprovement: optimization.qualityImprovement,
         },
         cost: 0, // Switching cost could be added here
-        benefit: optimization.potentialSavings
+        benefit: optimization.potentialSavings,
       };
-
     } catch (error) {
       console.error(`Error executing supplier change for item ${item.id}:`, error);
       return {
@@ -614,7 +625,7 @@ export class AutomatedSupplierSelector {
         target: item.id,
         action: `Failed to change supplier for ${item.name}`,
         result: 'failed',
-        details: { error: error.message }
+        details: { error: error.message },
       };
     }
   }
@@ -628,7 +639,7 @@ export class AutomatedSupplierSelector {
       recommendations.push({
         type: 'opportunity',
         message: `${supplierChanges.length} supplier changes could save $${totalSavings.toLocaleString()} annually.`,
-        action: 'implement_supplier_changes'
+        action: 'implement_supplier_changes',
       });
     }
 
@@ -637,7 +648,7 @@ export class AutomatedSupplierSelector {
       recommendations.push({
         type: 'improvement',
         message: `${noAlternatives.length} items lack supplier alternatives. Consider expanding supplier base.`,
-        action: 'supplier_sourcing_initiative'
+        action: 'supplier_sourcing_initiative',
       });
     }
 
@@ -673,7 +684,7 @@ export class DecisionSupportSystem {
       data,
       analysis,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Store in database
@@ -714,7 +725,7 @@ export class DecisionSupportSystem {
         risk: 0.3,
         cost: 0,
         benefit: 0,
-        score: 0.6
+        score: 0.6,
       },
       {
         id: 'switch_supplier',
@@ -725,7 +736,7 @@ export class DecisionSupportSystem {
         risk: 0.5,
         cost: 5000,
         benefit: 15000,
-        score: 0.8
+        score: 0.8,
       },
       {
         id: 'multi_supplier',
@@ -736,8 +747,8 @@ export class DecisionSupportSystem {
         risk: 0.2,
         cost: 3000,
         benefit: 8000,
-        score: 0.75
-      }
+        score: 0.75,
+      },
     ];
   }
 
@@ -752,7 +763,7 @@ export class DecisionSupportSystem {
         risk: 0.3,
         cost: 10000,
         benefit: 5000,
-        score: 0.6
+        score: 0.6,
       },
       {
         id: 'optimize_stock',
@@ -763,7 +774,7 @@ export class DecisionSupportSystem {
         risk: 0.2,
         cost: 2000,
         benefit: 12000,
-        score: 0.85
+        score: 0.85,
       },
       {
         id: 'jit_approach',
@@ -774,8 +785,8 @@ export class DecisionSupportSystem {
         risk: 0.6,
         cost: 1000,
         benefit: 15000,
-        score: 0.7
-      }
+        score: 0.7,
+      },
     ];
   }
 
@@ -790,7 +801,7 @@ export class DecisionSupportSystem {
         risk: 0.2,
         cost: 0,
         benefit: 0,
-        score: 0.5
+        score: 0.5,
       },
       {
         id: 'renegotiate',
@@ -801,7 +812,7 @@ export class DecisionSupportSystem {
         risk: 0.4,
         cost: 5000,
         benefit: 25000,
-        score: 0.8
+        score: 0.8,
       },
       {
         id: 'market_test',
@@ -812,8 +823,8 @@ export class DecisionSupportSystem {
         risk: 0.5,
         cost: 8000,
         benefit: 35000,
-        score: 0.75
-      }
+        score: 0.75,
+      },
     ];
   }
 
@@ -828,7 +839,7 @@ export class DecisionSupportSystem {
         risk: 0.2,
         cost: 0,
         benefit: 0,
-        score: 0.5
+        score: 0.5,
       },
       {
         id: 'reallocate_strategic',
@@ -839,7 +850,7 @@ export class DecisionSupportSystem {
         risk: 0.4,
         cost: 10000,
         benefit: 40000,
-        score: 0.8
+        score: 0.8,
       },
       {
         id: 'performance_based',
@@ -850,12 +861,15 @@ export class DecisionSupportSystem {
         risk: 0.3,
         cost: 5000,
         benefit: 20000,
-        score: 0.7
-      }
+        score: 0.7,
+      },
     ];
   }
 
-  private async generateRiskMitigationOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
+  private async generateRiskMitigationOptions(
+    _context: unknown,
+    _data: unknown
+  ): Promise<unknown[]> {
     return [
       {
         id: 'accept_risk',
@@ -866,7 +880,7 @@ export class DecisionSupportSystem {
         risk: 0.7,
         cost: 0,
         benefit: 0,
-        score: 0.4
+        score: 0.4,
       },
       {
         id: 'mitigate_risk',
@@ -877,7 +891,7 @@ export class DecisionSupportSystem {
         risk: 0.3,
         cost: 15000,
         benefit: 30000,
-        score: 0.8
+        score: 0.8,
       },
       {
         id: 'transfer_risk',
@@ -888,8 +902,8 @@ export class DecisionSupportSystem {
         risk: 0.2,
         cost: 8000,
         benefit: 10000,
-        score: 0.7
-      }
+        score: 0.7,
+      },
     ];
   }
 
@@ -909,7 +923,7 @@ export class DecisionSupportSystem {
       confidence: bestOption.score,
       rationale: this.generateRationale(bestOption, options),
       implementation: this.generateImplementation(bestOption, type),
-      risks: this.generateRiskAssessment(bestOption, options)
+      risks: this.generateRiskAssessment(bestOption, options),
     };
 
     // Generate sensitivity analysis
@@ -921,7 +935,7 @@ export class DecisionSupportSystem {
     return {
       options,
       recommendation,
-      sensitivity
+      sensitivity,
     };
   }
 
@@ -929,11 +943,15 @@ export class DecisionSupportSystem {
     const rationale = [];
 
     if (bestOption.score > 0.8) {
-      rationale.push(`Highest score option with ${(bestOption.score * 100).toFixed(1)}% confidence`);
+      rationale.push(
+        `Highest score option with ${(bestOption.score * 100).toFixed(1)}% confidence`
+      );
     }
 
     if (bestOption.benefit > bestOption.cost * 2) {
-      rationale.push(`Strong ROI with benefit-to-cost ratio of ${(bestOption.benefit / Math.max(bestOption.cost, 1)).toFixed(1)}:1`);
+      rationale.push(
+        `Strong ROI with benefit-to-cost ratio of ${(bestOption.benefit / Math.max(bestOption.cost, 1)).toFixed(1)}:1`
+      );
     }
 
     if (bestOption.risk < 0.4) {
@@ -954,7 +972,7 @@ export class DecisionSupportSystem {
       'Prepare implementation plan with timeline',
       'Identify required resources and stakeholders',
       'Execute implementation in phases',
-      'Monitor progress and adjust as needed'
+      'Monitor progress and adjust as needed',
     ];
 
     // Add type-specific steps
@@ -991,12 +1009,15 @@ export class DecisionSupportSystem {
       risks.push('Marginal ROI - monitor benefits realization closely');
     }
 
-    const averageRisk = allOptions.reduce((sum, option) => sum + option.risk, 0) / allOptions.length;
+    const averageRisk =
+      allOptions.reduce((sum, option) => sum + option.risk, 0) / allOptions.length;
     if (bestOption.risk > averageRisk * 1.2) {
       risks.push('Risk profile notably higher than alternatives');
     }
 
-    return risks.length > 0 ? risks : ['Low risk option with standard implementation considerations'];
+    return risks.length > 0
+      ? risks
+      : ['Low risk option with standard implementation considerations'];
   }
 
   private identifyCriticalFactors(options: unknown[]): string[] {
@@ -1012,7 +1033,8 @@ export class DecisionSupportSystem {
       factors.push('Risk level');
     }
 
-    const benefitRange = Math.max(...options.map(o => o.benefit)) - Math.min(...options.map(o => o.benefit));
+    const benefitRange =
+      Math.max(...options.map(o => o.benefit)) - Math.min(...options.map(o => o.benefit));
     if (benefitRange > 10000) {
       factors.push('Expected benefits');
     }
@@ -1026,56 +1048,61 @@ export class DecisionSupportSystem {
         name: 'Best Case',
         probability: 0.3,
         impact: 1.5,
-        recommendation: 'Proceed with full implementation'
+        recommendation: 'Proceed with full implementation',
       },
       {
         name: 'Most Likely',
         probability: 0.5,
         impact: 1.0,
-        recommendation: 'Implement with standard monitoring'
+        recommendation: 'Implement with standard monitoring',
       },
       {
         name: 'Worst Case',
         probability: 0.2,
         impact: 0.5,
-        recommendation: 'Implement with enhanced risk controls'
-      }
+        recommendation: 'Implement with enhanced risk controls',
+      },
     ];
   }
 
   private generateCaseTitle(type: string, context: unknown): string {
     const titles = {
-      'supplier_evaluation': `Supplier Evaluation: ${context.entityType}`,
-      'inventory_decision': `Inventory Decision: ${context.entityType}`,
-      'contract_renewal': `Contract Renewal: ${context.entityType}`,
-      'budget_allocation': `Budget Allocation: ${context.entityType}`,
-      'risk_assessment': `Risk Assessment: ${context.entityType}`
+      supplier_evaluation: `Supplier Evaluation: ${context.entityType}`,
+      inventory_decision: `Inventory Decision: ${context.entityType}`,
+      contract_renewal: `Contract Renewal: ${context.entityType}`,
+      budget_allocation: `Budget Allocation: ${context.entityType}`,
+      risk_assessment: `Risk Assessment: ${context.entityType}`,
     };
 
     return titles[type] || `Decision Support: ${type}`;
   }
 
   private generateCaseDescription(type: string, context: unknown, _data: unknown): string {
-    return `Decision support case for ${type.replace('_', ' ')} involving ${context.entityType} ` +
-           `with ${context.urgency} urgency level. Analysis of current state and recommendations for optimal decision.`;
+    return (
+      `Decision support case for ${type.replace('_', ' ')} involving ${context.entityType} ` +
+      `with ${context.urgency} urgency level. Analysis of current state and recommendations for optimal decision.`
+    );
   }
 
   private async storeDecisionCase(decisionCase: DecisionSupportCase): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO decision_support_cases (
           id, type, title, description, context, data, analysis, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `, [
-        decisionCase.id,
-        decisionCase.type,
-        decisionCase.title,
-        decisionCase.description,
-        JSON.stringify(decisionCase.context),
-        JSON.stringify(decisionCase.data),
-        JSON.stringify(decisionCase.analysis),
-        decisionCase.createdAt
-      ]);
+      `,
+        [
+          decisionCase.id,
+          decisionCase.type,
+          decisionCase.title,
+          decisionCase.description,
+          JSON.stringify(decisionCase.context),
+          JSON.stringify(decisionCase.data),
+          JSON.stringify(decisionCase.analysis),
+          decisionCase.createdAt,
+        ]
+      );
     } catch (error) {
       console.error('Error storing decision case:', error);
     }
@@ -1088,19 +1115,22 @@ export class DecisionSupportSystem {
     rationale: string
   ): Promise<boolean> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE decision_support_cases
         SET decision = $1, updated_at = NOW()
         WHERE id = $2
-      `, [
-        JSON.stringify({
-          selectedOption,
-          decisionBy,
-          decisionAt: new Date(),
-          rationale
-        }),
-        caseId
-      ]);
+      `,
+        [
+          JSON.stringify({
+            selectedOption,
+            decisionBy,
+            decisionAt: new Date(),
+            rationale,
+          }),
+          caseId,
+        ]
+      );
 
       return true;
     } catch (error) {
@@ -1148,7 +1178,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
           constraints: JSON.parse(row.constraints),
           createdAt: new Date(row.created_at),
           updatedAt: new Date(row.updated_at),
-          createdBy: row.created_by
+          createdBy: row.created_by,
         };
 
         this.workflows.set(workflow.id, workflow);
@@ -1157,7 +1187,6 @@ export class AutomatedWorkflowEngine extends EventEmitter {
       if (this.workflows.size === 0) {
         await this.createDefaultWorkflows();
       }
-
     } catch (error) {
       console.error('Error initializing workflows:', error);
       await this.createDefaultWorkflows();
@@ -1172,36 +1201,36 @@ export class AutomatedWorkflowEngine extends EventEmitter {
         trigger: {
           type: 'threshold',
           conditions: { stockLevel: 'below_reorder_point' },
-          frequency: '0 */6 * * *' // Every 6 hours
+          frequency: '0 */6 * * *', // Every 6 hours
         },
         automation: {
           level: 'fully_automated',
-          maxAutomatedValue: 10000
-        }
+          maxAutomatedValue: 10000,
+        },
       },
       {
         name: 'Supplier Performance Optimization',
         type: 'supplier_selection',
         trigger: {
           type: 'schedule',
-          frequency: '0 0 * * 1' // Weekly on Monday
+          frequency: '0 0 * * 1', // Weekly on Monday
         },
         automation: {
           level: 'semi_automated',
-          approvalThreshold: 5000
-        }
+          approvalThreshold: 5000,
+        },
       },
       {
         name: 'Cost Optimization Analysis',
         type: 'cost_optimization',
         trigger: {
           type: 'schedule',
-          frequency: '0 0 1 * *' // Monthly
+          frequency: '0 0 1 * *', // Monthly
         },
         automation: {
-          level: 'approval_required'
-        }
-      }
+          level: 'approval_required',
+        },
+      },
     ];
 
     for (const workflowConfig of defaultWorkflows) {
@@ -1223,44 +1252,56 @@ export class AutomatedWorkflowEngine extends EventEmitter {
         level: config.automation?.level || 'semi_automated',
         approvalThreshold: config.automation?.approvalThreshold,
         approvers: config.automation?.approvers || [],
-        maxAutomatedValue: config.automation?.maxAutomatedValue
+        maxAutomatedValue: config.automation?.maxAutomatedValue,
       },
       performance: {
         executionCount: 0,
         successRate: 0,
         avgExecutionTime: 0,
         costSavings: 0,
-        errorCount: 0
+        errorCount: 0,
       },
       constraints: config.constraints || {},
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: config.createdBy || 'system'
+      createdBy: config.createdBy || 'system',
     };
 
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO optimization_workflows (
           id, name, type, status, trigger, rules, automation,
           performance, constraints, created_at, created_by
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      `, [
-        workflow.id, workflow.name, workflow.type, workflow.status,
-        JSON.stringify(workflow.trigger), JSON.stringify(workflow.rules),
-        JSON.stringify(workflow.automation), JSON.stringify(workflow.performance),
-        JSON.stringify(workflow.constraints), workflow.createdAt, workflow.createdBy
-      ]);
+      `,
+        [
+          workflow.id,
+          workflow.name,
+          workflow.type,
+          workflow.status,
+          JSON.stringify(workflow.trigger),
+          JSON.stringify(workflow.rules),
+          JSON.stringify(workflow.automation),
+          JSON.stringify(workflow.performance),
+          JSON.stringify(workflow.constraints),
+          workflow.createdAt,
+          workflow.createdBy,
+        ]
+      );
 
       this.workflows.set(workflowId, workflow);
       return workflowId;
-
     } catch (error) {
       console.error('Error creating workflow:', error);
       throw new Error('Failed to create optimization workflow');
     }
   }
 
-  async executeWorkflow(workflowId: string, organizationId: string = 'default'): Promise<OptimizationResult> {
+  async executeWorkflow(
+    workflowId: string,
+    organizationId: string = 'default'
+  ): Promise<OptimizationResult> {
     const workflow = this.workflows.get(workflowId);
     if (!workflow) {
       throw new Error('Workflow not found');
@@ -1282,7 +1323,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
           // Combine multiple optimization types
           const [invResult, supResult] = await Promise.all([
             this.inventoryOptimizer.optimizeInventoryLevels(organizationId),
-            this.supplierSelector.optimizeSupplierSelection(organizationId)
+            this.supplierSelector.optimizeSupplierSelection(organizationId),
           ]);
           result = this.combineOptimizationResults([invResult, supResult]);
           break;
@@ -1298,7 +1339,6 @@ export class AutomatedWorkflowEngine extends EventEmitter {
       this.emit('workflowCompleted', { workflow, result });
 
       return result;
-
     } catch (error) {
       console.error(`Workflow execution error for ${workflowId}:`, error);
       workflow.performance.errorCount++;
@@ -1311,7 +1351,8 @@ export class AutomatedWorkflowEngine extends EventEmitter {
     const combinedActions = results.flatMap(r => r.actions);
     const totalCostSavings = results.reduce((sum, r) => sum + r.metrics.totalCostSavings, 0);
     const totalItemsProcessed = results.reduce((sum, r) => sum + r.metrics.itemsProcessed, 0);
-    const avgSuccessRate = results.reduce((sum, r) => sum + r.metrics.successRate, 0) / results.length;
+    const avgSuccessRate =
+      results.reduce((sum, r) => sum + r.metrics.successRate, 0) / results.length;
 
     return {
       workflowId: 'cost_optimization',
@@ -1322,11 +1363,11 @@ export class AutomatedWorkflowEngine extends EventEmitter {
         totalCostSavings,
         timeToExecution: Math.max(...results.map(r => r.metrics.timeToExecution)),
         itemsProcessed: totalItemsProcessed,
-        successRate: avgSuccessRate
+        successRate: avgSuccessRate,
       },
       recommendations: results.flatMap(r => r.recommendations),
       executedAt: new Date(),
-      completedAt: new Date()
+      completedAt: new Date(),
     };
   }
 
@@ -1337,10 +1378,10 @@ export class AutomatedWorkflowEngine extends EventEmitter {
   ): Promise<void> {
     workflow.performance.executionCount++;
     workflow.performance.lastExecution = new Date();
-    workflow.performance.avgExecutionTime = (
-      (workflow.performance.avgExecutionTime * (workflow.performance.executionCount - 1) + executionTime) /
-      workflow.performance.executionCount
-    );
+    workflow.performance.avgExecutionTime =
+      (workflow.performance.avgExecutionTime * (workflow.performance.executionCount - 1) +
+        executionTime) /
+      workflow.performance.executionCount;
 
     if (result.status === 'success') {
       const successCount = workflow.performance.executionCount - workflow.performance.errorCount;
@@ -1354,11 +1395,14 @@ export class AutomatedWorkflowEngine extends EventEmitter {
 
   private async updateWorkflowInDatabase(workflow: OptimizationWorkflow): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE optimization_workflows
         SET performance = $1, updated_at = NOW()
         WHERE id = $2
-      `, [JSON.stringify(workflow.performance), workflow.id]);
+      `,
+        [JSON.stringify(workflow.performance), workflow.id]
+      );
     } catch (error) {
       console.error('Error updating workflow performance:', error);
     }
@@ -1397,9 +1441,9 @@ export class AutomatedWorkflowEngine extends EventEmitter {
     // Simplified cron parsing - returns interval in milliseconds
     // In production, use a proper cron parser
     const patterns = {
-      '0 */6 * * *': 6 * 60 * 60 * 1000,     // Every 6 hours
-      '0 0 * * 1': 7 * 24 * 60 * 60 * 1000,  // Weekly
-      '0 0 1 * *': 30 * 24 * 60 * 60 * 1000  // Monthly
+      '0 */6 * * *': 6 * 60 * 60 * 1000, // Every 6 hours
+      '0 0 * * 1': 7 * 24 * 60 * 60 * 1000, // Weekly
+      '0 0 1 * *': 30 * 24 * 60 * 60 * 1000, // Monthly
     };
 
     return patterns[cronExpression as keyof typeof patterns] || 24 * 60 * 60 * 1000; // Default daily
@@ -1428,7 +1472,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
       executions: workflow.performance.executionCount,
       successRate: workflow.performance.successRate,
       totalSavings: workflow.performance.costSavings,
-      lastExecution: workflow.performance.lastExecution
+      lastExecution: workflow.performance.lastExecution,
     }));
   }
 }
@@ -1438,5 +1482,5 @@ export const automatedOptimization = {
   workflowEngine: (db: Pool) => new AutomatedWorkflowEngine(db),
   inventoryOptimizer: (db: Pool) => new AutomatedInventoryOptimizer(db),
   supplierSelector: (db: Pool) => new AutomatedSupplierSelector(db),
-  decisionSupport: (db: Pool) => new DecisionSupportSystem(db)
+  decisionSupport: (db: Pool) => new DecisionSupportSystem(db),
 };

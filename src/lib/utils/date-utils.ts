@@ -40,7 +40,7 @@ export function formatTimestamp(
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }
 ): string {
   const date = safeParseDate(input);

@@ -2,7 +2,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { AuthContext, AuthProvider as AuthProviderType, User, SignInCredentials, SignUpData, AuthResult } from '@/types/auth';
+import type {
+  AuthContext,
+  AuthProvider as AuthProviderType,
+  User,
+  LoginCredentials,
+  SignUpData,
+  AuthResult,
+} from '@/types/auth';
 import { mockAuthProvider } from './mock-provider';
 
 // Create context
@@ -47,50 +54,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [authProvider]);
 
   // Sign in method
-  const signIn = useCallback(async (credentials: SignInCredentials): Promise<AuthResult> => {
-    try {
-      setIsLoading(true);
-      const result = await authProvider.signIn(credentials);
+  const signIn = useCallback(
+    async (credentials: LoginCredentials): Promise<AuthResult> => {
+      try {
+        setIsLoading(true);
+        // AuthProvider interface uses 'login' not 'signIn'
+        const result = await authProvider.login(credentials);
 
-      if (result.success && result.user) {
-        setUser(result.user);
+        if (result.success && result.user) {
+          setUser(result.user);
+        }
+
+        return result;
+      } catch (error) {
+        console.error('Sign in error:', error);
+        return {
+          success: false,
+          message: 'An unexpected error occurred',
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        };
+      } finally {
+        setIsLoading(false);
       }
-
-      return result;
-    } catch (error) {
-      console.error('Sign in error:', error);
-      return {
-        success: false,
-        message: 'An unexpected error occurred',
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authProvider]);
+    },
+    [authProvider]
+  );
 
   // Sign up method
-  const signUp = useCallback(async (data: SignUpData): Promise<AuthResult> => {
-    try {
-      setIsLoading(true);
-      const result = await authProvider.signUp(data);
+  const signUp = useCallback(
+    async (data: SignUpData): Promise<AuthResult> => {
+      try {
+        setIsLoading(true);
+        const result = await authProvider.signUp(data);
 
-      if (result.success && result.user) {
-        setUser(result.user);
+        if (result.success && result.user) {
+          setUser(result.user);
+        }
+
+        return result;
+      } catch (error) {
+        console.error('Sign up error:', error);
+        return {
+          success: false,
+          message: 'An unexpected error occurred',
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        };
+      } finally {
+        setIsLoading(false);
       }
-
-      return result;
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return {
-        success: false,
-        message: 'An unexpected error occurred',
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authProvider]);
+    },
+    [authProvider]
+  );
 
   // Sign out method
   const signOut = useCallback(async (): Promise<void> => {
@@ -108,47 +122,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [authProvider]);
 
   // Update profile method
-  const updateProfile = useCallback(async (data: Partial<User>): Promise<User> => {
-    if (!user) {
-      throw new Error('No user signed in');
-    }
+  const updateProfile = useCallback(
+    async (data: Partial<User>): Promise<User> => {
+      if (!user) {
+        throw new Error('No user signed in');
+      }
 
-    try {
-      const updatedUser = await authProvider.updateProfile(data);
-      setUser(updatedUser);
-      return updatedUser;
-    } catch (error) {
-      console.error('Update profile error:', error);
-      throw error;
-    }
-  }, [authProvider, user]);
+      try {
+        const updatedUser = await authProvider.updateProfile(data);
+        setUser(updatedUser);
+        return updatedUser;
+      } catch (error) {
+        console.error('Update profile error:', error);
+        throw error;
+      }
+    },
+    [authProvider, user]
+  );
 
   // Permission checking utilities
-  const hasPermission = useCallback((permission: string): boolean => {
-    if (!user || !user.role) return false;
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!user || !user.role) return false;
 
-    // Check if user has the specific permission
-    return user.role.permissions.some(p => p.name === permission) ||
-           user.permissions.some(p => p.name === permission);
-  }, [user]);
+      // Check if user has the specific permission
+      return (
+        user.role.permissions.some(p => p.name === permission) ||
+        user.permissions.some(p => p.name === permission)
+      );
+    },
+    [user]
+  );
 
-  const hasRole = useCallback((roleName: string): boolean => {
-    if (!user || !user.role) return false;
-    return user.role.name === roleName;
-  }, [user]);
+  const hasRole = useCallback(
+    (roleName: string): boolean => {
+      if (!user || !user.role) return false;
+      return user.role.name === roleName;
+    },
+    [user]
+  );
 
-  const canAccess = useCallback((module: string, action: string): boolean => {
-    if (!user) return false;
+  const canAccess = useCallback(
+    (module: string, action: string): boolean => {
+      if (!user) return false;
 
-    // Admin role has access to everything
-    if (user.role.name === 'super_admin' || user.role.name === 'org_admin') {
-      return true;
-    }
+      // Admin role has access to everything
+      if (user.role.name === 'super_admin' || user.role.name === 'org_admin') {
+        return true;
+      }
 
-    // Check specific permission
-    const permissionName = `${module}.${action}`;
-    return hasPermission(permissionName);
-  }, [user, hasPermission]);
+      // Check specific permission
+      const permissionName = `${module}.${action}`;
+      return hasPermission(permissionName);
+    },
+    [user, hasPermission]
+  );
 
   // Computed values
   const isAuthenticated = user !== null;
@@ -168,9 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContextProvider.Provider value={contextValue}>
-      {children}
-    </AuthContextProvider.Provider>
+    <AuthContextProvider.Provider value={contextValue}>{children}</AuthContextProvider.Provider>
   );
 }
 
@@ -209,8 +235,8 @@ export function withAuth<P extends object>(
 
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
         </div>
       );
     }
@@ -218,9 +244,9 @@ export function withAuth<P extends object>(
     if (!user) {
       // In a real app, redirect to login page
       return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h1>
+            <h1 className="mb-4 text-2xl font-bold text-gray-900">Authentication Required</h1>
             <p className="text-gray-600">Please sign in to access this page.</p>
           </div>
         </div>

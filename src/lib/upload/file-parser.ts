@@ -3,11 +3,14 @@ import { parse as parseCSV } from 'csv-parse/sync';
 import type { FileFormatDetection, DetectedColumn } from '@/types/pricelist-upload';
 
 export class FileParserService {
-
   /**
    * Detect file format and analyze structure
    */
-  static async detectFormat(file: Buffer, fileName: string, mimeType: string): Promise<FileFormatDetection> {
+  static async detectFormat(
+    file: Buffer,
+    fileName: string,
+    mimeType: string
+  ): Promise<FileFormatDetection> {
     const extension = fileName.toLowerCase().split('.').pop();
 
     try {
@@ -15,7 +18,12 @@ export class FileParserService {
         return await this.detectCSVFormat(file, fileName);
       }
 
-      if (extension === 'xlsx' || extension === 'xls' || mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+      if (
+        extension === 'xlsx' ||
+        extension === 'xls' ||
+        mimeType.includes('spreadsheet') ||
+        mimeType.includes('excel')
+      ) {
         return await this.detectExcelFormat(file, fileName);
       }
 
@@ -30,11 +38,13 @@ export class FileParserService {
         totalRows: 0,
         totalColumns: 0,
         sampleData: [],
-        detectedColumns: []
+        detectedColumns: [],
       };
     } catch (error) {
       console.error('File format detection failed:', error);
-      throw new Error(`Failed to detect file format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to detect file format: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -68,14 +78,19 @@ export class FileParserService {
       }
     } catch (error) {
       console.error('File parsing failed:', error);
-      throw new Error(`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Detect CSV format and structure
    */
-  private static async detectCSVFormat(file: Buffer, fileName: string): Promise<FileFormatDetection> {
+  private static async detectCSVFormat(
+    file: Buffer,
+    fileName: string
+  ): Promise<FileFormatDetection> {
     const content = file.toString('utf-8');
     const lines = content.split('\n').slice(0, 100); // Sample first 100 lines
 
@@ -102,7 +117,7 @@ export class FileParserService {
         delimiter: bestDelimiter,
         skip_empty_lines: true,
         trim: true,
-        columns: false // Get raw arrays first
+        columns: false, // Get raw arrays first
       }) as string[][];
 
       if (records.length === 0) {
@@ -135,18 +150,22 @@ export class FileParserService {
         totalRows: records.length - (hasHeaders ? 1 : 0),
         totalColumns: headerRow.length,
         sampleData,
-        detectedColumns
+        detectedColumns,
       };
-
     } catch (error) {
-      throw new Error(`CSV parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `CSV parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Detect Excel format and structure
    */
-  private static async detectExcelFormat(file: Buffer, fileName: string): Promise<FileFormatDetection> {
+  private static async detectExcelFormat(
+    file: Buffer,
+    fileName: string
+  ): Promise<FileFormatDetection> {
     try {
       const workbook = XLSX.read(file, { type: 'buffer', cellDates: true });
       const sheetNames = workbook.SheetNames;
@@ -169,7 +188,7 @@ export class FileParserService {
         header: 1,
         range: `A1:${XLSX.utils.encode_col(range.e.c)}${Math.min(21, totalRows)}`,
         raw: false,
-        dateNF: 'yyyy-mm-dd'
+        dateNF: 'yyyy-mm-dd',
       }) as unknown[][];
 
       if (jsonData.length === 0) {
@@ -201,18 +220,22 @@ export class FileParserService {
         totalRows: totalRows - (hasHeaders ? 1 : 0),
         totalColumns,
         sampleData,
-        detectedColumns
+        detectedColumns,
       };
-
     } catch (error) {
-      throw new Error(`Excel parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Excel parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Detect JSON format and structure
    */
-  private static async detectJSONFormat(file: Buffer, fileName: string): Promise<FileFormatDetection> {
+  private static async detectJSONFormat(
+    file: Buffer,
+    fileName: string
+  ): Promise<FileFormatDetection> {
     try {
       const content = file.toString('utf-8');
       const jsonData = JSON.parse(content);
@@ -238,9 +261,7 @@ export class FileParserService {
       const sampleData = dataArray.slice(0, 10);
 
       // Convert to array format for column analysis
-      const dataRows = dataArray.map(item =>
-        headerRow.map(key => item[key])
-      );
+      const dataRows = dataArray.map(item => headerRow.map(key => item[key]));
 
       // Analyze columns
       const detectedColumns = this.analyzeColumns(headerRow, dataRows);
@@ -252,11 +273,12 @@ export class FileParserService {
         totalRows: dataArray.length,
         totalColumns: headerRow.length,
         sampleData,
-        detectedColumns
+        detectedColumns,
       };
-
     } catch (error) {
-      throw new Error(`JSON parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `JSON parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -277,7 +299,7 @@ export class FileParserService {
       skip_records_with_empty_values: false,
       trim: true,
       from_line: options.skipRows + 1,
-      to_line: options.skipRows + options.maxRows + (detection.hasHeaders ? 1 : 0)
+      to_line: options.skipRows + options.maxRows + (detection.hasHeaders ? 1 : 0),
     });
 
     return records;
@@ -306,7 +328,7 @@ export class FileParserService {
       header: detection.hasHeaders ? 1 : undefined,
       range: startRow,
       raw: false,
-      dateNF: 'yyyy-mm-dd'
+      dateNF: 'yyyy-mm-dd',
     });
 
     return jsonData.slice(0, options.maxRows);
@@ -388,7 +410,7 @@ export class FileParserService {
         nullCount,
         uniqueCount,
         suggestedMapping: suggestedMapping.field,
-        confidence: suggestedMapping.confidence
+        confidence: suggestedMapping.confidence,
       };
     });
   }
@@ -420,10 +442,13 @@ export class FileParserService {
     });
 
     // Find most common type
-    const typeCounts = types.reduce((acc, type) => {
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const typeCounts = types.reduce(
+      (acc, type) => {
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const dominantType = Object.entries(typeCounts).reduce((a, b) =>
       typeCounts[a[0]] > typeCounts[b[0]] ? a : b
@@ -440,23 +465,38 @@ export class FileParserService {
   /**
    * Suggest column mapping based on header name and content
    */
-  private static suggestColumnMapping(header: string, values: unknown[]): {
+  private static suggestColumnMapping(
+    header: string,
+    values: unknown[]
+  ): {
     field?: string;
     confidence: number;
   } {
     const headerLower = header.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     const mappings = [
-      { field: 'sku', patterns: ['sku', 'itemcode', 'productcode', 'partno', 'partnumber'], confidence: 0.9 },
-      { field: 'productName', patterns: ['name', 'title', 'product', 'description', 'item'], confidence: 0.8 },
-      { field: 'unitPrice', patterns: ['price', 'cost', 'unitprice', 'unitcost', 'amount'], confidence: 0.9 },
+      {
+        field: 'sku',
+        patterns: ['sku', 'itemcode', 'productcode', 'partno', 'partnumber'],
+        confidence: 0.9,
+      },
+      {
+        field: 'productName',
+        patterns: ['name', 'title', 'product', 'description', 'item'],
+        confidence: 0.8,
+      },
+      {
+        field: 'unitPrice',
+        patterns: ['price', 'cost', 'unitprice', 'unitcost', 'amount'],
+        confidence: 0.9,
+      },
       { field: 'currency', patterns: ['currency', 'curr'], confidence: 0.95 },
       { field: 'category', patterns: ['category', 'cat', 'group'], confidence: 0.8 },
       { field: 'brand', patterns: ['brand', 'manufacturer', 'make'], confidence: 0.8 },
       { field: 'unit', patterns: ['unit', 'uom', 'measure'], confidence: 0.8 },
       { field: 'barcode', patterns: ['barcode', 'upc', 'ean', 'gtin'], confidence: 0.9 },
       { field: 'weight', patterns: ['weight', 'mass'], confidence: 0.8 },
-      { field: 'availability', patterns: ['availability', 'stock', 'available'], confidence: 0.7 }
+      { field: 'availability', patterns: ['availability', 'stock', 'available'], confidence: 0.7 },
     ];
 
     for (const mapping of mappings) {

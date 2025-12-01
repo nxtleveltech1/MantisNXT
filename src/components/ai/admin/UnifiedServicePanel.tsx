@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,15 +6,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Trash2, Plus, Star, Edit2, CheckCircle2, XCircle } from 'lucide-react';
 import { ModelSelector } from './providers/ModelSelector';
 
-type ProviderKey = 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa' | 'openrouter' | 'kilocode';
-type ServiceType = 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'chatbot' | 'supplier_discovery';
+type ProviderKey =
+  | 'openai'
+  | 'anthropic'
+  | 'openai_compatible'
+  | 'google'
+  | 'serper'
+  | 'tavily'
+  | 'google_search'
+  | 'firecrawl'
+  | 'brave'
+  | 'exa'
+  | 'openrouter'
+  | 'kilocode';
+type ServiceType =
+  | 'demand_forecasting'
+  | 'anomaly_detection'
+  | 'supplier_scoring'
+  | 'chatbot'
+  | 'supplier_discovery';
 
 interface AIServiceConfig {
   id: string;
@@ -90,9 +113,11 @@ function useConfigs() {
 export default function UnifiedServicePanel() {
   const queryClient = useQueryClient();
   const { data: configs = [] } = useConfigs();
-  
+
   // CLI availability state
-  const { data: cliAvailability } = useQuery<Record<string, { available: boolean; version?: string; installationHint?: string }>>({
+  const { data: cliAvailability } = useQuery<
+    Record<string, { available: boolean; version?: string; installationHint?: string }>
+  >({
     queryKey: ['ai-cli-availability'],
     queryFn: async () => {
       const res = await fetch('/api/v1/ai/cli/availability');
@@ -102,27 +127,32 @@ export default function UnifiedServicePanel() {
     },
     refetchInterval: 60000, // Check every minute
   });
-  
+
   // Form state for adding a new provider instance per service
-  const [newProviderForms, setNewProviderForms] = useState<Record<string, {
-    provider: ProviderKey;
-    baseUrl: string;
-    apiKey: string;
-    model: string;
-    googleSearchEngineId?: string; // For Google Search provider
-    // Google Gemini specific
-    useVertexAI?: boolean;
-    googleProject?: string;
-    googleLocation?: string;
-    googleApiVersion?: 'v1' | 'v1alpha';
-    // CLI-based execution options
-    useCLI?: boolean;
-    cliCommand?: string;
-    cliArgs?: string;
-    useOAuth?: boolean;
-    useGCloudADC?: boolean;
-    cliWorkingDirectory?: string;
-  }>>({});
+  const [newProviderForms, setNewProviderForms] = useState<
+    Record<
+      string,
+      {
+        provider: ProviderKey;
+        baseUrl: string;
+        apiKey: string;
+        model: string;
+        googleSearchEngineId?: string; // For Google Search provider
+        // Google Gemini specific
+        useVertexAI?: boolean;
+        googleProject?: string;
+        googleLocation?: string;
+        googleApiVersion?: 'v1' | 'v1alpha';
+        // CLI-based execution options
+        useCLI?: boolean;
+        cliCommand?: string;
+        cliArgs?: string;
+        useOAuth?: boolean;
+        useGCloudADC?: boolean;
+        cliWorkingDirectory?: string;
+      }
+    >
+  >({});
 
   // Edit mode state
   const [editingInstance, setEditingInstance] = useState<string | null>(null);
@@ -147,7 +177,13 @@ export default function UnifiedServicePanel() {
   } | null>(null);
 
   const updateConfig = useMutation({
-    mutationFn: async ({ serviceType, payload }: { serviceType: ServiceType; payload: unknown }) => {
+    mutationFn: async ({
+      serviceType,
+      payload,
+    }: {
+      serviceType: ServiceType;
+      payload: unknown;
+    }) => {
       const res = await fetch(`/api/v1/ai/config/${serviceType}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -167,11 +203,11 @@ export default function UnifiedServicePanel() {
           queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
           return old || [];
         }
-        
+
         if (!old) {
           return [updatedConfig];
         }
-        
+
         // Find and replace by service_type (handles both temp IDs and real IDs)
         const existingIndex = old.findIndex(c => c.service_type === updatedConfig.service_type);
         if (existingIndex >= 0) {
@@ -198,7 +234,7 @@ export default function UnifiedServicePanel() {
   const getForm = (serviceType: ServiceType) => {
     const form = newProviderForms[serviceType];
     if (form) return form;
-    
+
     // Default form based on provider type
     return {
       provider: 'openai' as ProviderKey,
@@ -252,16 +288,19 @@ export default function UnifiedServicePanel() {
     return ['openai', 'anthropic', 'openai_compatible', 'google'].includes(provider);
   };
 
-  const setForm = (serviceType: ServiceType, updates: Partial<typeof newProviderForms[string]>) => {
+  const setForm = (
+    serviceType: ServiceType,
+    updates: Partial<(typeof newProviderForms)[string]>
+  ) => {
     setNewProviderForms(prev => {
       const current = getForm(serviceType);
       const newForm = { ...current, ...updates };
-      
+
       // Auto-fill baseUrl when provider changes if it's empty
       if (updates.provider && !newForm.baseUrl) {
         newForm.baseUrl = getDefaultBaseUrl(updates.provider);
       }
-      
+
       return {
         ...prev,
         [serviceType]: newForm,
@@ -275,7 +314,7 @@ export default function UnifiedServicePanel() {
       const form = getForm(serviceType);
       console.log('[addProviderInstance] Form state:', form);
       const isWebSearch = isWebSearchProvider(form.provider);
-      
+
       // Validation: provider is always required
       if (!form.provider) {
         console.error('[addProviderInstance] Validation failed: No provider selected');
@@ -283,195 +322,215 @@ export default function UnifiedServicePanel() {
         return;
       }
 
-    // Base URL is optional for CLI mode, but ensure it has a default for API mode
-    const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
-    const effectiveBaseUrl = form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
-    
-    if (!isCLIMode && !effectiveBaseUrl) {
-      toast.error('Please fill in endpoint URL');
-      return;
-    }
+      // Base URL is optional for CLI mode, but ensure it has a default for API mode
+      const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
+      const effectiveBaseUrl =
+        form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
 
-    // Google Gemini validation
-    if (form.provider === 'google') {
-      if (form.useCLI) {
-        // CLI mode validation - OAuth doesn't require API key or baseUrl
-        if (!form.useOAuth && !form.useGCloudADC) {
-          // Only require API key if neither OAuth nor gcloud ADC is enabled
+      if (!isCLIMode && !effectiveBaseUrl) {
+        toast.error('Please fill in endpoint URL');
+        return;
+      }
+
+      // Google Gemini validation
+      if (form.provider === 'google') {
+        if (form.useCLI) {
+          // CLI mode validation - OAuth doesn't require API key or baseUrl
+          if (!form.useOAuth && !form.useGCloudADC) {
+            // Only require API key if neither OAuth nor gcloud ADC is enabled
+            if (!form.apiKey) {
+              toast.error('API Key, OAuth, or gcloud ADC is required for CLI mode');
+              return;
+            }
+          }
+          if (form.useGCloudADC && !form.googleProject) {
+            toast.error('GCP Project ID is required for gcloud ADC mode');
+            return;
+          }
+          if (!form.model) {
+            toast.error('Model is required for Google Gemini');
+            return;
+          }
+        } else if (form.useVertexAI) {
+          // Vertex AI mode: requires project
+          if (!form.googleProject) {
+            toast.error('GCP Project ID is required for Vertex AI mode');
+            return;
+          }
+        } else {
+          // Developer API mode: requires API key
           if (!form.apiKey) {
-            toast.error('API Key, OAuth, or gcloud ADC is required for CLI mode');
+            toast.error('API Key is required for Google Gemini Developer API mode');
+            return;
+          }
+          if (!form.model) {
+            toast.error('Model is required for Google Gemini');
             return;
           }
         }
-        if (form.useGCloudADC && !form.googleProject) {
-          toast.error('GCP Project ID is required for gcloud ADC mode');
+      } else if (form.provider === 'openai' && form.useCLI) {
+        // OpenAI CLI mode validation
+        if (!form.useOAuth && !form.apiKey) {
+          toast.error('API Key or OAuth is required for CLI mode');
           return;
         }
         if (!form.model) {
-          toast.error('Model is required for Google Gemini');
-          return;
-        }
-      } else if (form.useVertexAI) {
-        // Vertex AI mode: requires project
-        if (!form.googleProject) {
-          toast.error('GCP Project ID is required for Vertex AI mode');
+          toast.error('Model is required for OpenAI');
           return;
         }
       } else {
-        // Developer API mode: requires API key
+        // Other providers: standard validation
         if (!form.apiKey) {
-          toast.error('API Key is required for Google Gemini Developer API mode');
+          toast.error('API Key is required');
           return;
         }
-        if (!form.model) {
-          toast.error('Model is required for Google Gemini');
+        if (!isWebSearch && !form.model) {
+          toast.error('Model is required for LLM providers');
           return;
         }
       }
-    } else if (form.provider === 'openai' && form.useCLI) {
-      // OpenAI CLI mode validation
-      if (!form.useOAuth && !form.apiKey) {
-        toast.error('API Key or OAuth is required for CLI mode');
-        return;
-      }
-      if (!form.model) {
-        toast.error('Model is required for OpenAI');
-        return;
-      }
-    } else {
-      // Other providers: standard validation
-      if (!form.apiKey) {
-        toast.error('API Key is required');
-        return;
-      }
-      if (!isWebSearch && !form.model) {
-        toast.error('Model is required for LLM providers');
-        return;
-      }
-    }
-    
-    // Google Search requires engine ID
-    if (form.provider === 'google_search' && !form.googleSearchEngineId) {
-      toast.error('Google Search Engine ID is required for Google Search provider');
-      return;
-    }
 
-    // Get the current config from the configs array to ensure we have the full config
-    const currentConfig = configs.find(c => c.service_type === serviceType);
-    const fullCfg = currentConfig?.config || cfg || {};
-    
-    const instances: ProviderInstance[] = fullCfg.providerInstances || [];
-    
-    const newInstance: ProviderInstance = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      provider: form.provider,
-      baseUrl: effectiveBaseUrl || undefined,
-      apiKey: form.apiKey || undefined, // Optional for Vertex AI mode or OAuth
-      model: form.model || undefined, // Optional for web search
-      enabled: true,
-      ...(form.provider === 'google_search' && form.googleSearchEngineId
-        ? { googleSearchEngineId: form.googleSearchEngineId }
-        : {}),
-      ...(form.provider === 'google' ? {
-        useVertexAI: form.useVertexAI || false,
-        googleProject: form.googleProject || undefined,
-        googleLocation: form.googleLocation || 'us-central1',
-        googleApiVersion: form.googleApiVersion || 'v1',
-      } : {}),
-      // CLI options - include for both Google and OpenAI
-      ...((form.useCLI && (form.provider === 'google' || form.provider === 'openai')) ? {
-        useCLI: true,
-        cliCommand: form.cliCommand || (form.provider === 'google' ? 'gemini' : 'codex'),
-        cliArgs: form.cliArgs ? form.cliArgs.split(',').map((s: string) => s.trim()).filter(Boolean) : undefined,
-        useOAuth: form.useOAuth || false,
-        useGCloudADC: form.useGCloudADC || false,
-        cliWorkingDirectory: form.cliWorkingDirectory || undefined,
-      } : {}),
-    };
-
-    const updatedInstances = [...instances, newInstance];
-    const activeId = fullCfg.activeProviderInstanceId || newInstance.id;
-
-    // Optimistically update the cache immediately
-    queryClient.setQueryData(['ai-configs'], (old: AIServiceConfig[] | undefined) => {
-      if (!old) {
-        // If no configs exist yet, create a new one
-        return [{
-          id: `temp-${serviceType}`,
-          service_type: serviceType,
-          config: {
-            ...fullCfg,
-            providerInstances: updatedInstances,
-            activeProviderInstanceId: activeId,
-          },
-          enabled: false,
-        }];
+      // Google Search requires engine ID
+      if (form.provider === 'google_search' && !form.googleSearchEngineId) {
+        toast.error('Google Search Engine ID is required for Google Search provider');
+        return;
       }
-      
-      const existingIndex = old.findIndex(c => c.service_type === serviceType);
-      if (existingIndex >= 0) {
-        // Update existing config
-        return old.map(c => {
-          if (c.service_type !== serviceType) return c;
-          const existingConfig = c.config || {};
-          return {
-            ...c,
+
+      // Get the current config from the configs array to ensure we have the full config
+      const currentConfig = configs.find(c => c.service_type === serviceType);
+      const fullCfg = currentConfig?.config || cfg || {};
+
+      const instances: ProviderInstance[] = fullCfg.providerInstances || [];
+
+      const newInstance: ProviderInstance = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        provider: form.provider,
+        baseUrl: effectiveBaseUrl || undefined,
+        apiKey: form.apiKey || undefined, // Optional for Vertex AI mode or OAuth
+        model: form.model || undefined, // Optional for web search
+        enabled: true,
+        ...(form.provider === 'google_search' && form.googleSearchEngineId
+          ? { googleSearchEngineId: form.googleSearchEngineId }
+          : {}),
+        ...(form.provider === 'google'
+          ? {
+              useVertexAI: form.useVertexAI || false,
+              googleProject: form.googleProject || undefined,
+              googleLocation: form.googleLocation || 'us-central1',
+              googleApiVersion: form.googleApiVersion || 'v1',
+            }
+          : {}),
+        // CLI options - include for both Google and OpenAI
+        ...(form.useCLI && (form.provider === 'google' || form.provider === 'openai')
+          ? {
+              useCLI: true,
+              cliCommand: form.cliCommand || (form.provider === 'google' ? 'gemini' : 'codex'),
+              cliArgs: form.cliArgs
+                ? form.cliArgs
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter(Boolean)
+                : undefined,
+              useOAuth: form.useOAuth || false,
+              useGCloudADC: form.useGCloudADC || false,
+              cliWorkingDirectory: form.cliWorkingDirectory || undefined,
+            }
+          : {}),
+      };
+
+      const updatedInstances = [...instances, newInstance];
+      const activeId = fullCfg.activeProviderInstanceId || newInstance.id;
+
+      // Optimistically update the cache immediately
+      queryClient.setQueryData(['ai-configs'], (old: AIServiceConfig[] | undefined) => {
+        if (!old) {
+          // If no configs exist yet, create a new one
+          return [
+            {
+              id: `temp-${serviceType}`,
+              service_type: serviceType,
+              config: {
+                ...fullCfg,
+                providerInstances: updatedInstances,
+                activeProviderInstanceId: activeId,
+              },
+              enabled: false,
+            },
+          ];
+        }
+
+        const existingIndex = old.findIndex(c => c.service_type === serviceType);
+        if (existingIndex >= 0) {
+          // Update existing config
+          return old.map(c => {
+            if (c.service_type !== serviceType) return c;
+            const existingConfig = c.config || {};
+            return {
+              ...c,
+              config: {
+                ...existingConfig,
+                providerInstances: updatedInstances,
+                activeProviderInstanceId: activeId,
+              },
+            };
+          });
+        } else {
+          // Add new config entry
+          return [
+            ...old,
+            {
+              id: `temp-${serviceType}`,
+              service_type: serviceType,
+              config: {
+                ...fullCfg,
+                providerInstances: updatedInstances,
+                activeProviderInstanceId: activeId,
+              },
+              enabled: false,
+            },
+          ];
+        }
+      });
+
+      console.log('Saving provider instance:', {
+        serviceType,
+        newInstance,
+        updatedInstances,
+        activeId,
+      });
+
+      updateConfig.mutate(
+        {
+          serviceType,
+          payload: {
             config: {
-              ...existingConfig,
+              ...fullCfg, // Preserve all existing config fields (webSearch, etc.)
               providerInstances: updatedInstances,
               activeProviderInstanceId: activeId,
             },
-          };
-        });
-      } else {
-        // Add new config entry
-        return [...old, {
-          id: `temp-${serviceType}`,
-          service_type: serviceType,
-          config: {
-            ...fullCfg,
-            providerInstances: updatedInstances,
-            activeProviderInstanceId: activeId,
-          },
-          enabled: false,
-        }];
-      }
-    });
-
-    console.log('Saving provider instance:', { serviceType, newInstance, updatedInstances, activeId });
-    
-    updateConfig.mutate(
-      {
-        serviceType,
-        payload: {
-          config: {
-            ...fullCfg, // Preserve all existing config fields (webSearch, etc.)
-            providerInstances: updatedInstances,
-            activeProviderInstanceId: activeId,
           },
         },
-      },
-      {
-        onSuccess: (data) => {
-          console.log('Provider added successfully:', data);
-          // Cache is updated by mutation's onSuccess handler
-          toast.success('Provider added successfully');
-          // Reset form
-          setNewProviderForms(prev => {
-            const next = { ...prev };
-            delete next[serviceType];
-            return next;
-          });
-        },
-        onError: (error: unknown) => {
-          console.error('Failed to add provider:', error);
-          // Rollback optimistic update on error
-          queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          toast.error(`Failed to add provider: ${errorMessage}`);
-        },
-      }
-    );
+        {
+          onSuccess: data => {
+            console.log('Provider added successfully:', data);
+            // Cache is updated by mutation's onSuccess handler
+            toast.success('Provider added successfully');
+            // Reset form
+            setNewProviderForms(prev => {
+              const next = { ...prev };
+              delete next[serviceType];
+              return next;
+            });
+          },
+          onError: (error: unknown) => {
+            console.error('Failed to add provider:', error);
+            // Rollback optimistic update on error
+            queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to add provider: ${errorMessage}`);
+          },
+        }
+      );
     } catch (error: unknown) {
       console.error('[addProviderInstance] Unexpected error:', error);
       toast.error(`Failed to add provider: ${error?.message || 'Unknown error'}`);
@@ -481,7 +540,7 @@ export default function UnifiedServicePanel() {
   const deleteProviderInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string) => {
     const instances: ProviderInstance[] = cfg.providerInstances || [];
     const updatedInstances = instances.filter(i => i.id !== instanceId);
-    
+
     let activeId = cfg.activeProviderInstanceId;
     if (activeId === instanceId) {
       activeId = updatedInstances.length > 0 ? updatedInstances[0].id : null;
@@ -513,7 +572,9 @@ export default function UnifiedServicePanel() {
       googleApiVersion: instance.googleApiVersion || 'v1',
       // CLI options
       useCLI: instance.useCLI || false,
-      cliCommand: instance.cliCommand || (instance.provider === 'google' ? 'gemini' : instance.provider === 'openai' ? 'codex' : ''),
+      cliCommand:
+        instance.cliCommand ||
+        (instance.provider === 'google' ? 'gemini' : instance.provider === 'openai' ? 'codex' : ''),
       cliArgs: instance.cliArgs?.join(', ') || '',
       useOAuth: instance.useOAuth || false,
       useGCloudADC: instance.useGCloudADC || false,
@@ -525,44 +586,55 @@ export default function UnifiedServicePanel() {
     if (!editForm) return;
 
     const instances: ProviderInstance[] = cfg.providerInstances || [];
-    const updatedInstances = instances.map(i => 
-      i.id === instanceId 
-        ? { 
-            ...i, 
-            ...editForm, 
+    const updatedInstances = instances.map(i =>
+      i.id === instanceId
+        ? {
+            ...i,
+            ...editForm,
             connected: undefined,
             ...(editForm.provider === 'google_search' && editForm.googleSearchEngineId
               ? { googleSearchEngineId: editForm.googleSearchEngineId }
               : editForm.provider !== 'google_search'
-              ? { googleSearchEngineId: undefined }
-              : {}),
-            ...(editForm.provider === 'google' ? {
-              useVertexAI: editForm.useVertexAI || false,
-              googleProject: editForm.googleProject || undefined,
-              googleLocation: editForm.googleLocation || 'us-central1',
-              googleApiVersion: editForm.googleApiVersion || 'v1',
-            } : {
-              useVertexAI: undefined,
-              googleProject: undefined,
-              googleLocation: undefined,
-              googleApiVersion: undefined,
-            }),
+                ? { googleSearchEngineId: undefined }
+                : {}),
+            ...(editForm.provider === 'google'
+              ? {
+                  useVertexAI: editForm.useVertexAI || false,
+                  googleProject: editForm.googleProject || undefined,
+                  googleLocation: editForm.googleLocation || 'us-central1',
+                  googleApiVersion: editForm.googleApiVersion || 'v1',
+                }
+              : {
+                  useVertexAI: undefined,
+                  googleProject: undefined,
+                  googleLocation: undefined,
+                  googleApiVersion: undefined,
+                }),
             // CLI options
-            ...((editForm.useCLI && (editForm.provider === 'google' || editForm.provider === 'openai')) ? {
-              useCLI: true,
-              cliCommand: editForm.cliCommand || (editForm.provider === 'google' ? 'gemini' : 'codex'),
-              cliArgs: editForm.cliArgs ? editForm.cliArgs.split(',').map((s: string) => s.trim()).filter(Boolean) : undefined,
-              useOAuth: editForm.useOAuth || false,
-              useGCloudADC: editForm.useGCloudADC || false,
-              cliWorkingDirectory: editForm.cliWorkingDirectory || undefined,
-            } : {
-              useCLI: false,
-              cliCommand: undefined,
-              cliArgs: undefined,
-              useOAuth: false,
-              useGCloudADC: false,
-              cliWorkingDirectory: undefined,
-            }),
+            ...(editForm.useCLI &&
+            (editForm.provider === 'google' || editForm.provider === 'openai')
+              ? {
+                  useCLI: true,
+                  cliCommand:
+                    editForm.cliCommand || (editForm.provider === 'google' ? 'gemini' : 'codex'),
+                  cliArgs: editForm.cliArgs
+                    ? editForm.cliArgs
+                        .split(',')
+                        .map((s: string) => s.trim())
+                        .filter(Boolean)
+                    : undefined,
+                  useOAuth: editForm.useOAuth || false,
+                  useGCloudADC: editForm.useGCloudADC || false,
+                  cliWorkingDirectory: editForm.cliWorkingDirectory || undefined,
+                }
+              : {
+                  useCLI: false,
+                  cliCommand: undefined,
+                  cliArgs: undefined,
+                  useOAuth: false,
+                  useGCloudADC: false,
+                  cliWorkingDirectory: undefined,
+                }),
           }
         : i
     );
@@ -585,19 +657,20 @@ export default function UnifiedServicePanel() {
     console.log('[testInstanceConnection] Starting test for:', { serviceType, instance });
     try {
       toast.loading('Testing connection...', { id: 'test-connection' });
-      
+
       const testConfig: unknown = {
         provider: instance.provider,
         baseUrl: instance.baseUrl,
         apiKey: instance.apiKey,
         model: instance.model,
       };
-      
+
       // Include CLI configuration if CLI mode is enabled
       if (instance.useCLI) {
         console.log('[testInstanceConnection] CLI mode enabled, adding CLI config');
         testConfig.useCLI = true;
-        testConfig.cliCommand = instance.cliCommand || (instance.provider === 'google' ? 'gemini' : 'codex');
+        testConfig.cliCommand =
+          instance.cliCommand || (instance.provider === 'google' ? 'gemini' : 'codex');
         testConfig.cliArgs = instance.cliArgs;
         testConfig.useOAuth = instance.useOAuth;
         testConfig.useGCloudADC = instance.useGCloudADC;
@@ -623,28 +696,28 @@ export default function UnifiedServicePanel() {
           testConfig.googleApiVersion = instance.googleApiVersion;
         }
       }
-      
+
       console.log('[testInstanceConnection] Sending test config:', testConfig);
-      
+
       const res = await fetch(`/api/v1/ai/config/${serviceType}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: testConfig }),
       });
-      
+
       console.log('[testInstanceConnection] Response status:', res.status);
       const responseData = await res.json().catch(() => ({}));
       console.log('[testInstanceConnection] Response data:', responseData);
-      
+
       if (!res.ok) {
-        const errorText = responseData.error || responseData.message || await res.text();
+        const errorText = responseData.error || responseData.message || (await res.text());
         console.error('[testInstanceConnection] Test failed:', errorText);
         toast.error(`Connection test failed: ${errorText}`, { id: 'test-connection' });
         throw new Error(errorText);
       }
-      
+
       toast.success('Connection successful', { id: 'test-connection' });
-      
+
       // Update connection status in cache
       queryClient.setQueryData(['ai-configs'], (old: AIServiceConfig[] | undefined) => {
         if (!old) return old;
@@ -655,7 +728,7 @@ export default function UnifiedServicePanel() {
             ...c,
             config: {
               ...c.config,
-              providerInstances: instances.map(i => 
+              providerInstances: instances.map(i =>
                 i.id === instance.id ? { ...i, connected: true } : i
               ),
             },
@@ -669,9 +742,14 @@ export default function UnifiedServicePanel() {
     }
   };
 
-  const toggleProviderInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string, enabled: boolean) => {
+  const toggleProviderInstance = (
+    serviceType: ServiceType,
+    cfg: unknown,
+    instanceId: string,
+    enabled: boolean
+  ) => {
     const instances: ProviderInstance[] = cfg.providerInstances || [];
-    const updatedInstances = instances.map(i => i.id === instanceId ? { ...i, enabled } : i);
+    const updatedInstances = instances.map(i => (i.id === instanceId ? { ...i, enabled } : i));
 
     updateConfig.mutate({
       serviceType,
@@ -708,10 +786,10 @@ export default function UnifiedServicePanel() {
 
   return (
     <div className="space-y-4">
-      {(Object.keys(SERVICE_INFO) as ServiceType[]).map((serviceType) => {
+      {(Object.keys(SERVICE_INFO) as ServiceType[]).map(serviceType => {
         const info = SERVICE_INFO[serviceType];
         const config = configsByType.get(serviceType);
-        
+
         // Use existing config or create default
         const cfg = config?.config || {};
         const instances: ProviderInstance[] = cfg.providerInstances || [];
@@ -737,29 +815,33 @@ export default function UnifiedServicePanel() {
                   <Switch
                     id={`${serviceType}-enabled`}
                     checked={isEnabled}
-                    onCheckedChange={(checked) => toggleService(serviceType, checked)}
+                    onCheckedChange={checked => toggleService(serviceType, checked)}
                   />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Add Provider Form */}
-              <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
-                <h4 className="font-medium text-sm">Add New Provider</h4>
-                <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${['google_search', 'google'].includes(form.provider) ? 'md:grid-cols-5' : ''}`}>
+              <div className="bg-muted/30 space-y-4 rounded-lg border p-4">
+                <h4 className="text-sm font-medium">Add New Provider</h4>
+                <div
+                  className={`grid grid-cols-1 gap-4 md:grid-cols-4 ${['google_search', 'google'].includes(form.provider) ? 'md:grid-cols-5' : ''}`}
+                >
                   <div className="space-y-2">
                     <Label>Provider Type</Label>
                     <Select
                       value={form.provider}
-                      onValueChange={(v) => {
+                      onValueChange={v => {
                         const newProvider = v as ProviderKey;
-                        setForm(serviceType, { 
+                        setForm(serviceType, {
                           provider: newProvider,
                           baseUrl: getDefaultBaseUrl(newProvider), // Auto-fill URL
                         });
                       }}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {/* LLM Providers */}
                         <SelectItem value="openai">OpenAI</SelectItem>
@@ -782,9 +864,9 @@ export default function UnifiedServicePanel() {
                   <div className="space-y-2">
                     <Label>Endpoint URL</Label>
                     <Input
-                      placeholder={getDefaultBaseUrl(form.provider) || "https://api.example.com"}
+                      placeholder={getDefaultBaseUrl(form.provider) || 'https://api.example.com'}
                       value={form.baseUrl}
-                      onChange={(e) => setForm(serviceType, { baseUrl: e.target.value })}
+                      onChange={e => setForm(serviceType, { baseUrl: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -793,14 +875,14 @@ export default function UnifiedServicePanel() {
                       type="password"
                       placeholder="sk-..."
                       value={form.apiKey}
-                      onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
+                      onChange={e => setForm(serviceType, { apiKey: e.target.value })}
                     />
                   </div>
                   {!isWebSearchProvider(form.provider) && (
                     <ModelSelector
                       providerId={form.provider}
                       value={form.model}
-                      onChange={(model) => setForm(serviceType, { model })}
+                      onChange={model => setForm(serviceType, { model })}
                       label="Model"
                       required={!isWebSearchProvider(form.provider)}
                       placeholder="Select or type a model"
@@ -810,7 +892,7 @@ export default function UnifiedServicePanel() {
                     <ModelSelector
                       providerId={form.provider}
                       value={form.model}
-                      onChange={(model) => setForm(serviceType, { model })}
+                      onChange={model => setForm(serviceType, { model })}
                       label="Model (Optional)"
                       required={false}
                       placeholder="Not required for web search"
@@ -819,27 +901,32 @@ export default function UnifiedServicePanel() {
                 </div>
                 {/* Google Gemini Advanced Configuration */}
                 {form.provider === 'google' && (
-                  <div className="border-t pt-4 space-y-4">
+                  <div className="space-y-4 border-t pt-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id={`${serviceType}-use-vertex-ai`}
                         checked={form.useVertexAI || false}
-                        onCheckedChange={(checked) => setForm(serviceType, { useVertexAI: checked as boolean })}
+                        onCheckedChange={checked =>
+                          setForm(serviceType, { useVertexAI: checked as boolean })
+                        }
                       />
-                      <Label htmlFor={`${serviceType}-use-vertex-ai`} className="text-sm font-normal cursor-pointer">
+                      <Label
+                        htmlFor={`${serviceType}-use-vertex-ai`}
+                        className="cursor-pointer text-sm font-normal"
+                      >
                         Use Vertex AI (GCP) instead of Developer API
                       </Label>
                     </div>
                     {form.useVertexAI ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label>GCP Project ID *</Label>
                           <Input
                             placeholder="my-gcp-project"
                             value={form.googleProject || ''}
-                            onChange={(e) => setForm(serviceType, { googleProject: e.target.value })}
+                            onChange={e => setForm(serviceType, { googleProject: e.target.value })}
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             Your Google Cloud Project ID
                           </p>
                         </div>
@@ -848,15 +935,13 @@ export default function UnifiedServicePanel() {
                           <Input
                             placeholder="us-central1"
                             value={form.googleLocation || 'us-central1'}
-                            onChange={(e) => setForm(serviceType, { googleLocation: e.target.value })}
+                            onChange={e => setForm(serviceType, { googleLocation: e.target.value })}
                           />
-                          <p className="text-xs text-muted-foreground">
-                            Default: us-central1
-                          </p>
+                          <p className="text-muted-foreground text-xs">Default: us-central1</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label>
                             API Key
@@ -864,21 +949,37 @@ export default function UnifiedServicePanel() {
                           </Label>
                           <Input
                             type="password"
-                            placeholder={form.useCLI && form.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
+                            placeholder={
+                              form.useCLI && form.useOAuth
+                                ? 'Optional - not needed for OAuth'
+                                : 'GEMINI_API_KEY or GOOGLE_API_KEY'
+                            }
                             value={form.apiKey}
-                            onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
+                            onChange={e => setForm(serviceType, { apiKey: e.target.value })}
                           />
-                          <p className="text-xs text-muted-foreground">
-                            Get from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>
+                          <p className="text-muted-foreground text-xs">
+                            Get from{' '}
+                            <a
+                              href="https://aistudio.google.com/apikey"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                            >
+                              Google AI Studio
+                            </a>
                           </p>
                         </div>
                         <div className="space-y-2">
                           <Label>API Version</Label>
                           <Select
                             value={form.googleApiVersion || 'v1'}
-                            onValueChange={(v) => setForm(serviceType, { googleApiVersion: v as 'v1' | 'v1alpha' })}
+                            onValueChange={v =>
+                              setForm(serviceType, { googleApiVersion: v as 'v1' | 'v1alpha' })
+                            }
                           >
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="v1">v1 (Stable)</SelectItem>
                               <SelectItem value="v1alpha">v1alpha (Preview)</SelectItem>
@@ -888,12 +989,12 @@ export default function UnifiedServicePanel() {
                       </div>
                     )}
                     {/* CLI Mode Configuration */}
-                    <div className="border-t pt-4 mt-4 space-y-4">
+                    <div className="mt-4 space-y-4 border-t pt-4">
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id={`${serviceType}-use-cli`}
                           checked={form.useCLI || false}
-                          onCheckedChange={(checked) => {
+                          onCheckedChange={checked => {
                             const updates: Partial<typeof form> = { useCLI: checked as boolean };
                             if (checked) {
                               // Set defaults when enabling CLI, but don't reset OAuth/ADC if already set
@@ -909,30 +1010,35 @@ export default function UnifiedServicePanel() {
                             setForm(serviceType, updates);
                           }}
                         />
-                      <Label htmlFor={`${serviceType}-use-cli`} className="text-sm font-normal cursor-pointer">
-                        Use CLI Mode (OAuth supports free & paid accounts)
-                      </Label>
+                        <Label
+                          htmlFor={`${serviceType}-use-cli`}
+                          className="cursor-pointer text-sm font-normal"
+                        >
+                          Use CLI Mode (OAuth supports free & paid accounts)
+                        </Label>
                         {cliAvailability?.google && (
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            cliAvailability.google.available 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {cliAvailability.google.available 
-                              ? `✓ CLI Available (v${cliAvailability.google.version || '?'})` 
+                          <span
+                            className={`rounded px-2 py-1 text-xs ${
+                              cliAvailability.google.available
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {cliAvailability.google.available
+                              ? `✓ CLI Available (v${cliAvailability.google.version || '?'})`
                               : 'CLI Not Installed'}
                           </span>
                         )}
                       </div>
                       {form.useCLI && (
-                        <div className="space-y-4 pl-6 border-l-2">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4 border-l-2 pl-6">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-2">
                               <Label>CLI Command</Label>
                               <Input
                                 placeholder="gemini"
                                 value={form.cliCommand || 'gemini'}
-                                onChange={(e) => setForm(serviceType, { cliCommand: e.target.value })}
+                                onChange={e => setForm(serviceType, { cliCommand: e.target.value })}
                               />
                             </div>
                             <div className="space-y-2">
@@ -940,7 +1046,9 @@ export default function UnifiedServicePanel() {
                               <Input
                                 placeholder="/path/to/project"
                                 value={form.cliWorkingDirectory || ''}
-                                onChange={(e) => setForm(serviceType, { cliWorkingDirectory: e.target.value })}
+                                onChange={e =>
+                                  setForm(serviceType, { cliWorkingDirectory: e.target.value })
+                                }
                               />
                             </div>
                           </div>
@@ -949,7 +1057,7 @@ export default function UnifiedServicePanel() {
                             <Input
                               placeholder="--verbose, --output json"
                               value={form.cliArgs || ''}
-                              onChange={(e) => setForm(serviceType, { cliArgs: e.target.value })}
+                              onChange={e => setForm(serviceType, { cliArgs: e.target.value })}
                             />
                           </div>
                           <div className="space-y-2">
@@ -961,10 +1069,15 @@ export default function UnifiedServicePanel() {
                                   id={`${serviceType}-cli-oauth`}
                                   name={`${serviceType}-cli-auth`}
                                   checked={form.useOAuth === true}
-                                  onChange={() => setForm(serviceType, { useOAuth: true, useGCloudADC: false })}
-                                  className="w-4 h-4"
+                                  onChange={() =>
+                                    setForm(serviceType, { useOAuth: true, useGCloudADC: false })
+                                  }
+                                  className="h-4 w-4"
                                 />
-                                <Label htmlFor={`${serviceType}-cli-oauth`} className="text-sm font-normal cursor-pointer">
+                                <Label
+                                  htmlFor={`${serviceType}-cli-oauth`}
+                                  className="cursor-pointer text-sm font-normal"
+                                >
                                   OAuth (Google Account) - Works with free or paid accounts
                                 </Label>
                               </div>
@@ -974,10 +1087,15 @@ export default function UnifiedServicePanel() {
                                   id={`${serviceType}-cli-gcloud`}
                                   name={`${serviceType}-cli-auth`}
                                   checked={form.useGCloudADC === true}
-                                  onChange={() => setForm(serviceType, { useGCloudADC: true, useOAuth: false })}
-                                  className="w-4 h-4"
+                                  onChange={() =>
+                                    setForm(serviceType, { useGCloudADC: true, useOAuth: false })
+                                  }
+                                  className="h-4 w-4"
                                 />
-                                <Label htmlFor={`${serviceType}-cli-gcloud`} className="text-sm font-normal cursor-pointer">
+                                <Label
+                                  htmlFor={`${serviceType}-cli-gcloud`}
+                                  className="cursor-pointer text-sm font-normal"
+                                >
                                   gcloud ADC (GCP Project)
                                 </Label>
                               </div>
@@ -987,10 +1105,15 @@ export default function UnifiedServicePanel() {
                                   id={`${serviceType}-cli-apikey`}
                                   name={`${serviceType}-cli-auth`}
                                   checked={!form.useOAuth && !form.useGCloudADC}
-                                  onChange={() => setForm(serviceType, { useOAuth: false, useGCloudADC: false })}
-                                  className="w-4 h-4"
+                                  onChange={() =>
+                                    setForm(serviceType, { useOAuth: false, useGCloudADC: false })
+                                  }
+                                  className="h-4 w-4"
                                 />
-                                <Label htmlFor={`${serviceType}-cli-apikey`} className="text-sm font-normal cursor-pointer">
+                                <Label
+                                  htmlFor={`${serviceType}-cli-apikey`}
+                                  className="cursor-pointer text-sm font-normal"
+                                >
                                   API Key
                                 </Label>
                               </div>
@@ -1001,46 +1124,62 @@ export default function UnifiedServicePanel() {
                                   type="password"
                                   placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
                                   value={form.apiKey}
-                                  onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
+                                  onChange={e => setForm(serviceType, { apiKey: e.target.value })}
                                 />
                               </div>
                             )}
                             {form.useGCloudADC && (
-                              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <Input
                                   placeholder="GCP Project ID"
                                   value={form.googleProject || ''}
-                                  onChange={(e) => setForm(serviceType, { googleProject: e.target.value })}
+                                  onChange={e =>
+                                    setForm(serviceType, { googleProject: e.target.value })
+                                  }
                                 />
                                 <Input
                                   placeholder="Location (default: us-central1)"
                                   value={form.googleLocation || 'us-central1'}
-                                  onChange={(e) => setForm(serviceType, { googleLocation: e.target.value })}
+                                  onChange={e =>
+                                    setForm(serviceType, { googleLocation: e.target.value })
+                                  }
                                 />
                               </div>
                             )}
                             {form.useOAuth && (
                               <div className="mt-2 space-y-2">
-                                <p className="text-xs text-muted-foreground">
-                                  <strong>Step 1:</strong> Run this command in your terminal to log in:
+                                <p className="text-muted-foreground text-xs">
+                                  <strong>Step 1:</strong> Run this command in your terminal to log
+                                  in:
                                 </p>
-                                <div className="bg-muted p-2 rounded text-xs font-mono">
-                                  gemini
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  This will open a browser where you can log in with your Google account (free or paid). 
-                                  After authentication, return here and click "Test Connection" to verify.
+                                <div className="bg-muted rounded p-2 font-mono text-xs">gemini</div>
+                                <p className="text-muted-foreground text-xs">
+                                  This will open a browser where you can log in with your Google
+                                  account (free or paid). After authentication, return here and
+                                  click "Test Connection" to verify.
                                 </p>
                               </div>
                             )}
                             {form.useGCloudADC && (
-                              <p className="text-xs text-muted-foreground">
-                                Run <code className="bg-muted px-1 rounded">gcloud auth application-default login</code> in terminal to authenticate with your GCP account
+                              <p className="text-muted-foreground text-xs">
+                                Run{' '}
+                                <code className="bg-muted rounded px-1">
+                                  gcloud auth application-default login
+                                </code>{' '}
+                                in terminal to authenticate with your GCP account
                               </p>
                             )}
                             {!form.useOAuth && !form.useGCloudADC && (
-                              <p className="text-xs text-muted-foreground">
-                                Enter your API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>
+                              <p className="text-muted-foreground text-xs">
+                                Enter your API key from{' '}
+                                <a
+                                  href="https://aistudio.google.com/apikey"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline"
+                                >
+                                  Google AI Studio
+                                </a>
                               </p>
                             )}
                           </div>
@@ -1051,12 +1190,12 @@ export default function UnifiedServicePanel() {
                 )}
                 {/* OpenAI Codex CLI Configuration */}
                 {form.provider === 'openai' && (
-                  <div className="border-t pt-4 space-y-4">
+                  <div className="space-y-4 border-t pt-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id={`${serviceType}-openai-use-cli`}
                         checked={form.useCLI || false}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={checked => {
                           const updates: Partial<typeof form> = { useCLI: checked as boolean };
                           if (checked) {
                             updates.cliCommand = 'codex';
@@ -1068,30 +1207,35 @@ export default function UnifiedServicePanel() {
                           setForm(serviceType, updates);
                         }}
                       />
-                      <Label htmlFor={`${serviceType}-openai-use-cli`} className="text-sm font-normal cursor-pointer">
+                      <Label
+                        htmlFor={`${serviceType}-openai-use-cli`}
+                        className="cursor-pointer text-sm font-normal"
+                      >
                         Use CLI Mode (Codex CLI)
                       </Label>
                       {cliAvailability?.openai && (
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          cliAvailability.openai.available 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {cliAvailability.openai.available 
-                            ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})` 
+                        <span
+                          className={`rounded px-2 py-1 text-xs ${
+                            cliAvailability.openai.available
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {cliAvailability.openai.available
+                            ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})`
                             : 'CLI Not Installed'}
                         </span>
                       )}
                     </div>
                     {form.useCLI && (
-                      <div className="space-y-4 pl-6 border-l-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4 border-l-2 pl-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <div className="space-y-2">
                             <Label>CLI Command</Label>
                             <Input
                               placeholder="codex"
                               value={form.cliCommand || 'codex'}
-                              onChange={(e) => setForm(serviceType, { cliCommand: e.target.value })}
+                              onChange={e => setForm(serviceType, { cliCommand: e.target.value })}
                             />
                           </div>
                           <div className="space-y-2">
@@ -1099,7 +1243,9 @@ export default function UnifiedServicePanel() {
                             <Input
                               placeholder="/path/to/project"
                               value={form.cliWorkingDirectory || ''}
-                              onChange={(e) => setForm(serviceType, { cliWorkingDirectory: e.target.value })}
+                              onChange={e =>
+                                setForm(serviceType, { cliWorkingDirectory: e.target.value })
+                              }
                             />
                           </div>
                         </div>
@@ -1108,7 +1254,7 @@ export default function UnifiedServicePanel() {
                           <Input
                             placeholder="--verbose, --output json"
                             value={form.cliArgs || ''}
-                            onChange={(e) => setForm(serviceType, { cliArgs: e.target.value })}
+                            onChange={e => setForm(serviceType, { cliArgs: e.target.value })}
                           />
                         </div>
                         <div className="space-y-2">
@@ -1121,10 +1267,14 @@ export default function UnifiedServicePanel() {
                                 name={`${serviceType}-openai-cli-auth`}
                                 checked={form.useOAuth === true}
                                 onChange={() => setForm(serviceType, { useOAuth: true })}
-                                className="w-4 h-4"
+                                className="h-4 w-4"
                               />
-                              <Label htmlFor={`${serviceType}-openai-cli-oauth`} className="text-sm font-normal cursor-pointer">
-                                ChatGPT Account (OAuth) - Works with free, Plus, Pro, Business, or Enterprise accounts
+                              <Label
+                                htmlFor={`${serviceType}-openai-cli-oauth`}
+                                className="cursor-pointer text-sm font-normal"
+                              >
+                                ChatGPT Account (OAuth) - Works with free, Plus, Pro, Business, or
+                                Enterprise accounts
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -1134,9 +1284,12 @@ export default function UnifiedServicePanel() {
                                 name={`${serviceType}-openai-cli-auth`}
                                 checked={form.useOAuth === false}
                                 onChange={() => setForm(serviceType, { useOAuth: false })}
-                                className="w-4 h-4"
+                                className="h-4 w-4"
                               />
-                              <Label htmlFor={`${serviceType}-openai-cli-apikey`} className="text-sm font-normal cursor-pointer">
+                              <Label
+                                htmlFor={`${serviceType}-openai-cli-apikey`}
+                                className="cursor-pointer text-sm font-normal"
+                              >
                                 API Key
                               </Label>
                             </div>
@@ -1147,27 +1300,32 @@ export default function UnifiedServicePanel() {
                                 type="password"
                                 placeholder="OPENAI_API_KEY"
                                 value={form.apiKey}
-                                onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
+                                onChange={e => setForm(serviceType, { apiKey: e.target.value })}
                               />
                             </div>
                           )}
                           {form.useOAuth && (
                             <div className="mt-2 space-y-2">
-                              <p className="text-xs text-muted-foreground">
-                                <strong>Step 1:</strong> Run this command in your terminal to log in:
+                              <p className="text-muted-foreground text-xs">
+                                <strong>Step 1:</strong> Run this command in your terminal to log
+                                in:
                               </p>
-                              <div className="bg-muted p-2 rounded text-xs font-mono">
-                                codex
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                This will open a browser where you can select "Sign in with ChatGPT" and log in with your OpenAI account 
-                                (free, Plus, Pro, Business, or Enterprise). After authentication, return here and click "Test Connection" to verify.
+                              <div className="bg-muted rounded p-2 font-mono text-xs">codex</div>
+                              <p className="text-muted-foreground text-xs">
+                                This will open a browser where you can select "Sign in with ChatGPT"
+                                and log in with your OpenAI account (free, Plus, Pro, Business, or
+                                Enterprise). After authentication, return here and click "Test
+                                Connection" to verify.
                               </p>
                             </div>
                           )}
                           {!form.useOAuth && (
-                            <p className="text-xs text-muted-foreground">
-                              Enter your OpenAI API key or run <code className="bg-muted px-1 rounded">codex login --with-api-key</code> in terminal
+                            <p className="text-muted-foreground text-xs">
+                              Enter your OpenAI API key or run{' '}
+                              <code className="bg-muted rounded px-1">
+                                codex login --with-api-key
+                              </code>{' '}
+                              in terminal
                             </p>
                           )}
                         </div>
@@ -1180,7 +1338,7 @@ export default function UnifiedServicePanel() {
                     <ModelSelector
                       providerId={form.provider}
                       value={form.model}
-                      onChange={(model) => setForm(serviceType, { model })}
+                      onChange={model => setForm(serviceType, { model })}
                       label="Model (Optional)"
                       required={false}
                       placeholder="Not required for Google Search"
@@ -1190,26 +1348,28 @@ export default function UnifiedServicePanel() {
                       <Input
                         placeholder="..."
                         value={form.googleSearchEngineId || ''}
-                        onChange={(e) => setForm(serviceType, { googleSearchEngineId: e.target.value })}
+                        onChange={e =>
+                          setForm(serviceType, { googleSearchEngineId: e.target.value })
+                        }
                       />
                     </div>
                   </>
                 )}
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={(e) => {
+                  <Button
+                    onClick={e => {
                       e.preventDefault();
                       e.stopPropagation();
                       console.log('[Button] Add Provider clicked', { serviceType, cfg });
-                      addProviderInstance(serviceType, cfg).catch((error) => {
+                      addProviderInstance(serviceType, cfg).catch(error => {
                         console.error('[Button] Add Provider error:', error);
                         toast.error(`Failed: ${error?.message || 'Unknown error'}`);
                       });
-                    }} 
+                    }}
                     className="flex-1"
                     type="button"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Provider
                   </Button>
                   <Button
@@ -1218,26 +1378,34 @@ export default function UnifiedServicePanel() {
                       try {
                         const testForm = getForm(serviceType);
                         console.log('[TestConnection] Form state:', testForm);
-                        
+
                         // Validation: provider is always required
                         if (!testForm.provider) {
                           toast.error('Please select a provider type');
                           return;
                         }
-                        
+
                         // Base URL is optional for CLI mode
-                        const isCLIMode = (testForm.provider === 'google' || testForm.provider === 'openai') && testForm.useCLI;
-                        const effectiveBaseUrl = testForm.baseUrl || (!isCLIMode ? getDefaultBaseUrl(testForm.provider) : undefined);
-                        
+                        const isCLIMode =
+                          (testForm.provider === 'google' || testForm.provider === 'openai') &&
+                          testForm.useCLI;
+                        const effectiveBaseUrl =
+                          testForm.baseUrl ||
+                          (!isCLIMode ? getDefaultBaseUrl(testForm.provider) : undefined);
+
                         if (!isCLIMode && !effectiveBaseUrl) {
                           toast.error('Please fill in endpoint URL');
                           return;
                         }
-                        
+
                         // For CLI mode with OAuth, API key is not required
                         if (testForm.useCLI && (testForm.useOAuth || testForm.useGCloudADC)) {
                           // OAuth mode - no API key needed, but model is required for LLM providers
-                          if (!testForm.model && testForm.provider !== 'google_search' && !isWebSearchProvider(testForm.provider)) {
+                          if (
+                            !testForm.model &&
+                            testForm.provider !== 'google_search' &&
+                            !isWebSearchProvider(testForm.provider)
+                          ) {
                             toast.error('Model is required');
                             return;
                           }
@@ -1263,7 +1431,11 @@ export default function UnifiedServicePanel() {
                             toast.error('API Key is required for API mode');
                             return;
                           }
-                          if (!testForm.model && testForm.provider !== 'google_search' && !isWebSearchProvider(testForm.provider)) {
+                          if (
+                            !testForm.model &&
+                            testForm.provider !== 'google_search' &&
+                            !isWebSearchProvider(testForm.provider)
+                          ) {
                             toast.error('Model is required');
                             return;
                           }
@@ -1274,23 +1446,35 @@ export default function UnifiedServicePanel() {
                           apiKey: testForm.apiKey || undefined,
                           model: testForm.model || undefined,
                         };
-                        
+
                         console.log('[TestConnection] Test config:', testConfig);
-                        
+
                         // Include CLI configuration if CLI mode is enabled
                         if (testForm.useCLI) {
                           testConfig.useCLI = true;
-                          testConfig.cliCommand = testForm.cliCommand || (testForm.provider === 'google' ? 'gemini' : testForm.provider === 'openai' ? 'codex' : '');
-                          testConfig.cliArgs = testForm.cliArgs ? testForm.cliArgs.split(',').map((s: string) => s.trim()).filter(Boolean) : undefined;
+                          testConfig.cliCommand =
+                            testForm.cliCommand ||
+                            (testForm.provider === 'google'
+                              ? 'gemini'
+                              : testForm.provider === 'openai'
+                                ? 'codex'
+                                : '');
+                          testConfig.cliArgs = testForm.cliArgs
+                            ? testForm.cliArgs
+                                .split(',')
+                                .map((s: string) => s.trim())
+                                .filter(Boolean)
+                            : undefined;
                           testConfig.useOAuth = testForm.useOAuth || false;
                           testConfig.useGCloudADC = testForm.useGCloudADC || false;
-                          testConfig.cliWorkingDirectory = testForm.cliWorkingDirectory || undefined;
+                          testConfig.cliWorkingDirectory =
+                            testForm.cliWorkingDirectory || undefined;
                           if (testForm.useGCloudADC && testForm.provider === 'google') {
                             testConfig.googleProject = testForm.googleProject;
                             testConfig.googleLocation = testForm.googleLocation;
                           }
                         }
-                        
+
                         // Include Google-specific config
                         if (testForm.provider === 'google') {
                           testConfig.useVertexAI = testForm.useVertexAI || false;
@@ -1298,19 +1482,22 @@ export default function UnifiedServicePanel() {
                           testConfig.googleLocation = testForm.googleLocation || undefined;
                           testConfig.googleApiVersion = testForm.googleApiVersion || undefined;
                         }
-                        
+
                         // Include Google Search config
                         if (testForm.provider === 'google_search') {
                           testConfig.googleSearchEngineId = testForm.googleSearchEngineId;
                         }
-                        
-                        console.log('[TestConnection] Sending request to:', `/api/v1/ai/config/${serviceType}/test`);
+
+                        console.log(
+                          '[TestConnection] Sending request to:',
+                          `/api/v1/ai/config/${serviceType}/test`
+                        );
                         const res = await fetch(`/api/v1/ai/config/${serviceType}/test`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ config: testConfig }),
                         });
-                        
+
                         console.log('[TestConnection] Response status:', res.status);
                         // Robust JSON parsing that handles empty responses
                         const text = await res.text();
@@ -1322,15 +1509,22 @@ export default function UnifiedServicePanel() {
                           responseData = { success: false, error: 'Invalid response from server' };
                         }
                         console.log('[TestConnection] Response data:', responseData);
-                        
+
                         if (!res.ok || !responseData.success) {
-                          const errorText = responseData.error || responseData.message || responseData.details?.connectivity || 'Connection test failed';
+                          const errorText =
+                            responseData.error ||
+                            responseData.message ||
+                            responseData.details?.connectivity ||
+                            'Connection test failed';
                           console.error('[TestConnection] Test failed:', errorText);
                           toast.error(`Connection test failed: ${errorText}`);
                           return;
                         }
-                        
-                        const message = responseData.data?.message || responseData.message || 'Connection test successful';
+
+                        const message =
+                          responseData.data?.message ||
+                          responseData.message ||
+                          'Connection test successful';
                         console.log('[TestConnection] Test successful:', message);
                         toast.success(message);
                       } catch (e: unknown) {
@@ -1349,43 +1543,65 @@ export default function UnifiedServicePanel() {
               {/* Provider Instances List */}
               {instances.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-sm">Active Providers ({instances.length})</h4>
-                  {instances.map((inst) => {
+                  <h4 className="text-sm font-medium">Active Providers ({instances.length})</h4>
+                  {instances.map(inst => {
                     const isEditing = editingInstance === inst.id;
                     return (
                       <div
                         key={inst.id}
-                        className={`border rounded-lg p-4 ${
+                        className={`rounded-lg border p-4 ${
                           activeId === inst.id ? 'border-primary bg-primary/5' : ''
                         }`}
                       >
                         {isEditing ? (
                           // Edit Mode
                           <div className="space-y-4">
-                            <div className={`grid grid-cols-4 gap-4 ${['google_search', 'google'].includes(editForm?.provider || '') ? 'md:grid-cols-5' : ''}`}>
+                            <div
+                              className={`grid grid-cols-4 gap-4 ${['google_search', 'google'].includes(editForm?.provider || '') ? 'md:grid-cols-5' : ''}`}
+                            >
                               <div className="space-y-2">
                                 <Label>Provider Type</Label>
                                 <Select
                                   value={editForm?.provider}
-                                  onValueChange={(v) => setEditForm(prev => prev ? { ...prev, provider: v as ProviderKey, baseUrl: getDefaultBaseUrl(v as ProviderKey) } : null)}
+                                  onValueChange={v =>
+                                    setEditForm(prev =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            provider: v as ProviderKey,
+                                            baseUrl: getDefaultBaseUrl(v as ProviderKey),
+                                          }
+                                        : null
+                                    )
+                                  }
                                 >
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
                                   <SelectContent>
                                     {/* LLM Providers */}
                                     <SelectItem value="openai">OpenAI</SelectItem>
                                     <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
                                     <SelectItem value="google">Google Gemini</SelectItem>
-                                    <SelectItem value="openai_compatible">OpenAI Compatible</SelectItem>
+                                    <SelectItem value="openai_compatible">
+                                      OpenAI Compatible
+                                    </SelectItem>
                                     <SelectItem value="openrouter">OpenRouter</SelectItem>
                                     <SelectItem value="kilocode">KiloCode</SelectItem>
                                     {/* Web Search Providers */}
-                                    <SelectItem value="serper">Serper (Google Search API)</SelectItem>
+                                    <SelectItem value="serper">
+                                      Serper (Google Search API)
+                                    </SelectItem>
                                     <SelectItem value="tavily">Tavily (AI Search)</SelectItem>
-                                    <SelectItem value="google_search">Google Custom Search</SelectItem>
+                                    <SelectItem value="google_search">
+                                      Google Custom Search
+                                    </SelectItem>
                                     <SelectItem value="brave">Brave Search</SelectItem>
                                     <SelectItem value="exa">Exa (Semantic Search)</SelectItem>
                                     {/* Web Scraping */}
-                                    <SelectItem value="firecrawl">Firecrawl (Web Scraping)</SelectItem>
+                                    <SelectItem value="firecrawl">
+                                      Firecrawl (Web Scraping)
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1393,7 +1609,11 @@ export default function UnifiedServicePanel() {
                                 <Label>Endpoint URL</Label>
                                 <Input
                                   value={editForm?.baseUrl || ''}
-                                  onChange={(e) => setEditForm(prev => prev ? { ...prev, baseUrl: e.target.value } : null)}
+                                  onChange={e =>
+                                    setEditForm(prev =>
+                                      prev ? { ...prev, baseUrl: e.target.value } : null
+                                    )
+                                  }
                                 />
                               </div>
                               <div className="space-y-2">
@@ -1401,35 +1621,46 @@ export default function UnifiedServicePanel() {
                                 <Input
                                   type="password"
                                   value={editForm?.apiKey || ''}
-                                  onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
+                                  onChange={e =>
+                                    setEditForm(prev =>
+                                      prev ? { ...prev, apiKey: e.target.value } : null
+                                    )
+                                  }
                                 />
                               </div>
                               {!isWebSearchProvider(editForm?.provider || 'openai') && (
                                 <ModelSelector
                                   providerId={editForm?.provider || 'openai'}
                                   value={editForm?.model || ''}
-                                  onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                  onChange={model =>
+                                    setEditForm(prev => (prev ? { ...prev, model } : null))
+                                  }
                                   label="Model"
                                   required={!isWebSearchProvider(editForm?.provider || '')}
                                   placeholder="Select or type a model"
                                 />
                               )}
-                              {isWebSearchProvider(editForm?.provider || '') && editForm?.provider !== 'google_search' && (
-                                <ModelSelector
-                                  providerId={editForm?.provider || ''}
-                                  value={editForm?.model || ''}
-                                  onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
-                                  label="Model (Optional)"
-                                  required={false}
-                                  placeholder="Not required for web search"
-                                />
-                              )}
+                              {isWebSearchProvider(editForm?.provider || '') &&
+                                editForm?.provider !== 'google_search' && (
+                                  <ModelSelector
+                                    providerId={editForm?.provider || ''}
+                                    value={editForm?.model || ''}
+                                    onChange={model =>
+                                      setEditForm(prev => (prev ? { ...prev, model } : null))
+                                    }
+                                    label="Model (Optional)"
+                                    required={false}
+                                    placeholder="Not required for web search"
+                                  />
+                                )}
                               {editForm?.provider === 'google_search' && (
                                 <>
                                   <ModelSelector
                                     providerId={editForm?.provider}
                                     value={editForm?.model || ''}
-                                    onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                    onChange={model =>
+                                      setEditForm(prev => (prev ? { ...prev, model } : null))
+                                    }
                                     label="Model (Optional)"
                                     required={false}
                                     placeholder="Not required for Google Search"
@@ -1438,7 +1669,13 @@ export default function UnifiedServicePanel() {
                                     <Label>Google Search Engine ID *</Label>
                                     <Input
                                       value={editForm?.googleSearchEngineId || ''}
-                                      onChange={(e) => setEditForm(prev => prev ? { ...prev, googleSearchEngineId: e.target.value } : null)}
+                                      onChange={e =>
+                                        setEditForm(prev =>
+                                          prev
+                                            ? { ...prev, googleSearchEngineId: e.target.value }
+                                            : null
+                                        )
+                                      }
                                     />
                                   </div>
                                 </>
@@ -1446,25 +1683,36 @@ export default function UnifiedServicePanel() {
                             </div>
                             {/* Google Gemini Advanced Configuration in Edit Mode */}
                             {editForm?.provider === 'google' && (
-                              <div className="border-t pt-4 space-y-4">
+                              <div className="space-y-4 border-t pt-4">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={`edit-${inst.id}-use-vertex-ai`}
                                     checked={editForm.useVertexAI || false}
-                                    onCheckedChange={(checked) => setEditForm(prev => prev ? { ...prev, useVertexAI: checked as boolean } : null)}
+                                    onCheckedChange={checked =>
+                                      setEditForm(prev =>
+                                        prev ? { ...prev, useVertexAI: checked as boolean } : null
+                                      )
+                                    }
                                   />
-                                  <Label htmlFor={`edit-${inst.id}-use-vertex-ai`} className="text-sm font-normal cursor-pointer">
+                                  <Label
+                                    htmlFor={`edit-${inst.id}-use-vertex-ai`}
+                                    className="cursor-pointer text-sm font-normal"
+                                  >
                                     Use Vertex AI (GCP) instead of Developer API
                                   </Label>
                                 </div>
                                 {editForm.useVertexAI ? (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
                                       <Label>GCP Project ID *</Label>
                                       <Input
                                         placeholder="my-gcp-project"
                                         value={editForm.googleProject || ''}
-                                        onChange={(e) => setEditForm(prev => prev ? { ...prev, googleProject: e.target.value } : null)}
+                                        onChange={e =>
+                                          setEditForm(prev =>
+                                            prev ? { ...prev, googleProject: e.target.value } : null
+                                          )
+                                        }
                                       />
                                     </div>
                                     <div className="space-y-2">
@@ -1472,31 +1720,56 @@ export default function UnifiedServicePanel() {
                                       <Input
                                         placeholder="us-central1"
                                         value={editForm.googleLocation || 'us-central1'}
-                                        onChange={(e) => setEditForm(prev => prev ? { ...prev, googleLocation: e.target.value } : null)}
+                                        onChange={e =>
+                                          setEditForm(prev =>
+                                            prev
+                                              ? { ...prev, googleLocation: e.target.value }
+                                              : null
+                                          )
+                                        }
                                       />
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
                                       <Label>
                                         API Key
-                                        {!(editForm.useCLI && (editForm.useOAuth || editForm.useGCloudADC)) && ' *'}
+                                        {!(
+                                          editForm.useCLI &&
+                                          (editForm.useOAuth || editForm.useGCloudADC)
+                                        ) && ' *'}
                                       </Label>
                                       <Input
                                         type="password"
-                                        placeholder={editForm.useCLI && editForm.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
+                                        placeholder={
+                                          editForm.useCLI && editForm.useOAuth
+                                            ? 'Optional - not needed for OAuth'
+                                            : 'GEMINI_API_KEY or GOOGLE_API_KEY'
+                                        }
                                         value={editForm.apiKey || ''}
-                                        onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
+                                        onChange={e =>
+                                          setEditForm(prev =>
+                                            prev ? { ...prev, apiKey: e.target.value } : null
+                                          )
+                                        }
                                       />
                                     </div>
                                     <div className="space-y-2">
                                       <Label>API Version</Label>
                                       <Select
                                         value={editForm.googleApiVersion || 'v1'}
-                                        onValueChange={(v) => setEditForm(prev => prev ? { ...prev, googleApiVersion: v as 'v1' | 'v1alpha' } : null)}
+                                        onValueChange={v =>
+                                          setEditForm(prev =>
+                                            prev
+                                              ? { ...prev, googleApiVersion: v as 'v1' | 'v1alpha' }
+                                              : null
+                                          )
+                                        }
                                       >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="v1">v1 (Stable)</SelectItem>
                                           <SelectItem value="v1alpha">v1alpha (Preview)</SelectItem>
@@ -1506,45 +1779,58 @@ export default function UnifiedServicePanel() {
                                   </div>
                                 )}
                                 {/* CLI Mode Configuration in Edit Mode */}
-                                <div className="border-t pt-4 mt-4 space-y-4">
+                                <div className="mt-4 space-y-4 border-t pt-4">
                                   <div className="flex items-center space-x-2">
                                     <Checkbox
                                       id={`edit-${inst.id}-use-cli`}
                                       checked={editForm.useCLI || false}
-                                      onCheckedChange={(checked) => {
+                                      onCheckedChange={checked => {
                                         const updates: unknown = { useCLI: checked as boolean };
                                         if (checked) {
                                           updates.cliCommand = 'gemini';
                                           updates.useOAuth = false;
                                           updates.useGCloudADC = false;
                                         }
-                                        setEditForm(prev => prev ? { ...prev, ...updates } : null);
+                                        setEditForm(prev =>
+                                          prev ? { ...prev, ...updates } : null
+                                        );
                                       }}
                                     />
-                                    <Label htmlFor={`edit-${inst.id}-use-cli`} className="text-sm font-normal cursor-pointer">
+                                    <Label
+                                      htmlFor={`edit-${inst.id}-use-cli`}
+                                      className="cursor-pointer text-sm font-normal"
+                                    >
                                       Use CLI Mode (OAuth supports free & paid accounts)
                                     </Label>
                                     {cliAvailability?.google && (
-                                      <span className={`text-xs px-2 py-1 rounded ${
-                                        cliAvailability.google.available 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : 'bg-yellow-100 text-yellow-800'
-                                      }`}>
-                                        {cliAvailability.google.available 
-                                          ? `✓ CLI Available (v${cliAvailability.google.version || '?'})` 
+                                      <span
+                                        className={`rounded px-2 py-1 text-xs ${
+                                          cliAvailability.google.available
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                        }`}
+                                      >
+                                        {cliAvailability.google.available
+                                          ? `✓ CLI Available (v${cliAvailability.google.version || '?'})`
                                           : 'CLI Not Installed'}
                                       </span>
                                     )}
                                   </div>
                                   {editForm.useCLI && (
-                                    <div className="space-y-4 pl-6 border-l-2">
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-4 border-l-2 pl-6">
+                                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         <div className="space-y-2">
                                           <Label>CLI Command</Label>
                                           <Input
                                             placeholder="gemini"
                                             value={editForm.cliCommand || 'gemini'}
-                                            onChange={(e) => setEditForm(prev => prev ? { ...prev, cliCommand: e.target.value } : null)}
+                                            onChange={e =>
+                                              setEditForm(prev =>
+                                                prev
+                                                  ? { ...prev, cliCommand: e.target.value }
+                                                  : null
+                                              )
+                                            }
                                           />
                                         </div>
                                         <div className="space-y-2">
@@ -1552,7 +1838,13 @@ export default function UnifiedServicePanel() {
                                           <Input
                                             placeholder="/path/to/project"
                                             value={editForm.cliWorkingDirectory || ''}
-                                            onChange={(e) => setEditForm(prev => prev ? { ...prev, cliWorkingDirectory: e.target.value } : null)}
+                                            onChange={e =>
+                                              setEditForm(prev =>
+                                                prev
+                                                  ? { ...prev, cliWorkingDirectory: e.target.value }
+                                                  : null
+                                              )
+                                            }
                                           />
                                         </div>
                                       </div>
@@ -1561,11 +1853,17 @@ export default function UnifiedServicePanel() {
                                         <Input
                                           placeholder="--verbose, --output json"
                                           value={editForm.cliArgs || ''}
-                                          onChange={(e) => setEditForm(prev => prev ? { ...prev, cliArgs: e.target.value } : null)}
+                                          onChange={e =>
+                                            setEditForm(prev =>
+                                              prev ? { ...prev, cliArgs: e.target.value } : null
+                                            )
+                                          }
                                         />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Authentication Method *</Label>
+                                        <Label className="text-sm font-medium">
+                                          Authentication Method *
+                                        </Label>
                                         <div className="space-y-2">
                                           <div className="flex items-center space-x-2">
                                             <input
@@ -1573,11 +1871,25 @@ export default function UnifiedServicePanel() {
                                               id={`edit-${inst.id}-cli-oauth`}
                                               name={`edit-${inst.id}-cli-auth`}
                                               checked={editForm.useOAuth === true}
-                                              onChange={() => setEditForm(prev => prev ? { ...prev, useOAuth: true, useGCloudADC: false } : null)}
-                                              className="w-4 h-4"
+                                              onChange={() =>
+                                                setEditForm(prev =>
+                                                  prev
+                                                    ? {
+                                                        ...prev,
+                                                        useOAuth: true,
+                                                        useGCloudADC: false,
+                                                      }
+                                                    : null
+                                                )
+                                              }
+                                              className="h-4 w-4"
                                             />
-                                            <Label htmlFor={`edit-${inst.id}-cli-oauth`} className="text-sm font-normal cursor-pointer">
-                                              OAuth (Google Account) - Works with free or paid accounts
+                                            <Label
+                                              htmlFor={`edit-${inst.id}-cli-oauth`}
+                                              className="cursor-pointer text-sm font-normal"
+                                            >
+                                              OAuth (Google Account) - Works with free or paid
+                                              accounts
                                             </Label>
                                           </div>
                                           <div className="flex items-center space-x-2">
@@ -1586,10 +1898,23 @@ export default function UnifiedServicePanel() {
                                               id={`edit-${inst.id}-cli-gcloud`}
                                               name={`edit-${inst.id}-cli-auth`}
                                               checked={editForm.useGCloudADC === true}
-                                              onChange={() => setEditForm(prev => prev ? { ...prev, useGCloudADC: true, useOAuth: false } : null)}
-                                              className="w-4 h-4"
+                                              onChange={() =>
+                                                setEditForm(prev =>
+                                                  prev
+                                                    ? {
+                                                        ...prev,
+                                                        useGCloudADC: true,
+                                                        useOAuth: false,
+                                                      }
+                                                    : null
+                                                )
+                                              }
+                                              className="h-4 w-4"
                                             />
-                                            <Label htmlFor={`edit-${inst.id}-cli-gcloud`} className="text-sm font-normal cursor-pointer">
+                                            <Label
+                                              htmlFor={`edit-${inst.id}-cli-gcloud`}
+                                              className="cursor-pointer text-sm font-normal"
+                                            >
                                               gcloud ADC (GCP Project)
                                             </Label>
                                           </div>
@@ -1599,10 +1924,23 @@ export default function UnifiedServicePanel() {
                                               id={`edit-${inst.id}-cli-apikey`}
                                               name={`edit-${inst.id}-cli-auth`}
                                               checked={!editForm.useOAuth && !editForm.useGCloudADC}
-                                              onChange={() => setEditForm(prev => prev ? { ...prev, useOAuth: false, useGCloudADC: false } : null)}
-                                              className="w-4 h-4"
+                                              onChange={() =>
+                                                setEditForm(prev =>
+                                                  prev
+                                                    ? {
+                                                        ...prev,
+                                                        useOAuth: false,
+                                                        useGCloudADC: false,
+                                                      }
+                                                    : null
+                                                )
+                                              }
+                                              className="h-4 w-4"
                                             />
-                                            <Label htmlFor={`edit-${inst.id}-cli-apikey`} className="text-sm font-normal cursor-pointer">
+                                            <Label
+                                              htmlFor={`edit-${inst.id}-cli-apikey`}
+                                              className="cursor-pointer text-sm font-normal"
+                                            >
                                               API Key
                                             </Label>
                                           </div>
@@ -1613,21 +1951,37 @@ export default function UnifiedServicePanel() {
                                               type="password"
                                               placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
                                               value={editForm.apiKey || ''}
-                                              onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
+                                              onChange={e =>
+                                                setEditForm(prev =>
+                                                  prev ? { ...prev, apiKey: e.target.value } : null
+                                                )
+                                              }
                                             />
                                           </div>
                                         )}
                                         {editForm.useGCloudADC && (
-                                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                                             <Input
                                               placeholder="GCP Project ID"
                                               value={editForm.googleProject || ''}
-                                              onChange={(e) => setEditForm(prev => prev ? { ...prev, googleProject: e.target.value } : null)}
+                                              onChange={e =>
+                                                setEditForm(prev =>
+                                                  prev
+                                                    ? { ...prev, googleProject: e.target.value }
+                                                    : null
+                                                )
+                                              }
                                             />
                                             <Input
                                               placeholder="Location (default: us-central1)"
                                               value={editForm.googleLocation || 'us-central1'}
-                                              onChange={(e) => setEditForm(prev => prev ? { ...prev, googleLocation: e.target.value } : null)}
+                                              onChange={e =>
+                                                setEditForm(prev =>
+                                                  prev
+                                                    ? { ...prev, googleLocation: e.target.value }
+                                                    : null
+                                                )
+                                              }
                                             />
                                           </div>
                                         )}
@@ -1639,44 +1993,53 @@ export default function UnifiedServicePanel() {
                             )}
                             {/* OpenAI Codex CLI Configuration in Edit Mode */}
                             {editForm?.provider === 'openai' && (
-                              <div className="border-t pt-4 space-y-4">
+                              <div className="space-y-4 border-t pt-4">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={`edit-${inst.id}-openai-use-cli`}
                                     checked={editForm.useCLI || false}
-                                    onCheckedChange={(checked) => {
+                                    onCheckedChange={checked => {
                                       const updates: unknown = { useCLI: checked as boolean };
                                       if (checked) {
                                         updates.cliCommand = 'codex';
                                         updates.useOAuth = false;
                                       }
-                                      setEditForm(prev => prev ? { ...prev, ...updates } : null);
+                                      setEditForm(prev => (prev ? { ...prev, ...updates } : null));
                                     }}
                                   />
-                                  <Label htmlFor={`edit-${inst.id}-openai-use-cli`} className="text-sm font-normal cursor-pointer">
+                                  <Label
+                                    htmlFor={`edit-${inst.id}-openai-use-cli`}
+                                    className="cursor-pointer text-sm font-normal"
+                                  >
                                     Use CLI Mode (Codex CLI)
                                   </Label>
                                   {cliAvailability?.openai && (
-                                    <span className={`text-xs px-2 py-1 rounded ${
-                                      cliAvailability.openai.available 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                      {cliAvailability.openai.available 
-                                        ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})` 
+                                    <span
+                                      className={`rounded px-2 py-1 text-xs ${
+                                        cliAvailability.openai.available
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-yellow-100 text-yellow-800'
+                                      }`}
+                                    >
+                                      {cliAvailability.openai.available
+                                        ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})`
                                         : 'CLI Not Installed'}
                                     </span>
                                   )}
                                 </div>
                                 {editForm.useCLI && (
-                                  <div className="space-y-4 pl-6 border-l-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-4 border-l-2 pl-6">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                       <div className="space-y-2">
                                         <Label>CLI Command</Label>
                                         <Input
                                           placeholder="codex"
                                           value={editForm.cliCommand || 'codex'}
-                                          onChange={(e) => setEditForm(prev => prev ? { ...prev, cliCommand: e.target.value } : null)}
+                                          onChange={e =>
+                                            setEditForm(prev =>
+                                              prev ? { ...prev, cliCommand: e.target.value } : null
+                                            )
+                                          }
                                         />
                                       </div>
                                       <div className="space-y-2">
@@ -1684,7 +2047,13 @@ export default function UnifiedServicePanel() {
                                         <Input
                                           placeholder="/path/to/project"
                                           value={editForm.cliWorkingDirectory || ''}
-                                          onChange={(e) => setEditForm(prev => prev ? { ...prev, cliWorkingDirectory: e.target.value } : null)}
+                                          onChange={e =>
+                                            setEditForm(prev =>
+                                              prev
+                                                ? { ...prev, cliWorkingDirectory: e.target.value }
+                                                : null
+                                            )
+                                          }
                                         />
                                       </div>
                                     </div>
@@ -1693,11 +2062,17 @@ export default function UnifiedServicePanel() {
                                       <Input
                                         placeholder="--verbose, --output json"
                                         value={editForm.cliArgs || ''}
-                                        onChange={(e) => setEditForm(prev => prev ? { ...prev, cliArgs: e.target.value } : null)}
+                                        onChange={e =>
+                                          setEditForm(prev =>
+                                            prev ? { ...prev, cliArgs: e.target.value } : null
+                                          )
+                                        }
                                       />
                                     </div>
                                     <div className="space-y-2">
-                                      <Label className="text-sm font-medium">Authentication Method *</Label>
+                                      <Label className="text-sm font-medium">
+                                        Authentication Method *
+                                      </Label>
                                       <div className="space-y-2">
                                         <div className="flex items-center space-x-2">
                                           <input
@@ -1705,12 +2080,20 @@ export default function UnifiedServicePanel() {
                                             id={`edit-${inst.id}-openai-cli-oauth`}
                                             name={`edit-${inst.id}-openai-cli-auth`}
                                             checked={editForm.useOAuth === true}
-                                            onChange={() => setEditForm(prev => prev ? { ...prev, useOAuth: true } : null)}
-                                            className="w-4 h-4"
+                                            onChange={() =>
+                                              setEditForm(prev =>
+                                                prev ? { ...prev, useOAuth: true } : null
+                                              )
+                                            }
+                                            className="h-4 w-4"
                                           />
-                                            <Label htmlFor={`edit-${inst.id}-openai-cli-oauth`} className="text-sm font-normal cursor-pointer">
-                                              ChatGPT Account (OAuth) - Works with free, Plus, Pro, Business, or Enterprise accounts
-                                            </Label>
+                                          <Label
+                                            htmlFor={`edit-${inst.id}-openai-cli-oauth`}
+                                            className="cursor-pointer text-sm font-normal"
+                                          >
+                                            ChatGPT Account (OAuth) - Works with free, Plus, Pro,
+                                            Business, or Enterprise accounts
+                                          </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                           <input
@@ -1718,10 +2101,17 @@ export default function UnifiedServicePanel() {
                                             id={`edit-${inst.id}-openai-cli-apikey`}
                                             name={`edit-${inst.id}-openai-cli-auth`}
                                             checked={editForm.useOAuth === false}
-                                            onChange={() => setEditForm(prev => prev ? { ...prev, useOAuth: false } : null)}
-                                            className="w-4 h-4"
+                                            onChange={() =>
+                                              setEditForm(prev =>
+                                                prev ? { ...prev, useOAuth: false } : null
+                                              )
+                                            }
+                                            className="h-4 w-4"
                                           />
-                                          <Label htmlFor={`edit-${inst.id}-openai-cli-apikey`} className="text-sm font-normal cursor-pointer">
+                                          <Label
+                                            htmlFor={`edit-${inst.id}-openai-cli-apikey`}
+                                            className="cursor-pointer text-sm font-normal"
+                                          >
                                             API Key
                                           </Label>
                                         </div>
@@ -1732,20 +2122,32 @@ export default function UnifiedServicePanel() {
                                             type="password"
                                             placeholder="OPENAI_API_KEY"
                                             value={editForm.apiKey || ''}
-                                            onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
+                                            onChange={e =>
+                                              setEditForm(prev =>
+                                                prev ? { ...prev, apiKey: e.target.value } : null
+                                              )
+                                            }
                                           />
                                         </div>
                                       )}
                                       {editForm.useOAuth && (
                                         <div className="mt-2 space-y-2">
-                                          <p className="text-xs text-muted-foreground">
-                                            <strong>To authenticate:</strong> Run <code className="bg-muted px-1 rounded">codex</code> in terminal and select "Sign in with ChatGPT" to log in with your OpenAI account (free, Plus, Pro, Business, or Enterprise).
+                                          <p className="text-muted-foreground text-xs">
+                                            <strong>To authenticate:</strong> Run{' '}
+                                            <code className="bg-muted rounded px-1">codex</code> in
+                                            terminal and select "Sign in with ChatGPT" to log in
+                                            with your OpenAI account (free, Plus, Pro, Business, or
+                                            Enterprise).
                                           </p>
                                         </div>
                                       )}
                                       {!editForm.useOAuth && (
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                          Enter your OpenAI API key or run <code className="bg-muted px-1 rounded">codex login --with-api-key</code> in terminal
+                                        <p className="text-muted-foreground mt-2 text-xs">
+                                          Enter your OpenAI API key or run{' '}
+                                          <code className="bg-muted rounded px-1">
+                                            codex login --with-api-key
+                                          </code>{' '}
+                                          in terminal
                                         </p>
                                       )}
                                     </div>
@@ -1753,7 +2155,7 @@ export default function UnifiedServicePanel() {
                                 )}
                               </div>
                             )}
-                            <div className="flex gap-2 justify-end">
+                            <div className="flex justify-end gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1775,7 +2177,7 @@ export default function UnifiedServicePanel() {
                         ) : (
                           // View Mode
                           <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 flex-1">
+                            <div className="flex flex-1 items-center gap-4">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1783,20 +2185,28 @@ export default function UnifiedServicePanel() {
                                 className={activeId === inst.id ? 'text-primary' : ''}
                                 title="Set as active provider"
                               >
-                                <Star className={`w-4 h-4 ${activeId === inst.id ? 'fill-current' : ''}`} />
+                                <Star
+                                  className={`h-4 w-4 ${activeId === inst.id ? 'fill-current' : ''}`}
+                                />
                               </Button>
-                              
+
                               {/* Connection Status */}
                               <div className="flex items-center gap-2">
                                 {inst.connected === true && (
-                                  <div className="flex items-center gap-1 text-green-600" title="Connected">
-                                    <CheckCircle2 className="w-4 h-4" />
+                                  <div
+                                    className="flex items-center gap-1 text-green-600"
+                                    title="Connected"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4" />
                                     <span className="text-xs font-medium">Connected</span>
                                   </div>
                                 )}
                                 {inst.connected === false && (
-                                  <div className="flex items-center gap-1 text-red-600" title="Connection failed">
-                                    <XCircle className="w-4 h-4" />
+                                  <div
+                                    className="flex items-center gap-1 text-red-600"
+                                    title="Connection failed"
+                                  >
+                                    <XCircle className="h-4 w-4" />
                                     <span className="text-xs font-medium">Failed</span>
                                   </div>
                                 )}
@@ -1812,67 +2222,85 @@ export default function UnifiedServicePanel() {
                                 )}
                               </div>
 
-                              <div className={`flex-1 grid gap-4 text-sm ${['google_search', 'google'].includes(inst.provider) ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                              <div
+                                className={`grid flex-1 gap-4 text-sm ${['google_search', 'google'].includes(inst.provider) ? 'grid-cols-5' : 'grid-cols-4'}`}
+                              >
                                 <div>
-                                  <div className="font-medium">{inst.provider.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
+                                  <div className="font-medium">
+                                    {inst.provider
+                                      .replace('_', ' ')
+                                      .replace(/\b\w/g, c => c.toUpperCase())}
+                                  </div>
                                 </div>
                                 <div className="truncate" title={inst.baseUrl}>
                                   <span className="text-muted-foreground">URL:</span> {inst.baseUrl}
                                 </div>
                                 <div className="truncate">
-                                  <span className="text-muted-foreground">Key:</span> {inst.apiKey ? `${inst.apiKey.substring(0, 10)}...` : 'N/A'}
+                                  <span className="text-muted-foreground">Key:</span>{' '}
+                                  {inst.apiKey ? `${inst.apiKey.substring(0, 10)}...` : 'N/A'}
                                 </div>
                                 {inst.useCLI && (
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                                    <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">
                                       ⚡ CLI Mode
                                       {inst.useOAuth && ' (OAuth)'}
                                       {inst.useGCloudADC && ' (gcloud ADC)'}
                                     </span>
                                     {cliAvailability && (
-                                      <span className={`text-xs px-2 py-1 rounded ${
-                                        (inst.provider === 'google' && cliAvailability.google?.available) ||
-                                        (inst.provider === 'openai' && cliAvailability.openai?.available)
-                                          ? 'bg-green-100 text-green-800' 
-                                          : 'bg-yellow-100 text-yellow-800'
-                                      }`}>
-                                        {(inst.provider === 'google' && cliAvailability.google?.available) ||
-                                        (inst.provider === 'openai' && cliAvailability.openai?.available)
-                                          ? '✓ CLI Installed' 
+                                      <span
+                                        className={`rounded px-2 py-1 text-xs ${
+                                          (inst.provider === 'google' &&
+                                            cliAvailability.google?.available) ||
+                                          (inst.provider === 'openai' &&
+                                            cliAvailability.openai?.available)
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                        }`}
+                                      >
+                                        {(inst.provider === 'google' &&
+                                          cliAvailability.google?.available) ||
+                                        (inst.provider === 'openai' &&
+                                          cliAvailability.openai?.available)
+                                          ? '✓ CLI Installed'
                                           : 'CLI Not Installed'}
                                       </span>
                                     )}
                                   </div>
                                 )}
                                 <div className="truncate" title={inst.model}>
-                                  <span className="text-muted-foreground">Model:</span> {inst.model || 'N/A'}
+                                  <span className="text-muted-foreground">Model:</span>{' '}
+                                  {inst.model || 'N/A'}
                                 </div>
                                 {inst.provider === 'google_search' && inst.googleSearchEngineId && (
                                   <div className="truncate" title={inst.googleSearchEngineId}>
-                                    <span className="text-muted-foreground">Engine ID:</span> {inst.googleSearchEngineId}
+                                    <span className="text-muted-foreground">Engine ID:</span>{' '}
+                                    {inst.googleSearchEngineId}
                                   </div>
                                 )}
                                 {inst.provider === 'google' && inst.useVertexAI && (
                                   <div className="truncate" title={inst.googleProject}>
-                                    <span className="text-muted-foreground">Project:</span> {inst.googleProject || 'N/A'}
+                                    <span className="text-muted-foreground">Project:</span>{' '}
+                                    {inst.googleProject || 'N/A'}
                                   </div>
                                 )}
                               </div>
                               {inst.provider === 'google' && inst.useVertexAI && (
-                                <div className="text-xs text-muted-foreground mt-1">
+                                <div className="text-muted-foreground mt-1 text-xs">
                                   Vertex AI Mode • Location: {inst.googleLocation || 'us-central1'}
                                 </div>
                               )}
-                              
+
                               <div className="flex items-center gap-2">
                                 <Switch
                                   checked={inst.enabled}
-                                  onCheckedChange={(checked) => toggleProviderInstance(serviceType, cfg, inst.id, checked)}
+                                  onCheckedChange={checked =>
+                                    toggleProviderInstance(serviceType, cfg, inst.id, checked)
+                                  }
                                 />
                                 <Label className="text-xs">{inst.enabled ? 'On' : 'Off'}</Label>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-1">
                               <Button
                                 variant="ghost"
@@ -1880,7 +2308,7 @@ export default function UnifiedServicePanel() {
                                 onClick={() => startEditingInstance(inst)}
                                 title="Edit provider"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1893,7 +2321,7 @@ export default function UnifiedServicePanel() {
                                 className="text-destructive hover:text-destructive"
                                 title="Delete provider"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
@@ -1910,4 +2338,3 @@ export default function UnifiedServicePanel() {
     </div>
   );
 }
-

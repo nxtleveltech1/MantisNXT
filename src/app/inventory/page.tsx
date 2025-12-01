@@ -1,28 +1,23 @@
-'use client'
+'use client';
 
-import React, { useMemo, useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import AppLayout, { findSectionForPath } from '@/components/layout/AppLayout'
-import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard'
-import AsyncBoundary from '@/components/ui/AsyncBoundary'
-import InventoryManagement from '@/components/inventory/InventoryManagement'
-import SupplierInventoryView from '@/components/inventory/SupplierInventoryView'
-import ProductStockManagement from '@/components/inventory/ProductStockManagement'
-import InventoryDetailView from '@/components/inventory/InventoryDetailView'
-import { SectionQuickLinks } from '@/components/layout/SectionQuickLinks'
-import { usePathname } from 'next/navigation'
+import React, { useMemo, useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLayout, { findSectionForPath } from '@/components/layout/AppLayout';
+import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard';
+import AsyncBoundary from '@/components/ui/AsyncBoundary';
+import InventoryManagement from '@/components/inventory/InventoryManagement';
+import SupplierInventoryView from '@/components/inventory/SupplierInventoryView';
+import ProductStockManagement from '@/components/inventory/ProductStockManagement';
+import InventoryDetailView from '@/components/inventory/InventoryDetailView';
+import { SectionQuickLinks } from '@/components/layout/SectionQuickLinks';
+import { usePathname } from 'next/navigation';
 
 export default function InventoryPage() {
-  const [selectedDetailItem, setSelectedDetailItem] = useState<string | null>(null)
-  const pathname = usePathname() || ''
-  const sectionLinks = useMemo(
-    () => findSectionForPath(pathname)?.items ?? [],
-    [pathname],
-  )
+  const [selectedDetailItem, setSelectedDetailItem] = useState<string | null>(null);
+  const pathname = usePathname() || '';
+  const sectionLinks = useMemo(() => findSectionForPath(pathname)?.items ?? [], [pathname]);
 
-  const breadcrumbs = [
-    { label: 'Inventory Management' }
-  ]
+  const breadcrumbs = [{ label: 'Inventory Management' }];
 
   return (
     <AppLayout
@@ -71,29 +66,32 @@ export default function InventoryPage() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="lg:col-span-2 text-center py-12">
-                <h2 className="text-2xl font-bold mb-4">Advanced Inventory Analytics</h2>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="py-12 text-center lg:col-span-2">
+                <h2 className="mb-4 text-2xl font-bold">Advanced Inventory Analytics</h2>
                 <p className="text-muted-foreground mb-6">
-                  Comprehensive analytics with AI-powered insights, demand forecasting, and optimization recommendations
+                  Comprehensive analytics with AI-powered insights, demand forecasting, and
+                  optimization recommendations
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                  <div className="p-6 border rounded-lg">
-                    <h3 className="font-semibold mb-2">AI-Powered Insights</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Machine learning algorithms analyze inventory patterns and provide intelligent recommendations
+                <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border p-6">
+                    <h3 className="mb-2 font-semibold">AI-Powered Insights</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Machine learning algorithms analyze inventory patterns and provide intelligent
+                      recommendations
                     </p>
                   </div>
-                  <div className="p-6 border rounded-lg">
-                    <h3 className="font-semibold mb-2">Demand Forecasting</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="rounded-lg border p-6">
+                    <h3 className="mb-2 font-semibold">Demand Forecasting</h3>
+                    <p className="text-muted-foreground text-sm">
                       Predict future demand based on historical data, seasonality, and market trends
                     </p>
                   </div>
-                  <div className="p-6 border rounded-lg">
-                    <h3 className="font-semibold mb-2">Cost Optimization</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Identify cost-saving opportunities through optimal ordering quantities and supplier selection
+                  <div className="rounded-lg border p-6">
+                    <h3 className="mb-2 font-semibold">Cost Optimization</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Identify cost-saving opportunities through optimal ordering quantities and
+                      supplier selection
                     </p>
                   </div>
                 </div>
@@ -110,5 +108,5 @@ export default function InventoryPage() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }

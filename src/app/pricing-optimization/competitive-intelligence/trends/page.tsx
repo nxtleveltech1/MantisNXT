@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import React, { useState, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   LineChart,
   Line,
@@ -23,93 +23,86 @@ import {
   ResponsiveContainer,
   Area,
   ComposedChart,
-} from 'recharts'
-import {
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Loader2,
-  BarChart3,
-  Activity,
-} from 'lucide-react'
-import { format } from 'date-fns'
+} from 'recharts';
+import { TrendingUp, TrendingDown, Calendar, Loader2, BarChart3, Activity } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface TrendData {
   historical: Array<{
-    date: string
-    averagePrice: number
-    minPrice: number
-    maxPrice: number
-    dataPoints: number
-  }>
+    date: string;
+    averagePrice: number;
+    minPrice: number;
+    maxPrice: number;
+    dataPoints: number;
+  }>;
   forecast: Array<{
-    date: string
-    predictedPrice: number
-    confidence: number
-  }>
+    date: string;
+    predictedPrice: number;
+    confidence: number;
+  }>;
   seasonalPatterns: Array<{
-    period: string
-    averageChange: number
-    frequency: number
-  }>
+    period: string;
+    averageChange: number;
+    frequency: number;
+  }>;
   trends: {
-    slope?: number
-    intercept?: number
-    direction?: 'upward' | 'downward' | 'stable'
-    strength?: 'strong' | 'moderate' | 'weak'
-  }
+    slope?: number;
+    intercept?: number;
+    direction?: 'upward' | 'downward' | 'stable';
+    strength?: 'strong' | 'moderate' | 'weak';
+  };
 }
 
 export default function TrendsPage() {
-  const [productId, setProductId] = useState<string>('')
-  const [forecastDays, setForecastDays] = useState<number>(30)
-  const [trendData, setTrendData] = useState<TrendData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [productId, setProductId] = useState<string>('');
+  const [forecastDays, setForecastDays] = useState<number>(30);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (productId) {
-      fetchTrends()
+      fetchTrends();
     }
-  }, [productId, forecastDays])
+  }, [productId, forecastDays]);
 
   const fetchTrends = async () => {
     if (!productId) {
-      setError('Please select a product')
-      return
+      setError('Please select a product');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const params = new URLSearchParams({
         productId,
         forecastDays: forecastDays.toString(),
-      })
+      });
 
-      const response = await fetch(`/api/v1/pricing-intel/trends?${params}`)
-      const data = await response.json()
+      const response = await fetch(`/api/v1/pricing-intel/trends?${params}`);
+      const data = await response.json();
 
       if (data.error) {
-        setError(data.error.message)
-        setTrendData(null)
+        setError(data.error.message);
+        setTrendData(null);
       } else {
-        setTrendData(data.data)
+        setTrendData(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch trend analysis')
-      setTrendData(null)
+      setError(err instanceof Error ? err.message : 'Failed to fetch trend analysis');
+      setTrendData(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Prepare chart data combining historical and forecast
   const chartData = React.useMemo(() => {
-    if (!trendData) return []
+    if (!trendData) return [];
 
-    const historical = trendData.historical.map((h) => ({
+    const historical = trendData.historical.map(h => ({
       date: h.date,
       dateFormatted: format(new Date(h.date), 'MMM dd'),
       price: h.averagePrice,
@@ -117,18 +110,18 @@ export default function TrendsPage() {
       maxPrice: h.maxPrice,
       type: 'historical' as const,
       confidence: 100,
-    }))
+    }));
 
-    const forecast = trendData.forecast.map((f) => ({
+    const forecast = trendData.forecast.map(f => ({
       date: f.date,
       dateFormatted: format(new Date(f.date), 'MMM dd'),
       price: f.predictedPrice,
       type: 'forecast' as const,
       confidence: f.confidence,
-    }))
+    }));
 
-    return [...historical, ...forecast]
-  }, [trendData])
+    return [...historical, ...forecast];
+  }, [trendData]);
 
   return (
     <AppLayout
@@ -159,7 +152,7 @@ export default function TrendsPage() {
             <CardDescription>Select product and forecast period</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex flex-wrap gap-4">
               <Select value={productId} onValueChange={setProductId}>
                 <SelectTrigger className="w-[300px]">
                   <SelectValue placeholder="Select product..." />
@@ -173,7 +166,7 @@ export default function TrendsPage() {
 
               <Select
                 value={forecastDays.toString()}
-                onValueChange={(v) => setForecastDays(parseInt(v, 10))}
+                onValueChange={v => setForecastDays(parseInt(v, 10))}
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue />
@@ -203,7 +196,7 @@ export default function TrendsPage() {
         {error && (
           <Card className="border-destructive">
             <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-destructive">
+              <div className="text-destructive flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
                 <span>{error}</span>
               </div>
@@ -240,22 +233,22 @@ export default function TrendsPage() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Historical Data Points</CardTitle>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground h-4 w-4" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{trendData.historical.length}</div>
-                    <p className="text-xs text-muted-foreground">Days analyzed</p>
+                    <p className="text-muted-foreground text-xs">Days analyzed</p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Seasonal Patterns</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <BarChart3 className="text-muted-foreground h-4 w-4" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{trendData.seasonalPatterns.length}</div>
-                    <p className="text-xs text-muted-foreground">Patterns detected</p>
+                    <p className="text-muted-foreground text-xs">Patterns detected</p>
                   </CardContent>
                 </Card>
               </div>
@@ -283,14 +276,14 @@ export default function TrendsPage() {
                       />
                       <YAxis
                         tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `$${value.toFixed(2)}`}
+                        tickFormatter={value => `$${value.toFixed(2)}`}
                       />
                       <Tooltip
                         formatter={(value: number, name: string) => [
                           `$${value?.toFixed(2) || 'N/A'}`,
                           name,
                         ]}
-                        labelFormatter={(label) => format(new Date(label), 'PPP')}
+                        labelFormatter={label => format(new Date(label), 'PPP')}
                       />
                       <Legend />
                       {/* Historical data area */}
@@ -319,7 +312,7 @@ export default function TrendsPage() {
                         dot={{ r: 4 }}
                         name="Historical Average"
                         connectNulls
-                        strokeDasharray={chartData.some((d) => d.type === 'forecast') ? '0' : '0'}
+                        strokeDasharray={chartData.some(d => d.type === 'forecast') ? '0' : '0'}
                       />
                       {/* Forecast line */}
                       {trendData.forecast.length > 0 && (
@@ -332,7 +325,7 @@ export default function TrendsPage() {
                           dot={{ r: 3, fill: '#10b981' }}
                           name="Forecast"
                           connectNulls
-                          data={chartData.filter((d) => d.type === 'forecast')}
+                          data={chartData.filter(d => d.type === 'forecast')}
                         />
                       )}
                     </ComposedChart>
@@ -346,20 +339,18 @@ export default function TrendsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Seasonal Pricing Patterns</CardTitle>
-                  <CardDescription>
-                    Detected monthly patterns in historical pricing
-                  </CardDescription>
+                  <CardDescription>Detected monthly patterns in historical pricing</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-3">
                     {trendData.seasonalPatterns.map((pattern, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                        className="flex items-center justify-between rounded-lg border p-4"
                       >
                         <div>
                           <div className="font-medium">{pattern.period}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             {pattern.frequency} observations
                           </div>
                         </div>
@@ -393,17 +384,17 @@ export default function TrendsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="max-h-[400px] space-y-2 overflow-y-auto">
                     {trendData.forecast.slice(0, 14).map((forecast, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <div>
                           <div className="font-medium">
                             {format(new Date(forecast.date), 'PPP')}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Confidence: {forecast.confidence}%
                           </div>
                         </div>
@@ -422,11 +413,5 @@ export default function TrendsPage() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }
-
-
-
-
-
-

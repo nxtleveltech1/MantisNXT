@@ -8,9 +8,9 @@
  * @author AS Team (Auth & Security)
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
 
 // ============================================================================
 // API HANDLER
@@ -19,12 +19,12 @@ import { neonAuthService } from '@/lib/auth/neon-auth-service'
 export async function GET(request: NextRequest) {
   try {
     // Get session token from cookie or Authorization header
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -33,24 +33,24 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'UNAUTHORIZED',
-          message: 'Authentication required'
+          message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
         {
           success: false,
           error: 'INVALID_SESSION',
-          message: 'Invalid or expired session'
+          message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Return user information
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
             id: r.id,
             name: r.name,
             slug: r.slug,
-            level: r.level
+            level: r.level,
           })),
           permissions: user.permissions.map(p => p.name),
 
@@ -93,23 +93,22 @@ export async function GET(request: NextRequest) {
           lastActivityAt: user.lastActivityAt,
 
           // Preferences
-          preferences: user.preferences
-        }
+          preferences: user.preferences,
+        },
       },
       { status: 200 }
-    )
-
+    );
   } catch (error) {
-    console.error('Get current user API error:', error)
+    console.error('Get current user API error:', error);
 
     return NextResponse.json(
       {
         success: false,
         error: 'SERVER_ERROR',
-        message: 'An unexpected error occurred'
+        message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -117,5 +116,5 @@ export async function GET(request: NextRequest) {
 // API METADATA
 // ============================================================================
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

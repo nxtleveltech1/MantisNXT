@@ -2,9 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type {
-  ColumnDef,
-  SortingState} from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
@@ -36,12 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Customer {
   id: string;
@@ -98,13 +91,12 @@ export function CustomerTable({
       churned: { color: 'bg-red-100 text-red-800', label: 'Churned' },
     };
 
-    const { color, label } = config[status] || { color: 'bg-gray-100 text-gray-800', label: status };
+    const { color, label } = config[status] || {
+      color: 'bg-gray-100 text-gray-800',
+      label: status,
+    };
 
-    return (
-      <Badge className={`${color} font-medium`}>
-        {label}
-      </Badge>
-    );
+    return <Badge className={`${color} font-medium`}>{label}</Badge>;
   };
 
   // Segment badge configuration
@@ -119,13 +111,12 @@ export function CustomerTable({
       enterprise: { color: 'bg-purple-100 text-purple-800', label: 'Enterprise' },
     };
 
-    const { color, label } = config[segment] || { color: 'bg-gray-100 text-gray-800', label: segment };
+    const { color, label } = config[segment] || {
+      color: 'bg-gray-100 text-gray-800',
+      label: segment,
+    };
 
-    return (
-      <Badge className={`${color} font-medium`}>
-        {label}
-      </Badge>
-    );
+    return <Badge className={`${color} font-medium`}>{label}</Badge>;
   };
 
   // Lifetime value with color coding
@@ -152,7 +143,7 @@ export function CustomerTable({
     }
 
     return (
-      <span className={`text-sm ${colorClass} ${bgClass} px-2 py-1 rounded`}>
+      <span className={`text-sm ${colorClass} ${bgClass} rounded px-2 py-1`}>
         {new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
@@ -181,9 +172,7 @@ export function CustomerTable({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="text-sm text-gray-700 cursor-help">
-              {relativeTime}
-            </span>
+            <span className="cursor-help text-sm text-gray-700">{relativeTime}</span>
           </TooltipTrigger>
           <TooltipContent>
             <p>{absoluteDate}</p>
@@ -202,7 +191,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Name
             {column.getIsSorted() === 'asc' ? (
@@ -214,9 +203,7 @@ export function CustomerTable({
             )}
           </button>
         ),
-        cell: ({ row }) => (
-          <div className="font-medium text-gray-900">{row.original.name}</div>
-        ),
+        cell: ({ row }) => <div className="font-medium text-gray-900">{row.original.name}</div>,
       },
       {
         id: 'email',
@@ -224,7 +211,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Email
             {column.getIsSorted() === 'asc' ? (
@@ -258,7 +245,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Company
             {column.getIsSorted() === 'asc' ? (
@@ -282,7 +269,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Segment
             {column.getIsSorted() === 'asc' ? (
@@ -302,7 +289,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Status
             {column.getIsSorted() === 'asc' ? (
@@ -322,7 +309,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Lifetime Value
             {column.getIsSorted() === 'asc' ? (
@@ -342,7 +329,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Acquired
             {column.getIsSorted() === 'asc' ? (
@@ -362,7 +349,7 @@ export function CustomerTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-2 hover:text-gray-900 font-semibold"
+            className="flex items-center gap-2 font-semibold hover:text-gray-900"
           >
             Last Interaction
             {column.getIsSorted() === 'asc' ? (
@@ -409,7 +396,7 @@ export function CustomerTable({
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 router.push(`/customers/${row.original.id}`);
               }}
@@ -420,7 +407,7 @@ export function CustomerTable({
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 router.push(`/customers/${row.original.id}/edit`);
               }}
@@ -433,7 +420,7 @@ export function CustomerTable({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
                   className="h-8 w-8 p-0"
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -441,18 +428,18 @@ export function CustomerTable({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     if (row.original.email) {
                       window.location.href = `mailto:${row.original.email}`;
                     }
                   }}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
+                  <Mail className="mr-2 h-4 w-4" />
                   Send Email
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     if (confirm(`Are you sure you want to delete ${row.original.name}?`)) {
                       onDeleteCustomer(row.original.id);
@@ -460,7 +447,7 @@ export function CustomerTable({
                   }}
                   className="text-red-600"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -502,16 +489,16 @@ export function CustomerTable({
   }, [pageSize, table]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="border-b border-gray-200 bg-gray-50">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
                   >
                     {header.isPlaceholder
                       ? null
@@ -521,7 +508,7 @@ export function CustomerTable({
               </tr>
             ))}
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 bg-white">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
@@ -536,7 +523,7 @@ export function CustomerTable({
                 <tr
                   key={row.id}
                   onClick={() => router.push(`/customers/${row.original.id}`)}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="cursor-pointer transition-colors hover:bg-gray-50"
                 >
                   {row.getVisibleCells().map(cell => (
                     <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
@@ -551,7 +538,7 @@ export function CustomerTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+      <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-700">
             Showing {table.getState().pagination.pageIndex * pageSize + 1} to{' '}
@@ -560,8 +547,8 @@ export function CustomerTable({
           </span>
           <select
             value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={e => setPageSize(Number(e.target.value))}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
           >
             <option value={10}>10 per page</option>
             <option value={25}>25 per page</option>

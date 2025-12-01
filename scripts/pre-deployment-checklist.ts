@@ -62,18 +62,9 @@ class PreDeploymentChecklist {
   private async checkEnvironmentVariables(): Promise<void> {
     console.log('\n📋 Checking Environment Variables...');
 
-    const required = [
-      'DATABASE_URL',
-      'NEXTAUTH_SECRET',
-      'NEXTAUTH_URL',
-      'JWT_SECRET',
-    ];
+    const required = ['DATABASE_URL', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL', 'JWT_SECRET'];
 
-    const optional = [
-      'ANTHROPIC_API_KEY',
-      'OPENAI_API_KEY',
-      'VERCEL_TOKEN',
-    ];
+    const optional = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'VERCEL_TOKEN'];
 
     // Check required variables
     const missing = required.filter(key => !process.env[key]);
@@ -151,7 +142,6 @@ class PreDeploymentChecklist {
         message: 'PostgreSQL version validated',
         details: { version },
       });
-
     } catch (error) {
       this.addResult({
         name: 'Database Connection',
@@ -250,7 +240,6 @@ class PreDeploymentChecklist {
           message: 'No blocked queries',
         });
       }
-
     } catch (error) {
       this.addResult({
         name: 'Database Health',
@@ -278,7 +267,9 @@ class PreDeploymentChecklist {
         return;
       }
 
-      const files = execSync(`ls -1 "${migrationsPath}"/*.sql 2>/dev/null || echo ""`, { encoding: 'utf-8' })
+      const files = execSync(`ls -1 "${migrationsPath}"/*.sql 2>/dev/null || echo ""`, {
+        encoding: 'utf-8',
+      })
         .split('\n')
         .filter(f => f.trim() && !f.includes('ROLLBACK'));
 
@@ -316,7 +307,6 @@ class PreDeploymentChecklist {
           });
         }
       }
-
     } catch (error) {
       this.addResult({
         name: 'Migration Files',
@@ -360,7 +350,6 @@ class PreDeploymentChecklist {
         status: 'passed',
         message: 'Build completed successfully',
       });
-
     } catch (error) {
       this.addResult({
         name: 'Build',
@@ -423,7 +412,6 @@ class PreDeploymentChecklist {
           message: 'Coverage report not found',
         });
       }
-
     } catch (error) {
       this.addResult({
         name: 'Test Coverage',
@@ -469,7 +457,6 @@ class PreDeploymentChecklist {
           message: 'No vulnerabilities found',
         });
       }
-
     } catch (error) {
       // npm audit exits with non-zero if vulnerabilities found
       this.addResult({
@@ -499,7 +486,6 @@ class PreDeploymentChecklist {
       await this.checkBuild();
       await this.checkTestCoverage();
       await this.checkSecurity();
-
     } finally {
       if (this.pool) {
         await this.pool.end();
@@ -564,11 +550,12 @@ if (require.main === module) {
   const config = parseArgs();
   const checklist = new PreDeploymentChecklist(config);
 
-  checklist.run()
-    .then((success) => {
+  checklist
+    .run()
+    .then(success => {
       process.exit(success ? 0 : 1);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Fatal error:', error);
       process.exit(1);
     });

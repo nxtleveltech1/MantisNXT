@@ -58,18 +58,26 @@ export const conversationTurnSchema = z.object({
   timestamp: z.date().default(() => new Date()),
   metadata: z.record(z.unknown()).default({}),
   // For tool calls
-  toolCalls: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    arguments: z.record(z.unknown()),
-  })).optional(),
+  toolCalls: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        arguments: z.record(z.unknown()),
+      })
+    )
+    .optional(),
   // For tool results
-  toolResults: z.array(z.object({
-    toolCallId: z.string(),
-    result: z.unknown(),
-    success: z.boolean(),
-    executionTimeMs: z.number().int().min(0),
-  })).optional(),
+  toolResults: z
+    .array(
+      z.object({
+        toolCallId: z.string(),
+        result: z.unknown(),
+        success: z.boolean(),
+        executionTimeMs: z.number().int().min(0),
+      })
+    )
+    .optional(),
 });
 
 export type ConversationTurn = z.infer<typeof conversationTurnSchema>;
@@ -80,13 +88,15 @@ export const orchestratorRequestSchema = z.object({
   message: z.string().min(1),
   conversationHistory: z.array(conversationTurnSchema).default([]),
   context: z.record(z.unknown()).default({}),
-  options: z.object({
-    stream: z.boolean().default(false),
-    timeout: z.number().int().min(1000).max(300000).optional(),
-    maxTokens: z.number().int().min(1).max(100000).optional(),
-    temperature: z.number().min(0).max(2).optional(),
-    tools: z.array(z.string()).default([]), // Tool names to enable
-  }).default({}),
+  options: z
+    .object({
+      stream: z.boolean().default(false),
+      timeout: z.number().int().min(1000).max(300000).optional(),
+      maxTokens: z.number().int().min(1).max(100000).optional(),
+      temperature: z.number().min(0).max(2).optional(),
+      tools: z.array(z.string()).default([]), // Tool names to enable
+    })
+    .default({}),
 });
 
 export type OrchestratorRequest = z.infer<typeof orchestratorRequestSchema>;
@@ -99,11 +109,13 @@ export const toolCallWithResultSchema = z.object({
   result: z.unknown().optional(),
   success: z.boolean().optional(),
   executionTimeMs: z.number().int().min(0).optional(),
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.unknown().optional(),
-  }).optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+      details: z.unknown().optional(),
+    })
+    .optional(),
 });
 
 export type ToolCallWithResult = z.infer<typeof toolCallWithResultSchema>;
@@ -113,11 +125,15 @@ export const orchestratorResponseSchema = z.object({
   sessionId: z.string().uuid(),
   content: z.string(),
   toolCalls: z.array(toolCallWithResultSchema).default([]),
-  citations: z.array(z.object({
-    source: z.string(),
-    text: z.string(),
-    confidence: z.number().min(0).max(1).optional(),
-  })).default([]),
+  citations: z
+    .array(
+      z.object({
+        source: z.string(),
+        text: z.string(),
+        confidence: z.number().min(0).max(1).optional(),
+      })
+    )
+    .default([]),
   usage: z.object({
     promptTokens: z.number().int().min(0).optional(),
     completionTokens: z.number().int().min(0).optional(),
@@ -141,10 +157,12 @@ export const planStepSchema = z.object({
   dependencies: z.array(z.string()).default([]), // IDs of steps this depends on
   estimatedDurationMs: z.number().int().min(0).optional(),
   priority: z.number().int().min(1).max(10).default(5),
-  retryPolicy: z.object({
-    maxRetries: z.number().int().min(0).max(5).default(0),
-    backoffMs: z.number().int().min(0).default(1000),
-  }).default({}),
+  retryPolicy: z
+    .object({
+      maxRetries: z.number().int().min(0).max(5).default(0),
+      backoffMs: z.number().int().min(0).default(1000),
+    })
+    .default({}),
 });
 
 export type PlanStep = z.infer<typeof planStepSchema>;
@@ -167,26 +185,34 @@ export type ExecutionPlan = z.infer<typeof executionPlanSchema>;
 export const planExecutionResultSchema = z.object({
   planId: z.string().uuid(),
   success: z.boolean(),
-  completedSteps: z.array(z.object({
-    stepId: z.string(),
-    success: z.boolean(),
-    result: z.unknown().optional(),
-    executionTimeMs: z.number().int().min(0),
-    error: z.object({
-      code: z.string(),
-      message: z.string(),
-      details: z.unknown().optional(),
-    }).optional(),
-  })),
-  failedSteps: z.array(z.object({
-    stepId: z.string(),
-    error: z.object({
-      code: z.string(),
-      message: z.string(),
-      details: z.unknown().optional(),
-    }),
-    retryCount: z.number().int().min(0),
-  })).default([]),
+  completedSteps: z.array(
+    z.object({
+      stepId: z.string(),
+      success: z.boolean(),
+      result: z.unknown().optional(),
+      executionTimeMs: z.number().int().min(0),
+      error: z
+        .object({
+          code: z.string(),
+          message: z.string(),
+          details: z.unknown().optional(),
+        })
+        .optional(),
+    })
+  ),
+  failedSteps: z
+    .array(
+      z.object({
+        stepId: z.string(),
+        error: z.object({
+          code: z.string(),
+          message: z.string(),
+          details: z.unknown().optional(),
+        }),
+        retryCount: z.number().int().min(0),
+      })
+    )
+    .default([]),
   totalExecutionTimeMs: z.number().int().min(0),
   rollbackExecuted: z.boolean().default(false),
 });
@@ -243,29 +269,31 @@ export const intentAnalysisSchema = z.object({
 export type IntentAnalysis = z.infer<typeof intentAnalysisSchema>;
 
 // Recovery Action Types
-export const recoveryActionSchema = z.enum([
-  'retry',
-  'skip',
-  'rollback',
-  'escalate',
-  'abort',
-]);
+export const recoveryActionSchema = z.enum(['retry', 'skip', 'rollback', 'escalate', 'abort']);
 
 export type RecoveryAction = z.infer<typeof recoveryActionSchema>;
 
 // Validation Result
 export const validationResultSchema = z.object({
   isValid: z.boolean(),
-  errors: z.array(z.object({
-    field: z.string(),
-    code: z.string(),
-    message: z.string(),
-  })).default([]),
-  warnings: z.array(z.object({
-    field: z.string(),
-    code: z.string(),
-    message: z.string(),
-  })).default([]),
+  errors: z
+    .array(
+      z.object({
+        field: z.string(),
+        code: z.string(),
+        message: z.string(),
+      })
+    )
+    .default([]),
+  warnings: z
+    .array(
+      z.object({
+        field: z.string(),
+        code: z.string(),
+        message: z.string(),
+      })
+    )
+    .default([]),
 });
 
 export type ValidationResult = z.infer<typeof validationResultSchema>;
@@ -298,33 +326,23 @@ export class OrchestratorError extends Error {
 
 export class OrchestratorTimeoutError extends OrchestratorError {
   constructor(timeoutMs: number) {
-    super(
-      `Orchestrator operation timed out after ${timeoutMs}ms`,
-      'TIMEOUT',
-      { timeoutMs }
-    );
+    super(`Orchestrator operation timed out after ${timeoutMs}ms`, 'TIMEOUT', { timeoutMs });
     this.name = 'OrchestratorTimeoutError';
   }
 }
 
 export class OrchestratorValidationError extends OrchestratorError {
   constructor(validationErrors: z.ZodError) {
-    super(
-      `Orchestrator validation failed: ${validationErrors.message}`,
-      'VALIDATION_ERROR',
-      { validationErrors: validationErrors.errors }
-    );
+    super(`Orchestrator validation failed: ${validationErrors.message}`, 'VALIDATION_ERROR', {
+      validationErrors: validationErrors.errors,
+    });
     this.name = 'OrchestratorValidationError';
   }
 }
 
 export class OrchestratorProviderError extends OrchestratorError {
   constructor(providerId: string, originalError: unknown) {
-    super(
-      `Provider ${providerId} failed`,
-      'PROVIDER_ERROR',
-      { providerId, originalError }
-    );
+    super(`Provider ${providerId} failed`, 'PROVIDER_ERROR', { providerId, originalError });
     this.name = 'OrchestratorProviderError';
   }
 }

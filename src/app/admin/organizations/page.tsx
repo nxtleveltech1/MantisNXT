@@ -1,14 +1,26 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Building2,
   Users,
@@ -26,27 +38,27 @@ import {
   MapPin,
   Activity,
   TrendingUp,
-  DollarSign
-} from "lucide-react"
+  DollarSign,
+} from 'lucide-react';
 
 interface Organization {
-  id: string
-  name: string
-  domain: string
-  logo?: string
-  tier: 'starter' | 'professional' | 'enterprise'
-  status: 'active' | 'inactive' | 'suspended'
-  createdAt: string
-  userCount: number
-  maxUsers: number
-  storageUsed: number
-  storageLimit: number
-  monthlySpend: number
-  contactEmail: string
-  contactPhone: string
-  address: string
-  primaryContact: string
-  features: string[]
+  id: string;
+  name: string;
+  domain: string;
+  logo?: string;
+  tier: 'starter' | 'professional' | 'enterprise';
+  status: 'active' | 'inactive' | 'suspended';
+  createdAt: string;
+  userCount: number;
+  maxUsers: number;
+  storageUsed: number;
+  storageLimit: number;
+  monthlySpend: number;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  primaryContact: string;
+  features: string[];
 }
 
 export default function OrganizationsPage() {
@@ -68,7 +80,7 @@ export default function OrganizationsPage() {
       contactPhone: '+27 11 123 4567',
       address: '123 Business Park, Johannesburg',
       primaryContact: 'John Smith',
-      features: ['api_access', 'advanced_analytics', 'priority_support', 'custom_integrations']
+      features: ['api_access', 'advanced_analytics', 'priority_support', 'custom_integrations'],
     },
     {
       id: '2',
@@ -86,7 +98,7 @@ export default function OrganizationsPage() {
       contactPhone: '+27 21 456 7890',
       address: '456 Innovation Hub, Cape Town',
       primaryContact: 'Sarah Johnson',
-      features: ['api_access', 'standard_analytics', 'email_support']
+      features: ['api_access', 'standard_analytics', 'email_support'],
     },
     {
       id: '3',
@@ -104,7 +116,7 @@ export default function OrganizationsPage() {
       contactPhone: '+27 31 789 0123',
       address: '789 Main Street, Durban',
       primaryContact: 'Mike Wilson',
-      features: ['basic_analytics', 'email_support']
+      features: ['basic_analytics', 'email_support'],
     },
     {
       id: '4',
@@ -122,82 +134,83 @@ export default function OrganizationsPage() {
       contactPhone: '+27 11 234 5678',
       address: '321 Inactive Street, Pretoria',
       primaryContact: 'Jane Doe',
-      features: ['api_access', 'standard_analytics']
-    }
-  ])
+      features: ['api_access', 'standard_analytics'],
+    },
+  ]);
 
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [filterTier, setFilterTier] = useState<string>("all")
-  const [isNewOrgDialogOpen, setIsNewOrgDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterTier, setFilterTier] = useState<string>('all');
+  const [isNewOrgDialogOpen, setIsNewOrgDialogOpen] = useState(false);
 
   const filteredOrganizations = organizations.filter(org => {
-    const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         org.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         org.contactEmail.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === "all" || org.status === filterStatus
-    const matchesTier = filterTier === "all" || org.tier === filterTier
+    const matchesSearch =
+      org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.contactEmail.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || org.status === filterStatus;
+    const matchesTier = filterTier === 'all' || org.tier === filterTier;
 
-    return matchesSearch && matchesStatus && matchesTier
-  })
+    return matchesSearch && matchesStatus && matchesTier;
+  });
 
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'enterprise':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-purple-100 text-purple-800';
       case 'professional':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       case 'starter':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'inactive':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
       case 'suspended':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case 'enterprise':
-        return <Crown className="h-4 w-4" />
+        return <Crown className="h-4 w-4" />;
       case 'professional':
-        return <Shield className="h-4 w-4" />
+        return <Shield className="h-4 w-4" />;
       default:
-        return <Users className="h-4 w-4" />
+        return <Users className="h-4 w-4" />;
     }
-  }
+  };
 
   const suspendOrganization = (orgId: string) => {
-    setOrganizations(prev => prev.map(org =>
-      org.id === orgId ? { ...org, status: 'suspended' as const } : org
-    ))
-  }
+    setOrganizations(prev =>
+      prev.map(org => (org.id === orgId ? { ...org, status: 'suspended' as const } : org))
+    );
+  };
 
   const activateOrganization = (orgId: string) => {
-    setOrganizations(prev => prev.map(org =>
-      org.id === orgId ? { ...org, status: 'active' as const } : org
-    ))
-  }
+    setOrganizations(prev =>
+      prev.map(org => (org.id === orgId ? { ...org, status: 'active' as const } : org))
+    );
+  };
 
   const deleteOrganization = (orgId: string) => {
-    setOrganizations(prev => prev.filter(org => org.id !== orgId))
-  }
+    setOrganizations(prev => prev.filter(org => org.id !== orgId));
+  };
 
-  const totalOrganizations = organizations.length
-  const activeOrganizations = organizations.filter(org => org.status === 'active').length
-  const totalUsers = organizations.reduce((sum, org) => sum + org.userCount, 0)
-  const totalRevenue = organizations.reduce((sum, org) => sum + org.monthlySpend, 0)
+  const totalOrganizations = organizations.length;
+  const activeOrganizations = organizations.filter(org => org.status === 'active').length;
+  const totalUsers = organizations.reduce((sum, org) => sum + org.userCount, 0);
+  const totalRevenue = organizations.reduce((sum, org) => sum + org.monthlySpend, 0);
 
   return (
     <div className="space-y-6">
@@ -205,14 +218,14 @@ export default function OrganizationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Organization Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             Manage multi-tenant organizations and their settings
           </p>
         </div>
         <Dialog open={isNewOrgDialogOpen} onOpenChange={setIsNewOrgDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Organization
             </Button>
           </DialogTrigger>
@@ -258,7 +271,7 @@ export default function OrganizationsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -308,13 +321,13 @@ export default function OrganizationsPage() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-4 md:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Search organizations..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -346,11 +359,11 @@ export default function OrganizationsPage() {
 
       {/* Organizations List */}
       <div className="space-y-4">
-        {filteredOrganizations.map((org) => (
+        {filteredOrganizations.map(org => (
           <Card key={org.id}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
+                <div className="flex flex-1 items-start gap-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={org.logo} alt={org.name} />
                     <AvatarFallback>
@@ -359,7 +372,7 @@ export default function OrganizationsPage() {
                   </Avatar>
 
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                       <h3 className="text-lg font-semibold">{org.name}</h3>
                       <Badge className={getTierColor(org.tier)} variant="secondary">
                         {getTierIcon(org.tier)}
@@ -370,47 +383,51 @@ export default function OrganizationsPage() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 lg:grid-cols-4">
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <Globe className="h-3 w-3" />
                           Domain
                         </p>
                         <p className="font-medium">{org.domain}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <Users className="h-3 w-3" />
                           Users
                         </p>
-                        <p className="font-medium">{org.userCount} / {org.maxUsers}</p>
+                        <p className="font-medium">
+                          {org.userCount} / {org.maxUsers}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <TrendingUp className="h-3 w-3" />
                           Monthly Spend
                         </p>
                         <p className="font-medium">R{org.monthlySpend.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <Calendar className="h-3 w-3" />
                           Created
                         </p>
-                        <p className="font-medium">{new Date(org.createdAt).toLocaleDateString()}</p>
+                        <p className="font-medium">
+                          {new Date(org.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="mt-3 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <Mail className="h-3 w-3" />
                           Contact
                         </p>
                         <p className="font-medium">{org.contactEmail}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 flex items-center gap-1">
+                        <p className="flex items-center gap-1 text-gray-500">
                           <MapPin className="h-3 w-3" />
                           Location
                         </p>
@@ -420,13 +437,15 @@ export default function OrganizationsPage() {
 
                     {/* Storage Usage */}
                     <div className="mt-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
+                      <div className="mb-1 flex items-center justify-between text-sm">
                         <span className="text-gray-500">Storage Usage</span>
-                        <span>{org.storageUsed} GB / {org.storageLimit} GB</span>
+                        <span>
+                          {org.storageUsed} GB / {org.storageLimit} GB
+                        </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className="h-2 rounded-full bg-blue-600"
                           style={{ width: `${(org.storageUsed / org.storageLimit) * 100}%` }}
                         ></div>
                       </div>
@@ -434,9 +453,9 @@ export default function OrganizationsPage() {
 
                     {/* Features */}
                     <div className="mt-3">
-                      <p className="text-gray-500 text-sm mb-2">Features</p>
+                      <p className="mb-2 text-sm text-gray-500">Features</p>
                       <div className="flex flex-wrap gap-1">
-                        {org.features.map((feature) => (
+                        {org.features.map(feature => (
                           <Badge key={feature} variant="outline" className="text-xs">
                             {feature.replace('_', ' ')}
                           </Badge>
@@ -462,11 +481,7 @@ export default function OrganizationsPage() {
                     </a>
                   </Button>
                   {org.status === 'active' ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => suspendOrganization(org.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => suspendOrganization(org.id)}>
                       Suspend
                     </Button>
                   ) : org.status === 'suspended' ? (
@@ -478,11 +493,7 @@ export default function OrganizationsPage() {
                       Activate
                     </Button>
                   ) : null}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteOrganization(org.id)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => deleteOrganization(org.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -494,18 +505,17 @@ export default function OrganizationsPage() {
 
       {filteredOrganizations.length === 0 && (
         <Card>
-          <CardContent className="text-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm || filterStatus !== "all" || filterTier !== "all"
-                ? "Try adjusting your search or filters"
-                : "Get started by adding your first organization"
-              }
+          <CardContent className="py-12 text-center">
+            <Building2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900">No organizations found</h3>
+            <p className="mb-4 text-gray-500">
+              {searchTerm || filterStatus !== 'all' || filterTier !== 'all'
+                ? 'Try adjusting your search or filters'
+                : 'Get started by adding your first organization'}
             </p>
-            {!searchTerm && filterStatus === "all" && filterTier === "all" && (
+            {!searchTerm && filterStatus === 'all' && filterTier === 'all' && (
               <Button onClick={() => setIsNewOrgDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Organization
               </Button>
             )}
@@ -513,5 +523,5 @@ export default function OrganizationsPage() {
         </Card>
       )}
     </div>
-  )
+  );
 }

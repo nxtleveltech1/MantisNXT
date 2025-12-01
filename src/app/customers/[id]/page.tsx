@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
   User,
   Mail,
@@ -20,14 +20,14 @@ import {
   DollarSign,
   Activity,
   Tag,
-} from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatDateTime } from "@/lib/utils";
+} from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { formatDate, formatDateTime } from '@/lib/utils';
 
 interface Customer {
   id: string;
@@ -87,7 +87,7 @@ export default function CustomerDetailsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const rawId = params && 'id' in params ? params.id : undefined;
-  const customerId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
+  const customerId = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loyalty, setLoyalty] = useState<CustomerLoyalty | null>(null);
@@ -118,7 +118,9 @@ export default function CustomerDetailsPage() {
         setLoyalty(loyaltyData.data);
       }
 
-      const transactionsResponse = await fetch(`/api/v1/customers/${customerId}/loyalty/transactions`);
+      const transactionsResponse = await fetch(
+        `/api/v1/customers/${customerId}/loyalty/transactions`
+      );
       const transactionsData = await transactionsResponse.json();
 
       if (transactionsData.success) {
@@ -127,9 +129,9 @@ export default function CustomerDetailsPage() {
     } catch (error) {
       console.error('Error fetching customer details:', error);
       toast({
-        title: "Error",
-        description: "Failed to load customer details",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load customer details',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -150,8 +152,8 @@ export default function CustomerDetailsPage() {
 
       if (data.success) {
         toast({
-          title: "Customer Deleted",
-          description: "Customer has been deleted successfully",
+          title: 'Customer Deleted',
+          description: 'Customer has been deleted successfully',
         });
         router.push('/customers');
       } else {
@@ -159,9 +161,9 @@ export default function CustomerDetailsPage() {
       }
     } catch (error: unknown) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete customer",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to delete customer',
+        variant: 'destructive',
       });
     }
   };
@@ -210,8 +212,6 @@ export default function CustomerDetailsPage() {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-
-
   const formatCurrency = (value: number | null) => {
     if (value === null || value === undefined) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -230,13 +230,10 @@ export default function CustomerDetailsPage() {
     return (
       <AppLayout
         title="Customer Details"
-        breadcrumbs={[
-          { label: "Customers", href: "/customers" },
-          { label: "Details" },
-        ]}
+        breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Details' }]}
       >
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
         </div>
       </AppLayout>
     );
@@ -246,12 +243,9 @@ export default function CustomerDetailsPage() {
     return (
       <AppLayout
         title="Customer Details"
-        breadcrumbs={[
-          { label: "Customers", href: "/customers" },
-          { label: "Details" },
-        ]}
+        breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Details' }]}
       >
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="flex h-64 flex-col items-center justify-center gap-4">
           <p className="text-muted-foreground">Customer not found</p>
           <Button onClick={() => router.push('/customers')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -265,23 +259,16 @@ export default function CustomerDetailsPage() {
   return (
     <AppLayout
       title={customer.name}
-      breadcrumbs={[
-        { label: "Customers", href: "/customers" },
-        { label: customer.name },
-      ]}
+      breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: customer.name }]}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/customers')}
-            >
+            <Button variant="outline" size="sm" onClick={() => router.push('/customers')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
                 <User className="h-6 w-6" />
               </div>
               <div className="flex gap-2">
@@ -289,26 +276,18 @@ export default function CustomerDetailsPage() {
                   {customer.status || 'Unknown'}
                 </Badge>
                 {customer.segment && (
-                  <Badge className={getSegmentColor(customer.segment)}>
-                    {customer.segment}
-                  </Badge>
+                  <Badge className={getSegmentColor(customer.segment)}>{customer.segment}</Badge>
                 )}
               </div>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/customers/${customerId}/edit`)}
-            >
+            <Button variant="outline" onClick={() => router.push(`/customers/${customerId}/edit`)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteCustomer}
-            >
+            <Button variant="destructive" onClick={handleDeleteCustomer}>
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
@@ -319,7 +298,7 @@ export default function CustomerDetailsPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Lifetime Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{formatCurrency(customer.lifetime_value)}</div>
@@ -329,7 +308,7 @@ export default function CustomerDetailsPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Loyalty Points</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
+              <Award className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{formatNumber(loyalty?.points_balance)}</div>
@@ -344,7 +323,7 @@ export default function CustomerDetailsPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Referrals</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{loyalty?.referral_count || 0}</div>
@@ -354,10 +333,12 @@ export default function CustomerDetailsPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Last Interaction</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-sm font-medium">{formatDate(customer.last_interaction_date)}</div>
+              <div className="text-sm font-medium">
+                {formatDate(customer.last_interaction_date)}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -374,33 +355,35 @@ export default function CustomerDetailsPage() {
             <Card className="border-border">
               <CardHeader>
                 <CardTitle>Contact Information</CardTitle>
-                <CardDescription>Customer contact details and communication preferences</CardDescription>
+                <CardDescription>
+                  Customer contact details and communication preferences
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <Mail className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Email</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{customer.email || 'N/A'}</p>
+                  <p className="text-muted-foreground text-sm">{customer.email || 'N/A'}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <Phone className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Phone</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{customer.phone || 'N/A'}</p>
+                  <p className="text-muted-foreground text-sm">{customer.phone || 'N/A'}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <Building2 className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Company</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{customer.company || 'N/A'}</p>
+                  <p className="text-muted-foreground text-sm">{customer.company || 'N/A'}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <TrendingUp className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Segment</p>
                   </div>
                   <Badge className={getSegmentColor(customer.segment)}>
@@ -419,9 +402,11 @@ export default function CustomerDetailsPage() {
                 {customer.address ? (
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                      <MapPin className="text-muted-foreground mt-1 h-4 w-4" />
                       <div className="space-y-1">
-                        {customer.address.street && <p className="text-sm">{customer.address.street}</p>}
+                        {customer.address.street && (
+                          <p className="text-sm">{customer.address.street}</p>
+                        )}
                         <p className="text-sm">
                           {[
                             customer.address.city,
@@ -431,12 +416,14 @@ export default function CustomerDetailsPage() {
                             .filter(Boolean)
                             .join(', ')}
                         </p>
-                        {customer.address.country && <p className="text-sm">{customer.address.country}</p>}
+                        {customer.address.country && (
+                          <p className="text-sm">{customer.address.country}</p>
+                        )}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No address on file</p>
+                  <p className="text-muted-foreground text-sm">No address on file</p>
                 )}
               </CardContent>
             </Card>
@@ -449,31 +436,35 @@ export default function CustomerDetailsPage() {
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Acquisition Date</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatDate(customer.acquisition_date)}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {formatDate(customer.acquisition_date)}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <Activity className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Last Interaction</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatDate(customer.last_interaction_date)}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {formatDate(customer.last_interaction_date)}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Created At</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatDate(customer.created_at)}</p>
+                  <p className="text-muted-foreground text-sm">{formatDate(customer.created_at)}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground h-4 w-4" />
                     <p className="text-sm font-medium">Last Updated</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatDate(customer.updated_at)}</p>
+                  <p className="text-muted-foreground text-sm">{formatDate(customer.updated_at)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -508,7 +499,7 @@ export default function CustomerDetailsPage() {
                     {Object.entries(customer.metadata).map(([key, value]) => (
                       <div key={key} className="space-y-1">
                         <p className="text-sm font-medium capitalize">{key.replace(/_/g, ' ')}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                         </p>
                       </div>
@@ -535,12 +526,14 @@ export default function CustomerDetailsPage() {
                           {loyalty.current_tier ? loyalty.current_tier.toUpperCase() : 'NO TIER'}
                         </Badge>
                       </div>
-                      <Award className="h-12 w-12 text-muted-foreground" />
+                      <Award className="text-muted-foreground h-12 w-12" />
                     </div>
                     {loyalty.tier_qualified_date && (
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Qualified Since</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(loyalty.tier_qualified_date)}</p>
+                        <p className="text-muted-foreground text-sm">
+                          {formatDate(loyalty.tier_qualified_date)}
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -580,7 +573,7 @@ export default function CustomerDetailsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-4">
-                      <Users className="h-8 w-8 text-muted-foreground" />
+                      <Users className="text-muted-foreground h-8 w-8" />
                       <div>
                         <p className="text-sm font-medium">Total Referrals</p>
                         <p className="text-2xl font-bold">{loyalty.referral_count}</p>
@@ -593,14 +586,18 @@ export default function CustomerDetailsPage() {
                   <Card className="border-border">
                     <CardHeader>
                       <CardTitle>Loyalty Lifetime Value</CardTitle>
-                      <CardDescription>Total value from loyalty program participation</CardDescription>
+                      <CardDescription>
+                        Total value from loyalty program participation
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-4">
-                        <DollarSign className="h-8 w-8 text-muted-foreground" />
+                        <DollarSign className="text-muted-foreground h-8 w-8" />
                         <div>
                           <p className="text-sm font-medium">Lifetime Value</p>
-                          <p className="text-2xl font-bold">{formatCurrency(loyalty.lifetime_value)}</p>
+                          <p className="text-2xl font-bold">
+                            {formatCurrency(loyalty.lifetime_value)}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -610,9 +607,11 @@ export default function CustomerDetailsPage() {
             ) : (
               <Card className="border-border">
                 <CardContent className="pt-6">
-                  <div className="text-center space-y-2">
-                    <Award className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <p className="text-muted-foreground">This customer is not enrolled in any loyalty program</p>
+                  <div className="space-y-2 text-center">
+                    <Award className="text-muted-foreground mx-auto h-12 w-12" />
+                    <p className="text-muted-foreground">
+                      This customer is not enrolled in any loyalty program
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -632,11 +631,16 @@ export default function CustomerDetailsPage() {
               <CardContent>
                 {transactions.length > 0 ? (
                   <div className="space-y-4">
-                    {transactions.map((transaction) => (
-                      <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
+                    {transactions.map(transaction => (
+                      <div
+                        key={transaction.id}
+                        className="flex items-start justify-between border-b pb-4 last:border-0"
+                      >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <Badge className={getTransactionTypeColor(transaction.transaction_type)}>
+                            <Badge
+                              className={getTransactionTypeColor(transaction.transaction_type)}
+                            >
                               {transaction.transaction_type}
                             </Badge>
                             <span className="text-sm font-medium">
@@ -645,31 +649,37 @@ export default function CustomerDetailsPage() {
                             </span>
                           </div>
                           {transaction.description && (
-                            <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                            <p className="text-muted-foreground text-sm">
+                              {transaction.description}
+                            </p>
                           )}
                           {transaction.reference_type && transaction.reference_id && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               Ref: {transaction.reference_type} #{transaction.reference_id}
                             </p>
                           )}
                           {transaction.expires_at && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               Expires: {formatDate(transaction.expires_at)}
                             </p>
                           )}
                         </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-sm text-muted-foreground">{formatDateTime(transaction.created_at)}</p>
+                        <div className="space-y-1 text-right">
+                          <p className="text-muted-foreground text-sm">
+                            {formatDateTime(transaction.created_at)}
+                          </p>
                           {transaction.created_by && (
-                            <p className="text-xs text-muted-foreground">By: {transaction.created_by}</p>
+                            <p className="text-muted-foreground text-xs">
+                              By: {transaction.created_by}
+                            </p>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 space-y-2">
-                    <History className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <div className="space-y-2 py-8 text-center">
+                    <History className="text-muted-foreground mx-auto h-12 w-12" />
                     <p className="text-muted-foreground">No transactions recorded yet</p>
                   </div>
                 )}
@@ -687,14 +697,14 @@ export default function CustomerDetailsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <DollarSign className="text-muted-foreground h-4 w-4" />
                       <p className="text-sm font-medium">Lifetime Value</p>
                     </div>
                     <p className="text-2xl font-bold">{formatCurrency(customer.lifetime_value)}</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <Activity className="text-muted-foreground h-4 w-4" />
                       <p className="text-sm font-medium">Status</p>
                     </div>
                     <Badge className={getStatusColor(customer.status)}>
@@ -703,7 +713,7 @@ export default function CustomerDetailsPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <TrendingUp className="text-muted-foreground h-4 w-4" />
                       <p className="text-sm font-medium">Segment</p>
                     </div>
                     <Badge className={getSegmentColor(customer.segment)}>
@@ -712,7 +722,7 @@ export default function CustomerDetailsPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Calendar className="text-muted-foreground h-4 w-4" />
                       <p className="text-sm font-medium">Days Since Acquisition</p>
                     </div>
                     <p className="text-2xl font-bold">
@@ -738,7 +748,7 @@ export default function CustomerDetailsPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <Award className="text-muted-foreground h-4 w-4" />
                         <p className="text-sm font-medium">Redemption Rate</p>
                       </div>
                       <p className="text-2xl font-bold">
@@ -749,21 +759,21 @@ export default function CustomerDetailsPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <Users className="text-muted-foreground h-4 w-4" />
                         <p className="text-sm font-medium">Referral Count</p>
                       </div>
                       <p className="text-2xl font-bold">{loyalty.referral_count}</p>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <CreditCard className="text-muted-foreground h-4 w-4" />
                         <p className="text-sm font-medium">Available Points</p>
                       </div>
                       <p className="text-2xl font-bold">{formatNumber(loyalty.points_balance)}</p>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <Award className="text-muted-foreground h-4 w-4" />
                         <p className="text-sm font-medium">Current Tier</p>
                       </div>
                       <Badge className={getTierColor(loyalty.current_tier)}>
@@ -784,7 +794,7 @@ export default function CustomerDetailsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <History className="h-4 w-4 text-muted-foreground" />
+                      <History className="text-muted-foreground h-4 w-4" />
                       <p className="text-sm font-medium">Total Transactions</p>
                     </div>
                     <p className="text-lg font-bold">{transactions.length}</p>
@@ -792,10 +802,10 @@ export default function CustomerDetailsPage() {
                   {transactions.length > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Calendar className="text-muted-foreground h-4 w-4" />
                         <p className="text-sm font-medium">Last Transaction</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {formatDate(transactions[0].created_at)}
                       </p>
                     </div>

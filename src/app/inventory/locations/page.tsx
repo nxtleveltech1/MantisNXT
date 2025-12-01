@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * Inventory Locations Management Page
@@ -9,7 +9,13 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +57,7 @@ export default function LocationsPage() {
 
     if (success) {
       // Refresh the table
-      setRefreshKey((prev) => prev + 1);
+      setRefreshKey(prev => prev + 1);
 
       toast({
         title: editingLocation ? 'Location Updated' : 'Location Created',
@@ -64,7 +70,7 @@ export default function LocationsPage() {
 
   // Handle delete success
   const handleDeleteSuccess = () => {
-    setRefreshKey((prev) => prev + 1);
+    setRefreshKey(prev => prev + 1);
     toast({
       title: 'Location Deleted',
       description: 'Location has been removed successfully',
@@ -77,8 +83,8 @@ export default function LocationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <MapPin className="h-8 w-8 text-primary" />
+            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
+              <MapPin className="text-primary h-8 w-8" />
               Inventory Locations
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -95,8 +101,8 @@ export default function LocationsPage() {
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Locations represent physical or virtual storage areas for inventory. Define internal warehouses,
-            supplier locations for dropshipping, or consignment storage facilities.
+            Locations represent physical or virtual storage areas for inventory. Define internal
+            warehouses, supplier locations for dropshipping, or consignment storage facilities.
           </AlertDescription>
         </Alert>
 
@@ -107,14 +113,14 @@ export default function LocationsPage() {
             <CardDescription>Search and filter locations</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                 <Input
                   placeholder="Search by name or address..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -164,7 +170,11 @@ export default function LocationsPage() {
           <CardContent className="p-0">
             <LocationsTable
               searchQuery={searchQuery}
-              typeFilter={typeFilter === 'all' ? undefined : (typeFilter as 'internal' | 'supplier' | 'consignment')}
+              typeFilter={
+                typeFilter === 'all'
+                  ? undefined
+                  : (typeFilter as 'internal' | 'supplier' | 'consignment')
+              }
               statusFilter={statusFilter === 'all' ? undefined : statusFilter === 'active'}
               refreshKey={refreshKey}
               onEdit={handleEdit}
@@ -175,11 +185,7 @@ export default function LocationsPage() {
       </div>
 
       {/* Create/Edit Dialog */}
-      <LocationDialog
-        open={dialogOpen}
-        location={editingLocation}
-        onClose={handleDialogClose}
-      />
+      <LocationDialog open={dialogOpen} location={editingLocation} onClose={handleDialogClose} />
     </AppLayout>
   );
 }

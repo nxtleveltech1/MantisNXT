@@ -4,11 +4,7 @@
  */
 
 import type { NextRequest } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { cleanupPredictionsSchema } from '@/lib/ai/validation-schemas';
 import { predictionService } from '@/lib/ai/services/prediction-service';
 
@@ -38,7 +34,7 @@ export async function POST(request: NextRequest) {
         offset: 0,
       };
       const result = await predictionService.listPredictions(user.org_id, filters);
-      affectedPredictions = result.predictions.map((p) => ({
+      affectedPredictions = result.predictions.map(p => ({
         id: p.id,
         service_type: p.service_type,
         created_at: p.created_at,

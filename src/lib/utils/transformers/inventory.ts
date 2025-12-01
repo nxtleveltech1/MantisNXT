@@ -47,4 +47,3 @@ export function toDisplay(row: DbInventoryRow): InventoryItem {
 export function toRaw(row: DbInventoryRow): Record<string, unknown> {
   return keysToSnake(row);
 }
-

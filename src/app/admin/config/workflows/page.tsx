@@ -1,15 +1,27 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Workflow,
   Plus,
@@ -27,35 +39,35 @@ import {
   Zap,
   FileText,
   Bell,
-  Shield
-} from "lucide-react"
+  Shield,
+} from 'lucide-react';
 
 interface WorkflowStep {
-  id: string
-  type: 'approval' | 'notification' | 'condition' | 'action'
-  name: string
-  description: string
-  assigneeType: 'user' | 'role' | 'department'
-  assigneeId: string
-  assigneeName: string
-  conditions?: string[]
-  timeoutHours?: number
-  escalationRules?: string[]
+  id: string;
+  type: 'approval' | 'notification' | 'condition' | 'action';
+  name: string;
+  description: string;
+  assigneeType: 'user' | 'role' | 'department';
+  assigneeId: string;
+  assigneeName: string;
+  conditions?: string[];
+  timeoutHours?: number;
+  escalationRules?: string[];
 }
 
 interface WorkflowDefinition {
-  id: string
-  name: string
-  description: string
-  trigger: 'manual' | 'automatic'
-  triggerConditions: string[]
-  entityType: 'purchase_order' | 'invoice' | 'supplier' | 'contract'
-  status: 'active' | 'draft' | 'disabled'
-  steps: WorkflowStep[]
-  createdAt: string
-  updatedAt: string
-  usageCount: number
-  avgCompletionTime: string
+  id: string;
+  name: string;
+  description: string;
+  trigger: 'manual' | 'automatic';
+  triggerConditions: string[];
+  entityType: 'purchase_order' | 'invoice' | 'supplier' | 'contract';
+  status: 'active' | 'draft' | 'disabled';
+  steps: WorkflowStep[];
+  createdAt: string;
+  updatedAt: string;
+  usageCount: number;
+  avgCompletionTime: string;
 }
 
 export default function WorkflowsPage() {
@@ -78,7 +90,7 @@ export default function WorkflowsPage() {
           assigneeId: 'dept_manager',
           assigneeName: 'Department Manager',
           timeoutHours: 48,
-          escalationRules: ['escalate_to_director']
+          escalationRules: ['escalate_to_director'],
         },
         {
           id: 'step2',
@@ -88,7 +100,7 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'finance_manager',
           assigneeName: 'Finance Manager',
-          conditions: ['budget_available = true']
+          conditions: ['budget_available = true'],
         },
         {
           id: 'step3',
@@ -99,7 +111,7 @@ export default function WorkflowsPage() {
           assigneeId: 'finance_director',
           assigneeName: 'Finance Director',
           conditions: ['amount > 50000'],
-          timeoutHours: 24
+          timeoutHours: 24,
         },
         {
           id: 'step4',
@@ -108,13 +120,13 @@ export default function WorkflowsPage() {
           description: 'Notify requester and supplier of approval',
           assigneeType: 'user',
           assigneeId: 'system',
-          assigneeName: 'System'
-        }
+          assigneeName: 'System',
+        },
       ],
       createdAt: '2023-01-15',
       updatedAt: '2023-11-20',
       usageCount: 247,
-      avgCompletionTime: '2.3 days'
+      avgCompletionTime: '2.3 days',
     },
     {
       id: '2',
@@ -133,7 +145,7 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'compliance_officer',
           assigneeName: 'Compliance Officer',
-          timeoutHours: 72
+          timeoutHours: 72,
         },
         {
           id: 'step2',
@@ -143,7 +155,7 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'finance_manager',
           assigneeName: 'Finance Manager',
-          timeoutHours: 48
+          timeoutHours: 48,
         },
         {
           id: 'step3',
@@ -153,13 +165,13 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'procurement_head',
           assigneeName: 'Procurement Head',
-          timeoutHours: 24
-        }
+          timeoutHours: 24,
+        },
       ],
       createdAt: '2023-02-10',
       updatedAt: '2023-10-15',
       usageCount: 89,
-      avgCompletionTime: '5.1 days'
+      avgCompletionTime: '5.1 days',
     },
     {
       id: '3',
@@ -177,7 +189,7 @@ export default function WorkflowsPage() {
           description: 'Automatic validation of invoice data and matching',
           assigneeType: 'user',
           assigneeId: 'system',
-          assigneeName: 'System'
+          assigneeName: 'System',
         },
         {
           id: 'step2',
@@ -187,7 +199,7 @@ export default function WorkflowsPage() {
           assigneeType: 'user',
           assigneeId: 'system',
           assigneeName: 'System',
-          conditions: ['validation_passed = false']
+          conditions: ['validation_passed = false'],
         },
         {
           id: 'step3',
@@ -197,13 +209,13 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'ap_clerk',
           assigneeName: 'AP Clerk',
-          timeoutHours: 24
-        }
+          timeoutHours: 24,
+        },
       ],
       createdAt: '2023-03-05',
       updatedAt: '2023-12-01',
       usageCount: 1456,
-      avgCompletionTime: '1.2 days'
+      avgCompletionTime: '1.2 days',
     },
     {
       id: '4',
@@ -221,7 +233,7 @@ export default function WorkflowsPage() {
           description: 'Send renewal reminder to contract owner',
           assigneeType: 'role',
           assigneeId: 'contract_manager',
-          assigneeName: 'Contract Manager'
+          assigneeName: 'Contract Manager',
         },
         {
           id: 'step2',
@@ -231,50 +243,50 @@ export default function WorkflowsPage() {
           assigneeType: 'role',
           assigneeId: 'contract_manager',
           assigneeName: 'Contract Manager',
-          timeoutHours: 168
-        }
+          timeoutHours: 168,
+        },
       ],
       createdAt: '2023-11-01',
       updatedAt: '2023-11-15',
       usageCount: 0,
-      avgCompletionTime: 'N/A'
-    }
-  ])
+      avgCompletionTime: 'N/A',
+    },
+  ]);
 
-  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null)
-  const [isNewWorkflowDialogOpen, setIsNewWorkflowDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
+  const [isNewWorkflowDialogOpen, setIsNewWorkflowDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'draft':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-100 text-yellow-800';
       case 'disabled':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getStepTypeIcon = (type: string) => {
     switch (type) {
       case 'approval':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
       case 'notification':
-        return <Bell className="h-4 w-4 text-green-500" />
+        return <Bell className="h-4 w-4 text-green-500" />;
       case 'condition':
-        return <GitBranch className="h-4 w-4 text-purple-500" />
+        return <GitBranch className="h-4 w-4 text-purple-500" />;
       case 'action':
-        return <Zap className="h-4 w-4 text-orange-500" />
+        return <Zap className="h-4 w-4 text-orange-500" />;
       default:
-        return <Settings className="h-4 w-4 text-gray-500" />
+        return <Settings className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
   const duplicateWorkflow = (workflowId: string) => {
-    const originalWorkflow = workflows.find(w => w.id === workflowId)
+    const originalWorkflow = workflows.find(w => w.id === workflowId);
     if (originalWorkflow) {
       const newWorkflow: WorkflowDefinition = {
         ...originalWorkflow,
@@ -284,34 +296,36 @@ export default function WorkflowsPage() {
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
         usageCount: 0,
-        avgCompletionTime: 'N/A'
-      }
-      setWorkflows(prev => [...prev, newWorkflow])
+        avgCompletionTime: 'N/A',
+      };
+      setWorkflows(prev => [...prev, newWorkflow]);
     }
-  }
+  };
 
   const toggleWorkflowStatus = (workflowId: string) => {
-    setWorkflows(prev => prev.map(workflow =>
-      workflow.id === workflowId
-        ? {
-            ...workflow,
-            status: workflow.status === 'active' ? 'disabled' : 'active' as const
-          }
-        : workflow
-    ))
-  }
+    setWorkflows(prev =>
+      prev.map(workflow =>
+        workflow.id === workflowId
+          ? {
+              ...workflow,
+              status: workflow.status === 'active' ? 'disabled' : ('active' as const),
+            }
+          : workflow
+      )
+    );
+  };
 
   const deleteWorkflow = (workflowId: string) => {
-    setWorkflows(prev => prev.filter(workflow => workflow.id !== workflowId))
-  }
+    setWorkflows(prev => prev.filter(workflow => workflow.id !== workflowId));
+  };
 
   const editWorkflow = (workflow: WorkflowDefinition) => {
-    setSelectedWorkflow(workflow)
-    setIsEditDialogOpen(true)
-  }
+    setSelectedWorkflow(workflow);
+    setIsEditDialogOpen(true);
+  };
 
-  const activeWorkflows = workflows.filter(w => w.status === 'active').length
-  const totalUsage = workflows.reduce((sum, w) => sum + w.usageCount, 0)
+  const activeWorkflows = workflows.filter(w => w.status === 'active').length;
+  const totalUsage = workflows.reduce((sum, w) => sum + w.usageCount, 0);
 
   return (
     <div className="space-y-6">
@@ -319,21 +333,21 @@ export default function WorkflowsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Workflow Builder</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             Create and manage approval workflows for business processes
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <a href="/admin/config/workflows/templates">
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText className="mr-2 h-4 w-4" />
               Templates
             </a>
           </Button>
           <Dialog open={isNewWorkflowDialogOpen} onOpenChange={setIsNewWorkflowDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Create Workflow
               </Button>
             </DialogTrigger>
@@ -371,11 +385,15 @@ export default function WorkflowsPage() {
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox id="automatic" />
-                      <label htmlFor="automatic" className="text-sm">Automatic</label>
+                      <label htmlFor="automatic" className="text-sm">
+                        Automatic
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="manual" />
-                      <label htmlFor="manual" className="text-sm">Manual</label>
+                      <label htmlFor="manual" className="text-sm">
+                        Manual
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -392,7 +410,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -441,12 +459,12 @@ export default function WorkflowsPage() {
 
       {/* Workflow List */}
       <div className="space-y-4">
-        {workflows.map((workflow) => (
-          <Card key={workflow.id} className="hover:shadow-md transition-shadow">
+        {workflows.map(workflow => (
+          <Card key={workflow.id} className="transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="mb-2 flex items-center gap-3">
                     <h3 className="text-lg font-semibold">{workflow.name}</h3>
                     <Badge className={getStatusColor(workflow.status)} variant="secondary">
                       {workflow.status}
@@ -459,19 +477,19 @@ export default function WorkflowsPage() {
                     </Badge>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-4">{workflow.description}</p>
+                  <p className="mb-4 text-sm text-gray-600">{workflow.description}</p>
 
                   {/* Workflow Steps Preview */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="mb-4 flex items-center gap-2">
                     <span className="text-sm text-gray-500">Steps:</span>
                     {workflow.steps.map((step, index) => (
                       <div key={step.id} className="flex items-center">
-                        <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
+                        <div className="flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs">
                           {getStepTypeIcon(step.type)}
                           {step.name}
                         </div>
                         {index < workflow.steps.length - 1 && (
-                          <ArrowRight className="h-3 w-3 text-gray-400 mx-1" />
+                          <ArrowRight className="mx-1 h-3 w-3 text-gray-400" />
                         )}
                       </div>
                     ))}
@@ -489,18 +507,16 @@ export default function WorkflowsPage() {
                     </div>
                     <div>
                       <p className="text-gray-500">Last Updated</p>
-                      <p className="font-medium">{new Date(workflow.updatedAt).toLocaleDateString()}</p>
+                      <p className="font-medium">
+                        {new Date(workflow.updatedAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => editWorkflow(workflow)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => editWorkflow(workflow)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
@@ -538,7 +554,7 @@ export default function WorkflowsPage() {
 
       {/* Edit Workflow Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Workflow: {selectedWorkflow?.name}</DialogTitle>
           </DialogHeader>
@@ -575,7 +591,7 @@ export default function WorkflowsPage() {
                 <div className="flex items-center justify-between">
                   <h4 className="text-lg font-medium">Workflow Steps</h4>
                   <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Step
                   </Button>
                 </div>
@@ -586,11 +602,11 @@ export default function WorkflowsPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full text-sm font-medium">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-medium">
                               {index + 1}
                             </div>
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="mb-1 flex items-center gap-2">
                                 {getStepTypeIcon(step.type)}
                                 <span className="font-medium">{step.name}</span>
                                 <Badge variant="outline" className="text-xs">
@@ -598,7 +614,7 @@ export default function WorkflowsPage() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-gray-600">{step.description}</p>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="mt-1 text-xs text-gray-500">
                                 Assigned to: {step.assigneeName}
                                 {step.timeoutHours && ` • Timeout: ${step.timeoutHours}h`}
                               </p>
@@ -624,7 +640,7 @@ export default function WorkflowsPage() {
                   Cancel
                 </Button>
                 <Button>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   Save Changes
                 </Button>
               </div>
@@ -642,10 +658,10 @@ export default function WorkflowsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-3">
               <h4 className="font-medium">Design Guidelines</h4>
-              <ul className="text-sm space-y-2 text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>• Keep workflows simple and easy to understand</li>
                 <li>• Set appropriate timeouts for each approval step</li>
                 <li>• Include escalation rules for critical processes</li>
@@ -655,7 +671,7 @@ export default function WorkflowsPage() {
             </div>
             <div className="space-y-3">
               <h4 className="font-medium">Performance Tips</h4>
-              <ul className="text-sm space-y-2 text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>• Monitor workflow completion times regularly</li>
                 <li>• Review and optimize bottleneck steps</li>
                 <li>• Use conditions to create efficient branching</li>
@@ -667,5 +683,5 @@ export default function WorkflowsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

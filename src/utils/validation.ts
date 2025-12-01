@@ -82,27 +82,36 @@ export const PurchaseOrderSchema = z.object({
 });
 
 // Contract validation schemas
-export const ContractSchema = z.object({
-  contractNumber: z.string().min(1, 'Contract number is required'),
-  supplierId: z.string().min(1, 'Supplier is required'),
-  type: z.enum(['master_agreement', 'service_agreement', 'purchase_agreement', 'nda', 'framework', 'other']),
-  title: z.string().min(5, 'Title must be at least 5 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  startDate: z.date(),
-  endDate: z.date(),
-  autoRenewal: z.boolean(),
-  renewalPeriod: z.number().min(1).optional(),
-  terminationNotice: z.number().min(1, 'Termination notice is required'),
-  value: z.number().min(0).optional(),
-  currency: z.string().length(3).optional(),
-  paymentTerms: z.string().optional(),
-  ourSignatory: z.string().min(1, 'Our signatory is required'),
-  supplierSignatory: z.string().min(1, 'Supplier signatory is required'),
-  notes: z.string().optional(),
-}).refine((data) => data.endDate > data.startDate, {
-  message: 'End date must be after start date',
-  path: ['endDate'],
-});
+export const ContractSchema = z
+  .object({
+    contractNumber: z.string().min(1, 'Contract number is required'),
+    supplierId: z.string().min(1, 'Supplier is required'),
+    type: z.enum([
+      'master_agreement',
+      'service_agreement',
+      'purchase_agreement',
+      'nda',
+      'framework',
+      'other',
+    ]),
+    title: z.string().min(5, 'Title must be at least 5 characters'),
+    description: z.string().min(10, 'Description must be at least 10 characters'),
+    startDate: z.date(),
+    endDate: z.date(),
+    autoRenewal: z.boolean(),
+    renewalPeriod: z.number().min(1).optional(),
+    terminationNotice: z.number().min(1, 'Termination notice is required'),
+    value: z.number().min(0).optional(),
+    currency: z.string().length(3).optional(),
+    paymentTerms: z.string().optional(),
+    ourSignatory: z.string().min(1, 'Our signatory is required'),
+    supplierSignatory: z.string().min(1, 'Supplier signatory is required'),
+    notes: z.string().optional(),
+  })
+  .refine(data => data.endDate > data.startDate, {
+    message: 'End date must be after start date',
+    path: ['endDate'],
+  });
 
 // Communication validation schemas
 export const CommunicationSchema = z.object({
@@ -230,10 +239,10 @@ export const formatCurrency = (amount: number, currency: string = 'ZAR'): string
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(amount);
 
   // Replace $ with R for ZAR currency
-  return currency === 'ZAR' ? formatted.replace('$', 'R') : formatted
+  return currency === 'ZAR' ? formatted.replace('$', 'R') : formatted;
 };
 
 export const formatDate = (date: Date): string => {

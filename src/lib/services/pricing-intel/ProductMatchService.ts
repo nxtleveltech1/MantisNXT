@@ -1,25 +1,25 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
-import { AIServiceConfigService } from '@/lib/ai/services/AIServiceConfigService'
-import { generateText } from 'ai'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
+import { AIServiceConfigService } from '@/lib/ai/services/AIServiceConfigService';
+import { generateText } from 'ai';
 
-import type { CompetitorProductMatch } from './types'
+import type { CompetitorProductMatch } from './types';
 
-const MATCH_TABLE = PRICING_TABLES.COMPETITOR_PRODUCT_MATCH
+const MATCH_TABLE = PRICING_TABLES.COMPETITOR_PRODUCT_MATCH;
 
 export class ProductMatchService {
-  private aiConfig = new AIServiceConfigService()
+  private aiConfig = new AIServiceConfigService();
 
   async list(orgId: string, filters?: { status?: string; competitorId?: string }) {
-    const conditions = ['org_id = $1']
-    const values: unknown[] = [orgId]
+    const conditions = ['org_id = $1'];
+    const values: unknown[] = [orgId];
     if (filters?.status) {
-      values.push(filters.status)
-      conditions.push(`status = $${values.length}`)
+      values.push(filters.status);
+      conditions.push(`status = $${values.length}`);
     }
     if (filters?.competitorId) {
-      values.push(filters.competitorId)
-      conditions.push(`competitor_id = $${values.length}`)
+      values.push(filters.competitorId);
+      conditions.push(`competitor_id = $${values.length}`);
     }
 
     const result = await query<CompetitorProductMatch>(
@@ -29,13 +29,16 @@ export class ProductMatchService {
         WHERE ${conditions.join(' AND ')}
         ORDER BY created_at DESC
       `,
-      values,
-    )
+      values
+    );
 
-    return result.rows
+    return result.rows;
   }
 
-  async upsert(orgId: string, payload: Partial<CompetitorProductMatch>): Promise<CompetitorProductMatch> {
+  async upsert(
+    orgId: string,
+    payload: Partial<CompetitorProductMatch>
+  ): Promise<CompetitorProductMatch> {
     const result = await query<CompetitorProductMatch>(
       `
         INSERT INTO ${MATCH_TABLE} (
@@ -112,17 +115,17 @@ export class ProductMatchService {
         payload.match_method ?? 'manual',
         payload.status ?? 'pending',
         payload.metadata ? JSON.stringify(payload.metadata) : null,
-      ],
-    )
+      ]
+    );
 
-    return result.rows[0]
+    return result.rows[0];
   }
 
   async updateStatus(
     orgId: string,
     matchId: string,
     status: 'matched' | 'rejected',
-    reviewerId?: string,
+    reviewerId?: string
   ): Promise<void> {
     await query(
       `
@@ -133,14 +136,18 @@ export class ProductMatchService {
             updated_at = NOW()
         WHERE org_id = $1 AND match_id = $2
       `,
-      [orgId, matchId, status, reviewerId ?? null],
-    )
+      [orgId, matchId, status, reviewerId ?? null]
+    );
   }
 
-  async suggestMatches(orgId: string, product: { title: string; sku?: string; upc?: string }, competitors: string[]) {
-    const aiConfig = await this.aiConfig.getConfig(orgId, 'competitive_intel_product_match')
+  async suggestMatches(
+    orgId: string,
+    product: { title: string; sku?: string; upc?: string },
+    competitors: string[]
+  ) {
+    const aiConfig = await this.aiConfig.getConfig(orgId, 'competitive_intel_product_match');
     if (!aiConfig?.is_enabled) {
-      return []
+      return [];
     }
 
     const prompt = [
@@ -153,24 +160,23 @@ export class ProductMatchService {
       'Response must be valid JSON.',
     ]
       .filter(Boolean)
-      .join('\n')
+      .join('\n');
 
     const result = await generateText({
       model: aiConfig.model_name,
       prompt,
       temperature: 0.1,
       maxTokens: 800,
-    })
+    });
 
     try {
-      const parsed = JSON.parse(result.text)
+      const parsed = JSON.parse(result.text);
       if (Array.isArray(parsed)) {
-        return parsed
+        return parsed;
       }
     } catch {
       /* ignore parse error */
     }
-    return []
+    return [];
   }
 }
-

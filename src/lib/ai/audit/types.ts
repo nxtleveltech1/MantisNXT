@@ -14,7 +14,14 @@ export type AuditSeverity = 'debug' | 'info' | 'warning' | 'error' | 'critical';
 // Base audit event schema
 export const AuditEventSchema = z.object({
   id: z.string().uuid(),
-  eventType: z.enum(['tool_execution', 'decision', 'access_check', 'approval', 'error', 'conversation']),
+  eventType: z.enum([
+    'tool_execution',
+    'decision',
+    'access_check',
+    'approval',
+    'error',
+    'conversation',
+  ]),
   severity: z.enum(['debug', 'info', 'warning', 'error', 'critical']),
   timestamp: z.date(),
   orgId: z.string().uuid().optional(),
@@ -80,10 +87,12 @@ export const AuditSummarySchema = z.object({
     start: z.date(),
     end: z.date(),
   }),
-  topTools: z.array(z.object({
-    toolName: z.string(),
-    count: z.number(),
-  })),
+  topTools: z.array(
+    z.object({
+      toolName: z.string(),
+      count: z.number(),
+    })
+  ),
   errorRate: z.number(),
 });
 
@@ -104,13 +113,15 @@ export type DecisionExplanation = z.infer<typeof DecisionExplanationSchema>;
 // Workflow explanation
 export const WorkflowExplanationSchema = z.object({
   sessionId: z.string().uuid(),
-  steps: z.array(z.object({
-    step: z.number(),
-    timestamp: z.date(),
-    eventType: z.string(),
-    description: z.string(),
-    explanation: z.string(),
-  })),
+  steps: z.array(
+    z.object({
+      step: z.number(),
+      timestamp: z.date(),
+      eventType: z.string(),
+      description: z.string(),
+      explanation: z.string(),
+    })
+  ),
   summary: z.string(),
 });
 

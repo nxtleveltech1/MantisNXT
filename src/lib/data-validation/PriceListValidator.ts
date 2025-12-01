@@ -95,7 +95,7 @@ export class PriceListValidator {
       duplicateHandling: 'warning',
       priceMultiplier: 1.0,
       defaultCurrency: 'ZAR',
-      ...config
+      ...config,
     };
   }
 
@@ -177,8 +177,8 @@ export class PriceListValidator {
         duplicateRecords,
         missingRequiredFields,
         priceValidationErrors,
-        skuValidationErrors
-      }
+        skuValidationErrors,
+      },
     };
   }
 
@@ -243,7 +243,7 @@ export class PriceListValidator {
             field: 'sku',
             value: record.sku,
             message: 'SKU missing, will be auto-generated',
-            suggestions: ['SKU will be generated based on supplier name and row index']
+            suggestions: ['SKU will be generated based on supplier name and row index'],
           });
         } else {
           errors.push({
@@ -253,7 +253,7 @@ export class PriceListValidator {
             message: 'SKU is required',
             severity: 'error',
             rowIndex,
-            suggestions: ['Provide a unique product SKU', 'Enable auto-generation of SKUs']
+            suggestions: ['Provide a unique product SKU', 'Enable auto-generation of SKUs'],
           });
         }
       }
@@ -269,7 +269,7 @@ export class PriceListValidator {
           message: `SKU format invalid: ${sku}`,
           severity: 'error',
           rowIndex,
-          suggestions: ['Ensure SKU matches the required pattern']
+          suggestions: ['Ensure SKU matches the required pattern'],
         });
       }
 
@@ -280,7 +280,7 @@ export class PriceListValidator {
           field: 'sku',
           value: sku,
           message: 'SKU exceeds 100 characters, will be truncated',
-          suggestions: ['Shorten SKU to under 100 characters']
+          suggestions: ['Shorten SKU to under 100 characters'],
         });
       }
 
@@ -314,7 +314,7 @@ export class PriceListValidator {
           message: 'Product name is required',
           severity: 'error',
           rowIndex,
-          suggestions: ['Provide a descriptive product name']
+          suggestions: ['Provide a descriptive product name'],
         });
       }
     } else {
@@ -326,7 +326,7 @@ export class PriceListValidator {
           field: 'name',
           value: name,
           message: 'Product name is very short',
-          suggestions: ['Provide a more descriptive product name']
+          suggestions: ['Provide a more descriptive product name'],
         });
       }
 
@@ -336,7 +336,7 @@ export class PriceListValidator {
           field: 'name',
           value: name,
           message: 'Product name exceeds 500 characters, will be truncated',
-          suggestions: ['Shorten product name to under 500 characters']
+          suggestions: ['Shorten product name to under 500 characters'],
         });
       }
     }
@@ -354,7 +354,7 @@ export class PriceListValidator {
     const prices = {
       costPrice: this.parsePrice(record.costPrice),
       retailPrice: this.parsePrice(record.retailPrice),
-      wholesalePrice: this.parsePrice(record.wholesalePrice)
+      wholesalePrice: this.parsePrice(record.wholesalePrice),
     };
 
     // Cost price validation (required)
@@ -367,7 +367,7 @@ export class PriceListValidator {
           message: 'Cost price is required',
           severity: 'error',
           rowIndex,
-          suggestions: ['Provide a valid numeric cost price']
+          suggestions: ['Provide a valid numeric cost price'],
         });
       }
     } else {
@@ -382,7 +382,7 @@ export class PriceListValidator {
           message: `Cost price ${adjustedPrice} is below minimum ${this.config.minPrice}`,
           severity: 'error',
           rowIndex,
-          suggestions: [`Set cost price above ${this.config.minPrice}`]
+          suggestions: [`Set cost price above ${this.config.minPrice}`],
         });
       }
 
@@ -392,7 +392,7 @@ export class PriceListValidator {
           field: 'costPrice',
           value: adjustedPrice,
           message: `Cost price ${adjustedPrice} is unusually high`,
-          suggestions: ['Verify the cost price is correct']
+          suggestions: ['Verify the cost price is correct'],
         });
       }
     }
@@ -405,7 +405,7 @@ export class PriceListValidator {
           field: 'retailPrice',
           value: prices.retailPrice,
           message: 'Retail price is below cost price',
-          suggestions: ['Review pricing to ensure profitability']
+          suggestions: ['Review pricing to ensure profitability'],
         });
       }
     }
@@ -418,7 +418,7 @@ export class PriceListValidator {
           field: 'wholesalePrice',
           value: prices.wholesalePrice,
           message: 'Wholesale price is below cost price',
-          suggestions: ['Review pricing to ensure profitability']
+          suggestions: ['Review pricing to ensure profitability'],
         });
       }
 
@@ -428,7 +428,7 @@ export class PriceListValidator {
           field: 'wholesalePrice',
           value: prices.wholesalePrice,
           message: 'Wholesale price is above retail price',
-          suggestions: ['Review pricing structure']
+          suggestions: ['Review pricing structure'],
         });
       }
     }
@@ -451,7 +451,7 @@ export class PriceListValidator {
         field: 'currency',
         value: currency,
         message: `Currency ${currency} not in allowed list, defaulting to ${this.config.defaultCurrency}`,
-        suggestions: [`Use one of: ${this.config.allowedCurrencies.join(', ')}`]
+        suggestions: [`Use one of: ${this.config.allowedCurrencies.join(', ')}`],
       });
     }
 
@@ -470,7 +470,7 @@ export class PriceListValidator {
         field: 'brand',
         value: record.brand,
         message: 'Brand information missing',
-        suggestions: ['Provide brand information for better categorization']
+        suggestions: ['Provide brand information for better categorization'],
       });
     }
 
@@ -480,7 +480,7 @@ export class PriceListValidator {
         field: 'category',
         value: record.category,
         message: 'Category information missing',
-        suggestions: ['Provide category information for better organization']
+        suggestions: ['Provide category information for better organization'],
       });
     }
 
@@ -499,7 +499,7 @@ export class PriceListValidator {
         field: 'description',
         value: record.description,
         message: 'Product description missing',
-        suggestions: ['Add product description for better searchability']
+        suggestions: ['Add product description for better searchability'],
       });
     } else if (record.description.toString().length < 10) {
       warnings.push({
@@ -507,7 +507,7 @@ export class PriceListValidator {
         field: 'description',
         value: record.description,
         message: 'Product description is very brief',
-        suggestions: ['Provide more detailed product description']
+        suggestions: ['Provide more detailed product description'],
       });
     }
 
@@ -530,7 +530,7 @@ export class PriceListValidator {
           field: 'barcode',
           value: barcode,
           message: 'Barcode should contain only numbers',
-          suggestions: ['Verify barcode format']
+          suggestions: ['Verify barcode format'],
         });
       }
 
@@ -541,7 +541,7 @@ export class PriceListValidator {
           field: 'barcode',
           value: barcode,
           message: 'Barcode length should be 8, 12, 13, or 14 digits',
-          suggestions: ['Verify barcode is complete']
+          suggestions: ['Verify barcode is complete'],
         });
       }
     }
@@ -562,7 +562,9 @@ export class PriceListValidator {
         duplicateCount += records.length - 1;
 
         const message = `Duplicate SKU found: ${sku} (${records.length} occurrences)`;
-        const duplicateInfo = records.map((r, i) => `Row ${r.sourceRow || i}: ${r.name || 'No name'}`);
+        const duplicateInfo = records.map(
+          (r, i) => `Row ${r.sourceRow || i}: ${r.name || 'No name'}`
+        );
 
         if (this.config.duplicateHandling === 'error') {
           errors.push({
@@ -574,8 +576,8 @@ export class PriceListValidator {
             suggestions: [
               'Make SKUs unique across all records',
               'Consider adding supplier prefix to SKUs',
-              ...duplicateInfo
-            ]
+              ...duplicateInfo,
+            ],
           });
         } else if (this.config.duplicateHandling === 'warning') {
           warnings.push({
@@ -585,8 +587,8 @@ export class PriceListValidator {
             message,
             suggestions: [
               'Review duplicate records - only the first will be imported',
-              ...duplicateInfo
-            ]
+              ...duplicateInfo,
+            ],
           });
         }
       }
@@ -648,8 +650,8 @@ export class PriceListValidator {
 
     report += `## Summary Statistics\n`;
     report += `- **Total Records:** ${stats.totalRecords.toLocaleString()}\n`;
-    report += `- **Valid Records:** ${stats.validRecords.toLocaleString()} (${Math.round(stats.validRecords/stats.totalRecords*100)}%)\n`;
-    report += `- **Invalid Records:** ${stats.invalidRecords.toLocaleString()} (${Math.round(stats.invalidRecords/stats.totalRecords*100)}%)\n`;
+    report += `- **Valid Records:** ${stats.validRecords.toLocaleString()} (${Math.round((stats.validRecords / stats.totalRecords) * 100)}%)\n`;
+    report += `- **Invalid Records:** ${stats.invalidRecords.toLocaleString()} (${Math.round((stats.invalidRecords / stats.totalRecords) * 100)}%)\n`;
     report += `- **Records with Warnings:** ${stats.warningRecords.toLocaleString()}\n`;
     report += `- **Duplicate Records:** ${stats.duplicateRecords.toLocaleString()}\n\n`;
 
@@ -698,18 +700,24 @@ export class PriceListValidator {
   }
 
   private groupErrorsByType(errors: ValidationError[]) {
-    return errors.reduce((groups, error) => {
-      if (!groups[error.type]) groups[error.type] = [];
-      groups[error.type].push(error);
-      return groups;
-    }, {} as Record<string, ValidationError[]>);
+    return errors.reduce(
+      (groups, error) => {
+        if (!groups[error.type]) groups[error.type] = [];
+        groups[error.type].push(error);
+        return groups;
+      },
+      {} as Record<string, ValidationError[]>
+    );
   }
 
   private groupWarningsByType(warnings: ValidationWarning[]) {
-    return warnings.reduce((groups, warning) => {
-      if (!groups[warning.type]) groups[warning.type] = [];
-      groups[warning.type].push(warning);
-      return groups;
-    }, {} as Record<string, ValidationWarning[]>);
+    return warnings.reduce(
+      (groups, warning) => {
+        if (!groups[warning.type]) groups[warning.type] = [];
+        groups[warning.type].push(warning);
+        return groups;
+      },
+      {} as Record<string, ValidationWarning[]>
+    );
   }
 }

@@ -1,12 +1,12 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { query } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url)
-    const orgId = url.searchParams.get('orgId') || undefined
-    const limit = 100
+    const url = new URL(request.url);
+    const orgId = url.searchParams.get('orgId') || undefined;
+    const limit = 100;
 
     const rows = await query<any>(
       `SELECT id, org_id, entity_type::text as entity_type, sync_status::text as status,
@@ -17,11 +17,10 @@ export async function GET(request: NextRequest) {
        ORDER BY started_at DESC
        LIMIT ${limit}`,
       orgId ? [orgId] : []
-    )
+    );
 
-    return NextResponse.json({ data: rows.rows, rowCount: rows.rowCount })
+    return NextResponse.json({ data: rows.rows, rowCount: rows.rowCount });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Failed' }, { status: 500 })
+    return NextResponse.json({ error: e?.message || 'Failed' }, { status: 500 });
   }
 }
-

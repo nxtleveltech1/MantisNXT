@@ -31,7 +31,7 @@
 
 import type { ReadableStreamDefaultController } from 'node:stream/web';
 import { ReadableStream } from 'node:stream/web';
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { authenticateRequest, handleError } from '@/lib/auth/middleware';
 import { syncProgressTracker } from '@/lib/services/SyncProgressTracker';
@@ -50,10 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   // Validate jobId format (UUID)
   if (!jobId || !/^[0-9a-f-]{36}$/i.test(jobId)) {
-    return NextResponse.json(
-      { success: false, error: 'Invalid job ID format' },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, error: 'Invalid job ID format' }, { status: 400 });
   }
 
   try {
@@ -63,10 +60,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Verify job ownership (organization-level access control)
     const progress = await syncProgressTracker.getProgress(jobId);
     if (!progress) {
-      return NextResponse.json(
-        { success: false, error: 'Sync job not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Sync job not found' }, { status: 404 });
     }
 
     // Verify org access
@@ -138,8 +132,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 await sendEvent(controller, 'completion', {
                   status: currentProgress.status,
                   totalTime: Math.floor(
-                    (currentProgress.completedAt!.getTime() -
-                      currentProgress.startedAt.getTime()) /
+                    (currentProgress.completedAt!.getTime() - currentProgress.startedAt.getTime()) /
                       1000
                   ),
                   processedCount: currentProgress.processedCount,
@@ -222,7 +215,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       headers: {
         'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'X-Accel-Buffering': 'no', // Disable nginx buffering
         'X-Content-Type-Options': 'nosniff',
         'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || '*',

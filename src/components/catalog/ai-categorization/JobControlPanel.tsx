@@ -1,31 +1,37 @@
-"use client"
+'use client';
 
-import { useState, useCallback, memo } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Play, RotateCw, AlertCircle } from "lucide-react"
-import { toast } from "sonner"
-import { buildApiUrl } from "@/lib/utils/api-url"
+import { useState, useCallback, memo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Play, RotateCw, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { buildApiUrl } from '@/lib/utils/api-url';
 
 interface JobControlPanelProps {
-  onJobStarted: (jobId: string) => void
+  onJobStarted: (jobId: string) => void;
 }
 
-export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: JobControlPanelProps) {
-  const [batchSize, setBatchSize] = useState(200)
-  const [productLimit, setProductLimit] = useState<number | ''>('')
-  const [confidenceThreshold, setConfidenceThreshold] = useState(0.7)
-  const [supplierFilter, setSupplierFilter] = useState("")
-  const [forceOverride, setForceOverride] = useState(false)
-  const [isStarting, setIsStarting] = useState(false)
+export const JobControlPanel = memo(function JobControlPanel({
+  onJobStarted,
+}: JobControlPanelProps) {
+  const [batchSize, setBatchSize] = useState(200);
+  const [productLimit, setProductLimit] = useState<number | ''>('');
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.7);
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [forceOverride, setForceOverride] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   const buildPayload = useCallback(
-    (jobType: "full_scan" | "recategorize", extraFilters: Record<string, unknown> = {}, configOverrides: Record<string, unknown> = {}) => {
-      const limit = typeof productLimit === 'number' && productLimit > 0 ? productLimit : undefined
+    (
+      jobType: 'full_scan' | 'recategorize',
+      extraFilters: Record<string, unknown> = {},
+      configOverrides: Record<string, unknown> = {}
+    ) => {
+      const limit = typeof productLimit === 'number' && productLimit > 0 ? productLimit : undefined;
       return {
         job_type: jobType,
         filters: {
@@ -34,94 +40,98 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
         },
         config: {
           confidence_threshold: confidenceThreshold,
-          force_recategorize: jobType !== "full_scan" || forceOverride,
+          force_recategorize: jobType !== 'full_scan' || forceOverride,
           ...configOverrides,
         },
         batch_size: batchSize,
         product_limit: limit,
-      }
+      };
     },
     [batchSize, confidenceThreshold, forceOverride, productLimit, supplierFilter]
-  )
+  );
 
   const startFullCategorization = useCallback(async () => {
-    setIsStarting(true)
+    setIsStarting(true);
     try {
-      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(buildApiUrl('/api/category/ai-categorization/start'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...buildPayload("full_scan", { exclude_categorized: !forceOverride })
+          ...buildPayload('full_scan', { exclude_categorized: !forceOverride }),
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
-        toast.success(`Job started: ${data.job_id}`)
-        toast.info(`Processing ${data.estimated_products} products`)
-        onJobStarted(data.job_id)
+        toast.success(`Job started: ${data.job_id}`);
+        toast.info(`Processing ${data.estimated_products} products`);
+        onJobStarted(data.job_id);
       } else {
-        toast.error(data.message || "Failed to start job")
+        toast.error(data.message || 'Failed to start job');
       }
     } catch (error) {
-      toast.error("Failed to start categorization job")
-      console.error(error)
+      toast.error('Failed to start categorization job');
+      console.error(error);
     } finally {
-      setIsStarting(false)
+      setIsStarting(false);
     }
-  }, [supplierFilter, forceOverride, confidenceThreshold, batchSize, onJobStarted])
+  }, [supplierFilter, forceOverride, confidenceThreshold, batchSize, onJobStarted]);
 
   const startLowConfidenceRecategorization = useCallback(async () => {
-    setIsStarting(true)
+    setIsStarting(true);
     try {
-      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(buildApiUrl('/api/category/ai-categorization/start'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...buildPayload("recategorize", { confidence_max: confidenceThreshold }, { force_recategorize: true })
+          ...buildPayload(
+            'recategorize',
+            { confidence_max: confidenceThreshold },
+            { force_recategorize: true }
+          ),
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
-        toast.success(`Recategorization job started: ${data.job_id}`)
-        onJobStarted(data.job_id)
+        toast.success(`Recategorization job started: ${data.job_id}`);
+        onJobStarted(data.job_id);
       } else {
-        toast.error(data.message || "Failed to start job")
+        toast.error(data.message || 'Failed to start job');
       }
     } catch (error) {
-      toast.error("Failed to start recategorization job")
-      console.error(error)
+      toast.error('Failed to start recategorization job');
+      console.error(error);
     } finally {
-      setIsStarting(false)
+      setIsStarting(false);
     }
-  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted])
+  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted]);
 
   const startFailedRecategorization = useCallback(async () => {
-    setIsStarting(true)
+    setIsStarting(true);
     try {
-      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(buildApiUrl('/api/category/ai-categorization/start'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...buildPayload("recategorize", { status: ["failed"] }, { force_recategorize: true })
+          ...buildPayload('recategorize', { status: ['failed'] }, { force_recategorize: true }),
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
-        toast.success(`Failed items recategorization started: ${data.job_id}`)
-        onJobStarted(data.job_id)
+        toast.success(`Failed items recategorization started: ${data.job_id}`);
+        onJobStarted(data.job_id);
       } else {
-        toast.error(data.message || "Failed to start job")
+        toast.error(data.message || 'Failed to start job');
       }
     } catch (error) {
-      toast.error("Failed to start recategorization job")
-      console.error(error)
+      toast.error('Failed to start recategorization job');
+      console.error(error);
     } finally {
-      setIsStarting(false)
+      setIsStarting(false);
     }
-  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted])
+  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted]);
 
   return (
     <Card>
@@ -140,9 +150,9 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
               min="50"
               max="500"
               value={batchSize}
-              onChange={(e) => setBatchSize(parseInt(e.target.value) || 200)}
+              onChange={e => setBatchSize(parseInt(e.target.value) || 200)}
             />
-            <p className="text-xs text-muted-foreground">Products per batch (50-500)</p>
+            <p className="text-muted-foreground text-xs">Products per batch (50-500)</p>
           </div>
 
           <div className="space-y-2">
@@ -153,17 +163,19 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
               min="1"
               placeholder="All"
               value={productLimit === '' ? '' : productLimit}
-              onChange={(e) => {
-                const value = e.target.value
+              onChange={e => {
+                const value = e.target.value;
                 if (value === '') {
-                  setProductLimit('')
+                  setProductLimit('');
                 } else {
-                  const parsed = parseInt(value, 10)
-                  setProductLimit(Number.isFinite(parsed) && parsed > 0 ? parsed : '')
+                  const parsed = parseInt(value, 10);
+                  setProductLimit(Number.isFinite(parsed) && parsed > 0 ? parsed : '');
                 }
               }}
             />
-            <p className="text-xs text-muted-foreground">Process only the first N products (oldest first).</p>
+            <p className="text-muted-foreground text-xs">
+              Process only the first N products (oldest first).
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -172,9 +184,9 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
               id="supplier-filter"
               placeholder="Supplier ID..."
               value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
+              onChange={e => setSupplierFilter(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">Leave empty for all suppliers</p>
+            <p className="text-muted-foreground text-xs">Leave empty for all suppliers</p>
           </div>
         </div>
 
@@ -188,20 +200,16 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
             max={1.0}
             step={0.05}
             value={[confidenceThreshold]}
-            onValueChange={(values) => setConfidenceThreshold(values[0])}
+            onValueChange={values => setConfidenceThreshold(values[0])}
             className="w-full"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Minimum confidence score for auto-assignment
           </p>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Switch
-            id="force-override"
-            checked={forceOverride}
-            onCheckedChange={setForceOverride}
-          />
+          <Switch id="force-override" checked={forceOverride} onCheckedChange={setForceOverride} />
           <Label htmlFor="force-override" className="cursor-pointer">
             Force Override (Re-categorize all products)
           </Label>
@@ -209,11 +217,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
 
         {/* Action Buttons */}
         <div className="grid gap-3 md:grid-cols-3">
-          <Button
-            onClick={startFullCategorization}
-            disabled={isStarting}
-            className="w-full"
-          >
+          <Button onClick={startFullCategorization} disabled={isStarting} className="w-full">
             <Play className="mr-2 h-4 w-4" />
             Start Full Categorization
           </Button>
@@ -240,6 +244,5 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
         </div>
       </CardContent>
     </Card>
-  )
-})
-
+  );
+});

@@ -70,12 +70,24 @@ export default function AIReviewPage() {
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Product</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Current Category</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Suggested Category</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Confidence</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Provider</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>Reasoning</th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Product
+            </th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Current Category
+            </th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Suggested Category
+            </th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Confidence
+            </th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Provider
+            </th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: 8 }}>
+              Reasoning
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -89,7 +101,9 @@ export default function AIReviewPage() {
             items.map(item => (
               <tr key={item.supplier_product_id}>
                 <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>
-                  <div style={{ fontWeight: 600 }}>{item.product_name || item.supplier_sku || item.supplier_product_id}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    {item.product_name || item.supplier_sku || item.supplier_product_id}
+                  </div>
                   <div style={{ color: '#666', fontSize: 12 }}>{item.supplier_product_id}</div>
                 </td>
                 <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>
@@ -104,7 +118,14 @@ export default function AIReviewPage() {
                 <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>
                   {item.suggestion?.provider || '—'}
                 </td>
-                <td style={{ borderBottom: '1px solid #eee', padding: 8, maxWidth: 480, whiteSpace: 'pre-wrap' }}>
+                <td
+                  style={{
+                    borderBottom: '1px solid #eee',
+                    padding: 8,
+                    maxWidth: 480,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
                   {item.suggestion?.reasoning || '—'}
                 </td>
               </tr>
@@ -115,10 +136,3 @@ export default function AIReviewPage() {
     </div>
   );
 }
-
-
-
-
-
-
-

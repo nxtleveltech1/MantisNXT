@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -21,20 +21,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import {
-  Trophy,
-  Medal,
-  Award,
-  Crown,
-  TrendingUp,
-  Download,
-  Users,
-  Star,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { format } from 'date-fns'
-import type { LoyaltyLeaderboardEntry, LoyaltyTier } from '@/types/loyalty'
+} from '@/components/ui/table';
+import { Trophy, Medal, Award, Crown, TrendingUp, Download, Users, Star } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import type { LoyaltyLeaderboardEntry, LoyaltyTier } from '@/types/loyalty';
 
 const TIER_COLORS: Record<LoyaltyTier, string> = {
   bronze: 'bg-amber-600',
@@ -42,7 +33,7 @@ const TIER_COLORS: Record<LoyaltyTier, string> = {
   gold: 'bg-yellow-500',
   platinum: 'bg-blue-400',
   diamond: 'bg-purple-500',
-}
+};
 
 const TIER_ICONS: Record<LoyaltyTier, unknown> = {
   bronze: Award,
@@ -50,12 +41,12 @@ const TIER_ICONS: Record<LoyaltyTier, unknown> = {
   gold: Trophy,
   platinum: Star,
   diamond: Crown,
-}
+};
 
 export default function LoyaltyLeaderboard() {
-  const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'all'>('month')
-  const [tierFilter, setTierFilter] = useState<LoyaltyTier | 'all'>('all')
-  const [limit, setLimit] = useState(50)
+  const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'all'>('month');
+  const [tierFilter, setTierFilter] = useState<LoyaltyTier | 'all'>('all');
+  const [limit, setLimit] = useState(50);
 
   // Fetch leaderboard
   const { data: leaderboard, isLoading } = useQuery({
@@ -65,19 +56,19 @@ export default function LoyaltyLeaderboard() {
         period,
         limit: limit.toString(),
         ...(tierFilter !== 'all' && { tier: tierFilter }),
-      })
+      });
 
-      const res = await fetch(`/api/v1/admin/loyalty/analytics/leaderboard?${params}`)
-      if (!res.ok) throw new Error('Failed to fetch leaderboard')
-      return res.json() as Promise<LoyaltyLeaderboardEntry[]>
+      const res = await fetch(`/api/v1/admin/loyalty/analytics/leaderboard?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch leaderboard');
+      return res.json() as Promise<LoyaltyLeaderboardEntry[]>;
     },
-  })
+  });
 
   // Export to CSV
   const handleExport = () => {
     if (!leaderboard || leaderboard.length === 0) {
-      toast.error('No data to export')
-      return
+      toast.error('No data to export');
+      return;
     }
 
     const headers = [
@@ -90,9 +81,9 @@ export default function LoyaltyLeaderboard() {
       'Lifetime Value',
       'Referrals',
       'Tier Qualified',
-    ]
+    ];
 
-    const rows = leaderboard.map((entry) => [
+    const rows = leaderboard.map(entry => [
       entry.overall_rank,
       entry.customer_name,
       entry.company || 'N/A',
@@ -102,59 +93,63 @@ export default function LoyaltyLeaderboard() {
       entry.lifetime_value,
       entry.referral_count,
       format(new Date(entry.tier_qualified_date), 'yyyy-MM-dd'),
-    ])
+    ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `loyalty-leaderboard-${period}-${Date.now()}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `loyalty-leaderboard-${period}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 
-    toast.success('Leaderboard exported successfully')
-  }
+    toast.success('Leaderboard exported successfully');
+  };
 
   // Stats
   const stats = useMemo(() => {
-    if (!leaderboard) return { total: 0, avgPoints: 0, avgValue: 0, topTier: 'bronze' as LoyaltyTier }
+    if (!leaderboard)
+      return { total: 0, avgPoints: 0, avgValue: 0, topTier: 'bronze' as LoyaltyTier };
 
-    const total = leaderboard.length
-    const avgPoints = leaderboard.reduce((sum, e) => sum + e.total_points_earned, 0) / total
-    const avgValue = leaderboard.reduce((sum, e) => sum + e.lifetime_value, 0) / total
+    const total = leaderboard.length;
+    const avgPoints = leaderboard.reduce((sum, e) => sum + e.total_points_earned, 0) / total;
+    const avgValue = leaderboard.reduce((sum, e) => sum + e.lifetime_value, 0) / total;
 
-    const tierCounts = leaderboard.reduce((acc, e) => {
-      acc[e.current_tier] = (acc[e.current_tier] || 0) + 1
-      return acc
-    }, {} as Record<LoyaltyTier, number>)
+    const tierCounts = leaderboard.reduce(
+      (acc, e) => {
+        acc[e.current_tier] = (acc[e.current_tier] || 0) + 1;
+        return acc;
+      },
+      {} as Record<LoyaltyTier, number>
+    );
 
-    const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] as LoyaltyTier
+    const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] as LoyaltyTier;
 
-    return { total, avgPoints, avgValue, topTier }
-  }, [leaderboard])
+    return { total, avgPoints, avgValue, topTier };
+  }, [leaderboard]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+        return <Trophy className="h-6 w-6 fill-yellow-500 text-yellow-500" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-400 fill-gray-400" />
+        return <Medal className="h-6 w-6 fill-gray-400 text-gray-400" />;
       case 3:
-        return <Medal className="w-6 h-6 text-amber-600 fill-amber-600" />
+        return <Medal className="h-6 w-6 fill-amber-600 text-amber-600" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   return (
     <div className="space-y-6">
@@ -165,7 +160,7 @@ export default function LoyaltyLeaderboard() {
           <p className="text-muted-foreground">Top performing customers and tier rankings</p>
         </div>
         <Button onClick={handleExport} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
+          <Download className="mr-2 h-4 w-4" />
           Export CSV
         </Button>
       </div>
@@ -176,10 +171,10 @@ export default function LoyaltyLeaderboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
+                <p className="text-muted-foreground text-sm font-medium">Total Customers</p>
                 <p className="text-2xl font-bold">{stats.total.toLocaleString()}</p>
               </div>
-              <Users className="w-8 h-8 text-primary" />
+              <Users className="text-primary h-8 w-8" />
             </div>
           </CardContent>
         </Card>
@@ -188,10 +183,10 @@ export default function LoyaltyLeaderboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Points Earned</p>
+                <p className="text-muted-foreground text-sm font-medium">Avg Points Earned</p>
                 <p className="text-2xl font-bold">{Math.round(stats.avgPoints).toLocaleString()}</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
+              <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -200,10 +195,10 @@ export default function LoyaltyLeaderboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Lifetime Value</p>
+                <p className="text-muted-foreground text-sm font-medium">Avg Lifetime Value</p>
                 <p className="text-2xl font-bold">${Math.round(stats.avgValue).toLocaleString()}</p>
               </div>
-              <Trophy className="w-8 h-8 text-yellow-500" />
+              <Trophy className="h-8 w-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
@@ -212,13 +207,15 @@ export default function LoyaltyLeaderboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Top Tier</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`w-3 h-3 rounded-full ${TIER_COLORS[stats.topTier]}`} />
+                <p className="text-muted-foreground text-sm font-medium">Top Tier</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <div className={`h-3 w-3 rounded-full ${TIER_COLORS[stats.topTier]}`} />
                   <p className="text-xl font-bold capitalize">{stats.topTier}</p>
                 </div>
               </div>
-              {React.createElement(TIER_ICONS[stats.topTier], { className: 'w-8 h-8 text-primary' })}
+              {React.createElement(TIER_ICONS[stats.topTier], {
+                className: 'w-8 h-8 text-primary',
+              })}
             </div>
           </CardContent>
         </Card>
@@ -229,7 +226,7 @@ export default function LoyaltyLeaderboard() {
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="flex-1">
-              <Select value={period} onValueChange={(v) => setPeriod(v as unknown)}>
+              <Select value={period} onValueChange={v => setPeriod(v as unknown)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -243,7 +240,7 @@ export default function LoyaltyLeaderboard() {
             </div>
 
             <div className="flex-1">
-              <Select value={tierFilter} onValueChange={(v) => setTierFilter(v as unknown)}>
+              <Select value={tierFilter} onValueChange={v => setTierFilter(v as unknown)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -259,7 +256,7 @@ export default function LoyaltyLeaderboard() {
             </div>
 
             <div className="flex-1">
-              <Select value={limit.toString()} onValueChange={(v) => setLimit(parseInt(v))}>
+              <Select value={limit.toString()} onValueChange={v => setLimit(parseInt(v))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -282,13 +279,13 @@ export default function LoyaltyLeaderboard() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 space-y-4">
+            <div className="space-y-4 p-8">
               {[...Array(10)].map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : !leaderboard || leaderboard.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
+            <div className="text-muted-foreground py-12 text-center">
               No leaderboard data available
             </div>
           ) : (
@@ -306,16 +303,19 @@ export default function LoyaltyLeaderboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leaderboard.map((entry) => {
-                  const TierIcon = TIER_ICONS[entry.current_tier]
-                  const rankIcon = getRankIcon(entry.overall_rank)
+                {leaderboard.map(entry => {
+                  const TierIcon = TIER_ICONS[entry.current_tier];
+                  const rankIcon = getRankIcon(entry.overall_rank);
 
                   return (
-                    <TableRow key={entry.customer_id} className={entry.overall_rank <= 3 ? 'bg-muted/50' : ''}>
+                    <TableRow
+                      key={entry.customer_id}
+                      className={entry.overall_rank <= 3 ? 'bg-muted/50' : ''}
+                    >
                       <TableCell>
                         <div className="flex items-center justify-center">
                           {rankIcon || (
-                            <span className="text-lg font-bold text-muted-foreground">
+                            <span className="text-muted-foreground text-lg font-bold">
                               {entry.overall_rank}
                             </span>
                           )}
@@ -332,7 +332,7 @@ export default function LoyaltyLeaderboard() {
                           <div>
                             <div className="font-medium">{entry.customer_name}</div>
                             {entry.company && (
-                              <div className="text-sm text-muted-foreground">{entry.company}</div>
+                              <div className="text-muted-foreground text-sm">{entry.company}</div>
                             )}
                           </div>
                         </div>
@@ -340,14 +340,18 @@ export default function LoyaltyLeaderboard() {
 
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${TIER_COLORS[entry.current_tier]}`} />
-                          <span className="capitalize font-medium">{entry.current_tier}</span>
-                          <TierIcon className="w-4 h-4 text-muted-foreground" />
+                          <div
+                            className={`h-3 w-3 rounded-full ${TIER_COLORS[entry.current_tier]}`}
+                          />
+                          <span className="font-medium capitalize">{entry.current_tier}</span>
+                          <TierIcon className="text-muted-foreground h-4 w-4" />
                         </div>
                       </TableCell>
 
                       <TableCell className="text-right">
-                        <div className="font-semibold">{entry.total_points_earned.toLocaleString()}</div>
+                        <div className="font-semibold">
+                          {entry.total_points_earned.toLocaleString()}
+                        </div>
                         {period === 'month' && entry.points_this_month > 0 && (
                           <div className="text-xs text-green-600">
                             +{entry.points_this_month.toLocaleString()} this month
@@ -378,7 +382,7 @@ export default function LoyaltyLeaderboard() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
@@ -386,5 +390,5 @@ export default function LoyaltyLeaderboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

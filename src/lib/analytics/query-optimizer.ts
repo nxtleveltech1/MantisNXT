@@ -68,7 +68,7 @@ export class QueryPerformanceAnalyzer {
   private performanceThresholds = {
     slowQueryTime: 1000, // milliseconds
     highJoinComplexity: 5,
-    lowCacheHitRatio: 0.9
+    lowCacheHitRatio: 0.9,
   };
 
   constructor(database: Pool) {
@@ -96,7 +96,6 @@ export class QueryPerformanceAnalyzer {
       this.cacheQueryAnalysis(queryHash, analysis);
 
       return analysis;
-
     } catch (error) {
       console.error('Query analysis error:', error);
       return {
@@ -109,7 +108,7 @@ export class QueryPerformanceAnalyzer {
         optimizationSuggestions: ['Query failed to execute'],
         performanceScore: 0,
         queryHash,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -125,7 +124,10 @@ export class QueryPerformanceAnalyzer {
     const joinComplexity = this.calculateJoinComplexity(plan);
     const performanceScore = this.calculatePerformanceScore(executionTime, plan, result.rowCount);
     const optimizationSuggestions = this.generateOptimizationSuggestions(
-      query, plan, executionTime, joinComplexity
+      query,
+      plan,
+      executionTime,
+      joinComplexity
     );
 
     return {
@@ -138,7 +140,7 @@ export class QueryPerformanceAnalyzer {
       optimizationSuggestions,
       performanceScore,
       queryHash: '',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -180,7 +182,11 @@ export class QueryPerformanceAnalyzer {
     return joinCount;
   }
 
-  private calculatePerformanceScore(executionTime: number, plan: unknown, rowCount: number): number {
+  private calculatePerformanceScore(
+    executionTime: number,
+    plan: unknown,
+    rowCount: number
+  ): number {
     // Base score calculation
     let score = 100;
 
@@ -192,7 +198,7 @@ export class QueryPerformanceAnalyzer {
     // Penalize inefficient plans
     const totalCost = plan['Plan']['Total Cost'];
     if (totalCost > 1000) {
-      score -= Math.min(30, (totalCost - 1000) / 1000 * 30);
+      score -= Math.min(30, ((totalCost - 1000) / 1000) * 30);
     }
 
     // Penalize sequential scans on large tables
@@ -249,13 +255,16 @@ export class QueryPerformanceAnalyzer {
 
   private hashQuery(query: string): string {
     // Simple hash function for query identification
-    return query.toLowerCase()
+    return query
+      .toLowerCase()
       .replace(/\s+/g, ' ')
       .replace(/\d+/g, '?') // Replace numbers with placeholders
-      .split('').reduce((hash, char) => {
+      .split('')
+      .reduce((hash, char) => {
         const charCode = char.charCodeAt(0);
-        return ((hash << 5) - hash) + charCode;
-      }, 0).toString();
+        return (hash << 5) - hash + charCode;
+      }, 0)
+      .toString();
   }
 
   private cacheQueryAnalysis(queryHash: string, analysis: QueryAnalysis) {
@@ -304,28 +313,28 @@ export class IntelligentQueryOptimizer {
     this.optimizationPatterns = [
       {
         pattern: /SELECT \* FROM (\w+) WHERE (\w+) IN \([^)]+\)/i,
-        optimization: (query) => this.optimizeInClause(query),
+        optimization: query => this.optimizeInClause(query),
         type: 'in_clause_optimization',
-        expectedSpeedup: 1.3
+        expectedSpeedup: 1.3,
       },
       {
         pattern: /SELECT .* FROM (\w+) .* ORDER BY (\w+) LIMIT (\d+)/i,
-        optimization: (query) => this.optimizeTopN(query),
+        optimization: query => this.optimizeTopN(query),
         type: 'top_n_optimization',
-        expectedSpeedup: 2.0
+        expectedSpeedup: 2.0,
       },
       {
         pattern: /SELECT .* FROM (\w+) a JOIN (\w+) b ON .* WHERE/i,
-        optimization: (query) => this.optimizeJoinOrder(query),
+        optimization: query => this.optimizeJoinOrder(query),
         type: 'join_reorder',
-        expectedSpeedup: 1.5
+        expectedSpeedup: 1.5,
       },
       {
         pattern: /EXISTS\s*\(\s*SELECT/i,
-        optimization: (query) => this.optimizeExistsClause(query),
+        optimization: query => this.optimizeExistsClause(query),
         type: 'exists_optimization',
-        expectedSpeedup: 1.4
-      }
+        expectedSpeedup: 1.4,
+      },
     ];
   }
 
@@ -350,7 +359,10 @@ export class IntelligentQueryOptimizer {
                 optimizationType: pattern.type as unknown,
                 expectedSpeedup: pattern.expectedSpeedup,
                 explanation: this.getOptimizationExplanation(pattern.type),
-                confidence: this.calculateOptimizationConfidence(originalAnalysis, optimizedAnalysis)
+                confidence: this.calculateOptimizationConfidence(
+                  originalAnalysis,
+                  optimizedAnalysis
+                ),
               };
             }
           }
@@ -358,7 +370,6 @@ export class IntelligentQueryOptimizer {
       }
 
       return null;
-
     } catch (error) {
       console.error('Query optimization error:', error);
       return null;
@@ -385,10 +396,7 @@ export class IntelligentQueryOptimizer {
   private optimizeJoinOrder(query: string): string {
     // Simple join reordering based on table size estimation
     // In production, this would use statistics
-    return query.replace(
-      /FROM (\w+) a JOIN (\w+) b/i,
-      'FROM $2 b JOIN $1 a'
-    );
+    return query.replace(/FROM (\w+) a JOIN (\w+) b/i, 'FROM $2 b JOIN $1 a');
   }
 
   private optimizeExistsClause(query: string): string {
@@ -401,10 +409,10 @@ export class IntelligentQueryOptimizer {
 
   private getOptimizationExplanation(type: string): string {
     const explanations = {
-      'in_clause_optimization': 'Converted IN clause to EXISTS for better index utilization',
-      'top_n_optimization': 'Added index hint for ORDER BY + LIMIT optimization',
-      'join_reorder': 'Reordered joins to process smaller table first',
-      'exists_optimization': 'Converted correlated subquery to more efficient form'
+      in_clause_optimization: 'Converted IN clause to EXISTS for better index utilization',
+      top_n_optimization: 'Added index hint for ORDER BY + LIMIT optimization',
+      join_reorder: 'Reordered joins to process smaller table first',
+      exists_optimization: 'Converted correlated subquery to more efficient form',
     };
 
     return explanations[type as keyof typeof explanations] || 'Applied query optimization';
@@ -414,7 +422,8 @@ export class IntelligentQueryOptimizer {
     original: QueryAnalysis,
     optimized: QueryAnalysis
   ): number {
-    const executionImprovement = (original.executionTime - optimized.executionTime) / original.executionTime;
+    const executionImprovement =
+      (original.executionTime - optimized.executionTime) / original.executionTime;
     const scoreImprovement = (optimized.performanceScore - original.performanceScore) / 100;
 
     return Math.min(0.95, Math.max(0.1, (executionImprovement + scoreImprovement) / 2));
@@ -433,18 +442,12 @@ export class DatabasePerformanceMonitor {
 
   async getCurrentMetrics(): Promise<DatabaseMetrics> {
     try {
-      const [
-        connectionStats,
-        queryStats,
-        cacheStats,
-        tableStats,
-        slowQueries
-      ] = await Promise.all([
+      const [connectionStats, queryStats, cacheStats, tableStats, slowQueries] = await Promise.all([
         this.getConnectionStats(),
         this.getQueryStats(),
         this.getCacheStats(),
         this.getTableStats(),
-        this.getSlowQueries()
+        this.getSlowQueries(),
       ]);
 
       const metrics: DatabaseMetrics = {
@@ -457,10 +460,10 @@ export class DatabasePerformanceMonitor {
         queryPerformance: {
           averageExecutionTime: queryStats.avgTime,
           slowestQueries: slowQueries,
-          mostFrequentQueries: await this.getMostFrequentQueries()
+          mostFrequentQueries: await this.getMostFrequentQueries(),
         },
         recommendedOptimizations: await this.generateOptimizationRecommendations(),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Store in history
@@ -470,7 +473,6 @@ export class DatabasePerformanceMonitor {
       }
 
       return metrics;
-
     } catch (error) {
       console.error('Error collecting database metrics:', error);
       throw new Error('Failed to collect database metrics');
@@ -489,7 +491,7 @@ export class DatabasePerformanceMonitor {
 
       return {
         total: parseInt(result.rows[0].total),
-        active: parseInt(result.rows[0].active)
+        active: parseInt(result.rows[0].active),
       };
     } catch {
       return { total: 0, active: 0 };
@@ -570,9 +572,9 @@ export class DatabasePerformanceMonitor {
         tablesTouched: [],
         joinComplexity: 0,
         optimizationSuggestions: ['Query execution time above threshold'],
-        performanceScore: Math.max(0, 100 - (row.execution_time / 100)),
+        performanceScore: Math.max(0, 100 - row.execution_time / 100),
         queryHash: '',
-        timestamp: new Date()
+        timestamp: new Date(),
       }));
     } catch {
       return [];
@@ -601,7 +603,7 @@ export class DatabasePerformanceMonitor {
         optimizationSuggestions: [],
         performanceScore: 80,
         queryHash: '',
-        timestamp: new Date()
+        timestamp: new Date(),
       }));
     } catch {
       return [];
@@ -623,13 +625,15 @@ export class DatabasePerformanceMonitor {
     }
   }
 
-  private async generateOptimizationRecommendations(): Promise<Array<{
-    type: 'index' | 'query' | 'schema' | 'configuration';
-    priority: 'low' | 'medium' | 'high' | 'critical';
-    description: string;
-    expectedImprovement: string;
-    implementation: string;
-  }>> {
+  private async generateOptimizationRecommendations(): Promise<
+    Array<{
+      type: 'index' | 'query' | 'schema' | 'configuration';
+      priority: 'low' | 'medium' | 'high' | 'critical';
+      description: string;
+      expectedImprovement: string;
+      implementation: string;
+    }>
+  > {
     const recommendations = [];
 
     // Check for missing indexes
@@ -651,7 +655,7 @@ export class DatabasePerformanceMonitor {
           priority: 'high' as const,
           description: `Table ${row.table_name} has high sequential scan activity`,
           expectedImprovement: '30-60% query performance improvement',
-          implementation: `Analyze query patterns and add appropriate indexes to ${row.table_name}`
+          implementation: `Analyze query patterns and add appropriate indexes to ${row.table_name}`,
         });
       });
     } catch (error) {
@@ -666,7 +670,7 @@ export class DatabasePerformanceMonitor {
         priority: 'medium',
         description: `Low cache hit ratio: ${(cacheStats.hitRatio * 100).toFixed(1)}%`,
         expectedImprovement: '10-20% overall performance improvement',
-        implementation: 'Increase shared_buffers or optimize query patterns'
+        implementation: 'Increase shared_buffers or optimize query patterns',
       });
     }
 
@@ -703,7 +707,7 @@ export class DatabasePerformanceMonitor {
 export const queryOptimization = {
   analyzer: (db: Pool) => new QueryPerformanceAnalyzer(db),
   optimizer: (db: Pool) => new IntelligentQueryOptimizer(db),
-  monitor: (db: Pool) => new DatabasePerformanceMonitor(db)
+  monitor: (db: Pool) => new DatabasePerformanceMonitor(db),
 };
 
 // Export individual classes for direct import

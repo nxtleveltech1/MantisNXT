@@ -121,7 +121,11 @@ export class AIPricingRecommendationService {
 
       // Auto-apply if eligible
       if (eligible_for_auto_apply) {
-        await this.autoApplyRecommendation(recommendation_id, supplier_product_id, aiResponse.recommended_price);
+        await this.autoApplyRecommendation(
+          recommendation_id,
+          supplier_product_id,
+          aiResponse.recommended_price
+        );
       }
 
       return {
@@ -326,10 +330,7 @@ Respond with ONLY the JSON object, no additional text.`;
     const result = await query<{
       enable_auto_activation: boolean;
       auto_activation_confidence_threshold: number;
-    }>(
-      `SELECT * FROM get_pricing_automation_config($1)`,
-      [org_id]
-    );
+    }>(`SELECT * FROM get_pricing_automation_config($1)`, [org_id]);
 
     if (result.rows.length === 0) {
       return {
@@ -353,10 +354,9 @@ Respond with ONLY the JSON object, no additional text.`;
     const recResult = await query<{
       inventory_item_id: string;
       recommended_price: number;
-    }>(
-      `SELECT inventory_item_id, recommended_price FROM pricing_recommendation WHERE id = $1`,
-      [recommendation_id]
-    );
+    }>(`SELECT inventory_item_id, recommended_price FROM pricing_recommendation WHERE id = $1`, [
+      recommendation_id,
+    ]);
 
     if (recResult.rows.length === 0) {
       throw new Error('Recommendation not found');

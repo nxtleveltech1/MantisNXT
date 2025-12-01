@@ -1,9 +1,5 @@
 import { createHash } from 'crypto';
-import type {
-  AIEmbeddingInput,
-  AIEmbeddingResult,
-  AIUsageMetrics,
-} from '@/types/ai';
+import type { AIEmbeddingInput, AIEmbeddingResult, AIUsageMetrics } from '@/types/ai';
 import {
   AIServiceBase,
   type AIServiceBaseOptions,
@@ -58,10 +54,10 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
 
   async embed(
     input: AIEmbeddingInput,
-    options: EmbeddingRequestOptions = {},
+    options: EmbeddingRequestOptions = {}
   ): Promise<AIServiceResponse<AIEmbeddingResult>> {
     const cacheKey = this.shouldCache(input, options)
-      ? options.cacheKey ?? this.buildCacheKey(input, options)
+      ? (options.cacheKey ?? this.buildCacheKey(input, options))
       : undefined;
 
     if (cacheKey) {
@@ -74,9 +70,10 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
 
     const response = await this.executeOperation<AIEmbeddingResult>(
       'embedding.generate',
-      async ({ service, runtimeOptions }) => service.embed(input, { ...runtimeOptions, dimensions: options.dimensions }),
+      async ({ service, runtimeOptions }) =>
+        service.embed(input, { ...runtimeOptions, dimensions: options.dimensions }),
       options,
-      { inputHash: this.hashEmbeddingInput(input) },
+      { inputHash: this.hashEmbeddingInput(input) }
     );
 
     if (response.success && cacheKey) {
@@ -88,23 +85,28 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
 
   async embedBatch(
     inputs: Array<string | AIEmbeddingInput>,
-    options: EmbeddingRequestOptions = {},
+    options: EmbeddingRequestOptions = {}
   ): Promise<AIServiceResponse<EmbeddingBatchResult>> {
-    const formattedInputs = inputs.map((entry) => (typeof entry === 'string' ? { input: entry } : entry));
+    const formattedInputs = inputs.map(entry =>
+      typeof entry === 'string' ? { input: entry } : entry
+    );
 
     const response = await this.executeOperation<EmbeddingBatchResult>(
       'embedding.batch',
       async ({ service, runtimeOptions }) => {
         const results: EmbeddingBatchItem[] = [];
         for (const input of formattedInputs) {
-          const result = await service.embed(input, { ...runtimeOptions, dimensions: options.dimensions });
+          const result = await service.embed(input, {
+            ...runtimeOptions,
+            dimensions: options.dimensions,
+          });
           results.push({ input, result });
         }
-        const aggregatedUsage = this.combineUsage(results.map((item) => item.result.usage));
+        const aggregatedUsage = this.combineUsage(results.map(item => item.result.usage));
         return { results, usage: aggregatedUsage };
       },
       options,
-      { batchSize: formattedInputs.length },
+      { batchSize: formattedInputs.length }
     );
 
     return response;
@@ -137,7 +139,7 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
     query: string | number[] | Float32Array,
     documents: EmbeddingDocument[],
     options: EmbeddingRequestOptions = {},
-    topK: number = 10,
+    topK: number = 10
   ): Promise<EmbeddingSearchResult[]> {
     let queryVector: number[] | Float32Array;
 
@@ -151,14 +153,12 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
       queryVector = query;
     }
 
-    const scored = documents.map((doc) => ({
+    const scored = documents.map(doc => ({
       ...doc,
       score: this.cosineSimilarity(queryVector, doc.vector),
     }));
 
-    return scored
-      .sort((left, right) => right.score - left.score)
-      .slice(0, topK);
+    return scored.sort((left, right) => right.score - left.score).slice(0, topK);
   }
 
   clearCache(): void {
@@ -197,7 +197,7 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
 
   private getCachedResponse(
     cacheKey: string | undefined,
-    options: EmbeddingRequestOptions,
+    options: EmbeddingRequestOptions
   ): AIServiceResponse<AIEmbeddingResult> | undefined {
     if (!cacheKey) {
       return undefined;
@@ -224,7 +224,7 @@ export class AIEmbeddingService extends AIServiceBase<EmbeddingRequestOptions> {
   private setCachedResponse(
     cacheKey: string,
     response: AIServiceResponse<AIEmbeddingResult>,
-    ttlMs?: number,
+    ttlMs?: number
   ): void {
     const expiresAt = Date.now() + (ttlMs ?? this.defaultCacheTtlMs);
     this.cache.set(cacheKey, {

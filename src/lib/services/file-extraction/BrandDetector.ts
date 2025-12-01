@@ -81,9 +81,7 @@ export function isSKULike(value: string | null | undefined): boolean {
   }
 
   // Algorithm 2: Prefix patterns (SKU-12345, ITEM-789, P-123)
-  if (
-    /^(SKU|ITEM|PART|PROD|MAT|ART|REF|CODE|P|I|M|A|R|C)[-_]/i.test(trimmed)
-  ) {
+  if (/^(SKU|ITEM|PART|PROD|MAT|ART|REF|CODE|P|I|M|A|R|C)[-_]/i.test(trimmed)) {
     return true;
   }
 
@@ -114,7 +112,7 @@ export function isSKULike(value: string | null | undefined): boolean {
   }
 
   // Algorithm 7: Starts with known SKU prefix
-  if (COMMON_SKU_PREFIXES.some((p) => trimmed.startsWith(p))) {
+  if (COMMON_SKU_PREFIXES.some(p => trimmed.startsWith(p))) {
     return true;
   }
 
@@ -135,9 +133,7 @@ export function isSKULike(value: string | null | undefined): boolean {
  * Extract brand from sheet name
  * Handles common patterns like "Brand - Products", "Products_Brand", etc.
  */
-export function extractBrandFromSheetName(
-  sheetName: string
-): BrandDetectionResult {
+export function extractBrandFromSheetName(sheetName: string): BrandDetectionResult {
   if (!sheetName) {
     return { brand: null, confidence: 0, source: 'sheet_name' };
   }
@@ -182,9 +178,7 @@ export function extractBrandFromSheetName(
     !cleaned.includes(' ') &&
     !isSKULike(cleaned) &&
     cleaned.length > 3 &&
-    !['SHEET', 'DATA', 'PRODUCTS', 'ITEMS', 'PRICELIST'].includes(
-      upperCleaned
-    )
+    !['SHEET', 'DATA', 'PRODUCTS', 'ITEMS', 'PRICELIST'].includes(upperCleaned)
   ) {
     return { brand: cleaned, confidence: 0.6, source: 'sheet_name' };
   }
@@ -196,10 +190,7 @@ export function extractBrandFromSheetName(
  * Extract brand from column value
  * Applies SKU filtering to prevent contamination
  */
-export function extractBrandFromColumn(
-  value: unknown,
-  columnName?: string
-): BrandDetectionResult {
+export function extractBrandFromColumn(value: unknown, columnName?: string): BrandDetectionResult {
   if (!value || typeof value !== 'string') {
     return { brand: null, confidence: 0, source: 'column' };
   }
@@ -213,9 +204,7 @@ export function extractBrandFromColumn(
 
   // Skip generic values
   const upperCleaned = cleaned.toUpperCase();
-  if (
-    ['N/A', 'NA', 'NONE', 'NULL', 'UNKNOWN', '-', ''].includes(upperCleaned)
-  ) {
+  if (['N/A', 'NA', 'NONE', 'NULL', 'UNKNOWN', '-', ''].includes(upperCleaned)) {
     return { brand: null, confidence: 0, source: 'column' };
   }
 
@@ -230,8 +219,7 @@ export function extractBrandFromColumn(
   }
 
   // Higher confidence if column is explicitly named "brand" or similar
-  const confidence =
-    columnName && /brand|make|manufacturer|merk/i.test(columnName) ? 0.9 : 0.7;
+  const confidence = columnName && /brand|make|manufacturer|merk/i.test(columnName) ? 0.9 : 0.7;
 
   return { brand: cleaned, confidence, source: 'column' };
 }
@@ -329,9 +317,7 @@ export function detectBrand(
   }
 
   // Return result with highest confidence
-  const best = results.reduce((prev, curr) =>
-    curr.confidence > prev.confidence ? curr : prev
-  );
+  const best = results.reduce((prev, curr) => (curr.confidence > prev.confidence ? curr : prev));
 
   return best.confidence > 0 ? best : { brand: null, confidence: 0, source: 'pattern' };
 }

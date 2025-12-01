@@ -3,7 +3,7 @@
  * Allows users to filter dashboard data by time period
  */
 
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,9 @@ export function TimeRangeSelector({ value, onChange, className }: TimeRangeSelec
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Calendar className="h-4 w-4 text-muted-foreground" />
-      <div className="flex gap-1 rounded-lg border border-border p-1 bg-muted/50">
-        {ranges.map((range) => (
+      <Calendar className="text-muted-foreground h-4 w-4" />
+      <div className="border-border bg-muted/50 flex gap-1 rounded-lg border p-1">
+        {ranges.map(range => (
           <Button
             key={range.value}
             variant={value === range.value ? 'default' : 'ghost'}

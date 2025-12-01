@@ -10,13 +10,7 @@ import {
 } from '../category-ai';
 import { recordProposedCategoryForProduct } from '../proposed-categories';
 import type { EnrichedProduct } from '../sip-product-enrichment';
-import type {
-  BatchResult,
-  CategorizationResult,
-  CategorizationStatus,
-  JobConfig} from './types';
-
-
+import type { BatchResult, CategorizationResult, CategorizationStatus, JobConfig } from './types';
 
 export class CategorizationEngine {
   private confidenceThreshold: number;
@@ -52,18 +46,13 @@ export class CategorizationEngine {
       console.log(
         `[CategorizationEngine] Requesting AI suggestions for ${products.length} products (provider batch size=${providerBatchSize}, timeout=${providerTimeoutMs}ms)`
       );
-      const suggestions = await suggestCategoriesBatch(
-        products,
-        undefined,
-        orgId,
-        {
-          batchSize: providerBatchSize,
-          batchDelayMs: config.batch_delay_ms || 0,
-          timeoutMs: providerTimeoutMs,
-          overallTimeoutMs,
-          maxBatches,
-        }
-      );
+      const suggestions = await suggestCategoriesBatch(products, undefined, orgId, {
+        batchSize: providerBatchSize,
+        batchDelayMs: config.batch_delay_ms || 0,
+        timeoutMs: providerTimeoutMs,
+        overallTimeoutMs,
+        maxBatches,
+      });
       console.log(`[CategorizationEngine] Received ${suggestions.size} AI suggestions`);
 
       // Process each product with smart re-categorization logic
@@ -269,7 +258,7 @@ export class CategorizationEngine {
 
   /**
    * Determine if a product should be (re)categorized based on smart logic
-   * 
+   *
    * Re-categorization rules:
    * 1. If product has no category: always categorize
    * 2. If product has category and ai_confidence exists: only if newConfidence > ai_confidence
@@ -567,4 +556,3 @@ export class CategorizationEngine {
 
 // Singleton instance
 export const categorizationEngine = new CategorizationEngine();
-

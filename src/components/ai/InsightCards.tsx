@@ -1,15 +1,13 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  TooltipProvider,
-} from "@/components/ui/tooltip"
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   Brain,
   Sparkles,
@@ -45,80 +43,80 @@ import {
   Package,
   Globe,
   FileText,
-  Info
-} from "lucide-react"
+  Info,
+} from 'lucide-react';
 
 // Enhanced AI Insight Types
 export interface AIInsight {
-  id: string
-  type: 'opportunity' | 'risk' | 'trend' | 'anomaly' | 'prediction' | 'recommendation'
-  priority: 'critical' | 'high' | 'medium' | 'low'
-  title: string
-  description: string
-  summary: string
+  id: string;
+  type: 'opportunity' | 'risk' | 'trend' | 'anomaly' | 'prediction' | 'recommendation';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  summary: string;
   impact: {
-    financial: number
-    operational: string
-    timeline: string
-    probability: number
-  }
-  confidence: number
-  dataPoints: number
-  sources: string[]
-  category: string
-  subcategory?: string
-  tags: string[]
+    financial: number;
+    operational: string;
+    timeline: string;
+    probability: number;
+  };
+  confidence: number;
+  dataPoints: number;
+  sources: string[];
+  category: string;
+  subcategory?: string;
+  tags: string[];
   actions: {
-    primary: ActionItem
-    secondary: ActionItem[]
-  }
+    primary: ActionItem;
+    secondary: ActionItem[];
+  };
   metrics: {
     [key: string]: {
-      current: number
-      target?: number
-      trend: 'up' | 'down' | 'stable'
-      unit: string
-      formatted?: string
-    }
-  }
+      current: number;
+      target?: number;
+      trend: 'up' | 'down' | 'stable';
+      unit: string;
+      formatted?: string;
+    };
+  };
   visualization?: {
-    type: 'chart' | 'gauge' | 'progress' | 'comparison'
-    data: unknown
-    config?: unknown
-  }
-  relatedInsights: string[]
-  createdAt: string
-  updatedAt: string
-  expiresAt?: string
-  status: 'new' | 'viewed' | 'bookmarked' | 'actioned' | 'dismissed'
-  aiModel: string
-  version: string
+    type: 'chart' | 'gauge' | 'progress' | 'comparison';
+    data: unknown;
+    config?: unknown;
+  };
+  relatedInsights: string[];
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string;
+  status: 'new' | 'viewed' | 'bookmarked' | 'actioned' | 'dismissed';
+  aiModel: string;
+  version: string;
 }
 
 interface ActionItem {
-  id: string
-  label: string
-  description: string
-  icon: React.ComponentType<{ className?: string }>
-  action: string
-  data?: unknown
-  urgency: 'immediate' | 'this_week' | 'this_month' | 'planned'
-  estimatedEffort: 'low' | 'medium' | 'high'
-  estimatedValue: number
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  action: string;
+  data?: unknown;
+  urgency: 'immediate' | 'this_week' | 'this_month' | 'planned';
+  estimatedEffort: 'low' | 'medium' | 'high';
+  estimatedValue: number;
 }
 
 interface AIInsightCardsProps {
-  insights?: AIInsight[]
-  onInsightAction?: (insightId: string, action: ActionItem) => void
-  onInsightStatusChange?: (insightId: string, status: AIInsight['status']) => void
-  onRefresh?: () => void
-  compactMode?: boolean
-  maxCards?: number
+  insights?: AIInsight[];
+  onInsightAction?: (insightId: string, action: ActionItem) => void;
+  onInsightStatusChange?: (insightId: string, status: AIInsight['status']) => void;
+  onRefresh?: () => void;
+  compactMode?: boolean;
+  maxCards?: number;
   filterBy?: {
-    type?: AIInsight['type'][]
-    priority?: AIInsight['priority'][]
-    category?: string[]
-  }
+    type?: AIInsight['type'][];
+    priority?: AIInsight['priority'][];
+    category?: string[];
+  };
 }
 
 const AIInsightCards: React.FC<AIInsightCardsProps> = ({
@@ -128,14 +126,14 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
   onRefresh,
   compactMode = false,
   maxCards,
-  filterBy
+  filterBy,
 }) => {
   // State Management
-  const [loading, setLoading] = useState(false)
-  const [selectedInsights, setSelectedInsights] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'priority' | 'confidence' | 'impact' | 'date'>('priority')
-  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [selectedInsights, setSelectedInsights] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'priority' | 'confidence' | 'impact' | 'date'>('priority');
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [error, setError] = useState<string | null>(null);
 
   // Mock insights data for demonstration
   const mockInsights: AIInsight[] = [
@@ -144,13 +142,15 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
       type: 'opportunity',
       priority: 'high',
       title: 'Supplier Consolidation Opportunity',
-      description: 'AI analysis identifies potential 18% cost reduction through strategic supplier consolidation in technology category.',
-      summary: 'Consolidate 5 technology suppliers into 2 primary partners for significant volume discounts and reduced management overhead.',
+      description:
+        'AI analysis identifies potential 18% cost reduction through strategic supplier consolidation in technology category.',
+      summary:
+        'Consolidate 5 technology suppliers into 2 primary partners for significant volume discounts and reduced management overhead.',
       impact: {
         financial: 275000,
         operational: 'Reduced vendor management complexity by 60%',
         timeline: '6 months',
-        probability: 87
+        probability: 87,
       },
       confidence: 91,
       dataPoints: 124,
@@ -167,7 +167,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           action: 'create_plan',
           urgency: 'this_week',
           estimatedEffort: 'medium',
-          estimatedValue: 275000
+          estimatedValue: 275000,
         },
         secondary: [
           {
@@ -178,7 +178,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'analyze_suppliers',
             urgency: 'immediate',
             estimatedEffort: 'low',
-            estimatedValue: 0
+            estimatedValue: 0,
           },
           {
             id: 'market_research',
@@ -188,9 +188,9 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'market_research',
             urgency: 'this_week',
             estimatedEffort: 'high',
-            estimatedValue: 50000
-          }
-        ]
+            estimatedValue: 50000,
+          },
+        ],
       },
       metrics: {
         currentSuppliers: {
@@ -198,28 +198,28 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           target: 2,
           trend: 'down',
           unit: 'suppliers',
-          formatted: '5 → 2 suppliers'
+          formatted: '5 → 2 suppliers',
         },
         potentialSavings: {
           current: 275000,
           trend: 'up',
           unit: 'USD',
-          formatted: '$275K annually'
+          formatted: '$275K annually',
         },
         managementReduction: {
           current: 60,
           trend: 'up',
           unit: '%',
-          formatted: '60% reduction'
-        }
+          formatted: '60% reduction',
+        },
       },
       visualization: {
         type: 'chart',
         data: [
           { category: 'Current Cost', value: 1500000 },
           { category: 'Optimized Cost', value: 1225000 },
-          { category: 'Savings', value: 275000 }
-        ]
+          { category: 'Savings', value: 275000 },
+        ],
       },
       relatedInsights: ['insight_002', 'insight_005'],
       createdAt: new Date().toISOString(),
@@ -227,20 +227,21 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'new',
       aiModel: 'Claude-3.5-Sonnet',
-      version: '1.0'
+      version: '1.0',
     },
     {
       id: 'insight_002',
       type: 'risk',
       priority: 'critical',
       title: 'Single Source Dependency Risk',
-      description: 'Critical risk identified: 3 essential components have single supplier dependency, creating potential supply chain vulnerability.',
+      description:
+        'Critical risk identified: 3 essential components have single supplier dependency, creating potential supply chain vulnerability.',
       summary: '65% of critical components sourced from single suppliers in Southeast Asia region.',
       impact: {
         financial: 150000,
         operational: 'Potential 2-week production halt risk',
         timeline: 'Immediate action required',
-        probability: 73
+        probability: 73,
       },
       confidence: 88,
       dataPoints: 89,
@@ -257,7 +258,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           action: 'diversify_suppliers',
           urgency: 'immediate',
           estimatedEffort: 'high',
-          estimatedValue: 150000
+          estimatedValue: 150000,
         },
         secondary: [
           {
@@ -268,7 +269,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'risk_assessment',
             urgency: 'immediate',
             estimatedEffort: 'medium',
-            estimatedValue: 25000
+            estimatedValue: 25000,
           },
           {
             id: 'contingency_plan',
@@ -278,9 +279,9 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'contingency_plan',
             urgency: 'this_week',
             estimatedEffort: 'medium',
-            estimatedValue: 75000
-          }
-        ]
+            estimatedValue: 75000,
+          },
+        ],
       },
       metrics: {
         riskScore: {
@@ -288,46 +289,56 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           target: 4.0,
           trend: 'down',
           unit: '/10',
-          formatted: '8.2/10 High Risk'
+          formatted: '8.2/10 High Risk',
         },
         singleSourceItems: {
           current: 3,
           target: 0,
           trend: 'stable',
           unit: 'items',
-          formatted: '3 critical items'
+          formatted: '3 critical items',
         },
         geographicConcentration: {
           current: 65,
           target: 30,
           trend: 'stable',
           unit: '%',
-          formatted: '65% concentration'
-        }
+          formatted: '65% concentration',
+        },
       },
       visualization: {
         type: 'gauge',
-        data: { value: 82, max: 100, zones: [{ min: 0, max: 40, color: 'green' }, { min: 40, max: 70, color: 'yellow' }, { min: 70, max: 100, color: 'red' }] }
+        data: {
+          value: 82,
+          max: 100,
+          zones: [
+            { min: 0, max: 40, color: 'green' },
+            { min: 40, max: 70, color: 'yellow' },
+            { min: 70, max: 100, color: 'red' },
+          ],
+        },
       },
       relatedInsights: ['insight_001', 'insight_003'],
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       updatedAt: new Date().toISOString(),
       status: 'new',
       aiModel: 'Claude-3.5-Sonnet',
-      version: '1.0'
+      version: '1.0',
     },
     {
       id: 'insight_003',
       type: 'prediction',
       priority: 'medium',
       title: 'Price Increase Forecast',
-      description: 'AI predicts 12-15% price increase in semiconductor components over next 6 months based on market trends and supplier communications.',
-      summary: 'Global supply constraints and increased demand driving significant price pressures in electronics category.',
+      description:
+        'AI predicts 12-15% price increase in semiconductor components over next 6 months based on market trends and supplier communications.',
+      summary:
+        'Global supply constraints and increased demand driving significant price pressures in electronics category.',
       impact: {
         financial: 89000,
         operational: 'Budget planning adjustment needed',
         timeline: '3-6 months',
-        probability: 79
+        probability: 79,
       },
       confidence: 84,
       dataPoints: 156,
@@ -344,7 +355,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           action: 'forward_buying',
           urgency: 'this_month',
           estimatedEffort: 'medium',
-          estimatedValue: 45000
+          estimatedValue: 45000,
         },
         secondary: [
           {
@@ -355,7 +366,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'negotiate_contracts',
             urgency: 'this_week',
             estimatedEffort: 'high',
-            estimatedValue: 89000
+            estimatedValue: 89000,
           },
           {
             id: 'alternative_suppliers',
@@ -365,29 +376,29 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             action: 'find_alternatives',
             urgency: 'this_month',
             estimatedEffort: 'high',
-            estimatedValue: 35000
-          }
-        ]
+            estimatedValue: 35000,
+          },
+        ],
       },
       metrics: {
         predictedIncrease: {
           current: 13.5,
           trend: 'up',
           unit: '%',
-          formatted: '13.5% increase'
+          formatted: '13.5% increase',
         },
         timelineMonths: {
           current: 4.5,
           trend: 'stable',
           unit: 'months',
-          formatted: '4.5 months'
+          formatted: '4.5 months',
         },
         affectedSpend: {
           current: 680000,
           trend: 'up',
           unit: 'USD',
-          formatted: '$680K annual spend'
-        }
+          formatted: '$680K annual spend',
+        },
       },
       visualization: {
         type: 'chart',
@@ -397,143 +408,143 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           { month: 'Month 2', price: 105 },
           { month: 'Month 3', price: 108 },
           { month: 'Month 4', price: 112 },
-          { month: 'Month 5', price: 115 }
-        ]
+          { month: 'Month 5', price: 115 },
+        ],
       },
       relatedInsights: ['insight_002', 'insight_004'],
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
       updatedAt: new Date().toISOString(),
       status: 'viewed',
       aiModel: 'Claude-3.5-Sonnet',
-      version: '1.0'
-    }
-  ]
+      version: '1.0',
+    },
+  ];
 
   // Use provided insights or mock data
-  const workingInsights = insights.length > 0 ? insights : mockInsights
+  const workingInsights = insights.length > 0 ? insights : mockInsights;
 
   // Filter insights based on filterBy prop
   const filteredInsights = useMemo(() => {
-    let filtered = workingInsights
+    let filtered = workingInsights;
 
     if (filterBy?.type && filterBy.type.length > 0) {
-      filtered = filtered.filter(insight => filterBy.type!.includes(insight.type))
+      filtered = filtered.filter(insight => filterBy.type!.includes(insight.type));
     }
 
     if (filterBy?.priority && filterBy.priority.length > 0) {
-      filtered = filtered.filter(insight => filterBy.priority!.includes(insight.priority))
+      filtered = filtered.filter(insight => filterBy.priority!.includes(insight.priority));
     }
 
     if (filterBy?.category && filterBy.category.length > 0) {
-      filtered = filtered.filter(insight => filterBy.category!.includes(insight.category))
+      filtered = filtered.filter(insight => filterBy.category!.includes(insight.category));
     }
 
-    return filtered
-  }, [workingInsights, filterBy])
+    return filtered;
+  }, [workingInsights, filterBy]);
 
   // Sort insights
   const sortedInsights = useMemo(() => {
     return [...filteredInsights].sort((a, b) => {
       switch (sortBy) {
         case 'priority':
-          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
-          return priorityOrder[a.priority] - priorityOrder[b.priority]
+          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+          return priorityOrder[a.priority] - priorityOrder[b.priority];
         case 'confidence':
-          return b.confidence - a.confidence
+          return b.confidence - a.confidence;
         case 'impact':
-          return b.impact.financial - a.impact.financial
+          return b.impact.financial - a.impact.financial;
         case 'date':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
-          return 0
+          return 0;
       }
-    })
-  }, [filteredInsights, sortBy])
+    });
+  }, [filteredInsights, sortBy]);
 
   // Apply max cards limit
-  const displayInsights = maxCards ? sortedInsights.slice(0, maxCards) : sortedInsights
+  const displayInsights = maxCards ? sortedInsights.slice(0, maxCards) : sortedInsights;
 
   // Get insight type icon and color
   const getInsightTypeIcon = (type: AIInsight['type']) => {
     switch (type) {
       case 'opportunity':
-        return { icon: Lightbulb, color: 'from-green-500 to-emerald-600' }
+        return { icon: Lightbulb, color: 'from-green-500 to-emerald-600' };
       case 'risk':
-        return { icon: AlertTriangle, color: 'from-red-500 to-rose-600' }
+        return { icon: AlertTriangle, color: 'from-red-500 to-rose-600' };
       case 'trend':
-        return { icon: TrendingUp, color: 'from-blue-500 to-indigo-600' }
+        return { icon: TrendingUp, color: 'from-blue-500 to-indigo-600' };
       case 'anomaly':
-        return { icon: Activity, color: 'from-yellow-500 to-amber-600' }
+        return { icon: Activity, color: 'from-yellow-500 to-amber-600' };
       case 'prediction':
-        return { icon: Brain, color: 'from-purple-500 to-violet-600' }
+        return { icon: Brain, color: 'from-purple-500 to-violet-600' };
       case 'recommendation':
-        return { icon: Target, color: 'from-indigo-500 to-blue-600' }
+        return { icon: Target, color: 'from-indigo-500 to-blue-600' };
       default:
-        return { icon: Info, color: 'from-gray-500 to-slate-600' }
+        return { icon: Info, color: 'from-gray-500 to-slate-600' };
     }
-  }
+  };
 
   // Get priority color
   const getPriorityColor = (priority: AIInsight['priority']) => {
     switch (priority) {
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-300'
+        return 'bg-red-100 text-red-800 border-red-300';
       case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-300'
+        return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-300'
+        return 'bg-green-100 text-green-800 border-green-300';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300'
+        return 'bg-gray-100 text-gray-800 border-gray-300';
     }
-  }
+  };
 
   // Handle insight action
   const handleInsightAction = (insight: AIInsight, action: ActionItem) => {
-    onInsightAction?.(insight.id, action)
+    onInsightAction?.(insight.id, action);
 
     // Update insight status to actioned
-    onInsightStatusChange?.(insight.id, 'actioned')
-  }
+    onInsightStatusChange?.(insight.id, 'actioned');
+  };
 
   // Handle insight status change
   const handleStatusChange = (insightId: string, status: AIInsight['status']) => {
-    onInsightStatusChange?.(insightId, status)
-  }
+    onInsightStatusChange?.(insightId, status);
+  };
 
   // Format financial impact
   const formatFinancialImpact = (amount: number): string => {
     if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`
+      return `$${(amount / 1000000).toFixed(1)}M`;
     } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`
+      return `$${(amount / 1000).toFixed(0)}K`;
     } else {
-      return `$${amount.toLocaleString()}`
+      return `$${amount.toLocaleString()}`;
     }
-  }
+  };
 
   // Refresh insights
   const handleRefresh = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await onRefresh?.()
+      await onRefresh?.();
       // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err) {
-      setError("Failed to refresh insights. Please try again.")
+      setError('Failed to refresh insights. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header with Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
               <Sparkles className="h-6 w-6 text-purple-600" />
               AI Insights
             </h2>
@@ -555,19 +566,19 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                 <DropdownMenuLabel>Sort Options</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setSortBy('priority')}>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <AlertTriangle className="mr-2 h-4 w-4" />
                   Priority
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy('confidence')}>
-                  <Star className="h-4 w-4 mr-2" />
+                  <Star className="mr-2 h-4 w-4" />
                   Confidence
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy('impact')}>
-                  <DollarSign className="h-4 w-4 mr-2" />
+                  <DollarSign className="mr-2 h-4 w-4" />
                   Financial Impact
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy('date')}>
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="mr-2 h-4 w-4" />
                   Date Created
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -592,14 +603,9 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              <div className="font-semibold mb-1">Error</div>
+              <div className="mb-1 font-semibold">Error</div>
               <div>{error}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setError(null)}
-              >
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setError(null)}>
                 Dismiss
               </Button>
             </AlertDescription>
@@ -607,14 +613,14 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
         )}
 
         {/* Insights Grid */}
-        <div className={`grid gap-6 ${
-          compactMode
-            ? 'grid-cols-1 lg:grid-cols-2'
-            : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
-        }`}>
+        <div
+          className={`grid gap-6 ${
+            compactMode ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
+          }`}
+        >
           <AnimatePresence>
             {displayInsights.map((insight, index) => {
-              const { icon: TypeIcon, color } = getInsightTypeIcon(insight.type)
+              const { icon: TypeIcon, color } = getInsightTypeIcon(insight.type);
 
               return (
                 <motion.div
@@ -625,17 +631,21 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                   transition={{ delay: index * 0.05 }}
                   className="group"
                 >
-                  <Card className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${
-                    insight.priority === 'critical' ? 'ring-2 ring-red-200' : ''
-                  }`}>
+                  <Card
+                    className={`border-0 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                      insight.priority === 'critical' ? 'ring-2 ring-red-200' : ''
+                    }`}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={`p-3 rounded-xl bg-gradient-to-r ${color} text-white shadow-lg`}>
+                          <div
+                            className={`rounded-xl bg-gradient-to-r p-3 ${color} text-white shadow-lg`}
+                          >
                             <TypeIcon className="h-5 w-5" />
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="mb-1 flex items-center gap-2">
                               <Badge
                                 variant="outline"
                                 className={`text-xs font-medium ${getPriorityColor(insight.priority)}`}
@@ -646,34 +656,40 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                                 {insight.confidence}% confident
                               </Badge>
                             </div>
-                            <CardTitle className="text-lg leading-tight">
-                              {insight.title}
-                            </CardTitle>
+                            <CardTitle className="text-lg leading-tight">{insight.title}</CardTitle>
                           </div>
                         </div>
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 transition-opacity group-hover:opacity-100"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleStatusChange(insight.id, 'bookmarked')}>
-                              <Bookmark className="h-4 w-4 mr-2" />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(insight.id, 'bookmarked')}
+                            >
+                              <Bookmark className="mr-2 h-4 w-4" />
                               Bookmark
                             </DropdownMenuItem>
                             <DropdownMenuItem>
-                              <Share className="h-4 w-4 mr-2" />
+                              <Share className="mr-2 h-4 w-4" />
                               Share
                             </DropdownMenuItem>
                             <DropdownMenuItem>
-                              <Download className="h-4 w-4 mr-2" />
+                              <Download className="mr-2 h-4 w-4" />
                               Export
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleStatusChange(insight.id, 'dismissed')}>
-                              <X className="h-4 w-4 mr-2" />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(insight.id, 'dismissed')}
+                            >
+                              <X className="mr-2 h-4 w-4" />
                               Dismiss
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -683,31 +699,35 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
 
                     <CardContent className="space-y-4">
                       {/* Description */}
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {insight.summary}
-                      </p>
+                      <p className="text-sm leading-relaxed text-gray-700">{insight.summary}</p>
 
                       {/* Key Metrics */}
                       <div className="space-y-3">
-                        {Object.entries(insight.metrics).slice(0, 2).map(([key, metric]) => (
-                          <div key={key} className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600 capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">
-                                {metric.formatted || `${metric.current}${metric.unit}`}
+                        {Object.entries(insight.metrics)
+                          .slice(0, 2)
+                          .map(([key, metric]) => (
+                            <div key={key} className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600 capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}
                               </span>
-                              {metric.trend === 'up' && <ArrowUp className="h-3 w-3 text-green-500" />}
-                              {metric.trend === 'down' && <ArrowDown className="h-3 w-3 text-red-500" />}
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {metric.formatted || `${metric.current}${metric.unit}`}
+                                </span>
+                                {metric.trend === 'up' && (
+                                  <ArrowUp className="h-3 w-3 text-green-500" />
+                                )}
+                                {metric.trend === 'down' && (
+                                  <ArrowDown className="h-3 w-3 text-red-500" />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
 
                       {/* Impact Summary */}
-                      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
+                      <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
+                        <div className="mb-2 flex items-center justify-between">
                           <span className="text-sm font-medium text-blue-800">Impact</span>
                           <Badge variant="outline" className="text-xs">
                             {insight.impact.probability}% likely
@@ -760,9 +780,11 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                       <div className="flex flex-col gap-2 pt-2">
                         <Button
                           onClick={() => handleInsightAction(insight, insight.actions.primary)}
-                          className={`w-full bg-gradient-to-r ${color} hover:opacity-90 text-white`}
+                          className={`w-full bg-gradient-to-r ${color} text-white hover:opacity-90`}
                         >
-                          {React.createElement(insight.actions.primary.icon, { className: "h-4 w-4 mr-2" })}
+                          {React.createElement(insight.actions.primary.icon, {
+                            className: 'h-4 w-4 mr-2',
+                          })}
                           {insight.actions.primary.label}
                         </Button>
 
@@ -771,10 +793,14 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleInsightAction(insight, insight.actions.secondary[0])}
+                              onClick={() =>
+                                handleInsightAction(insight, insight.actions.secondary[0])
+                              }
                               className="flex-1"
                             >
-                              {React.createElement(insight.actions.secondary[0].icon, { className: "h-3 w-3 mr-1" })}
+                              {React.createElement(insight.actions.secondary[0].icon, {
+                                className: 'h-3 w-3 mr-1',
+                              })}
                               {insight.actions.secondary[0].label}
                             </Button>
                             {insight.actions.secondary.length > 1 && (
@@ -785,12 +811,14 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                  {insight.actions.secondary.slice(1).map((action) => (
+                                  {insight.actions.secondary.slice(1).map(action => (
                                     <DropdownMenuItem
                                       key={action.id}
                                       onClick={() => handleInsightAction(insight, action)}
                                     >
-                                      {React.createElement(action.icon, { className: "h-4 w-4 mr-2" })}
+                                      {React.createElement(action.icon, {
+                                        className: 'h-4 w-4 mr-2',
+                                      })}
                                       {action.label}
                                     </DropdownMenuItem>
                                   ))}
@@ -802,7 +830,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                       </div>
 
                       {/* Footer */}
-                      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
+                      <div className="flex items-center justify-between border-t pt-2 text-xs text-gray-500">
                         <div className="flex items-center gap-2">
                           <Brain className="h-3 w-3" />
                           <span>{insight.aiModel}</span>
@@ -825,18 +853,21 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+            className="py-12 text-center"
           >
-            <div className="mx-auto w-24 h-24 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-indigo-100">
               <Sparkles className="h-12 w-12 text-purple-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Insights Available</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">No Insights Available</h3>
+            <p className="mb-4 text-gray-600">
               {loading ? 'Loading AI insights...' : 'No insights match your current filters.'}
             </p>
             {!loading && (
-              <Button onClick={handleRefresh} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
-                <RefreshCw className="h-4 w-4 mr-2" />
+              <Button
+                onClick={handleRefresh}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Insights
               </Button>
             )}
@@ -845,6 +876,6 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
       </div>
     </TooltipProvider>
   );
-}
+};
 
-export default AIInsightCards
+export default AIInsightCards;

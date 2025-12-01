@@ -15,9 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-
 import { Play, CheckCircle2, Clock, XCircle, Eye } from 'lucide-react';
-import type { OptimizationRun} from '@/lib/db/pricing-schema';
+import type { OptimizationRun } from '@/lib/db/pricing-schema';
 import { OptimizationStatus, PricingStrategy } from '@/lib/db/pricing-schema';
 import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
@@ -40,8 +39,10 @@ export default function OptimizationPage() {
 
   // Poll for progress on running optimizations
   useEffect(() => {
-    const runningRuns = runs.filter(r => r.status === OptimizationStatus.RUNNING || r.status === OptimizationStatus.PENDING);
-    
+    const runningRuns = runs.filter(
+      r => r.status === OptimizationStatus.RUNNING || r.status === OptimizationStatus.PENDING
+    );
+
     if (runningRuns.length === 0) return;
 
     const pollProgress = async () => {
@@ -115,7 +116,7 @@ export default function OptimizationPage() {
       case OptimizationStatus.COMPLETED:
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case OptimizationStatus.RUNNING:
-        return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+        return <Clock className="h-4 w-4 animate-spin text-blue-500" />;
       case OptimizationStatus.FAILED:
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
@@ -159,18 +160,19 @@ export default function OptimizationPage() {
 
           {loading ? (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
+              <CardContent className="text-muted-foreground py-8 text-center">
                 Loading optimization runs...
               </CardContent>
             </Card>
           ) : runs.length === 0 ? (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No optimization runs yet. Start your first optimization to get AI-powered pricing recommendations.
+              <CardContent className="text-muted-foreground py-8 text-center">
+                No optimization runs yet. Start your first optimization to get AI-powered pricing
+                recommendations.
               </CardContent>
             </Card>
           ) : (
-            runs.map((run) => (
+            runs.map(run => (
               <Card key={run.run_id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -179,7 +181,11 @@ export default function OptimizationPage() {
                         {getStatusIcon(run.status)}
                         <CardTitle>{run.run_name}</CardTitle>
                         <Badge variant="outline">{run.strategy}</Badge>
-                        <Badge variant={run.status === OptimizationStatus.COMPLETED ? 'default' : 'secondary'}>
+                        <Badge
+                          variant={
+                            run.status === OptimizationStatus.COMPLETED ? 'default' : 'secondary'
+                          }
+                        >
                           {run.status}
                         </Badge>
                       </div>
@@ -197,20 +203,27 @@ export default function OptimizationPage() {
                     )}
                   </div>
                 </CardHeader>
-                {(run.status === OptimizationStatus.RUNNING || run.status === OptimizationStatus.PENDING) && progress[run.run_id] && (
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{progress[run.run_id].current_step}</span>
-                        <span className="font-medium">{progress[run.run_id].progress_percent}%</span>
+                {(run.status === OptimizationStatus.RUNNING ||
+                  run.status === OptimizationStatus.PENDING) &&
+                  progress[run.run_id] && (
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {progress[run.run_id].current_step}
+                          </span>
+                          <span className="font-medium">
+                            {progress[run.run_id].progress_percent}%
+                          </span>
+                        </div>
+                        <Progress value={progress[run.run_id].progress_percent} />
+                        <div className="text-muted-foreground text-xs">
+                          {progress[run.run_id].products_processed} of{' '}
+                          {progress[run.run_id].total_products} products processed
+                        </div>
                       </div>
-                      <Progress value={progress[run.run_id].progress_percent} />
-                      <div className="text-xs text-muted-foreground">
-                        {progress[run.run_id].products_processed} of {progress[run.run_id].total_products} products processed
-                      </div>
-                    </div>
-                  </CardContent>
-                )}
+                    </CardContent>
+                  )}
                 {run.status === OptimizationStatus.COMPLETED && (
                   <CardContent>
                     <div className="grid grid-cols-4 gap-4 text-sm">

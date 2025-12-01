@@ -3,7 +3,7 @@
  * Natural language powered supplier search and matching
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 import { authenticateRequest } from '@/lib/ai/api-utils';
@@ -26,11 +26,14 @@ export async function POST(request: NextRequest) {
     // Validate request
     const validationError = validateDiscoveryRequest(body);
     if (validationError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationError
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationError,
+        },
+        { status: 400 }
+      );
     }
 
     console.log('🤖 AI Supplier Discovery initiated:', body.query);
@@ -50,7 +53,9 @@ export async function POST(request: NextRequest) {
 
     if (body.filters?.existingSuppliers === false) {
       // Filter out existing suppliers (placeholder logic)
-      filteredSuppliers = filteredSuppliers.filter((s: { id: string }) => !s.id.startsWith('existing_'));
+      filteredSuppliers = filteredSuppliers.filter(
+        (s: { id: string }) => !s.id.startsWith('existing_')
+      );
     }
 
     if (body.filters?.verified) {
@@ -59,12 +64,14 @@ export async function POST(request: NextRequest) {
 
     if (body.filters?.riskLevel) {
       const riskThresholds: Record<string, number> = {
-        'low': 0.3,
-        'medium': 0.6,
-        'high': 1.0
+        low: 0.3,
+        medium: 0.6,
+        high: 1.0,
       };
       const maxRisk = riskThresholds[body.filters.riskLevel as string];
-      filteredSuppliers = filteredSuppliers.filter((s: { riskScore: number }) => s.riskScore <= maxRisk);
+      filteredSuppliers = filteredSuppliers.filter(
+        (s: { riskScore: number }) => s.riskScore <= maxRisk
+      );
     }
 
     console.log(`✅ Found ${filteredSuppliers.length} matching suppliers`);
@@ -77,22 +84,24 @@ export async function POST(request: NextRequest) {
           queryProcessed: body.query,
           totalResults: filteredSuppliers.length,
           searchTime: result.metadata?.processingTime || 0,
-          confidence: result.metadata?.searchConfidence || result.metadata?.confidence || 0
+          confidence: result.metadata?.searchConfidence || result.metadata?.confidence || 0,
         },
         filters: body.filters || {},
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('❌ AI Supplier Discovery failed:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'AI supplier discovery failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      code: 'AI_DISCOVERY_ERROR'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'AI supplier discovery failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        code: 'AI_DISCOVERY_ERROR',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -112,10 +121,13 @@ export async function GET(request: NextRequest) {
     const supplierId = searchParams.get('supplierId');
 
     if (!supplierId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Supplier ID is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Supplier ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     console.log('🔍 Finding similar suppliers for:', supplierId);
@@ -129,18 +141,20 @@ export async function GET(request: NextRequest) {
         supplierId,
         similarSuppliers,
         count: similarSuppliers.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Similar supplier search failed:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to find similar suppliers',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to find similar suppliers',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 

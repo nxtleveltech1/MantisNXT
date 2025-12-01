@@ -40,7 +40,7 @@ export class ExportUtils {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -77,10 +77,7 @@ export class ExportUtils {
 
     // Auto-size columns
     const colWidths = columns.map((col, i) => {
-      const maxLength = Math.max(
-        col.label.length,
-        ...rows.map(row => String(row[i] || '').length)
-      );
+      const maxLength = Math.max(col.label.length, ...rows.map(row => String(row[i] || '').length));
       return { wch: Math.min(maxLength + 2, 50) };
     });
     worksheet['!cols'] = colWidths;
@@ -112,7 +109,7 @@ export class ExportUtils {
     if (value === null || value === undefined) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(value);
   }
 
@@ -125,7 +122,7 @@ export class ExportUtils {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   }
 

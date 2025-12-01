@@ -18,7 +18,10 @@ import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 export class DemandElasticityOptimizer extends BaseOptimizer {
   protected algorithmName = 'demand_elasticity';
 
-  async optimize(product: ProductData, run: OptimizationRun): Promise<OptimizationRecommendation | null> {
+  async optimize(
+    product: ProductData,
+    run: OptimizationRun
+  ): Promise<OptimizationRecommendation | null> {
     if (!this.validateProduct(product)) {
       return null;
     }
@@ -42,7 +45,8 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
     if (elasticity.optimal_price && elasticity.optimal_price > 0) {
       // Use pre-calculated optimal price
       recommendedPrice = elasticity.optimal_price;
-      reasoning = `Elasticity-based pricing: Analysis shows optimal price of $${recommendedPrice.toFixed(2)} ` +
+      reasoning =
+        `Elasticity-based pricing: Analysis shows optimal price of $${recommendedPrice.toFixed(2)} ` +
         `based on elasticity coefficient of ${elasticityCoef.toFixed(2)}. ` +
         `This maximizes total revenue given demand sensitivity.`;
     } else {
@@ -54,15 +58,17 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
 
       if (absElasticity <= 1) {
         // Inelastic demand - can increase price
-        recommendedPrice = currentPrice * 1.10; // 10% increase
-        reasoning = `Demand is inelastic (ε = ${elasticityCoef.toFixed(2)}). ` +
+        recommendedPrice = currentPrice * 1.1; // 10% increase
+        reasoning =
+          `Demand is inelastic (ε = ${elasticityCoef.toFixed(2)}). ` +
           `Customers are not highly price-sensitive, recommending 10% price increase to maximize revenue.`;
       } else if (absElasticity < 2) {
         // Moderately elastic - optimize based on cost
         if (cost > 0) {
           const optimalMarkup = absElasticity / (absElasticity - 1);
           recommendedPrice = cost * optimalMarkup;
-          reasoning = `Moderate price elasticity (ε = ${elasticityCoef.toFixed(2)}). ` +
+          reasoning =
+            `Moderate price elasticity (ε = ${elasticityCoef.toFixed(2)}). ` +
             `Optimal markup of ${((optimalMarkup - 1) * 100).toFixed(1)}% over cost.`;
         } else {
           recommendedPrice = currentPrice;
@@ -71,7 +77,8 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
       } else {
         // Highly elastic - lower price to increase volume
         recommendedPrice = currentPrice * 0.95; // 5% decrease
-        reasoning = `Demand is highly elastic (ε = ${elasticityCoef.toFixed(2)}). ` +
+        reasoning =
+          `Demand is highly elastic (ε = ${elasticityCoef.toFixed(2)}). ` +
           `Customers are very price-sensitive, recommending 5% price decrease to maximize volume and revenue.`;
       }
     }
@@ -117,19 +124,12 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
       hasSalesData: elasticity.data_points_count > 20,
     });
 
-    return this.createRecommendation(
-      product,
-      run,
-      recommendedPrice,
-      reasoning,
-      confidence,
-      {
-        elasticityEstimate: elasticityCoef,
-        projectedDemandChange: demandChangePercent,
-        projectedRevenueImpact: revenueImpact,
-        projectedProfitImpact: profitImpact,
-      }
-    );
+    return this.createRecommendation(product, run, recommendedPrice, reasoning, confidence, {
+      elasticityEstimate: elasticityCoef,
+      projectedDemandChange: demandChangePercent,
+      projectedRevenueImpact: revenueImpact,
+      projectedProfitImpact: profitImpact,
+    });
   }
 
   private async getElasticityData(productId: string): Promise<unknown | null> {

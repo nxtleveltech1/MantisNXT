@@ -1,6 +1,6 @@
 /**
  * Competitor Price Scraper Job
- * 
+ *
  * Scheduled job to collect competitor pricing data
  * Can be run manually or via cron/scheduler
  */
@@ -63,7 +63,9 @@ export async function runCompetitorPriceScraping(
     const productsResult = await query(productsQuery, params);
     const products = productsResult.rows;
 
-    console.log(`[Competitor Scraper] Processing ${products.length} products for org ${config.org_id}`);
+    console.log(
+      `[Competitor Scraper] Processing ${products.length} products for org ${config.org_id}`
+    );
 
     // For each product, attempt to scrape competitor prices
     // Note: Actual scraping implementation would depend on competitor APIs or web scraping tools
@@ -84,7 +86,6 @@ export async function runCompetitorPriceScraping(
         // const competitorPrices = await scrapeCompetitorPrices(product, config.competitor_names);
         // await CompetitorPriceScrapingService.bulkImportPrices(config.org_id, competitorPrices);
         // result.prices_collected += competitorPrices.length;
-
       } catch (error) {
         result.errors.push(
           `Failed to scrape product ${product.product_id}: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -100,12 +101,9 @@ export async function runCompetitorPriceScraping(
     // Cleanup stale prices
     const staleCount = await CompetitorPriceScrapingService.cleanupStalePrices(30);
     console.log(`[Competitor Scraper] Cleaned up ${staleCount} stale competitor prices`);
-
   } catch (error) {
     result.success = false;
-    result.errors.push(
-      `Job failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    result.errors.push(`Job failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
     result.duration_ms = Date.now() - startTime;
   }
@@ -141,12 +139,3 @@ export async function handleScrapingJob(request: Request) {
     };
   }
 }
-
-
-
-
-
-
-
-
-

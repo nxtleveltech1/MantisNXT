@@ -3,7 +3,7 @@
  * Displays key performance indicators with trends and drill-down capability
  */
 
-"use client";
+'use client';
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,30 +69,26 @@ export function EnhancedKPICard({
   const content = (
     <CardContent className="p-6">
       <div className="flex items-center justify-between">
-        <div className="space-y-1 flex-1 min-w-0">
-          <p className="text-sm font-medium text-muted-foreground truncate">
-            {title}
-          </p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground/70 truncate">{subtitle}</p>
-          )}
-          <div className="flex items-baseline gap-2 mt-2">
-            <p className="text-3xl font-bold tracking-tight truncate">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-muted-foreground truncate text-sm font-medium">{title}</p>
+          {subtitle && <p className="text-muted-foreground/70 truncate text-xs">{subtitle}</p>}
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="truncate text-3xl font-bold tracking-tight">
               {loading ? (
-                <span className="inline-block h-8 w-24 bg-muted animate-pulse rounded" />
+                <span className="bg-muted inline-block h-8 w-24 animate-pulse rounded" />
               ) : (
                 value
               )}
             </p>
           </div>
           {trendValue && !loading && (
-            <div className="flex items-center gap-1 text-sm mt-1">
+            <div className="mt-1 flex items-center gap-1 text-sm">
               {trend === 'up' ? (
                 <TrendingUp className="h-4 w-4 text-green-600" />
               ) : trend === 'down' ? (
                 <TrendingDown className="h-4 w-4 text-red-600" />
               ) : (
-                <Minus className="h-4 w-4 text-muted-foreground" />
+                <Minus className="text-muted-foreground h-4 w-4" />
               )}
               <span
                 className={cn(
@@ -110,7 +106,7 @@ export function EnhancedKPICard({
         </div>
         <div
           className={cn(
-            'h-12 w-12 rounded-full flex items-center justify-center transition-colors shrink-0',
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors',
             scheme.bg,
             scheme.hoverBg
           )}
@@ -124,16 +120,12 @@ export function EnhancedKPICard({
   if (href) {
     return (
       <Link href={href} className="block">
-        <Card className="bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer">
+        <Card className="bg-card border-border group cursor-pointer rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md">
           {content}
         </Card>
       </Link>
     );
   }
 
-  return (
-    <Card className="bg-card border border-border rounded-xl shadow-sm">
-      {content}
-    </Card>
-  );
+  return <Card className="bg-card border-border rounded-xl border shadow-sm">{content}</Card>;
 }

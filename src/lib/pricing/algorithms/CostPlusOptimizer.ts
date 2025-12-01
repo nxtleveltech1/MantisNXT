@@ -16,7 +16,10 @@ import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/prici
 export class CostPlusOptimizer extends BaseOptimizer {
   protected algorithmName = 'cost_plus';
 
-  async optimize(product: ProductData, run: OptimizationRun): Promise<OptimizationRecommendation | null> {
+  async optimize(
+    product: ProductData,
+    run: OptimizationRun
+  ): Promise<OptimizationRecommendation | null> {
     if (!this.validateProduct(product)) {
       return null;
     }
@@ -53,7 +56,8 @@ export class CostPlusOptimizer extends BaseOptimizer {
     const currentMargin = ((currentPrice - cost) / cost) * 100;
     const newMargin = ((recommendedPrice - cost) / cost) * 100;
 
-    const reasoning = `Cost-plus pricing: Product cost is $${cost.toFixed(2)}. ` +
+    const reasoning =
+      `Cost-plus pricing: Product cost is $${cost.toFixed(2)}. ` +
       `Current margin is ${currentMargin.toFixed(1)}%, target margin is ${targetMarginPercent}%. ` +
       `Recommended price of $${recommendedPrice.toFixed(2)} achieves ${newMargin.toFixed(1)}% margin.`;
 
@@ -71,15 +75,8 @@ export class CostPlusOptimizer extends BaseOptimizer {
       hasSalesData: false,
     });
 
-    return this.createRecommendation(
-      product,
-      run,
-      recommendedPrice,
-      reasoning,
-      confidence,
-      {
-        projectedProfitImpact: profitImpact,
-      }
-    );
+    return this.createRecommendation(product, run, recommendedPrice, reasoning, confidence, {
+      projectedProfitImpact: profitImpact,
+    });
   }
 }

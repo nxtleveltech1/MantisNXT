@@ -75,7 +75,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   async createAlert(
     orgId: string,
     data: CreateAlertData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIAlert>> {
     return this.executeOperation(
       'alert.create',
@@ -99,7 +99,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
             data.entityType,
             data.entityId,
             JSON.stringify(data.metadata || {}),
-          ],
+          ]
         );
 
         return this.mapAlertRow(result.rows[0]);
@@ -109,7 +109,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
         orgId,
         serviceType: data.serviceType,
         severity: data.severity,
-      },
+      }
     );
   }
 
@@ -119,7 +119,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   async acknowledgeAlert(
     alertId: string,
     userId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'alert.acknowledge',
@@ -134,17 +134,15 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE id = $2 AND is_acknowledged = false
           RETURNING id
           `,
-          [userId, alertId],
+          [userId, alertId]
         );
 
         if (result.rows.length === 0) {
-          throw new Error(
-            `Alert ${alertId} not found or already acknowledged`,
-          );
+          throw new Error(`Alert ${alertId} not found or already acknowledged`);
         }
       },
       options,
-      { alertId, userId },
+      { alertId, userId }
     );
   }
 
@@ -153,7 +151,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
    */
   async resolveAlert(
     alertId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'alert.resolve',
@@ -165,7 +163,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE id = $1 AND is_resolved = false
           RETURNING id
           `,
-          [alertId],
+          [alertId]
         );
 
         if (result.rows.length === 0) {
@@ -173,7 +171,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
         }
       },
       options,
-      { alertId },
+      { alertId }
     );
   }
 
@@ -183,7 +181,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   async dismissAlert(
     alertId: string,
     reason: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'alert.dismiss',
@@ -198,7 +196,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE id = $2 AND is_resolved = false
           RETURNING id
           `,
-          [reason, alertId],
+          [reason, alertId]
         );
 
         if (result.rows.length === 0) {
@@ -206,7 +204,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
         }
       },
       options,
-      { alertId, reason },
+      { alertId, reason }
     );
   }
 
@@ -215,7 +213,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
    */
   async getAlert(
     alertId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIAlert>> {
     return this.executeOperation(
       'alert.get',
@@ -225,7 +223,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           SELECT * FROM ai_alert
           WHERE id = $1
           `,
-          [alertId],
+          [alertId]
         );
 
         if (result.rows.length === 0) {
@@ -235,7 +233,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
         return this.mapAlertRow(result.rows[0]);
       },
       options,
-      { alertId },
+      { alertId }
     );
   }
 
@@ -244,7 +242,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
    */
   async getUnresolvedAlerts(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIAlert[]>> {
     return this.executeOperation(
       'alert.getUnresolved',
@@ -262,13 +260,13 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
             END,
             created_at DESC
           `,
-          [orgId],
+          [orgId]
         );
 
-        return result.rows.map((row) => this.mapAlertRow(row));
+        return result.rows.map(row => this.mapAlertRow(row));
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -278,7 +276,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   async getAlertsBySeverity(
     orgId: string,
     severity: AlertSeverity,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIAlert[]>> {
     return this.executeOperation(
       'alert.getBySeverity',
@@ -289,13 +287,13 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE org_id = $1 AND severity = $2
           ORDER BY created_at DESC
           `,
-          [orgId, severity],
+          [orgId, severity]
         );
 
-        return result.rows.map((row) => this.mapAlertRow(row));
+        return result.rows.map(row => this.mapAlertRow(row));
       },
       options,
-      { orgId, severity },
+      { orgId, severity }
     );
   }
 
@@ -305,7 +303,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   async getAlertsByService(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIAlert[]>> {
     return this.executeOperation(
       'alert.getByService',
@@ -316,13 +314,13 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE org_id = $1 AND service_type = $2
           ORDER BY created_at DESC
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
-        return result.rows.map((row) => this.mapAlertRow(row));
+        return result.rows.map(row => this.mapAlertRow(row));
       },
       options,
-      { orgId, serviceType },
+      { orgId, serviceType }
     );
   }
 
@@ -331,7 +329,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
    */
   async getAlertStats(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AlertStats>> {
     return this.executeOperation(
       'alert.stats',
@@ -350,7 +348,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           FROM ai_alert
           WHERE org_id = $1
           `,
-          [orgId],
+          [orgId]
         );
 
         const overall = overallResult.rows[0];
@@ -363,7 +361,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           WHERE org_id = $1
           GROUP BY severity
           `,
-          [orgId],
+          [orgId]
         );
 
         const bySeverity: Record<AlertSeverity, number> = {
@@ -383,13 +381,11 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           acknowledged: parseInt(overall.acknowledged || '0'),
           resolved: parseInt(overall.resolved || '0'),
           active: parseInt(overall.active || '0'),
-          avgResolutionTimeMinutes: parseFloat(
-            overall.avg_resolution_minutes || '0',
-          ),
+          avgResolutionTimeMinutes: parseFloat(overall.avg_resolution_minutes || '0'),
         };
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -398,7 +394,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
    */
   async getActiveAlertCount(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'alert.activeCount',
@@ -409,13 +405,13 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
           FROM ai_alert
           WHERE org_id = $1 AND is_resolved = false
           `,
-          [orgId],
+          [orgId]
         );
 
         return parseInt(result.rows[0]?.count || '0');
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -435,9 +431,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
       entityId: row.entity_id,
       isAcknowledged: row.is_acknowledged,
       acknowledgedBy: row.acknowledged_by,
-      acknowledgedAt: row.acknowledged_at
-        ? new Date(row.acknowledged_at)
-        : undefined,
+      acknowledgedAt: row.acknowledged_at ? new Date(row.acknowledged_at) : undefined,
       isResolved: row.is_resolved,
       resolvedAt: row.resolved_at ? new Date(row.resolved_at) : undefined,
       createdAt: new Date(row.created_at),

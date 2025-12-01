@@ -12,7 +12,7 @@ l1LineNums.forEach(lineNum => {
   const rawLine = lines[lineNum - 1];
   const line = rawLine.trim();
   const match = line.match(/^(\d+)\\?\.\s+(.+)$/);
-  
+
   console.log(`\nLine ${lineNum}:`);
   console.log(`  Raw: "${rawLine}" (length: ${rawLine.length})`);
   console.log(`  Trimmed: "${line}"`);
@@ -23,13 +23,14 @@ l1LineNums.forEach(lineNum => {
     const hasBullet = /[•o▪●○]/.test(line) || rawLine.match(/^[•o▪●○]/);
     const hasTab = rawLine.startsWith('\t');
     const restHasNumber = rest.match(/^\d+\./);
-    
+
     console.log(`  Num: ${num}`);
     console.log(`  Rest: "${rest}"`);
     console.log(`  Has bullet: ${hasBullet}`);
     console.log(`  Has tab: ${hasTab}`);
     console.log(`  Rest has number: ${restHasNumber ? 'YES' : 'NO'}`);
-    console.log(`  Would match L1: ${num >= 1 && num <= 10 && !hasBullet && !hasTab && !restHasNumber}`);
+    console.log(
+      `  Would match L1: ${num >= 1 && num <= 10 && !hasBullet && !hasTab && !restHasNumber}`
+    );
   }
 });
-

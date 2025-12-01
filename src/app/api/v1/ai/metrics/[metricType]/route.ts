@@ -33,11 +33,10 @@ export async function GET(
     const fresh = searchParams.get('fresh') === 'true';
     const period = (searchParams.get('period') as unknown) || 'daily';
 
-    const data = await AIMetricsService.getMetrics(
-      user.org_id,
-      metricType as MetricType,
-      { period, fresh }
-    );
+    const data = await AIMetricsService.getMetrics(user.org_id, metricType as MetricType, {
+      period,
+      fresh,
+    });
 
     const now = new Date();
     const cacheExpires = new Date(now.getTime() + 5 * 60 * 1000);

@@ -10,7 +10,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PricingRuleService } from '@/lib/services/PricingRuleService';
 
@@ -24,18 +24,12 @@ export async function GET(
     const rule = await PricingRuleService.getRuleById(id);
 
     if (!rule) {
-      return NextResponse.json(
-        { success: false, error: 'Rule not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, data: rule });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -50,10 +44,7 @@ export async function PUT(
     const rule = await PricingRuleService.updateRule(id, body);
 
     if (!rule) {
-      return NextResponse.json(
-        { success: false, error: 'Rule not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -62,10 +53,7 @@ export async function PUT(
       message: 'Rule updated successfully',
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -79,10 +67,7 @@ export async function DELETE(
     const success = await PricingRuleService.deleteRule(id);
 
     if (!success) {
-      return NextResponse.json(
-        { success: false, error: 'Rule not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -90,9 +75,6 @@ export async function DELETE(
       message: 'Rule deleted successfully',
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -1,19 +1,30 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const JoinSheetsConfigSchema = z.object({
   left_sheet: z.string().min(1),
   right_sheet: z.string().min(1),
   join_on: z.object({ left: z.string().min(1), right: z.string().min(1) }),
   drop_right: z.array(z.string()).optional().default([]),
-  output_map: z.object({
-    sku: z.object({ sheet: z.string().optional(), column: z.string().optional() }).optional(),
-    description: z.object({ sheet: z.string().optional(), column: z.string().optional() }).optional(),
-    priceExVat: z.object({ sheet: z.string().optional(), column: z.string().optional() }).optional(),
-    brand: z.object({ source: z.string().optional() }).optional(),
-    category: z.object({ sheet: z.string().optional(), column: z.string().optional() }).optional(),
-  }).partial(),
+  output_map: z
+    .object({
+      sku: z.object({ sheet: z.string().optional(), column: z.string().optional() }).optional(),
+      description: z
+        .object({ sheet: z.string().optional(), column: z.string().optional() })
+        .optional(),
+      priceExVat: z
+        .object({ sheet: z.string().optional(), column: z.string().optional() })
+        .optional(),
+      brand: z.object({ source: z.string().optional() }).optional(),
+      category: z
+        .object({ sheet: z.string().optional(), column: z.string().optional() })
+        .optional(),
+    })
+    .partial(),
   sheet_matcher: z
-    .object({ type: z.enum(['exact', 'includes', 'fuzzy']).optional(), threshold: z.number().min(0).max(1).optional() })
+    .object({
+      type: z.enum(['exact', 'includes', 'fuzzy']).optional(),
+      threshold: z.number().min(0).max(1).optional(),
+    })
     .optional(),
   conditions: z
     .object({
@@ -23,9 +34,9 @@ export const JoinSheetsConfigSchema = z.object({
       mime_type: z.string().optional(),
     })
     .optional(),
-})
+});
 
-export const AliasesConfigSchema = z.record(z.array(z.string()))
+export const AliasesConfigSchema = z.record(z.array(z.string()));
 
 export const SupplierRuleConfigSchema = z
   .object({
@@ -38,7 +49,7 @@ export const SupplierRuleConfigSchema = z
       })
       .optional(),
   })
-  .catchall(z.unknown())
+  .catchall(z.unknown());
 
 export const SupplierRulePayloadSchema = z.object({
   supplier_id: z.string().uuid(),
@@ -48,7 +59,7 @@ export const SupplierRulePayloadSchema = z.object({
   execution_order: z.number().int().nonnegative().default(0),
   rule_config: SupplierRuleConfigSchema,
   is_blocking: z.boolean().default(false),
-})
+});
 
-export type SupplierRulePayload = z.infer<typeof SupplierRulePayloadSchema>
-export type JoinSheetsConfig = z.infer<typeof JoinSheetsConfigSchema>
+export type SupplierRulePayload = z.infer<typeof SupplierRulePayloadSchema>;
+export type JoinSheetsConfig = z.infer<typeof JoinSheetsConfigSchema>;

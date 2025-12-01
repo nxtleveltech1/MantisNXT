@@ -15,10 +15,9 @@ import type {
   PriceChangeLog,
   CompetitorPrice,
   PriceElasticity,
-  PricePerformanceMetrics} from '@/lib/db/pricing-schema';
-import {
-  PRICING_TABLES
+  PricePerformanceMetrics,
 } from '@/lib/db/pricing-schema';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 
 export interface PriceHistoryEntry {
@@ -52,7 +51,12 @@ export interface ElasticityAnalysis {
     max: number;
     optimal: number;
   };
-  price_sensitivity: 'highly_elastic' | 'elastic' | 'unit_elastic' | 'inelastic' | 'highly_inelastic';
+  price_sensitivity:
+    | 'highly_elastic'
+    | 'elastic'
+    | 'unit_elastic'
+    | 'inelastic'
+    | 'highly_inelastic';
   historical_data_points: number;
 }
 
@@ -164,9 +168,10 @@ export class PriceAnalyticsService {
     const variance = prices.reduce((sum, p) => sum + Math.pow(p - avgPrice, 2), 0) / prices.length;
     const volatility = Math.sqrt(variance);
 
-    const currentMargin = product.current_cost > 0
-      ? ((product.current_price - product.current_cost) / product.current_cost) * 100
-      : 0;
+    const currentMargin =
+      product.current_cost > 0
+        ? ((product.current_price - product.current_cost) / product.current_cost) * 100
+        : 0;
 
     return {
       product_id: productId,
@@ -239,7 +244,8 @@ export class PriceAnalyticsService {
     }));
 
     const competitorPrices = competitors.map(c => c.price);
-    const marketAvgPrice = competitorPrices.reduce((sum, p) => sum + p, 0) / competitorPrices.length;
+    const marketAvgPrice =
+      competitorPrices.reduce((sum, p) => sum + p, 0) / competitorPrices.length;
 
     // Determine market position
     let marketPosition: CompetitorComparison['market_position'] = 'average';
@@ -423,13 +429,15 @@ export class PriceAnalyticsService {
     categoryId?: string,
     brandId?: string,
     days = 90
-  ): Promise<Array<{
-    date: Date;
-    avg_price: number;
-    min_price: number;
-    max_price: number;
-    products_count: number;
-  }>> {
+  ): Promise<
+    Array<{
+      date: Date;
+      avg_price: number;
+      min_price: number;
+      max_price: number;
+      products_count: number;
+    }>
+  > {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 

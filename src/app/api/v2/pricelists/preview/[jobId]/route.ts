@@ -5,10 +5,7 @@ interface Params {
   jobId: string;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<Params> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<Params> }) {
   try {
     const { jobId } = await params;
     const url = new URL(request.url);
@@ -19,10 +16,7 @@ export async function GET(
     const cached = await extractionCache.get(jobId);
 
     if (!cached) {
-      return NextResponse.json(
-        { success: false, error: 'Preview not available' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Preview not available' }, { status: 404 });
     }
 
     const { products, summary } = cached;
@@ -52,23 +46,19 @@ export async function GET(
             total: filtered.length,
             pages: Math.ceil(filtered.length / limit),
             has_next: start + limit < filtered.length,
-            has_prev: page > 1
-          }
-        }
+            has_prev: page > 1,
+          },
+        },
       },
       {
         status: 200,
         headers: {
-          'Cache-Control': 'max-age=300'
-        }
+          'Cache-Control': 'max-age=300',
+        },
       }
     );
-
   } catch (error: any) {
     console.error('[Preview API] Error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

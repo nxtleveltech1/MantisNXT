@@ -46,18 +46,19 @@ export async function GET() {
       schemas: {
         suppliers: suppliersSchema.rows,
         inventory_items: inventorySchema.rows,
-        purchase_orders: poSchema.rows
+        purchase_orders: poSchema.rows,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    return Response.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Schema check failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
-
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Schema check failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   } finally {
     await pool.end();
   }

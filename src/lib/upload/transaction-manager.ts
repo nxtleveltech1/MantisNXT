@@ -3,11 +3,7 @@
 import type { PoolClient } from 'pg';
 import { withTransaction } from '@/lib/database';
 import crypto from 'crypto';
-import type {
-  PriceListUpload,
-  BulkImportJob,
-  ImportSummary
-} from '@/types/pricelist-upload';
+import type { PriceListUpload, BulkImportJob, ImportSummary } from '@/types/pricelist-upload';
 
 export interface TransactionContext {
   client: PoolClient;
@@ -25,14 +21,13 @@ export interface BatchOperationResult {
 }
 
 export class TransactionManager {
-
   /**
    * Execute operations within a managed transaction with automatic rollback on error
    */
   static async withManagedTransaction<T>(
     operation: (context: TransactionContext) => Promise<T>
   ): Promise<T> {
-    return await withTransaction(async (client) => {
+    return await withTransaction(async client => {
       let isRolledBack = false;
       let isCommitted = false;
 
@@ -51,7 +46,7 @@ export class TransactionManager {
           }
         },
         isRolledBack,
-        isCommitted
+        isCommitted,
       };
 
       try {
@@ -97,7 +92,7 @@ export class TransactionManager {
       onError,
       stopOnError = false,
       retryAttempts = 2,
-      retryDelay = 1000
+      retryDelay = 1000,
     } = options;
 
     const startTime = Date.now();
@@ -110,7 +105,7 @@ export class TransactionManager {
       const batch = items.slice(i, i + batchSize);
 
       try {
-        await this.withManagedTransaction(async (context) => {
+        await this.withManagedTransaction(async context => {
           // Process batch with concurrency control
           const semaphore = new Semaphore(maxConcurrency);
           const batchPromises = batch.map(async (item, batchIndex) => {
@@ -155,7 +150,6 @@ export class TransactionManager {
 
           await Promise.all(batchPromises);
         });
-
       } catch (error) {
         if (stopOnError) {
           break;
@@ -167,7 +161,7 @@ export class TransactionManager {
       successful,
       failed,
       errors,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 
@@ -208,7 +202,7 @@ export class TransactionManager {
       batchSize = 50,
       validateBeforeImport = true,
       stopOnError = false,
-      onProgress
+      onProgress,
     } = options;
 
     // Create bulk import job record
@@ -221,22 +215,22 @@ export class TransactionManager {
         batchSize,
         parallelProcessing: true,
         validateBeforeImport,
-        stopOnError
+        stopOnError,
       },
       progress: {
         uploadsProcessed: 0,
         totalUploads: uploadIds.length,
         currentPhase: 'validation',
-        percentage: 0
+        percentage: 0,
       },
       results: {
         successful: [],
         failed: [],
         totalRowsProcessed: 0,
-        totalRowsImported: 0
+        totalRowsImported: 0,
       },
       createdBy: 'system', // TODO: Get from auth context
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     try {
@@ -282,7 +276,6 @@ export class TransactionManager {
           job.results.totalRowsProcessed += importResult.rowsProcessed;
           job.results.totalRowsImported += importResult.rowsImported;
           job.progress.uploadsProcessed++;
-
         } catch (error) {
           console.error(`Failed to import upload ${uploadId}:`, error);
           job.results.failed.push(uploadId);
@@ -306,7 +299,6 @@ export class TransactionManager {
       await this.updateBulkImportJob(job);
 
       return job;
-
     } catch (error) {
       job.status = 'failed';
       job.completedAt = new Date();
@@ -319,7 +311,7 @@ export class TransactionManager {
    * Import a single upload with transaction safety
    */
   private static async importSingleUpload(upload: PriceListUpload): Promise<ImportSummary> {
-    return await this.withManagedTransaction(async (context) => {
+    return await this.withManagedTransaction(async context => {
       // Create a savepoint before processing
       const savepointName = `import_${upload.id}`;
       await this.createSavepoint(context.client, savepointName);
@@ -344,7 +336,11 @@ export class TransactionManager {
 
               if (existing.rows.length > 0) {
                 // Update existing
-                await this.updateSupplierProduct(context.client, existing.rows[0].id, row.mappedData);
+                await this.updateSupplierProduct(
+                  context.client,
+                  existing.rows[0].id,
+                  row.mappedData
+                );
                 productsUpdated++;
               } else {
                 // Create new
@@ -353,7 +349,6 @@ export class TransactionManager {
               }
 
               rowsImported++;
-
             } catch (error) {
               console.error(`Failed to import row ${row.rowIndex}:`, error);
               // Continue with other rows unless critical error
@@ -390,9 +385,8 @@ export class TransactionManager {
           dataQualityScore: 100,
           completenessScore: 100,
           recommendations: [],
-          completedAt: new Date()
+          completedAt: new Date(),
         };
-
       } catch (error) {
         // Rollback to savepoint on error
         await this.rollbackToSavepoint(context.client, savepointName);
@@ -411,33 +405,37 @@ export class TransactionManager {
   }
 
   private static async saveBulkImportJob(job: BulkImportJob): Promise<void> {
-    await withTransaction(async (client) => {
-      await client.query(`
+    await withTransaction(async client => {
+      await client.query(
+        `
         INSERT INTO bulk_import_jobs (
           id, upload_ids, status, batch_size, parallel_processing,
           validate_before_import, stop_on_error, uploads_processed,
           total_uploads, percentage, created_by, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [
-        job.id,
-        job.uploads,
-        job.status,
-        job.config.batchSize,
-        job.config.parallelProcessing,
-        job.config.validateBeforeImport,
-        job.config.stopOnError,
-        job.progress.uploadsProcessed,
-        job.progress.totalUploads,
-        job.progress.percentage,
-        job.createdBy,
-        job.createdAt
-      ]);
+      `,
+        [
+          job.id,
+          job.uploads,
+          job.status,
+          job.config.batchSize,
+          job.config.parallelProcessing,
+          job.config.validateBeforeImport,
+          job.config.stopOnError,
+          job.progress.uploadsProcessed,
+          job.progress.totalUploads,
+          job.progress.percentage,
+          job.createdBy,
+          job.createdAt,
+        ]
+      );
     });
   }
 
   private static async updateBulkImportJob(job: BulkImportJob): Promise<void> {
-    await withTransaction(async (client) => {
-      await client.query(`
+    await withTransaction(async client => {
+      await client.query(
+        `
         UPDATE bulk_import_jobs SET
           status = $2,
           uploads_processed = $3,
@@ -452,29 +450,39 @@ export class TransactionManager {
           completed_at = $12,
           duration = $13
         WHERE id = $1
-      `, [
-        job.id,
-        job.status,
-        job.progress.uploadsProcessed,
-        job.progress.currentUpload,
-        job.progress.currentPhase,
-        job.progress.percentage,
-        job.results.successful,
-        job.results.failed,
-        job.results.totalRowsProcessed,
-        job.results.totalRowsImported,
-        job.startedAt,
-        job.completedAt,
-        job.duration
-      ]);
+      `,
+        [
+          job.id,
+          job.status,
+          job.progress.uploadsProcessed,
+          job.progress.currentUpload,
+          job.progress.currentPhase,
+          job.progress.percentage,
+          job.results.successful,
+          job.results.failed,
+          job.results.totalRowsProcessed,
+          job.results.totalRowsImported,
+          job.startedAt,
+          job.completedAt,
+          job.duration,
+        ]
+      );
     });
   }
 
-  private static async createSupplierProduct(client: PoolClient, data: unknown, upload: PriceListUpload): Promise<void> {
+  private static async createSupplierProduct(
+    client: PoolClient,
+    data: unknown,
+    upload: PriceListUpload
+  ): Promise<void> {
     // Implementation would create supplier product record
   }
 
-  private static async updateSupplierProduct(client: PoolClient, productId: string, data: unknown): Promise<void> {
+  private static async updateSupplierProduct(
+    client: PoolClient,
+    productId: string,
+    data: unknown
+  ): Promise<void> {
     // Implementation would update supplier product record
   }
 }

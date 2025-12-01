@@ -37,7 +37,7 @@ export const PRICING_TABLES = {
   MARKET_INTEL_DATA_POLICY: `${SCHEMA.CORE}.market_intel_data_policy`,
 } as const;
 
-export type PricingTableName = typeof PRICING_TABLES[keyof typeof PRICING_TABLES];
+export type PricingTableName = (typeof PRICING_TABLES)[keyof typeof PRICING_TABLES];
 
 /**
  * Pricing Rule Types
@@ -134,7 +134,14 @@ export interface PricingRule {
 export interface PricingRuleCondition {
   condition_id: string;
   rule_id: string;
-  condition_type: 'category' | 'brand' | 'supplier' | 'product' | 'price_range' | 'stock_level' | 'custom';
+  condition_type:
+    | 'category'
+    | 'brand'
+    | 'supplier'
+    | 'product'
+    | 'price_range'
+    | 'stock_level'
+    | 'custom';
   operator: 'equals' | 'not_equals' | 'in' | 'not_in' | 'greater_than' | 'less_than' | 'between';
   value: unknown;
   created_at: Date;
@@ -251,7 +258,13 @@ export interface PriceChangeLog {
   price_change_amount: number;
 
   // Context
-  change_reason: 'rule_applied' | 'optimization' | 'manual' | 'cost_change' | 'competitor_change' | 'market_adjustment';
+  change_reason:
+    | 'rule_applied'
+    | 'optimization'
+    | 'manual'
+    | 'cost_change'
+    | 'competitor_change'
+    | 'market_adjustment';
   rule_id?: string;
   recommendation_id?: string;
 
@@ -568,5 +581,7 @@ export function isOptimizationRun(obj: unknown): obj is OptimizationRun {
 }
 
 export function isOptimizationRecommendation(obj: unknown): obj is OptimizationRecommendation {
-  return obj && typeof obj.recommendation_id === 'string' && typeof obj.recommended_price === 'number';
+  return (
+    obj && typeof obj.recommendation_id === 'string' && typeof obj.recommended_price === 'number'
+  );
 }

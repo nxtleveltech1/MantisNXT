@@ -1,25 +1,25 @@
-import { query } from "@/lib/database/unified-connection"
+import { query } from '@/lib/database/unified-connection';
 
-export type CmmSchemaMode = "core" | "legacy" | "none"
+export type CmmSchemaMode = 'core' | 'legacy' | 'none';
 
-const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000
+const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000;
 
-let cachedSchemaMode: { mode: CmmSchemaMode; expiresAt: number } | null = null
+let cachedSchemaMode: { mode: CmmSchemaMode; expiresAt: number } | null = null;
 
 // Force cache invalidation function
 export function clearSchemaModeCache() {
-  cachedSchemaMode = null
+  cachedSchemaMode = null;
 }
 
 async function probeSchema(): Promise<CmmSchemaMode> {
   try {
     const { rows } = await query<{
-      has_core_supplier_product: boolean
-      has_core_category: boolean
-      has_core_ai_job: boolean
-      has_legacy_products: boolean
-      has_legacy_categories: boolean
-      has_legacy_tags: boolean
+      has_core_supplier_product: boolean;
+      has_core_category: boolean;
+      has_core_ai_job: boolean;
+      has_legacy_products: boolean;
+      has_legacy_categories: boolean;
+      has_legacy_tags: boolean;
     }>(`
       SELECT
         EXISTS (
@@ -58,127 +58,127 @@ async function probeSchema(): Promise<CmmSchemaMode> {
           WHERE table_schema = 'public'
             AND table_name = 'tags'
         ) AS has_legacy_tags
-    `)
+    `);
 
-    const row = rows[0]
+    const row = rows[0];
 
     if (row?.has_core_supplier_product && row?.has_core_category && row?.has_core_ai_job) {
-      return "core"
+      return 'core';
     }
 
     if (row?.has_legacy_products && row?.has_legacy_categories && row?.has_legacy_tags) {
-      return "legacy"
+      return 'legacy';
     }
 
-    return "none"
+    return 'none';
   } catch (error) {
-    console.error("Failed to probe schema mode:", error)
-    return "none"
+    console.error('Failed to probe schema mode:', error);
+    return 'none';
   }
 }
 
 export async function getSchemaMode(): Promise<CmmSchemaMode> {
-  const now = Date.now()
+  const now = Date.now();
 
   if (cachedSchemaMode && cachedSchemaMode.expiresAt > now) {
-    return cachedSchemaMode.mode
+    return cachedSchemaMode.mode;
   }
 
-  const mode = await probeSchema()
+  const mode = await probeSchema();
   cachedSchemaMode = {
     mode,
     expiresAt: now + SCHEMA_CACHE_TTL_MS,
-  }
+  };
 
-  return mode
+  return mode;
 }
 
 export async function checkDatabaseSchema(): Promise<boolean> {
-  const mode = await getSchemaMode()
-  return mode !== "none"
+  const mode = await getSchemaMode();
+  return mode !== 'none';
 }
 
 export async function getMockProducts() {
   return [
     {
-      sku: "YMH-001",
-      supplierId: "yamaha",
-      categoryId: "cat-001",
-      description: "Yamaha FG830 Acoustic Guitar",
+      sku: 'YMH-001',
+      supplierId: 'yamaha',
+      categoryId: 'cat-001',
+      description: 'Yamaha FG830 Acoustic Guitar',
       price: 199.99,
-      stockType: "stock" as const,
-      imageUrl: "/acoustic-guitar.png",
-      tags: ["tag-instruments", "tag-acoustic"],
-      attributes: { brand: "Yamaha", model: "FG830", type: "Acoustic" },
+      stockType: 'stock' as const,
+      imageUrl: '/acoustic-guitar.png',
+      tags: ['tag-instruments', 'tag-acoustic'],
+      attributes: { brand: 'Yamaha', model: 'FG830', type: 'Acoustic' },
       updatedAt: Date.now(),
     },
     {
-      sku: "YMH-002",
-      supplierId: "yamaha",
-      categoryId: "cat-001",
-      description: "Yamaha P-45 Digital Piano",
+      sku: 'YMH-002',
+      supplierId: 'yamaha',
+      categoryId: 'cat-001',
+      description: 'Yamaha P-45 Digital Piano',
       price: 449.99,
-      stockType: "stock" as const,
-      imageUrl: "/digital-piano.jpg",
-      tags: ["tag-instruments", "tag-piano"],
-      attributes: { brand: "Yamaha", model: "P-45", type: "Digital Piano" },
+      stockType: 'stock' as const,
+      imageUrl: '/digital-piano.jpg',
+      tags: ['tag-instruments', 'tag-piano'],
+      attributes: { brand: 'Yamaha', model: 'P-45', type: 'Digital Piano' },
       updatedAt: Date.now(),
     },
     {
-      sku: "FND-001",
-      supplierId: "fender",
-      categoryId: "cat-002",
-      description: "Fender Player Stratocaster Electric Guitar",
+      sku: 'FND-001',
+      supplierId: 'fender',
+      categoryId: 'cat-002',
+      description: 'Fender Player Stratocaster Electric Guitar',
       price: 799.99,
-      stockType: "stock" as const,
-      imageUrl: "/electric-guitar.jpg",
-      tags: ["tag-instruments", "tag-electric"],
-      attributes: { brand: "Fender", model: "Player Stratocaster", type: "Electric Guitar" },
+      stockType: 'stock' as const,
+      imageUrl: '/electric-guitar.jpg',
+      tags: ['tag-instruments', 'tag-electric'],
+      attributes: { brand: 'Fender', model: 'Player Stratocaster', type: 'Electric Guitar' },
       updatedAt: Date.now(),
     },
     {
-      sku: "GIB-001",
-      supplierId: "gibson",
-      categoryId: "cat-002",
-      description: "Gibson Les Paul Standard Electric Guitar",
+      sku: 'GIB-001',
+      supplierId: 'gibson',
+      categoryId: 'cat-002',
+      description: 'Gibson Les Paul Standard Electric Guitar',
       price: 2499.99,
-      stockType: "preorder" as const,
-      imageUrl: "/les-paul-guitar.jpg",
-      tags: ["tag-instruments", "tag-electric", "tag-preorder"],
-      attributes: { brand: "Gibson", model: "Les Paul Standard", type: "Electric Guitar" },
+      stockType: 'preorder' as const,
+      imageUrl: '/les-paul-guitar.jpg',
+      tags: ['tag-instruments', 'tag-electric', 'tag-preorder'],
+      attributes: { brand: 'Gibson', model: 'Les Paul Standard', type: 'Electric Guitar' },
       updatedAt: Date.now(),
     },
     {
-      sku: "DRM-001",
-      supplierId: "pearl",
-      categoryId: "cat-003",
-      description: "Pearl Export 5-Piece Drum Set",
+      sku: 'DRM-001',
+      supplierId: 'pearl',
+      categoryId: 'cat-003',
+      description: 'Pearl Export 5-Piece Drum Set',
       price: 699.99,
-      stockType: "stock" as const,
-      imageUrl: "/acoustic-drum-set.png",
-      tags: ["tag-instruments", "tag-drums"],
-      attributes: { brand: "Pearl", model: "Export", pieces: 5 },
+      stockType: 'stock' as const,
+      imageUrl: '/acoustic-drum-set.png',
+      tags: ['tag-instruments', 'tag-drums'],
+      attributes: { brand: 'Pearl', model: 'Export', pieces: 5 },
       updatedAt: Date.now(),
     },
-  ]
+  ];
 }
 
 export async function getMockUploads() {
   return [
     {
-      id: "upl-001",
-      supplierId: "yamaha",
-      source: "file",
-      filename: "yamaha_2024_q1.xlsx",
+      id: 'upl-001',
+      supplierId: 'yamaha',
+      source: 'file',
+      filename: 'yamaha_2024_q1.xlsx',
       inserted: 45,
       updated: 12,
       conflicts: 3,
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "upl-002",
-      supplierId: "fender",
-      source: "text",
+      id: 'upl-002',
+      supplierId: 'fender',
+      source: 'text',
       filename: null,
       inserted: 23,
       updated: 8,
@@ -186,15 +186,14 @@ export async function getMockUploads() {
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "upl-003",
-      supplierId: "gibson",
-      source: "file",
-      filename: "gibson_catalog_2024.csv",
+      id: 'upl-003',
+      supplierId: 'gibson',
+      source: 'file',
+      filename: 'gibson_catalog_2024.csv',
       inserted: 67,
       updated: 15,
       conflicts: 7,
       createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     },
-  ]
+  ];
 }
-

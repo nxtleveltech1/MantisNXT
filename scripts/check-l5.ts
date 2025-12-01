@@ -18,8 +18,9 @@ for (let i = 0; i < lines.length; i++) {
   const line = lines[i].trim();
   if (/^\d+\.\d+\.\d+\.\d+\.\d+/.test(line)) {
     count++;
-    console.log(`  Line ${i+1}: "${line.substring(0, 50)}" (first char code: ${line.charCodeAt(0)})`);
+    console.log(
+      `  Line ${i + 1}: "${line.substring(0, 50)}" (first char code: ${line.charCodeAt(0)})`
+    );
     if (count >= 10) break;
   }
 }
-

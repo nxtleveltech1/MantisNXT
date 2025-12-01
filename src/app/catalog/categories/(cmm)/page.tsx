@@ -1,128 +1,129 @@
-"use client"
+'use client';
 
-import { useEffect, useMemo, useState } from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, Tags, TrendingUp, AlertCircle, CheckCircle } from "lucide-react"
-import { buildApiUrl } from "@/lib/utils/api-url"
-import { usePathname } from "next/navigation"
-import Link from "next/link"
+import { useEffect, useMemo, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart3, Tags, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { buildApiUrl } from '@/lib/utils/api-url';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 interface CategorizationStats {
-  total_products: number
-  categorized_count: number
-  categorized_percentage: number
-  pending_count: number
-  pending_review_count?: number
-  failed_count: number
-  avg_confidence: number | null
+  total_products: number;
+  categorized_count: number;
+  categorized_percentage: number;
+  pending_count: number;
+  pending_review_count?: number;
+  failed_count: number;
+  avg_confidence: number | null;
   confidence_distribution: {
-    high: number
-    medium: number
-    low: number
-  }
-  by_status: Record<string, number>
-  by_provider: Record<string, number>
-  last_run_at: string | null
-  active_jobs_count: number
+    high: number;
+    medium: number;
+    low: number;
+  };
+  by_status: Record<string, number>;
+  by_provider: Record<string, number>;
+  last_run_at: string | null;
+  active_jobs_count: number;
 }
 
 interface CategorySummary {
-  id: string
-  name: string
-  parentId: string | null
-  path: string
-  level?: number
-  isActive?: boolean
-  productCount?: number
-  pendingReviewCount?: number
-  hasChildren?: boolean
+  id: string;
+  name: string;
+  parentId: string | null;
+  path: string;
+  level?: number;
+  isActive?: boolean;
+  productCount?: number;
+  pendingReviewCount?: number;
+  hasChildren?: boolean;
 }
 
 export default function CmmDashboard() {
-  const [stats, setStats] = useState<CategorizationStats | null>(null)
-  const [categories, setCategories] = useState<CategorySummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [hasLiveData, setHasLiveData] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const pathname = usePathname()
-  
+  const [stats, setStats] = useState<CategorizationStats | null>(null);
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasLiveData, setHasLiveData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pathname = usePathname();
+
   const getActiveTab = () => {
-    if (!pathname) return "dashboard"
-    if (pathname === "/catalog/categories" || pathname.endsWith("/categories")) return "dashboard"
-    if (pathname.includes("/ai-categorization")) return "ai-categorization"
-    if (pathname.includes("/categories") && !pathname.includes("/ai-categorization")) return "categories"
-    if (pathname.includes("/tags")) return "tags"
-    if (pathname.includes("/analytics")) return "analytics"
-    if (pathname.includes("/exceptions")) return "exceptions"
-    return "dashboard"
-  }
+    if (!pathname) return 'dashboard';
+    if (pathname === '/catalog/categories' || pathname.endsWith('/categories')) return 'dashboard';
+    if (pathname.includes('/ai-categorization')) return 'ai-categorization';
+    if (pathname.includes('/categories') && !pathname.includes('/ai-categorization'))
+      return 'categories';
+    if (pathname.includes('/tags')) return 'tags';
+    if (pathname.includes('/analytics')) return 'analytics';
+    if (pathname.includes('/exceptions')) return 'exceptions';
+    return 'dashboard';
+  };
 
   useEffect(() => {
-    void loadDashboard()
-  }, [])
+    void loadDashboard();
+  }, []);
 
   const loadDashboard = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const [statsRes, categoriesRes] = await Promise.all([
-        fetch(buildApiUrl("/api/category/ai-categorization/stats")),
-        fetch(buildApiUrl("/api/categories")),
-      ])
+        fetch(buildApiUrl('/api/category/ai-categorization/stats')),
+        fetch(buildApiUrl('/api/categories')),
+      ]);
 
       if (statsRes.ok) {
-        const statsData = await statsRes.json()
+        const statsData = await statsRes.json();
         if (statsData?.success && statsData.stats) {
-          setStats(statsData.stats as CategorizationStats)
-          setHasLiveData(true)
+          setStats(statsData.stats as CategorizationStats);
+          setHasLiveData(true);
         } else {
-          setHasLiveData(false)
+          setHasLiveData(false);
         }
       } else {
-        setHasLiveData(false)
+        setHasLiveData(false);
       }
 
       if (categoriesRes.ok) {
-        const categoriesData: CategorySummary[] = await categoriesRes.json()
-        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+        const categoriesData: CategorySummary[] = await categoriesRes.json();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } else {
-        setCategories([])
+        setCategories([]);
       }
     } catch (err) {
-      console.error("Failed to load category dashboard data:", err)
-      setError("Unable to load live category metrics. Showing placeholders instead.")
-      setHasLiveData(false)
+      console.error('Failed to load category dashboard data:', err);
+      setError('Unable to load live category metrics. Showing placeholders instead.');
+      setHasLiveData(false);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const derived = useMemo(() => {
-    const totalCategories = categories.length
-    const activeCategories = categories.filter((c) => c.isActive ?? true).length
+    const totalCategories = categories.length;
+    const activeCategories = categories.filter(c => c.isActive ?? true).length;
     const pendingReviewTotal = categories.reduce(
       (sum, cat) => sum + (cat.pendingReviewCount ?? 0),
-      0,
-    )
-    const totalProducts = stats?.total_products ?? 0
-    const uncategorizedProducts = stats ? stats.pending_count : 0
-    const categorizedProducts = stats ? stats.categorized_count : 0
-    const coverage = stats ? Math.round(stats.categorized_percentage) : 0
+      0
+    );
+    const totalProducts = stats?.total_products ?? 0;
+    const uncategorizedProducts = stats ? stats.pending_count : 0;
+    const categorizedProducts = stats ? stats.categorized_count : 0;
+    const coverage = stats ? Math.round(stats.categorized_percentage) : 0;
 
     const topCategories = [...categories]
-      .filter((category) => (category.productCount ?? 0) > 0)
+      .filter(category => (category.productCount ?? 0) > 0)
       .sort((a, b) => (b.productCount ?? 0) - (a.productCount ?? 0))
-      .slice(0, 5)
+      .slice(0, 5);
 
     const maxProductCount = topCategories.length
-      ? Math.max(...topCategories.map((category) => category.productCount ?? 0))
-      : 0
+      ? Math.max(...topCategories.map(category => category.productCount ?? 0))
+      : 0;
 
     return {
       totalCategories,
@@ -134,63 +135,67 @@ export default function CmmDashboard() {
       coverage,
       topCategories,
       maxProductCount,
-    }
-  }, [categories, stats])
+    };
+  }, [categories, stats]);
 
   if (loading) {
     return (
-      <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]} showQuickLinks={false}>
+      <AppLayout
+        title="Category Management Dashboard"
+        breadcrumbs={[{ label: 'Category Management' }]}
+        showQuickLinks={false}
+      >
         <div className="space-y-6">
           <div className="space-y-3">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold leading-tight">Category Management Dashboard</h1>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-3xl leading-tight font-bold">Category Management Dashboard</h1>
                 <p className="text-muted-foreground mt-1.5 text-sm">
                   Live view of category hierarchy, AI coverage, and outstanding review workloads.
                 </p>
               </div>
             </div>
             <Tabs value="dashboard" className="w-full">
-              <TabsList className="h-auto p-0 bg-transparent border-b rounded-none gap-0">
-                <TabsTrigger 
-                  value="dashboard" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsList className="h-auto gap-0 rounded-none border-b bg-transparent p-0">
+                <TabsTrigger
+                  value="dashboard"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/categories">DASHBOARD</Link>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="ai-categorization" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                <TabsTrigger
+                  value="ai-categorization"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/categories/ai-categorization">AI CATEGORIZATION</Link>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="categories" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                <TabsTrigger
+                  value="categories"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/categories/categories">CATEGORIES</Link>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="tags" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                <TabsTrigger
+                  value="tags"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/tags/ai-tagging">TAGS</Link>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                <TabsTrigger
+                  value="analytics"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/categories/analytics">ANALYTICS</Link>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="exceptions" 
-                  asChild 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                <TabsTrigger
+                  value="exceptions"
+                  asChild
+                  className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
                 >
                   <Link href="/catalog/categories/exceptions">EXCEPTIONS</Link>
                 </TabsTrigger>
@@ -198,12 +203,12 @@ export default function CmmDashboard() {
             </Tabs>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((index) => (
+            {[1, 2, 3, 4].map(index => (
               <Card key={index}>
                 <CardContent className="p-6">
                   <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-8 bg-muted rounded w-1/2" />
+                    <div className="bg-muted h-4 w-3/4 rounded" />
+                    <div className="bg-muted h-8 w-1/2 rounded" />
                   </div>
                 </CardContent>
               </Card>
@@ -211,76 +216,80 @@ export default function CmmDashboard() {
           </div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]} showQuickLinks={false}>
+    <AppLayout
+      title="Category Management Dashboard"
+      breadcrumbs={[{ label: 'Category Management' }]}
+      showQuickLinks={false}
+    >
       <div className="space-y-6">
         <div className="space-y-3">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold leading-tight">Category Management Dashboard</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-3xl leading-tight font-bold">Category Management Dashboard</h1>
               <p className="text-muted-foreground mt-1.5 text-sm">
                 Live view of category hierarchy, AI coverage, and outstanding review workloads.
               </p>
-              {error && <p className="text-sm text-yellow-600 mt-2">{error}</p>}
+              {error && <p className="mt-2 text-sm text-yellow-600">{error}</p>}
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0 md:mt-0 mt-2">
+            <div className="mt-2 flex flex-shrink-0 items-center gap-2 md:mt-0">
               {hasLiveData ? (
                 <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                  <CheckCircle className="h-3 w-3 mr-1" />
+                  <CheckCircle className="mr-1 h-3 w-3" />
                   Live Data
                 </Badge>
               ) : (
                 <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
-                  <AlertCircle className="h-3 w-3 mr-1" />
+                  <AlertCircle className="mr-1 h-3 w-3" />
                   Demo Mode
                 </Badge>
               )}
             </div>
           </div>
           <Tabs value={getActiveTab()} className="w-full">
-            <TabsList className="h-auto p-0 bg-transparent border-b rounded-none gap-0">
-              <TabsTrigger 
-                value="dashboard" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+            <TabsList className="h-auto gap-0 rounded-none border-b bg-transparent p-0">
+              <TabsTrigger
+                value="dashboard"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/categories">DASHBOARD</Link>
               </TabsTrigger>
-              <TabsTrigger 
-                value="ai-categorization" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsTrigger
+                value="ai-categorization"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/categories/ai-categorization">AI CATEGORIZATION</Link>
               </TabsTrigger>
-              <TabsTrigger 
-                value="categories" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsTrigger
+                value="categories"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/categories/categories">CATEGORIES</Link>
               </TabsTrigger>
-              <TabsTrigger 
-                value="tags" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsTrigger
+                value="tags"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/tags/ai-tagging">TAGS</Link>
               </TabsTrigger>
-              <TabsTrigger 
-                value="analytics" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsTrigger
+                value="analytics"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/categories/analytics">ANALYTICS</Link>
               </TabsTrigger>
-              <TabsTrigger 
-                value="exceptions" 
-                asChild 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              <TabsTrigger
+                value="exceptions"
+                asChild
+                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium"
               >
                 <Link href="/catalog/categories/exceptions">EXCEPTIONS</Link>
               </TabsTrigger>
@@ -292,11 +301,11 @@ export default function CmmDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Categories</CardTitle>
-              <Tags className="h-4 w-4 text-muted-foreground" />
+              <Tags className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{derived.totalCategories}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {derived.activeCategories} active • {derived.pendingReviewTotal} awaiting review
               </p>
             </CardContent>
@@ -307,9 +316,12 @@ export default function CmmDashboard() {
               <CardTitle className="text-sm font-medium">Categorized Products</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{derived.categorizedProducts.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Coverage at {derived.coverage}% ({derived.totalProducts.toLocaleString()} total products)
+              <div className="text-2xl font-bold">
+                {derived.categorizedProducts.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Coverage at {derived.coverage}% ({derived.totalProducts.toLocaleString()} total
+                products)
               </p>
               <Progress value={derived.coverage} className="mt-3" />
             </CardContent>
@@ -323,7 +335,7 @@ export default function CmmDashboard() {
               <div className="text-2xl font-bold">
                 {derived.pendingReviewTotal.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {stats?.pending_review_count ?? 0} products flagged by AI for manual approval
               </p>
             </CardContent>
@@ -332,11 +344,11 @@ export default function CmmDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active AI Jobs</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.active_jobs_count ?? 0}</div>
-              <p className="text-xs text-muted-foreground">Queued or running categorization jobs</p>
+              <p className="text-muted-foreground text-xs">Queued or running categorization jobs</p>
             </CardContent>
           </Card>
         </div>
@@ -372,12 +384,14 @@ export default function CmmDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               {derived.topCategories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No category coverage data available yet.</p>
+                <p className="text-muted-foreground text-sm">
+                  No category coverage data available yet.
+                </p>
               ) : (
-                derived.topCategories.map((category) => {
+                derived.topCategories.map(category => {
                   const share = derived.maxProductCount
                     ? Math.round(((category.productCount ?? 0) / derived.maxProductCount) * 100)
-                    : 0
+                    : 0;
 
                   return (
                     <div key={category.id}>
@@ -389,7 +403,7 @@ export default function CmmDashboard() {
                       </div>
                       <Progress value={share} className="mt-2" />
                     </div>
-                  )
+                  );
                 })
               )}
             </CardContent>
@@ -403,21 +417,21 @@ export default function CmmDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
-              <Button asChild variant="outline" className="h-auto p-4 flex-col bg-transparent">
+              <Button asChild variant="outline" className="h-auto flex-col bg-transparent p-4">
                 <a href="/catalog/categories/categories">
-                  <Tags className="h-6 w-6 mb-2" />
+                  <Tags className="mb-2 h-6 w-6" />
                   <span>Manage Hierarchy</span>
                 </a>
               </Button>
-              <Button asChild variant="outline" className="h-auto p-4 flex-col bg-transparent">
+              <Button asChild variant="outline" className="h-auto flex-col bg-transparent p-4">
                 <a href="/catalog/categories/ai-categorization">
-                  <TrendingUp className="h-6 w-6 mb-2" />
+                  <TrendingUp className="mb-2 h-6 w-6" />
                   <span>Run AI Categorization</span>
                 </a>
               </Button>
-              <Button asChild variant="outline" className="h-auto p-4 flex-col bg-transparent">
+              <Button asChild variant="outline" className="h-auto flex-col bg-transparent p-4">
                 <a href="/catalog/categories/analytics">
-                  <BarChart3 className="h-6 w-6 mb-2" />
+                  <BarChart3 className="mb-2 h-6 w-6" />
                   <span>Review Analytics</span>
                 </a>
               </Button>
@@ -426,7 +440,7 @@ export default function CmmDashboard() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
 
 function StatusRow({
@@ -434,23 +448,23 @@ function StatusRow({
   value,
   tone,
 }: {
-  label: string
-  value: number
-  tone: "success" | "warning" | "destructive" | "default"
+  label: string;
+  value: number;
+  tone: 'success' | 'warning' | 'destructive' | 'default';
 }) {
   const toneClass =
-    tone === "success"
-      ? "text-green-600"
-      : tone === "warning"
-        ? "text-yellow-600"
-        : tone === "destructive"
-          ? "text-red-600"
-          : "text-muted-foreground"
+    tone === 'success'
+      ? 'text-green-600'
+      : tone === 'warning'
+        ? 'text-yellow-600'
+        : tone === 'destructive'
+          ? 'text-red-600'
+          : 'text-muted-foreground';
 
   return (
     <div className="flex items-center justify-between text-sm">
       <span className={toneClass}>{label}</span>
       <span className="font-medium">{value.toLocaleString()}</span>
     </div>
-  )
+  );
 }

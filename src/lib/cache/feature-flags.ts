@@ -103,10 +103,7 @@ class FeatureFlagManager {
   /**
    * Set specific flag value
    */
-  setFlag<K extends keyof CacheFeatureFlags>(
-    key: K,
-    value: CacheFeatureFlags[K]
-  ): void {
+  setFlag<K extends keyof CacheFeatureFlags>(key: K, value: CacheFeatureFlags[K]): void {
     this.flags[key] = value;
     this.saveToStorage();
     this.notifyListeners();
@@ -143,7 +140,7 @@ class FeatureFlagManager {
   subscribe(listener: (flags: CacheFeatureFlags) => void): () => void {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
+      this.listeners = this.listeners.filter(l => l !== listener);
     };
   }
 
@@ -151,7 +148,7 @@ class FeatureFlagManager {
    * Notify all listeners of flag changes
    */
   private notifyListeners(): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(this.getFlags());
       } catch (error) {
@@ -166,10 +163,7 @@ class FeatureFlagManager {
   private saveToStorage(): void {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(
-          'cache_feature_flags',
-          JSON.stringify(this.flags)
-        );
+        localStorage.setItem('cache_feature_flags', JSON.stringify(this.flags));
       } catch (error) {
         console.error('[FeatureFlags] Error saving to storage:', error);
       }

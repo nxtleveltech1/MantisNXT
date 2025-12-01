@@ -68,7 +68,7 @@ export const useNeonSppStore = create<NeonSppState>((set, get) => ({
   },
 
   // Fetch uploads with filters
-  fetchUploads: async (filters) => {
+  fetchUploads: async filters => {
     set({ loading: true, error: null });
     try {
       const params = new URLSearchParams();
@@ -105,7 +105,7 @@ export const useNeonSppStore = create<NeonSppState>((set, get) => ({
           new_products_count: 0,
           recent_price_changes_count: 0,
         },
-        loading: false
+        loading: false,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -190,10 +190,7 @@ export const useNeonSppStore = create<NeonSppState>((set, get) => ({
       const result: MergeResult = data.data;
 
       // Refresh data
-      await Promise.all([
-        get().fetchUploads({ limit: 20 }),
-        get().fetchMetrics(),
-      ]);
+      await Promise.all([get().fetchUploads({ limit: 20 }), get().fetchMetrics()]);
 
       set({ loading: false });
       return result;

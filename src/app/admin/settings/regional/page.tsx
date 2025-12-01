@@ -1,13 +1,19 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Globe,
   MapPin,
@@ -17,9 +23,9 @@ import {
   FileText,
   Save,
   RotateCcw,
-  AlertTriangle
-} from 'lucide-react'
-import AppLayout from '@/components/layout/AppLayout'
+  AlertTriangle,
+} from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface RegionalSettings {
   country: string;
@@ -60,7 +66,7 @@ const SA_PROVINCES = [
   'Mpumalanga',
   'Northern Cape',
   'North West',
-  'Western Cape'
+  'Western Cape',
 ];
 
 // South African public holidays
@@ -76,13 +82,11 @@ const SA_PUBLIC_HOLIDAYS: PublicHoliday[] = [
   { id: '9', name: 'Heritage Day', date: '2024-09-24', type: 'fixed' },
   { id: '10', name: 'Day of Reconciliation', date: '2024-12-16', type: 'fixed' },
   { id: '11', name: 'Christmas Day', date: '2024-12-25', type: 'fixed' },
-  { id: '12', name: 'Day of Goodwill', date: '2024-12-26', type: 'fixed' }
+  { id: '12', name: 'Day of Goodwill', date: '2024-12-26', type: 'fixed' },
 ];
 
 // Time zones for South Africa
-const SA_TIMEZONES = [
-  { value: 'Africa/Johannesburg', label: 'South Africa Standard Time (SAST)' }
-];
+const SA_TIMEZONES = [{ value: 'Africa/Johannesburg', label: 'South Africa Standard Time (SAST)' }];
 
 // Date format options
 const DATE_FORMATS = [
@@ -90,13 +94,13 @@ const DATE_FORMATS = [
   { value: 'MM/dd/yyyy', label: 'MM/DD/YYYY (12/31/2024)' },
   { value: 'yyyy-MM-dd', label: 'YYYY-MM-DD (2024-12-31)' },
   { value: 'dd MMM yyyy', label: 'DD MMM YYYY (31 Dec 2024)' },
-  { value: 'MMMM dd, yyyy', label: 'MMMM DD, YYYY (December 31, 2024)' }
+  { value: 'MMMM dd, yyyy', label: 'MMMM DD, YYYY (December 31, 2024)' },
 ];
 
 // Time format options
 const TIME_FORMATS = [
   { value: 'HH:mm', label: '24-hour (14:30)' },
-  { value: 'hh:mm a', label: '12-hour (2:30 PM)' }
+  { value: 'hh:mm a', label: '12-hour (2:30 PM)' },
 ];
 
 // Default South African settings
@@ -113,75 +117,75 @@ const DEFAULT_REGIONAL_SETTINGS: RegionalSettings = {
   businessHours: {
     start: '08:00',
     end: '17:00',
-    workDays: [1, 2, 3, 4, 5] // Monday to Friday
+    workDays: [1, 2, 3, 4, 5], // Monday to Friday
   },
   publicHolidays: SA_PUBLIC_HOLIDAYS,
   addressFormat: '{street}\n{city}\n{province}\n{postalCode}\n{country}',
   phoneFormat: '+27 {area} {number}',
-  postalCodeFormat: '####'
+  postalCodeFormat: '####',
 };
 
 export default function RegionalSettingsPage() {
-  const [settings, setSettings] = useState<RegionalSettings>(DEFAULT_REGIONAL_SETTINGS)
-  const [isModified, setIsModified] = useState(false)
-  const [activeTab, setActiveTab] = useState('location')
-  const [isSaving, setIsSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [settings, setSettings] = useState<RegionalSettings>(DEFAULT_REGIONAL_SETTINGS);
+  const [isModified, setIsModified] = useState(false);
+  const [activeTab, setActiveTab] = useState('location');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Update settings
   const updateSettings = (updates: Partial<RegionalSettings>) => {
-    const newSettings = { ...settings, ...updates }
-    setSettings(newSettings)
-    setIsModified(true)
-  }
+    const newSettings = { ...settings, ...updates };
+    setSettings(newSettings);
+    setIsModified(true);
+  };
 
   // Save settings
   const saveSettings = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // In a real application, this would save to database/API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsModified(false)
-      setLastSaved(new Date())
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsModified(false);
+      setLastSaved(new Date());
     } catch (error) {
-      console.error('Failed to save settings:', error)
+      console.error('Failed to save settings:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Reset to defaults
   const resetToDefaults = () => {
-    setSettings(DEFAULT_REGIONAL_SETTINGS)
-    setIsModified(true)
-  }
+    setSettings(DEFAULT_REGIONAL_SETTINGS);
+    setIsModified(true);
+  };
 
   // Get formatted preview
   const getDatePreview = () => {
-    const now = new Date()
+    const now = new Date();
     try {
       return now.toLocaleDateString(settings.locale, {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit'
-      })
+        day: '2-digit',
+      });
     } catch {
-      return 'Invalid format'
+      return 'Invalid format';
     }
-  }
+  };
 
   const getTimePreview = () => {
-    const now = new Date()
+    const now = new Date();
     try {
       return now.toLocaleTimeString(settings.locale, {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: settings.timeFormat.includes('a')
-      })
+        hour12: settings.timeFormat.includes('a'),
+      });
     } catch {
-      return 'Invalid format'
+      return 'Invalid format';
     }
-  }
+  };
 
   return (
     <AppLayout>
@@ -196,23 +200,16 @@ export default function RegionalSettingsPage() {
           </div>
           <div className="flex items-center gap-3">
             {lastSaved && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Last saved: {lastSaved.toLocaleTimeString()}
               </p>
             )}
-            <Button
-              variant="outline"
-              onClick={resetToDefaults}
-              disabled={isSaving}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={resetToDefaults} disabled={isSaving}>
+              <RotateCcw className="mr-2 h-4 w-4" />
               Reset to Defaults
             </Button>
-            <Button
-              onClick={saveSettings}
-              disabled={!isModified || isSaving}
-            >
-              <Save className="h-4 w-4 mr-2" />
+            <Button onClick={saveSettings} disabled={!isModified || isSaving}>
+              <Save className="mr-2 h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -225,7 +222,8 @@ export default function RegionalSettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  You have unsaved changes. Click &ldquo;Save Changes&rdquo; to apply your configuration.
+                  You have unsaved changes. Click &ldquo;Save Changes&rdquo; to apply your
+                  configuration.
                 </p>
               </div>
             </CardContent>
@@ -243,7 +241,7 @@ export default function RegionalSettingsPage() {
 
           {/* Location Settings */}
           <TabsContent value="location" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -257,7 +255,7 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="country"
                       value={settings.country}
-                      onChange={(e) => updateSettings({ country: e.target.value })}
+                      onChange={e => updateSettings({ country: e.target.value })}
                     />
                   </div>
 
@@ -265,7 +263,7 @@ export default function RegionalSettingsPage() {
                     <Label htmlFor="province">Province</Label>
                     <Select
                       value={settings.province}
-                      onValueChange={(value) => updateSettings({ province: value })}
+                      onValueChange={value => updateSettings({ province: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -285,7 +283,7 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="city"
                       value={settings.city}
-                      onChange={(e) => updateSettings({ city: e.target.value })}
+                      onChange={e => updateSettings({ city: e.target.value })}
                     />
                   </div>
                 </CardContent>
@@ -303,7 +301,7 @@ export default function RegionalSettingsPage() {
                     <Label htmlFor="timezone">Timezone</Label>
                     <Select
                       value={settings.timezone}
-                      onValueChange={(value) => updateSettings({ timezone: value })}
+                      onValueChange={value => updateSettings({ timezone: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -323,10 +321,10 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="locale"
                       value={settings.locale}
-                      onChange={(e) => updateSettings({ locale: e.target.value })}
+                      onChange={e => updateSettings({ locale: e.target.value })}
                       placeholder="en-ZA"
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Used for number, currency, and date formatting
                     </p>
                   </div>
@@ -336,7 +334,7 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="language"
                       value={settings.languageCode}
-                      onChange={(e) => updateSettings({ languageCode: e.target.value })}
+                      onChange={e => updateSettings({ languageCode: e.target.value })}
                       placeholder="en"
                     />
                   </div>
@@ -347,7 +345,7 @@ export default function RegionalSettingsPage() {
 
           {/* Date & Time Settings */}
           <TabsContent value="datetime" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -360,7 +358,7 @@ export default function RegionalSettingsPage() {
                     <Label htmlFor="date-format">Date Format</Label>
                     <Select
                       value={settings.dateFormat}
-                      onValueChange={(value) => updateSettings({ dateFormat: value })}
+                      onValueChange={value => updateSettings({ dateFormat: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -373,16 +371,14 @@ export default function RegionalSettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Preview: {getDatePreview()}
-                    </p>
+                    <p className="text-muted-foreground text-sm">Preview: {getDatePreview()}</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="time-format">Time Format</Label>
                     <Select
                       value={settings.timeFormat}
-                      onValueChange={(value) => updateSettings({ timeFormat: value })}
+                      onValueChange={value => updateSettings({ timeFormat: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -395,16 +391,14 @@ export default function RegionalSettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Preview: {getTimePreview()}
-                    </p>
+                    <p className="text-muted-foreground text-sm">Preview: {getTimePreview()}</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="first-day">First Day of Week</Label>
                     <Select
                       value={settings.firstDayOfWeek.toString()}
-                      onValueChange={(value) => updateSettings({ firstDayOfWeek: parseInt(value) })}
+                      onValueChange={value => updateSettings({ firstDayOfWeek: parseInt(value) })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -429,12 +423,15 @@ export default function RegionalSettingsPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>South African Public Holidays (2024)</Label>
-                    <div className="max-h-64 overflow-y-auto space-y-2">
+                    <div className="max-h-64 space-y-2 overflow-y-auto">
                       {settings.publicHolidays.map(holiday => (
-                        <div key={holiday.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div
+                          key={holiday.id}
+                          className="flex items-center justify-between rounded bg-gray-50 p-2"
+                        >
                           <div>
-                            <div className="font-medium text-sm">{holiday.name}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-sm font-medium">{holiday.name}</div>
+                            <div className="text-muted-foreground text-xs">
                               {new Date(holiday.date).toLocaleDateString(settings.locale)}
                             </div>
                           </div>
@@ -460,7 +457,7 @@ export default function RegionalSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -469,12 +466,14 @@ export default function RegionalSettingsPage() {
                           id="start-time"
                           type="time"
                           value={settings.businessHours.start}
-                          onChange={(e) => updateSettings({
-                            businessHours: {
-                              ...settings.businessHours,
-                              start: e.target.value
-                            }
-                          })}
+                          onChange={e =>
+                            updateSettings({
+                              businessHours: {
+                                ...settings.businessHours,
+                                start: e.target.value,
+                              },
+                            })
+                          }
                         />
                       </div>
                       <div className="space-y-2">
@@ -483,12 +482,14 @@ export default function RegionalSettingsPage() {
                           id="end-time"
                           type="time"
                           value={settings.businessHours.end}
-                          onChange={(e) => updateSettings({
-                            businessHours: {
-                              ...settings.businessHours,
-                              end: e.target.value
-                            }
-                          })}
+                          onChange={e =>
+                            updateSettings({
+                              businessHours: {
+                                ...settings.businessHours,
+                                end: e.target.value,
+                              },
+                            })
+                          }
                         />
                       </div>
                     </div>
@@ -503,7 +504,7 @@ export default function RegionalSettingsPage() {
                           return (
                             <Button
                               key={day}
-                              variant={isSelected ? "default" : "outline"}
+                              variant={isSelected ? 'default' : 'outline'}
                               size="sm"
                               onClick={() => {
                                 const workDays = isSelected
@@ -513,8 +514,8 @@ export default function RegionalSettingsPage() {
                                 updateSettings({
                                   businessHours: {
                                     ...settings.businessHours,
-                                    workDays
-                                  }
+                                    workDays,
+                                  },
                                 });
                               }}
                             >
@@ -527,19 +528,29 @@ export default function RegionalSettingsPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">Current Schedule</h4>
+                    <div className="rounded-lg bg-blue-50 p-4">
+                      <h4 className="mb-2 font-medium text-blue-900">Current Schedule</h4>
                       <div className="space-y-1 text-sm text-blue-800">
-                        <p>Hours: {settings.businessHours.start} - {settings.businessHours.end}</p>
+                        <p>
+                          Hours: {settings.businessHours.start} - {settings.businessHours.end}
+                        </p>
                         <p>Work Days: {settings.businessHours.workDays.length} days per week</p>
                         <p>Timezone: {settings.timezone.split('/')[1]}</p>
                       </div>
                     </div>
 
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-medium text-green-900 mb-2">Business Week</h4>
+                    <div className="rounded-lg bg-green-50 p-4">
+                      <h4 className="mb-2 font-medium text-green-900">Business Week</h4>
                       <div className="space-y-1 text-sm text-green-800">
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
+                        {[
+                          'Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday',
+                        ].map((day, index) => {
                           const dayIndex = index === 6 ? 0 : index + 1;
                           const isWorkDay = settings.businessHours.workDays.includes(dayIndex);
 
@@ -547,7 +558,9 @@ export default function RegionalSettingsPage() {
                             <div key={day} className="flex justify-between">
                               <span>{day}</span>
                               <span className={isWorkDay ? 'text-green-700' : 'text-gray-500'}>
-                                {isWorkDay ? `${settings.businessHours.start} - ${settings.businessHours.end}` : 'Closed'}
+                                {isWorkDay
+                                  ? `${settings.businessHours.start} - ${settings.businessHours.end}`
+                                  : 'Closed'}
                               </span>
                             </div>
                           );
@@ -562,7 +575,7 @@ export default function RegionalSettingsPage() {
 
           {/* Formatting Settings */}
           <TabsContent value="formatting" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -575,17 +588,18 @@ export default function RegionalSettingsPage() {
                     <Label htmlFor="address-format">Address Format Template</Label>
                     <textarea
                       id="address-format"
-                      className="w-full h-24 p-2 border rounded-md resize-none"
+                      className="h-24 w-full resize-none rounded-md border p-2"
                       value={settings.addressFormat}
-                      onChange={(e) => updateSettings({ addressFormat: e.target.value })}
+                      onChange={e => updateSettings({ addressFormat: e.target.value })}
                       placeholder="{street}&#10;{city}&#10;{province}&#10;{postalCode}&#10;{country}"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Use placeholders: {'{street}'}, {'{city}'}, {'{province}'}, {'{postalCode}'}, {'{country}'}
+                    <p className="text-muted-foreground text-sm">
+                      Use placeholders: {'{street}'}, {'{city}'}, {'{province}'}, {'{postalCode}'},{' '}
+                      {'{country}'}
                     </p>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded border">
+                  <div className="rounded border bg-gray-50 p-3">
                     <Label className="text-sm font-medium">Preview:</Label>
                     <div className="mt-1 text-sm whitespace-pre-line">
                       {settings.addressFormat
@@ -593,8 +607,7 @@ export default function RegionalSettingsPage() {
                         .replace('{city}', settings.city)
                         .replace('{province}', settings.province)
                         .replace('{postalCode}', '2000')
-                        .replace('{country}', settings.country)
-                      }
+                        .replace('{country}', settings.country)}
                     </div>
                   </div>
                 </CardContent>
@@ -613,14 +626,15 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="phone-format"
                       value={settings.phoneFormat}
-                      onChange={(e) => updateSettings({ phoneFormat: e.target.value })}
+                      onChange={e => updateSettings({ phoneFormat: e.target.value })}
                       placeholder="+27 {area} {number}"
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Use placeholders: {'{area}'}, {'{number}'}
                     </p>
-                    <div className="text-sm text-muted-foreground">
-                      Preview: {settings.phoneFormat.replace('{area}', '11').replace('{number}', '123 4567')}
+                    <div className="text-muted-foreground text-sm">
+                      Preview:{' '}
+                      {settings.phoneFormat.replace('{area}', '11').replace('{number}', '123 4567')}
                     </div>
                   </div>
 
@@ -629,19 +643,19 @@ export default function RegionalSettingsPage() {
                     <Input
                       id="postal-format"
                       value={settings.postalCodeFormat}
-                      onChange={(e) => updateSettings({ postalCodeFormat: e.target.value })}
+                      onChange={e => updateSettings({ postalCodeFormat: e.target.value })}
                       placeholder="####"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Use # for digits, A for letters
-                    </p>
-                    <div className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">Use # for digits, A for letters</p>
+                    <div className="text-muted-foreground text-sm">
                       Example: {settings.postalCodeFormat.replace(/#/g, '2').replace(/A/g, 'A')}
                     </div>
                   </div>
 
-                  <div className="p-3 bg-green-50 rounded border">
-                    <Label className="text-sm font-medium text-green-800">South African Standards:</Label>
+                  <div className="rounded border bg-green-50 p-3">
+                    <Label className="text-sm font-medium text-green-800">
+                      South African Standards:
+                    </Label>
                     <div className="mt-1 space-y-1 text-sm text-green-700">
                       <div>Phone: +27 11 123 4567</div>
                       <div>Postal Code: 4-digit (2000)</div>

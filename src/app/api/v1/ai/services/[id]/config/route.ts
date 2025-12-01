@@ -6,9 +6,18 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
+import {
+  authenticateRequest,
+  handleAIError,
+  successResponse,
+  noContentResponse,
+} from '@/lib/ai/api-utils';
 import { updateConfigSchema } from '@/lib/ai/validation-schemas';
-import { getConfigByServiceId, upsertConfigByServiceId, deleteConfigByServiceId } from '../../../config/_store';
+import {
+  getConfigByServiceId,
+  upsertConfigByServiceId,
+  deleteConfigByServiceId,
+} from '../../../config/_store';
 
 // Force Node.js runtime to avoid bundling issues
 export const runtime = 'nodejs';
@@ -31,7 +40,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const user = await authenticateRequest(request);
     const body = await request.json();
     const validated = updateConfigSchema.parse(body);
-    const updated = await upsertConfigByServiceId(user.org_id, id, { config: validated.config, enabled: validated.enabled });
+    const updated = await upsertConfigByServiceId(user.org_id, id, {
+      config: validated.config,
+      enabled: validated.enabled,
+    });
     return successResponse(updated);
   } catch (error) {
     return handleAIError(error);
@@ -48,5 +60,3 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     return handleAIError(error);
   }
 }
-
-

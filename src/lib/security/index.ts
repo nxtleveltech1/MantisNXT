@@ -37,9 +37,7 @@ export const validateSAID = (id: string): { isValid: boolean; errors: string[] }
   const fullYear = year > 21 ? 1900 + year : 2000 + year; // Assuming cutoff at 2021
   const date = new Date(fullYear, month - 1, day);
 
-  if (date.getFullYear() !== fullYear ||
-      date.getMonth() !== month - 1 ||
-      date.getDate() !== day) {
+  if (date.getFullYear() !== fullYear || date.getMonth() !== month - 1 || date.getDate() !== day) {
     errors.push('Invalid birth date in ID number');
   }
 
@@ -92,7 +90,9 @@ export const validateVATNumber = (vatNumber: string): { isValid: boolean; errors
 };
 
 // Company registration number validation
-export const validateCompanyRegNumber = (regNumber: string): { isValid: boolean; errors: string[] } => {
+export const validateCompanyRegNumber = (
+  regNumber: string
+): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (!regNumber) {
@@ -156,7 +156,9 @@ export const generateSecurePassword = (length: number = 12): string => {
   return password;
 };
 
-export const validatePasswordStrength = (password: string): {
+export const validatePasswordStrength = (
+  password: string
+): {
   score: number;
   feedback: string[];
   isStrong: boolean;
@@ -184,13 +186,14 @@ export const validatePasswordStrength = (password: string): {
   return {
     score,
     feedback,
-    isStrong: score >= 4
+    isStrong: score >= 4,
   };
 };
 
 // IP address utilities
 export const isValidIPAddress = (ip: string): boolean => {
-  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const ipv4Regex =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
   const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
 
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
@@ -211,7 +214,8 @@ export const isIPInRange = (ip: string, range: string): boolean => {
   }
 
   const ipInt = (ipParts[0] << 24) + (ipParts[1] << 16) + (ipParts[2] << 8) + ipParts[3];
-  const rangeInt = (rangeParts[0] << 24) + (rangeParts[1] << 16) + (rangeParts[2] << 8) + rangeParts[3];
+  const rangeInt =
+    (rangeParts[0] << 24) + (rangeParts[1] << 16) + (rangeParts[2] << 8) + rangeParts[3];
 
   return (ipInt & mask) === (rangeInt & mask);
 };
@@ -262,7 +266,7 @@ export const createAuditLog = (
     details,
     ipAddress,
     userAgent,
-    success
+    success,
   };
 };
 

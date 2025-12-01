@@ -1,24 +1,19 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface OAuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  provider: 'github' | 'google'
-  isLoading?: boolean
+  provider: 'github' | 'google';
+  isLoading?: boolean;
 }
 
 const providerConfig = {
   github: {
     name: 'GitHub',
     icon: (
-      <svg
-        viewBox="0 0 24 24"
-        className="size-5"
-        fill="currentColor"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -30,11 +25,7 @@ const providerConfig = {
   google: {
     name: 'Google',
     icon: (
-      <svg
-        viewBox="0 0 24 24"
-        className="size-5"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="size-5" aria-hidden="true">
         <path
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
           fill="#4285F4"
@@ -54,7 +45,7 @@ const providerConfig = {
       </svg>
     ),
   },
-} as const
+} as const;
 
 export function OAuthButton({
   provider,
@@ -63,7 +54,7 @@ export function OAuthButton({
   disabled,
   ...props
 }: OAuthButtonProps) {
-  const config = providerConfig[provider]
+  const config = providerConfig[provider];
 
   return (
     <Button
@@ -71,24 +62,22 @@ export function OAuthButton({
       variant="outline"
       disabled={isLoading || disabled}
       className={cn(
-        'relative w-full h-11 px-4 py-2',
+        'relative h-11 w-full px-4 py-2',
         'bg-background hover:bg-accent',
-        'border border-border',
+        'border-border border',
         'text-foreground font-medium',
         'rounded-lg',
         'transition-all duration-200',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2',
+        'disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
     >
-      <span className="absolute left-4 flex items-center justify-center">
-        {config.icon}
-      </span>
+      <span className="absolute left-4 flex items-center justify-center">{config.icon}</span>
       <span className="flex-1 text-sm">
         {isLoading ? 'Connecting...' : `Continue with ${config.name}`}
       </span>
     </Button>
-  )
+  );
 }

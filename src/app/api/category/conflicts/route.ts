@@ -1,36 +1,36 @@
-import { NextResponse } from "next/server"
-import { getSchemaMode } from "@/lib/cmm/db"
-import { query as dbQuery } from "@/lib/database/unified-connection"
+import { NextResponse } from 'next/server';
+import { getSchemaMode } from '@/lib/cmm/db';
+import { query as dbQuery } from '@/lib/database/unified-connection';
 
 type ConflictRow = {
-  supplier_product_id: string
-  supplier_id: string
-  supplier_sku: string
-  name_from_supplier: string
-  category_id: string | null
-  current_category_name: string | null
-  ai_confidence: number | null
-  ai_reasoning: string | null
-  ai_categorization_status: string | null
-  updated_at: Date | string | null
-  first_seen_at: Date | string | null
+  supplier_product_id: string;
+  supplier_id: string;
+  supplier_sku: string;
+  name_from_supplier: string;
+  category_id: string | null;
+  current_category_name: string | null;
+  ai_confidence: number | null;
+  ai_reasoning: string | null;
+  ai_categorization_status: string | null;
+  updated_at: Date | string | null;
+  first_seen_at: Date | string | null;
   proposals: Array<{
-    proposed_category_id?: string
-    category_id?: string | null
-    category_name?: string | null
-    confidence?: number | null
-    reasoning?: string | null
-    provider?: string | null
-    created_at?: string | Date | null
-  }>
-}
+    proposed_category_id?: string;
+    category_id?: string | null;
+    category_name?: string | null;
+    confidence?: number | null;
+    reasoning?: string | null;
+    provider?: string | null;
+    created_at?: string | Date | null;
+  }>;
+};
 
 export async function GET() {
   try {
-    const schemaMode = await getSchemaMode()
+    const schemaMode = await getSchemaMode();
 
-    if (schemaMode !== "core") {
-      return NextResponse.json({ success: true, conflicts: [] })
+    if (schemaMode !== 'core') {
+      return NextResponse.json({ success: true, conflicts: [] });
     }
 
     const { rows } = await dbQuery<ConflictRow & { proposals: unknown }>(`
@@ -82,41 +82,41 @@ export async function GET() {
          )
       ORDER BY sp.updated_at DESC NULLS LAST
       LIMIT 100
-    `)
+    `);
 
-    const conflicts = rows.map((row) => {
+    const conflicts = rows.map(row => {
       const conflictType = !row.category_id
-        ? "missing_category"
-        : row.ai_categorization_status === "pending_review"
-          ? "pending_review"
-          : row.ai_categorization_status === "failed"
-            ? "ai_failed"
-            : "manual_review"
+        ? 'missing_category'
+        : row.ai_categorization_status === 'pending_review'
+          ? 'pending_review'
+          : row.ai_categorization_status === 'failed'
+            ? 'ai_failed'
+            : 'manual_review';
 
       const severity =
-        conflictType === "missing_category"
-          ? "high"
-          : conflictType === "pending_review" || conflictType === "ai_failed"
-            ? "medium"
-            : "low"
+        conflictType === 'missing_category'
+          ? 'high'
+          : conflictType === 'pending_review' || conflictType === 'ai_failed'
+            ? 'medium'
+            : 'low';
 
-      let message: string
+      let message: string;
       switch (conflictType) {
-        case "missing_category":
-          message = "Product has no active category assignment."
-          break
-        case "pending_review":
-          message = "AI suggestions require review before assignment."
-          break
-        case "ai_failed":
-          message = "AI categorization failed for this product. Manual intervention is required."
-          break
+        case 'missing_category':
+          message = 'Product has no active category assignment.';
+          break;
+        case 'pending_review':
+          message = 'AI suggestions require review before assignment.';
+          break;
+        case 'ai_failed':
+          message = 'AI categorization failed for this product. Manual intervention is required.';
+          break;
         default:
-          message = "Manual review requested for recent category changes."
+          message = 'Manual review requested for recent category changes.';
       }
 
-      const proposals: ConflictRow["proposals"] = Array.isArray(row.proposals)
-        ? row.proposals.map((proposal) => ({
+      const proposals: ConflictRow['proposals'] = Array.isArray(row.proposals)
+        ? row.proposals.map(proposal => ({
             proposed_category_id: proposal.proposed_category_id ?? null,
             category_id: proposal.category_id ?? null,
             category_name: proposal.category_name ?? null,
@@ -128,7 +128,7 @@ export async function GET() {
             provider: proposal.provider ?? null,
             created_at: proposal.created_at ?? null,
           }))
-        : []
+        : [];
 
       return {
         supplier_product_id: row.supplier_product_id,
@@ -149,20 +149,18 @@ export async function GET() {
         updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null,
         first_seen_at: row.first_seen_at ? new Date(row.first_seen_at).toISOString() : null,
         suggestions: proposals,
-      }
-    })
+      };
+    });
 
-    return NextResponse.json({ success: true, conflicts })
+    return NextResponse.json({ success: true, conflicts });
   } catch (error) {
-    console.error("[API] Conflict listing error:", error)
+    console.error('[API] Conflict listing error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to retrieve conflict queue",
+        message: 'Failed to retrieve conflict queue',
       },
-      { status: 500 },
-    )
+      { status: 500 }
+    );
   }
 }
-
-

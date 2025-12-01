@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface ParticlesProps {
   className?: string;
@@ -23,7 +23,7 @@ export default function Particles({
   ease = 50,
   size = 0.4,
   refresh = false,
-  color = "#ffffff",
+  color = '#ffffff',
   vx = 0,
   vy = 0,
 }: ParticlesProps) {
@@ -37,18 +37,18 @@ export default function Particles({
     w: 0,
     h: 0,
   });
-  const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
   useEffect(() => {
     if (canvasRef.current) {
-      context.current = canvasRef.current.getContext("2d");
+      context.current = canvasRef.current.getContext('2d');
     }
     initCanvas();
     animate();
-    window.addEventListener("resize", initCanvas);
+    window.addEventListener('resize', initCanvas);
 
     return () => {
-      window.removeEventListener("resize", initCanvas);
+      window.removeEventListener('resize', initCanvas);
     };
   }, [animate, color, initCanvas]);
 
@@ -135,21 +135,24 @@ export default function Particles({
 
   const rgb = useMemo(() => hexToRgb(color), [color]);
 
-  const drawCircle = useCallback((circle: Circle, update = false) => {
-    if (context.current) {
-      const { x, y, translateX, translateY, size, alpha } = circle;
-      context.current.translate(translateX, translateY);
-      context.current.beginPath();
-      context.current.arc(x, y, size, 0, 2 * Math.PI);
-      context.current.fillStyle = `rgba(${rgb.join(", ")}, ${alpha})`;
-      context.current.fill();
-      context.current.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const drawCircle = useCallback(
+    (circle: Circle, update = false) => {
+      if (context.current) {
+        const { x, y, translateX, translateY, size, alpha } = circle;
+        context.current.translate(translateX, translateY);
+        context.current.beginPath();
+        context.current.arc(x, y, size, 0, 2 * Math.PI);
+        context.current.fillStyle = `rgba(${rgb.join(', ')}, ${alpha})`;
+        context.current.fill();
+        context.current.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      if (!update) {
-        circles.current.push(circle);
+        if (!update) {
+          circles.current.push(circle);
+        }
       }
-    }
-  }, [dpr, rgb]);
+    },
+    [dpr, rgb]
+  );
 
   const clearContext = useCallback(() => {
     if (context.current) {
@@ -171,10 +174,9 @@ export default function Particles({
     start1: number,
     end1: number,
     start2: number,
-    end2: number,
+    end2: number
   ): number => {
-    const remapped =
-      ((value - start1) * (end2 - start2)) / (end1 - start1) + start2;
+    const remapped = ((value - start1) * (end2 - start2)) / (end1 - start1) + start2;
     return remapped > 0 ? remapped : 0;
   };
 
@@ -188,9 +190,7 @@ export default function Particles({
         canvasSize.h - circle.y - circle.translateY - circle.size,
       ];
       const closestEdge = edge.reduce((a, b) => Math.min(a, b));
-      const remapClosestEdge = parseFloat(
-        remapValue(closestEdge, 0, 20, 0, 1).toFixed(2),
-      );
+      const remapClosestEdge = parseFloat(remapValue(closestEdge, 0, 20, 0, 1).toFixed(2));
       if (remapClosestEdge > 1) {
         circle.alpha += 0.02;
         if (circle.alpha > circle.targetAlpha) {
@@ -202,13 +202,9 @@ export default function Particles({
       circle.x += circle.dx + vx;
       circle.y += circle.dy + vy;
       circle.translateX +=
-        (mousePosition.current.x / (staticity / circle.magnetism) -
-          circle.translateX) /
-        ease;
+        (mousePosition.current.x / (staticity / circle.magnetism) - circle.translateX) / ease;
       circle.translateY +=
-        (mousePosition.current.y / (staticity / circle.magnetism) -
-          circle.translateY) /
-        ease;
+        (mousePosition.current.y / (staticity / circle.magnetism) - circle.translateY) / ease;
 
       drawCircle(circle, true);
 
@@ -227,19 +223,23 @@ export default function Particles({
   }, [canvasSize, circleParams, clearContext, drawCircle, ease, staticity, vx, vy]);
 
   return (
-    <div className={cn("pointer-events-none", className)} ref={canvasContainerRef} aria-hidden="true">
+    <div
+      className={cn('pointer-events-none', className)}
+      ref={canvasContainerRef}
+      aria-hidden="true"
+    >
       <canvas ref={canvasRef} className="size-full" />
     </div>
   );
 }
 
 function hexToRgb(hex: string): number[] {
-  hex = hex.replace("#", "");
+  hex = hex.replace('#', '');
   if (hex.length === 3) {
     hex = hex
-      .split("")
-      .map((char) => char + char)
-      .join("");
+      .split('')
+      .map(char => char + char)
+      .join('');
   }
   const hexInt = parseInt(hex, 16);
   const red = (hexInt >> 16) & 255;

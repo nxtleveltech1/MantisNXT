@@ -35,14 +35,14 @@ export async function upsertInventoryItem(input: UpsertInventoryInput) {
     RETURNING id
   `;
   const { rows } = await query(q, [
-      input.sku,
-      input.stock_qty ?? 0,
-      input.reserved_qty ?? 0,
-      input.cost_price ?? null,
-      input.sale_price ?? null,
-      input.supplier_id ?? null,
-      input.brand_id ?? null
-    ]);
+    input.sku,
+    input.stock_qty ?? 0,
+    input.reserved_qty ?? 0,
+    input.cost_price ?? null,
+    input.sale_price ?? null,
+    input.supplier_id ?? null,
+    input.brand_id ?? null,
+  ]);
   return rows[0];
 }
 

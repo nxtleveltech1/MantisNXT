@@ -333,5 +333,3 @@ export class PerformanceOptimizer {
 }
 
 export default PerformanceOptimizer;
-
-

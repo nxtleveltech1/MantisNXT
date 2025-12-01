@@ -14,12 +14,13 @@ import { query, withTransaction } from '@/lib/database';
 import type {
   OptimizationRun,
   OptimizationRecommendation,
-  PriceChangeLog} from '@/lib/db/pricing-schema';
+  PriceChangeLog,
+} from '@/lib/db/pricing-schema';
 import {
   PRICING_TABLES,
   OptimizationStatus,
   RecommendationStatus,
-  PricingStrategy
+  PricingStrategy,
 } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 import { v4 as uuidv4 } from 'uuid';
@@ -137,7 +138,13 @@ export class PricingOptimizationService {
       }
 
       // Update progress: Saving recommendations
-      await this.updateProgress(run.run_id, 95, 'Saving recommendations', products.length, products.length);
+      await this.updateProgress(
+        run.run_id,
+        95,
+        'Saving recommendations',
+        products.length,
+        products.length
+      );
 
       // Save recommendations
       await this.saveRecommendations(run.run_id, recommendations);
@@ -156,7 +163,6 @@ export class PricingOptimizationService {
       // Mark as completed
       await this.updateRunStatus(run.run_id, OptimizationStatus.COMPLETED);
       await this.updateRunField(run.run_id, 'completed_at', 'NOW()');
-
     } catch (error: unknown) {
       await this.updateRunStatus(run.run_id, OptimizationStatus.FAILED, error.message);
       throw error;
@@ -258,7 +264,9 @@ export class PricingOptimizationService {
   /**
    * Get a single recommendation by ID
    */
-  static async getRecommendationById(recommendationId: string): Promise<OptimizationRecommendation | null> {
+  static async getRecommendationById(
+    recommendationId: string
+  ): Promise<OptimizationRecommendation | null> {
     const sql = `
       SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS}
       WHERE recommendation_id = $1
@@ -300,7 +308,7 @@ export class PricingOptimizationService {
     }
 
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Get current product price
         const productSql = `
           SELECT price FROM ${CORE_TABLES.SUPPLIER_PRODUCT}
@@ -321,7 +329,10 @@ export class PricingOptimizationService {
           SET price = $1, updated_at = NOW()
           WHERE product_id = $2
         `;
-        await client.query(updateSql, [recommendation.recommended_price, recommendation.product_id]);
+        await client.query(updateSql, [
+          recommendation.recommended_price,
+          recommendation.product_id,
+        ]);
 
         // Create price change log
         const logId = uuidv4();
@@ -476,7 +487,10 @@ export class PricingOptimizationService {
   /**
    * Get appropriate optimizers based on strategy
    */
-  private static getOptimizers(strategy: PricingStrategy, config: OptimizationRun['config']): unknown[] {
+  private static getOptimizers(
+    strategy: PricingStrategy,
+    config: OptimizationRun['config']
+  ): unknown[] {
     const optimizers: unknown[] = [];
 
     if (config.algorithms) {
@@ -515,7 +529,10 @@ export class PricingOptimizationService {
   /**
    * Save recommendations to database
    */
-  private static async saveRecommendations(runId: string, recommendations: OptimizationRecommendation[]): Promise<void> {
+  private static async saveRecommendations(
+    runId: string,
+    recommendations: OptimizationRecommendation[]
+  ): Promise<void> {
     if (recommendations.length === 0) return;
 
     const values: string[] = [];
@@ -591,7 +608,11 @@ export class PricingOptimizationService {
   /**
    * Update run status
    */
-  private static async updateRunStatus(runId: string, status: OptimizationStatus, errorMessage?: string): Promise<void> {
+  private static async updateRunStatus(
+    runId: string,
+    status: OptimizationStatus,
+    errorMessage?: string
+  ): Promise<void> {
     const sql = `
       UPDATE ${PRICING_TABLES.OPTIMIZATION_RUNS}
       SET status = $1, error_message = $2
@@ -640,12 +661,15 @@ export class PricingOptimizationService {
   /**
    * Update run results
    */
-  private static async updateRunResults(runId: string, results: {
-    total_products_analyzed: number;
-    recommendations_generated: number;
-    estimated_revenue_impact: number;
-    estimated_profit_impact: number;
-  }): Promise<void> {
+  private static async updateRunResults(
+    runId: string,
+    results: {
+      total_products_analyzed: number;
+      recommendations_generated: number;
+      estimated_revenue_impact: number;
+      estimated_profit_impact: number;
+    }
+  ): Promise<void> {
     const sql = `
       UPDATE ${PRICING_TABLES.OPTIMIZATION_RUNS}
       SET
@@ -685,12 +709,14 @@ export class PricingOptimizationService {
   private static parseRecommendation(row: unknown): OptimizationRecommendation {
     return {
       ...row,
-      competitor_prices: typeof row.competitor_prices === 'string'
-        ? JSON.parse(row.competitor_prices)
-        : row.competitor_prices,
-      historical_performance: typeof row.historical_performance === 'string'
-        ? JSON.parse(row.historical_performance)
-        : row.historical_performance,
+      competitor_prices:
+        typeof row.competitor_prices === 'string'
+          ? JSON.parse(row.competitor_prices)
+          : row.competitor_prices,
+      historical_performance:
+        typeof row.historical_performance === 'string'
+          ? JSON.parse(row.historical_performance)
+          : row.historical_performance,
       created_at: new Date(row.created_at),
       applied_at: row.applied_at ? new Date(row.applied_at) : undefined,
       expires_at: row.expires_at ? new Date(row.expires_at) : undefined,

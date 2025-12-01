@@ -1,19 +1,19 @@
 // @ts-nocheck
-"use client"
+'use client';
 
-import React, { useCallback, useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
+import React, { useCallback, useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -21,18 +21,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-
+} from '@/components/ui/table';
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  TooltipProvider,
-} from '@/components/ui/tooltip'
+} from '@/components/ui/dropdown-menu';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   Search,
   Plus,
@@ -51,12 +48,12 @@ import {
   Download,
   Upload,
   X,
-  SlidersHorizontal
-} from 'lucide-react'
-import { useSupplierStore } from '@/lib/stores/supplier-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
-import type { Supplier, SupplierFilters } from '@/lib/types/inventory'
-import { format } from 'date-fns'
+  SlidersHorizontal,
+} from 'lucide-react';
+import { useSupplierStore } from '@/lib/stores/supplier-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import type { Supplier, SupplierFilters } from '@/lib/types/inventory';
+import { format } from 'date-fns';
 
 export default function SupplierManagement() {
   const {
@@ -72,120 +69,124 @@ export default function SupplierManagement() {
     addSupplier,
     updateSupplier,
     deleteSupplier,
-    clearError
-  } = useSupplierStore()
+    clearError,
+  } = useSupplierStore();
 
-  const { addNotification } = useNotificationStore()
+  const { addNotification } = useNotificationStore();
 
-  const [searchTerm, setSearchTerm] = useState(filters.search || '')
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set())
-  const [showAddSupplier, setShowAddSupplier] = useState(false)
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
-  const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null)
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set());
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      await Promise.all([
-        fetchSuppliers(),
-        fetchAnalytics()
-      ])
+      await Promise.all([fetchSuppliers(), fetchAnalytics()]);
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Failed to load supplier data',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
     }
-  }, [addNotification, fetchAnalytics, fetchSuppliers])
+  }, [addNotification, fetchAnalytics, fetchSuppliers]);
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      setFilters({ search: searchTerm })
-    }, 500)
+      setFilters({ search: searchTerm });
+    }, 500);
 
-    return () => clearTimeout(debounceTimer)
-  }, [searchTerm, setFilters])
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, setFilters]);
 
   const handleDeleteSupplier = async (supplierId: string) => {
     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
-      return
+      return;
     }
 
     try {
-      await deleteSupplier(supplierId)
+      await deleteSupplier(supplierId);
       addNotification({
         type: 'success',
         title: 'Supplier deleted',
-        message: 'Supplier has been successfully deleted'
-      })
+        message: 'Supplier has been successfully deleted',
+      });
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Failed to delete supplier',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
     }
-  }
+  };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
-        return 'default'
+        return 'default';
       case 'inactive':
-        return 'secondary'
+        return 'secondary';
       case 'suspended':
-        return 'destructive'
+        return 'destructive';
       case 'pending_approval':
-        return 'outline'
+        return 'outline';
       case 'blocked':
-        return 'destructive'
+        return 'destructive';
       case 'under_review':
-        return 'outline'
+        return 'outline';
       default:
-        return 'secondary'
+        return 'secondary';
     }
-  }
+  };
 
   const getPerformanceTierColor = (tier: string) => {
     switch (tier) {
       case 'platinum':
-        return 'text-purple-600'
+        return 'text-purple-600';
       case 'gold':
-        return 'text-yellow-600'
+        return 'text-yellow-600';
       case 'silver':
-        return 'text-gray-600'
+        return 'text-gray-600';
       case 'bronze':
-        return 'text-orange-600'
+        return 'text-orange-600';
       case 'unrated':
-        return 'text-gray-400'
+        return 'text-gray-400';
       default:
-        return 'text-gray-400'
+        return 'text-gray-400';
     }
-  }
+  };
 
   const formatCurrency = (amount: number | null) => {
-    if (amount === null) return 'N/A'
+    if (amount === null) return 'N/A';
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR',
-      minimumFractionDigits: 0
-    }).format(amount)
-  }
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy')
-  }
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  };
 
-  const statuses = ['active', 'inactive', 'suspended', 'pending_approval', 'blocked', 'under_review']
-  const performanceTiers = ['platinum', 'gold', 'silver', 'bronze', 'unrated']
-  const regions = [...new Set(suppliers.map(s => s.geographic_region).filter(Boolean))]
-  const categories = [...new Set(suppliers.map(s => s.primary_category).filter(Boolean))]
-  const beeLevels = [...new Set(suppliers.map(s => s.bee_level).filter(Boolean))]
+  const statuses = [
+    'active',
+    'inactive',
+    'suspended',
+    'pending_approval',
+    'blocked',
+    'under_review',
+  ];
+  const performanceTiers = ['platinum', 'gold', 'silver', 'bronze', 'unrated'];
+  const regions = [...new Set(suppliers.map(s => s.geographic_region).filter(Boolean))];
+  const categories = [...new Set(suppliers.map(s => s.primary_category).filter(Boolean))];
+  const beeLevels = [...new Set(suppliers.map(s => s.bee_level).filter(Boolean))];
 
   return (
     <TooltipProvider>
@@ -199,34 +200,20 @@ export default function SupplierManagement() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadData}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-            >
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-            >
-              <Upload className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm">
+              <Upload className="mr-2 h-4 w-4" />
               Import
             </Button>
-            <Button
-              onClick={() => setShowAddSupplier(true)}
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setShowAddSupplier(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
               Add Supplier
             </Button>
           </div>
@@ -234,16 +221,14 @@ export default function SupplierManagement() {
 
         {/* Analytics Cards */}
         {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Suppliers</p>
+                    <p className="text-muted-foreground text-sm">Total Suppliers</p>
                     <p className="text-2xl font-bold">{analytics.totalSuppliers}</p>
-                    <p className="text-xs text-green-600">
-                      {analytics.activeSuppliers} active
-                    </p>
+                    <p className="text-xs text-green-600">{analytics.activeSuppliers} active</p>
                   </div>
                   <Building2 className="h-8 w-8 text-blue-500" />
                 </div>
@@ -254,8 +239,10 @@ export default function SupplierManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Spend</p>
-                    <p className="text-2xl font-bold">{formatCurrency(analytics.spendAnalysis.totalSpend)}</p>
+                    <p className="text-muted-foreground text-sm">Total Spend</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(analytics.spendAnalysis.totalSpend)}
+                    </p>
                     <p className="text-xs text-blue-600">
                       Avg: {formatCurrency(analytics.spendAnalysis.avgOrderValue)}
                     </p>
@@ -269,8 +256,10 @@ export default function SupplierManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">On-Time Delivery</p>
-                    <p className="text-2xl font-bold">{analytics.performanceMetrics.onTimeDeliveryRate.toFixed(1)}%</p>
+                    <p className="text-muted-foreground text-sm">On-Time Delivery</p>
+                    <p className="text-2xl font-bold">
+                      {analytics.performanceMetrics.onTimeDeliveryRate.toFixed(1)}%
+                    </p>
                     <p className="text-xs text-orange-600">
                       Avg: {analytics.performanceMetrics.avgDeliveryTime} days
                     </p>
@@ -284,8 +273,10 @@ export default function SupplierManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Quality Score</p>
-                    <p className="text-2xl font-bold">{analytics.performanceMetrics.avgQualityScore.toFixed(1)}/5</p>
+                    <p className="text-muted-foreground text-sm">Quality Score</p>
+                    <p className="text-2xl font-bold">
+                      {analytics.performanceMetrics.avgQualityScore.toFixed(1)}/5
+                    </p>
                     <p className="text-xs text-purple-600">
                       Response: {analytics.performanceMetrics.avgResponsivenessScore.toFixed(1)}/5
                     </p>
@@ -302,23 +293,19 @@ export default function SupplierManagement() {
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                 <Input
                   placeholder="Search suppliers..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
                 Filters
-                {Object.keys(filters).some(key =>
-                  key !== 'search' && filters[key as keyof SupplierFilters]
+                {Object.keys(filters).some(
+                  key => key !== 'search' && filters[key as keyof SupplierFilters]
                 ) && (
                   <Badge variant="secondary" className="ml-2">
                     Active
@@ -327,7 +314,7 @@ export default function SupplierManagement() {
               </Button>
               {Object.keys(filters).some(key => filters[key as keyof SupplierFilters]) && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="mr-2 h-4 w-4" />
                   Clear
                 </Button>
               )}
@@ -335,14 +322,17 @@ export default function SupplierManagement() {
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="bg-muted/50 mt-4 space-y-4 rounded-lg p-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                   <div>
-                    <p className="text-sm font-medium mb-2 block">Status</p>
+                    <p className="mb-2 block text-sm font-medium">Status</p>
                     <Select
                       value={filters.status?.[0] || 'all_statuses'}
-                      onValueChange={(value) =>
-                        setFilters({ status: value && value !== 'all_statuses' ? [value as unknown] : undefined })
+                      onValueChange={value =>
+                        setFilters({
+                          status:
+                            value && value !== 'all_statuses' ? [value as unknown] : undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -360,11 +350,14 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium mb-2 block">Performance Tier</p>
+                    <p className="mb-2 block text-sm font-medium">Performance Tier</p>
                     <Select
                       value={filters.performance_tier?.[0] || 'all_tiers'}
-                      onValueChange={(value) =>
-                        setFilters({ performance_tier: value && value !== 'all_tiers' ? [value as unknown] : undefined })
+                      onValueChange={value =>
+                        setFilters({
+                          performance_tier:
+                            value && value !== 'all_tiers' ? [value as unknown] : undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -382,11 +375,13 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium mb-2 block">Category</p>
+                    <p className="mb-2 block text-sm font-medium">Category</p>
                     <Select
                       value={filters.category?.[0] || 'all_categories'}
-                      onValueChange={(value) =>
-                        setFilters({ category: value && value !== 'all_categories' ? [value] : undefined })
+                      onValueChange={value =>
+                        setFilters({
+                          category: value && value !== 'all_categories' ? [value] : undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -404,11 +399,13 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium mb-2 block">Region</p>
+                    <p className="mb-2 block text-sm font-medium">Region</p>
                     <Select
                       value={filters.region?.[0] || 'all_regions'}
-                      onValueChange={(value) =>
-                        setFilters({ region: value && value !== 'all_regions' ? [value] : undefined })
+                      onValueChange={value =>
+                        setFilters({
+                          region: value && value !== 'all_regions' ? [value] : undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -426,11 +423,13 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium mb-2 block">BEE Level</p>
+                    <p className="mb-2 block text-sm font-medium">BEE Level</p>
                     <Select
                       value={filters.bee_level?.[0] || 'all_levels'}
-                      onValueChange={(value) =>
-                        setFilters({ bee_level: value && value !== 'all_levels' ? [value] : undefined })
+                      onValueChange={value =>
+                        setFilters({
+                          bee_level: value && value !== 'all_levels' ? [value] : undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -453,7 +452,7 @@ export default function SupplierManagement() {
                     <Checkbox
                       id="preferred-only"
                       checked={filters.preferred_only || false}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={checked =>
                         setFilters({ preferred_only: checked as boolean })
                       }
                     />
@@ -478,18 +477,18 @@ export default function SupplierManagement() {
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
                 <span>Loading suppliers...</span>
               </div>
             ) : suppliers.length === 0 ? (
-              <div className="text-center py-8">
-                <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No suppliers found</h3>
+              <div className="py-8 text-center">
+                <Building2 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-medium">No suppliers found</h3>
                 <p className="text-muted-foreground mb-4">
                   Get started by adding your first supplier.
                 </p>
                 <Button onClick={() => setShowAddSupplier(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Supplier
                 </Button>
               </div>
@@ -501,11 +500,11 @@ export default function SupplierManagement() {
                       <TableHead className="w-12">
                         <Checkbox
                           checked={selectedSuppliers.size === suppliers.length}
-                          onCheckedChange={(checked) => {
+                          onCheckedChange={checked => {
                             if (checked) {
-                              setSelectedSuppliers(new Set(suppliers.map(s => s.id)))
+                              setSelectedSuppliers(new Set(suppliers.map(s => s.id)));
                             } else {
-                              setSelectedSuppliers(new Set())
+                              setSelectedSuppliers(new Set());
                             }
                           }}
                         />
@@ -521,34 +520,34 @@ export default function SupplierManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {suppliers.map((supplier) => (
+                    {suppliers.map(supplier => (
                       <TableRow key={supplier.id}>
                         <TableCell>
                           <Checkbox
                             checked={selectedSuppliers.has(supplier.id)}
-                            onCheckedChange={(checked) => {
-                              const newSelection = new Set(selectedSuppliers)
+                            onCheckedChange={checked => {
+                              const newSelection = new Set(selectedSuppliers);
                               if (checked) {
-                                newSelection.add(supplier.id)
+                                newSelection.add(supplier.id);
                               } else {
-                                newSelection.delete(supplier.id)
+                                newSelection.delete(supplier.id);
                               }
-                              setSelectedSuppliers(newSelection)
+                              setSelectedSuppliers(newSelection);
                             }}
                           />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 font-semibold text-white">
                               {supplier.name.charAt(0)}
                             </div>
                             <div>
                               <p className="font-medium">{supplier.name}</p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-muted-foreground text-sm">
                                 {supplier.primary_category || 'General'}
                               </p>
                               {supplier.preferred_supplier && (
-                                <Badge variant="outline" className="text-xs mt-1">
+                                <Badge variant="outline" className="mt-1 text-xs">
                                   Preferred
                                 </Badge>
                               )}
@@ -556,26 +555,28 @@ export default function SupplierManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-xs font-mono text-muted-foreground">
-                            {supplier.orgId || (supplier as unknown as { org_id?: string }).org_id || '—'}
+                          <div className="text-muted-foreground font-mono text-xs">
+                            {supplier.orgId ||
+                              (supplier as unknown as { org_id?: string }).org_id ||
+                              '—'}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             {supplier.email && (
                               <div className="flex items-center gap-1 text-sm">
-                                <Mail className="h-3 w-3 text-muted-foreground" />
-                                <span className="truncate max-w-[120px]">{supplier.email}</span>
+                                <Mail className="text-muted-foreground h-3 w-3" />
+                                <span className="max-w-[120px] truncate">{supplier.email}</span>
                               </div>
                             )}
                             {supplier.phone && (
                               <div className="flex items-center gap-1 text-sm">
-                                <Phone className="h-3 w-3 text-muted-foreground" />
+                                <Phone className="text-muted-foreground h-3 w-3" />
                                 <span>{supplier.phone}</span>
                               </div>
                             )}
                             {supplier.contact_person && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-muted-foreground text-xs">
                                 Contact: {supplier.contact_person}
                               </p>
                             )}
@@ -584,18 +585,22 @@ export default function SupplierManagement() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Star className={`h-3 w-3 ${getPerformanceTierColor(supplier.performance_tier)}`} />
-                              <span className={`text-sm font-medium ${getPerformanceTierColor(supplier.performance_tier)}`}>
+                              <Star
+                                className={`h-3 w-3 ${getPerformanceTierColor(supplier.performance_tier)}`}
+                              />
+                              <span
+                                className={`text-sm font-medium ${getPerformanceTierColor(supplier.performance_tier)}`}
+                              >
                                 {supplier.performance_tier.toUpperCase()}
                               </span>
                             </div>
                             {supplier.quality_rating && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 Quality: {supplier.quality_rating.toFixed(1)}/5
                               </div>
                             )}
                             {supplier.delivery_performance_score && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 Delivery: {supplier.delivery_performance_score.toFixed(1)}%
                               </div>
                             )}
@@ -607,7 +612,7 @@ export default function SupplierManagement() {
                               {formatCurrency(supplier.spend_last_12_months)}
                             </p>
                             {supplier.bee_level && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-muted-foreground text-xs">
                                 BEE: {supplier.bee_level}
                               </p>
                             )}
@@ -615,11 +620,11 @@ export default function SupplierManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm">
-                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                            <MapPin className="text-muted-foreground h-3 w-3" />
                             <span>{supplier.geographic_region || 'Not specified'}</span>
                           </div>
                           {supplier.rural_based && (
-                            <Badge variant="outline" className="text-xs mt-1">
+                            <Badge variant="outline" className="mt-1 text-xs">
                               Rural
                             </Badge>
                           )}
@@ -637,23 +642,19 @@ export default function SupplierManagement() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => setViewingSupplier(supplier)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
+                              <DropdownMenuItem onClick={() => setViewingSupplier(supplier)}>
+                                <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => setEditingSupplier(supplier)}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
+                              <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                                <Edit className="mr-2 h-4 w-4" />
                                 Edit Supplier
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDeleteSupplier(supplier.id)}
                                 className="text-red-600"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Supplier
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -672,5 +673,5 @@ export default function SupplierManagement() {
         {/* For brevity, not implementing the full dialogs in this response */}
       </div>
     </TooltipProvider>
-  )
+  );
 }

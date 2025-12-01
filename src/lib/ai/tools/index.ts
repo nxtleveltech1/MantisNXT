@@ -15,7 +15,11 @@ export { toolExecutor } from './executor';
 export { ToolExecutor } from './executor';
 
 // Built-in Tools
-export { registerBuiltInTools, getSystemContextForAI, builtInToolDefinitions } from './built-in/index';
+export {
+  registerBuiltInTools,
+  getSystemContextForAI,
+  builtInToolDefinitions,
+} from './built-in/index';
 
 // MCP Bridge
 export { mcpBridge } from './mcp-bridge';

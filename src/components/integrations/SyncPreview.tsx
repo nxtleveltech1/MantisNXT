@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +16,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { AlertCircle, CheckCircle2, Search, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +70,7 @@ const SkeletonRow: React.FC<{ columns: number }> = ({ columns }) => (
   <TableRow>
     {Array.from({ length: columns }).map((_, i) => (
       <TableCell key={i}>
-        <div className="h-4 bg-muted rounded animate-pulse" />
+        <div className="bg-muted h-4 animate-pulse rounded" />
       </TableCell>
     ))}
   </TableRow>
@@ -83,10 +97,10 @@ const SyncItemRow = React.memo(
       </TableCell>
       <TableCell className="font-medium">{item.id}</TableCell>
       <TableCell>{item.name}</TableCell>
-      <TableCell className="text-sm text-muted-foreground">
+      <TableCell className="text-muted-foreground text-sm">
         {item.lastModified ? new Date(item.lastModified).toLocaleDateString() : '-'}
       </TableCell>
-      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+      <TableCell className="text-muted-foreground max-w-xs truncate text-sm">
         {item.preview ? item.preview.substring(0, 50) : '-'}
       </TableCell>
     </TableRow>
@@ -113,7 +127,7 @@ const SyncItemsTable = React.memo(
     onLoadMore: () => void;
   }) => (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-card">
+      <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -134,7 +148,7 @@ const SyncItemsTable = React.memo(
                 <SkeletonRow columns={5} />
               </>
             ) : items.length > 0 ? (
-              items.map((item) => (
+              items.map(item => (
                 <SyncItemRow
                   key={item.id}
                   item={item}
@@ -144,7 +158,7 @@ const SyncItemsTable = React.memo(
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-muted-foreground py-8 text-center">
                   No items to sync
                 </TableCell>
               </TableRow>
@@ -154,12 +168,7 @@ const SyncItemsTable = React.memo(
       </div>
 
       {!isLoading && items.length > 0 && items.length < totalCount && (
-        <Button
-          variant="outline"
-          onClick={onLoadMore}
-          className="w-full"
-          disabled={isLoading}
-        >
+        <Button variant="outline" onClick={onLoadMore} className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -267,7 +276,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
             ? setSelectedUpdated
             : setSelectedDeleted;
 
-      setState((prev) => {
+      setState(prev => {
         const next = new Set(prev);
         next.has(id) ? next.delete(id) : next.add(id);
         return next;
@@ -294,7 +303,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
   const filterItems = (items: SyncItem[]): SyncItem[] => {
     if (!searchTerm) return items;
     return items.filter(
-      (item) =>
+      item =>
         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(item.id).toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -303,8 +312,8 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
   if (!data && !loading && !error) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={open => !open && onCancel()}>
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>Sync Preview</span>
@@ -317,10 +326,10 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between rounded-lg border p-3 mb-4 bg-muted/30">
+        <div className="bg-muted/30 mb-4 flex items-center justify-between rounded-lg border p-3">
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">Sync Direction</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-foreground text-sm font-medium">Sync Direction</span>
+            <span className="text-muted-foreground text-xs">
               Choose whether to pull external changes (Sync Down) or push local updates (Sync Up)
             </span>
           </div>
@@ -348,9 +357,9 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
           <Card className="border-destructive bg-destructive/5">
             <CardContent className="pt-6">
               <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <AlertCircle className="text-destructive mt-0.5 h-5 w-5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-destructive">{error}</p>
+                  <p className="text-destructive font-medium">{error}</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -361,7 +370,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                       // Re-fetch will happen automatically
                     }}
                   >
-                    <RefreshCw className="h-3 w-3 mr-1" />
+                    <RefreshCw className="mr-1 h-3 w-3" />
                     Retry
                   </Button>
                 </div>
@@ -374,11 +383,11 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
           <>
             {/* Search bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 placeholder="Search by name or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
                 aria-label="Search sync items"
               />
@@ -416,7 +425,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   totalCount={data.totalNew}
                   isLoading={loading}
                   selectedIds={selectedNew}
-                  onSelectItem={(id) => handleSelectItem('new', id)}
+                  onSelectItem={id => handleSelectItem('new', id)}
                   onLoadMore={() => {
                     // Load more implementation would go here
                   }}
@@ -429,7 +438,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   totalCount={data.totalUpdated}
                   isLoading={loading}
                   selectedIds={selectedUpdated}
-                  onSelectItem={(id) => handleSelectItem('updated', id)}
+                  onSelectItem={id => handleSelectItem('updated', id)}
                   onLoadMore={() => {
                     // Load more implementation would go here
                   }}
@@ -442,7 +451,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   totalCount={data.totalDeleted}
                   isLoading={loading}
                   selectedIds={selectedDeleted}
-                  onSelectItem={(id) => handleSelectItem('deleted', id)}
+                  onSelectItem={id => handleSelectItem('deleted', id)}
                   onLoadMore={() => {
                     // Load more implementation would go here
                   }}
@@ -461,10 +470,10 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   <Checkbox
                     id="include-new"
                     checked={includeNew}
-                    onCheckedChange={(checked) => setIncludeNew(checked === true)}
+                    onCheckedChange={checked => setIncludeNew(checked === true)}
                     aria-label="Include new items in sync"
                   />
-                  <Label htmlFor="include-new" className="font-normal cursor-pointer">
+                  <Label htmlFor="include-new" className="cursor-pointer font-normal">
                     Include New Items ({data.totalNew})
                   </Label>
                 </div>
@@ -472,10 +481,10 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   <Checkbox
                     id="include-updated"
                     checked={includeUpdated}
-                    onCheckedChange={(checked) => setIncludeUpdated(checked === true)}
+                    onCheckedChange={checked => setIncludeUpdated(checked === true)}
                     aria-label="Include updated items in sync"
                   />
-                  <Label htmlFor="include-updated" className="font-normal cursor-pointer">
+                  <Label htmlFor="include-updated" className="cursor-pointer font-normal">
                     Include Updated Items ({data.totalUpdated})
                   </Label>
                 </div>
@@ -483,10 +492,10 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
                   <Checkbox
                     id="include-deleted"
                     checked={includeDeleted}
-                    onCheckedChange={(checked) => setIncludeDeleted(checked === true)}
+                    onCheckedChange={checked => setIncludeDeleted(checked === true)}
                     aria-label="Include deleted items in sync"
                   />
-                  <Label htmlFor="include-deleted" className="font-normal cursor-pointer">
+                  <Label htmlFor="include-deleted" className="cursor-pointer font-normal">
                     Include Deleted Items ({data.totalDeleted})
                   </Label>
                 </div>
@@ -495,17 +504,14 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
           </>
         )}
 
-        <DialogFooter className="flex gap-2 justify-end">
+        <DialogFooter className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={loading || !data}
-            className={cn(
-              'gap-2',
-              loading && 'opacity-70'
-            )}
+            className={cn('gap-2', loading && 'opacity-70')}
           >
             {loading ? (
               <>

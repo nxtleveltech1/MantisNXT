@@ -69,7 +69,7 @@ export class SupplierPerformancePredictor {
     qualityMetrics: 0.25,
     responseTime: 0.15,
     priceStability: 0.15,
-    financialHealth: 0.15
+    financialHealth: 0.15,
   };
 
   predictPerformance(
@@ -84,14 +84,17 @@ export class SupplierPerformancePredictor {
       prediction: score,
       confidence: this.calculateConfidence(historicalData.length, features),
       factors: features,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
   private extractFeatures(history: SupplierPerformance[], recent: unknown) {
-    const avgDeliveryRate = history.reduce((sum, p) => sum + p.metrics.onTimeDeliveryRate, 0) / history.length;
-    const avgQualityRate = history.reduce((sum, p) => sum + p.metrics.qualityAcceptanceRate, 0) / history.length;
-    const avgResponseTime = history.reduce((sum, p) => sum + p.metrics.responseTime, 0) / history.length;
+    const avgDeliveryRate =
+      history.reduce((sum, p) => sum + p.metrics.onTimeDeliveryRate, 0) / history.length;
+    const avgQualityRate =
+      history.reduce((sum, p) => sum + p.metrics.qualityAcceptanceRate, 0) / history.length;
+    const avgResponseTime =
+      history.reduce((sum, p) => sum + p.metrics.responseTime, 0) / history.length;
 
     // Trend analysis
     const deliveryTrend = this.calculateTrend(history.map(h => h.metrics.onTimeDeliveryRate));
@@ -100,23 +103,27 @@ export class SupplierPerformancePredictor {
     return {
       avgDeliveryRate: avgDeliveryRate / 100,
       avgQualityRate: avgQualityRate / 100,
-      responseTimeScore: Math.max(0, 1 - (avgResponseTime / 48)), // Normalize to 48hr baseline
+      responseTimeScore: Math.max(0, 1 - avgResponseTime / 48), // Normalize to 48hr baseline
       deliveryTrend,
       qualityTrend,
       consistencyScore: this.calculateConsistency(history),
-      recentPerformance: recent?.overallRating || 0.5
+      recentPerformance: recent?.overallRating || 0.5,
     };
   }
 
   private calculatePerformanceScore(features: Record<string, number>): number {
-    return Math.min(1, Math.max(0,
-      features.avgDeliveryRate * this.weights.deliveryHistory +
-      features.avgQualityRate * this.weights.qualityMetrics +
-      features.responseTimeScore * this.weights.responseTime +
-      features.deliveryTrend * 0.1 +
-      features.qualityTrend * 0.1 +
-      features.consistencyScore * 0.15
-    ));
+    return Math.min(
+      1,
+      Math.max(
+        0,
+        features.avgDeliveryRate * this.weights.deliveryHistory +
+          features.avgQualityRate * this.weights.qualityMetrics +
+          features.responseTimeScore * this.weights.responseTime +
+          features.deliveryTrend * 0.1 +
+          features.qualityTrend * 0.1 +
+          features.consistencyScore * 0.15
+      )
+    );
   }
 
   private calculateTrend(values: number[]): number {
@@ -125,7 +132,7 @@ export class SupplierPerformancePredictor {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, idx) => sum + (idx * val), 0);
+    const sumXY = values.reduce((sum, val, idx) => sum + idx * val, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -141,14 +148,16 @@ export class SupplierPerformancePredictor {
     const standardDeviation = Math.sqrt(variance);
 
     // Lower standard deviation = higher consistency
-    return Math.max(0, 1 - (standardDeviation / 2));
+    return Math.max(0, 1 - standardDeviation / 2);
   }
 
   private calculateConfidence(dataPoints: number, features: Record<string, number>): number {
     const dataSizeScore = Math.min(1, dataPoints / 10); // Full confidence at 10+ data points
-    const featureQuality = Object.values(features).reduce((sum, val) => sum + (isNaN(val) ? 0 : 1), 0) / Object.keys(features).length;
+    const featureQuality =
+      Object.values(features).reduce((sum, val) => sum + (isNaN(val) ? 0 : 1), 0) /
+      Object.keys(features).length;
 
-    return (dataSizeScore * 0.6) + (featureQuality * 0.4);
+    return dataSizeScore * 0.6 + featureQuality * 0.4;
   }
 }
 
@@ -172,15 +181,15 @@ export class DemandForecaster {
       predictions: {
         next7Days: this.forecastPeriod(dailyDemand, weeklyPattern, 7, trend),
         next30Days: this.forecastPeriod(dailyDemand, monthlyPattern, 30, trend),
-        next90Days: this.forecastPeriod(dailyDemand, monthlyPattern, 90, trend)
+        next90Days: this.forecastPeriod(dailyDemand, monthlyPattern, 90, trend),
       },
       seasonality: {
         weeklyPattern,
         monthlyPattern,
-        yearlyTrend: trend
+        yearlyTrend: trend,
       },
       confidence: this.calculateForecastConfidence(dailyDemand),
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   }
 
@@ -233,7 +242,7 @@ export class DemandForecaster {
   ): number {
     const recentAverage = this.getRecentAverage(dailyDemand, 14);
     const seasonalMultiplier = this.getSeasonalMultiplier(pattern, days);
-    const trendAdjustment = 1 + (trend * days / 365);
+    const trendAdjustment = 1 + (trend * days) / 365;
 
     return Math.max(0, recentAverage * seasonalMultiplier * trendAdjustment * days);
   }
@@ -262,7 +271,7 @@ export class DemandForecaster {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, idx) => sum + (idx * val), 0);
+    const sumXY = values.reduce((sum, val, idx) => sum + idx * val, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
 
     return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
@@ -308,7 +317,12 @@ export class PriceOptimizer {
       expectedProfitIncrease: this.calculateProfitIncrease(currentPrice, finalPrice, cost),
       demandSensitivity: Math.abs(demandElasticity),
       competitivePosition: this.getCompetitivePosition(finalPrice, competitorPrices),
-      recommendation: this.generateRecommendation(currentPrice, finalPrice, currentMargin, targetMargin)
+      recommendation: this.generateRecommendation(
+        currentPrice,
+        finalPrice,
+        currentMargin,
+        targetMargin
+      ),
     };
   }
 
@@ -321,7 +335,8 @@ export class PriceOptimizer {
   private adjustForCompetition(price: number, competitorPrices: number[]): number {
     if (competitorPrices.length === 0) return price;
 
-    const avgCompetitorPrice = competitorPrices.reduce((sum, p) => sum + p, 0) / competitorPrices.length;
+    const avgCompetitorPrice =
+      competitorPrices.reduce((sum, p) => sum + p, 0) / competitorPrices.length;
     const minCompetitorPrice = Math.min(...competitorPrices);
     const maxCompetitorPrice = Math.max(...competitorPrices);
 
@@ -338,7 +353,10 @@ export class PriceOptimizer {
     return newProfit > currentProfit ? (newProfit - currentProfit) / currentProfit : 0;
   }
 
-  private getCompetitivePosition(price: number, competitorPrices: number[]): 'low' | 'competitive' | 'premium' {
+  private getCompetitivePosition(
+    price: number,
+    competitorPrices: number[]
+  ): 'low' | 'competitive' | 'premium' {
     if (competitorPrices.length === 0) return 'competitive';
 
     const avgPrice = competitorPrices.reduce((sum, p) => sum + p, 0) / competitorPrices.length;
@@ -348,11 +366,16 @@ export class PriceOptimizer {
     return 'competitive';
   }
 
-  private generateRecommendation(currentPrice: number, optimalPrice: number, currentMargin: number, targetMargin: number): string {
+  private generateRecommendation(
+    currentPrice: number,
+    optimalPrice: number,
+    currentMargin: number,
+    targetMargin: number
+  ): string {
     const priceDiff = ((optimalPrice - currentPrice) / currentPrice) * 100;
 
     if (Math.abs(priceDiff) < 2) {
-      return "Current pricing is optimal. No immediate changes needed.";
+      return 'Current pricing is optimal. No immediate changes needed.';
     } else if (priceDiff > 5) {
       return `Consider increasing price by ${priceDiff.toFixed(1)}% to improve margins.`;
     } else if (priceDiff < -5) {
@@ -387,7 +410,7 @@ export class AnomalyDetector {
           severity: p.metrics.onTimeDeliveryRate < 70 ? 'high' : 'medium',
           description: 'On-time delivery rate below threshold',
           value: p.metrics.onTimeDeliveryRate,
-          threshold: 85
+          threshold: 85,
         });
       }
 
@@ -398,7 +421,7 @@ export class AnomalyDetector {
           severity: p.metrics.qualityAcceptanceRate < 80 ? 'high' : 'medium',
           description: 'Quality acceptance rate below threshold',
           value: p.metrics.qualityAcceptanceRate,
-          threshold: 90
+          threshold: 90,
         });
       }
     });
@@ -426,7 +449,7 @@ export class AnomalyDetector {
           anomalyType: 'low_stock',
           severity: item.currentStock === 0 ? 'high' : 'medium',
           description: 'Stock level at or below reorder point',
-          value: item.currentStock
+          value: item.currentStock,
         });
       }
 
@@ -436,13 +459,15 @@ export class AnomalyDetector {
           anomalyType: 'overstock',
           severity: 'medium',
           description: 'Stock level significantly above maximum',
-          value: item.currentStock
+          value: item.currentStock,
         });
       }
 
       // Unusual price movements
       const recentMovements = movements
-        .filter(m => m.itemId === item.id && m.timestamp > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+        .filter(
+          m => m.itemId === item.id && m.timestamp > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        )
         .filter(m => m.unitCost);
 
       if (recentMovements.length > 1) {
@@ -456,7 +481,7 @@ export class AnomalyDetector {
             anomalyType: 'price_volatility',
             severity: 'medium',
             description: 'Unusual price volatility detected',
-            value: maxDeviation / avgCost
+            value: maxDeviation / avgCost,
           });
         }
       }
@@ -471,5 +496,5 @@ export const mlModels = {
   supplierPredictor: new SupplierPerformancePredictor(),
   demandForecaster: new DemandForecaster(),
   priceOptimizer: new PriceOptimizer(),
-  anomalyDetector: new AnomalyDetector()
+  anomalyDetector: new AnomalyDetector(),
 };

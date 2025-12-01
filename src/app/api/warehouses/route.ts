@@ -1,6 +1,6 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 // Validation schemas
 const CreateWarehouseSchema = z.object({
@@ -11,61 +11,65 @@ const CreateWarehouseSchema = z.object({
     city: z.string().min(1, 'City is required'),
     state: z.string().min(1, 'State is required'),
     postalCode: z.string().min(1, 'Postal code is required'),
-    country: z.string().min(1, 'Country is required')
+    country: z.string().min(1, 'Country is required'),
   }),
   capacity: z.object({
     volume: z.number().min(0, 'Volume must be non-negative'),
     weight: z.number().min(0, 'Weight must be non-negative'),
-    pallets: z.number().min(0, 'Pallets must be non-negative')
+    pallets: z.number().min(0, 'Pallets must be non-negative'),
   }),
   isActive: z.boolean().default(true),
   isPrimary: z.boolean().default(false),
   timezone: z.string().default('UTC'),
-  operatingHours: z.object({
-    monday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    tuesday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    wednesday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    thursday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    friday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    saturday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
-    }),
-    sunday: z.object({
-      open: z.string(),
-      close: z.string(),
-      isOpen: z.boolean()
+  operatingHours: z
+    .object({
+      monday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      tuesday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      wednesday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      thursday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      friday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      saturday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
+      sunday: z.object({
+        open: z.string(),
+        close: z.string(),
+        isOpen: z.boolean(),
+      }),
     })
-  }).optional(),
-  contactInfo: z.object({
-    phone: z.string().optional(),
-    email: z.string().email().optional(),
-    managerName: z.string().optional()
-  }).optional()
-})
+    .optional(),
+  contactInfo: z
+    .object({
+      phone: z.string().optional(),
+      email: z.string().email().optional(),
+      managerName: z.string().optional(),
+    })
+    .optional(),
+});
 
-const UpdateWarehouseSchema = CreateWarehouseSchema.partial()
+const UpdateWarehouseSchema = CreateWarehouseSchema.partial();
 
 const SearchWarehousesSchema = z.object({
   query: z.string().optional(),
@@ -77,8 +81,8 @@ const SearchWarehousesSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['name', 'code', 'city', 'capacity', 'utilization']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('asc')
-})
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
 
 // Mock database
 const mockWarehouseData: Array<Record<string, unknown>> = [
@@ -91,17 +95,17 @@ const mockWarehouseData: Array<Record<string, unknown>> = [
       city: 'Springfield',
       state: 'IL',
       postalCode: '62701',
-      country: 'USA'
+      country: 'USA',
     },
     capacity: {
       volume: 50000, // cubic meters
       weight: 100000, // kg
-      pallets: 2000
+      pallets: 2000,
     },
     utilization: {
       volume: 35000,
       weight: 75000,
-      pallets: 1450
+      pallets: 1450,
     },
     isActive: true,
     isPrimary: true,
@@ -113,12 +117,12 @@ const mockWarehouseData: Array<Record<string, unknown>> = [
       thursday: { open: '08:00', close: '18:00', isOpen: true },
       friday: { open: '08:00', close: '18:00', isOpen: true },
       saturday: { open: '09:00', close: '15:00', isOpen: true },
-      sunday: { open: '00:00', close: '00:00', isOpen: false }
+      sunday: { open: '00:00', close: '00:00', isOpen: false },
     },
     contactInfo: {
       phone: '+1-555-0123',
       email: 'warehouse@company.com',
-      managerName: 'John Smith'
+      managerName: 'John Smith',
     },
     zones: [
       {
@@ -148,32 +152,32 @@ const mockWarehouseData: Array<Record<string, unknown>> = [
                     shelfId: 'shelf_001',
                     capacity: { volume: 10, weight: 50, items: 20 },
                     currentStock: 15,
-                    status: 'available'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+                    status: 'available',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
     ],
     performance: {
       pickingAccuracy: 99.2,
       averagePickTime: 2.5,
       shippingAccuracy: 98.8,
       receivingEfficiency: 95.5,
-      inventoryTurnover: 8.2
+      inventoryTurnover: 8.2,
     },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-09-22'),
-    createdBy: 'admin@company.com'
-  }
-]
+    createdBy: 'admin@company.com',
+  },
+];
 
 // GET /api/warehouses - List warehouses with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     const queryParams = {
       query: searchParams.get('query') || undefined,
@@ -185,92 +189,98 @@ export async function GET(request: NextRequest) {
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
       sortBy: searchParams.get('sortBy') || undefined,
-      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' || 'asc'
-    }
+      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc',
+    };
 
-    const validatedParams = SearchWarehousesSchema.parse(queryParams)
+    const validatedParams = SearchWarehousesSchema.parse(queryParams);
 
     // Apply filters
     const filteredWarehouses = mockWarehouseData.filter(warehouse => {
       // Text search
       if (validatedParams.query) {
-        const query = validatedParams.query.toLowerCase()
+        const query = validatedParams.query.toLowerCase();
         const matchesQuery =
           warehouse.name.toLowerCase().includes(query) ||
           warehouse.code.toLowerCase().includes(query) ||
           warehouse.address.city.toLowerCase().includes(query) ||
-          warehouse.address.state.toLowerCase().includes(query)
+          warehouse.address.state.toLowerCase().includes(query);
 
-        if (!matchesQuery) return false
+        if (!matchesQuery) return false;
       }
 
       // Status filters
-      if (validatedParams.isActive !== undefined && warehouse.isActive !== validatedParams.isActive) {
-        return false
+      if (
+        validatedParams.isActive !== undefined &&
+        warehouse.isActive !== validatedParams.isActive
+      ) {
+        return false;
       }
 
-      if (validatedParams.isPrimary !== undefined && warehouse.isPrimary !== validatedParams.isPrimary) {
-        return false
+      if (
+        validatedParams.isPrimary !== undefined &&
+        warehouse.isPrimary !== validatedParams.isPrimary
+      ) {
+        return false;
       }
 
       // Location filters
       if (validatedParams.city && warehouse.address.city !== validatedParams.city) {
-        return false
+        return false;
       }
 
       if (validatedParams.state && warehouse.address.state !== validatedParams.state) {
-        return false
+        return false;
       }
 
       if (validatedParams.country && warehouse.address.country !== validatedParams.country) {
-        return false
+        return false;
       }
 
-      return true
-    })
+      return true;
+    });
 
     // Apply sorting
     if (validatedParams.sortBy) {
       filteredWarehouses.sort((a, b) => {
-        let aValue: unknown, bValue: unknown
+        let aValue: unknown, bValue: unknown;
 
         switch (validatedParams.sortBy) {
           case 'name':
-            aValue = a.name
-            bValue = b.name
-            break
+            aValue = a.name;
+            bValue = b.name;
+            break;
           case 'code':
-            aValue = a.code
-            bValue = b.code
-            break
+            aValue = a.code;
+            bValue = b.code;
+            break;
           case 'city':
-            aValue = a.address.city
-            bValue = b.address.city
-            break
+            aValue = a.address.city;
+            bValue = b.address.city;
+            break;
           case 'capacity':
-            aValue = a.capacity.volume
-            bValue = b.capacity.volume
-            break
+            aValue = a.capacity.volume;
+            bValue = b.capacity.volume;
+            break;
           case 'utilization':
-            aValue = (a.utilization.volume / a.capacity.volume) * 100
-            bValue = (b.utilization.volume / b.capacity.volume) * 100
-            break
+            aValue = (a.utilization.volume / a.capacity.volume) * 100;
+            bValue = (b.utilization.volume / b.capacity.volume) * 100;
+            break;
           default:
-            aValue = a.name
-            bValue = b.name
+            aValue = a.name;
+            bValue = b.name;
         }
 
-        if (aValue < bValue) return validatedParams.sortOrder === 'asc' ? -1 : 1
-        if (aValue > bValue) return validatedParams.sortOrder === 'asc' ? 1 : -1
-        return 0
-      })
+        if (aValue < bValue) return validatedParams.sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return validatedParams.sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
     }
 
     // Apply pagination
-    const total = filteredWarehouses.length
-    const totalPages = Math.ceil(total / validatedParams.limit)
-    const offset = (validatedParams.page - 1) * validatedParams.limit
-    const paginatedWarehouses = filteredWarehouses.slice(offset, offset + validatedParams.limit)
+    const total = filteredWarehouses.length;
+    const totalPages = Math.ceil(total / validatedParams.limit);
+    const offset = (validatedParams.page - 1) * validatedParams.limit;
+    const paginatedWarehouses = filteredWarehouses.slice(offset, offset + validatedParams.limit);
 
     // Calculate summary metrics
     const metrics = {
@@ -278,9 +288,16 @@ export async function GET(request: NextRequest) {
       activeWarehouses: mockWarehouseData.filter(w => w.isActive).length,
       totalCapacity: mockWarehouseData.reduce((sum, w) => sum + w.capacity.volume, 0),
       totalUtilization: mockWarehouseData.reduce((sum, w) => sum + w.utilization.volume, 0),
-      averageUtilizationRate: mockWarehouseData.length > 0 ?
-        mockWarehouseData.reduce((sum, w) => sum + (w.utilization.volume / w.capacity.volume), 0) / mockWarehouseData.length * 100 : 0
-    }
+      averageUtilizationRate:
+        mockWarehouseData.length > 0
+          ? (mockWarehouseData.reduce(
+              (sum, w) => sum + w.utilization.volume / w.capacity.volume,
+              0
+            ) /
+              mockWarehouseData.length) *
+            100
+          : 0,
+    };
 
     return NextResponse.json({
       success: true,
@@ -291,51 +308,59 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
         hasNext: validatedParams.page < totalPages,
-        hasPrev: validatedParams.page > 1
+        hasPrev: validatedParams.page > 1,
       },
       metrics,
-      filters: validatedParams
-    })
-
+      filters: validatedParams,
+    });
   } catch (error) {
-    console.error('Error fetching warehouses:', error)
+    console.error('Error fetching warehouses:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.issues
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid query parameters',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // POST /api/warehouses - Create new warehouse
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedData = CreateWarehouseSchema.parse(body)
+    const body = await request.json();
+    const validatedData = CreateWarehouseSchema.parse(body);
 
     // Check if code already exists
-    const existingWarehouse = mockWarehouseData.find(w => w.code === validatedData.code)
+    const existingWarehouse = mockWarehouseData.find(w => w.code === validatedData.code);
     if (existingWarehouse) {
-      return NextResponse.json({
-        success: false,
-        error: 'Warehouse code already exists',
-        details: { code: validatedData.code }
-      }, { status: 409 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Warehouse code already exists',
+          details: { code: validatedData.code },
+        },
+        { status: 409 }
+      );
     }
 
     // If this is being set as primary, update existing primary
     if (validatedData.isPrimary) {
       mockWarehouseData.forEach(w => {
-        if (w.isPrimary) w.isPrimary = false
-      })
+        if (w.isPrimary) w.isPrimary = false;
+      });
     }
 
     const newWarehouse = {
@@ -344,7 +369,7 @@ export async function POST(request: NextRequest) {
       utilization: {
         volume: 0,
         weight: 0,
-        pallets: 0
+        pallets: 0,
       },
       zones: [],
       performance: {
@@ -352,96 +377,106 @@ export async function POST(request: NextRequest) {
         averagePickTime: 0,
         shippingAccuracy: 0,
         receivingEfficiency: 0,
-        inventoryTurnover: 0
+        inventoryTurnover: 0,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: 'api_user@company.com'
-    }
+      createdBy: 'api_user@company.com',
+    };
 
-    mockWarehouseData.push(newWarehouse)
+    mockWarehouseData.push(newWarehouse);
 
-    return NextResponse.json({
-      success: true,
-      data: newWarehouse,
-      message: 'Warehouse created successfully'
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        success: true,
+        data: newWarehouse,
+        message: 'Warehouse created successfully',
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error creating warehouse:', error)
+    console.error('Error creating warehouse:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request data',
-        details: error.issues
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // PUT /api/warehouses - Batch update warehouses
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { warehouses } = body
+    const body = await request.json();
+    const { warehouses } = body;
 
     if (!Array.isArray(warehouses)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Warehouses must be an array'
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Warehouses must be an array',
+        },
+        { status: 400 }
+      );
     }
 
-    const updatedWarehouses: Array<Record<string, unknown>> = []
-    const errors: Array<Record<string, unknown>> = []
+    const updatedWarehouses: Array<Record<string, unknown>> = [];
+    const errors: Array<Record<string, unknown>> = [];
 
     for (const updateData of warehouses) {
       try {
-        const { id, ...payload } = updateData
+        const { id, ...payload } = updateData;
         if (!id) {
-          errors.push({ id, error: 'ID is required for updates' })
-          continue
+          errors.push({ id, error: 'ID is required for updates' });
+          continue;
         }
 
-        const validatedData = UpdateWarehouseSchema.parse(payload)
+        const validatedData = UpdateWarehouseSchema.parse(payload);
 
-        const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
+        const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id);
         if (warehouseIndex === -1) {
-          errors.push({ id, error: 'Warehouse not found' })
-          continue
+          errors.push({ id, error: 'Warehouse not found' });
+          continue;
         }
 
         // Handle primary warehouse logic
         if (validatedData.isPrimary) {
           mockWarehouseData.forEach(w => {
             if (w.id !== id && w.isPrimary) {
-              w.isPrimary = false
+              w.isPrimary = false;
             }
-          })
+          });
         }
 
-        const existingWarehouse = mockWarehouseData[warehouseIndex]
+        const existingWarehouse = mockWarehouseData[warehouseIndex];
         const updatedWarehouse = {
           ...existingWarehouse,
           ...validatedData,
           id,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        };
 
-        mockWarehouseData[warehouseIndex] = updatedWarehouse
-        updatedWarehouses.push(updatedWarehouse)
-
+        mockWarehouseData[warehouseIndex] = updatedWarehouse;
+        updatedWarehouses.push(updatedWarehouse);
       } catch (error) {
         errors.push({
           id: updateData.id,
-          error: error instanceof z.ZodError ? error.issues : 'Invalid data'
-        })
+          error: error instanceof z.ZodError ? error.issues : 'Invalid data',
+        });
       }
     }
 
@@ -449,62 +484,67 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: {
         updated: updatedWarehouses,
-        errors
+        errors,
       },
-      message: `${updatedWarehouses.length} warehouses updated successfully${errors.length > 0 ? `, ${errors.length} errors` : ''}`
-    })
-
+      message: `${updatedWarehouses.length} warehouses updated successfully${errors.length > 0 ? `, ${errors.length} errors` : ''}`,
+    });
   } catch (error) {
-    console.error('Error batch updating warehouses:', error)
+    console.error('Error batch updating warehouses:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE /api/warehouses - Batch delete warehouses
 export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { ids } = body
+    const body = await request.json();
+    const { ids } = body;
 
     if (!Array.isArray(ids)) {
-      return NextResponse.json({
-        success: false,
-        error: 'IDs must be an array'
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'IDs must be an array',
+        },
+        { status: 400 }
+      );
     }
 
-    const deletedWarehouses = []
-    const notFoundIds = []
-    const blockedIds = []
+    const deletedWarehouses = [];
+    const notFoundIds = [];
+    const blockedIds = [];
 
     for (const id of ids) {
-      const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
+      const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id);
       if (warehouseIndex === -1) {
-        notFoundIds.push(id)
-        continue
+        notFoundIds.push(id);
+        continue;
       }
 
-      const warehouse = mockWarehouseData[warehouseIndex]
+      const warehouse = mockWarehouseData[warehouseIndex];
 
       // Check if warehouse is primary
       if (warehouse.isPrimary) {
-        blockedIds.push({ id, reason: 'Cannot delete primary warehouse' })
-        continue
+        blockedIds.push({ id, reason: 'Cannot delete primary warehouse' });
+        continue;
       }
 
       // Check if warehouse has active inventory
       if (warehouse.utilization.volume > 0) {
-        blockedIds.push({ id, reason: 'Cannot delete warehouse with active inventory' })
-        continue
+        blockedIds.push({ id, reason: 'Cannot delete warehouse with active inventory' });
+        continue;
       }
 
-      const deletedWarehouse = mockWarehouseData[warehouseIndex]
-      mockWarehouseData.splice(warehouseIndex, 1)
-      deletedWarehouses.push(deletedWarehouse)
+      const deletedWarehouse = mockWarehouseData[warehouseIndex];
+      mockWarehouseData.splice(warehouseIndex, 1);
+      deletedWarehouses.push(deletedWarehouse);
     }
 
     return NextResponse.json({
@@ -512,17 +552,19 @@ export async function DELETE(request: NextRequest) {
       data: {
         deleted: deletedWarehouses,
         notFound: notFoundIds,
-        blocked: blockedIds
+        blocked: blockedIds,
       },
-      message: `${deletedWarehouses.length} warehouses deleted successfully${blockedIds.length > 0 ? `, ${blockedIds.length} blocked` : ''}${notFoundIds.length > 0 ? `, ${notFoundIds.length} not found` : ''}`
-    })
-
+      message: `${deletedWarehouses.length} warehouses deleted successfully${blockedIds.length > 0 ? `, ${blockedIds.length} blocked` : ''}${notFoundIds.length > 0 ? `, ${notFoundIds.length} not found` : ''}`,
+    });
   } catch (error) {
-    console.error('Error batch deleting warehouses:', error)
+    console.error('Error batch deleting warehouses:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }

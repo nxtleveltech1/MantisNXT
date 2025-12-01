@@ -4,16 +4,16 @@
  */
 
 // Dashboard data
-export * from './zar-dashboard-data'
+export * from './zar-dashboard-data';
 
 // Invoice data
-export * from './zar-invoice-data'
+export * from './zar-invoice-data';
 
 // Payment data
-export * from './zar-payment-data'
+export * from './zar-payment-data';
 
 // Purchase Order data
-export * from './zar-purchase-order-data'
+export * from './zar-purchase-order-data';
 
 // Supplier data
-export * from './zar-supplier-data'
+export * from './zar-supplier-data';

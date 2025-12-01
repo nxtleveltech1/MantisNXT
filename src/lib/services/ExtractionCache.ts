@@ -33,13 +33,14 @@ export class ExtractionCache {
           ? JSON.parse(result.rows[0].summary)
           : result.rows[0].summary;
 
-      const data = summary && typeof summary === 'object'
-        ? { ...summary, products: summary.products ?? products ?? [] }
-        : { products: products ?? [], summary };
+      const data =
+        summary && typeof summary === 'object'
+          ? { ...summary, products: summary.products ?? products ?? [] }
+          : { products: products ?? [], summary };
 
       this.memCache.set(job_id, {
         data,
-        expires: Date.now() + this.MEM_TTL_MS
+        expires: Date.now() + this.MEM_TTL_MS,
       });
 
       return data;
@@ -51,7 +52,7 @@ export class ExtractionCache {
   async set(job_id: string, data: any): Promise<void> {
     this.memCache.set(job_id, {
       data,
-      expires: Date.now() + this.MEM_TTL_MS
+      expires: Date.now() + this.MEM_TTL_MS,
     });
 
     const { query } = await import('@/lib/database');
@@ -73,12 +74,9 @@ export class ExtractionCache {
 
   async invalidate(job_id: string): Promise<void> {
     this.memCache.delete(job_id);
-    
+
     const { query } = await import('@/lib/database');
-    await query(
-      `DELETE FROM spp.extraction_results WHERE job_id = $1`,
-      [job_id]
-    );
+    await query(`DELETE FROM spp.extraction_results WHERE job_id = $1`, [job_id]);
   }
 
   async cleanup(): Promise<void> {

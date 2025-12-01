@@ -16,10 +16,9 @@ import type {
   RewardCatalogInsert,
   RewardCatalogUpdate,
   RewardAnalytics,
-  RewardType} from '@/types/loyalty';
-import {
-  LoyaltyError,
+  RewardType,
 } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 // ============================================================================
 // TYPES FOR SERVICE METHODS
@@ -70,12 +69,9 @@ export class RewardCatalogService {
   /**
    * Create a new reward in the catalog
    */
-  static async createReward(
-    data: CreateRewardData,
-    orgId: string
-  ): Promise<RewardCatalog> {
+  static async createReward(data: CreateRewardData, orgId: string): Promise<RewardCatalog> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Validate image URL if provided
         if (data.image_url) {
           this.validateImageUrl(data.image_url);
@@ -161,12 +157,7 @@ export class RewardCatalogService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[RewardCatalogService] Error creating reward:', error);
-      throw new LoyaltyError(
-        'Failed to create reward',
-        'CREATE_REWARD_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to create reward', 'CREATE_REWARD_ERROR', 500, { error });
     }
   }
 
@@ -309,12 +300,7 @@ export class RewardCatalogService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[RewardCatalogService] Error updating reward:', error);
-      throw new LoyaltyError(
-        'Failed to update reward',
-        'UPDATE_REWARD_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to update reward', 'UPDATE_REWARD_ERROR', 500, { error });
     }
   }
 
@@ -331,10 +317,7 @@ export class RewardCatalogService {
         [rewardId]
       );
 
-      const redemptionCount = parseInt(
-        redemptionCheck.rows[0]?.count || '0',
-        10
-      );
+      const redemptionCount = parseInt(redemptionCheck.rows[0]?.count || '0', 10);
 
       if (redemptionCount > 0) {
         throw new LoyaltyError(
@@ -344,10 +327,10 @@ export class RewardCatalogService {
         );
       }
 
-      const result = await query(
-        `DELETE FROM reward_catalog WHERE id = $1 AND org_id = $2`,
-        [rewardId, orgId]
-      );
+      const result = await query(`DELETE FROM reward_catalog WHERE id = $1 AND org_id = $2`, [
+        rewardId,
+        orgId,
+      ]);
 
       if (result.rowCount === 0) {
         throw new LoyaltyError('Reward not found', 'REWARD_NOT_FOUND', 404);
@@ -355,22 +338,14 @@ export class RewardCatalogService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[RewardCatalogService] Error deleting reward:', error);
-      throw new LoyaltyError(
-        'Failed to delete reward',
-        'DELETE_REWARD_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to delete reward', 'DELETE_REWARD_ERROR', 500, { error });
     }
   }
 
   /**
    * Get reward by ID
    */
-  static async getRewardById(
-    rewardId: string,
-    orgId: string
-  ): Promise<RewardCatalog> {
+  static async getRewardById(rewardId: string, orgId: string): Promise<RewardCatalog> {
     try {
       const sql = `
         SELECT
@@ -407,12 +382,7 @@ export class RewardCatalogService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[RewardCatalogService] Error fetching reward:', error);
-      throw new LoyaltyError(
-        'Failed to fetch reward',
-        'FETCH_REWARD_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch reward', 'FETCH_REWARD_ERROR', 500, { error });
     }
   }
 
@@ -449,9 +419,7 @@ export class RewardCatalogService {
       }
 
       if (filters.programId) {
-        conditions.push(
-          `(program_id = $${paramIndex} OR program_id IS NULL)`
-        );
+        conditions.push(`(program_id = $${paramIndex} OR program_id IS NULL)`);
         params.push(filters.programId);
         paramIndex++;
       }
@@ -520,12 +488,7 @@ export class RewardCatalogService {
       };
     } catch (error) {
       console.error('[RewardCatalogService] Error listing rewards:', error);
-      throw new LoyaltyError(
-        'Failed to list rewards',
-        'LIST_REWARDS_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to list rewards', 'LIST_REWARDS_ERROR', 500, { error });
     }
   }
 
@@ -574,10 +537,7 @@ export class RewardCatalogService {
       const result = await query<RewardCatalog>(sql, [customerId, orgId]);
       return result.rows;
     } catch (error) {
-      console.error(
-        '[RewardCatalogService] Error fetching available rewards:',
-        error
-      );
+      console.error('[RewardCatalogService] Error fetching available rewards:', error);
       throw new LoyaltyError(
         'Failed to fetch available rewards',
         'FETCH_AVAILABLE_REWARDS_ERROR',
@@ -625,10 +585,7 @@ export class RewardCatalogService {
       const result = await query<RewardCatalog>(sql, [orgId]);
       return result.rows;
     } catch (error) {
-      console.error(
-        '[RewardCatalogService] Error fetching featured rewards:',
-        error
-      );
+      console.error('[RewardCatalogService] Error fetching featured rewards:', error);
       throw new LoyaltyError(
         'Failed to fetch featured rewards',
         'FETCH_FEATURED_REWARDS_ERROR',
@@ -641,18 +598,10 @@ export class RewardCatalogService {
   /**
    * Update stock quantity
    */
-  static async updateStock(
-    rewardId: string,
-    quantity: number,
-    orgId: string
-  ): Promise<void> {
+  static async updateStock(rewardId: string, quantity: number, orgId: string): Promise<void> {
     try {
       if (quantity < 0) {
-        throw new LoyaltyError(
-          'Stock quantity cannot be negative',
-          'INVALID_STOCK_QUANTITY',
-          400
-        );
+        throw new LoyaltyError('Stock quantity cannot be negative', 'INVALID_STOCK_QUANTITY', 400);
       }
 
       const result = await query(
@@ -668,22 +617,14 @@ export class RewardCatalogService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[RewardCatalogService] Error updating stock:', error);
-      throw new LoyaltyError(
-        'Failed to update stock',
-        'UPDATE_STOCK_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to update stock', 'UPDATE_STOCK_ERROR', 500, { error });
     }
   }
 
   /**
    * Check reward availability
    */
-  static async checkAvailability(
-    rewardId: string,
-    orgId: string
-  ): Promise<AvailabilityStatus> {
+  static async checkAvailability(rewardId: string, orgId: string): Promise<AvailabilityStatus> {
     try {
       const reward = await this.getRewardById(rewardId, orgId);
 
@@ -692,8 +633,7 @@ export class RewardCatalogService {
         (!reward.valid_from || new Date(reward.valid_from) <= now) &&
         (!reward.valid_until || new Date(reward.valid_until) > now);
 
-      const inStock =
-        reward.stock_quantity === null || reward.stock_quantity > 0;
+      const inStock = reward.stock_quantity === null || reward.stock_quantity > 0;
 
       const available = reward.is_active && isValid && inStock;
 
@@ -714,10 +654,7 @@ export class RewardCatalogService {
       };
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[RewardCatalogService] Error checking availability:',
-        error
-      );
+      console.error('[RewardCatalogService] Error checking availability:', error);
       throw new LoyaltyError(
         'Failed to check reward availability',
         'CHECK_AVAILABILITY_ERROR',
@@ -763,16 +700,10 @@ export class RewardCatalogService {
       const result = await query<RewardAnalytics>(sql, [orgId]);
       return result.rows;
     } catch (error) {
-      console.error(
-        '[RewardCatalogService] Error fetching reward analytics:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch reward analytics',
-        'FETCH_ANALYTICS_ERROR',
-        500,
-        { error }
-      );
+      console.error('[RewardCatalogService] Error fetching reward analytics:', error);
+      throw new LoyaltyError('Failed to fetch reward analytics', 'FETCH_ANALYTICS_ERROR', 500, {
+        error,
+      });
     }
   }
 

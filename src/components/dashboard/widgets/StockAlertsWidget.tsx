@@ -3,7 +3,7 @@
  * Displays critical, warning, and info level stock alerts
  */
 
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,17 +21,17 @@ export function StockAlertsWidget() {
 
   if (isLoading) {
     return (
-      <Card className="bg-card border border-border rounded-xl shadow-sm">
+      <Card className="bg-card border-border rounded-xl border shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-muted-foreground text-sm">
             Loading alerts...
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-muted h-16 animate-pulse rounded" />
             ))}
           </div>
         </CardContent>
@@ -41,14 +41,14 @@ export function StockAlertsWidget() {
 
   if (error || !data?.success) {
     return (
-      <Card className="bg-card border border-border rounded-xl shadow-sm">
+      <Card className="bg-card border-border rounded-xl border shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Failed to load alerts</p>
+          <div className="py-8 text-center">
+            <AlertTriangle className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-sm">Failed to load alerts</p>
           </div>
         </CardContent>
       </Card>
@@ -59,7 +59,7 @@ export function StockAlertsWidget() {
   const summary = data.summary || { critical: 0, warning: 0, info: 0, total: 0 };
 
   const filteredAlerts =
-    filter === 'all' ? alerts : alerts.filter((alert) => alert.severity === filter);
+    filter === 'all' ? alerts : alerts.filter(alert => alert.severity === filter);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -108,19 +108,19 @@ export function StockAlertsWidget() {
   };
 
   return (
-    <Card className="bg-card border border-border rounded-xl shadow-sm">
+    <Card className="bg-card border-border rounded-xl border shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
+        <CardDescription className="text-muted-foreground text-sm">
           {summary.total} total alerts
         </CardDescription>
 
         {/* Summary badges */}
-        <div className="flex gap-2 mt-3 flex-wrap">
+        <div className="mt-3 flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               filter === 'all'
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-muted hover:bg-muted-foreground/10 border-border'
@@ -131,10 +131,10 @@ export function StockAlertsWidget() {
           <button
             onClick={() => setFilter('critical')}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               filter === 'critical'
-                ? 'bg-red-600 text-white border-red-600'
-                : 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+                ? 'border-red-600 bg-red-600 text-white'
+                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30'
             )}
           >
             Critical ({summary.critical})
@@ -142,10 +142,10 @@ export function StockAlertsWidget() {
           <button
             onClick={() => setFilter('warning')}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               filter === 'warning'
-                ? 'bg-orange-600 text-white border-orange-600'
-                : 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300'
+                ? 'border-orange-600 bg-orange-600 text-white'
+                : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300 dark:hover:bg-orange-900/30'
             )}
           >
             Warning ({summary.warning})
@@ -153,10 +153,10 @@ export function StockAlertsWidget() {
           <button
             onClick={() => setFilter('info')}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               filter === 'info'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                ? 'border-blue-600 bg-blue-600 text-white'
+                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30'
             )}
           >
             Info ({summary.info})
@@ -165,19 +165,19 @@ export function StockAlertsWidget() {
       </CardHeader>
       <CardContent>
         {filteredAlerts.length === 0 ? (
-          <div className="text-center py-8">
-            <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No alerts to display</p>
+          <div className="py-8 text-center">
+            <Package className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-sm">No alerts to display</p>
           </div>
         ) : (
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <div className="max-h-[400px] space-y-2 overflow-y-auto">
             {filteredAlerts.slice(0, 20).map((alert, index) => {
               const colors = getSeverityColors(alert.severity);
               return (
                 <div
                   key={`${alert.productId}-${index}`}
                   className={cn(
-                    'p-3 rounded-lg border transition-colors hover:shadow-sm',
+                    'rounded-lg border p-3 transition-colors hover:shadow-sm',
                     colors.bg,
                     colors.border
                   )}
@@ -186,19 +186,19 @@ export function StockAlertsWidget() {
                     <div className={cn('mt-0.5 shrink-0', colors.icon)}>
                       {getSeverityIcon(alert.severity)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={cn('font-medium text-sm truncate', colors.text)}>
+                        <p className={cn('truncate text-sm font-medium', colors.text)}>
                           {alert.productName}
                         </p>
                         {alert.sku && (
-                          <Badge variant="outline" className="text-xs shrink-0">
+                          <Badge variant="outline" className="shrink-0 text-xs">
                             {alert.sku}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{alert.message}</p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <p className="text-muted-foreground mt-1 text-xs">{alert.message}</p>
+                      <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
                         {alert.locationName && (
                           <span className="truncate">📍 {alert.locationName}</span>
                         )}

@@ -5,7 +5,7 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { jobManager } from '@/lib/cmm/ai-categorization';
 import type { StartJobRequest, StartJobResponse } from '@/lib/cmm/ai-categorization/types';
@@ -15,14 +15,8 @@ export async function POST(request: NextRequest) {
     console.log('\n==== [/api/category/ai-categorization/start] incoming request ====');
     const body: StartJobRequest = await request.json();
     console.log('[API:start] payload:', body);
-    
-    const {
-      job_type = 'full_scan',
-      filters = {},
-      config = {},
-      batch_size,
-      product_limit,
-    } = body;
+
+    const { job_type = 'full_scan', filters = {}, config = {}, batch_size, product_limit } = body;
 
     // Create the job
     console.log('[API:start] creating job…');
@@ -77,4 +71,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

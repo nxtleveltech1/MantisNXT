@@ -1,6 +1,6 @@
 /**
  * Optimization Progress API
- * 
+ *
  * GET /api/v1/pricing/optimization/[id]/progress - Get progress for an optimization run
  */
 
@@ -11,10 +11,7 @@ import { PricingOptimizationService } from '@/lib/services/PricingOptimizationSe
  * GET /api/v1/pricing/optimization/[id]/progress
  * Get current progress for an optimization run
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const runId = params.id;
 
@@ -56,12 +53,3 @@ export async function GET(
     );
   }
 }
-
-
-
-
-
-
-
-
-

@@ -52,7 +52,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
   async generateForecast(
     orgId: string,
     request: ForecastRequest,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ForecastResult>> {
     return this.executeOperation(
       'forecast.generate',
@@ -61,7 +61,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
         const historicalData = await this.getHistoricalData(
           orgId,
           request.productId,
-          request.historicalDays || 90,
+          request.historicalDays || 90
         );
 
         if (historicalData.length === 0) {
@@ -85,7 +85,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
         const { lowerBound, upperBound } = this.calculateConfidenceBounds(
           forecastData.predictedQuantity,
           historicalData,
-          0.95,
+          0.95
         );
 
         // Store forecast in database
@@ -109,7 +109,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
         return forecast;
       },
       options,
-      { productId: request.productId, horizon: request.horizon },
+      { productId: request.productId, horizon: request.horizon }
     );
   }
 
@@ -119,7 +119,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
   async generateBatchForecast(
     orgId: string,
     request: BatchForecastRequest,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ForecastResult[]>> {
     return this.executeOperation(
       'forecast.batch',
@@ -132,19 +132,19 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
           const chunk = request.productIds.slice(i, i + chunkSize);
 
           const chunkForecasts = await Promise.all(
-            chunk.map(async (productId) => {
+            chunk.map(async productId => {
               try {
                 const result = await this.generateForecast(
                   orgId,
                   { ...request, productId },
-                  options,
+                  options
                 );
                 return result.data;
               } catch (error) {
                 console.error(`Forecast failed for product ${productId}:`, error);
                 return null;
               }
-            }),
+            })
           );
 
           forecasts.push(...chunkForecasts.filter((f): f is ForecastResult => f !== null));
@@ -153,7 +153,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
         return forecasts;
       },
       options,
-      { productCount: request.productIds.length, horizon: request.horizon },
+      { productCount: request.productIds.length, horizon: request.horizon }
     );
   }
 
@@ -162,17 +162,17 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
    */
   async getAccuracyMetrics(
     orgId: string,
-    days: number = 30,
+    days: number = 30
   ): Promise<AIServiceResponse<ForecastAccuracyMetrics[]>> {
     return this.executeOperation(
       'forecast.accuracy',
       async () => {
-        const result = await db.query(
-          `SELECT * FROM get_forecast_accuracy_metrics($1, $2)`,
-          [orgId, days],
-        );
+        const result = await db.query(`SELECT * FROM get_forecast_accuracy_metrics($1, $2)`, [
+          orgId,
+          days,
+        ]);
 
-        return result.rows.map((row) => ({
+        return result.rows.map(row => ({
           horizon: row.forecast_horizon,
           totalForecasts: parseInt(row.total_forecasts),
           avgAccuracy: parseFloat(row.avg_accuracy) || 0,
@@ -181,25 +181,21 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
         }));
       },
       undefined,
-      { orgId, days },
+      { orgId, days }
     );
   }
 
   /**
    * Update actual values and calculate accuracy
    */
-  async updateActuals(
-    orgId: string,
-    forecastId: string,
-    actualQuantity: number,
-  ): Promise<void> {
+  async updateActuals(orgId: string, forecastId: string, actualQuantity: number): Promise<void> {
     await db.query(
       `
       UPDATE demand_forecast
       SET actual_quantity = $1
       WHERE id = $2 AND org_id = $3
       `,
-      [actualQuantity, forecastId, orgId],
+      [actualQuantity, forecastId, orgId]
     );
   }
 
@@ -209,7 +205,7 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
   private async getHistoricalData(
     orgId: string,
     productId: string,
-    days: number,
+    days: number
   ): Promise<Array<{ date: Date; quantity: number }>> {
     const result = await db.query(
       `
@@ -223,10 +219,10 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
       GROUP BY DATE(sm.created_at)
       ORDER BY date ASC
       `,
-      [productId, days, orgId],
+      [productId, days, orgId]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       date: new Date(row.date),
       quantity: parseFloat(row.quantity),
     }));
@@ -237,10 +233,10 @@ export class DemandForecastingService extends AIServiceBase<AIServiceRequestOpti
    */
   private buildForecastPrompt(
     request: ForecastRequest,
-    historicalData: Array<{ date: Date; quantity: number }>,
+    historicalData: Array<{ date: Date; quantity: number }>
   ): string {
     const dataPoints = historicalData
-      .map((d) => `${d.date.toISOString().split('T')[0]}: ${d.quantity}`)
+      .map(d => `${d.date.toISOString().split('T')[0]}: ${d.quantity}`)
       .join('\n');
 
     return `
@@ -301,13 +297,13 @@ Respond in JSON format:
   private calculateConfidenceBounds(
     predicted: number,
     historicalData: Array<{ date: Date; quantity: number }>,
-    confidenceLevel: number,
+    confidenceLevel: number
   ): { lowerBound: number; upperBound: number } {
     if (historicalData.length === 0) {
       return { lowerBound: predicted * 0.8, upperBound: predicted * 1.2 };
     }
 
-    const quantities = historicalData.map((d) => d.quantity);
+    const quantities = historicalData.map(d => d.quantity);
     const mean = quantities.reduce((sum, q) => sum + q, 0) / quantities.length;
     const variance =
       quantities.reduce((sum, q) => sum + Math.pow(q - mean, 2), 0) / quantities.length;
@@ -349,7 +345,7 @@ Respond in JSON format:
         data.confidenceInterval,
         data.algorithm,
         JSON.stringify(data.metadata),
-      ],
+      ]
     );
 
     const row = forecastResult.rows[0];
@@ -384,7 +380,7 @@ Respond in JSON format:
           algorithm: data.algorithm,
           forecastDate: data.forecastDate,
         }),
-      ],
+      ]
     );
 
     return {

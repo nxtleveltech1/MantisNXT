@@ -50,10 +50,7 @@ export default function PricingDashboardPage() {
   };
 
   return (
-    <AppLayout
-      title="Pricing Optimization"
-      breadcrumbs={[{ label: 'Pricing Optimization' }]}
-    >
+    <AppLayout title="Pricing Optimization" breadcrumbs={[{ label: 'Pricing Optimization' }]}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -84,29 +81,28 @@ export default function PricingDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Products Tracked</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.total_products_tracked?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Active pricing monitoring
-              </p>
+              <p className="text-muted-foreground text-xs">Active pricing monitoring</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Price Changes (30d)</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.recent_price_changes?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Avg change: {loading ? '...' : `${metrics?.avg_price_change_percent?.toFixed(1) || '0'}%`}
+              <p className="text-muted-foreground text-xs">
+                Avg change:{' '}
+                {loading ? '...' : `${metrics?.avg_price_change_percent?.toFixed(1) || '0'}%`}
               </p>
             </CardContent>
           </Card>
@@ -114,50 +110,44 @@ export default function PricingDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Competitors Tracked</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <Target className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.active_competitors_tracked?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Active monitoring
-              </p>
+              <p className="text-muted-foreground text-xs">Active monitoring</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Optimization Opportunities</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.optimization_opportunities?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Pending recommendations
-              </p>
+              <p className="text-muted-foreground text-xs">Pending recommendations</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/rules">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-primary" />
+                  <Settings className="text-primary h-5 w-5" />
                   <CardTitle>Pricing Rules</CardTitle>
                 </div>
-                <CardDescription>
-                  Create and manage automated pricing rules
-                </CardDescription>
+                <CardDescription>Create and manage automated pricing rules</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Active rules</span>
+                  <span className="text-muted-foreground text-sm">Active rules</span>
                   <Badge variant="secondary">
                     {loading ? '...' : metrics?.active_rules_count || '0'}
                   </Badge>
@@ -166,40 +156,36 @@ export default function PricingDashboardPage() {
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/optimization">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Play className="h-5 w-5 text-primary" />
+                  <Play className="text-primary h-5 w-5" />
                   <CardTitle>Run Optimization</CardTitle>
                 </div>
-                <CardDescription>
-                  Start AI-powered pricing optimization
-                </CardDescription>
+                <CardDescription>Start AI-powered pricing optimization</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Ready to optimize</span>
+                  <span className="text-muted-foreground text-sm">Ready to optimize</span>
                   <Badge variant="outline">Start</Badge>
                 </div>
               </CardContent>
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/analytics">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <BarChart3 className="text-primary h-5 w-5" />
                   <CardTitle>Analytics & Insights</CardTitle>
                 </div>
-                <CardDescription>
-                  View performance and competitive analysis
-                </CardDescription>
+                <CardDescription>View performance and competitive analysis</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">View trends</span>
+                  <span className="text-muted-foreground text-sm">View trends</span>
                   <Badge variant="outline">Analyze</Badge>
                 </div>
               </CardContent>
@@ -215,25 +201,29 @@ export default function PricingDashboardPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading price changes...</div>
+              <div className="text-muted-foreground py-8 text-center">Loading price changes...</div>
             ) : metrics?.recent_changes_list && metrics.recent_changes_list.length > 0 ? (
               <div className="space-y-4">
                 {metrics.recent_changes_list.map((change: unknown, index: number) => {
                   const priceChangePercent = change.price_change_percent || 0;
                   const isDecrease = priceChangePercent < 0;
                   const daysAgo = Math.floor(
-                    (new Date().getTime() - new Date(change.changed_at).getTime()) / (1000 * 60 * 60 * 24)
+                    (new Date().getTime() - new Date(change.changed_at).getTime()) /
+                      (1000 * 60 * 60 * 24)
                   );
 
                   return (
-                    <div key={index} className="flex items-center justify-between border-b pb-3 last:border-0">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between border-b pb-3 last:border-0"
+                    >
                       <div className="flex-1">
                         <p className="font-medium">{change.product_name || 'Unknown Product'}</p>
-                        <p className="text-sm text-muted-foreground">{change.sku || 'No SKU'}</p>
+                        <p className="text-muted-foreground text-sm">{change.sku || 'No SKU'}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-sm text-muted-foreground line-through">
+                          <p className="text-muted-foreground text-sm line-through">
                             ${change.old_price?.toFixed(2) || '0.00'}
                           </p>
                           <p className="font-medium">${change.new_price?.toFixed(2) || '0.00'}</p>
@@ -246,13 +236,15 @@ export default function PricingDashboardPage() {
                             </>
                           ) : (
                             <>
-                              <TrendingUp className="mr-1 h-3 w-3" />
-                              +{priceChangePercent.toFixed(1)}%
+                              <TrendingUp className="mr-1 h-3 w-3" />+
+                              {priceChangePercent.toFixed(1)}%
                             </>
                           )}
                         </Badge>
-                        <span className="text-sm text-muted-foreground w-24">
-                          {daysAgo === 0 ? 'Today' : `${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`}
+                        <span className="text-muted-foreground w-24 text-sm">
+                          {daysAgo === 0
+                            ? 'Today'
+                            : `${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`}
                         </span>
                       </div>
                     </div>
@@ -260,7 +252,7 @@ export default function PricingDashboardPage() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 No recent price changes in the last 30 days
               </div>
             )}

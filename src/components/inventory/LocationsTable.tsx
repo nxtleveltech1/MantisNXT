@@ -1,8 +1,15 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,7 +32,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MoreHorizontal, Edit, Trash2, MapPin, Building2, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  MapPin,
+  Building2,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { StockLocation } from '@/types/nxt-spp';
 import { formatDistanceToNow } from 'date-fns';
@@ -130,16 +146,19 @@ export function LocationsTable({
 
   // Get type badge
   const getTypeBadge = (type: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'outline'; icon: React.ReactNode }> = {
-      internal: { variant: 'default', icon: <Building2 className="h-3 w-3 mr-1" /> },
-      supplier: { variant: 'secondary', icon: <Package className="h-3 w-3 mr-1" /> },
-      consignment: { variant: 'outline', icon: <MapPin className="h-3 w-3 mr-1" /> },
+    const variants: Record<
+      string,
+      { variant: 'default' | 'secondary' | 'outline'; icon: React.ReactNode }
+    > = {
+      internal: { variant: 'default', icon: <Building2 className="mr-1 h-3 w-3" /> },
+      supplier: { variant: 'secondary', icon: <Package className="mr-1 h-3 w-3" /> },
+      consignment: { variant: 'outline', icon: <MapPin className="mr-1 h-3 w-3" /> },
     };
 
     const config = variants[type] || variants.internal;
 
     return (
-      <Badge variant={config.variant} className="flex items-center w-fit">
+      <Badge variant={config.variant} className="flex w-fit items-center">
         {config.icon}
         {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
@@ -149,7 +168,7 @@ export function LocationsTable({
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-6 space-y-3">
+      <div className="space-y-3 p-6">
         {[...Array(5)].map((_, i) => (
           <Skeleton key={i} className="h-16 w-full" />
         ))}
@@ -162,9 +181,7 @@ export function LocationsTable({
     return (
       <div className="p-6">
         <Alert variant="destructive">
-          <AlertDescription>
-            Failed to load locations. Please try again.
-          </AlertDescription>
+          <AlertDescription>Failed to load locations. Please try again.</AlertDescription>
         </Alert>
       </div>
     );
@@ -177,8 +194,8 @@ export function LocationsTable({
   if (locations.length === 0) {
     return (
       <div className="p-12 text-center">
-        <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No locations found</h3>
+        <MapPin className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+        <h3 className="mb-2 text-lg font-semibold">No locations found</h3>
         <p className="text-muted-foreground">
           {searchQuery || typeFilter || statusFilter !== undefined
             ? 'Try adjusting your filters'
@@ -203,7 +220,7 @@ export function LocationsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {locations.map((location) => (
+            {locations.map(location => (
               <TableRow key={location.location_id}>
                 <TableCell className="font-medium">{location.name}</TableCell>
                 <TableCell>{getTypeBadge(location.type)}</TableCell>
@@ -214,7 +231,9 @@ export function LocationsTable({
                 </TableCell>
                 <TableCell>
                   {location.is_active ? (
-                    <Badge variant="default" className="bg-green-500">Active</Badge>
+                    <Badge variant="default" className="bg-green-500">
+                      Active
+                    </Badge>
                   ) : (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
@@ -254,9 +273,9 @@ export function LocationsTable({
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
+        <div className="flex items-center justify-between border-t px-6 py-4">
+          <div className="text-muted-foreground text-sm">
+            Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
             {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
             {pagination.total} locations
           </div>
@@ -292,8 +311,8 @@ export function LocationsTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Location</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deletingLocation?.name}</strong>?
-              This will deactivate the location. It can be reactivated later if needed.
+              Are you sure you want to delete <strong>{deletingLocation?.name}</strong>? This will
+              deactivate the location. It can be reactivated later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

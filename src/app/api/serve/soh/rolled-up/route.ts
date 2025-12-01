@@ -2,7 +2,7 @@
  * GET /api/serve/soh/rolled-up - Rolled-up SOH report (aggregated across suppliers)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { stockService } from '@/lib/services/StockService';
 import { SohReportRequestSchema } from '@/types/nxt-spp';
@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
 
     const requestData = {
       product_ids: searchParams.get('product_ids')?.split(',').filter(Boolean),
-      as_of_date: searchParams.get('as_of_date') ? new Date(searchParams.get('as_of_date')!) : undefined,
-      selected_only: searchParams.get('selected_only') === 'true'
+      as_of_date: searchParams.get('as_of_date')
+        ? new Date(searchParams.get('as_of_date')!)
+        : undefined,
+      selected_only: searchParams.get('selected_only') === 'true',
     };
 
     const validated = SohReportRequestSchema.parse(requestData);
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: rolledUpData,
       count: rolledUpData.length,
-      filters: validated
+      filters: validated,
     });
   } catch (error) {
     console.error('Rolled-up SOH report error:', error);
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Invalid request parameters',
-          details: error.issues
+          details: error.issues,
         },
         { status: 400 }
       );
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate rolled-up report'
+        error: error instanceof Error ? error.message : 'Failed to generate rolled-up report',
       },
       { status: 500 }
     );

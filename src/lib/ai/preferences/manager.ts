@@ -71,21 +71,28 @@ export class PreferenceManager extends EventEmitter {
       return preferences;
     } catch (error) {
       console.error('Error fetching user preferences:', error);
-      throw new Error(`Failed to get preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Set a single preference
    */
-  async setPreference(userId: string, category: PreferenceCategory, key: string, value: unknown): Promise<void> {
+  async setPreference(
+    userId: string,
+    category: PreferenceCategory,
+    key: string,
+    value: unknown
+  ): Promise<void> {
     const validation = SetPreferenceSchema.safeParse({ userId, category, key, value });
     if (!validation.success) {
       throw new Error(`Invalid preference data: ${validation.error.message}`);
     }
 
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         // Get current preferences to track changes
         const currentPrefs = await this.getPreferences(userId, 'default-org'); // TODO: Pass orgId properly
 
@@ -134,7 +141,9 @@ export class PreferenceManager extends EventEmitter {
       });
     } catch (error) {
       console.error('Error setting preference:', error);
-      throw new Error(`Failed to set preference: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to set preference: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -145,7 +154,7 @@ export class PreferenceManager extends EventEmitter {
     try {
       const defaults = DEFAULT_USER_PREFERENCES;
 
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         let updateQuery: string;
         let values: unknown[];
 
@@ -175,14 +184,20 @@ export class PreferenceManager extends EventEmitter {
       });
     } catch (error) {
       console.error('Error resetting preferences:', error);
-      throw new Error(`Failed to reset preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to reset preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Merge preferences with cascading priority: user > org > global
    */
-  mergePreferences(userPrefs: UserPreferences, orgPrefs?: UserPreferences, globalPrefs?: UserPreferences): UserPreferences {
+  mergePreferences(
+    userPrefs: UserPreferences,
+    orgPrefs?: UserPreferences,
+    globalPrefs?: UserPreferences
+  ): UserPreferences {
     const merged = { ...userPrefs };
 
     if (orgPrefs) {
@@ -212,12 +227,14 @@ export class PreferenceManager extends EventEmitter {
       switch (category) {
         case 'communication':
           if (key === 'verbosity') return ['low', 'medium', 'high'].includes(value as string);
-          if (key === 'responseFormat') return ['text', 'structured', 'markdown'].includes(value as string);
+          if (key === 'responseFormat')
+            return ['text', 'structured', 'markdown'].includes(value as string);
           if (key === 'language') return typeof value === 'string' && value.length === 2;
           return typeof value === 'boolean' || typeof value === 'string';
         case 'behavior':
           if (key === 'autoApprove') return typeof value === 'boolean';
-          if (key === 'confirmThreshold') return ['low', 'medium', 'high'].includes(value as string);
+          if (key === 'confirmThreshold')
+            return ['low', 'medium', 'high'].includes(value as string);
           if (key === 'defaultTools') return Array.isArray(value);
           return typeof value === 'boolean' || typeof value === 'number' || Array.isArray(value);
         case 'tools':
@@ -241,11 +258,15 @@ export class PreferenceManager extends EventEmitter {
    */
   async exportPreferences(userId: string): Promise<string> {
     const preferences = await this.getPreferences(userId, 'default-org');
-    return JSON.stringify({
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      preferences,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        preferences,
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -270,7 +291,7 @@ export class PreferenceManager extends EventEmitter {
         }
       }
 
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         await client.query(
           `UPDATE ai_user_preferences
            SET preferences = $1, updated_at = NOW()
@@ -285,7 +306,9 @@ export class PreferenceManager extends EventEmitter {
       });
     } catch (error) {
       console.error('Error importing preferences:', error);
-      throw new Error(`Failed to import preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to import preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -342,7 +365,9 @@ export class PreferenceManager extends EventEmitter {
       };
     } catch (error) {
       console.error('Error creating default preferences:', error);
-      throw new Error(`Failed to create default preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create default preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

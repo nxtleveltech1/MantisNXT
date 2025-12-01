@@ -1,29 +1,26 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import React, { useState, useEffect, useCallback } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  TooltipProvider,
-} from '@/components/ui/tooltip'
-
+} from '@/components/ui/select';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 import {
   Brain,
@@ -45,8 +42,8 @@ import {
   Activity,
   Loader2,
   Save,
-  X
-} from 'lucide-react'
+  X,
+} from 'lucide-react';
 
 // Form Schema
 const supplierFormSchema = z.object({
@@ -57,14 +54,14 @@ const supplierFormSchema = z.object({
     email: z.string().email('Valid email required'),
     phone: z.string().min(10, 'Valid phone number required'),
     taxId: z.string().optional(),
-    registrationNumber: z.string().optional()
+    registrationNumber: z.string().optional(),
   }),
   address: z.object({
     street: z.string().min(1, 'Street address required'),
     city: z.string().min(1, 'City required'),
     state: z.string().min(1, 'State/Province required'),
     postalCode: z.string().min(3, 'Postal code required'),
-    country: z.string().min(2, 'Country required')
+    country: z.string().min(2, 'Country required'),
   }),
   businessDetails: z.object({
     category: z.string().min(1, 'Primary category required'),
@@ -75,96 +72,102 @@ const supplierFormSchema = z.object({
     employeeCount: z.number().min(1),
     annualRevenue: z.number().optional(),
     certifications: z.array(z.string()).optional(),
-    specializations: z.array(z.string()).optional()
+    specializations: z.array(z.string()).optional(),
   }),
   financialInfo: z.object({
     paymentTerms: z.string().optional(),
     currency: z.string().min(3, 'Currency required'),
-    bankDetails: z.object({
-      bankName: z.string().optional(),
-      accountNumber: z.string().optional(),
-      routingNumber: z.string().optional()
-    }).optional(),
+    bankDetails: z
+      .object({
+        bankName: z.string().optional(),
+        accountNumber: z.string().optional(),
+        routingNumber: z.string().optional(),
+      })
+      .optional(),
     taxStatus: z.string().optional(),
-    vatNumber: z.string().optional()
+    vatNumber: z.string().optional(),
   }),
   capabilities: z.object({
     productCategories: z.array(z.string()),
     serviceOfferings: z.array(z.string()),
     geographicCoverage: z.array(z.string()),
-    capacity: z.object({
-      monthlyVolume: z.number().optional(),
-      leadTime: z.number().optional(),
-      minimumOrderQuantity: z.number().optional(),
-      maximumOrderQuantity: z.number().optional()
-    }).optional(),
+    capacity: z
+      .object({
+        monthlyVolume: z.number().optional(),
+        leadTime: z.number().optional(),
+        minimumOrderQuantity: z.number().optional(),
+        maximumOrderQuantity: z.number().optional(),
+      })
+      .optional(),
     qualityStandards: z.array(z.string()).optional(),
-    complianceFrameworks: z.array(z.string()).optional()
+    complianceFrameworks: z.array(z.string()).optional(),
   }),
-  sustainability: z.object({
-    sustainabilityRating: z.number().min(1).max(5).optional(),
-    environmentalCertifications: z.array(z.string()).optional(),
-    carbonFootprintReduction: z.boolean().optional(),
-    sustainabilityReportUrl: z.string().url().optional().or(z.literal('')),
-    socialImpactInitiatives: z.array(z.string()).optional()
-  }).optional()
-})
+  sustainability: z
+    .object({
+      sustainabilityRating: z.number().min(1).max(5).optional(),
+      environmentalCertifications: z.array(z.string()).optional(),
+      carbonFootprintReduction: z.boolean().optional(),
+      sustainabilityReportUrl: z.string().url().optional().or(z.literal('')),
+      socialImpactInitiatives: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
 
-type SupplierFormData = z.infer<typeof supplierFormSchema>
+type SupplierFormData = z.infer<typeof supplierFormSchema>;
 
 // AI Assistance Types
 interface AIFormSuggestion {
-  field: string
-  value: string | number | boolean
-  confidence: number
-  reason: string
-  source: string
+  field: string;
+  value: string | number | boolean;
+  confidence: number;
+  reason: string;
+  source: string;
 }
 
 interface AIValidationResult {
-  isValid: boolean
-  score: number
+  isValid: boolean;
+  score: number;
   issues: Array<{
-    field: string
-    severity: 'error' | 'warning' | 'info'
-    message: string
-    suggestion?: string
-  }>
-  recommendations: string[]
+    field: string;
+    severity: 'error' | 'warning' | 'info';
+    message: string;
+    suggestion?: string;
+  }>;
+  recommendations: string[];
 }
 
 interface AIComplianceCheck {
-  framework: string
-  status: 'compliant' | 'partial' | 'non_compliant'
+  framework: string;
+  status: 'compliant' | 'partial' | 'non_compliant';
   requirements: Array<{
-    requirement: string
-    met: boolean
-    evidence?: string
-    recommendation?: string
-  }>
+    requirement: string;
+    met: boolean;
+    evidence?: string;
+    recommendation?: string;
+  }>;
 }
 
 interface AIEnhancedSupplierFormProps {
-  initialData?: Partial<SupplierFormData>
-  mode: 'create' | 'edit'
-  onSubmit: (data: SupplierFormData) => Promise<void>
-  onCancel?: () => void
+  initialData?: Partial<SupplierFormData>;
+  mode: 'create' | 'edit';
+  onSubmit: (data: SupplierFormData) => Promise<void>;
+  onCancel?: () => void;
 }
 
 export default function AIEnhancedSupplierForm({
   initialData,
   mode,
   onSubmit,
-  onCancel
+  onCancel,
 }: AIEnhancedSupplierFormProps) {
-  const [activeTab, setActiveTab] = useState('basic')
-  const [aiSuggestions, setAiSuggestions] = useState<AIFormSuggestion[]>([])
-  const [validationResult, setValidationResult] = useState<AIValidationResult | null>(null)
-  const [complianceChecks, setComplianceChecks] = useState<AIComplianceCheck[]>([])
-  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false)
-  const [showAiAssistant, setShowAiAssistant] = useState(true)
-  const [completionScore, setCompletionScore] = useState(0)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState('basic');
+  const [aiSuggestions, setAiSuggestions] = useState<AIFormSuggestion[]>([]);
+  const [validationResult, setValidationResult] = useState<AIValidationResult | null>(null);
+  const [complianceChecks, setComplianceChecks] = useState<AIComplianceCheck[]>([]);
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+  const [showAiAssistant, setShowAiAssistant] = useState(true);
+  const [completionScore, setCompletionScore] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     control,
@@ -173,7 +176,7 @@ export default function AIEnhancedSupplierForm({
     setValue,
     getValues,
     formState: { errors, isDirty: _isDirty, isValid },
-    trigger: _trigger
+    trigger: _trigger,
   } = useForm<SupplierFormData>({
     resolver: zodResolver(supplierFormSchema),
     defaultValues: initialData || {
@@ -184,11 +187,11 @@ export default function AIEnhancedSupplierForm({
         yearsInOperation: 1,
         employeeCount: 1,
         certifications: [],
-        specializations: []
+        specializations: [],
       },
       financialInfo: {
         currency: 'ZAR',
-        bankDetails: {}
+        bankDetails: {},
       },
       capabilities: {
         productCategories: [],
@@ -196,106 +199,109 @@ export default function AIEnhancedSupplierForm({
         geographicCoverage: [],
         capacity: {},
         qualityStandards: [],
-        complianceFrameworks: []
+        complianceFrameworks: [],
       },
       sustainability: {
         environmentalCertifications: [],
-        socialImpactInitiatives: []
-      }
+        socialImpactInitiatives: [],
+      },
     },
-    mode: 'onChange'
-  })
+    mode: 'onChange',
+  });
 
-  const formData = watch()
+  const formData = watch();
 
   // AI-powered auto-completion and suggestions
-  const generateAISuggestions = useCallback(async (field?: string) => {
-    if (!formData.basicInfo.name && !formData.basicInfo.website) return
+  const generateAISuggestions = useCallback(
+    async (field?: string) => {
+      if (!formData.basicInfo.name && !formData.basicInfo.website) return;
 
-    setIsAiAnalyzing(true)
-    try {
-      const response = await fetch('/api/ai/suppliers/form-assist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          formData: getValues(),
-          focusField: field,
-          mode
-        })
-      })
+      setIsAiAnalyzing(true);
+      try {
+        const response = await fetch('/api/ai/suppliers/form-assist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            formData: getValues(),
+            focusField: field,
+            mode,
+          }),
+        });
 
-      if (response.ok) {
-        const { suggestions, validation, compliance } = await response.json()
-        setAiSuggestions(suggestions || [])
-        setValidationResult(validation)
-        setComplianceChecks(compliance || [])
+        if (response.ok) {
+          const { suggestions, validation, compliance } = await response.json();
+          setAiSuggestions(suggestions || []);
+          setValidationResult(validation);
+          setComplianceChecks(compliance || []);
+        }
+      } catch (error) {
+        console.error('AI assistance error:', error);
+      } finally {
+        setIsAiAnalyzing(false);
       }
-    } catch (error) {
-      console.error('AI assistance error:', error)
-    } finally {
-      setIsAiAnalyzing(false)
-    }
-  }, [formData, getValues, mode])
+    },
+    [formData, getValues, mode]
+  );
 
   // Calculate form completion score
   useEffect(() => {
     const calculateCompletionScore = () => {
-      const totalFields = 25 // Estimated important fields
-      let completedFields = 0
+      const totalFields = 25; // Estimated important fields
+      let completedFields = 0;
 
-      if (formData.basicInfo.name) completedFields++
-      if (formData.basicInfo.email) completedFields++
-      if (formData.basicInfo.phone) completedFields++
-      if (formData.basicInfo.website) completedFields++
-      if (formData.address.street) completedFields++
-      if (formData.address.city) completedFields++
-      if (formData.address.country) completedFields++
-      if (formData.businessDetails.category) completedFields++
-      if (formData.businessDetails.businessSize) completedFields++
-      if (formData.businessDetails.employeeCount) completedFields++
-      if (formData.financialInfo.currency) completedFields++
-      if (formData.capabilities.productCategories.length > 0) completedFields += 2
-      if (formData.capabilities.serviceOfferings.length > 0) completedFields += 2
-      if (formData.capabilities.geographicCoverage.length > 0) completedFields++
-      if (formData.businessDetails.certifications?.length > 0) completedFields += 2
+      if (formData.basicInfo.name) completedFields++;
+      if (formData.basicInfo.email) completedFields++;
+      if (formData.basicInfo.phone) completedFields++;
+      if (formData.basicInfo.website) completedFields++;
+      if (formData.address.street) completedFields++;
+      if (formData.address.city) completedFields++;
+      if (formData.address.country) completedFields++;
+      if (formData.businessDetails.category) completedFields++;
+      if (formData.businessDetails.businessSize) completedFields++;
+      if (formData.businessDetails.employeeCount) completedFields++;
+      if (formData.financialInfo.currency) completedFields++;
+      if (formData.capabilities.productCategories.length > 0) completedFields += 2;
+      if (formData.capabilities.serviceOfferings.length > 0) completedFields += 2;
+      if (formData.capabilities.geographicCoverage.length > 0) completedFields++;
+      if (formData.businessDetails.certifications?.length > 0) completedFields += 2;
       // Add more field checks...
 
-      setCompletionScore(Math.round((completedFields / totalFields) * 100))
-    }
+      setCompletionScore(Math.round((completedFields / totalFields) * 100));
+    };
 
-    calculateCompletionScore()
-  }, [formData])
+    calculateCompletionScore();
+  }, [formData]);
 
   // Auto-trigger AI suggestions when key fields are populated
   useEffect(() => {
     const timer = setTimeout(() => {
       if (formData.basicInfo.name || formData.basicInfo.website) {
-        generateAISuggestions()
+        generateAISuggestions();
       }
-    }, 1000)
+    }, 1000);
 
-    return () => clearTimeout(timer)
-  }, [formData.basicInfo.name, formData.basicInfo.website, generateAISuggestions])
+    return () => clearTimeout(timer);
+  }, [formData.basicInfo.name, formData.basicInfo.website, generateAISuggestions]);
 
   const applySuggestion = (suggestion: AIFormSuggestion) => {
-    setValue(suggestion.field as unknown, suggestion.value, { shouldValidate: true })
-    setAiSuggestions(prev => prev.filter(s => s.field !== suggestion.field))
-  }
+    setValue(suggestion.field as unknown, suggestion.value, { shouldValidate: true });
+    setAiSuggestions(prev => prev.filter(s => s.field !== suggestion.field));
+  };
 
   const dismissSuggestion = (field: string) => {
-    setAiSuggestions(prev => prev.filter(s => s.field !== field))
-  }
+    setAiSuggestions(prev => prev.filter(s => s.field !== field));
+  };
 
   const onFormSubmit = async (data: SupplierFormData) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error('Form submission error:', error)
+      console.error('Form submission error:', error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const tabs = [
     { id: 'basic', label: 'Basic Information', icon: User },
@@ -303,12 +309,12 @@ export default function AIEnhancedSupplierForm({
     { id: 'business', label: 'Business Details', icon: FileText },
     { id: 'financial', label: 'Financial Info', icon: DollarSign },
     { id: 'capabilities', label: 'Capabilities', icon: Target },
-    { id: 'sustainability', label: 'Sustainability', icon: Activity }
-  ]
+    { id: 'sustainability', label: 'Sustainability', icon: Activity },
+  ];
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Main Form */}
         <div className="lg:col-span-3">
           <Card>
@@ -320,10 +326,10 @@ export default function AIEnhancedSupplierForm({
                   {isAiAnalyzing && <Loader2 className="h-4 w-4 animate-spin" />}
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Completion: {completionScore}%
                   </div>
-                  <Progress value={completionScore} className="w-20 h-2" />
+                  <Progress value={completionScore} className="h-2 w-20" />
                 </div>
               </div>
             </CardHeader>
@@ -331,20 +337,20 @@ export default function AIEnhancedSupplierForm({
               <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-6">
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon
+                    {tabs.map(tab => {
+                      const Icon = tab.icon;
                       return (
                         <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
-                          <Icon className="h-3 w-3 mr-1" />
+                          <Icon className="mr-1 h-3 w-3" />
                           {tab.label}
                         </TabsTrigger>
-                      )
+                      );
                     })}
                   </TabsList>
 
                   {/* Basic Information Tab */}
                   <TabsContent value="basic" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="name">Company Name *</Label>
                         <Controller
@@ -360,7 +366,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.basicInfo?.name && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.basicInfo.name.message}
                           </p>
                         )}
@@ -372,11 +378,7 @@ export default function AIEnhancedSupplierForm({
                           name="basicInfo.legalName"
                           control={control}
                           render={({ field }) => (
-                            <Input
-                              {...field}
-                              id="legalName"
-                              placeholder="Legal business name"
-                            />
+                            <Input {...field} id="legalName" placeholder="Legal business name" />
                           )}
                         />
                       </div>
@@ -388,7 +390,7 @@ export default function AIEnhancedSupplierForm({
                           control={control}
                           render={({ field }) => (
                             <div className="relative">
-                              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                               <Input
                                 {...field}
                                 id="website"
@@ -399,7 +401,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.basicInfo?.website && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.basicInfo.website.message}
                           </p>
                         )}
@@ -412,7 +414,7 @@ export default function AIEnhancedSupplierForm({
                           control={control}
                           render={({ field }) => (
                             <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                               <Input
                                 {...field}
                                 id="email"
@@ -424,7 +426,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.basicInfo?.email && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.basicInfo.email.message}
                           </p>
                         )}
@@ -437,7 +439,7 @@ export default function AIEnhancedSupplierForm({
                           control={control}
                           render={({ field }) => (
                             <div className="relative">
-                              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Phone className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                               <Input
                                 {...field}
                                 id="phone"
@@ -448,7 +450,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.basicInfo?.phone && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.basicInfo.phone.message}
                           </p>
                         )}
@@ -460,11 +462,7 @@ export default function AIEnhancedSupplierForm({
                           name="basicInfo.taxId"
                           control={control}
                           render={({ field }) => (
-                            <Input
-                              {...field}
-                              id="taxId"
-                              placeholder="Tax identification number"
-                            />
+                            <Input {...field} id="taxId" placeholder="Tax identification number" />
                           )}
                         />
                       </div>
@@ -488,7 +486,7 @@ export default function AIEnhancedSupplierForm({
 
                   {/* Address Tab */}
                   <TabsContent value="address" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="md:col-span-2">
                         <Label htmlFor="street">Street Address *</Label>
                         <Controller
@@ -504,7 +502,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.address?.street && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.address.street.message}
                           </p>
                         )}
@@ -525,9 +523,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.address?.city && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.address.city.message}
-                          </p>
+                          <p className="mt-1 text-sm text-red-500">{errors.address.city.message}</p>
                         )}
                       </div>
 
@@ -546,7 +542,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.address?.state && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.address.state.message}
                           </p>
                         )}
@@ -567,7 +563,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.address?.postalCode && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.address.postalCode.message}
                           </p>
                         )}
@@ -580,7 +576,9 @@ export default function AIEnhancedSupplierForm({
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <SelectTrigger className={errors.address?.country ? 'border-red-500' : ''}>
+                              <SelectTrigger
+                                className={errors.address?.country ? 'border-red-500' : ''}
+                              >
                                 <SelectValue placeholder="Select country" />
                               </SelectTrigger>
                               <SelectContent>
@@ -596,7 +594,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.address?.country && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.address.country.message}
                           </p>
                         )}
@@ -606,7 +604,7 @@ export default function AIEnhancedSupplierForm({
 
                   {/* Business Details Tab */}
                   <TabsContent value="business" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="category">Primary Category *</Label>
                         <Controller
@@ -614,7 +612,9 @@ export default function AIEnhancedSupplierForm({
                           control={control}
                           render={({ field }) => (
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <SelectTrigger className={errors.businessDetails?.category ? 'border-red-500' : ''}>
+                              <SelectTrigger
+                                className={errors.businessDetails?.category ? 'border-red-500' : ''}
+                              >
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
                               <SelectContent>
@@ -622,7 +622,9 @@ export default function AIEnhancedSupplierForm({
                                 <SelectItem value="technology">Technology</SelectItem>
                                 <SelectItem value="services">Professional Services</SelectItem>
                                 <SelectItem value="construction">Construction</SelectItem>
-                                <SelectItem value="logistics">Logistics & Transportation</SelectItem>
+                                <SelectItem value="logistics">
+                                  Logistics & Transportation
+                                </SelectItem>
                                 <SelectItem value="retail">Retail & Distribution</SelectItem>
                                 <SelectItem value="healthcare">Healthcare</SelectItem>
                                 <SelectItem value="energy">Energy & Utilities</SelectItem>
@@ -633,7 +635,7 @@ export default function AIEnhancedSupplierForm({
                           )}
                         />
                         {errors.businessDetails?.category && (
-                          <p className="text-red-500 text-sm mt-1">
+                          <p className="mt-1 text-sm text-red-500">
                             {errors.businessDetails.category.message}
                           </p>
                         )}
@@ -654,7 +656,9 @@ export default function AIEnhancedSupplierForm({
                                 <SelectItem value="small">Small (6-50 employees)</SelectItem>
                                 <SelectItem value="medium">Medium (51-250 employees)</SelectItem>
                                 <SelectItem value="large">Large (251-1000 employees)</SelectItem>
-                                <SelectItem value="enterprise">Enterprise (1000+ employees)</SelectItem>
+                                <SelectItem value="enterprise">
+                                  Enterprise (1000+ employees)
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           )}
@@ -674,7 +678,7 @@ export default function AIEnhancedSupplierForm({
                               min="0"
                               max="200"
                               placeholder="5"
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                             />
                           )}
                         />
@@ -692,7 +696,7 @@ export default function AIEnhancedSupplierForm({
                               type="number"
                               min="1"
                               placeholder="25"
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 1)}
                             />
                           )}
                         />
@@ -702,7 +706,7 @@ export default function AIEnhancedSupplierForm({
 
                   {/* Financial Information Tab */}
                   <TabsContent value="financial" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="paymentTerms">Payment Terms</Label>
                         <Controller
@@ -764,8 +768,11 @@ export default function AIEnhancedSupplierForm({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  const newCategories = formData.capabilities.productCategories.filter((_, i) => i !== index)
-                                  setValue('capabilities.productCategories', newCategories)
+                                  const newCategories =
+                                    formData.capabilities.productCategories.filter(
+                                      (_, i) => i !== index
+                                    );
+                                  setValue('capabilities.productCategories', newCategories);
                                 }}
                               >
                                 <X className="h-3 w-3" />
@@ -785,8 +792,10 @@ export default function AIEnhancedSupplierForm({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  const newServices = formData.capabilities.serviceOfferings.filter((_, i) => i !== index)
-                                  setValue('capabilities.serviceOfferings', newServices)
+                                  const newServices = formData.capabilities.serviceOfferings.filter(
+                                    (_, i) => i !== index
+                                  );
+                                  setValue('capabilities.serviceOfferings', newServices);
                                 }}
                               >
                                 <X className="h-3 w-3" />
@@ -800,14 +809,17 @@ export default function AIEnhancedSupplierForm({
 
                   {/* Sustainability Tab */}
                   <TabsContent value="sustainability" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="sustainabilityRating">Sustainability Rating</Label>
                         <Controller
                           name="sustainability.sustainabilityRating"
                           control={control}
                           render={({ field }) => (
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                            <Select
+                              onValueChange={value => field.onChange(parseInt(value))}
+                              defaultValue={field.value?.toString()}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="Rate sustainability efforts" />
                               </SelectTrigger>
@@ -842,12 +854,8 @@ export default function AIEnhancedSupplierForm({
                 </Tabs>
 
                 {/* Form Actions */}
-                <div className="flex items-center justify-between pt-6 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onCancel}
-                  >
+                <div className="flex items-center justify-between border-t pt-6">
+                  <Button type="button" variant="outline" onClick={onCancel}>
                     Cancel
                   </Button>
                   <div className="flex items-center gap-2">
@@ -858,20 +866,17 @@ export default function AIEnhancedSupplierForm({
                       disabled={isAiAnalyzing}
                     >
                       {isAiAnalyzing ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
+                        <Sparkles className="mr-2 h-4 w-4" />
                       )}
                       AI Assist
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting || !isValid}
-                    >
+                    <Button type="submit" disabled={isSubmitting || !isValid}>
                       {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <Save className="h-4 w-4 mr-2" />
+                        <Save className="mr-2 h-4 w-4" />
                       )}
                       {mode === 'create' ? 'Create Supplier' : 'Update Supplier'}
                     </Button>
@@ -883,7 +888,7 @@ export default function AIEnhancedSupplierForm({
         </div>
 
         {/* AI Assistant Sidebar */}
-        <div className="lg:col-span-1 space-y-4">
+        <div className="space-y-4 lg:col-span-1">
           {showAiAssistant && (
             <>
               {/* AI Suggestions */}
@@ -894,11 +899,7 @@ export default function AIEnhancedSupplierForm({
                       <Sparkles className="h-4 w-4 text-purple-600" />
                       AI Suggestions
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAiAssistant(false)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setShowAiAssistant(false)}>
                       <EyeOff className="h-4 w-4" />
                     </Button>
                   </CardTitle>
@@ -906,9 +907,9 @@ export default function AIEnhancedSupplierForm({
                 <CardContent>
                   <ScrollArea className="h-[300px]">
                     <div className="space-y-3">
-                      {aiSuggestions.map((suggestion) => (
-                        <div key={suggestion.field} className="p-3 border rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
+                      {aiSuggestions.map(suggestion => (
+                        <div key={suggestion.field} className="rounded-lg border p-3">
+                          <div className="mb-2 flex items-start justify-between">
                             <span className="text-sm font-medium">
                               {suggestion.field.split('.').pop()}
                             </span>
@@ -916,15 +917,10 @@ export default function AIEnhancedSupplierForm({
                               {suggestion.confidence}%
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {suggestion.reason}
-                          </p>
+                          <p className="text-muted-foreground mb-2 text-sm">{suggestion.reason}</p>
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => applySuggestion(suggestion)}
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
+                            <Button size="sm" onClick={() => applySuggestion(suggestion)}>
+                              <CheckCircle className="mr-1 h-3 w-3" />
                               Apply
                             </Button>
                             <Button
@@ -938,9 +934,11 @@ export default function AIEnhancedSupplierForm({
                         </div>
                       ))}
                       {aiSuggestions.length === 0 && !isAiAnalyzing && (
-                        <div className="text-center py-4 text-muted-foreground">
-                          <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No suggestions yet. Fill out more fields to get AI assistance.</p>
+                        <div className="text-muted-foreground py-4 text-center">
+                          <Bot className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                          <p className="text-sm">
+                            No suggestions yet. Fill out more fields to get AI assistance.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -953,7 +951,7 @@ export default function AIEnhancedSupplierForm({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">
-                      <Shield className="h-4 w-4 mr-2 inline" />
+                      <Shield className="mr-2 inline h-4 w-4" />
                       Validation Score: {validationResult.score}/100
                     </CardTitle>
                   </CardHeader>
@@ -961,13 +959,14 @@ export default function AIEnhancedSupplierForm({
                     <Progress value={validationResult.score} className="mb-4" />
                     <div className="space-y-2">
                       {validationResult.issues.map((issue, index) => (
-                        <Alert key={index} variant={issue.severity === 'error' ? 'destructive' : 'default'}>
+                        <Alert
+                          key={index}
+                          variant={issue.severity === 'error' ? 'destructive' : 'default'}
+                        >
                           <AlertDescription className="text-sm">
                             <strong>{issue.field}:</strong> {issue.message}
                             {issue.suggestion && (
-                              <div className="mt-1 text-xs">
-                                💡 {issue.suggestion}
-                              </div>
+                              <div className="mt-1 text-xs">💡 {issue.suggestion}</div>
                             )}
                           </AlertDescription>
                         </Alert>
@@ -982,21 +981,25 @@ export default function AIEnhancedSupplierForm({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">
-                      <CheckCircle className="h-4 w-4 mr-2 inline" />
+                      <CheckCircle className="mr-2 inline h-4 w-4" />
                       Compliance Status
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {complianceChecks.map((check) => (
+                      {complianceChecks.map(check => (
                         <div key={check.framework} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{check.framework}</span>
-                            <Badge className={
-                              check.status === 'compliant' ? 'bg-green-100 text-green-800' :
-                              check.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }>
+                            <span className="text-sm font-medium">{check.framework}</span>
+                            <Badge
+                              className={
+                                check.status === 'compliant'
+                                  ? 'bg-green-100 text-green-800'
+                                  : check.status === 'partial'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                              }
+                            >
                               {check.status}
                             </Badge>
                           </div>
@@ -1004,9 +1007,9 @@ export default function AIEnhancedSupplierForm({
                             {check.requirements.slice(0, 2).map((req, index) => (
                               <div key={index} className="flex items-start gap-2 text-xs">
                                 {req.met ? (
-                                  <CheckCircle className="h-3 w-3 text-green-500 mt-0.5" />
+                                  <CheckCircle className="mt-0.5 h-3 w-3 text-green-500" />
                                 ) : (
-                                  <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5" />
+                                  <AlertTriangle className="mt-0.5 h-3 w-3 text-red-500" />
                                 )}
                                 <span>{req.requirement}</span>
                               </div>
@@ -1022,17 +1025,13 @@ export default function AIEnhancedSupplierForm({
           )}
 
           {!showAiAssistant && (
-            <Button
-              variant="outline"
-              onClick={() => setShowAiAssistant(true)}
-              className="w-full"
-            >
-              <Eye className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={() => setShowAiAssistant(true)} className="w-full">
+              <Eye className="mr-2 h-4 w-4" />
               Show AI Assistant
             </Button>
           )}
         </div>
       </div>
     </TooltipProvider>
-  )
+  );
 }

@@ -1,27 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { permissionResolver } from '@/lib/ai/access'
-import { toolRegistry } from '@/lib/ai/tools'
-import { ErrorHandler } from '@/lib/ai/errors'
+import { NextRequest, NextResponse } from 'next/server';
+import { permissionResolver } from '@/lib/ai/access';
+import { toolRegistry } from '@/lib/ai/tools';
+import { ErrorHandler } from '@/lib/ai/errors';
 
 interface RouteParams {
-  toolName: string
+  toolName: string;
 }
 
 // GET /api/ai/tools/[toolName] - Get tool schema and metadata
-export async function GET(
-  request: NextRequest,
-  { params }: { params: RouteParams }
-) {
+export async function GET(request: NextRequest, { params }: { params: RouteParams }) {
   try {
-    const { toolName } = params
+    const { toolName } = params;
 
     // Get user from request context
-    const userId = request.headers.get('x-user-id')
+    const userId = request.headers.get('x-user-id');
     if (!userId) {
       return NextResponse.json(
         { data: null, error: { code: 'AUTH_REQUIRED', message: 'User authentication required' } },
         { status: 401 }
-      )
+      );
     }
 
     // Check tool access permissions
@@ -29,15 +26,15 @@ export async function GET(
       resourceType: 'tool',
       resourceId: toolName,
       action: 'read',
-    })
+    });
 
     // Get the tool
-    const tool = toolRegistry.getTool(toolName)
+    const tool = toolRegistry.getTool(toolName);
     if (!tool) {
       return NextResponse.json(
         { data: null, error: { code: 'TOOL_NOT_FOUND', message: `Tool '${toolName}' not found` } },
         { status: 404 }
-      )
+      );
     }
 
     return NextResponse.json({
@@ -50,12 +47,9 @@ export async function GET(
         metadata: tool.metadata,
       },
       error: null,
-    })
+    });
   } catch (error) {
-    const formattedError = ErrorHandler.formatForUser(error)
-    return NextResponse.json(
-      { data: null, error: formattedError },
-      { status: 500 }
-    )
+    const formattedError = ErrorHandler.formatForUser(error);
+    return NextResponse.json({ data: null, error: formattedError }, { status: 500 });
   }
 }

@@ -88,15 +88,17 @@ const inventoryTools = [
     description: 'Search for inventory items by name, SKU, or category',
     category: 'inventory' as const,
     inputSchema: searchInventorySchema,
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      sku: z.string(),
-      quantity: z.number(),
-      unit_price: z.number(),
-      reorder_point: z.number().optional(),
-      category: z.string().optional(),
-    })),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        sku: z.string(),
+        quantity: z.number(),
+        unit_price: z.number(),
+        reorder_point: z.number().optional(),
+        category: z.string().optional(),
+      })
+    ),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['inventory:read'],
     handler: async (params: z.infer<typeof searchInventorySchema>, context: any) => {
@@ -151,14 +153,16 @@ const inventoryTools = [
     description: 'Get items that are below the reorder threshold',
     category: 'inventory' as const,
     inputSchema: getLowStockItemsSchema,
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      sku: z.string(),
-      quantity: z.number(),
-      reorder_point: z.number(),
-      supplier_name: z.string().optional(),
-    })),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        sku: z.string(),
+        quantity: z.number(),
+        reorder_point: z.number(),
+        supplier_name: z.string().optional(),
+      })
+    ),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['inventory:read'],
     handler: async (params: z.infer<typeof getLowStockItemsSchema>, context: any) => {
@@ -174,15 +178,17 @@ const supplierTools = [
     description: 'Search for suppliers by name, email, or contact information',
     category: 'suppliers' as const,
     inputSchema: searchSuppliersSchema,
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      status: z.string(),
-      contact_email: z.string().optional(),
-      phone: z.string().optional(),
-      address: z.string().optional(),
-      performance_score: z.number().optional(),
-    })),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+        contact_email: z.string().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        performance_score: z.number().optional(),
+      })
+    ),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['suppliers:read'],
     handler: async (params: z.infer<typeof searchSuppliersSchema>, context: any) => {
@@ -225,12 +231,14 @@ const supplierTools = [
       quality_rating: z.number(),
       total_orders: z.number(),
       total_value: z.number(),
-      recent_deliveries: z.array(z.object({
-        order_id: z.string(),
-        delivered_at: z.date(),
-        on_time: z.boolean(),
-        quality_issues: z.boolean(),
-      })),
+      recent_deliveries: z.array(
+        z.object({
+          order_id: z.string(),
+          delivered_at: z.date(),
+          on_time: z.boolean(),
+          quality_issues: z.boolean(),
+        })
+      ),
     }),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['suppliers:read'],
@@ -273,13 +281,15 @@ const orderTools = [
       supplier_name: z.string(),
       status: z.string(),
       total_value: z.number(),
-      items: z.array(z.object({
-        item_id: z.string(),
-        item_name: z.string(),
-        quantity: z.number(),
-        unit_price: z.number(),
-        total_price: z.number(),
-      })),
+      items: z.array(
+        z.object({
+          item_id: z.string(),
+          item_name: z.string(),
+          quantity: z.number(),
+          unit_price: z.number(),
+          total_price: z.number(),
+        })
+      ),
       created_at: z.date(),
       approved_at: z.date().optional(),
       shipped_at: z.date().optional(),
@@ -297,14 +307,16 @@ const orderTools = [
     description: 'List purchase orders with optional filtering',
     category: 'orders' as const,
     inputSchema: listPurchaseOrdersSchema,
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      supplier_name: z.string(),
-      status: z.string(),
-      total_value: z.number(),
-      items_count: z.number(),
-      created_at: z.date(),
-    })),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        supplier_name: z.string(),
+        status: z.string(),
+        total_value: z.number(),
+        items_count: z.number(),
+        created_at: z.date(),
+      })
+    ),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['orders:read'],
     handler: async (params: z.infer<typeof listPurchaseOrdersSchema>, context: any) => {
@@ -341,17 +353,21 @@ const analyticsTools = [
     outputSchema: z.object({
       product_id: z.string(),
       forecast_period_days: z.number(),
-      predictions: z.array(z.object({
-        date: z.date(),
-        predicted_demand: z.number(),
-        confidence_lower: z.number(),
-        confidence_upper: z.number(),
-        confidence_level: z.number(),
-      })),
-      accuracy_metrics: z.object({
-        mape: z.number().optional(),
-        rmse: z.number().optional(),
-      }).optional(),
+      predictions: z.array(
+        z.object({
+          date: z.date(),
+          predicted_demand: z.number(),
+          confidence_lower: z.number(),
+          confidence_upper: z.number(),
+          confidence_level: z.number(),
+        })
+      ),
+      accuracy_metrics: z
+        .object({
+          mape: z.number().optional(),
+          rmse: z.number().optional(),
+        })
+        .optional(),
     }),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['analytics:read'],
@@ -365,19 +381,21 @@ const analyticsTools = [
     description: 'Detect anomalies in business metrics for entities',
     category: 'analytics' as const,
     inputSchema: getAnomaliesSchema,
-    outputSchema: z.array(z.object({
-      id: z.string(),
-      entity_type: z.string(),
-      entity_id: z.string(),
-      anomaly_type: z.string(),
-      severity: z.enum(['low', 'medium', 'high', 'critical']),
-      description: z.string(),
-      detected_value: z.number(),
-      expected_value: z.number(),
-      deviation_percentage: z.number(),
-      detected_at: z.date(),
-      status: z.enum(['active', 'acknowledged', 'resolved']),
-    })),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        entity_type: z.string(),
+        entity_id: z.string(),
+        anomaly_type: z.string(),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        description: z.string(),
+        detected_value: z.number(),
+        expected_value: z.number(),
+        deviation_percentage: z.number(),
+        detected_at: z.date(),
+        status: z.enum(['active', 'acknowledged', 'resolved']),
+      })
+    ),
     accessLevel: 'read-only' as const,
     requiredPermissions: ['analytics:read'],
     handler: async (params: z.infer<typeof getAnomaliesSchema>, context: any) => {
@@ -391,12 +409,7 @@ const analyticsTools = [
  * Register all built-in MantisNXT tools
  */
 export function registerBuiltInTools(): void {
-  const allTools = [
-    ...inventoryTools,
-    ...supplierTools,
-    ...orderTools,
-    ...analyticsTools,
-  ];
+  const allTools = [...inventoryTools, ...supplierTools, ...orderTools, ...analyticsTools];
 
   for (const tool of allTools) {
     toolRegistry.registerTool({

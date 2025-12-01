@@ -1,6 +1,6 @@
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { testConnection, query } from "@/lib/database/unified-connection";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { testConnection, query } from '@/lib/database/unified-connection';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,21 +11,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Database connection failed",
-          details: connectionResult.error
+          error: 'Database connection failed',
+          details: connectionResult.error,
         },
         { status: 500 }
       );
     }
 
     // Test a simple query
-    const result = await query(
-      "SELECT NOW() as current_time, version() as postgres_version"
-    );
+    const result = await query('SELECT NOW() as current_time, version() as postgres_version');
 
     return NextResponse.json({
       success: true,
-      message: "Database connection successful",
+      message: 'Database connection successful',
       data: {
         connected: true,
         currentTime: result.rows[0].current_time,
@@ -34,21 +32,14 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Database test error:", error);
+    console.error('Database test error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: "Database test failed",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Database test failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
 }
-
-
-
-
-
-
-

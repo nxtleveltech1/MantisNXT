@@ -1,9 +1,5 @@
 import { createHash } from 'crypto';
-import type {
-  AITextResult,
-  AIStreamChunk,
-  AIUsageMetrics,
-} from '@/types/ai';
+import type { AITextResult, AIStreamChunk, AIUsageMetrics } from '@/types/ai';
 import {
   AIServiceBase,
   type AIServiceBaseOptions,
@@ -57,8 +53,14 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
     this.defaultCacheTtlMs = options?.defaultCacheTtlMs ?? 5 * 60 * 1000;
   }
 
-  async generateText(prompt: string, options: TextGenerationOptions = {}): Promise<AIServiceResponse<AITextResult>> {
-    const cacheKey = options.cache === false ? undefined : options.cacheKey ?? this.buildCacheKey(prompt, options);
+  async generateText(
+    prompt: string,
+    options: TextGenerationOptions = {}
+  ): Promise<AIServiceResponse<AITextResult>> {
+    const cacheKey =
+      options.cache === false
+        ? undefined
+        : (options.cacheKey ?? this.buildCacheKey(prompt, options));
     if (cacheKey) {
       const cached = this.getCachedResponse(cacheKey, options);
       if (cached) {
@@ -71,7 +73,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
       'text.generate',
       async ({ service, runtimeOptions }) => service.generateText(prompt, runtimeOptions),
       options,
-      { promptHash: this.hashPrompt(prompt) },
+      { promptHash: this.hashPrompt(prompt) }
     );
 
     if (response.success && cacheKey) {
@@ -84,7 +86,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
   async generateWithTemplate(
     templateId: string,
     variables: Record<string, string | number | boolean>,
-    options: TemplateGenerationOptions = {},
+    options: TemplateGenerationOptions = {}
   ): Promise<AIServiceResponse<AITextResult>> {
     const rendered = this.promptManager.renderTemplate(templateId, {
       variables,
@@ -116,7 +118,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
 
   async generateBatch(
     prompts: string[],
-    options: TextGenerationOptions = {},
+    options: TextGenerationOptions = {}
   ): Promise<AIServiceResponse<TextGenerationBatchResult>> {
     const response = await this.executeOperation<TextGenerationBatchResult>(
       'text.batch',
@@ -126,11 +128,11 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
           const result = await service.generateText(prompt, runtimeOptions);
           results.push({ prompt, result });
         }
-        const aggregatedUsage = this.combineUsage(results.map((item) => item.result.usage));
+        const aggregatedUsage = this.combineUsage(results.map(item => item.result.usage));
         return { results, aggregatedUsage, usage: aggregatedUsage };
       },
       options,
-      { batchSize: prompts.length },
+      { batchSize: prompts.length }
     );
 
     return response;
@@ -138,7 +140,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
 
   async streamText(
     prompt: string,
-    options: TextGenerationOptions = {},
+    options: TextGenerationOptions = {}
   ): Promise<StreamingResult<AIStreamChunk, { text: string; chunks: number }>> {
     const requestId = options.requestId ?? this.generateRequestId();
     const notifyChannel = options.notifyChannel ?? this.notifyChannel;
@@ -154,15 +156,25 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
       operation: 'text.stream',
       metadata,
     });
-    await this.notifyEvent('request', {
-      requestId,
-      service: this.serviceName,
-      operation: 'text.stream',
-      metadata,
-      timestamp: this.getTimestamp(),
-    }, notifyChannel);
+    await this.notifyEvent(
+      'request',
+      {
+        requestId,
+        service: this.serviceName,
+        operation: 'text.stream',
+        metadata,
+        timestamp: this.getTimestamp(),
+      },
+      notifyChannel
+    );
 
-    const { service, cleanup } = this.createServiceInstance(options, requestId, 'text.stream', notifyChannel, metadata);
+    const { service, cleanup } = this.createServiceInstance(
+      options,
+      requestId,
+      'text.stream',
+      notifyChannel,
+      metadata
+    );
     const runtimeOptions = this.buildRuntimeOptions(options);
 
     try {
@@ -178,7 +190,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
         startedAt,
         cleanup,
         aggregate: {
-          onChunk: (chunk) => {
+          onChunk: chunk => {
             aggregate.chunks += 1;
             if (chunk.token) {
               aggregate.text += chunk.token;
@@ -256,7 +268,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
 
   private getCachedResponse(
     cacheKey: string | undefined,
-    options: TextGenerationOptions,
+    options: TextGenerationOptions
   ): AIServiceResponse<AITextResult> | undefined {
     if (!cacheKey) {
       return undefined;
@@ -283,7 +295,7 @@ export class AITextService extends AIServiceBase<TextGenerationOptions> {
   private setCachedResponse(
     cacheKey: string,
     response: AIServiceResponse<AITextResult>,
-    ttlMs?: number,
+    ttlMs?: number
   ): void {
     const expiresAt = Date.now() + (ttlMs ?? this.defaultCacheTtlMs);
     this.cache.set(cacheKey, {

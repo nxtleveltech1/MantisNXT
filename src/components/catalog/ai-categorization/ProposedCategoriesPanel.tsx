@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState, memo } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { buildApiUrl } from "@/lib/utils/api-url";
+import { useCallback, useEffect, useState, memo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { buildApiUrl } from '@/lib/utils/api-url';
 
 interface LinkedProduct {
   supplier_product_id: string;
@@ -44,13 +38,13 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   const fetchProposals = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals"));
+      const res = await fetch(buildApiUrl('/api/category/ai-categorization/proposals'));
       const data = await res.json();
       if (data.success) {
         setProposals(data.proposals);
       }
     } catch (error) {
-      console.error("Failed to fetch proposals", error);
+      console.error('Failed to fetch proposals', error);
     } finally {
       setLoading(false);
     }
@@ -63,26 +57,26 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   const handleApprove = async (proposalId: string) => {
     setSubmitting(proposalId);
     try {
-      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals/approve"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(buildApiUrl('/api/category/ai-categorization/proposals/approve'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ proposed_category_id: proposalId }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Approval failed");
+        throw new Error(data.message || 'Approval failed');
       }
       toast({
-        title: "Proposal approved",
+        title: 'Proposal approved',
         description: `${data.affected_products} products updated`,
       });
       fetchProposals();
     } catch (error) {
       console.error(error);
       toast({
-        title: "Approval failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+        title: 'Approval failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(null);
@@ -90,30 +84,32 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   };
 
   const handleReject = async (proposalId: string) => {
-    const confirm = window.confirm("Reject this proposed category? Products will return to pending.");
+    const confirm = window.confirm(
+      'Reject this proposed category? Products will return to pending.'
+    );
     if (!confirm) return;
     setSubmitting(proposalId);
     try {
-      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals/reject"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(buildApiUrl('/api/category/ai-categorization/proposals/reject'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ proposed_category_id: proposalId }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Rejection failed");
+        throw new Error(data.message || 'Rejection failed');
       }
       toast({
-        title: "Proposal rejected",
+        title: 'Proposal rejected',
         description: `${data.affected_products} products reset to pending`,
       });
       fetchProposals();
     } catch (error) {
       console.error(error);
       toast({
-        title: "Rejection failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+        title: 'Rejection failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(null);
@@ -130,23 +126,20 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading proposals…</p>
+          <p className="text-muted-foreground text-sm">Loading proposals…</p>
         ) : proposals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No pending proposals.</p>
+          <p className="text-muted-foreground text-sm">No pending proposals.</p>
         ) : (
           <div className="space-y-3">
             {proposals.map(proposal => (
-              <div
-                key={proposal.proposed_category_id}
-                className="border rounded-lg p-4 space-y-3"
-              >
+              <div key={proposal.proposed_category_id} className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-base">{proposal.display_name}</span>
+                      <span className="text-base font-semibold">{proposal.display_name}</span>
                       <Badge variant="secondary">
                         {proposal.suggestion_count} suggestion
-                        {proposal.suggestion_count === 1 ? "" : "s"}
+                        {proposal.suggestion_count === 1 ? '' : 's'}
                       </Badge>
                       {proposal.last_confidence != null && (
                         <Badge variant="outline">
@@ -154,9 +147,9 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {proposal.linked_products.length} product
-                      {proposal.linked_products.length === 1 ? "" : "s"} linked • Updated{" "}
+                      {proposal.linked_products.length === 1 ? '' : 's'} linked • Updated{' '}
                       {new Date(proposal.updated_at).toLocaleString()}
                     </p>
                   </div>
@@ -179,26 +172,24 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
                   </div>
                 </div>
                 {proposal.linked_products.length > 0 && (
-                  <div className="rounded-md bg-muted p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                  <div className="bg-muted rounded-md p-3">
+                    <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
                       Suggested products
                     </p>
                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                       {proposal.linked_products.map(product => (
                         <div
                           key={product.supplier_product_id}
-                          className="rounded border bg-background p-2 text-xs space-y-1"
+                          className="bg-background space-y-1 rounded border p-2 text-xs"
                         >
-                          <div className="font-mono truncate">
-                            {product.supplier_product_id}
-                          </div>
+                          <div className="truncate font-mono">{product.supplier_product_id}</div>
                           {product.confidence != null && (
-                            <div>
-                              Confidence: {(product.confidence * 100).toFixed(1)}%
-                            </div>
+                            <div>Confidence: {(product.confidence * 100).toFixed(1)}%</div>
                           )}
                           {product.provider && (
-                            <div className="text-muted-foreground">Provider: {product.provider}</div>
+                            <div className="text-muted-foreground">
+                              Provider: {product.provider}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -212,5 +203,4 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
       </CardContent>
     </Card>
   );
-})
-
+});

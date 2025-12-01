@@ -1,10 +1,10 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { z } from 'zod'
+import { NextResponse, type NextRequest } from 'next/server';
+import { z } from 'zod';
 
-import { ScrapingJobService } from '@/lib/services/pricing-intel/ScrapingJobService'
-import { getOrgId } from '../_helpers'
+import { ScrapingJobService } from '@/lib/services/pricing-intel/ScrapingJobService';
+import { getOrgId } from '../_helpers';
 
-const service = new ScrapingJobService()
+const service = new ScrapingJobService();
 
 const jobSchema = z.object({
   orgId: z.string().uuid().optional(),
@@ -18,26 +18,26 @@ const jobSchema = z.object({
   rate_limit_per_min: z.number().min(1).max(600).optional(),
   next_run_at: z.string().datetime().optional(),
   metadata: z.record(z.any()).optional(),
-})
+});
 
 export async function GET(request: NextRequest) {
   try {
-    const orgId = await getOrgId(request)
-    const jobs = await service.listJobs(orgId)
-    return NextResponse.json({ data: jobs, error: null })
+    const orgId = await getOrgId(request);
+    const jobs = await service.listJobs(orgId);
+    return NextResponse.json({ data: jobs, error: null });
   } catch (error) {
     return NextResponse.json(
       { data: null, error: error instanceof Error ? error.message : 'Failed to list jobs' },
-      { status: 400 },
-    )
+      { status: 400 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const payload = jobSchema.parse(body)
-    const orgId = await getOrgId(request, body)
+    const body = await request.json();
+    const payload = jobSchema.parse(body);
+    const orgId = await getOrgId(request, body);
     const job = await service.createJob(orgId, {
       job_id: '',
       org_id: orgId,
@@ -57,16 +57,15 @@ export async function POST(request: NextRequest) {
       updated_at: new Date(),
       last_run_at: undefined,
       last_status: undefined,
-    })
-    return NextResponse.json({ data: job, error: null }, { status: 201 })
+    });
+    return NextResponse.json({ data: job, error: null }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ data: null, error: error.issues }, { status: 400 })
+      return NextResponse.json({ data: null, error: error.issues }, { status: 400 });
     }
     return NextResponse.json(
       { data: null, error: error instanceof Error ? error.message : 'Failed to create job' },
-      { status: 400 },
-    )
+      { status: 400 }
+    );
   }
 }
-

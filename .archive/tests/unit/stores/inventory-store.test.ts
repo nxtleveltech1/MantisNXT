@@ -1,4 +1,9 @@
-import { assertCamelItem, deriveStockStatus, totalAvailable, bySku } from '@/lib/stores/inventory-store';
+import {
+  assertCamelItem,
+  deriveStockStatus,
+  totalAvailable,
+  bySku,
+} from '@/lib/stores/inventory-store';
 
 describe('inventory-store (camelCase only)', () => {
   const good = {
@@ -42,4 +47,3 @@ describe('inventory-store (camelCase only)', () => {
     expect(map['SKU-1'].id).toBe('1');
   });
 });
-

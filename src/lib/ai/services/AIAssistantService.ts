@@ -37,7 +37,7 @@ export class AIAssistantService extends AIChatService {
    */
   async startConversation(
     context: AssistantContext,
-    initialMessage?: string,
+    initialMessage?: string
   ): Promise<{ conversationId: string; response?: AssistantResponse }> {
     const systemPrompt = this.buildSystemPrompt(context);
 
@@ -59,11 +59,7 @@ export class AIAssistantService extends AIChatService {
     });
 
     if (initialMessage) {
-      const response = await this.sendMessage(
-        context,
-        conversation.id,
-        initialMessage,
-      );
+      const response = await this.sendMessage(context, conversation.id, initialMessage);
       return {
         conversationId: conversation.id,
         response: response.data,
@@ -79,7 +75,7 @@ export class AIAssistantService extends AIChatService {
   async sendMessage(
     context: AssistantContext,
     conversationId: string,
-    message: string,
+    message: string
   ): Promise<AIServiceResponse<AssistantResponse>> {
     // Store user message
     await this.storeMessage(context.orgId, context.userId, conversationId, {
@@ -88,10 +84,7 @@ export class AIAssistantService extends AIChatService {
     });
 
     // Augment message with relevant context
-    const enhancedMessage = await this.enhanceMessageWithContext(
-      context,
-      message,
-    );
+    const enhancedMessage = await this.enhanceMessageWithContext(context, message);
 
     // Get AI response
     const chatMessage: AIChatMessage = {
@@ -99,14 +92,10 @@ export class AIAssistantService extends AIChatService {
       content: enhancedMessage,
     };
 
-    const response = await this.continueConversation(
+    const response = await this.continueConversation(conversationId, chatMessage, {
       conversationId,
-      chatMessage,
-      {
-        conversationId,
-        metadata: { orgId: context.orgId, userId: context.userId },
-      },
-    );
+      metadata: { orgId: context.orgId, userId: context.userId },
+    });
 
     if (!response.success || !response.data) {
       return response as unknown;
@@ -134,7 +123,7 @@ export class AIAssistantService extends AIChatService {
   async getHistory(
     context: AssistantContext,
     conversationId: string,
-    limit: number = 50,
+    limit: number = 50
   ): Promise<AssistantMessage[]> {
     const result = await db.query(
       `
@@ -146,10 +135,10 @@ export class AIAssistantService extends AIChatService {
       ORDER BY created_at DESC
       LIMIT $4
       `,
-      [context.orgId, context.userId, conversationId, limit],
+      [context.orgId, context.userId, conversationId, limit]
     );
 
-    return result.rows.reverse().map((row) => ({
+    return result.rows.reverse().map(row => ({
       role: row.role,
       content: row.content,
       context: row.context,
@@ -161,7 +150,7 @@ export class AIAssistantService extends AIChatService {
    */
   async listConversations(
     context: AssistantContext,
-    limit: number = 20,
+    limit: number = 20
   ): Promise<Array<{ id: string; lastMessage: string; lastActivity: Date }>> {
     const result = await db.query(
       `
@@ -176,10 +165,10 @@ export class AIAssistantService extends AIChatService {
       ORDER BY conversation_id, created_at DESC
       LIMIT $3
       `,
-      [context.orgId, context.userId, limit],
+      [context.orgId, context.userId, limit]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       id: row.id,
       lastMessage: row.last_message.substring(0, 100),
       lastActivity: row.last_activity,
@@ -189,10 +178,7 @@ export class AIAssistantService extends AIChatService {
   /**
    * Delete a conversation
    */
-  async deleteConversation(
-    context: AssistantContext,
-    conversationId: string,
-  ): Promise<void> {
+  async deleteConversation(context: AssistantContext, conversationId: string): Promise<void> {
     await db.query(
       `
       DELETE FROM ai_conversation
@@ -200,7 +186,7 @@ export class AIAssistantService extends AIChatService {
         AND user_id = $2
         AND conversation_id = $3
       `,
-      [context.orgId, context.userId, conversationId],
+      [context.orgId, context.userId, conversationId]
     );
 
     this.closeConversation(conversationId);
@@ -256,7 +242,7 @@ Available actions you can suggest:
    */
   private async enhanceMessageWithContext(
     context: AssistantContext,
-    message: string,
+    message: string
   ): Promise<string> {
     const lowerMessage = message.toLowerCase();
 
@@ -292,7 +278,7 @@ Available actions you can suggest:
    */
   private async getRecentProducts(
     orgId: string,
-    limit: number,
+    limit: number
   ): Promise<Array<{ name: string; quantity: number; category: string }>> {
     const result = await db.query(
       `
@@ -304,10 +290,10 @@ Available actions you can suggest:
       ORDER BY p.created_at DESC
       LIMIT $2
       `,
-      [orgId, limit],
+      [orgId, limit]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       name: row.name,
       quantity: parseFloat(row.quantity) || 0,
       category: row.category || 'Uncategorized',
@@ -319,7 +305,7 @@ Available actions you can suggest:
    */
   private async getTopSuppliers(
     orgId: string,
-    limit: number,
+    limit: number
   ): Promise<Array<{ name: string; totalOrders: number }>> {
     const result = await db.query(
       `
@@ -331,10 +317,10 @@ Available actions you can suggest:
       ORDER BY total_orders DESC
       LIMIT $2
       `,
-      [orgId, limit],
+      [orgId, limit]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       name: row.name,
       totalOrders: parseInt(row.total_orders) || 0,
     }));
@@ -345,7 +331,7 @@ Available actions you can suggest:
    */
   private async getRecentAlerts(
     orgId: string,
-    limit: number,
+    limit: number
   ): Promise<Array<{ severity: string; title: string }>> {
     const result = await db.query(
       `
@@ -356,7 +342,7 @@ Available actions you can suggest:
       ORDER BY created_at DESC
       LIMIT $2
       `,
-      [orgId, limit],
+      [orgId, limit]
     );
 
     return result.rows;
@@ -406,7 +392,7 @@ Available actions you can suggest:
     orgId: string,
     userId: string,
     conversationId: string,
-    message: AssistantMessage,
+    message: AssistantMessage
   ): Promise<void> {
     await db.query(
       `
@@ -422,7 +408,7 @@ Available actions you can suggest:
         message.role,
         message.content,
         JSON.stringify(message.context || {}),
-      ],
+      ]
     );
   }
 }

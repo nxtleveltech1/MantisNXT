@@ -5,7 +5,12 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
+import {
+  authenticateRequest,
+  handleAIError,
+  successResponse,
+  noContentResponse,
+} from '@/lib/ai/api-utils';
 import { deleteService, updateService } from '../_store';
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -35,5 +40,3 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     return handleAIError(error);
   }
 }
-
-

@@ -95,10 +95,10 @@ const MetricCard = React.memo(
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">
+            <p className="text-muted-foreground text-sm">{title}</p>
+            <p className="mt-1 text-2xl font-bold">
               {value}
-              {unit && <span className="text-sm text-muted-foreground ml-1">{unit}</span>}
+              {unit && <span className="text-muted-foreground ml-1 text-sm">{unit}</span>}
             </p>
           </div>
           <div className="text-muted-foreground">{Icon}</div>
@@ -112,7 +112,15 @@ MetricCard.displayName = 'MetricCard';
 
 // Failed items list component (memoized)
 const FailedItemsList = React.memo(
-  ({ items, isExpanded, onToggle }: { items: unknown[]; isExpanded: boolean; onToggle: () => void }) => (
+  ({
+    items,
+    isExpanded,
+    onToggle,
+  }: {
+    items: unknown[];
+    isExpanded: boolean;
+    onToggle: () => void;
+  }) => (
     <div className="mt-4 space-y-2">
       <Button
         variant="outline"
@@ -129,13 +137,13 @@ const FailedItemsList = React.memo(
       </Button>
 
       {isExpanded && items.length > 0 && (
-        <div className="max-h-48 overflow-y-auto space-y-2 bg-muted/30 p-3 rounded-lg">
+        <div className="bg-muted/30 max-h-48 space-y-2 overflow-y-auto rounded-lg p-3">
           {items.map((item, idx) => (
-            <div key={idx} className="text-sm border-l-2 border-destructive pl-3">
+            <div key={idx} className="border-destructive border-l-2 pl-3 text-sm">
               <p className="font-medium">
                 {item.name} (ID: {item.id})
               </p>
-              <p className="text-xs text-muted-foreground">{item.error}</p>
+              <p className="text-muted-foreground text-xs">{item.error}</p>
             </div>
           ))}
         </div>
@@ -163,11 +171,7 @@ const formatTime = (ms: number): string => {
 };
 
 // Calculate ETA based on progress
-const calculateETA = (
-  totalCount: number,
-  processedCount: number,
-  elapsedTime: number
-): string => {
+const calculateETA = (totalCount: number, processedCount: number, elapsedTime: number): string => {
   if (processedCount === 0) return '--:--:--';
   const itemsPerSecond = processedCount / (elapsedTime / 1000);
   const remainingItems = totalCount - processedCount;
@@ -194,13 +198,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
     const pollProgress = async () => {
       try {
-        const response = await fetch(
-          `/api/v1/integrations/sync/progress/${jobId}`,
-          {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+        const response = await fetch(`/api/v1/integrations/sync/progress/${jobId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch progress: ${response.statusText}`);
@@ -212,10 +213,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           setError(null);
 
           // Check if sync is complete
-          if (
-            result.data.status === 'completed' ||
-            result.data.status === 'failed'
-          ) {
+          if (result.data.status === 'completed' || result.data.status === 'failed') {
             onComplete?.(result.data.status);
           }
         } else {
@@ -225,7 +223,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         setError(err instanceof Error ? err.message : 'An error occurred');
       }
 
-      setPollCount((prev) => prev + 1);
+      setPollCount(prev => prev + 1);
     };
 
     // Initial poll
@@ -241,17 +239,16 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   }
 
   const elapsedTime = (data.endTime || Date.now()) - data.startTime;
-  const eta = data.status === 'processing'
-    ? calculateETA(data.totalCount, data.processedCount, elapsedTime)
-    : '--:--:--';
+  const eta =
+    data.status === 'processing'
+      ? calculateETA(data.totalCount, data.processedCount, elapsedTime)
+      : '--:--:--';
 
-  const progressPercent = data.totalCount > 0
-    ? Math.round((data.processedCount / data.totalCount) * 100)
-    : 0;
+  const progressPercent =
+    data.totalCount > 0 ? Math.round((data.processedCount / data.totalCount) * 100) : 0;
 
-  const itemsPerMinute = elapsedTime > 0
-    ? Math.round((data.processedCount / (elapsedTime / 60000)) * 10) / 10
-    : 0;
+  const itemsPerMinute =
+    elapsedTime > 0 ? Math.round((data.processedCount / (elapsedTime / 60000)) * 10) / 10 : 0;
 
   return (
     <div className="space-y-6">
@@ -283,7 +280,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">{progressPercent}%</span>
+              <span className="text-muted-foreground text-sm">{progressPercent}%</span>
             </div>
             <Progress
               value={progressPercent}
@@ -297,24 +294,24 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
           {/* Error message */}
           {error && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+            <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-3 text-sm">
               <p>{error}</p>
             </div>
           )}
 
           {/* Current item */}
           {data.currentItem && (
-            <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground mb-1">Currently Processing</p>
-              <p className="font-medium text-sm">{data.currentItem.name}</p>
-              <p className="text-xs text-muted-foreground mt-1">ID: {data.currentItem.id}</p>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground mb-1 text-xs">Currently Processing</p>
+              <p className="text-sm font-medium">{data.currentItem.name}</p>
+              <p className="text-muted-foreground mt-1 text-xs">ID: {data.currentItem.id}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Items Processed"
           value={`${data.processedCount} / ${data.totalCount}`}
@@ -326,11 +323,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           unit="items/min"
           icon={<Zap className="h-5 w-5" />}
         />
-        <MetricCard
-          title="ETA"
-          value={eta}
-          icon={<Clock className="h-5 w-5" />}
-        />
+        <MetricCard title="ETA" value={eta} icon={<Clock className="h-5 w-5" />} />
         <MetricCard
           title="Elapsed"
           value={formatTime(elapsedTime)}
@@ -339,36 +332,36 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Created</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{data.createdCount}</p>
+              <p className="text-muted-foreground text-sm">Created</p>
+              <p className="mt-1 text-2xl font-bold text-green-600">{data.createdCount}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Updated</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{data.updatedCount}</p>
+              <p className="text-muted-foreground text-sm">Updated</p>
+              <p className="mt-1 text-2xl font-bold text-blue-600">{data.updatedCount}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Failed</p>
-              <p className="text-2xl font-bold text-destructive mt-1">{data.failedCount}</p>
+              <p className="text-muted-foreground text-sm">Failed</p>
+              <p className="text-destructive mt-1 text-2xl font-bold">{data.failedCount}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Success Rate</p>
-              <p className="text-2xl font-bold mt-1">
+              <p className="text-muted-foreground text-sm">Success Rate</p>
+              <p className="mt-1 text-2xl font-bold">
                 {data.totalCount > 0
                   ? Math.round(((data.totalCount - data.failedCount) / data.totalCount) * 100)
                   : 0}
@@ -385,17 +378,17 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           <CardHeader>
             <CardTitle className="text-base">Performance</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {data.networkSpeed && (
               <div>
-                <p className="text-sm text-muted-foreground">Network Speed</p>
-                <p className="text-lg font-semibold mt-1">{data.networkSpeed} Mbps</p>
+                <p className="text-muted-foreground text-sm">Network Speed</p>
+                <p className="mt-1 text-lg font-semibold">{data.networkSpeed} Mbps</p>
               </div>
             )}
             {data.dbWriteSpeed && (
               <div>
-                <p className="text-sm text-muted-foreground">DB Write Speed</p>
-                <p className="text-lg font-semibold mt-1">{data.dbWriteSpeed} items/sec</p>
+                <p className="text-muted-foreground text-sm">DB Write Speed</p>
+                <p className="mt-1 text-lg font-semibold">{data.dbWriteSpeed} items/sec</p>
               </div>
             )}
           </CardContent>
@@ -417,13 +410,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
       {/* Action buttons */}
       {data.status === 'processing' && (
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <Button
             variant="outline"
             onClick={() => onCancel?.()}
             disabled={data.status !== 'processing'}
           >
-            <XCircle className="h-4 w-4 mr-2" />
+            <XCircle className="mr-2 h-4 w-4" />
             Cancel Sync
           </Button>
         </div>

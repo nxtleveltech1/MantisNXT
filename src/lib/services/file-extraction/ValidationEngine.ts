@@ -269,10 +269,7 @@ function validateOptionalFields(row: ParsedRow): string[] {
  * Validate a single row
  * Returns validation result with is_valid flag and warnings
  */
-export function validateRow(
-  row: Partial<ParsedRow>,
-  config?: ExtractionConfig
-): ValidationResult {
+export function validateRow(row: Partial<ParsedRow>, config?: ExtractionConfig): ValidationResult {
   const warnings: string[] = [];
 
   // Check required fields
@@ -315,8 +312,8 @@ export function validateRow(
   }
 
   // Calculate confidence based on warnings
-  const errorCount = warnings.filter((w) =>
-    w.toLowerCase().includes('missing') || w.toLowerCase().includes('invalid')
+  const errorCount = warnings.filter(
+    w => w.toLowerCase().includes('missing') || w.toLowerCase().includes('invalid')
   ).length;
 
   const warningCount = warnings.length - errorCount;
@@ -328,9 +325,7 @@ export function validateRow(
   confidence = Math.max(0, Math.min(1, confidence));
 
   // Determine validity
-  const is_valid = config?.strictMode
-    ? warnings.length === 0
-    : errorCount === 0;
+  const is_valid = config?.strictMode ? warnings.length === 0 : errorCount === 0;
 
   return {
     is_valid,

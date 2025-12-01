@@ -1,106 +1,130 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import type { Resolver } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import type { Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import { loginFormSchema, type LoginFormData } from '@/lib/auth/validation'
+import { useAuth } from '@/lib/auth/auth-context';
+import { loginFormSchema, type LoginFormData } from '@/lib/auth/validation';
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
-  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null)
-  const [twoFactorCode, setTwoFactorCode] = useState('')
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  const router = useRouter()
+  const router = useRouter();
+  const { signIn, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   const form = useForm<LoginFormData, unknown, LoginFormData>({
     resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, unknown, LoginFormData>,
     defaultValues: {
       email: '',
       password: '',
-      remember_me: false
-    }
-  })
+      remember_me: false,
+    },
+  });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
-      const result = await authProvider.login({
+      const result = await signIn({
         email: data.email,
         password: data.password,
         remember_me: data.remember_me,
-        two_factor_code: requiresTwoFactor ? twoFactorCode : undefined
-      })
+        two_factor_code: requiresTwoFactor ? twoFactorCode : undefined,
+      });
 
       if (result.success && result.user) {
-        router.push('/')
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          router.push('/');
+        }, 100);
       } else if (result.requires_two_factor) {
-        setRequiresTwoFactor(true)
-        setTwoFactorToken(result.two_factor_token!)
-        setError(null)
+        setRequiresTwoFactor(true);
+        setTwoFactorToken(result.two_factor_token!);
+        setError(null);
       } else {
-        setError(result.message || 'Login failed')
+        setError(result.message || 'Login failed');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleTwoFactorSubmit = async () => {
     if (!twoFactorToken || !twoFactorCode) {
-      setError('Please enter the verification code')
-      return
+      setError('Please enter the verification code');
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
-      const isValid = await authProvider.verifyTwoFactor(twoFactorToken, twoFactorCode)
+      const data = form.getValues();
+      const result = await signIn({
+        email: data.email,
+        password: data.password,
+        remember_me: data.remember_me,
+        two_factor_code: twoFactorCode,
+      });
 
-      if (isValid) {
-        const data = form.getValues()
-        const result = await authProvider.login({
-          email: data.email,
-          password: data.password,
-          remember_me: data.remember_me,
-          two_factor_code: twoFactorCode
-        })
-
-        if (result.success) {
-          router.push('/')
-        } else {
-          setError(result.message || 'Login failed')
-        }
+      if (result.success && result.user) {
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          router.push('/');
+        }, 100);
       } else {
-        setError('Invalid verification code')
+        setError(result.message || 'Invalid verification code');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
+  };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-900"></div>
+      </div>
+    );
   }
 
   if (requiresTwoFactor) {
     return (
-      <div className="min-h-screen relative">
+      <div className="relative min-h-screen">
         {/* Background Image */}
         <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
           <div
@@ -116,7 +140,7 @@ export default function LoginPage() {
         </div>
 
         {/* Content - Two Factor Form at bottom center */}
-        <div 
+        <div
           className="z-10 max-w-md px-4"
           style={{
             position: 'fixed',
@@ -124,12 +148,12 @@ export default function LoginPage() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: '100%',
-            maxWidth: '28rem'
+            maxWidth: '28rem',
           }}
         >
-          <div className="bg-black/60 backdrop-blur-sm rounded-lg border border-red-900/50 p-6 space-y-6">
+          <div className="space-y-6 rounded-lg border border-red-900/50 bg-black/60 p-6 backdrop-blur-sm">
             {error && (
-              <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
+              <Alert variant="destructive" className="rounded-lg border-red-700 bg-red-900/90">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-white">{error}</AlertDescription>
               </Alert>
@@ -141,9 +165,9 @@ export default function LoginPage() {
                 type="text"
                 placeholder="000000"
                 value={twoFactorCode}
-                onChange={(e) => setTwoFactorCode(e.target.value)}
+                onChange={e => setTwoFactorCode(e.target.value)}
                 maxLength={6}
-                className="h-12 text-center text-lg tracking-widest bg-red-900/30 border-red-700/50 text-white placeholder:text-white/60 rounded-lg"
+                className="h-12 rounded-lg border-red-700/50 bg-red-900/30 text-center text-lg tracking-widest text-white placeholder:text-white/60"
                 aria-label="Enter 6-digit verification code"
                 autoComplete="one-time-code"
               />
@@ -152,7 +176,7 @@ export default function LoginPage() {
             <Button
               onClick={handleTwoFactorSubmit}
               disabled={isLoading || twoFactorCode.length !== 6}
-              className="w-full h-12 bg-red-900 hover:bg-red-800 text-white rounded-lg font-medium"
+              className="h-12 w-full rounded-lg bg-red-900 font-medium text-white hover:bg-red-800"
             >
               {isLoading ? 'Verifying...' : 'Verify'}
             </Button>
@@ -161,10 +185,10 @@ export default function LoginPage() {
               <Button
                 variant="link"
                 onClick={() => {
-                  setRequiresTwoFactor(false)
-                  setTwoFactorToken(null)
-                  setTwoFactorCode('')
-                  setError(null)
+                  setRequiresTwoFactor(false);
+                  setTwoFactorToken(null);
+                  setTwoFactorCode('');
+                  setError(null);
                 }}
                 className="text-sm text-white/80 hover:text-white"
               >
@@ -174,11 +198,11 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Background Image */}
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
         <div
@@ -194,7 +218,7 @@ export default function LoginPage() {
       </div>
 
       {/* Content - Login Form at bottom center */}
-      <div 
+      <div
         className="z-10 max-w-md px-4"
         style={{
           position: 'fixed',
@@ -202,13 +226,13 @@ export default function LoginPage() {
           left: '50%',
           transform: 'translateX(-50%)',
           width: '100%',
-          maxWidth: '28rem'
+          maxWidth: '28rem',
         }}
       >
         {/* Login Form - Dark semi-transparent panel */}
-        <div className="bg-black/60 backdrop-blur-sm rounded-lg border border-red-900/50 p-6 space-y-6">
+        <div className="space-y-6 rounded-lg border border-red-900/50 bg-black/60 p-6 backdrop-blur-sm">
           {error && (
-            <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
+            <Alert variant="destructive" className="rounded-lg border-red-700 bg-red-900/90">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-white">{error}</AlertDescription>
             </Alert>
@@ -226,7 +250,7 @@ export default function LoginPage() {
                       <Input
                         type="email"
                         placeholder="Username or Email"
-                        className="h-12 bg-red-900/30 border-red-700/50 text-white placeholder:text-white/60 rounded-lg"
+                        className="h-12 rounded-lg border-red-700/50 bg-red-900/30 text-white placeholder:text-white/60"
                         autoComplete="email"
                         {...field}
                       />
@@ -247,7 +271,7 @@ export default function LoginPage() {
                         <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password"
-                          className="h-12 bg-red-900/30 border-red-700/50 text-white placeholder:text-white/60 rounded-lg pr-12"
+                          className="h-12 rounded-lg border-red-700/50 bg-red-900/30 pr-12 text-white placeholder:text-white/60"
                           autoComplete="current-password"
                           {...field}
                         />
@@ -255,7 +279,7 @@ export default function LoginPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 hover:bg-transparent"
+                          className="absolute top-1/2 right-1 h-10 w-10 -translate-y-1/2 hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
@@ -275,7 +299,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-red-900 hover:bg-red-800 text-white rounded-lg font-medium"
+                className="h-12 w-full rounded-lg bg-red-900 font-medium text-white hover:bg-red-800"
               >
                 {isLoading ? (
                   'Signing in...'
@@ -291,5 +315,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

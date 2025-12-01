@@ -1,15 +1,15 @@
-import { getOrSet, makeKey } from '@/lib/cache/responseCache'
+import { getOrSet, makeKey } from '@/lib/cache/responseCache';
 /**
  * Predictions API
  * EMERGENCY RECOVERY: Using stable pool connection
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
-  const cacheKey = makeKey(request.url)
+  const cacheKey = makeKey(request.url);
   try {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type') || 'all';
@@ -18,13 +18,13 @@ export async function GET(request: NextRequest) {
     console.log(`🔮 Generating predictions for organization: ${organizationId}, type: ${type}`);
 
     const predictions: Array<{
-      type: string
-      title: string
-      prediction: string
-      confidence: number
-      timeline: string
-      description: string
-      action_required: boolean
+      type: string;
+      title: string;
+      prediction: string;
+      confidence: number;
+      timeline: string;
+      description: string;
+      action_required: boolean;
     }> = [];
 
     // Stock level predictions based on historical data
@@ -43,15 +43,17 @@ export async function GET(request: NextRequest) {
       `;
 
       const stockResult = await pool.query(stockPredictionQuery);
-      predictions.push(...stockResult.rows.map(row => ({
-        type: 'inventory',
-        title: `Stock Prediction: ${row.product_name}`,
-        prediction: row.prediction,
-        confidence: 85,
-        timeline: `${row.days_until_action} days`,
-        description: `Current: ${row.current_stock}, Reorder at: ${row.reorder_level}`,
-        action_required: row.prediction !== 'stock_adequate'
-      })));
+      predictions.push(
+        ...stockResult.rows.map(row => ({
+          type: 'inventory',
+          title: `Stock Prediction: ${row.product_name}`,
+          prediction: row.prediction,
+          confidence: 85,
+          timeline: `${row.days_until_action} days`,
+          description: `Current: ${row.current_stock}, Reorder at: ${row.reorder_level}`,
+          action_required: row.prediction !== 'stock_adequate',
+        }))
+      );
     }
 
     // Supplier performance predictions
@@ -92,15 +94,17 @@ export async function GET(request: NextRequest) {
       `;
 
       const supplierResult = await pool.query(supplierPredictionQuery);
-      predictions.push(...supplierResult.rows.map(row => ({
-        type: 'supplier',
-        title: `Supplier Risk: ${row.supplier_name}`,
-        prediction: row.risk_prediction,
-        confidence: 78,
-        timeline: '30 days',
-        description: `Payment terms: ${row.payment_terms_days} days`,
-        action_required: row.risk_prediction !== 'risk_low'
-      })));
+      predictions.push(
+        ...supplierResult.rows.map(row => ({
+          type: 'supplier',
+          title: `Supplier Risk: ${row.supplier_name}`,
+          prediction: row.risk_prediction,
+          confidence: 78,
+          timeline: '30 days',
+          description: `Payment terms: ${row.payment_terms_days} days`,
+          action_required: row.risk_prediction !== 'risk_low',
+        }))
+      );
     }
 
     // Financial predictions based on current data
@@ -129,33 +133,35 @@ export async function GET(request: NextRequest) {
           confidence: 72,
           timeline: '90 days',
           description: `${data.total_suppliers} suppliers, avg payment: ${Math.round(data.avg_payment_terms)} days`,
-          action_required: data.avg_payment_terms > 45
+          action_required: data.avg_payment_terms > 45,
         });
       }
     }
 
     console.log(`✅ Generated ${predictions.length} predictions`);
 
-    return NextResponse.json(await getOrSet(cacheKey, async () => ({
-      success: true,
-      data: {
-        predictions,
-        total: predictions.length,
-        timestamp: new Date().toISOString(),
-        organizationId,
-        type
-      }
-    })));
-
+    return NextResponse.json(
+      await getOrSet(cacheKey, async () => ({
+        success: true,
+        data: {
+          predictions,
+          total: predictions.length,
+          timestamp: new Date().toISOString(),
+          organizationId,
+          type,
+        },
+      }))
+    );
   } catch (error) {
     console.error('❌ Predictions API error:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to generate predictions',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to generate predictions',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
-
-

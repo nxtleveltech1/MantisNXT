@@ -1,16 +1,16 @@
-"use client"
+'use client';
 
-import React from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -19,34 +19,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useInventoryStore } from '@/lib/stores/inventory-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
-import type { ProductFormData } from '@/lib/types/inventory'
+} from '@/components/ui/select';
+import { useInventoryStore } from '@/lib/stores/inventory-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import type { ProductFormData } from '@/lib/types/inventory';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
-  category: z.enum([
-    'raw_materials',
-    'components',
-    'finished_goods',
-    'consumables',
-    'services',
-    'packaging',
-    'tools',
-    'safety_equipment'
-  ], { required_error: 'Category is required' }),
+  category: z.enum(
+    [
+      'raw_materials',
+      'components',
+      'finished_goods',
+      'consumables',
+      'services',
+      'packaging',
+      'tools',
+      'safety_equipment',
+    ],
+    { required_error: 'Category is required' }
+  ),
   sku: z.string().optional(),
   unit_of_measure: z.string().min(1, 'Unit of measure is required'),
   unit_cost_zar: z.coerce.number().positive('Unit cost must be positive'),
@@ -60,17 +63,17 @@ const productSchema = z.object({
   storage_requirements: z.string().optional(),
   country_of_origin: z.string().optional(),
   brand: z.string().optional(),
-  model_number: z.string().optional()
-})
+  model_number: z.string().optional(),
+});
 
 interface AddProductDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function AddProductDialog({ open, onOpenChange }: AddProductDialogProps) {
-  const { suppliers, addProduct, loading } = useInventoryStore()
-  const { addNotification } = useNotificationStore()
+  const { suppliers, addProduct, loading } = useInventoryStore();
+  const { addNotification } = useNotificationStore();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -84,28 +87,28 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
       barcode: '',
       country_of_origin: 'South Africa',
       brand: '',
-      model_number: ''
-    }
-  })
+      model_number: '',
+    },
+  });
 
   const onSubmit = async (data: ProductFormData) => {
     try {
-      await addProduct(data)
+      await addProduct(data);
       addNotification({
         type: 'success',
         title: 'Product added',
-        message: `${data.name} has been successfully added to your inventory`
-      })
-      form.reset()
-      onOpenChange(false)
+        message: `${data.name} has been successfully added to your inventory`,
+      });
+      form.reset();
+      onOpenChange(false);
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Failed to add product',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
     }
-  }
+  };
 
   const categories = [
     { value: 'raw_materials', label: 'Raw Materials' },
@@ -115,17 +118,31 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
     { value: 'services', label: 'Services' },
     { value: 'packaging', label: 'Packaging' },
     { value: 'tools', label: 'Tools' },
-    { value: 'safety_equipment', label: 'Safety Equipment' }
-  ]
+    { value: 'safety_equipment', label: 'Safety Equipment' },
+  ];
 
   const commonUnits = [
-    'Each', 'Piece', 'Set', 'Kit', 'Meter', 'Kilogram', 'Liter', 'Square Meter',
-    'Cubic Meter', 'Hour', 'Day', 'Box', 'Case', 'Pallet', 'Roll', 'Sheet'
-  ]
+    'Each',
+    'Piece',
+    'Set',
+    'Kit',
+    'Meter',
+    'Kilogram',
+    'Liter',
+    'Square Meter',
+    'Cubic Meter',
+    'Hour',
+    'Day',
+    'Box',
+    'Case',
+    'Pallet',
+    'Roll',
+    'Sheet',
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription>
@@ -135,7 +152,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Basic Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Basic Information</h3>
@@ -210,11 +227,13 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {suppliers.filter(s => s.status === 'active').map(supplier => (
-                            <SelectItem key={supplier.id} value={supplier.id}>
-                              {supplier.name}
-                            </SelectItem>
-                          ))}
+                          {suppliers
+                            .filter(s => s.status === 'active')
+                            .map(supplier => (
+                              <SelectItem key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -288,7 +307,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {/* Pricing & Quantity */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Pricing & Quantity</h3>
@@ -300,12 +319,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                     <FormItem>
                       <FormLabel>Unit Cost (ZAR) *</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                        />
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -332,9 +346,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        Or type a custom unit in the field
-                      </FormDescription>
+                      <FormDescription>Or type a custom unit in the field</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -389,10 +401,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                     <FormItem>
                       <FormLabel>Dimensions (cm)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="L x W x H (e.g., 10x20x5)"
-                          {...field}
-                        />
+                        <Input placeholder="L x W x H (e.g., 10x20x5)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -406,11 +415,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                     <FormItem>
                       <FormLabel>Shelf Life (days)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter shelf life in days"
-                          {...field}
-                        />
+                        <Input type="number" placeholder="Enter shelf life in days" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -443,11 +448,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                     <FormItem>
                       <FormLabel>Lead Time (days)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter lead time in days"
-                          {...field}
-                        />
+                        <Input type="number" placeholder="Enter lead time in days" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -475,11 +476,7 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
@@ -490,5 +487,5 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

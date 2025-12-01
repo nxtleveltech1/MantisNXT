@@ -70,7 +70,7 @@ const VERIFICATION_QUERIES = {
   `,
 };
 
-async function checkPrerequisites(pool: Pool): Promise<{org: boolean, authUsers: boolean}> {
+async function checkPrerequisites(pool: Pool): Promise<{ org: boolean; authUsers: boolean }> {
   const orgRes = await pool.query(`
     SELECT 1 FROM pg_tables WHERE tablename = 'organization' AND schemaname = 'public';
   `);
@@ -190,7 +190,10 @@ async function main() {
             try {
               await executeMigration(
                 pool,
-                resolve(process.cwd(), 'database/migrations/0021_comprehensive_auth_system_FIXED.sql'),
+                resolve(
+                  process.cwd(),
+                  'database/migrations/0021_comprehensive_auth_system_FIXED.sql'
+                ),
                 'Migration 0021 FIXED (auth.users_extended)'
               );
               result.prerequisitesApplied.push('0021 FIXED');
@@ -237,7 +240,7 @@ async function main() {
     const tablesRes = await pool.query(VERIFICATION_QUERIES['Tables Created']);
     result.tablesCreated = tablesRes.rows.map((r: any) => r.tablename);
     console.log(`   ✓ Tables created: ${result.tablesCreated.length}`);
-    result.tablesCreated.forEach((t) => console.log(`      - ${t}`));
+    result.tablesCreated.forEach(t => console.log(`      - ${t}`));
 
     // Get RLS enabled tables
     const rlsRes = await pool.query(VERIFICATION_QUERIES['RLS Status']);
@@ -263,22 +266,52 @@ async function main() {
     const enumsRes = await pool.query(VERIFICATION_QUERIES['Enum Types']);
     result.enumsCreated = enumsRes.rows.map((r: any) => r.typname);
     console.log(`   ✓ Enum types created: ${result.enumsCreated.length}`);
-    result.enumsCreated.forEach((t) => console.log(`      - ${t}`));
+    result.enumsCreated.forEach(t => console.log(`      - ${t}`));
 
     // Step 5: Detailed summary
     console.log('\n📋 Step 5/6: Validating results against specifications...');
     console.log('');
 
     const validations = [
-      { name: 'Tables Created (3)', expected: 3, actual: result.tablesCreated.length, pass: result.tablesCreated.length === 3 },
-      { name: 'RLS Enabled on All', expected: 3, actual: result.rlsEnabled.length, pass: result.rlsEnabled.length === 3 },
-      { name: 'Security Policies (12)', expected: 12, actual: result.policiesCount, pass: result.policiesCount === 12 },
-      { name: 'Indexes (15+)', expected: 15, actual: result.indexesCount, pass: result.indexesCount >= 15 },
-      { name: 'Triggers (5)', expected: 5, actual: result.triggersCount, pass: result.triggersCount === 5 },
-      { name: 'Enum Types (4)', expected: 4, actual: result.enumsCreated.length, pass: result.enumsCreated.length === 4 },
+      {
+        name: 'Tables Created (3)',
+        expected: 3,
+        actual: result.tablesCreated.length,
+        pass: result.tablesCreated.length === 3,
+      },
+      {
+        name: 'RLS Enabled on All',
+        expected: 3,
+        actual: result.rlsEnabled.length,
+        pass: result.rlsEnabled.length === 3,
+      },
+      {
+        name: 'Security Policies (12)',
+        expected: 12,
+        actual: result.policiesCount,
+        pass: result.policiesCount === 12,
+      },
+      {
+        name: 'Indexes (15+)',
+        expected: 15,
+        actual: result.indexesCount,
+        pass: result.indexesCount >= 15,
+      },
+      {
+        name: 'Triggers (5)',
+        expected: 5,
+        actual: result.triggersCount,
+        pass: result.triggersCount === 5,
+      },
+      {
+        name: 'Enum Types (4)',
+        expected: 4,
+        actual: result.enumsCreated.length,
+        pass: result.enumsCreated.length === 4,
+      },
     ];
 
-    validations.forEach((v) => {
+    validations.forEach(v => {
       const status = v.pass ? '✓' : '✗';
       console.log(`   ${status} ${v.name}: ${v.actual}/${v.expected}`);
     });
@@ -291,13 +324,13 @@ async function main() {
     console.log('═══════════════════════════════════════════════════════════════════');
     console.log('');
 
-    const overallPass = validations.every((v) => v.pass);
+    const overallPass = validations.every(v => v.pass);
     console.log(`STATUS: ${overallPass ? 'SUCCESS' : 'PARTIAL SUCCESS'}`);
     console.log('');
 
     if (result.prerequisitesApplied.length > 0) {
       console.log('PREREQUISITES APPLIED:');
-      result.prerequisitesApplied.forEach((p) => {
+      result.prerequisitesApplied.forEach(p => {
         console.log(`  ✓ Migration ${p}`);
       });
       console.log('');
@@ -312,7 +345,9 @@ async function main() {
 
     console.log('SECURITY (ROW-LEVEL SECURITY):');
     console.log(`  RLS Enabled: ${result.rlsEnabled.length}/3 tables`);
-    console.log(`  Policies: ${result.policiesCount} (4 per table: SELECT, INSERT, UPDATE, DELETE)`);
+    console.log(
+      `  Policies: ${result.policiesCount} (4 per table: SELECT, INSERT, UPDATE, DELETE)`
+    );
     console.log(`  Org Isolation: ${result.rlsEnabled.length === 3 ? 'ENFORCED' : 'PARTIAL'}`);
     console.log('');
 
@@ -324,7 +359,7 @@ async function main() {
 
     console.log('SCHEMA EXTENSIONS:');
     console.log(`  Enum Types: ${result.enumsCreated.length}`);
-    result.enumsCreated.forEach((t) => {
+    result.enumsCreated.forEach(t => {
       console.log(`    • ${t}`);
     });
     console.log('');
@@ -338,12 +373,15 @@ async function main() {
     console.log('');
 
     console.log('═══════════════════════════════════════════════════════════════════');
-    console.log(overallPass ? '✅ MIGRATION 0024 COMPLETED SUCCESSFULLY' : '⚠️  MIGRATION 0024 COMPLETED WITH WARNINGS');
+    console.log(
+      overallPass
+        ? '✅ MIGRATION 0024 COMPLETED SUCCESSFULLY'
+        : '⚠️  MIGRATION 0024 COMPLETED WITH WARNINGS'
+    );
     console.log('═══════════════════════════════════════════════════════════════════');
     console.log('');
 
     process.exit(overallPass ? 0 : 1);
-
   } catch (error: any) {
     result.endTime = performance.now();
     result.duration = result.endTime - result.startTime;
@@ -371,13 +409,12 @@ async function main() {
     console.error('');
 
     process.exit(1);
-
   } finally {
     await pool.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('FATAL:', err.message);
   process.exit(1);
 });

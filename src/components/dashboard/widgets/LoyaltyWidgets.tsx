@@ -3,7 +3,7 @@
  * Placeholder widgets for future loyalty program integration
  */
 
-"use client";
+'use client';
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,14 +38,14 @@ export function LoyaltySignupsWidget() {
   const data = generateMockLoyaltyData();
 
   return (
-    <Card className="bg-card border border-border rounded-xl shadow-sm">
+    <Card className="bg-card border-border rounded-xl border shadow-sm">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">New Sign-ups</p>
-            <p className="text-xs text-muted-foreground/70">Last 30 days</p>
+            <p className="text-muted-foreground text-sm font-medium">New Sign-ups</p>
+            <p className="text-muted-foreground/70 text-xs">Last 30 days</p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
             <UserPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
@@ -64,7 +64,7 @@ export function LoyaltySignupsWidget() {
             <span className="text-muted-foreground text-xs">vs last month</span>
           </div>
 
-          <div className="pt-3 border-t border-border">
+          <div className="border-border border-t pt-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Total sign-ups</span>
               <span className="font-medium">{data.signups.total}</span>
@@ -72,11 +72,9 @@ export function LoyaltySignupsWidget() {
           </div>
         </div>
 
-        <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-          <p className="text-xs text-yellow-800 dark:text-yellow-200 font-medium">
-            📦 Mock Data
-          </p>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
             Loyalty program integration in progress
           </p>
         </div>
@@ -91,14 +89,14 @@ export function ActiveMembersWidget() {
   const activePercentage = ((data.members.active / data.members.total) * 100).toFixed(1);
 
   return (
-    <Card className="bg-card border border-border rounded-xl shadow-sm">
+    <Card className="bg-card border-border rounded-xl border shadow-sm">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Active Members</p>
-            <p className="text-xs text-muted-foreground/70">Loyalty program</p>
+            <p className="text-muted-foreground text-sm font-medium">Active Members</p>
+            <p className="text-muted-foreground/70 text-xs">Loyalty program</p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
             <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
         </div>
@@ -111,7 +109,7 @@ export function ActiveMembersWidget() {
             <span className="text-muted-foreground"> total members</span>
           </div>
 
-          <div className="pt-3 border-t border-border space-y-2">
+          <div className="border-border space-y-2 border-t pt-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Active rate</span>
               <span className="font-medium text-green-600">{activePercentage}%</span>
@@ -123,11 +121,9 @@ export function ActiveMembersWidget() {
           </div>
         </div>
 
-        <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-          <p className="text-xs text-yellow-800 dark:text-yellow-200 font-medium">
-            📦 Mock Data
-          </p>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
             Loyalty program integration in progress
           </p>
         </div>
@@ -142,14 +138,14 @@ export function PointsEconomyWidget() {
   const availablePoints = data.points.accumulated - data.points.redeemed;
 
   return (
-    <Card className="bg-card border border-border rounded-xl shadow-sm">
+    <Card className="bg-card border-border rounded-xl border shadow-sm">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Points Economy</p>
-            <p className="text-xs text-muted-foreground/70">Total & value</p>
+            <p className="text-muted-foreground text-sm font-medium">Points Economy</p>
+            <p className="text-muted-foreground/70 text-xs">Total & value</p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
             <Gift className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </div>
         </div>
@@ -157,7 +153,7 @@ export function PointsEconomyWidget() {
         <div className="space-y-2">
           <div>
             <div className="text-3xl font-bold">{availablePoints.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Available points</div>
+            <div className="text-muted-foreground text-xs">Available points</div>
           </div>
 
           <div className="flex items-center gap-1 text-sm">
@@ -168,7 +164,7 @@ export function PointsEconomyWidget() {
             <span className="text-muted-foreground text-xs">value</span>
           </div>
 
-          <div className="pt-3 border-t border-border space-y-2">
+          <div className="border-border space-y-2 border-t pt-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Accumulated</span>
               <span className="font-medium">{data.points.accumulated.toLocaleString()}</span>
@@ -184,11 +180,9 @@ export function PointsEconomyWidget() {
           </div>
         </div>
 
-        <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-          <p className="text-xs text-yellow-800 dark:text-yellow-200 font-medium">
-            📦 Mock Data
-          </p>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
             Loyalty program integration in progress
           </p>
         </div>

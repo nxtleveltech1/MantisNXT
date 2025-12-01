@@ -8,7 +8,7 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -80,7 +80,6 @@ export async function POST(
 
     // Authorization - Customer access check
     await authorizeCustomerAccess(user, id);
-
 
     // Parse and validate body
     const body = await request.json();

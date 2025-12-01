@@ -4,11 +4,7 @@
  */
 
 import type { NextRequest } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { updateLayoutSchema } from '@/lib/ai/validation-schemas';
 import { DashboardService } from '@/lib/ai/services/dashboard-service';
 

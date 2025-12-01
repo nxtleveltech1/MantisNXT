@@ -7,15 +7,8 @@ import { query as dbQuery } from '@/lib/database/unified-connection';
 import { enrichProductsForCategorization } from '../sip-product-enrichment';
 import { CategorizationEngine } from './CategorizationEngine';
 import { ProgressTracker } from './ProgressTracker';
-import type {
-  Job,
-  JobParams,
-  JobStatus,
-  JobFilters,
-  JobStatus_Detail} from './types';
-import {
-  DEFAULT_JOB_CONFIG,
-} from './types';
+import type { Job, JobParams, JobStatus, JobFilters, JobStatus_Detail } from './types';
+import { DEFAULT_JOB_CONFIG } from './types';
 
 export class JobManager {
   private categorizationEngine: CategorizationEngine;
@@ -76,7 +69,7 @@ export class JobManager {
     console.log(`\n🚀 [JobManager] ============================================`);
     console.log(`🚀 [JobManager] STARTING JOB PROCESSING: ${jobId}`);
     console.log(`🚀 [JobManager] ============================================\n`);
-    
+
     // Check if job is already running
     if (this.activeJobs.get(jobId)) {
       throw new Error(`Job ${jobId} is already running`);
@@ -93,7 +86,9 @@ export class JobManager {
       if (!job) {
         throw new Error(`Job ${jobId} not found`);
       }
-      console.log(`[JobManager] Job details: status=${job.status}, total_products=${job.total_products}, batch_size=${job.batch_size}`);
+      console.log(
+        `[JobManager] Job details: status=${job.status}, total_products=${job.total_products}, batch_size=${job.batch_size}`
+      );
 
       // Validate job status
       if (job.status !== 'queued' && job.status !== 'paused') {
@@ -128,11 +123,7 @@ export class JobManager {
           );
 
           // Fetch products for this batch
-          const products = await this.fetchProductsForBatch(
-            job.batch_size,
-            currentOffset,
-            filters
-          );
+          const products = await this.fetchProductsForBatch(job.batch_size, currentOffset, filters);
           console.log(
             `[JobManager] Job ${jobId} batch ${batchNumber} fetched ${products.length} products`
           );
@@ -164,9 +155,7 @@ export class JobManager {
 
           // Process batch with AI
           const batchStartTime = Date.now();
-          console.log(
-            `[JobManager] Job ${jobId} batch ${batchNumber} invoking categorizeBatch`
-          );
+          console.log(`[JobManager] Job ${jobId} batch ${batchNumber} invoking categorizeBatch`);
           const batchResult = await this.categorizationEngine.categorizeBatch(
             products,
             config,
@@ -196,9 +185,10 @@ export class JobManager {
             duration_ms: batchResult.duration_ms,
             tokens_used: batchResult.tokens_used,
             provider_used: batchResult.results[0]?.provider ?? null,
-            error_message: applyResult.errors.length > 0
-              ? `${applyResult.errors.length} products failed to update`
-              : null,
+            error_message:
+              applyResult.errors.length > 0
+                ? `${applyResult.errors.length} products failed to update`
+                : null,
           });
 
           // Update job progress
@@ -208,7 +198,8 @@ export class JobManager {
             processed_products: processedSoFar,
             successful_categorizations: job.successful_categorizations + batchResult.successful,
             failed_categorizations: job.failed_categorizations + batchResult.failed,
-            skipped_products: job.skipped_products + batchResult.skipped + batchResult.pending_review,
+            skipped_products:
+              job.skipped_products + batchResult.skipped + batchResult.pending_review,
             current_batch_offset: processedSoFar,
             tokens_used: batchResult.tokens_used,
           });
@@ -477,9 +468,7 @@ export class JobManager {
     if (productIds.length === 0) return [];
 
     const enriched = await enrichProductsForCategorization(productIds);
-    console.log(
-      `[JobManager] fetchProductsForBatch enriched ${enriched.length} products`
-    );
+    console.log(`[JobManager] fetchProductsForBatch enriched ${enriched.length} products`);
     return enriched;
   }
 
@@ -664,4 +653,3 @@ export class JobManager {
 
 // Singleton instance
 export const jobManager = new JobManager();
-

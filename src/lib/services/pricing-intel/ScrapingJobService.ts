@@ -1,37 +1,37 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
-import { RateLimiter, RateLimitPreset } from '@/lib/services/RateLimiter'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
+import { RateLimiter, RateLimitPreset } from '@/lib/services/RateLimiter';
 import type {
   MarketIntelScrapeJob,
   MarketIntelScrapeRun,
   ScrapeRequest,
   ScrapeResult,
   ScrapingProviderId,
-} from './types'
-import { ScrapingProviderRegistry } from './ScrapingProviderRegistry'
+} from './types';
+import { ScrapingProviderRegistry } from './ScrapingProviderRegistry';
 
-const JOB_TABLE = PRICING_TABLES.MARKET_INTEL_SCRAPE_JOB
-const RUN_TABLE = PRICING_TABLES.MARKET_INTEL_SCRAPE_RUN
+const JOB_TABLE = PRICING_TABLES.MARKET_INTEL_SCRAPE_JOB;
+const RUN_TABLE = PRICING_TABLES.MARKET_INTEL_SCRAPE_RUN;
 
 export class ScrapingJobService {
-  private registry: ScrapingProviderRegistry
-  private rateLimiter = new RateLimiter()
+  private registry: ScrapingProviderRegistry;
+  private rateLimiter = new RateLimiter();
 
   constructor(registry?: ScrapingProviderRegistry) {
-    this.registry = registry ?? new ScrapingProviderRegistry()
+    this.registry = registry ?? new ScrapingProviderRegistry();
   }
 
   async listJobs(orgId: string): Promise<MarketIntelScrapeJob[]> {
     const result = await query<MarketIntelScrapeJob>(
       `SELECT * FROM ${JOB_TABLE} WHERE org_id = $1 ORDER BY created_at DESC`,
-      [orgId],
-    )
-    return result.rows
+      [orgId]
+    );
+    return result.rows;
   }
 
   async createJob(
     orgId: string,
-    payload: Omit<MarketIntelScrapeJob, 'job_id' | 'org_id' | 'created_at' | 'updated_at'>,
+    payload: Omit<MarketIntelScrapeJob, 'job_id' | 'org_id' | 'created_at' | 'updated_at'>
   ): Promise<MarketIntelScrapeJob> {
     const result = await query<MarketIntelScrapeJob>(
       `
@@ -82,15 +82,15 @@ export class ScrapingJobService {
         JSON.stringify(payload.metadata ?? {}),
         payload.created_by ?? null,
         payload.updated_by ?? null,
-      ],
-    )
-    return result.rows[0]
+      ]
+    );
+    return result.rows[0];
   }
 
   async updateJob(
     orgId: string,
     jobId: string,
-    input: Partial<MarketIntelScrapeJob>,
+    input: Partial<MarketIntelScrapeJob>
   ): Promise<MarketIntelScrapeJob | null> {
     const result = await query<MarketIntelScrapeJob>(
       `
@@ -123,9 +123,9 @@ export class ScrapingJobService {
         input.next_run_at ?? null,
         input.metadata ? JSON.stringify(input.metadata) : null,
         input.updated_by ?? null,
-      ],
-    )
-    return result.rows[0] ?? null
+      ]
+    );
+    return result.rows[0] ?? null;
   }
 
   async recordRun(run: Partial<MarketIntelScrapeRun>): Promise<MarketIntelScrapeRun> {
@@ -181,9 +181,9 @@ export class ScrapingJobService {
         run.processed_products ?? 0,
         run.error_details ? JSON.stringify(run.error_details) : null,
         run.metadata ? JSON.stringify(run.metadata) : '{}',
-      ],
-    )
-    return result.rows[0]
+      ]
+    );
+    return result.rows[0];
   }
 
   async updateRun(runId: string, input: Partial<MarketIntelScrapeRun>): Promise<void> {
@@ -215,19 +215,19 @@ export class ScrapingJobService {
         input.processed_products ?? null,
         input.error_details ? JSON.stringify(input.error_details) : null,
         input.metadata ? JSON.stringify(input.metadata) : null,
-      ],
-    )
+      ]
+    );
   }
 
   async executeJob(
     providerId: ScrapingProviderId,
     request: ScrapeRequest,
-    options?: { runId?: string },
+    options?: { runId?: string }
   ): Promise<{ run: MarketIntelScrapeRun; result: ScrapeResult }> {
-    const rateKey = `${request.orgId}:${providerId}`
-    const limitResult = await this.rateLimiter.checkLimit(rateKey, RateLimitPreset.API)
+    const rateKey = `${request.orgId}:${providerId}`;
+    const limitResult = await this.rateLimiter.checkLimit(rateKey, RateLimitPreset.API);
     if (!limitResult.allowed) {
-      throw new Error(`Rate limit exceeded. Retry after ${limitResult.retry_after}s`)
+      throw new Error(`Rate limit exceeded. Retry after ${limitResult.retry_after}s`);
     }
 
     const run = options?.runId
@@ -239,11 +239,11 @@ export class ScrapingJobService {
           triggered_by: 'system',
           status: 'running',
           started_at: new Date(),
-        })
+        });
 
-    await this.updateRun(run.run_id, { status: 'running', started_at: new Date() })
+    await this.updateRun(run.run_id, { status: 'running', started_at: new Date() });
 
-    const result = await this.registry.scrapeWithProvider(providerId, request)
+    const result = await this.registry.scrapeWithProvider(providerId, request);
 
     await this.updateRun(run.run_id, {
       status: result.success ? 'completed' : 'failed',
@@ -253,25 +253,24 @@ export class ScrapingJobService {
       failed_sources: result.errors.length,
       success_sources: result.errors.length === 0 ? 1 : 0,
       error_details: result.errors.length ? { errors: result.errors } : undefined,
-    })
+    });
 
-    return { run: await this.getRun(run.run_id), result }
+    return { run: await this.getRun(run.run_id), result };
   }
 
   async getRun(runId?: string): Promise<MarketIntelScrapeRun> {
     if (!runId) {
-      throw new Error('runId is required')
+      throw new Error('runId is required');
     }
 
     const result = await query<MarketIntelScrapeRun>(
       `SELECT * FROM ${RUN_TABLE} WHERE run_id = $1`,
-      [runId],
-    )
+      [runId]
+    );
 
     if (!result.rows[0]) {
-      throw new Error(`Scrape run ${runId} not found`)
+      throw new Error(`Scrape run ${runId} not found`);
     }
-    return result.rows[0]
+    return result.rows[0];
   }
 }
-

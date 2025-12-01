@@ -1,6 +1,12 @@
 // Shared AI types for provider orchestration, configuration management, and service integration.
 
-export type AIProvider = 'openai' | 'anthropic' | 'vercel' | 'openai-compatible' | 'google' | 'firecrawl';
+export type AIProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'vercel'
+  | 'openai-compatible'
+  | 'google'
+  | 'firecrawl';
 export type AIProviderId = AIProvider;
 
 export type AIProviderStatus = 'healthy' | 'degraded' | 'unhealthy';

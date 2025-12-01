@@ -65,12 +65,7 @@ const TIER_BENEFITS_CONFIG: Record<
     multiplier: 1.25,
     discount: 5,
     free_shipping: false,
-    perks: [
-      'Earn points on purchases',
-      'Birthday bonus',
-      '1.25x points multiplier',
-      '5% discount',
-    ],
+    perks: ['Earn points on purchases', 'Birthday bonus', '1.25x points multiplier', '5% discount'],
   },
   gold: {
     multiplier: 1.5,
@@ -118,9 +113,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['loyalty-summary', customerId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/summary`
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/summary`);
       if (!response.ok) throw new Error('Failed to fetch loyalty summary');
       const json = await response.json();
       return json.data.tier_info as TierData;
@@ -132,7 +125,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2" />
           </div>
         </CardContent>
       </Card>
@@ -141,15 +134,11 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
 
   if (!data) return null;
 
-  const currentTierIndex = TIER_PROGRESSION.findIndex(
-    (t) => t.name === data.current_tier
-  );
+  const currentTierIndex = TIER_PROGRESSION.findIndex(t => t.name === data.current_tier);
   const nextTierIndex = currentTierIndex + 1;
   const hasNextTier = nextTierIndex < TIER_PROGRESSION.length;
 
-  const currentBenefits =
-    TIER_BENEFITS_CONFIG[data.current_tier] ||
-    TIER_BENEFITS_CONFIG['bronze'];
+  const currentBenefits = TIER_BENEFITS_CONFIG[data.current_tier] || TIER_BENEFITS_CONFIG['bronze'];
   const nextBenefits = hasNextTier
     ? TIER_BENEFITS_CONFIG[TIER_PROGRESSION[nextTierIndex].name]
     : null;
@@ -160,7 +149,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
+            <Trophy className="text-primary h-5 w-5" />
             Tier Progress
           </CardTitle>
         </CardHeader>
@@ -168,19 +157,19 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
           {/* Current Tier */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground mb-2">Current Tier</p>
+              <p className="text-muted-foreground mb-2 text-sm">Current Tier</p>
               <TierBadge tier={data.current_tier as unknown} size="lg" />
             </div>
             {hasNextTier && (
               <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-2">Next Tier</p>
+                <p className="text-muted-foreground mb-2 text-sm">Next Tier</p>
                 <div className="relative">
                   <TierBadge
                     tier={TIER_PROGRESSION[nextTierIndex].name as unknown}
                     size="lg"
                     className="opacity-50"
                   />
-                  <Lock className="absolute -top-1 -right-1 h-4 w-4 text-muted-foreground" />
+                  <Lock className="text-muted-foreground absolute -top-1 -right-1 h-4 w-4" />
                 </div>
               </div>
             )}
@@ -189,23 +178,22 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
           {/* Progress Bar */}
           {hasNextTier ? (
             <div className="space-y-3">
-              <div className="flex justify-between items-baseline">
+              <div className="flex items-baseline justify-between">
                 <span className="text-sm font-medium">
-                  {data.progress_percentage.toFixed(1)}% to{' '}
-                  {TIER_PROGRESSION[nextTierIndex].name}
+                  {data.progress_percentage.toFixed(1)}% to {TIER_PROGRESSION[nextTierIndex].name}
                 </span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {data.points_to_next_tier.toLocaleString()} points needed
                 </span>
               </div>
 
               <div className="relative">
-                <div className="h-4 bg-muted rounded-full overflow-hidden">
+                <div className="bg-muted h-4 overflow-hidden rounded-full">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${data.progress_percentage}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary/80 rounded-full"
+                    className="from-primary via-primary/90 to-primary/80 h-full rounded-full bg-gradient-to-r"
                   />
                 </div>
               </div>
@@ -215,18 +203,18 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20"
+                className="bg-primary/5 border-primary/20 flex items-start gap-2 rounded-lg border p-3"
               >
-                <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <Sparkles className="text-primary mt-0.5 h-5 w-5 shrink-0" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-primary">
+                  <p className="text-primary text-sm font-medium">
                     {data.progress_percentage > 75
-                      ? "You are almost there!"
+                      ? 'You are almost there!'
                       : data.progress_percentage > 50
                         ? 'Keep it up!'
                         : 'Great progress!'}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {data.progress_percentage > 75
                       ? `Just ${data.points_to_next_tier.toLocaleString()} more points to unlock ${TIER_PROGRESSION[nextTierIndex].name} tier benefits!`
                       : `Earn ${data.points_to_next_tier.toLocaleString()} more points to reach ${TIER_PROGRESSION[nextTierIndex].name} tier.`}
@@ -235,10 +223,10 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
               </motion.div>
             </div>
           ) : (
-            <div className="text-center py-6 space-y-2">
-              <Trophy className="h-12 w-12 text-primary mx-auto" />
-              <p className="font-semibold text-lg">Maximum Tier Achieved!</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-2 py-6 text-center">
+              <Trophy className="text-primary mx-auto h-12 w-12" />
+              <p className="text-lg font-semibold">Maximum Tier Achieved!</p>
+              <p className="text-muted-foreground text-sm">
                 You are at the highest tier. Enjoy all premium benefits!
               </p>
             </div>
@@ -258,23 +246,19 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
           <div className="space-y-4">
             {/* Benefit Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-2xl font-bold text-green-700">
-                  {currentBenefits.multiplier}x
-                </p>
-                <p className="text-xs text-green-600 mt-1">Points Multiplier</p>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+                <p className="text-2xl font-bold text-green-700">{currentBenefits.multiplier}x</p>
+                <p className="mt-1 text-xs text-green-600">Points Multiplier</p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-2xl font-bold text-green-700">
-                  {currentBenefits.discount}%
-                </p>
-                <p className="text-xs text-green-600 mt-1">Discount</p>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+                <p className="text-2xl font-bold text-green-700">{currentBenefits.discount}%</p>
+                <p className="mt-1 text-xs text-green-600">Discount</p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
                 <p className="text-2xl font-bold text-green-700">
                   {currentBenefits.free_shipping ? 'Yes' : 'No'}
                 </p>
-                <p className="text-xs text-green-600 mt-1">Free Shipping</p>
+                <p className="mt-1 text-xs text-green-600">Free Shipping</p>
               </div>
             </div>
 
@@ -282,7 +266,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
             <div className="space-y-2">
               {currentBenefits.perks.map((perk, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-600 shrink-0" />
+                  <Check className="h-4 w-4 shrink-0 text-green-600" />
                   <span className="text-sm">{perk}</span>
                 </div>
               ))}
@@ -296,7 +280,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
         <Card className="border-primary/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="text-primary h-5 w-5" />
               Unlock with {TIER_PROGRESSION[nextTierIndex].name} Tier
             </CardTitle>
           </CardHeader>
@@ -304,27 +288,19 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
             <div className="space-y-4">
               {/* Benefit Stats */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-2xl font-bold text-primary">
-                    {nextBenefits.multiplier}x
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Points Multiplier
-                  </p>
+                <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
+                  <p className="text-primary text-2xl font-bold">{nextBenefits.multiplier}x</p>
+                  <p className="text-muted-foreground mt-1 text-xs">Points Multiplier</p>
                 </div>
-                <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-2xl font-bold text-primary">
-                    {nextBenefits.discount}%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">Discount</p>
+                <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
+                  <p className="text-primary text-2xl font-bold">{nextBenefits.discount}%</p>
+                  <p className="text-muted-foreground mt-1 text-xs">Discount</p>
                 </div>
-                <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-2xl font-bold text-primary">
+                <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
+                  <p className="text-primary text-2xl font-bold">
                     {nextBenefits.free_shipping ? 'Yes' : 'No'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Free Shipping
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">Free Shipping</p>
                 </div>
               </div>
 
@@ -335,21 +311,18 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                   return (
                     <div
                       key={index}
-                      className={cn(
-                        'flex items-center gap-2',
-                        isNew && 'font-medium text-primary'
-                      )}
+                      className={cn('flex items-center gap-2', isNew && 'text-primary font-medium')}
                     >
                       {isNew ? (
                         <Sparkles className="h-4 w-4 shrink-0" />
                       ) : (
-                        <Check className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <Check className="text-muted-foreground h-4 w-4 shrink-0" />
                       )}
                       <span className="text-sm">{perk}</span>
                       {isNew && (
                         <Badge
                           variant="secondary"
-                          className="ml-auto text-xs bg-primary/10 text-primary"
+                          className="bg-primary/10 text-primary ml-auto text-xs"
                         >
                           New
                         </Badge>
@@ -378,11 +351,11 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                 <div
                   key={tier.name}
                   className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border transition-colors',
+                    'flex items-center gap-3 rounded-lg border p-3 transition-colors',
                     isCurrent
                       ? 'bg-primary/5 border-primary'
                       : isUnlocked
-                        ? 'bg-green-50 border-green-200'
+                        ? 'border-green-200 bg-green-50'
                         : 'bg-muted border-muted'
                   )}
                 >
@@ -390,7 +363,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                     {isUnlocked ? (
                       <Check className="h-5 w-5 text-green-600" />
                     ) : (
-                      <Lock className="h-5 w-5 text-muted-foreground" />
+                      <Lock className="text-muted-foreground h-5 w-5" />
                     )}
                   </div>
                   <TierBadge
@@ -398,7 +371,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                     size="md"
                     className={!isUnlocked ? 'opacity-50' : ''}
                   />
-                  <span className="text-sm text-muted-foreground ml-auto">
+                  <span className="text-muted-foreground ml-auto text-sm">
                     {tier.threshold.toLocaleString()} pts
                   </span>
                   {isCurrent && (

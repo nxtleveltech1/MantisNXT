@@ -16,10 +16,9 @@ import type {
   LoyaltyRuleInsert,
   LoyaltyRuleUpdate,
   LoyaltyRuleConditions,
-  RuleTriggerType} from '@/types/loyalty';
-import {
-  LoyaltyError,
+  RuleTriggerType,
 } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 // ============================================================================
 // TYPES FOR SERVICE METHODS
@@ -77,12 +76,9 @@ export class LoyaltyRuleService {
   /**
    * Create a new loyalty rule
    */
-  static async createRule(
-    data: CreateRuleData,
-    orgId: string
-  ): Promise<LoyaltyRule> {
+  static async createRule(data: CreateRuleData, orgId: string): Promise<LoyaltyRule> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Verify program exists and belongs to org
         const programCheck = await client.query(
           `SELECT id FROM loyalty_program
@@ -91,11 +87,7 @@ export class LoyaltyRuleService {
         );
 
         if (programCheck.rows.length === 0) {
-          throw new LoyaltyError(
-            'Loyalty program not found',
-            'PROGRAM_NOT_FOUND',
-            404
-          );
+          throw new LoyaltyError('Loyalty program not found', 'PROGRAM_NOT_FOUND', 404);
         }
 
         // Validate conditions
@@ -154,12 +146,7 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error creating rule:', error);
-      throw new LoyaltyError(
-        'Failed to create loyalty rule',
-        'CREATE_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to create loyalty rule', 'CREATE_RULE_ERROR', 500, { error });
     }
   }
 
@@ -280,12 +267,7 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error updating rule:', error);
-      throw new LoyaltyError(
-        'Failed to update loyalty rule',
-        'UPDATE_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to update loyalty rule', 'UPDATE_RULE_ERROR', 500, { error });
     }
   }
 
@@ -294,10 +276,10 @@ export class LoyaltyRuleService {
    */
   static async deleteRule(ruleId: string, orgId: string): Promise<void> {
     try {
-      const result = await query(
-        `DELETE FROM loyalty_rule WHERE id = $1 AND org_id = $2`,
-        [ruleId, orgId]
-      );
+      const result = await query(`DELETE FROM loyalty_rule WHERE id = $1 AND org_id = $2`, [
+        ruleId,
+        orgId,
+      ]);
 
       if (result.rowCount === 0) {
         throw new LoyaltyError('Rule not found', 'RULE_NOT_FOUND', 404);
@@ -305,12 +287,7 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error deleting rule:', error);
-      throw new LoyaltyError(
-        'Failed to delete loyalty rule',
-        'DELETE_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to delete loyalty rule', 'DELETE_RULE_ERROR', 500, { error });
     }
   }
 
@@ -350,22 +327,14 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error fetching rule:', error);
-      throw new LoyaltyError(
-        'Failed to fetch loyalty rule',
-        'FETCH_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch loyalty rule', 'FETCH_RULE_ERROR', 500, { error });
     }
   }
 
   /**
    * List all rules for a program
    */
-  static async listRules(
-    programId: string,
-    orgId: string
-  ): Promise<LoyaltyRule[]> {
+  static async listRules(programId: string, orgId: string): Promise<LoyaltyRule[]> {
     try {
       const sql = `
         SELECT
@@ -393,12 +362,7 @@ export class LoyaltyRuleService {
       return result.rows;
     } catch (error) {
       console.error('[LoyaltyRuleService] Error listing rules:', error);
-      throw new LoyaltyError(
-        'Failed to list loyalty rules',
-        'LIST_RULES_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to list loyalty rules', 'LIST_RULES_ERROR', 500, { error });
     }
   }
 
@@ -451,12 +415,9 @@ export class LoyaltyRuleService {
       return result.rows;
     } catch (error) {
       console.error('[LoyaltyRuleService] Error fetching active rules:', error);
-      throw new LoyaltyError(
-        'Failed to fetch active rules',
-        'FETCH_ACTIVE_RULES_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch active rules', 'FETCH_ACTIVE_RULES_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -478,12 +439,7 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error activating rule:', error);
-      throw new LoyaltyError(
-        'Failed to activate rule',
-        'ACTIVATE_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to activate rule', 'ACTIVATE_RULE_ERROR', 500, { error });
     }
   }
 
@@ -505,12 +461,7 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error deactivating rule:', error);
-      throw new LoyaltyError(
-        'Failed to deactivate rule',
-        'DEACTIVATE_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to deactivate rule', 'DEACTIVATE_RULE_ERROR', 500, { error });
     }
   }
 
@@ -524,11 +475,7 @@ export class LoyaltyRuleService {
     triggerType: RuleTriggerType = 'order_placed'
   ): Promise<RuleEvaluation> {
     try {
-      const activeRules = await this.getActiveRules(
-        programId,
-        orgId,
-        triggerType
-      );
+      const activeRules = await this.getActiveRules(programId, orgId, triggerType);
 
       let totalMultiplier = 1.0;
       let totalBonusPoints = 0;
@@ -557,12 +504,7 @@ export class LoyaltyRuleService {
       };
     } catch (error) {
       console.error('[LoyaltyRuleService] Error evaluating rules:', error);
-      throw new LoyaltyError(
-        'Failed to evaluate rules',
-        'EVALUATE_RULES_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to evaluate rules', 'EVALUATE_RULES_ERROR', 500, { error });
     }
   }
 
@@ -578,10 +520,7 @@ export class LoyaltyRuleService {
       const rule = await this.getRule(ruleId, orgId);
       const basePoints = testData.basePoints || 100;
 
-      const conditionsMet = this.checkConditions(
-        rule.conditions,
-        testData.context
-      );
+      const conditionsMet = this.checkConditions(rule.conditions, testData.context);
 
       let totalPoints = basePoints;
       if (conditionsMet) {
@@ -589,10 +528,7 @@ export class LoyaltyRuleService {
         totalPoints += rule.bonus_points;
       }
 
-      const evaluationDetails = this.getEvaluationDetails(
-        rule.conditions,
-        testData.context
-      );
+      const evaluationDetails = this.getEvaluationDetails(rule.conditions, testData.context);
 
       return {
         conditionsMet,
@@ -604,23 +540,14 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error testing rule:', error);
-      throw new LoyaltyError(
-        'Failed to test rule',
-        'TEST_RULE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to test rule', 'TEST_RULE_ERROR', 500, { error });
     }
   }
 
   /**
    * Update rule priority
    */
-  static async updatePriority(
-    ruleId: string,
-    priority: number,
-    orgId: string
-  ): Promise<void> {
+  static async updatePriority(ruleId: string, priority: number, orgId: string): Promise<void> {
     try {
       const result = await query(
         `UPDATE loyalty_rule
@@ -635,25 +562,18 @@ export class LoyaltyRuleService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyRuleService] Error updating priority:', error);
-      throw new LoyaltyError(
-        'Failed to update rule priority',
-        'UPDATE_PRIORITY_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to update rule priority', 'UPDATE_PRIORITY_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Reorder rules by setting new priorities
    */
-  static async reorderRules(
-    programId: string,
-    ruleOrder: string[],
-    orgId: string
-  ): Promise<void> {
+  static async reorderRules(programId: string, ruleOrder: string[], orgId: string): Promise<void> {
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         for (let i = 0; i < ruleOrder.length; i++) {
           const priority = ruleOrder.length - i; // Higher index = higher priority
           await client.query(
@@ -666,12 +586,7 @@ export class LoyaltyRuleService {
       });
     } catch (error) {
       console.error('[LoyaltyRuleService] Error reordering rules:', error);
-      throw new LoyaltyError(
-        'Failed to reorder rules',
-        'REORDER_RULES_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to reorder rules', 'REORDER_RULES_ERROR', 500, { error });
     }
   }
 
@@ -684,10 +599,7 @@ export class LoyaltyRuleService {
    */
   private static validateConditions(conditions: LoyaltyRuleConditions): void {
     // Validate min/max order amounts
-    if (
-      conditions.min_order_amount !== undefined &&
-      conditions.max_order_amount !== undefined
-    ) {
+    if (conditions.min_order_amount !== undefined && conditions.max_order_amount !== undefined) {
       if (conditions.min_order_amount > conditions.max_order_amount) {
         throw new LoyaltyError(
           'min_order_amount cannot be greater than max_order_amount',
@@ -698,10 +610,7 @@ export class LoyaltyRuleService {
     }
 
     // Validate order count
-    if (
-      conditions.order_count_min !== undefined &&
-      conditions.order_count_max !== undefined
-    ) {
+    if (conditions.order_count_min !== undefined && conditions.order_count_max !== undefined) {
       if (conditions.order_count_min > conditions.order_count_max) {
         throw new LoyaltyError(
           'order_count_min cannot be greater than order_count_max',
@@ -715,39 +624,27 @@ export class LoyaltyRuleService {
   /**
    * Check if all conditions are met
    */
-  private static checkConditions(
-    conditions: LoyaltyRuleConditions,
-    context: RuleContext
-  ): boolean {
+  private static checkConditions(conditions: LoyaltyRuleConditions, context: RuleContext): boolean {
     // Check min order amount
-    if (
-      conditions.min_order_amount !== undefined &&
-      context.orderAmount !== undefined
-    ) {
+    if (conditions.min_order_amount !== undefined && context.orderAmount !== undefined) {
       if (context.orderAmount < conditions.min_order_amount) {
         return false;
       }
     }
 
     // Check max order amount
-    if (
-      conditions.max_order_amount !== undefined &&
-      context.orderAmount !== undefined
-    ) {
+    if (conditions.max_order_amount !== undefined && context.orderAmount !== undefined) {
       if (context.orderAmount > conditions.max_order_amount) {
         return false;
       }
     }
 
     // Check product categories
-    if (
-      conditions.product_categories &&
-      conditions.product_categories.length > 0
-    ) {
+    if (conditions.product_categories && conditions.product_categories.length > 0) {
       if (!context.productCategories || context.productCategories.length === 0) {
         return false;
       }
-      const hasMatch = conditions.product_categories.some((cat) =>
+      const hasMatch = conditions.product_categories.some(cat =>
         context.productCategories!.includes(cat)
       );
       if (!hasMatch) {
@@ -760,9 +657,7 @@ export class LoyaltyRuleService {
       if (!context.productIds || context.productIds.length === 0) {
         return false;
       }
-      const hasMatch = conditions.product_ids.some((id) =>
-        context.productIds!.includes(id)
-      );
+      const hasMatch = conditions.product_ids.some(id => context.productIds!.includes(id));
       if (!hasMatch) {
         return false;
       }
@@ -779,10 +674,7 @@ export class LoyaltyRuleService {
     }
 
     // Check customer segment
-    if (
-      conditions.customer_segment &&
-      conditions.customer_segment.length > 0
-    ) {
+    if (conditions.customer_segment && conditions.customer_segment.length > 0) {
       if (!context.customerSegment) {
         return false;
       }
@@ -792,19 +684,13 @@ export class LoyaltyRuleService {
     }
 
     // Check order count
-    if (
-      conditions.order_count_min !== undefined &&
-      context.orderCount !== undefined
-    ) {
+    if (conditions.order_count_min !== undefined && context.orderCount !== undefined) {
       if (context.orderCount < conditions.order_count_min) {
         return false;
       }
     }
 
-    if (
-      conditions.order_count_max !== undefined &&
-      context.orderCount !== undefined
-    ) {
+    if (conditions.order_count_max !== undefined && context.orderCount !== undefined) {
       if (context.orderCount > conditions.order_count_max) {
         return false;
       }
@@ -827,8 +713,7 @@ export class LoyaltyRuleService {
         required: conditions.min_order_amount,
         actual: context.orderAmount,
         met:
-          context.orderAmount !== undefined &&
-          context.orderAmount >= conditions.min_order_amount,
+          context.orderAmount !== undefined && context.orderAmount >= conditions.min_order_amount,
       };
     }
 
@@ -837,8 +722,7 @@ export class LoyaltyRuleService {
         required: conditions.max_order_amount,
         actual: context.orderAmount,
         met:
-          context.orderAmount !== undefined &&
-          context.orderAmount <= conditions.max_order_amount,
+          context.orderAmount !== undefined && context.orderAmount <= conditions.max_order_amount,
       };
     }
 

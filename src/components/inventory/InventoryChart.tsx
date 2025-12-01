@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import {
@@ -14,7 +14,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  Legend
+  Legend,
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -60,11 +60,12 @@ interface TooltipProps {
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-        <p className="font-medium text-sm mb-1">{label}</p>
+      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+        <p className="mb-1 text-sm font-medium">{label}</p>
         {payload.map((entry: unknown, index: number) => (
           <p key={index} className="text-xs" style={{ color: entry.color }}>
-            {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+            {entry.name}:{' '}
+            {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
           </p>
         ))}
       </div>
@@ -98,25 +99,21 @@ export function InventoryChart() {
             <AreaChart data={inventoryTrendsData}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorItems" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#82ca9d" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12 }}
-                tickLine={{ stroke: '#e0e0e0' }}
-              />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={{ stroke: '#e0e0e0' }} />
               <YAxis
                 yAxisId="left"
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: '#e0e0e0' }}
-                tickFormatter={(value) => formatCurrency(value)}
+                tickFormatter={value => formatCurrency(value)}
               />
               <YAxis
                 yAxisId="right"
@@ -178,15 +175,11 @@ export function InventoryChart() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stockLevelData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12 }}
-                tickLine={{ stroke: '#e0e0e0' }}
-              />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={{ stroke: '#e0e0e0' }} />
               <YAxis
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: '#e0e0e0' }}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={value => `${value}%`}
               />
               <Tooltip
                 content={<CustomTooltip />}
@@ -210,7 +203,7 @@ export function InventoryChart() {
                 type="number"
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: '#e0e0e0' }}
-                tickFormatter={(value) => `${value}x`}
+                tickFormatter={value => `${value}x`}
               />
               <YAxis
                 type="category"

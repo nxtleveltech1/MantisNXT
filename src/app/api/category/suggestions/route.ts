@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
   enrichProductsForCategorization,
@@ -248,7 +248,9 @@ export async function POST(request: NextRequest) {
     }
 
     const duration = Date.now() - t0;
-    console.log(`[category/suggestions] processed=${validProducts.length} missing=${missingIds.length} durationMs=${duration}`);
+    console.log(
+      `[category/suggestions] processed=${validProducts.length} missing=${missingIds.length} durationMs=${duration}`
+    );
 
     return NextResponse.json({
       success: true,

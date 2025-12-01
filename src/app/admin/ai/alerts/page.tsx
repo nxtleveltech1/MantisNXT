@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import AIAlertManagement from "@/components/ai/admin/AIAlertManagement"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import AIAlertManagement from '@/components/ai/admin/AIAlertManagement';
 
 /**
  * AI Alert Management Admin Page
@@ -12,13 +12,8 @@ import AIAlertManagement from "@/components/ai/admin/AIAlertManagement"
  */
 export default function AIAlertsPage() {
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Alerts" },
-      ]}
-    >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+    <AppLayout breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Alerts' }]}>
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Alert Management</h1>
           <p className="text-muted-foreground">
@@ -29,5 +24,5 @@ export default function AIAlertsPage() {
         <AIAlertManagement />
       </div>
     </AppLayout>
-  )
+  );
 }

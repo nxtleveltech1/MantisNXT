@@ -248,7 +248,6 @@ async function seedCustomers() {
 
     console.log('\nCustomer Summary:');
     console.table(summaryResult.rows);
-
   } catch (error) {
     console.error('Error seeding customers:', error);
     throw error;

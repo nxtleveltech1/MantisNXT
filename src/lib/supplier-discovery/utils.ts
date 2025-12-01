@@ -25,7 +25,9 @@ export function validateSupplierData(data: DiscoveredSupplierData): {
 
   // Confidence threshold validation
   if (data.confidence.overall < DISCOVERY_CONFIG.MIN_CONFIDENCE_THRESHOLD) {
-    errors.push(`Overall confidence (${Math.round(data.confidence.overall * 100)}%) is below minimum threshold (${Math.round(DISCOVERY_CONFIG.MIN_CONFIDENCE_THRESHOLD * 100)}%)`);
+    errors.push(
+      `Overall confidence (${Math.round(data.confidence.overall * 100)}%) is below minimum threshold (${Math.round(DISCOVERY_CONFIG.MIN_CONFIDENCE_THRESHOLD * 100)}%)`
+    );
   }
 
   // Contact information validation
@@ -66,7 +68,7 @@ export function validateSupplierData(data: DiscoveredSupplierData): {
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -81,14 +83,14 @@ export function formatSupplierData(data: DiscoveredSupplierData): DiscoveredSupp
       ...data.contactInfo,
       phone: formatPhoneNumber(data.contactInfo.phone),
       email: data.contactInfo.email.toLowerCase().trim(),
-      website: formatWebsite(data.contactInfo.website)
+      website: formatWebsite(data.contactInfo.website),
     },
     address: formatAddress(data.address),
     registrationNumber: formatRegistrationNumber(data.registrationNumber),
     compliance: {
       ...data.compliance,
-      vatNumber: formatVATNumber(data.compliance.vatNumber)
-    }
+      vatNumber: formatVATNumber(data.compliance.vatNumber),
+    },
   };
 }
 
@@ -115,19 +117,19 @@ export function mergeSupplierData(
       industry: selectBestValue(dataSources, 'businessInfo.industry'),
       establishedDate: selectBestValue(dataSources, 'businessInfo.establishedDate'),
       employeeCount: Math.max(...dataSources.map(d => d.businessInfo.employeeCount || 0)),
-      annualRevenue: Math.max(...dataSources.map(d => d.businessInfo.annualRevenue || 0))
+      annualRevenue: Math.max(...dataSources.map(d => d.businessInfo.annualRevenue || 0)),
     },
     compliance: {
       vatNumber: selectBestValue(dataSources, 'compliance.vatNumber'),
       beeRating: selectBestValue(dataSources, 'compliance.beeRating'),
-      certifications: mergeArrays(dataSources.map(d => d.compliance.certifications))
+      certifications: mergeArrays(dataSources.map(d => d.compliance.certifications)),
     },
     confidence: {
       overall: primary.confidence.overall,
-      individual: { ...primary.confidence.individual }
+      individual: { ...primary.confidence.individual },
     },
     sources: mergeArrays(dataSources.map(d => d.sources)),
-    discoveredAt: primary.discoveredAt
+    discoveredAt: primary.discoveredAt,
   };
 
   return merged;
@@ -164,7 +166,7 @@ export function shouldRefreshData(data: DiscoveredSupplierData): {
     return {
       shouldRefresh: true,
       reason: 'Low confidence data that is becoming stale',
-      priority: 'high'
+      priority: 'high',
     };
   }
 
@@ -173,7 +175,7 @@ export function shouldRefreshData(data: DiscoveredSupplierData): {
     return {
       shouldRefresh: true,
       reason: 'Data is over a month old',
-      priority: 'medium'
+      priority: 'medium',
     };
   }
 
@@ -181,7 +183,7 @@ export function shouldRefreshData(data: DiscoveredSupplierData): {
     return {
       shouldRefresh: true,
       reason: 'Low confidence data should be refreshed',
-      priority: 'medium'
+      priority: 'medium',
     };
   }
 
@@ -190,14 +192,14 @@ export function shouldRefreshData(data: DiscoveredSupplierData): {
     return {
       shouldRefresh: true,
       reason: 'Moderate age and confidence - refresh recommended',
-      priority: 'low'
+      priority: 'low',
     };
   }
 
   return {
     shouldRefresh: false,
     reason: 'Data is fresh and reliable',
-    priority: 'low'
+    priority: 'low',
   };
 }
 
@@ -212,9 +214,9 @@ function isValidEmail(email: string): boolean {
 function isValidSAPhoneNumber(phone: string): boolean {
   // SA phone number patterns
   const patterns = [
-    /^\+27[0-9]{9}$/,  // +27 followed by 9 digits
-    /^0[0-9]{9}$/,     // 0 followed by 9 digits
-    /^27[0-9]{9}$/     // 27 followed by 9 digits
+    /^\+27[0-9]{9}$/, // +27 followed by 9 digits
+    /^0[0-9]{9}$/, // 0 followed by 9 digits
+    /^27[0-9]{9}$/, // 27 followed by 9 digits
   ];
 
   const cleaned = phone.replace(/[\s\-()]/g, '');
@@ -250,8 +252,9 @@ function formatCompanyName(name: string): string {
   return name
     .trim()
     .replace(/\s+/g, ' ')
-    .replace(/\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi, match =>
-      match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
+    .replace(
+      /\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi,
+      match => match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
     );
 }
 
@@ -286,7 +289,7 @@ function formatAddress(address: SupplierAddress): SupplierAddress {
     city: address.city.trim(),
     province: address.province.trim(),
     postalCode: address.postalCode.replace(/\D/g, ''),
-    country: address.country.trim() || 'South Africa'
+    country: address.country.trim() || 'South Africa',
   };
 }
 
@@ -334,8 +337,8 @@ function getNestedValue(obj: unknown, path: string): string {
 }
 
 function mergeAddresses(addresses: SupplierAddress[]): SupplierAddress {
-  const nonEmpty = addresses.filter(addr =>
-    addr.street || addr.city || addr.province || addr.postalCode
+  const nonEmpty = addresses.filter(
+    addr => addr.street || addr.city || addr.province || addr.postalCode
   );
 
   if (nonEmpty.length === 0) {

@@ -98,7 +98,7 @@ class ConversationService {
     conversationId: string,
     role: ConversationRole,
     content: string,
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ): Promise<ConversationMessage | null> {
     const result = await this.service.saveMessage(
       orgId,
@@ -106,7 +106,7 @@ class ConversationService {
       conversationId,
       role,
       content,
-      context,
+      context
     );
 
     if (!result.success || !result.data) {
@@ -137,7 +137,7 @@ class ConversationService {
     orgId: string,
     userId: string,
     conversationId: string,
-    limit?: number,
+    limit?: number
   ): Promise<ConversationMessage[]> {
     const result = await this.service.getMessages(orgId, conversationId, limit);
 
@@ -146,7 +146,7 @@ class ConversationService {
       return [];
     }
 
-    return result.data.map((msg) => ({
+    return result.data.map(msg => ({
       id: msg.id,
       conversationId: msg.conversationId,
       role: msg.role,
@@ -167,7 +167,7 @@ class ConversationService {
   async listConversations(
     orgId: string,
     userId: string,
-    filters?: ConversationFilters,
+    filters?: ConversationFilters
   ): Promise<ConversationSummary[]> {
     const result = await this.service.listConversations(userId, {
       orgId,
@@ -193,7 +193,7 @@ class ConversationService {
   async searchConversations(
     orgId: string,
     userId: string,
-    query: string,
+    query: string
   ): Promise<ConversationSearchResult[]> {
     const result = await this.service.searchConversations(orgId, query);
 
@@ -203,7 +203,7 @@ class ConversationService {
     }
 
     // Filter by userId for security
-    return result.data.filter((msg) => {
+    return result.data.filter(msg => {
       // Note: This assumes userId is in context or we need to join with user_id
       // For now, we trust the orgId isolation from RLS
       return true;

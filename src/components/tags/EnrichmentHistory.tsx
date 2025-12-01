@@ -1,49 +1,49 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { History, Clock, User } from "lucide-react"
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { History, Clock, User } from 'lucide-react';
 
 interface EnrichmentHistoryProps {
-  productId: string
+  productId: string;
 }
 
 type EnrichmentLog = {
-  id: string
-  type: string
-  source_data: Record<string, unknown> | null
-  changes_applied: Record<string, unknown>
-  confidence: number | null
-  web_research_results: Record<string, unknown> | null
-  created_at: Date
-  created_by: string | null
-}
+  id: string;
+  type: string;
+  source_data: Record<string, unknown> | null;
+  changes_applied: Record<string, unknown>;
+  confidence: number | null;
+  web_research_results: Record<string, unknown> | null;
+  created_at: Date;
+  created_by: string | null;
+};
 
 export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
-  const [history, setHistory] = useState<EnrichmentLog[]>([])
-  const [loading, setLoading] = useState(true)
+  const [history, setHistory] = useState<EnrichmentLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (productId) {
-      fetchHistory()
+      fetchHistory();
     }
-  }, [productId])
+  }, [productId]);
 
   const fetchHistory = async () => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/tags/enrich/history/${productId}`)
-      const data = await response.json()
+      setLoading(true);
+      const response = await fetch(`/api/tags/enrich/history/${productId}`);
+      const data = await response.json();
       if (data.success) {
-        setHistory(data.data || [])
+        setHistory(data.data || []);
       }
     } catch (error) {
-      console.error("Failed to fetch enrichment history:", error)
+      console.error('Failed to fetch enrichment history:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -52,10 +52,10 @@ export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
           <CardTitle>Enrichment History</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-muted-foreground text-sm">Loading...</div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (history.length === 0) {
@@ -69,10 +69,10 @@ export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
           <CardDescription>View past enrichment activities for this product</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">No enrichment history found</div>
+          <div className="text-muted-foreground text-sm">No enrichment history found</div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -86,9 +86,9 @@ export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {history.map((log) => (
-            <div key={log.id} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
+          {history.map(log => (
+            <div key={log.id} className="rounded-lg border p-4">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{log.type}</Badge>
                   {log.confidence && (
@@ -97,26 +97,26 @@ export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Clock className="h-3 w-3" />
                   {new Date(log.created_at).toLocaleString()}
                 </div>
               </div>
               {log.changes_applied && Object.keys(log.changes_applied).length > 0 && (
                 <div className="mt-2">
-                  <div className="text-sm font-medium mb-1">Changes Applied:</div>
-                  <div className="text-sm space-y-1">
+                  <div className="mb-1 text-sm font-medium">Changes Applied:</div>
+                  <div className="space-y-1 text-sm">
                     {Object.entries(log.changes_applied).map(([key, value]) => (
                       <div key={key}>
-                        <span className="font-medium">{key}:</span>{" "}
-                        {typeof value === "string" ? value : JSON.stringify(value)}
+                        <span className="font-medium">{key}:</span>{' '}
+                        {typeof value === 'string' ? value : JSON.stringify(value)}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
               {log.created_by && (
-                <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mt-2 flex items-center gap-1 text-sm">
                   <User className="h-3 w-3" />
                   {log.created_by}
                 </div>
@@ -126,6 +126,5 @@ export function EnrichmentHistory({ productId }: EnrichmentHistoryProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

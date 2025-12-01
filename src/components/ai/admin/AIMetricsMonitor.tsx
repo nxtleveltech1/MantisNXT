@@ -110,7 +110,11 @@ export default function AIMetricsMonitor() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch metrics data
-  const { data: metrics, isLoading, refetch } = useQuery<MetricsData>({
+  const {
+    data: metrics,
+    isLoading,
+    refetch,
+  } = useQuery<MetricsData>({
     queryKey: ['ai-metrics', selectedService, timeRange],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -126,7 +130,7 @@ export default function AIMetricsMonitor() {
     },
     refetchInterval: 60000, // Refetch every minute
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const handleRefresh = async () => {
@@ -213,15 +217,15 @@ export default function AIMetricsMonitor() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   if (!metrics) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-4">
-        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center space-y-4 p-12">
+        <AlertCircle className="text-muted-foreground h-12 w-12" />
         <p className="text-muted-foreground">No metrics data available</p>
         <Button onClick={() => refetch()}>Retry</Button>
       </div>
@@ -248,21 +252,12 @@ export default function AIMetricsMonitor() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-          >
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
         </div>
@@ -273,13 +268,13 @@ export default function AIMetricsMonitor() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Predictions</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
+            <Brain className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatNumber(metrics.summary?.totalPredictions ?? 0)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               <span className="text-green-600">↑ 12%</span> from last period
             </p>
           </CardContent>
@@ -288,13 +283,13 @@ export default function AIMetricsMonitor() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Accuracy</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <Target className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatPercentage(metrics.summary?.averageAccuracy ?? 0)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {(metrics.summary?.averageAccuracy ?? 0) >= 0.95 ? (
                 <span className="text-green-600">Excellent</span>
               ) : (metrics.summary?.averageAccuracy ?? 0) >= 0.85 ? (
@@ -315,7 +310,7 @@ export default function AIMetricsMonitor() {
             <div className="text-2xl font-bold text-yellow-600">
               {metrics.summary?.activeAlerts ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">Requiring attention</p>
+            <p className="text-muted-foreground text-xs">Requiring attention</p>
           </CardContent>
         </Card>
 
@@ -328,7 +323,7 @@ export default function AIMetricsMonitor() {
             <div className="text-2xl font-bold text-green-600">
               {metrics.summary?.resolvedAlerts ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">In current period</p>
+            <p className="text-muted-foreground text-xs">In current period</p>
           </CardContent>
         </Card>
       </div>
@@ -403,7 +398,7 @@ export default function AIMetricsMonitor() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="date"
-                      tickFormatter={(value) => {
+                      tickFormatter={value => {
                         try {
                           return value ? format(new Date(value), 'MMM d, HH:mm') : 'N/A';
                         } catch {
@@ -413,7 +408,7 @@ export default function AIMetricsMonitor() {
                     />
                     <YAxis />
                     <Tooltip
-                      labelFormatter={(value) => {
+                      labelFormatter={value => {
                         try {
                           return value ? format(new Date(value), 'PPpp') : 'N/A';
                         } catch {
@@ -432,7 +427,7 @@ export default function AIMetricsMonitor() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px]">
+                <div className="flex h-[300px] items-center justify-center">
                   <p className="text-muted-foreground">No prediction data available</p>
                 </div>
               )}
@@ -453,7 +448,7 @@ export default function AIMetricsMonitor() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="date"
-                      tickFormatter={(value) => {
+                      tickFormatter={value => {
                         try {
                           return value ? format(new Date(value), 'MMM d, HH:mm') : 'N/A';
                         } catch {
@@ -463,10 +458,10 @@ export default function AIMetricsMonitor() {
                     />
                     <YAxis
                       domain={[0, 1]}
-                      tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                      tickFormatter={value => `${(value * 100).toFixed(0)}%`}
                     />
                     <Tooltip
-                      labelFormatter={(value) => {
+                      labelFormatter={value => {
                         try {
                           return value ? format(new Date(value), 'PPpp') : 'N/A';
                         } catch {
@@ -485,7 +480,7 @@ export default function AIMetricsMonitor() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px]">
+                <div className="flex h-[300px] items-center justify-center">
                   <p className="text-muted-foreground">No accuracy data available</p>
                 </div>
               )}
@@ -513,22 +508,20 @@ export default function AIMetricsMonitor() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Predictions</p>
+                          <p className="text-muted-foreground text-sm">Predictions</p>
                           <p className="text-2xl font-bold">{formatNumber(data.predictions)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Accuracy</p>
+                          <p className="text-muted-foreground text-sm">Accuracy</p>
                           <p className="text-2xl font-bold">{formatPercentage(data.accuracy)}</p>
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t">
+                      <div className="border-t pt-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              Last prediction
-                            </span>
+                            <Clock className="text-muted-foreground h-4 w-4" />
+                            <span className="text-muted-foreground text-sm">Last prediction</span>
                           </div>
                           <span className="text-sm">
                             {(() => {
@@ -542,10 +535,10 @@ export default function AIMetricsMonitor() {
                             })()}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="mt-2 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 text-yellow-600" />
-                            <span className="text-sm text-muted-foreground">Active alerts</span>
+                            <span className="text-muted-foreground text-sm">Active alerts</span>
                           </div>
                           <span className="text-sm font-medium">{data.alerts}</span>
                         </div>
@@ -581,14 +574,17 @@ export default function AIMetricsMonitor() {
                           dataKey="value"
                         >
                           {pieData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
                           ))}
                         </Pie>
                         <Tooltip formatter={(value: number) => formatNumber(value)} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-[300px]">
+                    <div className="flex h-[300px] items-center justify-center">
                       <p className="text-muted-foreground">No distribution data available</p>
                     </div>
                   )}
@@ -603,7 +599,7 @@ export default function AIMetricsMonitor() {
                         />
                         <div className="flex-1">
                           <p className="text-sm font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {formatNumber(item.value)} predictions
                           </p>
                         </div>
@@ -620,17 +616,19 @@ export default function AIMetricsMonitor() {
       {/* Cache Info */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               <span>
-                Last updated: {metrics.calculatedAt ? format(new Date(metrics.calculatedAt), 'PPpp') : 'N/A'}
+                Last updated:{' '}
+                {metrics.calculatedAt ? format(new Date(metrics.calculatedAt), 'PPpp') : 'N/A'}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>
-                Cache expires: {metrics.cacheExpires ? format(new Date(metrics.cacheExpires), 'PPpp') : 'N/A'}
+                Cache expires:{' '}
+                {metrics.cacheExpires ? format(new Date(metrics.cacheExpires), 'PPpp') : 'N/A'}
               </span>
             </div>
           </div>

@@ -136,19 +136,8 @@ export class ProviderError extends AIError {
 }
 
 export class AccessError extends AIError {
-  constructor(
-    code: AIErrorCode,
-    message: string,
-    context: ErrorContext
-  ) {
-    super(
-      code,
-      message,
-      'fatal',
-      context,
-      false,
-      'Contact administrator for access permissions'
-    );
+  constructor(code: AIErrorCode, message: string, context: ErrorContext) {
+    super(code, message, 'fatal', context, false, 'Contact administrator for access permissions');
     this.name = 'AccessError';
   }
 }
@@ -160,32 +149,14 @@ export class SessionError extends AIError {
     context: ErrorContext,
     retryable: boolean = false
   ) {
-    super(
-      code,
-      message,
-      'recoverable',
-      context,
-      retryable,
-      'Reinitialize session and try again'
-    );
+    super(code, message, 'recoverable', context, retryable, 'Reinitialize session and try again');
     this.name = 'SessionError';
   }
 }
 
 export class ValidationError extends AIError {
-  constructor(
-    code: AIErrorCode,
-    message: string,
-    context: ErrorContext
-  ) {
-    super(
-      code,
-      message,
-      'fatal',
-      context,
-      false,
-      'Fix input data and try again'
-    );
+  constructor(code: AIErrorCode, message: string, context: ErrorContext) {
+    super(code, message, 'fatal', context, false, 'Fix input data and try again');
     this.name = 'ValidationError';
   }
 }

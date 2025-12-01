@@ -1,36 +1,36 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Save, CheckCircle2, User as UserIcon } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Save, CheckCircle2, User as UserIcon } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import type { User as UserType } from '@/types/auth'
+import { authProvider } from '@/lib/auth/mock-provider';
+import type { User as UserType } from '@/types/auth';
 
 interface ProfileFormData {
-  name: string
-  phone: string
-  mobile?: string
-  department: string
+  name: string;
+  phone: string;
+  mobile?: string;
+  department: string;
 }
 
 export default function AccountProfilePage() {
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<ProfileFormData>({
     defaultValues: {
@@ -39,40 +39,40 @@ export default function AccountProfilePage() {
       mobile: '',
       department: '',
     },
-  })
+  });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoading(true)
-        const currentUser = await authProvider.getCurrentUser()
+        setIsLoading(true);
+        const currentUser = await authProvider.getCurrentUser();
         if (!currentUser) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        setUser(currentUser)
+        setUser(currentUser);
         form.reset({
           name: currentUser.name,
           phone: currentUser.phone,
           mobile: currentUser.mobile || '',
           department: currentUser.department,
-        })
+        });
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user')
+        setError(err instanceof Error ? err.message : 'Failed to load user');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    loadUser()
-  }, [router, form])
+    };
+    loadUser();
+  }, [router, form]);
 
   const onSubmit = async (data: ProfileFormData) => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      setIsSaving(true)
-      setError(null)
-      setSuccess(null)
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
 
       const response = await fetch('/api/v1/users/me', {
         method: 'PUT',
@@ -87,79 +87,64 @@ export default function AccountProfilePage() {
           mobile: data.mobile,
           department: data.department,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to update profile')
+        throw new Error(result.message || 'Failed to update profile');
       }
 
-      setSuccess('Profile updated successfully')
+      setSuccess('Profile updated successfully');
       // Reload user data
-      const currentUser = await authProvider.getCurrentUser()
+      const currentUser = await authProvider.getCurrentUser();
       if (currentUser) {
-        setUser(currentUser)
+        setUser(currentUser);
         form.reset({
           name: currentUser.name,
           phone: currentUser.phone,
           mobile: currentUser.mobile || '',
           department: currentUser.department,
-        })
+        });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile')
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   if (isLoading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Profile' },
-        ]}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Profile' },
-        ]}
-      >
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
         <Alert variant="destructive">
           <AlertDescription>Failed to load user data</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: 'Account', href: '/account' },
-        { label: 'Profile' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">My Profile</h1>
@@ -181,7 +166,7 @@ export default function AccountProfilePage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle>Profile Picture</CardTitle>
@@ -190,9 +175,7 @@ export default function AccountProfilePage() {
               <div className="flex justify-center">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user.profile_image} alt={user.name} />
-                  <AvatarFallback className="text-2xl">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-2xl">{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
               </div>
               <Button variant="outline" className="w-full">
@@ -210,24 +193,19 @@ export default function AccountProfilePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      {...form.register('name', { required: 'Name is required' })}
-                    />
+                    <Input id="name" {...form.register('name', { required: 'Name is required' })} />
                     {form.formState.errors.name && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.name.message}
-                      </p>
+                      <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" value={user.email} disabled />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Email cannot be changed. Contact administrator.
                     </p>
                   </div>
@@ -239,9 +217,7 @@ export default function AccountProfilePage() {
                       {...form.register('phone', { required: 'Phone is required' })}
                     />
                     {form.formState.errors.phone && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.phone.message}
-                      </p>
+                      <p className="text-sm text-red-600">{form.formState.errors.phone.message}</p>
                     )}
                   </div>
 
@@ -265,15 +241,11 @@ export default function AccountProfilePage() {
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => form.reset()}
-                  >
+                  <Button type="button" variant="outline" onClick={() => form.reset()}>
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isSaving}>
-                    <Save className="h-4 w-4 mr-2" />
+                    <Save className="mr-2 h-4 w-4" />
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
@@ -285,12 +257,10 @@ export default function AccountProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
-            <CardDescription>
-              Read-only account details and status
-            </CardDescription>
+            <CardDescription>Read-only account details and status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Role</Label>
                 <div className="flex items-center gap-2">
@@ -311,7 +281,7 @@ export default function AccountProfilePage() {
                   {user.email_verified ? (
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                   ) : (
-                    <UserIcon className="h-5 w-5 text-muted-foreground" />
+                    <UserIcon className="text-muted-foreground h-5 w-5" />
                   )}
                   <span className="text-sm">
                     {user.email_verified ? 'Verified' : 'Not Verified'}
@@ -320,7 +290,7 @@ export default function AccountProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label>Member Since</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {new Date(user.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -329,6 +299,5 @@ export default function AccountProfilePage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
-

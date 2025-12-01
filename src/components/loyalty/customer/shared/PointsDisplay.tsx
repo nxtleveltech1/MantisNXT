@@ -37,9 +37,7 @@ export function PointsDisplay({
     mass: 1,
   });
 
-  const display = useTransform(spring, (current) =>
-    Math.round(current).toLocaleString()
-  );
+  const display = useTransform(spring, current => Math.round(current).toLocaleString());
 
   useEffect(() => {
     if (animated) {
@@ -49,15 +47,13 @@ export function PointsDisplay({
 
   if (!animated) {
     return (
-      <div className={cn('font-bold text-primary', className)}>
+      <div className={cn('text-primary font-bold', className)}>
         {variant === 'compact' ? (
           <span>{points.toLocaleString()}</span>
         ) : (
           <div className="flex items-baseline gap-2">
             <span className="text-5xl">{points.toLocaleString()}</span>
-            {showLabel && (
-              <span className="text-lg text-muted-foreground">points</span>
-            )}
+            {showLabel && <span className="text-muted-foreground text-lg">points</span>}
           </div>
         )}
       </div>
@@ -68,16 +64,14 @@ export function PointsDisplay({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={cn('font-bold text-primary', className)}
+      className={cn('text-primary font-bold', className)}
     >
       {variant === 'compact' ? (
         <motion.span>{display}</motion.span>
       ) : (
         <div className="flex items-baseline gap-2">
           <motion.span className="text-5xl">{display}</motion.span>
-          {showLabel && (
-            <span className="text-lg text-muted-foreground">points</span>
-          )}
+          {showLabel && <span className="text-muted-foreground text-lg">points</span>}
         </div>
       )}
     </motion.div>

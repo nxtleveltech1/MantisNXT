@@ -1,6 +1,6 @@
 /**
  * Competitor Price Scraping Job API
- * 
+ *
  * POST /api/v1/pricing/competitors/scrape - Trigger competitor price scraping job
  */
 
@@ -56,12 +56,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
-
-
-
-
-
-
-

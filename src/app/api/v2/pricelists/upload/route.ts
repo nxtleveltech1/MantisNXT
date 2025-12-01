@@ -14,10 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'File is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'File is required' }, { status: 400 });
     }
 
     if (file.size > 50 * 1024 * 1024) {
@@ -31,14 +28,11 @@ export async function POST(request: NextRequest) {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
       'text/csv',
-      'application/pdf'
+      'application/pdf',
     ];
 
     if (!validTypes.includes(file.type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid file type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid file type' }, { status: 400 });
     }
 
     // Create upload record
@@ -68,7 +62,7 @@ export async function POST(request: NextRequest) {
         file.type,
         filepath,
         currency,
-        'uploaded'
+        'uploaded',
       ]
     );
 
@@ -83,12 +77,11 @@ export async function POST(request: NextRequest) {
           supplier_id,
           status: 'uploaded',
           created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        }
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        },
       },
       { status: 201 }
     );
-
   } catch (error: any) {
     console.error('[Upload API] Error:', error);
     return NextResponse.json(

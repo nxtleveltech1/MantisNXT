@@ -49,10 +49,7 @@ export class CacheEventBus {
       // Update stats
       this.stats.totalEvents++;
       this.stats.lastEventTime = Date.now();
-      this.stats.eventCounts.set(
-        event.type,
-        (this.stats.eventCounts.get(event.type) || 0) + 1
-      );
+      this.stats.eventCounts.set(event.type, (this.stats.eventCounts.get(event.type) || 0) + 1);
 
       // Get event-specific listeners
       const eventListeners = this.listeners.get(event.type) || new Set();
@@ -61,19 +58,15 @@ export class CacheEventBus {
       const allListeners = new Set([...eventListeners, ...this.globalListeners]);
 
       // Notify all listeners
-      const notifications = Array.from(allListeners).map(async (listener) => {
+      const notifications = Array.from(allListeners).map(async listener => {
         try {
           await listener(event);
           listenersNotified++;
         } catch (error) {
-          const err =
-            error instanceof Error ? error : new Error(String(error));
+          const err = error instanceof Error ? error : new Error(String(error));
           errors.push(err);
           this.stats.errors++;
-          console.error(
-            `[CacheEventBus] Listener error for event ${event.type}:`,
-            err
-          );
+          console.error(`[CacheEventBus] Listener error for event ${event.type}:`, err);
         }
       });
 
@@ -100,10 +93,7 @@ export class CacheEventBus {
   /**
    * Subscribe to specific event type
    */
-  on(
-    eventType: CacheInvalidationEventType,
-    listener: CacheEventListener
-  ): EventSubscription {
+  on(eventType: CacheInvalidationEventType, listener: CacheEventListener): EventSubscription {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
     }
@@ -137,10 +127,7 @@ export class CacheEventBus {
   /**
    * Remove specific listener
    */
-  off(
-    eventType: CacheInvalidationEventType,
-    listener: CacheEventListener
-  ): void {
+  off(eventType: CacheInvalidationEventType, listener: CacheEventListener): void {
     const listeners = this.listeners.get(eventType);
     if (listeners) {
       listeners.delete(listener);
@@ -177,7 +164,7 @@ export class CacheEventBus {
     });
 
     let totalListeners = this.globalListeners.size;
-    this.listeners.forEach((listeners) => {
+    this.listeners.forEach(listeners => {
       totalListeners += listeners.size;
     });
 
@@ -208,9 +195,7 @@ export class CacheEventBus {
   hasListeners(eventType?: CacheInvalidationEventType): boolean {
     if (eventType) {
       const listeners = this.listeners.get(eventType);
-      return (
-        (listeners && listeners.size > 0) || this.globalListeners.size > 0
-      );
+      return (listeners && listeners.size > 0) || this.globalListeners.size > 0;
     }
     return this.listeners.size > 0 || this.globalListeners.size > 0;
   }
@@ -225,7 +210,7 @@ export class CacheEventBus {
     }
 
     let total = this.globalListeners.size;
-    this.listeners.forEach((listeners) => {
+    this.listeners.forEach(listeners => {
       total += listeners.size;
     });
     return total;
@@ -240,9 +225,7 @@ export const cacheEventBus = new CacheEventBus();
 /**
  * Convenience function to emit events
  */
-export async function emitCacheEvent(
-  event: CacheInvalidationEvent
-): Promise<EventEmissionResult> {
+export async function emitCacheEvent(event: CacheInvalidationEvent): Promise<EventEmissionResult> {
   return cacheEventBus.emit(event);
 }
 
@@ -259,8 +242,6 @@ export function onCacheEvent(
 /**
  * Convenience function to subscribe to all events
  */
-export function onAnyCacheEvent(
-  listener: CacheEventListener
-): EventSubscription {
+export function onAnyCacheEvent(listener: CacheEventListener): EventSubscription {
   return cacheEventBus.onAny(listener);
 }

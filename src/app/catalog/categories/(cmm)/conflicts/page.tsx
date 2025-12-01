@@ -1,9 +1,3 @@
-import ConflictResolutionQueue from "@/components/cmm/ConflictResolutionQueue"
+import ConflictResolutionQueue from '@/components/cmm/ConflictResolutionQueue';
 
-export default ConflictResolutionQueue
-
-
-
-
-
-
+export default ConflictResolutionQueue;

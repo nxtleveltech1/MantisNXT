@@ -1,54 +1,56 @@
-"use client"
+'use client';
 
-import { useEffect, useState, useCallback, memo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, CheckCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react"
-import { buildApiUrl } from "@/lib/utils/api-url"
+import { useEffect, useState, useCallback, memo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, CheckCircle, AlertTriangle, TrendingUp, Activity } from 'lucide-react';
+import { buildApiUrl } from '@/lib/utils/api-url';
 
 interface Stats {
-  total_products: number
-  categorized_count: number
-  categorized_percentage: number
-  pending_count: number
-  pending_review_count?: number
-  failed_count: number
-  avg_confidence: number | null
+  total_products: number;
+  categorized_count: number;
+  categorized_percentage: number;
+  pending_count: number;
+  pending_review_count?: number;
+  failed_count: number;
+  avg_confidence: number | null;
   confidence_distribution: {
-    high: number
-    medium: number
-    low: number
-  }
-  by_provider: Record<string, number>
-  last_run_at: string | null
-  active_jobs_count: number
+    high: number;
+    medium: number;
+    low: number;
+  };
+  by_provider: Record<string, number>;
+  last_run_at: string | null;
+  active_jobs_count: number;
 }
 
 interface StatisticsPanelProps {
-  refreshTrigger?: number
+  refreshTrigger?: number;
 }
 
-export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }: StatisticsPanelProps) {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
+export const StatisticsPanel = memo(function StatisticsPanel({
+  refreshTrigger,
+}: StatisticsPanelProps) {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch(buildApiUrl("/api/category/ai-categorization/stats"))
-      const data = await response.json()
+      const response = await fetch(buildApiUrl('/api/category/ai-categorization/stats'));
+      const data = await response.json();
 
       if (data.success) {
-        setStats(data.stats)
+        setStats(data.stats);
       }
-      setLoading(false)
+      setLoading(false);
     } catch (error) {
-      console.error("Failed to fetch stats:", error)
-      setLoading(false)
+      console.error('Failed to fetch stats:', error);
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchStats()
-  }, [fetchStats, refreshTrigger])
+    fetchStats();
+  }, [fetchStats, refreshTrigger]);
 
   if (loading || !stats) {
     return (
@@ -56,12 +58,12 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardContent className="p-6">
-              <div className="h-16 bg-muted animate-pulse rounded" />
+              <div className="bg-muted h-16 animate-pulse rounded" />
             </CardContent>
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -71,11 +73,11 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <Package className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total_products.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">In inventory</p>
+            <p className="text-muted-foreground text-xs">In inventory</p>
           </CardContent>
         </Card>
 
@@ -88,7 +90,7 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
             <div className="text-2xl font-bold text-green-600">
               {stats.categorized_count.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {Number(stats.categorized_percentage).toFixed(1)}% of total
             </p>
           </CardContent>
@@ -103,13 +105,10 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
             <div className="text-2xl font-bold text-yellow-600">
               {stats.pending_count.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Need categorization
-              {typeof stats.pending_review_count === "number" ? (
-                <>
-                  {" "}
-                  • {stats.pending_review_count.toLocaleString()} awaiting review
-                </>
+              {typeof stats.pending_review_count === 'number' ? (
+                <> • {stats.pending_review_count.toLocaleString()} awaiting review</>
               ) : null}
             </p>
           </CardContent>
@@ -118,13 +117,13 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Confidence</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.avg_confidence ? `${(Number(stats.avg_confidence) * 100).toFixed(1)}%` : "N/A"}
+              {stats.avg_confidence ? `${(Number(stats.avg_confidence) * 100).toFixed(1)}%` : 'N/A'}
             </div>
-            <p className="text-xs text-muted-foreground">AI confidence score</p>
+            <p className="text-muted-foreground text-xs">AI confidence score</p>
           </CardContent>
         </Card>
       </div>
@@ -139,24 +138,30 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <div className="h-3 w-3 rounded-full bg-green-500" />
                 <span className="text-sm">High (≥80%)</span>
               </div>
-              <span className="font-medium">{stats.confidence_distribution.high.toLocaleString()}</span>
+              <span className="font-medium">
+                {stats.confidence_distribution.high.toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <div className="h-3 w-3 rounded-full bg-yellow-500" />
                 <span className="text-sm">Medium (60-80%)</span>
               </div>
-              <span className="font-medium">{stats.confidence_distribution.medium.toLocaleString()}</span>
+              <span className="font-medium">
+                {stats.confidence_distribution.medium.toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="h-3 w-3 rounded-full bg-red-500" />
                 <span className="text-sm">Low (&lt;60%)</span>
               </div>
-              <span className="font-medium">{stats.confidence_distribution.low.toLocaleString()}</span>
+              <span className="font-medium">
+                {stats.confidence_distribution.low.toLocaleString()}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -175,7 +180,7 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">No data available</p>
+              <p className="text-muted-foreground text-sm">No data available</p>
             )}
           </CardContent>
         </Card>
@@ -201,14 +206,11 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Last Run</span>
             <span className="font-medium">
-              {stats.last_run_at
-                ? new Date(stats.last_run_at).toLocaleString()
-                : "Never"}
+              {stats.last_run_at ? new Date(stats.last_run_at).toLocaleString() : 'Never'}
             </span>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
-})
-
+  );
+});

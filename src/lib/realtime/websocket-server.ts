@@ -53,11 +53,11 @@ export class RealTimeWebSocketServer extends EventEmitter {
         type: 'data',
         data: { message: 'Connected to MantisNXT Real-Time Server', clientId },
         timestamp: new Date().toISOString(),
-        clientId
+        clientId,
       });
 
       // Handle client messages
-      ws.on('message', (data) => {
+      ws.on('message', data => {
         try {
           const message: WebSocketMessage = JSON.parse(data.toString());
           this.handleClientMessage(clientId, message);
@@ -73,7 +73,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       });
 
       // Handle connection errors
-      ws.on('error', (error) => {
+      ws.on('error', error => {
         console.error(`❌ WebSocket error for client ${clientId}:`, error);
         this.handleClientDisconnect(clientId);
       });
@@ -120,7 +120,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       table: message.table,
       organizationId: message.data?.organizationId,
       userId: message.data?.userId,
-      filters: message.data?.filters || {}
+      filters: message.data?.filters || {},
     };
 
     // Add subscription for client
@@ -134,10 +134,10 @@ export class RealTimeWebSocketServer extends EventEmitter {
       type: 'data',
       data: {
         message: `Subscribed to ${message.table}`,
-        subscription
+        subscription,
       },
       timestamp: new Date().toISOString(),
-      clientId
+      clientId,
     });
 
     console.log(`📡 Client ${clientId} subscribed to ${message.table}`);
@@ -167,7 +167,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       type: 'data',
       data: { message: `Unsubscribed from ${message.table || 'all tables'}` },
       timestamp: new Date().toISOString(),
-      clientId
+      clientId,
     });
   }
 
@@ -179,7 +179,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       type: 'heartbeat',
       data: { alive: true },
       timestamp: new Date().toISOString(),
-      clientId
+      clientId,
     });
   }
 
@@ -187,7 +187,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
    * Listen to database changes
    */
   private async listenToDatabaseChanges(): Promise<void> {
-    await db.listen('table_changes', (payload) => {
+    await db.listen('table_changes', payload => {
       try {
         const change = JSON.parse(payload);
         this.broadcastTableChange(change);
@@ -216,10 +216,10 @@ export class RealTimeWebSocketServer extends EventEmitter {
                 operation,
                 table,
                 record,
-                timestamp: change.timestamp
+                timestamp: change.timestamp,
               },
               timestamp: new Date().toISOString(),
-              clientId
+              clientId,
             });
           }
         }
@@ -276,7 +276,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       type: 'error',
       data: { error },
       timestamp: new Date().toISOString(),
-      clientId
+      clientId,
     });
   }
 
@@ -306,7 +306,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
       this.broadcast({
         type: 'heartbeat',
         data: { timestamp: new Date().toISOString() },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }, 30000); // 30 seconds
   }
@@ -324,9 +324,12 @@ export class RealTimeWebSocketServer extends EventEmitter {
   public getStatus() {
     return {
       connectedClients: this.clients.size,
-      totalSubscriptions: Array.from(this.subscriptions.values()).reduce((sum, subs) => sum + subs.size, 0),
+      totalSubscriptions: Array.from(this.subscriptions.values()).reduce(
+        (sum, subs) => sum + subs.size,
+        0
+      ),
       port: this.port,
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 

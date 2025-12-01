@@ -14,13 +14,16 @@ export const connectionResolver = {
   /**
    * Execute a database query
    */
-  query: async <T = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> => {
+  query: async <T = unknown>(
+    text: string,
+    params?: unknown[]
+  ): Promise<{ rows: T[]; rowCount: number }> => {
     try {
       console.log('🔍 Connection Resolver executing query');
       const result = await pool.query(text, params);
       return {
         rows: result.rows,
-        rowCount: result.rowCount || 0
+        rowCount: result.rowCount || 0,
       };
     } catch (error) {
       console.error('❌ Connection Resolver query error:', error);
@@ -47,7 +50,7 @@ export const connectionResolver = {
       idleCount: pool.idleCount,
       waitingCount: pool.waitingCount,
     };
-  }
+  },
 };
 
 // Export for legacy compatibility

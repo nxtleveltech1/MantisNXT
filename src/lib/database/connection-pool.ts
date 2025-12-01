@@ -82,7 +82,7 @@ class DatabaseConnectionPool {
     this.pool = new Pool(poolConfig);
 
     // Event handlers
-    this.pool.on('connect', (client) => {
+    this.pool.on('connect', client => {
       console.log('Database: New client connected');
       this.metrics.totalConnections++;
 
@@ -142,10 +142,7 @@ class DatabaseConnectionPool {
       this.recordQueryTime(queryTime);
 
       // Log slow queries
-      const slowQueryThreshold = parseInt(
-        process.env.SLOW_QUERY_THRESHOLD_MS || '1000',
-        10
-      );
+      const slowQueryThreshold = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '1000', 10);
 
       if (queryTime > slowQueryThreshold) {
         this.metrics.slowQueries++;
@@ -297,9 +294,7 @@ export async function getDbMetrics() {
 }
 
 // Transaction helper
-export async function transaction<T>(
-  callback: (client: PoolClient) => Promise<T>
-): Promise<T> {
+export async function transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await getClient();
 
   try {

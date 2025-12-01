@@ -15,14 +15,7 @@ export class ExtractionMetrics {
       `INSERT INTO spp.extraction_metrics (
         job_id, status, duration_ms, rows_processed, error_code, error_message, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-      [
-        job_id,
-        status,
-        duration_ms,
-        rows_processed,
-        error?.code || null,
-        error?.message || null
-      ]
+      [job_id, status, duration_ms, rows_processed, error?.code || null, error?.message || null]
     );
   }
 
@@ -71,7 +64,7 @@ export class ExtractionMetrics {
         GROUP BY error_code
         ORDER BY count DESC
         LIMIT 5
-      `)
+      `),
     ]);
 
     return {
@@ -82,8 +75,8 @@ export class ExtractionMetrics {
       rows_processed_24h: parseInt(results[4].rows[0]?.total || '0'),
       top_errors: results[5].rows.map(row => ({
         code: row.code,
-        count: parseInt(row.count)
-      }))
+        count: parseInt(row.count),
+      })),
     };
   }
 }

@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle,
   XCircle,
@@ -13,160 +13,156 @@ import {
   Database,
   Server,
   Activity,
-  Monitor
-} from 'lucide-react'
+  Monitor,
+} from 'lucide-react';
 
 interface HealthData {
-  timestamp: string
-  status: 'healthy' | 'degraded' | 'unhealthy'
+  timestamp: string;
+  status: 'healthy' | 'degraded' | 'unhealthy';
   services: {
     database: {
-      status: string
-      responseTime: number
-      error?: string
-      version?: string
-    }
+      status: string;
+      responseTime: number;
+      error?: string;
+      version?: string;
+    };
     apis: {
       [key: string]: {
-        status: string
-        responseTime: number
-        error?: string
-        dataCount?: number
-      }
-    }
-  }
+        status: string;
+        responseTime: number;
+        error?: string;
+        dataCount?: number;
+      };
+    };
+  };
   system: {
-    nodeVersion: string
-    platform: string
-    uptime: number
+    nodeVersion: string;
+    platform: string;
+    uptime: number;
     memoryUsage: {
-      heapUsed: number
-      heapTotal: number
-      external: number
-      arrayBuffers: number
-    }
-    totalResponseTime: number
-  }
-  recommendations: string[]
+      heapUsed: number;
+      heapTotal: number;
+      external: number;
+      arrayBuffers: number;
+    };
+    totalResponseTime: number;
+  };
+  recommendations: string[];
 }
 
 const StatusPage = () => {
-  const [healthData, setHealthData] = useState<HealthData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [lastCheck, setLastCheck] = useState<Date | null>(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchHealthData = async () => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/health/frontend')
-      const result = await response.json()
+      setLoading(true);
+      const response = await fetch('/api/health/frontend');
+      const result = await response.json();
 
       if (result.success) {
-        setHealthData(result.data)
-        setLastCheck(new Date())
+        setHealthData(result.data);
+        setLastCheck(new Date());
       } else {
-        console.error('Health check failed:', result.error)
+        console.error('Health check failed:', result.error);
       }
     } catch (error) {
-      console.error('Failed to fetch health data:', error)
+      console.error('Failed to fetch health data:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchHealthData()
+    fetchHealthData();
 
     if (autoRefresh) {
-      const interval = setInterval(fetchHealthData, 30000) // Refresh every 30 seconds
-      return () => clearInterval(interval)
+      const interval = setInterval(fetchHealthData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
     }
-  }, [autoRefresh])
+  }, [autoRefresh]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'degraded':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
       case 'unhealthy':
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return <XCircle className="h-5 w-5 text-red-500" />;
       default:
-        return <AlertTriangle className="h-5 w-5 text-gray-500" />
+        return <AlertTriangle className="h-5 w-5 text-gray-500" />;
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'healthy':
-        return <Badge className="bg-green-100 text-green-800">Healthy</Badge>
+        return <Badge className="bg-green-100 text-green-800">Healthy</Badge>;
       case 'degraded':
-        return <Badge className="bg-yellow-100 text-yellow-800">Degraded</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Degraded</Badge>;
       case 'unhealthy':
-        return <Badge variant="destructive">Unhealthy</Badge>
+        return <Badge variant="destructive">Unhealthy</Badge>;
       default:
-        return <Badge variant="secondary">Unknown</Badge>
+        return <Badge variant="secondary">Unknown</Badge>;
     }
-  }
+  };
 
   const formatUptime = (uptime: number) => {
-    const days = Math.floor(uptime / (24 * 60 * 60))
-    const hours = Math.floor((uptime % (24 * 60 * 60)) / (60 * 60))
-    const minutes = Math.floor((uptime % (60 * 60)) / 60)
+    const days = Math.floor(uptime / (24 * 60 * 60));
+    const hours = Math.floor((uptime % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((uptime % (60 * 60)) / 60);
 
     if (days > 0) {
-      return `${days}d ${hours}h ${minutes}m`
+      return `${days}d ${hours}h ${minutes}m`;
     } else if (hours > 0) {
-      return `${hours}h ${minutes}m`
+      return `${hours}h ${minutes}m`;
     } else {
-      return `${minutes}m`
+      return `${minutes}m`;
     }
-  }
+  };
 
   const formatBytes = (bytes: number) => {
-    const mb = bytes / (1024 * 1024)
-    return `${mb.toFixed(1)} MB`
-  }
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
 
   const getResponseTimeColor = (responseTime: number) => {
-    if (responseTime < 1000) return 'text-green-600'
-    if (responseTime < 3000) return 'text-yellow-600'
-    return 'text-red-600'
-  }
+    if (responseTime < 1000) return 'text-green-600';
+    if (responseTime < 3000) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   if (loading && !healthData) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+        <div className="py-8 text-center">
+          <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin" />
           <p>Checking system health...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">System Status</h1>
-          <p className="text-muted-foreground">
-            Real-time health monitoring for MantisNXT
-          </p>
+          <p className="text-muted-foreground">Real-time health monitoring for MantisNXT</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            size="sm"
-          >
-            <Activity className={`h-4 w-4 mr-2 ${autoRefresh ? 'text-green-500' : 'text-gray-400'}`} />
+          <Button variant="outline" onClick={() => setAutoRefresh(!autoRefresh)} size="sm">
+            <Activity
+              className={`mr-2 h-4 w-4 ${autoRefresh ? 'text-green-500' : 'text-gray-400'}`}
+            />
             Auto-refresh {autoRefresh ? 'On' : 'Off'}
           </Button>
           <Button onClick={fetchHealthData} disabled={loading} size="sm">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -183,22 +179,24 @@ const StatusPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <div className="text-sm font-medium">Last Check</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {lastCheck ? lastCheck.toLocaleString() : 'Never'}
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm font-medium">Response Time</div>
-                <div className={`text-sm ${getResponseTimeColor(healthData.system.totalResponseTime)}`}>
+                <div
+                  className={`text-sm ${getResponseTimeColor(healthData.system.totalResponseTime)}`}
+                >
                   {healthData.system.totalResponseTime}ms
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm font-medium">System Uptime</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {formatUptime(healthData.system.uptime)}
                 </div>
               </div>
@@ -208,7 +206,7 @@ const StatusPage = () => {
       )}
 
       {healthData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Database Status */}
           <Card>
             <CardHeader>
@@ -222,19 +220,21 @@ const StatusPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium">Response Time</div>
-                  <div className={`text-sm ${getResponseTimeColor(healthData.services.database.responseTime)}`}>
+                  <div
+                    className={`text-sm ${getResponseTimeColor(healthData.services.database.responseTime)}`}
+                  >
                     {healthData.services.database.responseTime}ms
                   </div>
                 </div>
                 <div>
                   <div className="text-sm font-medium">Version</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {healthData.services.database.version || 'Unknown'}
                   </div>
                 </div>
               </div>
               {healthData.services.database.error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                   <div className="text-sm font-medium text-red-800">Error</div>
                   <div className="text-sm text-red-600">{healthData.services.database.error}</div>
                 </div>
@@ -253,11 +253,20 @@ const StatusPage = () => {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="mb-1 flex justify-between text-sm">
                     <span>Memory Usage</span>
-                    <span>{formatBytes(healthData.system.memoryUsage.heapUsed)} / {formatBytes(healthData.system.memoryUsage.heapTotal)}</span>
+                    <span>
+                      {formatBytes(healthData.system.memoryUsage.heapUsed)} /{' '}
+                      {formatBytes(healthData.system.memoryUsage.heapTotal)}
+                    </span>
                   </div>
-                  <Progress value={(healthData.system.memoryUsage.heapUsed / healthData.system.memoryUsage.heapTotal) * 100} />
+                  <Progress
+                    value={
+                      (healthData.system.memoryUsage.heapUsed /
+                        healthData.system.memoryUsage.heapTotal) *
+                      100
+                    }
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -285,9 +294,9 @@ const StatusPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {Object.entries(healthData.services.apis).map(([name, service]) => (
-                <div key={name} className="p-4 border rounded-lg space-y-2">
+                <div key={name} className="space-y-2 rounded-lg border p-4">
                   <div className="flex items-center justify-between">
                     <div className="font-medium capitalize">{name}</div>
                     {getStatusIcon(service.status)}
@@ -307,7 +316,7 @@ const StatusPage = () => {
                     )}
                   </div>
                   {service.error && (
-                    <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                    <div className="rounded bg-red-50 p-2 text-xs text-red-600">
                       {service.error}
                     </div>
                   )}
@@ -331,7 +340,7 @@ const StatusPage = () => {
             <ul className="space-y-2">
               {healthData.recommendations.map((recommendation, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <div className="w-1 h-1 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="mt-2 h-1 w-1 flex-shrink-0 rounded-full bg-yellow-500"></div>
                   {recommendation}
                 </li>
               ))}
@@ -340,7 +349,7 @@ const StatusPage = () => {
         </Card>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default StatusPage
+export default StatusPage;

@@ -34,10 +34,7 @@ export class WidgetDataProvider {
   /**
    * Fetch data for a specific widget
    */
-  static async getWidgetData(
-    orgId: string,
-    widgetConfig: WidgetConfig,
-  ): Promise<WidgetData> {
+  static async getWidgetData(orgId: string, widgetConfig: WidgetConfig): Promise<WidgetData> {
     const startTime = Date.now();
 
     let data: unknown;
@@ -49,7 +46,7 @@ export class WidgetDataProvider {
       orgId,
       widgetConfig.metricType,
       cacheKey,
-      widgetConfig.query.dateRange?.start || new Date(),
+      widgetConfig.query.dateRange?.start || new Date()
     );
 
     if (cached) {
@@ -68,7 +65,7 @@ export class WidgetDataProvider {
           data,
           'hourly',
           widgetConfig.query.dateRange.start,
-          widgetConfig.query.dateRange.end,
+          widgetConfig.query.dateRange.end
         );
       }
     }
@@ -89,10 +86,10 @@ export class WidgetDataProvider {
    */
   static async getBatchWidgetData(
     orgId: string,
-    widgetConfigs: WidgetConfig[],
+    widgetConfigs: WidgetConfig[]
   ): Promise<WidgetData[]> {
     const results = await Promise.all(
-      widgetConfigs.map((config) => this.getWidgetData(orgId, config)),
+      widgetConfigs.map(config => this.getWidgetData(orgId, config))
     );
 
     return results;
@@ -103,7 +100,7 @@ export class WidgetDataProvider {
    */
   private static async calculateWidgetData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     switch (widgetConfig.metricType) {
       case 'sales':
@@ -126,7 +123,7 @@ export class WidgetDataProvider {
    */
   private static async calculateSalesData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     const { dateRange, filters } = widgetConfig.query;
     const { chartType, groupBy, limit } = widgetConfig.config;
@@ -137,18 +134,14 @@ export class WidgetDataProvider {
 
     switch (widgetConfig.widgetType) {
       case 'kpi':
-        return MetricsCalculator.calculateSalesMetrics(
-          orgId,
-          dateRange.start,
-          dateRange.end,
-        );
+        return MetricsCalculator.calculateSalesMetrics(orgId, dateRange.start, dateRange.end);
 
       case 'chart':
         if (groupBy === 'category') {
           const metrics = await MetricsCalculator.calculateSalesMetrics(
             orgId,
             dateRange.start,
-            dateRange.end,
+            dateRange.end
           );
           return metrics.revenueByCategory;
         }
@@ -163,7 +156,7 @@ export class WidgetDataProvider {
         const metrics = await MetricsCalculator.calculateSalesMetrics(
           orgId,
           dateRange.start,
-          dateRange.end,
+          dateRange.end
         );
         return metrics.topProducts.slice(0, limit || 10);
 
@@ -177,7 +170,7 @@ export class WidgetDataProvider {
    */
   private static async calculateInventoryData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     const metrics = await MetricsCalculator.calculateInventoryMetrics(orgId);
 
@@ -206,7 +199,7 @@ export class WidgetDataProvider {
    */
   private static async calculateSupplierData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     const metrics = await MetricsCalculator.calculateSupplierMetrics(orgId);
 
@@ -233,7 +226,7 @@ export class WidgetDataProvider {
    */
   private static async calculateFinancialData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     const { dateRange } = widgetConfig.query;
 
@@ -253,7 +246,7 @@ export class WidgetDataProvider {
       WHERE po.org_id = $1
         AND po.created_at BETWEEN $2 AND $3
       `,
-      [orgId, dateRange.start, dateRange.end],
+      [orgId, dateRange.start, dateRange.end]
     );
 
     const row = result.rows[0];
@@ -272,7 +265,7 @@ export class WidgetDataProvider {
    */
   private static async calculateOperationalData(
     orgId: string,
-    widgetConfig: WidgetConfig,
+    widgetConfig: WidgetConfig
   ): Promise<unknown> {
     const { dateRange } = widgetConfig.query;
 
@@ -293,7 +286,7 @@ export class WidgetDataProvider {
       WHERE current_setting('app.current_org_id', true)::uuid = $1
         AND sm.created_at BETWEEN $2 AND $3
       `,
-      [orgId, dateRange.start, dateRange.end],
+      [orgId, dateRange.start, dateRange.end]
     );
 
     const row = result.rows[0];
@@ -313,7 +306,7 @@ export class WidgetDataProvider {
   private static async getSalesOverTime(
     orgId: string,
     startDate: Date,
-    endDate: Date,
+    endDate: Date
   ): Promise<Array<{ date: string; revenue: number; orders: number }>> {
     const result = await db.query(
       `
@@ -328,10 +321,10 @@ export class WidgetDataProvider {
       GROUP BY DATE(po.created_at)
       ORDER BY date ASC
       `,
-      [orgId, startDate, endDate],
+      [orgId, startDate, endDate]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       date: row.date,
       revenue: parseFloat(row.revenue),
       orders: parseInt(row.orders),
@@ -343,7 +336,7 @@ export class WidgetDataProvider {
    */
   private static async getLowStockProducts(
     orgId: string,
-    limit: number,
+    limit: number
   ): Promise<Array<{ productId: string; name: string; quantity: number; reorderPoint: number }>> {
     const result = await db.query(
       `
@@ -359,10 +352,10 @@ export class WidgetDataProvider {
       ORDER BY (soh.quantity / NULLIF(p.reorder_point, 0)) ASC
       LIMIT $2
       `,
-      [orgId, limit],
+      [orgId, limit]
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       productId: row.product_id,
       name: row.name,
       quantity: parseFloat(row.quantity),
@@ -388,10 +381,7 @@ export class WidgetDataProvider {
   /**
    * Refresh widget cache
    */
-  static async refreshWidgetCache(
-    orgId: string,
-    widgetId: string,
-  ): Promise<void> {
+  static async refreshWidgetCache(orgId: string, widgetId: string): Promise<void> {
     // Get widget config from database
     const result = await db.query(
       `
@@ -399,7 +389,7 @@ export class WidgetDataProvider {
       FROM analytics_widget
       WHERE id = $1 AND org_id = $2
       `,
-      [widgetId, orgId],
+      [widgetId, orgId]
     );
 
     if (result.rows.length === 0) {
@@ -427,7 +417,7 @@ export class WidgetDataProvider {
         data,
         'hourly',
         widgetConfig.query.dateRange.start,
-        widgetConfig.query.dateRange.end,
+        widgetConfig.query.dateRange.end
       );
     }
   }

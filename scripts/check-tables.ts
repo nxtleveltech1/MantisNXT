@@ -27,8 +27,12 @@ async function main() {
   });
 
   // Check specifically for organization and auth tables
-  const orgRes = await pool.query(`SELECT 1 FROM pg_tables WHERE tablename = 'organization' AND schemaname = 'public';`);
-  const authRes = await pool.query(`SELECT 1 FROM pg_tables WHERE tablename = 'users_extended' AND schemaname = 'auth';`);
+  const orgRes = await pool.query(
+    `SELECT 1 FROM pg_tables WHERE tablename = 'organization' AND schemaname = 'public';`
+  );
+  const authRes = await pool.query(
+    `SELECT 1 FROM pg_tables WHERE tablename = 'users_extended' AND schemaname = 'auth';`
+  );
 
   console.log('\nCritical tables for 0024:');
   console.log(`  organization: ${orgRes.rows.length > 0 ? 'EXISTS' : 'MISSING'}`);

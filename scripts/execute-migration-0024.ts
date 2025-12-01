@@ -100,8 +100,7 @@ async function main() {
     errors: [],
   };
 
-  const databaseUrl = process.env.NEON_SPP_DATABASE_URL ||
-                      process.env.DATABASE_URL;
+  const databaseUrl = process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('\n❌ FATAL: DATABASE_URL or NEON_SPP_DATABASE_URL environment variable not set');
@@ -155,7 +154,6 @@ async function main() {
       await client.query('COMMIT;');
       console.log('   ✓ Transaction committed successfully');
       result.success = true;
-
     } catch (execError: any) {
       console.error(`   ✗ Migration failed: ${execError.message}`);
       result.errors.push(execError.message);
@@ -218,13 +216,13 @@ async function main() {
     console.log('');
 
     console.log('TABLES CREATED (3):');
-    result.tablesCreated.forEach((table) => {
+    result.tablesCreated.forEach(table => {
       console.log(`  ✓ ${table}`);
     });
     console.log('');
 
     console.log('ENUM TYPES CREATED (4):');
-    result.enumsCreated.forEach((enumType) => {
+    result.enumsCreated.forEach(enumType => {
       console.log(`  ✓ ${enumType}`);
     });
     console.log('');
@@ -268,7 +266,6 @@ async function main() {
     console.log('');
 
     process.exit(0);
-
   } catch (error: any) {
     result.endTime = performance.now();
     result.duration = result.endTime - result.startTime;
@@ -299,13 +296,12 @@ async function main() {
     }
 
     process.exit(1);
-
   } finally {
     await pool.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('FATAL:', err.message);
   process.exit(1);
 });

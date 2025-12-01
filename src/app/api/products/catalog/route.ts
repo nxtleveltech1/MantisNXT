@@ -1,60 +1,60 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { query } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 
 interface ProductCatalogItem {
-  id: string
-  sku: string
-  name: string
-  description: string
-  price: number
-  currency: string
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
   supplier: {
-    id: string
-    name: string
-  }
+    id: string;
+    name: string;
+  };
   pricelist: {
-    id: string
-    name: string
-    validFrom: string
-    validTo: string | null
-  }
-  category?: string
-  brand?: string
-  inStock: boolean
-  lastUpdated: string
+    id: string;
+    name: string;
+    validFrom: string;
+    validTo: string | null;
+  };
+  category?: string;
+  brand?: string;
+  inStock: boolean;
+  lastUpdated: string;
 }
 
 type ProductCatalogRow = {
-  id: string
-  sku: string
-  name: string
-  description: string
-  price: string
-  currency?: string
-  pricelist_id: string
-  pricelist_name: string
-  validFrom: string
-  validTo: string | null
-  supplier_id: string
-  supplier_name: string
-  updatedAt: string | null
-}
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  price: string;
+  currency?: string;
+  pricelist_id: string;
+  pricelist_name: string;
+  validFrom: string;
+  validTo: string | null;
+  supplier_id: string;
+  supplier_name: string;
+  updatedAt: string | null;
+};
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
-    const search = searchParams.get('search')
-    const supplier = searchParams.get('supplier')
-    const priceRange = searchParams.get('priceRange')
-    const sortBy = searchParams.get('sortBy') || 'name'
-    const sortOrder = (searchParams.get('sortOrder') || 'asc').toLowerCase()
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const search = searchParams.get('search');
+    const supplier = searchParams.get('supplier');
+    const priceRange = searchParams.get('priceRange');
+    const sortBy = searchParams.get('sortBy') || 'name';
+    const sortOrder = (searchParams.get('sortOrder') || 'asc').toLowerCase();
 
-    const whereClauses: string[] = ['p.active = true']
-    const filterParams: unknown[] = []
-    let paramIndex = 1
+    const whereClauses: string[] = ['p.active = true'];
+    const filterParams: unknown[] = [];
+    let paramIndex = 1;
 
     if (search) {
       whereClauses.push(`
@@ -63,43 +63,41 @@ export async function GET(request: NextRequest) {
           LOWER(pi.description) LIKE LOWER($${paramIndex}) OR
           LOWER(pi.sku) LIKE LOWER($${paramIndex})
         )
-      `)
-      filterParams.push(`%${search}%`)
-      paramIndex++
+      `);
+      filterParams.push(`%${search}%`);
+      paramIndex++;
     }
 
     if (supplier) {
-      whereClauses.push(`s.id = $${paramIndex}`)
-      filterParams.push(supplier)
-      paramIndex++
+      whereClauses.push(`s.id = $${paramIndex}`);
+      filterParams.push(supplier);
+      paramIndex++;
     }
 
     if (priceRange) {
-      const [minRaw, maxRaw] = priceRange.split('-').map((value) => parseFloat(value))
+      const [minRaw, maxRaw] = priceRange.split('-').map(value => parseFloat(value));
       if (!Number.isNaN(minRaw)) {
-        whereClauses.push(`pi.price >= $${paramIndex}`)
-        filterParams.push(minRaw)
-        paramIndex++
+        whereClauses.push(`pi.price >= $${paramIndex}`);
+        filterParams.push(minRaw);
+        paramIndex++;
       }
       if (!Number.isNaN(maxRaw)) {
-        whereClauses.push(`pi.price <= $${paramIndex}`)
-        filterParams.push(maxRaw)
-        paramIndex++
+        whereClauses.push(`pi.price <= $${paramIndex}`);
+        filterParams.push(maxRaw);
+        paramIndex++;
       }
     }
 
-    const whereSql = whereClauses.length
-      ? `WHERE ${whereClauses.join('\n      AND ')}`
-      : ''
+    const whereSql = whereClauses.length ? `WHERE ${whereClauses.join('\n      AND ')}` : '';
 
     const validSortColumns: Record<string, string> = {
       name: 'pi.name',
       price: 'pi.price',
       supplier: 's.name',
       updated: 'pi."updatedAt"',
-    }
-    const sortColumn = validSortColumns[sortBy] || 'pi.name'
-    const order = sortOrder === 'desc' ? 'DESC' : 'ASC'
+    };
+    const sortColumn = validSortColumns[sortBy] || 'pi.name';
+    const order = sortOrder === 'desc' ? 'DESC' : 'ASC';
 
     const listQuery = `
       SELECT 
@@ -122,9 +120,9 @@ export async function GET(request: NextRequest) {
       ${whereSql}
       ORDER BY ${sortColumn} ${order}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `
+    `;
 
-    const { rows } = await query<ProductCatalogRow>(listQuery, [...filterParams, limit, offset])
+    const { rows } = await query<ProductCatalogRow>(listQuery, [...filterParams, limit, offset]);
 
     const countQuery = `
       SELECT COUNT(*) AS total
@@ -132,9 +130,9 @@ export async function GET(request: NextRequest) {
       JOIN "Pricelist" p ON pi."pricelistId" = p.id
       JOIN public.suppliers s ON p."supplierId" = s.id
       ${whereSql}
-    `
-    const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams)
-    const totalCount = parseInt(countRows[0]?.total || '0', 10)
+    `;
+    const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams);
+    const totalCount = parseInt(countRows[0]?.total || '0', 10);
 
     const priceStatsQuery = `
       SELECT 
@@ -144,10 +142,14 @@ export async function GET(request: NextRequest) {
       FROM "PricelistItem" pi
       JOIN "Pricelist" p ON pi."pricelistId" = p.id
       WHERE p.active = true
-    `
-    const { rows: priceStatsRows } = await query<{ min_price: string | null; max_price: string | null; avg_price: string | null }>(priceStatsQuery)
+    `;
+    const { rows: priceStatsRows } = await query<{
+      min_price: string | null;
+      max_price: string | null;
+      avg_price: string | null;
+    }>(priceStatsQuery);
 
-    const products: ProductCatalogItem[] = rows.map((row) => ({
+    const products: ProductCatalogItem[] = rows.map(row => ({
       id: row.id,
       sku: row.sku,
       name: row.name,
@@ -166,7 +168,7 @@ export async function GET(request: NextRequest) {
       },
       inStock: true,
       lastUpdated: row.updatedAt || new Date().toISOString(),
-    }))
+    }));
 
     return NextResponse.json({
       products,
@@ -180,22 +182,24 @@ export async function GET(request: NextRequest) {
         priceRange: {
           min: priceStatsRows[0]?.min_price ? parseFloat(priceStatsRows[0].min_price) : null,
           max: priceStatsRows[0]?.max_price ? parseFloat(priceStatsRows[0].max_price) : null,
-          average: priceStatsRows[0]?.avg_price ? parseFloat(priceStatsRows[0].avg_price).toFixed(2) : null,
+          average: priceStatsRows[0]?.avg_price
+            ? parseFloat(priceStatsRows[0].avg_price).toFixed(2)
+            : null,
         },
         filters: {
           suppliers: Boolean(supplier),
           priceRange: Boolean(priceRange),
         },
       },
-    })
+    });
   } catch (error) {
-    console.error('Product catalog error:', error)
+    console.error('Product catalog error:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch product catalog',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }

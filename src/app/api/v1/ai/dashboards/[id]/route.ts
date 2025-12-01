@@ -66,12 +66,7 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateDashboardSchema.parse(body);
 
-    const dashboard = await DashboardService.updateDashboard(
-      user.id,
-      user.org_id,
-      id,
-      validated
-    );
+    const dashboard = await DashboardService.updateDashboard(user.id, user.org_id, id, validated);
 
     if (!dashboard) {
       return new Response(
@@ -102,11 +97,7 @@ export async function DELETE(
     const { id } = await context.params;
     const user = await authenticateRequest(request);
 
-    const deleted = await DashboardService.deleteDashboard(
-      user.id,
-      user.org_id,
-      id
-    );
+    const deleted = await DashboardService.deleteDashboard(user.id, user.org_id, id);
 
     if (!deleted) {
       return new Response(

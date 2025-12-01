@@ -64,7 +64,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   async createMessage(
     orgId: string,
     data: CreateMessageData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIConversation>> {
     return this.executeOperation(
       'conversation.createMessage',
@@ -84,7 +84,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
             data.role,
             data.content,
             JSON.stringify(data.context || {}),
-          ],
+          ]
         );
 
         return this.mapConversationRow(result.rows[0]);
@@ -94,7 +94,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         orgId,
         conversationId: data.conversationId,
         role: data.role,
-      },
+      }
     );
   }
 
@@ -103,7 +103,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
    */
   async getConversation(
     conversationId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIConversation[]>> {
     return this.executeOperation(
       'conversation.get',
@@ -114,13 +114,13 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE conversation_id = $1
           ORDER BY created_at ASC
           `,
-          [conversationId],
+          [conversationId]
         );
 
-        return result.rows.map((row) => this.mapConversationRow(row));
+        return result.rows.map(row => this.mapConversationRow(row));
       },
       options,
-      { conversationId },
+      { conversationId }
     );
   }
 
@@ -130,7 +130,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   async getConversationHistory(
     userId: string,
     limit: number = 50,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ConversationSummary[]>> {
     return this.listConversations(userId, { limit }, options);
   }
@@ -147,7 +147,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
       fromDate?: Date;
       toDate?: Date;
     },
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ConversationSummary[]>> {
     return this.executeOperation(
       'conversation.list',
@@ -199,7 +199,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
 
         const result = await db.query(query, params);
 
-        return result.rows.map((row) => ({
+        return result.rows.map(row => ({
           conversationId: row.conversation_id,
           messageCount: parseInt(row.message_count),
           firstMessage: row.first_message,
@@ -209,7 +209,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         }));
       },
       options,
-      { userId, filters },
+      { userId, filters }
     );
   }
 
@@ -223,7 +223,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
     role: ConversationRole,
     content: string,
     context?: Record<string, unknown>,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIConversation>> {
     return this.createMessage(
       orgId,
@@ -234,7 +234,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         content,
         context,
       },
-      options,
+      options
     );
   }
 
@@ -245,7 +245,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
     orgId: string,
     conversationId: string,
     limit?: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIConversation[]>> {
     return this.executeOperation(
       'conversation.getMessages',
@@ -266,10 +266,10 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         const result = await db.query(query, params);
 
         // Reverse to get chronological order (oldest first)
-        return result.rows.reverse().map((row) => this.mapConversationRow(row));
+        return result.rows.reverse().map(row => this.mapConversationRow(row));
       },
       options,
-      { orgId, conversationId, limit },
+      { orgId, conversationId, limit }
     );
   }
 
@@ -278,7 +278,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
    */
   async deleteConversation(
     conversationId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'conversation.delete',
@@ -289,13 +289,13 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE conversation_id = $1
           RETURNING id
           `,
-          [conversationId],
+          [conversationId]
         );
 
         return result.rows.length;
       },
       options,
-      { conversationId },
+      { conversationId }
     );
   }
 
@@ -305,7 +305,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   async addContext(
     messageId: string,
     context: Record<string, unknown>,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'conversation.addContext',
@@ -317,7 +317,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE id = $2
           RETURNING id
           `,
-          [JSON.stringify(context), messageId],
+          [JSON.stringify(context), messageId]
         );
 
         if (result.rows.length === 0) {
@@ -325,7 +325,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         }
       },
       options,
-      { messageId },
+      { messageId }
     );
   }
 
@@ -334,7 +334,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
    */
   async getRelevantContext(
     conversationId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Record<string, unknown>>> {
     return this.executeOperation(
       'conversation.getContext',
@@ -347,7 +347,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE conversation_id = $1
           ORDER BY created_at DESC
           `,
-          [conversationId],
+          [conversationId]
         );
 
         // Merge all context objects
@@ -361,7 +361,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         return mergedContext;
       },
       options,
-      { conversationId },
+      { conversationId }
     );
   }
 
@@ -371,7 +371,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   async searchConversations(
     orgId: string,
     query: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ConversationSearchResult[]>> {
     return this.executeOperation(
       'conversation.search',
@@ -392,10 +392,10 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           ORDER BY relevance DESC, created_at DESC
           LIMIT 100
           `,
-          [orgId, query],
+          [orgId, query]
         );
 
-        return result.rows.map((row) => ({
+        return result.rows.map(row => ({
           conversationId: row.conversation_id,
           messageId: row.id,
           role: row.role,
@@ -405,7 +405,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         }));
       },
       options,
-      { orgId, query },
+      { orgId, query }
     );
   }
 
@@ -414,7 +414,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
    */
   async deleteOldConversations(
     daysOld: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'conversation.deleteOld',
@@ -425,13 +425,13 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE created_at < NOW() - INTERVAL '1 day' * $1
           RETURNING id
           `,
-          [daysOld],
+          [daysOld]
         );
 
         return result.rows.length;
       },
       options,
-      { daysOld },
+      { daysOld }
     );
   }
 

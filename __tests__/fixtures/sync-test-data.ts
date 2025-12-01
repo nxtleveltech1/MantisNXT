@@ -187,7 +187,9 @@ export const generateProgressSnapshot = () => {
     failed: 0,
     progress: (processed / total) * 100,
     itemsPerSecond: processed / (elapsedMs / 1000),
-    estimatedTimeRemaining: Math.ceil(((total - processed) / (processed / (elapsedMs / 1000))) * 1000),
+    estimatedTimeRemaining: Math.ceil(
+      ((total - processed) / (processed / (elapsedMs / 1000))) * 1000
+    ),
   };
 };
 
@@ -210,7 +212,11 @@ export const mockWooCommerceResponse = (type: string = 'customers') => {
   return responses[type] || responses.customers;
 };
 
-export const mockApiResponse = (success: boolean = true, data: unknown = null, error: string | null = null) => {
+export const mockApiResponse = (
+  success: boolean = true,
+  data: unknown = null,
+  error: string | null = null
+) => {
   return {
     status: success ? 200 : 400,
     data: {

@@ -1,6 +1,6 @@
 /**
  * Competitor Comparison Chart Component
- * 
+ *
  * Displays price comparison between our prices and competitor prices
  */
 
@@ -36,7 +36,7 @@ interface CompetitorComparisonChartProps {
 export function CompetitorComparisonChart({ data, loading }: CompetitorComparisonChartProps) {
   if (loading) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         Loading competitor data...
       </div>
     );
@@ -44,7 +44,7 @@ export function CompetitorComparisonChart({ data, loading }: CompetitorCompariso
 
   if (!data || data.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         No competitor comparison data available
       </div>
     );
@@ -52,9 +52,10 @@ export function CompetitorComparisonChart({ data, loading }: CompetitorCompariso
 
   // Format data for chart - show first 10 products
   const chartData = data.slice(0, 10).map(item => ({
-    name: item.product_name.length > 20 
-      ? item.product_name.substring(0, 20) + '...' 
-      : item.product_name,
+    name:
+      item.product_name.length > 20
+        ? item.product_name.substring(0, 20) + '...'
+        : item.product_name,
     'Our Price': Number(item.our_price),
     'Market Average': Number(item.market_avg),
   }));
@@ -63,18 +64,9 @@ export function CompetitorComparisonChart({ data, loading }: CompetitorCompariso
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
-          dataKey="name" 
-          tick={{ fontSize: 12 }}
-          angle={-45}
-          textAnchor="end"
-          height={100}
-        />
-        <YAxis 
-          tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `$${value.toFixed(2)}`}
-        />
-        <Tooltip 
+        <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={100} />
+        <YAxis tick={{ fontSize: 12 }} tickFormatter={value => `$${value.toFixed(2)}`} />
+        <Tooltip
           formatter={(value: number) => `$${value.toFixed(2)}`}
           labelStyle={{ color: '#000' }}
         />
@@ -85,4 +77,3 @@ export function CompetitorComparisonChart({ data, loading }: CompetitorCompariso
     </ResponsiveContainer>
   );
 }
-

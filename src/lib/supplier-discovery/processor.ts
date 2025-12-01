@@ -11,7 +11,7 @@ import type {
   SupplierContactInfo,
   SupplierBusinessInfo,
   SupplierCompliance,
-  ConfidenceScores
+  ConfidenceScores,
 } from './types';
 import { FIELD_MAPPINGS, CONFIDENCE_WEIGHTS, DISCOVERY_CONFIG } from './config';
 
@@ -19,7 +19,9 @@ export class DataProcessor {
   /**
    * Process raw extraction results into structured supplier data
    */
-  async processExtractionResults(results: ExtractionResult[]): Promise<DiscoveredSupplierData | null> {
+  async processExtractionResults(
+    results: ExtractionResult[]
+  ): Promise<DiscoveredSupplierData | null> {
     if (results.length === 0) {
       console.warn('No extraction results to process');
       return null;
@@ -59,7 +61,7 @@ export class DataProcessor {
       compliance,
       confidence,
       sources,
-      discoveredAt: new Date()
+      discoveredAt: new Date(),
     };
 
     console.log(`Successfully processed supplier data for: ${supplierName}`);
@@ -130,15 +132,18 @@ export class DataProcessor {
       .trim()
       .replace(/\s+/g, ' ')
       .replace(/[^\w\s&().-]/g, '')
-      .replace(/\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi, match =>
-        match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
+      .replace(
+        /\b(pty|ltd|inc|corp|llc|limited|proprietary)\b\.?/gi,
+        match => match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()
       );
   }
 
   /**
    * Extract registration number
    */
-  private extractRegistrationNumber(groupedResults: Record<string, ExtractionResult[]>): string | null {
+  private extractRegistrationNumber(
+    groupedResults: Record<string, ExtractionResult[]>
+  ): string | null {
     const regResults = groupedResults['registrationNumber'];
     if (regResults && regResults.length > 0) {
       const bestResult = regResults.reduce((best, current) =>
@@ -166,7 +171,7 @@ export class DataProcessor {
       city: '',
       province: '',
       postalCode: '',
-      country: 'South Africa'
+      country: 'South Africa',
     };
 
     if (addressResults.length === 0) {
@@ -198,8 +203,15 @@ export class DataProcessor {
 
       // SA provinces
       const provinces = [
-        'Western Cape', 'Eastern Cape', 'Northern Cape', 'Free State',
-        'KwaZulu-Natal', 'North West', 'Gauteng', 'Mpumalanga', 'Limpopo'
+        'Western Cape',
+        'Eastern Cape',
+        'Northern Cape',
+        'Free State',
+        'KwaZulu-Natal',
+        'North West',
+        'Gauteng',
+        'Mpumalanga',
+        'Limpopo',
       ];
 
       let province = '';
@@ -216,9 +228,22 @@ export class DataProcessor {
 
       // Major SA cities
       const majorCities = [
-        'Cape Town', 'Johannesburg', 'Durban', 'Pretoria', 'Port Elizabeth',
-        'Bloemfontein', 'East London', 'Pietermaritzburg', 'Welkom', 'Kimberley',
-        'Rustenburg', 'Polokwane', 'Witbank', 'Midrand', 'Sandton', 'Centurion'
+        'Cape Town',
+        'Johannesburg',
+        'Durban',
+        'Pretoria',
+        'Port Elizabeth',
+        'Bloemfontein',
+        'East London',
+        'Pietermaritzburg',
+        'Welkom',
+        'Kimberley',
+        'Rustenburg',
+        'Polokwane',
+        'Witbank',
+        'Midrand',
+        'Sandton',
+        'Centurion',
       ];
 
       // Find city
@@ -240,7 +265,7 @@ export class DataProcessor {
         city,
         province,
         postalCode,
-        country: 'South Africa'
+        country: 'South Africa',
       };
     } catch (error) {
       console.warn('Failed to parse address:', error);
@@ -251,7 +276,9 @@ export class DataProcessor {
   /**
    * Extract contact information
    */
-  private extractContactInfo(groupedResults: Record<string, ExtractionResult[]>): SupplierContactInfo {
+  private extractContactInfo(
+    groupedResults: Record<string, ExtractionResult[]>
+  ): SupplierContactInfo {
     const phone = this.getBestValue(groupedResults['phone']) || '';
     const email = this.getBestValue(groupedResults['email']) || '';
     const website = this.getBestValue(groupedResults['website']) || '';
@@ -259,14 +286,16 @@ export class DataProcessor {
     return {
       phone: this.formatPhoneNumber(phone),
       email: this.validateEmail(email) ? email : '',
-      website: this.formatWebsite(website)
+      website: this.formatWebsite(website),
     };
   }
 
   /**
    * Extract business information
    */
-  private extractBusinessInfo(groupedResults: Record<string, ExtractionResult[]>): SupplierBusinessInfo {
+  private extractBusinessInfo(
+    groupedResults: Record<string, ExtractionResult[]>
+  ): SupplierBusinessInfo {
     const industry = this.getBestValue(groupedResults['industry']) || '';
     const employeesStr = this.getBestValue(groupedResults['employees']) || '0';
     const establishedStr = this.getBestValue(groupedResults['established']) || '';
@@ -275,21 +304,23 @@ export class DataProcessor {
       industry,
       establishedDate: this.parseEstablishedDate(establishedStr),
       employeeCount: this.parseEmployeeCount(employeesStr),
-      annualRevenue: 0 // Would need additional data sources
+      annualRevenue: 0, // Would need additional data sources
     };
   }
 
   /**
    * Extract compliance information
    */
-  private extractCompliance(groupedResults: Record<string, ExtractionResult[]>): SupplierCompliance {
+  private extractCompliance(
+    groupedResults: Record<string, ExtractionResult[]>
+  ): SupplierCompliance {
     const vatNumber = this.getBestValue(groupedResults['vatNumber']) || '';
     const beeRating = this.getBestValue(groupedResults['beeLevel']) || '';
 
     return {
       vatNumber: this.validateVatNumber(vatNumber) ? vatNumber : '',
       beeRating,
-      certifications: [] // Would need additional processing
+      certifications: [], // Would need additional processing
     };
   }
 
@@ -328,19 +359,20 @@ export class DataProcessor {
 
     // Calculate overall confidence
     const requiredFields = DISCOVERY_CONFIG.REQUIRED_FIELDS;
-    const requiredFieldsPresent = requiredFields.filter(field =>
-      individual[field] && individual[field] > 0.5
+    const requiredFieldsPresent = requiredFields.filter(
+      field => individual[field] && individual[field] > 0.5
     ).length;
 
     const completenessScore = requiredFieldsPresent / requiredFields.length;
-    const averageConfidence = Object.values(individual).reduce((sum, conf) => sum + conf, 0) /
-                             Math.max(Object.values(individual).length, 1);
+    const averageConfidence =
+      Object.values(individual).reduce((sum, conf) => sum + conf, 0) /
+      Math.max(Object.values(individual).length, 1);
 
     // Weight by source types
     const sourceTypeBonus = this.calculateSourceTypeBonus(allResults);
 
     const overall = Math.min(
-      (completenessScore * 0.4 + averageConfidence * 0.5 + sourceTypeBonus * 0.1),
+      completenessScore * 0.4 + averageConfidence * 0.5 + sourceTypeBonus * 0.1,
       1.0
     );
 
@@ -351,9 +383,7 @@ export class DataProcessor {
    * Calculate bonus based on source types
    */
   private calculateSourceTypeBonus(results: ExtractionResult[]): number {
-    const sourceTypes = new Set(
-      results.map(r => this.categorizeSource(r.source))
-    );
+    const sourceTypes = new Set(results.map(r => this.categorizeSource(r.source)));
 
     let bonus = 0;
     if (sourceTypes.has('official')) bonus += CONFIDENCE_WEIGHTS.officialSource;

@@ -12,10 +12,9 @@ import type {
   CustomerLoyalty,
   CustomerLoyaltyUpdate,
   CustomerRewardsSummary,
-  UpdateTierResult} from '@/types/loyalty';
-import {
-  LoyaltyError,
+  UpdateTierResult,
 } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 export class CustomerLoyaltyService {
   /**
@@ -50,10 +49,7 @@ export class CustomerLoyaltyService {
       const result = await query<CustomerLoyalty>(sql, [customerId, orgId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(
-        '[CustomerLoyaltyService] Error fetching customer loyalty:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error fetching customer loyalty:', error);
       throw new LoyaltyError(
         'Failed to fetch customer loyalty',
         'FETCH_CUSTOMER_LOYALTY_ERROR',
@@ -91,10 +87,7 @@ export class CustomerLoyaltyService {
 
       return summary;
     } catch (error) {
-      console.error(
-        '[CustomerLoyaltyService] Error fetching rewards summary:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error fetching rewards summary:', error);
       throw new LoyaltyError(
         'Failed to fetch customer rewards summary',
         'FETCH_REWARDS_SUMMARY_ERROR',
@@ -113,7 +106,7 @@ export class CustomerLoyaltyService {
     orgId: string
   ): Promise<CustomerLoyalty> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Check if customer already enrolled
         const existingResult = await client.query<CustomerLoyalty>(
           'SELECT * FROM customer_loyalty WHERE customer_id = $1 AND program_id = $2',
@@ -135,11 +128,7 @@ export class CustomerLoyaltyService {
         );
 
         if (programResult.rows.length === 0) {
-          throw new LoyaltyError(
-            'Loyalty program not found or inactive',
-            'PROGRAM_NOT_FOUND',
-            404
-          );
+          throw new LoyaltyError('Loyalty program not found or inactive', 'PROGRAM_NOT_FOUND', 404);
         }
 
         // Enroll customer
@@ -192,16 +181,8 @@ export class CustomerLoyaltyService {
       });
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[CustomerLoyaltyService] Error enrolling customer:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to enroll customer',
-        'ENROLL_CUSTOMER_ERROR',
-        500,
-        { error }
-      );
+      console.error('[CustomerLoyaltyService] Error enrolling customer:', error);
+      throw new LoyaltyError('Failed to enroll customer', 'ENROLL_CUSTOMER_ERROR', 500, { error });
     }
   }
 
@@ -303,20 +284,13 @@ export class CustomerLoyaltyService {
       const result = await query<CustomerLoyalty>(sql, values);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer loyalty record not found',
-          'LOYALTY_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer loyalty record not found', 'LOYALTY_NOT_FOUND', 404);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[CustomerLoyaltyService] Error updating customer loyalty:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error updating customer loyalty:', error);
       throw new LoyaltyError(
         'Failed to update customer loyalty',
         'UPDATE_CUSTOMER_LOYALTY_ERROR',
@@ -329,45 +303,26 @@ export class CustomerLoyaltyService {
   /**
    * Update customer tier using database function
    */
-  static async updateCustomerTier(
-    customerId: string,
-    orgId: string
-  ): Promise<UpdateTierResult> {
+  static async updateCustomerTier(customerId: string, orgId: string): Promise<UpdateTierResult> {
     try {
       // Verify customer belongs to org
       const loyaltyRecord = await this.getCustomerLoyalty(customerId, orgId);
       if (!loyaltyRecord) {
-        throw new LoyaltyError(
-          'Customer loyalty record not found',
-          'LOYALTY_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer loyalty record not found', 'LOYALTY_NOT_FOUND', 404);
       }
 
       const sql = `SELECT * FROM update_customer_tier($1)`;
       const result = await query<UpdateTierResult>(sql, [customerId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Failed to update customer tier',
-          'UPDATE_TIER_ERROR',
-          500
-        );
+        throw new LoyaltyError('Failed to update customer tier', 'UPDATE_TIER_ERROR', 500);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[CustomerLoyaltyService] Error updating customer tier:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to update customer tier',
-        'UPDATE_TIER_ERROR',
-        500,
-        { error }
-      );
+      console.error('[CustomerLoyaltyService] Error updating customer tier:', error);
+      throw new LoyaltyError('Failed to update customer tier', 'UPDATE_TIER_ERROR', 500, { error });
     }
   }
 
@@ -414,25 +369,14 @@ export class CustomerLoyaltyService {
         LIMIT $3 OFFSET $4
       `;
 
-      const result = await query<CustomerLoyalty>(sql, [
-        orgId,
-        tier,
-        limit,
-        offset,
-      ]);
+      const result = await query<CustomerLoyalty>(sql, [orgId, tier, limit, offset]);
 
       return { data: result.rows, count };
     } catch (error) {
-      console.error(
-        '[CustomerLoyaltyService] Error fetching customers by tier:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch customers by tier',
-        'FETCH_BY_TIER_ERROR',
-        500,
-        { error }
-      );
+      console.error('[CustomerLoyaltyService] Error fetching customers by tier:', error);
+      throw new LoyaltyError('Failed to fetch customers by tier', 'FETCH_BY_TIER_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -481,16 +425,10 @@ export class CustomerLoyaltyService {
       const result = await query<CustomerLoyalty>(sql, params);
       return result.rows;
     } catch (error) {
-      console.error(
-        '[CustomerLoyaltyService] Error fetching top customers:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch top customers',
-        'FETCH_TOP_CUSTOMERS_ERROR',
-        500,
-        { error }
-      );
+      console.error('[CustomerLoyaltyService] Error fetching top customers:', error);
+      throw new LoyaltyError('Failed to fetch top customers', 'FETCH_TOP_CUSTOMERS_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -526,27 +464,16 @@ export class CustomerLoyaltyService {
           updated_at
       `;
 
-      const result = await query<CustomerLoyalty>(sql, [
-        orderAmount,
-        customerId,
-        orgId,
-      ]);
+      const result = await query<CustomerLoyalty>(sql, [orderAmount, customerId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer loyalty record not found',
-          'LOYALTY_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer loyalty record not found', 'LOYALTY_NOT_FOUND', 404);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[CustomerLoyaltyService] Error updating lifetime value:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error updating lifetime value:', error);
       throw new LoyaltyError(
         'Failed to update lifetime value',
         'UPDATE_LIFETIME_VALUE_ERROR',
@@ -559,10 +486,7 @@ export class CustomerLoyaltyService {
   /**
    * Increment referral count
    */
-  static async incrementReferralCount(
-    customerId: string,
-    orgId: string
-  ): Promise<CustomerLoyalty> {
+  static async incrementReferralCount(customerId: string, orgId: string): Promise<CustomerLoyalty> {
     try {
       const sql = `
         UPDATE customer_loyalty
@@ -590,20 +514,13 @@ export class CustomerLoyaltyService {
       const result = await query<CustomerLoyalty>(sql, [customerId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer loyalty record not found',
-          'LOYALTY_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer loyalty record not found', 'LOYALTY_NOT_FOUND', 404);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[CustomerLoyaltyService] Error incrementing referral count:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error incrementing referral count:', error);
       throw new LoyaltyError(
         'Failed to increment referral count',
         'INCREMENT_REFERRAL_ERROR',
@@ -656,19 +573,11 @@ export class CustomerLoyaltyService {
         LIMIT $3 OFFSET $4
       `;
 
-      const result = await query<CustomerLoyalty>(sql, [
-        programId,
-        orgId,
-        limit,
-        offset,
-      ]);
+      const result = await query<CustomerLoyalty>(sql, [programId, orgId, limit, offset]);
 
       return { data: result.rows, count };
     } catch (error) {
-      console.error(
-        '[CustomerLoyaltyService] Error fetching program customers:',
-        error
-      );
+      console.error('[CustomerLoyaltyService] Error fetching program customers:', error);
       throw new LoyaltyError(
         'Failed to fetch program customers',
         'FETCH_PROGRAM_CUSTOMERS_ERROR',

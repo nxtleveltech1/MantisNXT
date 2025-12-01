@@ -3,13 +3,12 @@
 import type {
   MappedProductData,
   ImportConfiguration,
-  PriceListRowExtended} from '@/types/pricelist-upload';
-
+  PriceListRowExtended,
+} from '@/types/pricelist-upload';
 
 import { DataCleaner } from './validator';
 
 export class DataTransformer {
-
   /**
    * Transform raw data rows to mapped product data
    */
@@ -27,7 +26,7 @@ export class DataTransformer {
         mappedData: transformedData,
         validationStatus: 'valid', // Will be updated during validation
         validationErrors: [],
-        validationWarnings: []
+        validationWarnings: [],
       };
     });
   }
@@ -68,9 +67,7 @@ export class DataTransformer {
     }
 
     // Map price fields
-    const priceFields = [
-      'unitPrice', 'listPrice', 'wholesalePrice', 'retailPrice'
-    ] as const;
+    const priceFields = ['unitPrice', 'listPrice', 'wholesalePrice', 'retailPrice'] as const;
 
     priceFields.forEach(field => {
       if (columnMapping[field] && row[columnMapping[field]] !== undefined) {
@@ -91,7 +88,10 @@ export class DataTransformer {
     }
 
     // Map numeric fields
-    if (columnMapping.minimumOrderQuantity && row[columnMapping.minimumOrderQuantity] !== undefined) {
+    if (
+      columnMapping.minimumOrderQuantity &&
+      row[columnMapping.minimumOrderQuantity] !== undefined
+    ) {
       const value = DataCleaner.parseNumeric(row[columnMapping.minimumOrderQuantity]);
       if (value && Number.isInteger(value)) {
         mapped.minimumOrderQuantity = value;
@@ -174,7 +174,10 @@ export class DataTransformer {
     });
 
     // Apply currency conversion
-    if (rules.currencyConversion && transformed.currency === rules.currencyConversion.fromCurrency) {
+    if (
+      rules.currencyConversion &&
+      transformed.currency === rules.currencyConversion.fromCurrency
+    ) {
       const rate = rules.currencyConversion.exchangeRate;
 
       if (transformed.unitPrice) transformed.unitPrice *= rate;
@@ -197,18 +200,18 @@ export class DataTransformer {
     const normalized = value.toLowerCase().trim();
 
     const availabilityMap: Record<string, string> = {
-      'yes': 'available',
-      'true': 'available',
+      yes: 'available',
+      true: 'available',
       'in stock': 'available',
-      'available': 'available',
-      'active': 'available',
-      'no': 'discontinued',
-      'false': 'discontinued',
-      'discontinued': 'discontinued',
-      'inactive': 'discontinued',
-      'limited': 'limited',
+      available: 'available',
+      active: 'available',
+      no: 'discontinued',
+      false: 'discontinued',
+      discontinued: 'discontinued',
+      inactive: 'discontinued',
+      limited: 'limited',
       'low stock': 'limited',
-      'seasonal': 'seasonal'
+      seasonal: 'seasonal',
     };
 
     return availabilityMap[normalized] || 'available';
@@ -243,7 +246,7 @@ export class DataTransformer {
     const patterns = [
       /(\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)/,
       /(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/,
-      /(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/
+      /(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/,
     ];
 
     for (const pattern of patterns) {
@@ -254,7 +257,7 @@ export class DataTransformer {
           length: parseFloat(length),
           width: parseFloat(width),
           height: parseFloat(height),
-          unit: this.detectDimensionUnit(value)
+          unit: this.detectDimensionUnit(value),
         };
       }
     }
@@ -270,9 +273,11 @@ export class DataTransformer {
 
     if (lowerValue.includes('cm') || lowerValue.includes('centimeter')) return 'cm';
     if (lowerValue.includes('mm') || lowerValue.includes('millimeter')) return 'mm';
-    if (lowerValue.includes('m') && !lowerValue.includes('mm') && !lowerValue.includes('cm')) return 'm';
+    if (lowerValue.includes('m') && !lowerValue.includes('mm') && !lowerValue.includes('cm'))
+      return 'm';
     if (lowerValue.includes('in') || lowerValue.includes('inch')) return 'in';
-    if (lowerValue.includes('ft') || lowerValue.includes('feet') || lowerValue.includes('foot')) return 'ft';
+    if (lowerValue.includes('ft') || lowerValue.includes('feet') || lowerValue.includes('foot'))
+      return 'ft';
 
     return 'cm'; // default
   }
@@ -288,14 +293,24 @@ export class DataTransformer {
 
     headers.forEach(header => {
       const headerLower = header.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const columnData = sampleData.map(row => row[header]).filter(val => val != null && val !== '');
+      const columnData = sampleData
+        .map(row => row[header])
+        .filter(val => val != null && val !== '');
 
       // SKU detection
-      if (headerLower.includes('sku') || headerLower.includes('itemcode') || headerLower.includes('productcode')) {
+      if (
+        headerLower.includes('sku') ||
+        headerLower.includes('itemcode') ||
+        headerLower.includes('productcode')
+      ) {
         mapping.sku = header;
       }
       // Product name detection
-      else if (headerLower.includes('name') || headerLower.includes('title') || headerLower.includes('product')) {
+      else if (
+        headerLower.includes('name') ||
+        headerLower.includes('title') ||
+        headerLower.includes('product')
+      ) {
         mapping.productName = header;
       }
       // Price detection
@@ -322,7 +337,11 @@ export class DataTransformer {
         mapping.category = header;
       }
       // Brand detection
-      else if (headerLower.includes('brand') || headerLower.includes('manufacturer') || headerLower.includes('make')) {
+      else if (
+        headerLower.includes('brand') ||
+        headerLower.includes('manufacturer') ||
+        headerLower.includes('make')
+      ) {
         mapping.brand = header;
       }
       // Currency detection
@@ -338,7 +357,11 @@ export class DataTransformer {
         mapping.supplierPartNumber = header;
       }
       // Quantity detection
-      else if (headerLower.includes('qty') || headerLower.includes('quantity') || headerLower.includes('moq')) {
+      else if (
+        headerLower.includes('qty') ||
+        headerLower.includes('quantity') ||
+        headerLower.includes('moq')
+      ) {
         mapping.minimumOrderQuantity = header;
       }
       // Lead time detection
@@ -350,11 +373,19 @@ export class DataTransformer {
         mapping.weight = header;
       }
       // Barcode detection
-      else if (headerLower.includes('barcode') || headerLower.includes('upc') || headerLower.includes('ean')) {
+      else if (
+        headerLower.includes('barcode') ||
+        headerLower.includes('upc') ||
+        headerLower.includes('ean')
+      ) {
         mapping.barcode = header;
       }
       // Availability detection
-      else if (headerLower.includes('available') || headerLower.includes('stock') || headerLower.includes('status')) {
+      else if (
+        headerLower.includes('available') ||
+        headerLower.includes('stock') ||
+        headerLower.includes('status')
+      ) {
         mapping.availability = header;
       }
       // Dimensions detection
@@ -382,14 +413,14 @@ export class DataTransformer {
         validateProducts: true,
         autoCreateCategories: true,
         defaultCurrency: 'USD',
-        priceColumn: 'unitPrice'
+        priceColumn: 'unitPrice',
       },
       transformRules: {
         trimWhitespace: true,
         convertToUpperCase: ['sku'],
         convertToLowerCase: ['unit'],
-        removeSpecialChars: []
-      }
+        removeSpecialChars: [],
+      },
     };
   }
 
@@ -412,7 +443,9 @@ export class DataTransformer {
 
     // Check if the selected price column is actually mapped
     if (config.options.requirePrice && !config.columnMapping[config.options.priceColumn]) {
-      errors.push(`Selected price column '${config.options.priceColumn}' is not mapped to any input column`);
+      errors.push(
+        `Selected price column '${config.options.priceColumn}' is not mapped to any input column`
+      );
     }
 
     // Check if SKU column is mapped when required
@@ -442,7 +475,7 @@ export class DataTransformer {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

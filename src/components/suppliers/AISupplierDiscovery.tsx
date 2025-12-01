@@ -1,30 +1,29 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-
+} from '@/components/ui/select';
 
 import {
   Brain,
@@ -48,305 +47,301 @@ import {
   Lightbulb,
   Database,
   ArrowRight,
-  ExternalLink
-} from "lucide-react"
+  ExternalLink,
+} from 'lucide-react';
 
 // AI Enhanced Types
 interface AISupplierRecommendation {
-  id: string
-  name: string
-  legalName: string
-  industry: string
+  id: string;
+  name: string;
+  legalName: string;
+  industry: string;
   location: {
-    country: string
-    city: string
-    region: string
-    coordinates: { lat: number; lng: number }
-  }
-  aiMatchScore: number
-  confidenceLevel: number
-  reasoning: string[]
-  keyStrengths: string[]
-  potentialRisks: string[]
-  estimatedSavings: number
+    country: string;
+    city: string;
+    region: string;
+    coordinates: { lat: number; lng: number };
+  };
+  aiMatchScore: number;
+  confidenceLevel: number;
+  reasoning: string[];
+  keyStrengths: string[];
+  potentialRisks: string[];
+  estimatedSavings: number;
   performancePreview: {
-    deliveryRating: number
-    qualityScore: number
-    sustainabilityRating: number
-    innovationIndex: number
-  }
+    deliveryRating: number;
+    qualityScore: number;
+    sustainabilityRating: number;
+    innovationIndex: number;
+  };
   marketIntelligence: {
-    marketPosition: 'leader' | 'challenger' | 'follower'
-    pricingTier: 'premium' | 'competitive' | 'budget'
-    growthTrend: number
-    marketShare: number
-  }
+    marketPosition: 'leader' | 'challenger' | 'follower';
+    pricingTier: 'premium' | 'competitive' | 'budget';
+    growthTrend: number;
+    marketShare: number;
+  };
   complianceStatus: {
-    certifications: string[]
-    riskLevel: 'low' | 'medium' | 'high'
-    lastAudit: string
-    complianceScore: number
-  }
+    certifications: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+    lastAudit: string;
+    complianceScore: number;
+  };
   contactRecommendation: {
-    bestTimeToContact: string
-    preferredChannel: 'email' | 'phone' | 'platform'
-    keyPersona: string
-    approachStrategy: string
-  }
-  tags: string[]
-  status: 'available' | 'exclusive' | 'preferred' | 'restricted'
-  lastUpdated: string
+    bestTimeToContact: string;
+    preferredChannel: 'email' | 'phone' | 'platform';
+    keyPersona: string;
+    approachStrategy: string;
+  };
+  tags: string[];
+  status: 'available' | 'exclusive' | 'preferred' | 'restricted';
+  lastUpdated: string;
 }
 
 interface AIInsight {
-  id: string
-  type: 'market_trend' | 'cost_opportunity' | 'risk_alert' | 'performance_insight'
-  title: string
-  description: string
-  impact: 'high' | 'medium' | 'low'
-  confidence: number
-  recommendation: string
-  data: unknown
-  createdAt: string
+  id: string;
+  type: 'market_trend' | 'cost_opportunity' | 'risk_alert' | 'performance_insight';
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  confidence: number;
+  recommendation: string;
+  data: unknown;
+  createdAt: string;
 }
 
 interface AISupplierDiscoveryProps {
-  onSupplierSelect?: (supplier: AISupplierRecommendation) => void
-  onSupplierBookmark?: (supplierId: string) => void
-  initialQuery?: string
-  compactMode?: boolean
+  onSupplierSelect?: (supplier: AISupplierRecommendation) => void;
+  onSupplierBookmark?: (supplierId: string) => void;
+  initialQuery?: string;
+  compactMode?: boolean;
 }
 
 const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
   onSupplierSelect,
   onSupplierBookmark,
-  initialQuery = "",
-  compactMode = false
+  initialQuery = '',
+  compactMode = false,
 }) => {
   // State Management
-  const [searchQuery, setSearchQuery] = useState(initialQuery)
-  const [aiProcessing, setAIProcessing] = useState(false)
-  const [recommendations, setRecommendations] = useState<AISupplierRecommendation[]>([])
-  const [selectedSupplier, setSelectedSupplier] = useState<AISupplierRecommendation | null>(null)
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [aiProcessing, setAIProcessing] = useState(false);
+  const [recommendations, setRecommendations] = useState<AISupplierRecommendation[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<AISupplierRecommendation | null>(null);
   const [filters, setFilters] = useState({
-    industry: "",
-    location: "",
-    tier: "",
-    riskLevel: "",
-    minMatchScore: 70
-  })
-  const [sortBy, setSortBy] = useState<'match_score' | 'savings' | 'performance' | 'risk'>('match_score')
-  const [insights, setInsights] = useState<AIInsight[]>([])
-  const [bookmarkedSuppliers, setBookmarkedSuppliers] = useState<string[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("recommendations")
+    industry: '',
+    location: '',
+    tier: '',
+    riskLevel: '',
+    minMatchScore: 70,
+  });
+  const [sortBy, setSortBy] = useState<'match_score' | 'savings' | 'performance' | 'risk'>(
+    'match_score'
+  );
+  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [bookmarkedSuppliers, setBookmarkedSuppliers] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('recommendations');
 
   // AI-powered search with auto-suggestions
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Simulate AI processing and recommendations
   const performAISearch = useCallback(async (query: string) => {
-    setAIProcessing(true)
-    setError(null)
+    setAIProcessing(true);
+    setError(null);
 
     try {
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Mock AI recommendations
       const mockRecommendations: AISupplierRecommendation[] = [
         {
-          id: "ai_sup_001",
-          name: "TechFlow Solutions",
-          legalName: "TechFlow Solutions Pty Ltd",
-          industry: "Technology Components",
+          id: 'ai_sup_001',
+          name: 'TechFlow Solutions',
+          legalName: 'TechFlow Solutions Pty Ltd',
+          industry: 'Technology Components',
           location: {
-            country: "South Africa",
-            city: "Cape Town",
-            region: "Western Cape",
-            coordinates: { lat: -33.9249, lng: 18.4241 }
+            country: 'South Africa',
+            city: 'Cape Town',
+            region: 'Western Cape',
+            coordinates: { lat: -33.9249, lng: 18.4241 },
           },
           aiMatchScore: 94,
           confidenceLevel: 89,
           reasoning: [
-            "Perfect alignment with your technology procurement requirements",
-            "Exceptional delivery performance (98.2% on-time)",
-            "Strong sustainability credentials matching your ESG goals",
-            "Competitive pricing with 15% cost reduction potential"
+            'Perfect alignment with your technology procurement requirements',
+            'Exceptional delivery performance (98.2% on-time)',
+            'Strong sustainability credentials matching your ESG goals',
+            'Competitive pricing with 15% cost reduction potential',
           ],
           keyStrengths: [
-            "Advanced manufacturing capabilities",
-            "ISO 27001 certified security processes",
-            "Carbon-neutral operations",
-            "24/7 technical support"
+            'Advanced manufacturing capabilities',
+            'ISO 27001 certified security processes',
+            'Carbon-neutral operations',
+            '24/7 technical support',
           ],
-          potentialRisks: [
-            "Single facility dependency",
-            "Limited backup suppliers"
-          ],
+          potentialRisks: ['Single facility dependency', 'Limited backup suppliers'],
           estimatedSavings: 180000,
           performancePreview: {
             deliveryRating: 4.9,
             qualityScore: 4.7,
             sustainabilityRating: 4.8,
-            innovationIndex: 4.6
+            innovationIndex: 4.6,
           },
           marketIntelligence: {
             marketPosition: 'challenger',
             pricingTier: 'competitive',
             growthTrend: 15.2,
-            marketShare: 8.5
+            marketShare: 8.5,
           },
           complianceStatus: {
-            certifications: ["ISO 9001", "ISO 14001", "ISO 27001", "B-BBEE Level 2"],
+            certifications: ['ISO 9001', 'ISO 14001', 'ISO 27001', 'B-BBEE Level 2'],
             riskLevel: 'low',
-            lastAudit: "2024-08-15",
-            complianceScore: 96
+            lastAudit: '2024-08-15',
+            complianceScore: 96,
           },
           contactRecommendation: {
-            bestTimeToContact: "Tuesday-Thursday, 9AM-11AM SAST",
+            bestTimeToContact: 'Tuesday-Thursday, 9AM-11AM SAST',
             preferredChannel: 'email',
-            keyPersona: "Technical Decision Maker",
-            approachStrategy: "Lead with sustainability and innovation focus"
+            keyPersona: 'Technical Decision Maker',
+            approachStrategy: 'Lead with sustainability and innovation focus',
           },
-          tags: ["AI-Recommended", "Sustainability Leader", "Innovation Partner"],
+          tags: ['AI-Recommended', 'Sustainability Leader', 'Innovation Partner'],
           status: 'available',
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         },
         {
-          id: "ai_sup_002",
-          name: "Global Component Systems",
-          legalName: "Global Component Systems International",
-          industry: "Industrial Components",
+          id: 'ai_sup_002',
+          name: 'Global Component Systems',
+          legalName: 'Global Component Systems International',
+          industry: 'Industrial Components',
           location: {
-            country: "Germany",
-            city: "Munich",
-            region: "Bavaria",
-            coordinates: { lat: 48.1351, lng: 11.5820 }
+            country: 'Germany',
+            city: 'Munich',
+            region: 'Bavaria',
+            coordinates: { lat: 48.1351, lng: 11.582 },
           },
           aiMatchScore: 87,
           confidenceLevel: 82,
           reasoning: [
-            "Strong quality heritage with German engineering excellence",
-            "Proven track record with similar enterprises",
-            "Competitive pricing for premium quality",
-            "EU compliance reduces regulatory risk"
+            'Strong quality heritage with German engineering excellence',
+            'Proven track record with similar enterprises',
+            'Competitive pricing for premium quality',
+            'EU compliance reduces regulatory risk',
           ],
           keyStrengths: [
-            "Industry 4.0 manufacturing",
-            "Premium quality standards",
-            "European regulatory compliance",
-            "Strong R&D investment"
+            'Industry 4.0 manufacturing',
+            'Premium quality standards',
+            'European regulatory compliance',
+            'Strong R&D investment',
           ],
-          potentialRisks: [
-            "Currency exchange rate exposure",
-            "Longer lead times due to distance"
-          ],
+          potentialRisks: ['Currency exchange rate exposure', 'Longer lead times due to distance'],
           estimatedSavings: 95000,
           performancePreview: {
             deliveryRating: 4.4,
             qualityScore: 4.9,
             sustainabilityRating: 4.3,
-            innovationIndex: 4.8
+            innovationIndex: 4.8,
           },
           marketIntelligence: {
             marketPosition: 'leader',
             pricingTier: 'premium',
             growthTrend: 8.1,
-            marketShare: 22.3
+            marketShare: 22.3,
           },
           complianceStatus: {
-            certifications: ["ISO 9001", "CE Marking", "REACH Compliance"],
+            certifications: ['ISO 9001', 'CE Marking', 'REACH Compliance'],
             riskLevel: 'low',
-            lastAudit: "2024-07-22",
-            complianceScore: 94
+            lastAudit: '2024-07-22',
+            complianceScore: 94,
           },
           contactRecommendation: {
-            bestTimeToContact: "Monday-Friday, 2PM-4PM CET",
+            bestTimeToContact: 'Monday-Friday, 2PM-4PM CET',
             preferredChannel: 'platform',
-            keyPersona: "Engineering Specialist",
-            approachStrategy: "Emphasize precision and quality requirements"
+            keyPersona: 'Engineering Specialist',
+            approachStrategy: 'Emphasize precision and quality requirements',
           },
-          tags: ["Premium Quality", "European Excellence", "R&D Leader"],
+          tags: ['Premium Quality', 'European Excellence', 'R&D Leader'],
           status: 'preferred',
-          lastUpdated: new Date().toISOString()
-        }
-      ]
+          lastUpdated: new Date().toISOString(),
+        },
+      ];
 
-      setRecommendations(mockRecommendations)
+      setRecommendations(mockRecommendations);
 
       // Mock AI insights
       const mockInsights: AIInsight[] = [
         {
-          id: "insight_001",
+          id: 'insight_001',
           type: 'cost_opportunity',
-          title: "Significant Cost Reduction Opportunity",
-          description: "AI analysis indicates potential 18% cost reduction through strategic supplier consolidation",
+          title: 'Significant Cost Reduction Opportunity',
+          description:
+            'AI analysis indicates potential 18% cost reduction through strategic supplier consolidation',
           impact: 'high',
           confidence: 91,
-          recommendation: "Consider bundling requirements with TechFlow Solutions for volume discounts",
-          data: { potentialSavings: 275000, timeframe: "6 months" },
-          createdAt: new Date().toISOString()
+          recommendation:
+            'Consider bundling requirements with TechFlow Solutions for volume discounts',
+          data: { potentialSavings: 275000, timeframe: '6 months' },
+          createdAt: new Date().toISOString(),
         },
         {
-          id: "insight_002",
+          id: 'insight_002',
           type: 'market_trend',
-          title: "Market Trend Alert: Supply Chain Diversification",
-          description: "Industry trend shows 35% increase in supply chain diversification initiatives",
+          title: 'Market Trend Alert: Supply Chain Diversification',
+          description:
+            'Industry trend shows 35% increase in supply chain diversification initiatives',
           impact: 'medium',
           confidence: 84,
-          recommendation: "Consider geographic diversification with European suppliers",
-          data: { trend: "+35%", timeline: "Q4 2024" },
-          createdAt: new Date().toISOString()
-        }
-      ]
+          recommendation: 'Consider geographic diversification with European suppliers',
+          data: { trend: '+35%', timeline: 'Q4 2024' },
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
-      setInsights(mockInsights)
-
+      setInsights(mockInsights);
     } catch (err) {
-      setError("AI search failed. Please try again.")
-      console.error("AI search error:", err)
+      setError('AI search failed. Please try again.');
+      console.error('AI search error:', err);
     } finally {
-      setAIProcessing(false)
+      setAIProcessing(false);
     }
-  }, [])
+  }, []);
 
   // Search suggestions based on input
   const updateSearchSuggestions = useCallback((query: string) => {
     if (query.length < 2) {
-      setSearchSuggestions([])
-      setShowSuggestions(false)
-      return
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
     }
 
     const suggestions = [
-      "Technology components with sustainability focus",
-      "Industrial automation suppliers in Europe",
-      "Cost-effective software licensing partners",
-      "Green energy equipment manufacturers",
-      "Automotive parts suppliers with ISO certification"
-    ].filter(suggestion =>
-      suggestion.toLowerCase().includes(query.toLowerCase())
-    )
+      'Technology components with sustainability focus',
+      'Industrial automation suppliers in Europe',
+      'Cost-effective software licensing partners',
+      'Green energy equipment manufacturers',
+      'Automotive parts suppliers with ISO certification',
+    ].filter(suggestion => suggestion.toLowerCase().includes(query.toLowerCase()));
 
-    setSearchSuggestions(suggestions)
-    setShowSuggestions(suggestions.length > 0)
-  }, [])
+    setSearchSuggestions(suggestions);
+    setShowSuggestions(suggestions.length > 0);
+  }, []);
 
   // Handle search input changes
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    updateSearchSuggestions(value)
-  }
+    setSearchQuery(value);
+    updateSearchSuggestions(value);
+  };
 
   // Execute AI search
   const executeSearch = () => {
     if (searchQuery.trim()) {
-      setShowSuggestions(false)
-      performAISearch(searchQuery)
+      setShowSuggestions(false);
+      performAISearch(searchQuery);
     }
-  }
+  };
 
   // Filter and sort recommendations
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -355,40 +350,40 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
         (!filters.industry || supplier.industry.includes(filters.industry)) &&
         (!filters.location || supplier.location.country.includes(filters.location)) &&
         (!filters.riskLevel || supplier.complianceStatus.riskLevel === filters.riskLevel) &&
-        (supplier.aiMatchScore >= filters.minMatchScore)
-      )
-    })
+        supplier.aiMatchScore >= filters.minMatchScore
+      );
+    });
 
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'savings':
-          return b.estimatedSavings - a.estimatedSavings
+          return b.estimatedSavings - a.estimatedSavings;
         case 'performance':
-          return b.performancePreview.deliveryRating - a.performancePreview.deliveryRating
+          return b.performancePreview.deliveryRating - a.performancePreview.deliveryRating;
         case 'risk':
-          const riskOrder = { 'low': 0, 'medium': 1, 'high': 2 }
-          return riskOrder[a.complianceStatus.riskLevel] - riskOrder[b.complianceStatus.riskLevel]
+          const riskOrder = { low: 0, medium: 1, high: 2 };
+          return riskOrder[a.complianceStatus.riskLevel] - riskOrder[b.complianceStatus.riskLevel];
         default:
-          return b.aiMatchScore - a.aiMatchScore
+          return b.aiMatchScore - a.aiMatchScore;
       }
-    })
-  }, [recommendations, filters, sortBy])
+    });
+  }, [recommendations, filters, sortBy]);
 
   // Get match score color
   const getMatchScoreColor = (score: number): string => {
-    if (score >= 90) return "from-green-500 to-emerald-600"
-    if (score >= 80) return "from-blue-500 to-indigo-600"
-    if (score >= 70) return "from-yellow-500 to-orange-600"
-    return "from-red-500 to-pink-600"
-  }
+    if (score >= 90) return 'from-green-500 to-emerald-600';
+    if (score >= 80) return 'from-blue-500 to-indigo-600';
+    if (score >= 70) return 'from-yellow-500 to-orange-600';
+    return 'from-red-500 to-pink-600';
+  };
 
   // Get performance indicator color
   const getPerformanceColor = (score: number): string => {
-    if (score >= 4.5) return "text-green-600"
-    if (score >= 4.0) return "text-blue-600"
-    if (score >= 3.5) return "text-yellow-600"
-    return "text-red-600"
-  }
+    if (score >= 4.5) return 'text-green-600';
+    if (score >= 4.0) return 'text-blue-600';
+    if (score >= 3.5) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   return (
     <div className="space-y-6">
@@ -396,31 +391,31 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 text-white shadow-2xl"
+        className="rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 text-white shadow-2xl"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className="rounded-xl bg-white/20 p-3 backdrop-blur-sm"
               >
                 <Brain className="h-8 w-8" />
               </motion.div>
               <div>
                 <h1 className="text-3xl font-bold">AI Supplier Discovery</h1>
-                <p className="text-purple-100 text-lg">Intelligent matching with market insights</p>
+                <p className="text-lg text-purple-100">Intelligent matching with market insights</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-              <Sparkles className="h-4 w-4 mr-1" />
+            <Badge variant="secondary" className="border-white/30 bg-white/20 text-white">
+              <Sparkles className="mr-1 h-4 w-4" />
               AI Powered
             </Badge>
-            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-              <Database className="h-4 w-4 mr-1" />
+            <Badge variant="secondary" className="border-white/30 bg-white/20 text-white">
+              <Database className="mr-1 h-4 w-4" />
               {recommendations.length} Found
             </Badge>
           </div>
@@ -438,18 +433,18 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
           <div className="space-y-4">
             <div className="relative">
               <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <div className="relative flex-1">
+                  <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Describe what you're looking for (e.g., 'sustainable tech suppliers in Africa')"
                     value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && executeSearch()}
-                    className="pl-10 py-6 text-lg border-2 border-gray-200 focus:border-purple-500 rounded-xl"
+                    onChange={e => handleSearchChange(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && executeSearch()}
+                    className="rounded-xl border-2 border-gray-200 py-6 pl-10 text-lg focus:border-purple-500"
                     aria-label="AI supplier search"
                   />
                   {aiProcessing && (
-                    <div className="absolute right-3 top-3">
+                    <div className="absolute top-3 right-3">
                       <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
                     </div>
                   )}
@@ -458,12 +453,12 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   onClick={executeSearch}
                   disabled={!searchQuery.trim() || aiProcessing}
                   size="lg"
-                  className="px-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl"
+                  className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-8 text-white hover:from-purple-700 hover:to-indigo-700"
                 >
                   {aiProcessing ? (
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   ) : (
-                    <Brain className="h-5 w-5 mr-2" />
+                    <Brain className="mr-2 h-5 w-5" />
                   )}
                   AI Search
                 </Button>
@@ -476,17 +471,17 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-10 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-xl"
+                    className="absolute z-10 mt-2 w-full rounded-xl border-2 border-gray-200 bg-white shadow-xl"
                   >
                     {searchSuggestions.map((suggestion, index) => (
                       <motion.div
                         key={index}
-                        whileHover={{ backgroundColor: "#f3f4f6" }}
-                        className="px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        whileHover={{ backgroundColor: '#f3f4f6' }}
+                        className="cursor-pointer border-b border-gray-100 px-4 py-3 last:border-b-0"
                         onClick={() => {
-                          setSearchQuery(suggestion)
-                          setShowSuggestions(false)
-                          performAISearch(suggestion)
+                          setSearchQuery(suggestion);
+                          setShowSuggestions(false);
+                          performAISearch(suggestion);
                         }}
                       >
                         <div className="flex items-center gap-2">
@@ -502,7 +497,10 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
 
             {/* Filters and Sort */}
             <div className="flex flex-wrap gap-3">
-              <Select value={filters.industry} onValueChange={(value) => setFilters({...filters, industry: value})}>
+              <Select
+                value={filters.industry}
+                onValueChange={value => setFilters({ ...filters, industry: value })}
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Industry" />
                 </SelectTrigger>
@@ -514,7 +512,10 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 </SelectContent>
               </Select>
 
-              <Select value={filters.location} onValueChange={(value) => setFilters({...filters, location: value})}>
+              <Select
+                value={filters.location}
+                onValueChange={value => setFilters({ ...filters, location: value })}
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Location" />
                 </SelectTrigger>
@@ -526,7 +527,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as unknown)}>
+              <Select value={sortBy} onValueChange={value => setSortBy(value as unknown)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
@@ -538,7 +539,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2">
                 <span className="text-sm text-gray-600">Min Match:</span>
                 <span className="text-sm font-medium">{filters.minMatchScore}%</span>
                 <input
@@ -546,7 +547,9 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   min="50"
                   max="100"
                   value={filters.minMatchScore}
-                  onChange={(e) => setFilters({...filters, minMatchScore: parseInt(e.target.value)})}
+                  onChange={e =>
+                    setFilters({ ...filters, minMatchScore: parseInt(e.target.value) })
+                  }
                   className="w-20"
                 />
               </div>
@@ -559,14 +562,9 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
-            <div className="font-semibold mb-1">AI Search Error</div>
+            <div className="mb-1 font-semibold">AI Search Error</div>
             <div>{error}</div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => setError(null)}
-            >
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => setError(null)}>
               Dismiss
             </Button>
           </AlertDescription>
@@ -595,23 +593,23 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+              className="grid grid-cols-1 gap-6 lg:grid-cols-2"
             >
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4].map(i => (
                 <Card key={i} className="border-0 shadow-lg">
                   <CardContent className="p-6">
                     <div className="animate-pulse space-y-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+                        <div className="h-12 w-12 rounded-xl bg-gray-200"></div>
                         <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                          <div className="h-4 w-3/4 rounded bg-gray-200"></div>
+                          <div className="h-3 w-1/2 rounded bg-gray-200"></div>
                         </div>
                       </div>
-                      <div className="h-24 bg-gray-200 rounded"></div>
+                      <div className="h-24 rounded bg-gray-200"></div>
                       <div className="flex gap-2">
-                        <div className="h-6 bg-gray-200 rounded w-20"></div>
-                        <div className="h-6 bg-gray-200 rounded w-20"></div>
+                        <div className="h-6 w-20 rounded bg-gray-200"></div>
+                        <div className="h-6 w-20 rounded bg-gray-200"></div>
                       </div>
                     </div>
                   </CardContent>
@@ -619,7 +617,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
               ))}
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <AnimatePresence>
                 {filteredAndSortedRecommendations.map((supplier, index) => (
                   <motion.div
@@ -629,17 +627,19 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    <Card className="group border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="p-3 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl">
+                            <div className="rounded-xl bg-gradient-to-r from-purple-100 to-indigo-100 p-3">
                               <Building2 className="h-6 w-6 text-purple-600" />
                             </div>
                             <div>
-                              <CardTitle className="text-lg leading-tight">{supplier.name}</CardTitle>
+                              <CardTitle className="text-lg leading-tight">
+                                {supplier.name}
+                              </CardTitle>
                               <p className="text-sm text-gray-600">{supplier.industry}</p>
-                              <div className="flex items-center gap-1 mt-1">
+                              <div className="mt-1 flex items-center gap-1">
                                 <MapPin className="h-3 w-3 text-gray-400" />
                                 <span className="text-xs text-gray-500">
                                   {supplier.location.city}, {supplier.location.country}
@@ -648,7 +648,9 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getMatchScoreColor(supplier.aiMatchScore)} text-white text-sm font-bold`}>
+                            <div
+                              className={`rounded-full bg-gradient-to-r px-3 py-1 ${getMatchScoreColor(supplier.aiMatchScore)} text-sm font-bold text-white`}
+                            >
                               {supplier.aiMatchScore}% Match
                             </div>
                             <Button
@@ -657,9 +659,9 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                               onClick={() => {
                                 const newBookmarks = bookmarkedSuppliers.includes(supplier.id)
                                   ? bookmarkedSuppliers.filter(id => id !== supplier.id)
-                                  : [...bookmarkedSuppliers, supplier.id]
-                                setBookmarkedSuppliers(newBookmarks)
-                                onSupplierBookmark?.(supplier.id)
+                                  : [...bookmarkedSuppliers, supplier.id];
+                                setBookmarkedSuppliers(newBookmarks);
+                                onSupplierBookmark?.(supplier.id);
                               }}
                               className="text-gray-400 hover:text-red-500"
                             >
@@ -685,28 +687,36 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Delivery</span>
-                            <span className={`font-medium flex items-center gap-1 ${getPerformanceColor(supplier.performancePreview.deliveryRating)}`}>
+                            <span
+                              className={`flex items-center gap-1 font-medium ${getPerformanceColor(supplier.performancePreview.deliveryRating)}`}
+                            >
                               <Star className="h-3 w-3 fill-current" />
                               {supplier.performancePreview.deliveryRating}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Quality</span>
-                            <span className={`font-medium flex items-center gap-1 ${getPerformanceColor(supplier.performancePreview.qualityScore)}`}>
+                            <span
+                              className={`flex items-center gap-1 font-medium ${getPerformanceColor(supplier.performancePreview.qualityScore)}`}
+                            >
                               <Award className="h-3 w-3" />
                               {supplier.performancePreview.qualityScore}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Sustainability</span>
-                            <span className={`font-medium flex items-center gap-1 ${getPerformanceColor(supplier.performancePreview.sustainabilityRating)}`}>
+                            <span
+                              className={`flex items-center gap-1 font-medium ${getPerformanceColor(supplier.performancePreview.sustainabilityRating)}`}
+                            >
                               <ShieldCheck className="h-3 w-3" />
                               {supplier.performancePreview.sustainabilityRating}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Innovation</span>
-                            <span className={`font-medium flex items-center gap-1 ${getPerformanceColor(supplier.performancePreview.innovationIndex)}`}>
+                            <span
+                              className={`flex items-center gap-1 font-medium ${getPerformanceColor(supplier.performancePreview.innovationIndex)}`}
+                            >
                               <Zap className="h-3 w-3" />
                               {supplier.performancePreview.innovationIndex}
                             </span>
@@ -714,9 +724,11 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                         </div>
 
                         {/* Estimated Savings */}
-                        <div className="p-3 bg-green-50 rounded-lg">
+                        <div className="rounded-lg bg-green-50 p-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-green-700 font-medium">Potential Savings</span>
+                            <span className="text-sm font-medium text-green-700">
+                              Potential Savings
+                            </span>
                             <span className="text-lg font-bold text-green-800">
                               ${(supplier.estimatedSavings / 1000).toFixed(0)}k
                             </span>
@@ -748,7 +760,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                             onClick={() => setSelectedSupplier(supplier)}
                             className="flex-1"
                           >
-                            <Eye className="h-4 w-4 mr-1" />
+                            <Eye className="mr-1 h-4 w-4" />
                             View Details
                           </Button>
                           <Button
@@ -756,7 +768,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                             onClick={() => onSupplierSelect?.(supplier)}
                             className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                           >
-                            <ArrowRight className="h-4 w-4 mr-1" />
+                            <ArrowRight className="mr-1 h-4 w-4" />
                             Connect
                           </Button>
                         </div>
@@ -771,7 +783,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
 
         {/* Market Insights Tab */}
         <TabsContent value="insights">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {insights.map((insight, index) => (
               <motion.div
                 key={insight.id}
@@ -782,27 +794,42 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 <Card className="border-0 shadow-lg">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-xl ${
-                        insight.type === 'cost_opportunity' ? 'bg-green-100 text-green-600' :
-                        insight.type === 'market_trend' ? 'bg-blue-100 text-blue-600' :
-                        insight.type === 'risk_alert' ? 'bg-red-100 text-red-600' :
-                        'bg-purple-100 text-purple-600'
-                      }`}>
+                      <div
+                        className={`rounded-xl p-3 ${
+                          insight.type === 'cost_opportunity'
+                            ? 'bg-green-100 text-green-600'
+                            : insight.type === 'market_trend'
+                              ? 'bg-blue-100 text-blue-600'
+                              : insight.type === 'risk_alert'
+                                ? 'bg-red-100 text-red-600'
+                                : 'bg-purple-100 text-purple-600'
+                        }`}
+                      >
                         {insight.type === 'cost_opportunity' && <DollarSign className="h-5 w-5" />}
                         {insight.type === 'market_trend' && <TrendingUp className="h-5 w-5" />}
                         {insight.type === 'risk_alert' && <AlertTriangle className="h-5 w-5" />}
-                        {insight.type === 'performance_insight' && <BarChart3 className="h-5 w-5" />}
+                        {insight.type === 'performance_insight' && (
+                          <BarChart3 className="h-5 w-5" />
+                        )}
                       </div>
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold">{insight.title}</h3>
-                          <Badge variant={insight.impact === 'high' ? 'destructive' : insight.impact === 'medium' ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={
+                              insight.impact === 'high'
+                                ? 'destructive'
+                                : insight.impact === 'medium'
+                                  ? 'default'
+                                  : 'secondary'
+                            }
+                          >
                             {insight.impact} impact
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600">{insight.description}</p>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <h4 className="text-sm font-medium text-blue-800 mb-1">Recommendation</h4>
+                        <div className="rounded-lg bg-blue-50 p-3">
+                          <h4 className="mb-1 text-sm font-medium text-blue-800">Recommendation</h4>
                           <p className="text-sm text-blue-700">{insight.recommendation}</p>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500">
@@ -829,53 +856,62 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-2">Supplier</th>
-                      <th className="text-center py-3 px-2">AI Match</th>
-                      <th className="text-center py-3 px-2">Savings</th>
-                      <th className="text-center py-3 px-2">Performance</th>
-                      <th className="text-center py-3 px-2">Risk</th>
-                      <th className="text-center py-3 px-2">Action</th>
+                      <th className="px-2 py-3 text-left">Supplier</th>
+                      <th className="px-2 py-3 text-center">AI Match</th>
+                      <th className="px-2 py-3 text-center">Savings</th>
+                      <th className="px-2 py-3 text-center">Performance</th>
+                      <th className="px-2 py-3 text-center">Risk</th>
+                      <th className="px-2 py-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAndSortedRecommendations.slice(0, 5).map((supplier, index) => (
                       <tr key={supplier.id} className="border-b hover:bg-gray-50">
-                        <td className="py-4 px-2">
+                        <td className="px-2 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
+                            <div className="rounded-lg bg-purple-100 p-2">
                               <Building2 className="h-4 w-4 text-purple-600" />
                             </div>
                             <div>
                               <div className="font-medium">{supplier.name}</div>
-                              <div className="text-sm text-gray-500">{supplier.location.country}</div>
+                              <div className="text-sm text-gray-500">
+                                {supplier.location.country}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="text-center py-4 px-2">
-                          <div className={`px-2 py-1 rounded-full bg-gradient-to-r ${getMatchScoreColor(supplier.aiMatchScore)} text-white text-sm font-medium`}>
+                        <td className="px-2 py-4 text-center">
+                          <div
+                            className={`rounded-full bg-gradient-to-r px-2 py-1 ${getMatchScoreColor(supplier.aiMatchScore)} text-sm font-medium text-white`}
+                          >
                             {supplier.aiMatchScore}%
                           </div>
                         </td>
-                        <td className="text-center py-4 px-2">
-                          <div className="text-green-600 font-medium">
+                        <td className="px-2 py-4 text-center">
+                          <div className="font-medium text-green-600">
                             ${(supplier.estimatedSavings / 1000).toFixed(0)}k
                           </div>
                         </td>
-                        <td className="text-center py-4 px-2">
+                        <td className="px-2 py-4 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            <Star className="h-4 w-4 fill-current text-yellow-500" />
                             <span>{supplier.performancePreview.deliveryRating}</span>
                           </div>
                         </td>
-                        <td className="text-center py-4 px-2">
-                          <Badge variant={
-                            supplier.complianceStatus.riskLevel === 'low' ? 'default' :
-                            supplier.complianceStatus.riskLevel === 'medium' ? 'secondary' : 'destructive'
-                          }>
+                        <td className="px-2 py-4 text-center">
+                          <Badge
+                            variant={
+                              supplier.complianceStatus.riskLevel === 'low'
+                                ? 'default'
+                                : supplier.complianceStatus.riskLevel === 'medium'
+                                  ? 'secondary'
+                                  : 'destructive'
+                            }
+                          >
                             {supplier.complianceStatus.riskLevel}
                           </Badge>
                         </td>
-                        <td className="text-center py-4 px-2">
+                        <td className="px-2 py-4 text-center">
                           <Button
                             variant="outline"
                             size="sm"
@@ -896,10 +932,10 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
       {/* Supplier Detail Dialog */}
       {selectedSupplier && (
         <Dialog open={!!selectedSupplier} onOpenChange={() => setSelectedSupplier(null)}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
+                <div className="rounded-lg bg-purple-100 p-2">
                   <Building2 className="h-6 w-6 text-purple-600" />
                 </div>
                 {selectedSupplier.name} - AI Analysis
@@ -919,9 +955,11 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="text-center">
-                      <div className={`text-3xl font-bold bg-gradient-to-r ${getMatchScoreColor(selectedSupplier.aiMatchScore)} bg-clip-text text-transparent`}>
+                      <div
+                        className={`bg-gradient-to-r text-3xl font-bold ${getMatchScoreColor(selectedSupplier.aiMatchScore)} bg-clip-text text-transparent`}
+                      >
                         {selectedSupplier.aiMatchScore}%
                       </div>
                       <div className="text-sm text-gray-600">Match Score</div>
@@ -947,7 +985,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     <div className="space-y-2">
                       {selectedSupplier.reasoning.map((reason, index) => (
                         <div key={index} className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
                           <span className="text-sm text-gray-700">{reason}</span>
                         </div>
                       ))}
@@ -957,7 +995,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
               </Card>
 
               {/* Performance Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle>Performance Preview</CardTitle>
@@ -1021,25 +1059,33 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-3">
                       <div>
                         <span className="text-sm text-gray-600">Best Time to Contact</span>
-                        <div className="font-medium">{selectedSupplier.contactRecommendation.bestTimeToContact}</div>
+                        <div className="font-medium">
+                          {selectedSupplier.contactRecommendation.bestTimeToContact}
+                        </div>
                       </div>
                       <div>
                         <span className="text-sm text-gray-600">Preferred Channel</span>
-                        <div className="font-medium capitalize">{selectedSupplier.contactRecommendation.preferredChannel}</div>
+                        <div className="font-medium capitalize">
+                          {selectedSupplier.contactRecommendation.preferredChannel}
+                        </div>
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
                         <span className="text-sm text-gray-600">Key Persona</span>
-                        <div className="font-medium">{selectedSupplier.contactRecommendation.keyPersona}</div>
+                        <div className="font-medium">
+                          {selectedSupplier.contactRecommendation.keyPersona}
+                        </div>
                       </div>
                       <div>
                         <span className="text-sm text-gray-600">Approach Strategy</span>
-                        <div className="font-medium">{selectedSupplier.contactRecommendation.approachStrategy}</div>
+                        <div className="font-medium">
+                          {selectedSupplier.contactRecommendation.approachStrategy}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1052,11 +1098,11 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   onClick={() => onSupplierSelect?.(selectedSupplier)}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                 >
-                  <ArrowRight className="h-4 w-4 mr-2" />
+                  <ArrowRight className="mr-2 h-4 w-4" />
                   Connect with Supplier
                 </Button>
                 <Button variant="outline" className="flex-1">
-                  <ExternalLink className="h-4 w-4 mr-2" />
+                  <ExternalLink className="mr-2 h-4 w-4" />
                   View Company Profile
                 </Button>
               </div>
@@ -1066,6 +1112,6 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
       )}
     </div>
   );
-}
+};
 
-export default AISupplierDiscovery
+export default AISupplierDiscovery;

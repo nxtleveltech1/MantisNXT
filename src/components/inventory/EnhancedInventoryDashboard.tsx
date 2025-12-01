@@ -1,20 +1,33 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Line,
   AreaChart,
@@ -29,8 +42,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ComposedChart
-} from 'recharts'
+  ComposedChart,
+} from 'recharts';
 import {
   Package,
   AlertTriangle,
@@ -51,157 +64,163 @@ import {
   Gauge,
   AlertOctagon,
   Bell,
-  Sparkles
-} from 'lucide-react'
+  Sparkles,
+} from 'lucide-react';
 
 // Enhanced Types for Inventory Management
 interface InventoryMetrics {
-  totalValue: number
-  totalItems: number
-  lowStockItems: number
-  outOfStockItems: number
-  criticalItems: number
-  stockTurnover: number
-  avgDaysInStock: number
-  reorderPointItems: number
-  excessStockValue: number
-  deadStockValue: number
-  forecastAccuracy: number
-  fillRate: number
+  totalValue: number;
+  totalItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  criticalItems: number;
+  stockTurnover: number;
+  avgDaysInStock: number;
+  reorderPointItems: number;
+  excessStockValue: number;
+  deadStockValue: number;
+  forecastAccuracy: number;
+  fillRate: number;
 }
 
 interface InventoryItem {
-  id: string
-  sku: string
-  name: string
-  description: string
-  category: string
-  subcategory: string
-  currentStock: number
-  reorderPoint: number
-  maxStock: number
-  unitCost: number
-  unitPrice: number
-  totalValue: number
-  lastMovement: string
-  daysInStock: number
-  velocity: 'high' | 'medium' | 'low' | 'dead'
-  status: 'in_stock' | 'low_stock' | 'out_of_stock' | 'critical'
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  category: string;
+  subcategory: string;
+  currentStock: number;
+  reorderPoint: number;
+  maxStock: number;
+  unitCost: number;
+  unitPrice: number;
+  totalValue: number;
+  lastMovement: string;
+  daysInStock: number;
+  velocity: 'high' | 'medium' | 'low' | 'dead';
+  status: 'in_stock' | 'low_stock' | 'out_of_stock' | 'critical';
   supplier: {
-    id: string
-    name: string
-    leadTimeDays: number
-    rating: number
-  }
+    id: string;
+    name: string;
+    leadTimeDays: number;
+    rating: number;
+  };
   location: {
-    warehouse: string
-    zone: string
-    aisle: string
-    shelf: string
-  }
+    warehouse: string;
+    zone: string;
+    aisle: string;
+    shelf: string;
+  };
   alerts: Array<{
-    type: 'low_stock' | 'out_of_stock' | 'excess_stock' | 'slow_moving'
-    severity: 'high' | 'medium' | 'low'
-    message: string
-    createdAt: string
-  }>
+    type: 'low_stock' | 'out_of_stock' | 'excess_stock' | 'slow_moving';
+    severity: 'high' | 'medium' | 'low';
+    message: string;
+    createdAt: string;
+  }>;
   movements: Array<{
-    date: string
-    type: 'inbound' | 'outbound' | 'adjustment'
-    quantity: number
-    reason: string
-  }>
+    date: string;
+    type: 'inbound' | 'outbound' | 'adjustment';
+    quantity: number;
+    reason: string;
+  }>;
 }
 
 interface StockAlert {
-  id: string
-  itemId: string
-  itemName: string
-  sku: string
-  type: 'low_stock' | 'out_of_stock' | 'excess_stock' | 'slow_moving' | 'expiring'
-  severity: 'critical' | 'high' | 'medium' | 'low'
-  message: string
-  recommendation: string
-  impact: string
-  createdAt: string
-  acknowledged: boolean
-  estimatedCost: number
+  id: string;
+  itemId: string;
+  itemName: string;
+  sku: string;
+  type: 'low_stock' | 'out_of_stock' | 'excess_stock' | 'slow_moving' | 'expiring';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  recommendation: string;
+  impact: string;
+  createdAt: string;
+  acknowledged: boolean;
+  estimatedCost: number;
 }
 
 interface ChartDataPoint {
-  period?: string
-  category?: string
-  value?: number
-  turnover?: number
-  aClass?: number
-  bClass?: number
-  cClass?: number
-  fastMoving?: number
-  deadStock?: number
+  period?: string;
+  category?: string;
+  value?: number;
+  turnover?: number;
+  aClass?: number;
+  bClass?: number;
+  cClass?: number;
+  fastMoving?: number;
+  deadStock?: number;
 }
 
 interface EnhancedInventoryDashboardProps {
-  refreshInterval?: number
-  enableRealTime?: boolean
-  showPredictiveAnalytics?: boolean
+  refreshInterval?: number;
+  enableRealTime?: boolean;
+  showPredictiveAnalytics?: boolean;
 }
 
 const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
   refreshInterval = 30000,
   enableRealTime = true,
-  showPredictiveAnalytics = true
+  showPredictiveAnalytics = true,
 }) => {
   // State Management
-  const [metrics, setMetrics] = useState<InventoryMetrics | null>(null)
-  const [items, setItems] = useState<InventoryItem[]>([])
-  const [visibleCount, setVisibleCount] = useState<number>(200)
-  const [alerts, setAlerts] = useState<StockAlert[]>([])
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('all')
-  const [supplierOptions, setSupplierOptions] = useState<Array<{ id: string; name: string }>>([])
-  const [categoryOptions, setCategoryOptions] = useState<string[]>([])
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [sortBy, setSortBy] = useState<keyof InventoryItem>('name')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
-  const [autoRefresh, setAutoRefresh] = useState(enableRealTime)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [metrics, setMetrics] = useState<InventoryMetrics | null>(null);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [visibleCount, setVisibleCount] = useState<number>(200);
+  const [alerts, setAlerts] = useState<StockAlert[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+  const [supplierOptions, setSupplierOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<keyof InventoryItem>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [autoRefresh, setAutoRefresh] = useState(enableRealTime);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // Fetch inventory data
   const fetchInventoryData = useCallback(async () => {
     try {
-      setError(null)
+      setError(null);
 
       // Build server-side filtered inventory request
-      const qs = new URLSearchParams()
-      qs.set('format', 'display')
-      qs.set('limit', '25000')
-      if (searchTerm) qs.set('search', searchTerm)
-      if (selectedCategory && selectedCategory !== 'all') qs.set('category', selectedCategory)
+      const qs = new URLSearchParams();
+      qs.set('format', 'display');
+      qs.set('limit', '25000');
+      if (searchTerm) qs.set('search', searchTerm);
+      if (selectedCategory && selectedCategory !== 'all') qs.set('category', selectedCategory);
       // Status is filtered client-side to avoid DB dependency on reorder_point thresholds
-      if (selectedSupplier && selectedSupplier !== 'all') qs.set('supplierId', selectedSupplier)
+      if (selectedSupplier && selectedSupplier !== 'all') qs.set('supplierId', selectedSupplier);
 
-      const [inventoryResponse, itemsResponse, alertsResponse, analyticsResponse, movementsResponse] = await Promise.all([
+      const [
+        inventoryResponse,
+        itemsResponse,
+        alertsResponse,
+        analyticsResponse,
+        movementsResponse,
+      ] = await Promise.all([
         fetch('/api/inventory/analytics'),
         fetch(`/api/inventory?${qs.toString()}`),
         fetch('/api/inventory/alerts'),
         fetch('/api/inventory/analytics'), // Use analytics endpoint for trends data
-        fetch('/api/stock-movements?limit=20')
-      ])
+        fetch('/api/stock-movements?limit=20'),
+      ]);
 
-      const inventoryData = await inventoryResponse.json()
-      const itemsData = await itemsResponse.json()
-      const alertsData = await alertsResponse.json()
-      const analyticsData = await analyticsResponse.json()
+      const inventoryData = await inventoryResponse.json();
+      const itemsData = await itemsResponse.json();
+      const alertsData = await alertsResponse.json();
+      const analyticsData = await analyticsResponse.json();
 
-      if (inventoryData?.success) setMetrics(inventoryData.data)
+      if (inventoryData?.success) setMetrics(inventoryData.data);
 
       // Handle {items: [...]} format from /api/inventory
       if (itemsData?.items && Array.isArray(itemsData.items)) {
@@ -217,19 +236,30 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           maxStock: 0,
           unitCost: Number(r.cost_price ?? r.costPrice ?? 0),
           unitPrice: Number(r.sale_price ?? r.salePrice ?? r.cost_price ?? r.costPrice ?? 0),
-          totalValue: Number(r.cost_price ?? r.costPrice ?? 0) * Number(r.stock_qty ?? r.currentStock ?? 0),
+          totalValue:
+            Number(r.cost_price ?? r.costPrice ?? 0) * Number(r.stock_qty ?? r.currentStock ?? 0),
           lastMovement: '',
           daysInStock: 0,
           velocity: 'medium',
-          status: (r.stock_qty ?? r.currentStock ?? 0) <= 0 ? 'out_of_stock' : ((r.stock_qty ?? r.currentStock ?? 0) <= 10 ? 'low_stock' : 'in_stock'),
-          supplier: { id: r.supplier_id ?? r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
+          status:
+            (r.stock_qty ?? r.currentStock ?? 0) <= 0
+              ? 'out_of_stock'
+              : (r.stock_qty ?? r.currentStock ?? 0) <= 10
+                ? 'low_stock'
+                : 'in_stock',
+          supplier: {
+            id: r.supplier_id ?? r.supplierId ?? '',
+            name: '',
+            leadTimeDays: 0,
+            rating: 0,
+          },
           location: { warehouse: '', zone: '', aisle: '', shelf: '' },
           alerts: [],
-          movements: []
-        }))
-        setItems(mapped)
-        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
-        setCategoryOptions(cats)
+          movements: [],
+        }));
+        setItems(mapped);
+        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)));
+        setCategoryOptions(cats);
       } else if (Array.isArray(itemsData)) {
         const mapped = itemsData.map((r: unknown) => ({
           id: r.id,
@@ -247,17 +277,18 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           lastMovement: '',
           daysInStock: 0,
           velocity: 'medium',
-          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 10 ? 'low_stock' : 'in_stock'),
+          status:
+            r.currentStock <= 0 ? 'out_of_stock' : r.currentStock <= 10 ? 'low_stock' : 'in_stock',
           supplier: { id: r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
           location: { warehouse: '', zone: '', aisle: '', shelf: '' },
           alerts: [],
-          movements: []
-        }))
-        setItems(mapped)
-        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
-        setCategoryOptions(cats)
+          movements: [],
+        }));
+        setItems(mapped);
+        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)));
+        setCategoryOptions(cats);
       } else if (itemsData?.success) {
-        const rows = itemsData.data || itemsData.data?.items || []
+        const rows = itemsData.data || itemsData.data?.items || [];
         const mapped = rows.map((r: unknown) => ({
           id: r.id,
           sku: r.sku,
@@ -274,154 +305,170 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           lastMovement: '',
           daysInStock: 0,
           velocity: 'medium',
-          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 10 ? 'low_stock' : 'in_stock'),
+          status:
+            r.currentStock <= 0 ? 'out_of_stock' : r.currentStock <= 10 ? 'low_stock' : 'in_stock',
           supplier: { id: r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
           location: { warehouse: '', zone: '', aisle: '', shelf: '' },
           alerts: [],
-          movements: []
-        }))
-        setItems(mapped)
-        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
-        setCategoryOptions(cats)
+          movements: [],
+        }));
+        setItems(mapped);
+        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)));
+        setCategoryOptions(cats);
       }
 
       if (alertsData.success) {
-        setAlerts(alertsData.data.alerts || [])
+        setAlerts(alertsData.data.alerts || []);
       }
 
       // Use analytics data for chart, handling both series and direct data formats
       if (analyticsData?.success) {
-        const chartSeries = Array.isArray(analyticsData.data?.series) 
-          ? analyticsData.data.series 
+        const chartSeries = Array.isArray(analyticsData.data?.series)
+          ? analyticsData.data.series
           : Array.isArray(analyticsData.data)
-          ? analyticsData.data
-          : []
-        setChartData(chartSeries)
+            ? analyticsData.data
+            : [];
+        setChartData(chartSeries);
       }
 
-      const mvData = await movementsResponse.json()
-      const movementList = Array.isArray(mvData?.data) ? mvData.data : []
-      ;(window as unknown).__recentMovements = movementList
+      const mvData = await movementsResponse.json();
+      const movementList = Array.isArray(mvData?.data) ? mvData.data : [];
+      (window as unknown).__recentMovements = movementList;
 
-      setLastUpdate(new Date())
-
+      setLastUpdate(new Date());
     } catch (err) {
-      console.error('Inventory fetch error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load inventory data')
+      console.error('Inventory fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load inventory data');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedSupplier])
+  }, [searchTerm, selectedCategory, selectedSupplier]);
 
   // Real-time refresh effect
   useEffect(() => {
-    fetchInventoryData()
-  }, [fetchInventoryData])
+    fetchInventoryData();
+  }, [fetchInventoryData]);
 
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh) return;
 
-    const interval = setInterval(fetchInventoryData, refreshInterval)
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval, fetchInventoryData])
+    const interval = setInterval(fetchInventoryData, refreshInterval);
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, fetchInventoryData]);
 
   // Fetch supplier options for filtering
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
+    let cancelled = false;
+    (async () => {
       try {
         // Use v3 API with correct parameter format: status as array, limit max 1000
-        const res = await fetch('/api/suppliers?status=active&limit=1000')
+        const res = await fetch('/api/suppliers?status=active&limit=1000');
         if (!res.ok) {
-          console.warn('Failed to fetch suppliers:', res.status)
-          return
+          console.warn('Failed to fetch suppliers:', res.status);
+          return;
         }
-        const data = await res.json()
+        const data = await res.json();
         // Handle v3 API response format with pagination
-        const list = Array.isArray(data?.data) 
-          ? data.data 
-          : Array.isArray(data) 
-          ? data 
-          : (data?.data || [])
-        const options = list.map((s: unknown) => ({ id: s.id, name: s.name || s.supplier_name || 'Unnamed Supplier' }))
-        if (!cancelled) setSupplierOptions(options)
+        const list = Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : data?.data || [];
+        const options = list.map((s: unknown) => ({
+          id: s.id,
+          name: s.name || s.supplier_name || 'Unnamed Supplier',
+        }));
+        if (!cancelled) setSupplierOptions(options);
       } catch (err) {
-        console.error('Error fetching suppliers:', err)
+        console.error('Error fetching suppliers:', err);
       }
-    })()
-    return () => { cancelled = true }
-  }, [])
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Filtered and sorted items
   const filteredItems = useMemo(() => {
     const filtered = items.filter(item => {
-      const matchesSearch = searchTerm === '' ||
+      const matchesSearch =
+        searchTerm === '' ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+        item.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
-      const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
 
-      const matchesSupplier = selectedSupplier === 'all' || item.supplier?.id === selectedSupplier
+      const matchesSupplier = selectedSupplier === 'all' || item.supplier?.id === selectedSupplier;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesSupplier
-    })
+      return matchesSearch && matchesCategory && matchesStatus && matchesSupplier;
+    });
 
     // Sort items
     filtered.sort((a, b) => {
-      const aVal = a[sortBy]
-      const bVal = b[sortBy]
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
 
       if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
       } else {
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        return sortOrder === 'asc'
-          ? aStr.localeCompare(bStr)
-          : bStr.localeCompare(aStr)
+        const aStr = String(aVal).toLowerCase();
+        const bStr = String(bVal).toLowerCase();
+        return sortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
       }
-    })
+    });
 
-    return filtered
-  }, [items, searchTerm, selectedCategory, selectedStatus, selectedSupplier, sortBy, sortOrder])
+    return filtered;
+  }, [items, searchTerm, selectedCategory, selectedStatus, selectedSupplier, sortBy, sortOrder]);
 
   // Critical alerts
   const criticalAlerts = useMemo(() => {
-    return alerts.filter(alert => alert.severity === 'critical' || alert.severity === 'high').slice(0, 5)
-  }, [alerts])
+    return alerts
+      .filter(alert => alert.severity === 'critical' || alert.severity === 'high')
+      .slice(0, 5);
+  }, [alerts]);
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'in_stock': return 'text-green-600 bg-green-100'
-      case 'low_stock': return 'text-yellow-600 bg-yellow-100'
-      case 'out_of_stock': return 'text-red-600 bg-red-100'
-      case 'critical': return 'text-red-700 bg-red-200'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'in_stock':
+        return 'text-green-600 bg-green-100';
+      case 'low_stock':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'out_of_stock':
+        return 'text-red-600 bg-red-100';
+      case 'critical':
+        return 'text-red-700 bg-red-200';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
-  }
+  };
 
   // Get velocity color
   const getVelocityColor = (velocity: string) => {
     switch (velocity) {
-      case 'high': return 'text-green-600'
-      case 'medium': return 'text-blue-600'
-      case 'low': return 'text-yellow-600'
-      case 'dead': return 'text-red-600'
-      default: return 'text-gray-600'
+      case 'high':
+        return 'text-green-600';
+      case 'medium':
+        return 'text-blue-600';
+      case 'low':
+        return 'text-yellow-600';
+      case 'dead':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
     }
-  }
+  };
 
   if (loading && !metrics) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center space-y-4">
+      <div className="flex min-h-96 items-center justify-center">
+        <div className="space-y-4 text-center">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="p-4 bg-blue-100 rounded-full mx-auto w-fit"
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="mx-auto w-fit rounded-full bg-blue-100 p-4"
           >
             <Package className="h-8 w-8 text-blue-600" />
           </motion.div>
@@ -431,7 +478,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -439,23 +486,23 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
       <Alert className="border-red-200 bg-red-50">
         <AlertOctagon className="h-4 w-4 text-red-600" />
         <AlertDescription className="text-red-800">
-          <div className="font-semibold mb-1">Inventory Error</div>
+          <div className="mb-1 font-semibold">Inventory Error</div>
           <div>{error}</div>
           <Button
             variant="outline"
             size="sm"
             className="mt-2"
             onClick={() => {
-              setError(null)
-              fetchInventoryData()
+              setError(null);
+              fetchInventoryData();
             }}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
@@ -464,21 +511,21 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 rounded-2xl p-8 text-white shadow-2xl"
+        className="rounded-2xl bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 p-8 text-white shadow-2xl"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotateY: [0, 360] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                className="rounded-xl bg-white/20 p-3 backdrop-blur-sm"
               >
                 <Package className="h-8 w-8" />
               </motion.div>
               <div>
                 <h1 className="text-3xl font-bold">Smart Inventory Management</h1>
-                <p className="text-blue-100 text-lg">Real-time stock tracking and optimization</p>
+                <p className="text-lg text-blue-100">Real-time stock tracking and optimization</p>
               </div>
             </div>
           </div>
@@ -496,7 +543,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 onClick={() => setAutoRefresh(!autoRefresh)}
                 className={`${autoRefresh ? 'bg-green-500 text-white' : 'bg-white/20 text-white'}`}
               >
-                <Activity className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-pulse' : ''}`} />
+                <Activity className={`mr-2 h-4 w-4 ${autoRefresh ? 'animate-pulse' : ''}`} />
                 {autoRefresh ? 'Real-time' : 'Manual'}
               </Button>
               <Button
@@ -506,7 +553,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 disabled={loading}
                 className="bg-white/20 text-white hover:bg-white/30"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
             </div>
@@ -520,13 +567,13 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5"
         >
           {/* Total Value */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-100 hover:shadow-2xl transition-all duration-300">
+          <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-500 rounded-xl text-white">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-green-500 p-3 text-white">
                   <DollarSign className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -539,25 +586,25 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 </div>
                 <div className="text-sm text-green-700">Total Inventory Value</div>
                 <div className="flex items-center text-xs text-green-600">
-                  <Archive className="h-3 w-3 mr-1" />
+                  <Archive className="mr-1 h-3 w-3" />
                   {(metrics?.totalItems ?? 0).toLocaleString()} Items
                 </div>
               </div>
             </CardContent>
           </Card>
 
-
-
           {/* Stock Health */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-2xl transition-all duration-300">
+          <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-500 rounded-xl text-white">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-blue-500 p-3 text-white">
                   <Gauge className="h-6 w-6" />
                 </div>
                 <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                  <span className="text-sm font-medium">{(metrics.fillRate * 100).toFixed(0)}%</span>
+                  <Star className="h-4 w-4 fill-current text-yellow-500" />
+                  <span className="text-sm font-medium">
+                    {(metrics.fillRate * 100).toFixed(0)}%
+                  </span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -566,7 +613,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 </div>
                 <div className="text-sm text-blue-700">Low Stock Items</div>
                 <div className="flex items-center text-xs text-blue-600">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  <AlertTriangle className="mr-1 h-3 w-3" />
                   {metrics?.criticalItems ?? 0} Critical
                 </div>
               </div>
@@ -574,23 +621,30 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Turnover Rate */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 to-violet-100 hover:shadow-2xl transition-all duration-300">
+          <Card className="border-0 bg-gradient-to-br from-purple-50 to-violet-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-500 rounded-xl text-white">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-purple-500 p-3 text-white">
                   <Activity className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                  {(Number(metrics?.stockTurnover ?? 0) > 6) ? 'Excellent' : (Number(metrics?.stockTurnover ?? 0) > 4) ? 'Good' : 'Poor'}
+                  {Number(metrics?.stockTurnover ?? 0) > 6
+                    ? 'Excellent'
+                    : Number(metrics?.stockTurnover ?? 0) > 4
+                      ? 'Good'
+                      : 'Poor'}
                 </Badge>
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-purple-800">
-                  {Number.isFinite(metrics?.stockTurnover as unknown) ? (metrics!.stockTurnover as number).toFixed(1) : '0.0'}x
+                  {Number.isFinite(metrics?.stockTurnover as unknown)
+                    ? (metrics!.stockTurnover as number).toFixed(1)
+                    : '0.0'}
+                  x
                 </div>
                 <div className="text-sm text-purple-700">Stock Turnover</div>
                 <div className="flex items-center text-xs text-purple-600">
-                  <Clock className="h-3 w-3 mr-1" />
+                  <Clock className="mr-1 h-3 w-3" />
                   {metrics?.avgDaysInStock ?? 0} Days Avg
                 </div>
               </div>
@@ -598,10 +652,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Forecast Accuracy */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-orange-50 to-amber-100 hover:shadow-2xl transition-all duration-300">
+          <Card className="border-0 bg-gradient-to-br from-orange-50 to-amber-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-orange-500 rounded-xl text-white">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-orange-500 p-3 text-white">
                   <Target className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-orange-100 text-orange-800">
@@ -610,11 +664,14 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-orange-800">
-                  {Number.isFinite(metrics?.forecastAccuracy as unknown) ? ((metrics!.forecastAccuracy as number) * 100).toFixed(0) : '0'}%
+                  {Number.isFinite(metrics?.forecastAccuracy as unknown)
+                    ? ((metrics!.forecastAccuracy as number) * 100).toFixed(0)
+                    : '0'}
+                  %
                 </div>
                 <div className="text-sm text-orange-700">Forecast Accuracy</div>
                 <div className="flex items-center text-xs text-orange-600">
-                  <Sparkles className="h-3 w-3 mr-1" />
+                  <Sparkles className="mr-1 h-3 w-3" />
                   Machine Learning
                 </div>
               </div>
@@ -622,25 +679,29 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Stock Alerts */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-red-50 to-rose-100 hover:shadow-2xl transition-all duration-300">
+          <Card className="border-0 bg-gradient-to-br from-red-50 to-rose-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-red-500 rounded-xl text-white">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-red-500 p-3 text-white">
                   <Bell className="h-6 w-6" />
                 </div>
                 <div className="flex gap-1">
-                  <Badge variant="destructive" className="text-xs">Critical</Badge>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">Warning</Badge>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">Info</Badge>
+                  <Badge variant="destructive" className="text-xs">
+                    Critical
+                  </Badge>
+                  <Badge variant="secondary" className="bg-yellow-100 text-xs text-yellow-800">
+                    Warning
+                  </Badge>
+                  <Badge variant="secondary" className="bg-blue-100 text-xs text-blue-800">
+                    Info
+                  </Badge>
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-red-800">
-                  {criticalAlerts.length}
-                </div>
+                <div className="text-3xl font-bold text-red-800">{criticalAlerts.length}</div>
                 <div className="text-sm text-red-700">Stock Alerts</div>
                 <div className="flex items-center text-xs text-red-600">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  <AlertTriangle className="mr-1 h-3 w-3" />
                   {alerts.length} Total Alerts
                 </div>
               </div>
@@ -659,7 +720,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           <Card className="border-0 shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-red-400 to-red-600 rounded-lg text-white animate-pulse">
+                <div className="animate-pulse rounded-lg bg-gradient-to-r from-red-400 to-red-600 p-2 text-white">
                   <Bell className="h-5 w-5" />
                 </div>
                 Critical Stock Alerts
@@ -677,28 +738,26 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="p-4 rounded-xl border-l-4 border-red-500 bg-gradient-to-r from-red-50 to-red-100 hover:shadow-md transition-all duration-200"
+                      className="rounded-xl border-l-4 border-red-500 bg-gradient-to-r from-red-50 to-red-100 p-4 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <h4 className="font-semibold text-red-800">{alert.itemName}</h4>
-                            <Badge variant="outline" className="text-xs bg-white border-red-300">
+                            <Badge variant="outline" className="border-red-300 bg-white text-xs">
                               {alert.sku}
                             </Badge>
-                            <Badge variant="destructive">
-                              {alert.severity.toUpperCase()}
-                            </Badge>
+                            <Badge variant="destructive">{alert.severity.toUpperCase()}</Badge>
                           </div>
-                          <p className="text-sm text-red-700 mb-2">{alert.message}</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                            <div className="p-2 bg-white/60 rounded-lg">
+                          <p className="mb-2 text-sm text-red-700">{alert.message}</p>
+                          <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                            <div className="rounded-lg bg-white/60 p-2">
                               <span className="font-medium text-red-800">Impact:</span>
-                              <span className="text-red-700 ml-1">{alert.impact}</span>
+                              <span className="ml-1 text-red-700">{alert.impact}</span>
                             </div>
-                            <div className="p-2 bg-white/60 rounded-lg">
+                            <div className="rounded-lg bg-white/60 p-2">
                               <span className="font-medium text-green-800">Action:</span>
-                              <span className="text-green-700 ml-1">{alert.recommendation}</span>
+                              <span className="ml-1 text-green-700">{alert.recommendation}</span>
                             </div>
                           </div>
                         </div>
@@ -746,10 +805,25 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       <Pie
                         dataKey="value"
                         data={[
-                          { name: 'In Stock', value: Number(metrics?.totalItems ?? 0) - Number(metrics?.lowStockItems ?? 0) - Number(metrics?.outOfStockItems ?? 0), fill: '#10B981' },
-                          { name: 'Low Stock', value: metrics?.lowStockItems || 0, fill: '#F59E0B' },
-                          { name: 'Out of Stock', value: metrics?.outOfStockItems || 0, fill: '#EF4444' },
-                          { name: 'Critical', value: metrics?.criticalItems || 0, fill: '#DC2626' }
+                          {
+                            name: 'In Stock',
+                            value:
+                              Number(metrics?.totalItems ?? 0) -
+                              Number(metrics?.lowStockItems ?? 0) -
+                              Number(metrics?.outOfStockItems ?? 0),
+                            fill: '#10B981',
+                          },
+                          {
+                            name: 'Low Stock',
+                            value: metrics?.lowStockItems || 0,
+                            fill: '#F59E0B',
+                          },
+                          {
+                            name: 'Out of Stock',
+                            value: metrics?.outOfStockItems || 0,
+                            fill: '#EF4444',
+                          },
+                          { name: 'Critical', value: metrics?.criticalItems || 0, fill: '#DC2626' },
                         ]}
                         cx="50%"
                         cy="50%"
@@ -779,8 +853,22 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Area type="monotone" dataKey="value" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} name="Inventory Value" />
-                      <Area type="monotone" dataKey="turnover" stroke="#10B981" fill="#10B981" fillOpacity={0.2} name="Turnover Rate" />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#3B82F6"
+                        fill="#3B82F6"
+                        fillOpacity={0.3}
+                        name="Inventory Value"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="turnover"
+                        stroke="#10B981"
+                        fill="#10B981"
+                        fillOpacity={0.2}
+                        name="Turnover Rate"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -804,11 +892,11 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       size="sm"
                       onClick={() => setShowFilters(!showFilters)}
                     >
-                      <Filter className="h-4 w-4 mr-2" />
+                      <Filter className="mr-2 h-4 w-4" />
                       Filters
                     </Button>
                     <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Add Item
                     </Button>
                   </div>
@@ -820,7 +908,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                     <Input
                       placeholder="Search items by name, SKU, or description..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={e => setSearchTerm(e.target.value)}
                       className="w-full"
                     />
                   </div>
@@ -831,7 +919,9 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {categoryOptions.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -842,7 +932,9 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                     <SelectContent>
                       <SelectItem value="all">All Suppliers</SelectItem>
                       {supplierOptions.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -861,18 +953,21 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 </div>
 
                 {/* Items Table */}
-                <div className="border rounded-lg">
+                <div className="rounded-lg border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">
                           <Checkbox
-                            checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
-                            onCheckedChange={(checked) => {
+                            checked={
+                              selectedItems.size === filteredItems.length &&
+                              filteredItems.length > 0
+                            }
+                            onCheckedChange={checked => {
                               if (checked) {
-                                setSelectedItems(new Set(filteredItems.map(item => item.id)))
+                                setSelectedItems(new Set(filteredItems.map(item => item.id)));
                               } else {
-                                setSelectedItems(new Set())
+                                setSelectedItems(new Set());
                               }
                             }}
                           />
@@ -887,19 +982,19 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredItems.slice(0, visibleCount).map((item) => (
+                      {filteredItems.slice(0, visibleCount).map(item => (
                         <TableRow key={item.id} className="hover:bg-gray-50">
                           <TableCell>
                             <Checkbox
                               checked={selectedItems.has(item.id)}
-                              onCheckedChange={(checked) => {
-                                const newSelected = new Set(selectedItems)
+                              onCheckedChange={checked => {
+                                const newSelected = new Set(selectedItems);
                                 if (checked) {
-                                  newSelected.add(item.id)
+                                  newSelected.add(item.id);
                                 } else {
-                                  newSelected.delete(item.id)
+                                  newSelected.delete(item.id);
                                 }
-                                setSelectedItems(newSelected)
+                                setSelectedItems(newSelected);
                               }}
                             />
                           </TableCell>
@@ -912,10 +1007,12 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1">
-                              <div className="font-medium">{item.currentStock.toLocaleString()}</div>
+                              <div className="font-medium">
+                                {item.currentStock.toLocaleString()}
+                              </div>
                               <Progress
                                 value={(item.currentStock / item.maxStock) * 100}
-                                className="w-20 h-2"
+                                className="h-2 w-20"
                               />
                               <div className="text-xs text-gray-500">
                                 Max: {item.maxStock.toLocaleString()}
@@ -924,9 +1021,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">${item.totalValue.toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">
-                              ${item.unitPrice}/unit
-                            </div>
+                            <div className="text-xs text-gray-500">${item.unitPrice}/unit</div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={getVelocityColor(item.velocity)}>
@@ -937,7 +1032,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                             <div className="space-y-1">
                               <div className="text-sm font-medium">{item.supplier.name}</div>
                               <div className="flex items-center text-xs text-gray-500">
-                                <Star className="h-3 w-3 mr-1 text-yellow-400 fill-current" />
+                                <Star className="mr-1 h-3 w-3 fill-current text-yellow-400" />
                                 {item.supplier.rating.toFixed(1)}
                               </div>
                             </div>
@@ -967,7 +1062,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                   </Table>
                 </div>
                 {filteredItems.length > visibleCount && (
-                  <div className="flex justify-center mt-4">
+                  <div className="mt-4 flex justify-center">
                     <Button variant="outline" onClick={() => setVisibleCount(c => c + 200)}>
                       Load more items
                     </Button>
@@ -1013,7 +1108,13 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       <Tooltip />
                       <Legend />
                       <Bar dataKey="fastMoving" fill="#10B981" name="Fast Moving" />
-                      <Line type="monotone" dataKey="deadStock" stroke="#EF4444" strokeWidth={3} name="Dead Stock %" />
+                      <Line
+                        type="monotone"
+                        dataKey="deadStock"
+                        stroke="#EF4444"
+                        strokeWidth={3}
+                        name="Dead Stock %"
+                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -1043,7 +1144,8 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Array.isArray((window as unknown).__recentMovements) && (window as unknown).__recentMovements.length > 0 ? (
+                      {Array.isArray((window as unknown).__recentMovements) &&
+                      (window as unknown).__recentMovements.length > 0 ? (
                         (window as unknown).__recentMovements.map((m: unknown) => (
                           <TableRow key={m.id}>
                             <TableCell>{m.createdAt || m.timestamp || '-'}</TableCell>
@@ -1056,8 +1158,8 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       ) : (
                         <TableRow>
                           <TableCell colSpan={5}>
-                            <div className="text-center py-8 text-gray-500">
-                              <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <div className="py-8 text-center text-gray-500">
+                              <Archive className="mx-auto mb-4 h-12 w-12 opacity-50" />
                               <p>No recent movements</p>
                             </div>
                           </TableCell>
@@ -1073,7 +1175,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
       </motion.div>
 
       {/* Item Details Dialog */}
-      <Dialog open={selectedItem !== null} onOpenChange={(open) => !open && setSelectedItem(null)}>
+      <Dialog open={selectedItem !== null} onOpenChange={open => !open && setSelectedItem(null)}>
         <DialogContent className="max-w-4xl">
           {selectedItem && (
             <>
@@ -1086,7 +1188,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                   </Badge>
                 </DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Item Details */}
                 <div className="space-y-4">
                   <Card>
@@ -1105,7 +1207,9 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                         </div>
                         <div>
                           <span className="font-medium">Current Stock:</span>
-                          <span className="ml-2 font-semibold">{selectedItem.currentStock.toLocaleString()}</span>
+                          <span className="ml-2 font-semibold">
+                            {selectedItem.currentStock.toLocaleString()}
+                          </span>
                         </div>
                         <div>
                           <span className="font-medium">Reorder Point:</span>
@@ -1123,7 +1227,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       <Separator />
                       <div>
                         <span className="font-medium">Description:</span>
-                        <p className="text-sm text-gray-600 mt-1">{selectedItem.description}</p>
+                        <p className="mt-1 text-sm text-gray-600">{selectedItem.description}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1138,7 +1242,9 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                     <CardContent>
                       <div className="space-y-4">
                         <div className="text-center">
-                          <div className="text-3xl font-bold">{selectedItem.currentStock.toLocaleString()}</div>
+                          <div className="text-3xl font-bold">
+                            {selectedItem.currentStock.toLocaleString()}
+                          </div>
                           <div className="text-sm text-gray-500">Current Stock</div>
                         </div>
                         <Progress
@@ -1160,7 +1266,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
-export default EnhancedInventoryDashboard
+export default EnhancedInventoryDashboard;

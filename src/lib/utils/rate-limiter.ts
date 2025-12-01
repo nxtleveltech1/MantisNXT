@@ -11,9 +11,9 @@
  */
 
 export interface RateLimiterConfig {
-  maxTokens: number;      // Maximum tokens (requests) allowed
-  refillRate: number;     // Tokens per second
-  identifier: string;     // Unique identifier for this limiter
+  maxTokens: number; // Maximum tokens (requests) allowed
+  refillRate: number; // Tokens per second
+  identifier: string; // Unique identifier for this limiter
 }
 
 export class RateLimiter {
@@ -65,7 +65,7 @@ export class RateLimiter {
   async consume(cost: number = 1): Promise<void> {
     while (!this.tryConsume(cost)) {
       // Calculate wait time until next token
-      const waitTime = (cost - this.tokens) / this.refillRate * 1000;
+      const waitTime = ((cost - this.tokens) / this.refillRate) * 1000;
       await new Promise(resolve => setTimeout(resolve, Math.max(100, waitTime)));
     }
   }
@@ -101,11 +101,14 @@ export function getRateLimiter(
   refillRate: number = 0.16 // ~10 requests per minute
 ): RateLimiter {
   if (!rateLimiters.has(identifier)) {
-    rateLimiters.set(identifier, new RateLimiter({
+    rateLimiters.set(
       identifier,
-      maxTokens,
-      refillRate,
-    }));
+      new RateLimiter({
+        identifier,
+        maxTokens,
+        refillRate,
+      })
+    );
   }
 
   return rateLimiters.get(identifier)!;
@@ -129,9 +132,10 @@ export async function exponentialBackoff(
       lastError = error;
 
       // Check if error is rate limit (429)
-      const isRateLimit = error.status === 429 ||
-                         error.code === 'RATE_LIMITED' ||
-                         error.message?.includes('too many requests');
+      const isRateLimit =
+        error.status === 429 ||
+        error.code === 'RATE_LIMITED' ||
+        error.message?.includes('too many requests');
 
       // If not rate limit error and not last attempt, retry with backoff
       if (!isRateLimit && attempt < maxRetries - 1) {
@@ -191,7 +195,9 @@ export class CircuitBreaker {
         this.state = 'half-open';
         console.log(`[${this.identifier}] Circuit breaker entering half-open state`);
       } else {
-        throw new Error(`Circuit breaker is open. Service unavailable. Try again in ${Math.ceil((this.timeout - timeSinceLastFailure) / 1000)}s`);
+        throw new Error(
+          `Circuit breaker is open. Service unavailable. Try again in ${Math.ceil((this.timeout - timeSinceLastFailure) / 1000)}s`
+        );
       }
     }
 

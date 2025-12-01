@@ -66,7 +66,7 @@ class SyncProgressHandler {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
       stream,
     };
@@ -131,7 +131,7 @@ class SyncProgressHandler {
           data: {
             jobId,
             itemsPerSecond: Math.random() * 100 + 50,
-            estimatedTimeRemaining: (total - processed) / 75 * 1000,
+            estimatedTimeRemaining: ((total - processed) / 75) * 1000,
             timestamp: new Date().toISOString(),
           },
         });
@@ -179,7 +179,7 @@ class SyncProgressHandler {
   }
 
   clearAll() {
-    this.activeStreams.forEach((stream) => stream.close());
+    this.activeStreams.forEach(stream => stream.close());
     this.activeStreams.clear();
     this.jobs.clear();
   }
@@ -559,10 +559,10 @@ describe('POST /api/v1/integrations/sync/progress/[jobId]', () => {
         headers: createAuthenticatedRequest('token').headers,
       };
 
-      const responses = await Promise.all(jobs.map((jobId) => handler.handleRequest(jobId, request)));
+      const responses = await Promise.all(jobs.map(jobId => handler.handleRequest(jobId, request)));
 
       expect(responses).toHaveLength(3);
-      responses.forEach((response) => {
+      responses.forEach(response => {
         expect(response.status).toBe(200);
       });
 

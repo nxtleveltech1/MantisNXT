@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -79,34 +85,33 @@ export default function OrganizationSettingsPage() {
     }
   }, [user]);
 
-  const handleInputChange = (field: keyof Organization) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    if (!organization) return;
+  const handleInputChange =
+    (field: keyof Organization) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (!organization) return;
 
-    setOrganization(prev => ({
-      ...prev!,
-      [field]: e.target.value,
-      updatedAt: new Date(),
-    }));
-    setHasChanges(true);
-  };
-
-  const handleAddressChange = (field: keyof Organization['address']) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!organization) return;
-
-    setOrganization(prev => ({
-      ...prev!,
-      address: {
-        ...prev!.address,
+      setOrganization(prev => ({
+        ...prev!,
         [field]: e.target.value,
-      },
-      updatedAt: new Date(),
-    }));
-    setHasChanges(true);
-  };
+        updatedAt: new Date(),
+      }));
+      setHasChanges(true);
+    };
+
+  const handleAddressChange =
+    (field: keyof Organization['address']) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!organization) return;
+
+      setOrganization(prev => ({
+        ...prev!,
+        address: {
+          ...prev!.address,
+          [field]: e.target.value,
+        },
+        updatedAt: new Date(),
+      }));
+      setHasChanges(true);
+    };
 
   const handleSelectChange = (field: keyof Organization) => (value: string) => {
     if (!organization) return;
@@ -146,7 +151,8 @@ export default function OrganizationSettingsPage() {
         <Alert variant="destructive">
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            You don&apos;t have permission to view organization settings. Contact your administrator.
+            You don&apos;t have permission to view organization settings. Contact your
+            administrator.
           </AlertDescription>
         </Alert>
       </div>
@@ -155,8 +161,8 @@ export default function OrganizationSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -165,28 +171,25 @@ export default function OrganizationSettingsPage() {
     return (
       <div className="p-6">
         <Alert variant="destructive">
-          <AlertDescription>
-            Organization not found. Please contact support.
-          </AlertDescription>
+          <AlertDescription>Organization not found. Please contact support.</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6 p-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Organization Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your organization&apos;s information and configuration</p>
+          <p className="text-muted-foreground mt-1">
+            Manage your organization&apos;s information and configuration
+          </p>
         </div>
 
         <ProtectedComponent permission="organization.update">
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-          >
+          <Button onClick={handleSave} disabled={!hasChanges || isSaving}>
             {isSaving ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -222,12 +225,10 @@ export default function OrganizationSettingsPage() {
             <Building2 className="mr-2 h-5 w-5" />
             Basic Information
           </CardTitle>
-          <CardDescription>
-            Core organization details and branding
-          </CardDescription>
+          <CardDescription>Core organization details and branding</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="orgName">Organization Name</Label>
               <Input
@@ -268,9 +269,7 @@ export default function OrganizationSettingsPage() {
               <Calendar className="mr-1 h-3 w-3" />
               Created: {new Date(organization.createdAt).toLocaleDateString('en-ZA')}
             </Badge>
-            <Badge variant="outline">
-              Status: {organization.status}
-            </Badge>
+            <Badge variant="outline">Status: {organization.status}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -282,12 +281,10 @@ export default function OrganizationSettingsPage() {
             <Shield className="mr-2 h-5 w-5" />
             South African Business Registration
           </CardTitle>
-          <CardDescription>
-            Legal entity information and compliance details
-          </CardDescription>
+          <CardDescription>Legal entity information and compliance details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="regNumber">Company Registration Number</Label>
               <Input
@@ -331,12 +328,12 @@ export default function OrganizationSettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="beeLevel">BEE Certification Level</Label>
               <Select
                 value={organization.beeLevel || ''}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   setOrganization(prev => ({
                     ...prev!,
                     beeLevel: value,
@@ -368,8 +365,8 @@ export default function OrganizationSettingsPage() {
                 min="0"
                 max="100"
                 step="0.01"
-                value={((organization.vatRate ?? (SA_VAT_RATE ?? 0)) * 100).toFixed(2)}
-                onChange={(e) => {
+                value={((organization.vatRate ?? SA_VAT_RATE ?? 0) * 100).toFixed(2)}
+                onChange={e => {
                   const rate = parseFloat(e.target.value || '0') / 100;
                   setOrganization(prev => ({
                     ...prev!,
@@ -393,12 +390,10 @@ export default function OrganizationSettingsPage() {
             <Phone className="mr-2 h-5 w-5" />
             Contact Information
           </CardTitle>
-          <CardDescription>
-            Primary contact details for your organization
-          </CardDescription>
+          <CardDescription>Primary contact details for your organization</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="email">Primary Email</Label>
               <Input
@@ -451,16 +446,14 @@ export default function OrganizationSettingsPage() {
             <MapPin className="mr-2 h-5 w-5" />
             Physical Address
           </CardTitle>
-          <CardDescription>
-            Official business address in South Africa
-          </CardDescription>
+          <CardDescription>Official business address in South Africa</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="street1">Street Address 1</Label>
-              <Input
+            <Input
               id="street1"
-                value={organization.address.street1 || organization.address.street || ''}
+              value={organization.address.street1 || organization.address.street || ''}
               onChange={handleAddressChange('street1')}
               placeholder="123 Business Park Drive"
               disabled={!hasPermission('organization.update')}
@@ -469,7 +462,7 @@ export default function OrganizationSettingsPage() {
 
           <div className="space-y-2">
             <Label htmlFor="street2">Street Address 2 (Optional)</Label>
-              <Input
+            <Input
               id="street2"
               value={organization.address.street2 || ''}
               onChange={handleAddressChange('street2')}
@@ -478,7 +471,7 @@ export default function OrganizationSettingsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="suburb">Suburb</Label>
               <Input
@@ -529,7 +522,7 @@ export default function OrganizationSettingsPage() {
             <Label htmlFor="province">Province</Label>
             <Select
               value={organization.address.province}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setOrganization(prev => ({
                   ...prev!,
                   address: {
@@ -564,12 +557,10 @@ export default function OrganizationSettingsPage() {
             <CreditCard className="mr-2 h-5 w-5" />
             System Configuration
           </CardTitle>
-          <CardDescription>
-            Localization and system settings for South Africa
-          </CardDescription>
+          <CardDescription>Localization and system settings for South Africa</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Currency</Label>
               <div className="flex items-center space-x-2">
@@ -583,9 +574,7 @@ export default function OrganizationSettingsPage() {
             <div className="space-y-2">
               <Label>Timezone</Label>
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">
-                  {organization.timezone}
-                </Badge>
+                <Badge variant="outline">{organization.timezone}</Badge>
               </div>
               <p className="text-xs text-gray-500">South African Standard Time (SAST)</p>
             </div>
@@ -593,9 +582,7 @@ export default function OrganizationSettingsPage() {
             <div className="space-y-2">
               <Label>Locale</Label>
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">
-                  en-ZA (English - South Africa)
-                </Badge>
+                <Badge variant="outline">en-ZA (English - South Africa)</Badge>
               </div>
               <p className="text-xs text-gray-500">Date/number formatting</p>
             </div>
@@ -605,10 +592,12 @@ export default function OrganizationSettingsPage() {
 
           <div className="space-y-2">
             <Label>Financial Configuration</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">VAT Rate:</span>
-                <span className="font-medium">{((organization.vatRate ?? 0) * 100).toFixed(1)}%</span>
+                <span className="font-medium">
+                  {((organization.vatRate ?? 0) * 100).toFixed(1)}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax Year:</span>

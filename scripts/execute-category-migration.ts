@@ -6,7 +6,11 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const migrationFile = join(process.cwd(), 'migrations', '0034_seed_comprehensive_category_hierarchy.sql');
+const migrationFile = join(
+  process.cwd(),
+  'migrations',
+  '0034_seed_comprehensive_category_hierarchy.sql'
+);
 const content = readFileSync(migrationFile, 'utf-8');
 
 // Split by level markers
@@ -25,7 +29,7 @@ const lines = content.split('\n');
 
 for (let i = 0; i < lines.length; i++) {
   const line = lines[i];
-  
+
   // Check if this is a level marker
   const marker = levelMarkers.find(m => line.includes(m.marker));
   if (marker) {
@@ -37,15 +41,17 @@ for (let i = 0; i < lines.length; i++) {
     currentSql = '';
     continue;
   }
-  
+
   // Skip BEGIN/COMMIT and function definitions (already executed)
-  if (line.trim() === 'BEGIN;' || 
-      line.trim() === 'COMMIT;' || 
-      line.includes('CREATE OR REPLACE FUNCTION') ||
-      line.includes('DO $$')) {
+  if (
+    line.trim() === 'BEGIN;' ||
+    line.trim() === 'COMMIT;' ||
+    line.includes('CREATE OR REPLACE FUNCTION') ||
+    line.includes('DO $$')
+  ) {
     continue;
   }
-  
+
   // Collect SQL for current level
   if (currentLevel > 0) {
     currentSql += line + '\n';
@@ -65,4 +71,3 @@ levels.forEach(l => {
 
 // Export for use in execution
 export { levels };
-

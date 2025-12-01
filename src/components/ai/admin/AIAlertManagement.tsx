@@ -21,14 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertTriangle,
-  AlertCircle,
-  Info,
-  CheckCircle2,
-  Clock,
-  Loader2,
-} from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -215,10 +208,10 @@ export default function AIAlertManagement() {
 
   // Group alerts by severity
   const alertsBySeverity = {
-    critical: alerts.filter((a) => a.severity === 'critical'),
-    high: alerts.filter((a) => a.severity === 'high'),
-    medium: alerts.filter((a) => a.severity === 'medium'),
-    low: alerts.filter((a) => a.severity === 'low'),
+    critical: alerts.filter(a => a.severity === 'critical'),
+    high: alerts.filter(a => a.severity === 'high'),
+    medium: alerts.filter(a => a.severity === 'medium'),
+    low: alerts.filter(a => a.severity === 'low'),
   };
 
   const getStatusBadge = (status: string) => {
@@ -239,7 +232,7 @@ export default function AIAlertManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -258,11 +251,11 @@ export default function AIAlertManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <AlertCircle className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.unresolved_count || 0}</div>
-            <p className="text-xs text-muted-foreground">Requiring attention</p>
+            <p className="text-muted-foreground text-xs">Requiring attention</p>
           </CardContent>
         </Card>
 
@@ -275,20 +268,18 @@ export default function AIAlertManagement() {
             <div className="text-2xl font-bold text-red-600">
               {stats?.by_severity.critical || 0}
             </div>
-            <p className="text-xs text-muted-foreground">High priority</p>
+            <p className="text-muted-foreground text-xs">High priority</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Acknowledged</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.acknowledged_count || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">In progress</p>
+            <div className="text-2xl font-bold">{stats?.acknowledged_count || 0}</div>
+            <p className="text-muted-foreground text-xs">In progress</p>
           </CardContent>
         </Card>
 
@@ -298,10 +289,8 @@ export default function AIAlertManagement() {
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.by_status.resolved || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">Successfully resolved</p>
+            <div className="text-2xl font-bold">{stats?.by_status.resolved || 0}</div>
+            <p className="text-muted-foreground text-xs">Successfully resolved</p>
           </CardContent>
         </Card>
       </div>
@@ -418,16 +407,16 @@ export default function AIAlertManagement() {
                   </CardContent>
                 </Card>
               ) : (
-                severityAlerts.map((alert) => (
+                severityAlerts.map(alert => (
                   <Card
                     key={alert.id}
-                    className={`border-l-4 ${config.border} ${config.bg} cursor-pointer hover:shadow-md transition-shadow`}
+                    className={`border-l-4 ${config.border} ${config.bg} cursor-pointer transition-shadow hover:shadow-md`}
                     onClick={() => setSelectedAlert(alert)}
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <Icon className={`h-5 w-5 mt-0.5 ${config.color}`} />
+                          <Icon className={`mt-0.5 h-5 w-5 ${config.color}`} />
                           <div className="flex-1">
                             <CardTitle className="text-base">{alert.title}</CardTitle>
                             <CardDescription className="mt-1">{alert.message}</CardDescription>
@@ -441,7 +430,7 @@ export default function AIAlertManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-4 text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-4">
                           <span>{alert.service_type.replace(/_/g, ' ')}</span>
                           <span>{format(new Date(alert.created_at), 'MMM d, yyyy HH:mm')}</span>
                           {alert.entity_type && (
@@ -456,7 +445,7 @@ export default function AIAlertManagement() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   acknowledgeMutation.mutate({ alertId: alert.id });
                                 }}
@@ -466,7 +455,7 @@ export default function AIAlertManagement() {
                               </Button>
                               <Button
                                 size="sm"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   resolveMutation.mutate({ alertId: alert.id });
                                 }}
@@ -479,7 +468,7 @@ export default function AIAlertManagement() {
                           {alert.status === 'acknowledged' && (
                             <Button
                               size="sm"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 resolveMutation.mutate({ alertId: alert.id });
                               }}
@@ -508,7 +497,11 @@ export default function AIAlertManagement() {
                 <>
                   {(() => {
                     const Icon = SEVERITY_CONFIG[selectedAlert.severity].icon;
-                    return <Icon className={`h-5 w-5 ${SEVERITY_CONFIG[selectedAlert.severity].color}`} />;
+                    return (
+                      <Icon
+                        className={`h-5 w-5 ${SEVERITY_CONFIG[selectedAlert.severity].color}`}
+                      />
+                    );
                   })()}
                   {selectedAlert.title}
                 </>
@@ -520,24 +513,24 @@ export default function AIAlertManagement() {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Service</Label>
+                  <Label className="text-muted-foreground text-sm">Service</Label>
                   <div className="mt-1 text-sm font-medium">
                     {selectedAlert.service_type.replace(/_/g, ' ')}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Status</Label>
+                  <Label className="text-muted-foreground text-sm">Status</Label>
                   <div className="mt-1">{getStatusBadge(selectedAlert.status)}</div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Created</Label>
+                  <Label className="text-muted-foreground text-sm">Created</Label>
                   <div className="mt-1 text-sm">
                     {format(new Date(selectedAlert.created_at), 'PPpp')}
                   </div>
                 </div>
                 {selectedAlert.acknowledged_at && (
                   <div>
-                    <Label className="text-sm text-muted-foreground">Acknowledged</Label>
+                    <Label className="text-muted-foreground text-sm">Acknowledged</Label>
                     <div className="mt-1 text-sm">
                       {format(new Date(selectedAlert.acknowledged_at), 'PPpp')}
                     </div>
@@ -547,7 +540,7 @@ export default function AIAlertManagement() {
 
               {selectedAlert.recommendations && selectedAlert.recommendations.length > 0 && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Recommendations</Label>
+                  <Label className="text-muted-foreground text-sm">Recommendations</Label>
                   <ul className="mt-1 space-y-1 text-sm">
                     {selectedAlert.recommendations.map((rec: unknown, idx: number) => (
                       <li key={idx} className="flex items-start gap-2">
@@ -561,8 +554,8 @@ export default function AIAlertManagement() {
 
               {selectedAlert.metadata && Object.keys(selectedAlert.metadata).length > 0 && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Metadata</Label>
-                  <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-32">
+                  <Label className="text-muted-foreground text-sm">Metadata</Label>
+                  <pre className="bg-muted mt-1 max-h-32 overflow-auto rounded-md p-4 text-sm">
                     {JSON.stringify(selectedAlert.metadata, null, 2)}
                   </pre>
                 </div>
@@ -597,9 +590,7 @@ export default function AIAlertManagement() {
                     }
                     disabled={resolveMutation.isPending}
                   >
-                    {resolveMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                    {resolveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Resolve
                   </Button>
                 )}

@@ -9,9 +9,8 @@ import type {
   CreateUserData,
   AuthResult,
   TwoFactorSetup,
-  BulkImportResult} from '@/types/auth';
-
-
+  BulkImportResult,
+} from '@/types/auth';
 
 // Mock data store (in real app, this would be a database)
 const mockUsers: User[] = [
@@ -24,7 +23,7 @@ const mockUsers: User[] = [
     department: 'IT',
     permissions: [
       { id: 'perm-1', name: 'users.manage', resource: 'users', action: 'manage' },
-      { id: 'perm-2', name: 'admin.access', resource: 'admin', action: 'manage' }
+      { id: 'perm-2', name: 'admin.access', resource: 'admin', action: 'manage' },
     ],
     created_at: new Date('2024-01-15'),
     last_login: new Date(),
@@ -41,7 +40,7 @@ const mockUsers: User[] = [
       city: 'Johannesburg',
       province: 'gauteng',
       postal_code: '2196',
-      country: 'South Africa'
+      country: 'South Africa',
     },
     preferences: {
       language: 'en',
@@ -52,12 +51,12 @@ const mockUsers: User[] = [
         email_notifications: true,
         sms_notifications: false,
         push_notifications: true,
-        digest_frequency: 'daily'
-      }
+        digest_frequency: 'daily',
+      },
     },
     two_factor_enabled: false,
     email_verified: true,
-    password_changed_at: new Date('2024-01-15')
+    password_changed_at: new Date('2024-01-15'),
   },
   {
     id: 'user-2',
@@ -68,7 +67,7 @@ const mockUsers: User[] = [
     department: 'Procurement',
     permissions: [
       { id: 'perm-3', name: 'users.read', resource: 'users', action: 'read' },
-      { id: 'perm-4', name: 'procurement.manage', resource: 'procurement', action: 'manage' }
+      { id: 'perm-4', name: 'procurement.manage', resource: 'procurement', action: 'manage' },
     ],
     created_at: new Date('2024-01-20'),
     last_login: new Date(Date.now() - 86400000), // 1 day ago
@@ -85,7 +84,7 @@ const mockUsers: User[] = [
       city: 'Cape Town',
       province: 'western_cape',
       postal_code: '8001',
-      country: 'South Africa'
+      country: 'South Africa',
     },
     preferences: {
       language: 'en',
@@ -96,12 +95,12 @@ const mockUsers: User[] = [
         email_notifications: true,
         sms_notifications: true,
         push_notifications: true,
-        digest_frequency: 'weekly'
-      }
+        digest_frequency: 'weekly',
+      },
     },
     two_factor_enabled: true,
     email_verified: true,
-    password_changed_at: new Date('2024-01-20')
+    password_changed_at: new Date('2024-01-20'),
   },
   {
     id: 'user-3',
@@ -112,7 +111,7 @@ const mockUsers: User[] = [
     department: 'Procurement',
     permissions: [
       { id: 'perm-5', name: 'procurement.read', resource: 'procurement', action: 'read' },
-      { id: 'perm-6', name: 'orders.create', resource: 'orders', action: 'create' }
+      { id: 'perm-6', name: 'orders.create', resource: 'orders', action: 'create' },
     ],
     created_at: new Date('2024-02-01'),
     last_login: new Date(Date.now() - 3600000), // 1 hour ago
@@ -129,7 +128,7 @@ const mockUsers: User[] = [
       city: 'Durban',
       province: 'kwazulu_natal',
       postal_code: '3629',
-      country: 'South Africa'
+      country: 'South Africa',
     },
     preferences: {
       language: 'en',
@@ -140,14 +139,14 @@ const mockUsers: User[] = [
         email_notifications: true,
         sms_notifications: false,
         push_notifications: false,
-        digest_frequency: 'monthly'
-      }
+        digest_frequency: 'monthly',
+      },
     },
     two_factor_enabled: false,
     email_verified: true,
-    password_changed_at: new Date('2024-02-01')
-  }
-]
+    password_changed_at: new Date('2024-02-01'),
+  },
+];
 
 const mockOrganizations: Organization[] = [
   {
@@ -169,7 +168,7 @@ const mockOrganizations: Organization[] = [
       city: 'Johannesburg',
       province: 'gauteng',
       postal_code: '2196',
-      country: 'South Africa'
+      country: 'South Africa',
     },
     logo_url: undefined,
     settings: {
@@ -182,33 +181,65 @@ const mockOrganizations: Organization[] = [
         require_lowercase: true,
         require_numbers: true,
         require_symbols: true,
-        expires_days: 90
+        expires_days: 90,
       },
       session_timeout: 3600,
-      allowed_domains: ['mantis.co.za']
-    }
-  }
-]
+      allowed_domains: ['mantis.co.za'],
+    },
+  },
+];
 
 export class MockAuthProvider implements AuthProvider {
-  private currentUser: User | null = null
-  private sessionToken: string | null = null
+  private currentUser: User | null = null;
+  private sessionToken: string | null = null;
+  private readonly STORAGE_KEY = 'mantis_auth_session';
+
+  constructor() {
+    // Restore session from localStorage on initialization
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          this.currentUser = parsed.user;
+          this.sessionToken = parsed.token;
+        }
+      } catch (error) {
+        console.error('Failed to restore auth session:', error);
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+    }
+  }
+
+  private saveSession(user: User | null, token: string | null): void {
+    if (typeof window !== 'undefined') {
+      try {
+        if (user && token) {
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ user, token }));
+        } else {
+          localStorage.removeItem(this.STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('Failed to save auth session:', error);
+      }
+    }
+  }
 
   async login(credentials: LoginCredentials): Promise<AuthResult> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Mock authentication - accept any valid email format with password length >= 3
     if (!credentials.email.includes('@') || credentials.password.length < 3) {
       return {
         success: false,
         message: 'Invalid email or password',
-        errors: ['Please check your email and password']
-      }
+        errors: ['Please check your email and password'],
+      };
     }
 
     // Find user or create demo user for valid emails
-    let user = mockUsers.find(u => u.email === credentials.email)
+    let user = mockUsers.find(u => u.email === credentials.email);
 
     if (!user) {
       // Auto-create user for demo purposes
@@ -219,9 +250,7 @@ export class MockAuthProvider implements AuthProvider {
         role: 'viewer',
         org_id: 'org-1',
         department: 'General',
-        permissions: [
-          { id: 'perm-view', name: 'basic.read', resource: 'basic', action: 'read' }
-        ],
+        permissions: [{ id: 'perm-view', name: 'basic.read', resource: 'basic', action: 'read' }],
         created_at: new Date(),
         last_login: new Date(),
         is_active: true,
@@ -235,16 +264,16 @@ export class MockAuthProvider implements AuthProvider {
             email_notifications: true,
             sms_notifications: false,
             push_notifications: true,
-            digest_frequency: 'weekly'
-          }
+            digest_frequency: 'weekly',
+          },
         },
         two_factor_enabled: false,
         email_verified: true,
-        password_changed_at: new Date()
-      }
+        password_changed_at: new Date(),
+      };
 
-      mockUsers.push(newUser)
-      user = newUser
+      mockUsers.push(newUser);
+      user = newUser;
     }
 
     // Check for 2FA requirement
@@ -253,8 +282,8 @@ export class MockAuthProvider implements AuthProvider {
         success: false,
         requires_two_factor: true,
         two_factor_token: `2fa-token-${user.id}-${Date.now()}`,
-        message: 'Two-factor authentication required'
-      }
+        message: 'Two-factor authentication required',
+      };
     }
 
     // Verify 2FA code if provided
@@ -263,42 +292,47 @@ export class MockAuthProvider implements AuthProvider {
       if (!/^\d{6}$/.test(credentials.two_factor_code)) {
         return {
           success: false,
-          message: 'Invalid verification code'
-        }
+          message: 'Invalid verification code',
+        };
       }
     }
 
     // Update last login
-    user.last_login = new Date()
+    user.last_login = new Date();
 
     // Set current user and session
-    this.currentUser = user
-    this.sessionToken = `mock-token-${user.id}-${Date.now()}`
+    this.currentUser = user;
+    this.sessionToken = `mock-token-${user.id}-${Date.now()}`;
+    
+    // Persist session to localStorage
+    this.saveSession(user, this.sessionToken);
 
     return {
       success: true,
       user,
       token: this.sessionToken,
-      message: 'Login successful'
-    }
+      message: 'Login successful',
+    };
   }
 
   async logout(): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    this.currentUser = null
-    this.sessionToken = null
+    await new Promise(resolve => setTimeout(resolve, 300));
+    this.currentUser = null;
+    this.sessionToken = null;
+    // Clear persisted session
+    this.saveSession(null, null);
   }
 
   async register(data: RegistrationData): Promise<AuthResult> {
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Check if user already exists
     if (mockUsers.find(u => u.email === data.email)) {
       return {
         success: false,
         message: 'User already exists',
-        errors: ['A user with this email already exists']
-      }
+        errors: ['A user with this email already exists'],
+      };
     }
 
     // Create new organization
@@ -326,14 +360,14 @@ export class MockAuthProvider implements AuthProvider {
           require_lowercase: true,
           require_numbers: true,
           require_symbols: true,
-          expires_days: 90
+          expires_days: 90,
         },
         session_timeout: 3600,
-        allowed_domains: [data.email.split('@')[1]]
-      }
-    }
+        allowed_domains: [data.email.split('@')[1]],
+      },
+    };
 
-    mockOrganizations.push(newOrg)
+    mockOrganizations.push(newOrg);
 
     // Create admin user
     const newUser: User = {
@@ -345,7 +379,7 @@ export class MockAuthProvider implements AuthProvider {
       department: 'Administration',
       permissions: [
         { id: 'perm-admin', name: 'admin.manage', resource: 'admin', action: 'manage' },
-        { id: 'perm-users', name: 'users.manage', resource: 'users', action: 'manage' }
+        { id: 'perm-users', name: 'users.manage', resource: 'users', action: 'manage' },
       ],
       created_at: new Date(),
       last_login: new Date(),
@@ -362,113 +396,124 @@ export class MockAuthProvider implements AuthProvider {
           email_notifications: true,
           sms_notifications: false,
           push_notifications: true,
-          digest_frequency: 'daily'
-        }
+          digest_frequency: 'daily',
+        },
       },
       two_factor_enabled: false,
       email_verified: false, // Would require verification in real system
-      password_changed_at: new Date()
-    }
+      password_changed_at: new Date(),
+    };
 
-    mockUsers.push(newUser)
+    mockUsers.push(newUser);
 
     // For mock: auto-verify and sign in
-    newUser.email_verified = true
-    this.currentUser = newUser
-    this.sessionToken = `mock-token-${newUser.id}-${Date.now()}`
+    newUser.email_verified = true;
+    this.currentUser = newUser;
+    this.sessionToken = `mock-token-${newUser.id}-${Date.now()}`;
+    
+    // Persist session to localStorage
+    this.saveSession(newUser, this.sessionToken);
 
     return {
       success: true,
       user: newUser,
       token: this.sessionToken,
-      message: 'Registration successful'
-    }
+      message: 'Registration successful',
+    };
   }
 
   async resetPassword(email: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log(`Password reset requested for: ${email}`)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(`Password reset requested for: ${email}`);
   }
 
   async verifyEmail(token: string): Promise<boolean> {
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise(resolve => setTimeout(resolve, 800));
     // Mock verification - accept any token
-    return token.length > 10
+    return token.length > 10;
   }
 
   async setupTwoFactor(): Promise<TwoFactorSetup> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const secret = 'JBSWY3DPEHPK3PXP'
-    const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`
+    const secret = 'JBSWY3DPEHPK3PXP';
+    const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
     const backupCodes = [
-      '12345678', '23456789', '34567890', '45678901', '56789012',
-      '67890123', '78901234', '89012345', '90123456', '01234567'
-    ]
+      '12345678',
+      '23456789',
+      '34567890',
+      '45678901',
+      '56789012',
+      '67890123',
+      '78901234',
+      '89012345',
+      '90123456',
+      '01234567',
+    ];
 
     return {
       secret,
       qr_code: qrCode,
-      backup_codes: backupCodes
-    }
+      backup_codes: backupCodes,
+    };
   }
 
   async verifyTwoFactor(token: string, code: string): Promise<boolean> {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 500));
     // Mock verification - accept any 6-digit code
     return /^\d{6}$/.test(code);
   }
 
   async disableTwoFactor(password: string): Promise<boolean> {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return password.length >= 3
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return password.length >= 3;
   }
 
   async getCurrentUser(): Promise<User | null> {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    return this.currentUser
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return this.currentUser;
   }
 
   async refreshToken(): Promise<string> {
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 300));
     if (!this.currentUser) {
-      throw new Error('No user signed in')
+      throw new Error('No user signed in');
     }
-    this.sessionToken = `mock-token-${this.currentUser.id}-${Date.now()}`
-    return this.sessionToken
+    this.sessionToken = `mock-token-${this.currentUser.id}-${Date.now()}`;
+    return this.sessionToken;
   }
 
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000));
     if (!this.currentUser) {
-      throw new Error('No user signed in')
+      throw new Error('No user signed in');
     }
     if (oldPassword.length < 3) {
-      throw new Error('Current password is incorrect')
+      throw new Error('Current password is incorrect');
     }
-    console.log(`Password updated for user: ${this.currentUser.email}`)
+    console.log(`Password updated for user: ${this.currentUser.email}`);
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise(resolve => setTimeout(resolve, 800));
     if (!this.currentUser) {
-      throw new Error('No user signed in')
+      throw new Error('No user signed in');
     }
 
     // Update user data
-    Object.assign(this.currentUser, data)
+    Object.assign(this.currentUser, data);
 
     // Update in mock store
-    const userIndex = mockUsers.findIndex(u => u.id === this.currentUser!.id)
+    const userIndex = mockUsers.findIndex(u => u.id === this.currentUser!.id);
     if (userIndex >= 0) {
-      mockUsers[userIndex] = this.currentUser
+      mockUsers[userIndex] = this.currentUser;
     }
 
-    return this.currentUser
+    return this.currentUser;
   }
 
   async createUser(data: CreateUserData): Promise<User> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const newUser: User = {
       id: `user-${Date.now()}`,
@@ -477,12 +522,13 @@ export class MockAuthProvider implements AuthProvider {
       role: data.role,
       org_id: this.currentUser?.org_id || 'org-1',
       department: data.department,
-      permissions: data.permissions?.map(p => ({
-        id: `perm-${p}`,
-        name: p,
-        resource: p.split('.')[0],
-        action: p.split('.')[1] as unknown
-      })) || [],
+      permissions:
+        data.permissions?.map(p => ({
+          id: `perm-${p}`,
+          name: p,
+          resource: p.split('.')[0],
+          action: p.split('.')[1] as unknown,
+        })) || [],
       created_at: new Date(),
       last_login: new Date(),
       is_active: true,
@@ -498,76 +544,76 @@ export class MockAuthProvider implements AuthProvider {
           email_notifications: true,
           sms_notifications: false,
           push_notifications: true,
-          digest_frequency: 'weekly'
-        }
+          digest_frequency: 'weekly',
+        },
       },
       two_factor_enabled: false,
       email_verified: !data.send_invitation,
-      password_changed_at: new Date()
-    }
+      password_changed_at: new Date(),
+    };
 
-    mockUsers.push(newUser)
-    return newUser
+    mockUsers.push(newUser);
+    return newUser;
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User> {
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    const userIndex = mockUsers.findIndex(u => u.id === id)
+    const userIndex = mockUsers.findIndex(u => u.id === id);
     if (userIndex === -1) {
-      throw new Error('User not found')
+      throw new Error('User not found');
     }
 
-    Object.assign(mockUsers[userIndex], data)
-    return mockUsers[userIndex]
+    Object.assign(mockUsers[userIndex], data);
+    return mockUsers[userIndex];
   }
 
   async deleteUser(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const userIndex = mockUsers.findIndex(u => u.id === id)
+    const userIndex = mockUsers.findIndex(u => u.id === id);
     if (userIndex === -1) {
-      throw new Error('User not found')
+      throw new Error('User not found');
     }
 
-    mockUsers.splice(userIndex, 1)
+    mockUsers.splice(userIndex, 1);
   }
 
   async getUsersByOrganization(orgId: string): Promise<User[]> {
-    await new Promise(resolve => setTimeout(resolve, 600))
-    return mockUsers.filter(u => u.org_id === orgId)
+    await new Promise(resolve => setTimeout(resolve, 600));
+    return mockUsers.filter(u => u.org_id === orgId);
   }
 
   async bulkImportUsers(csvData: string): Promise<BulkImportResult> {
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const lines = csvData.split('\n').filter(line => line.trim())
-    const headers = lines[0].split(',')
-    const dataLines = lines.slice(1)
+    const lines = csvData.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',');
+    const dataLines = lines.slice(1);
 
     const result: BulkImportResult = {
       total_processed: dataLines.length,
       successful_imports: 0,
       failed_imports: 0,
       errors: [],
-      created_users: []
-    }
+      created_users: [],
+    };
 
     dataLines.forEach((line, index) => {
-      const values = line.split(',')
+      const values = line.split(',');
       try {
         // Mock validation and user creation
         if (values.length < headers.length) {
-          throw new Error('Missing required fields')
+          throw new Error('Missing required fields');
         }
 
-        const email = values[headers.indexOf('email')]
+        const email = values[headers.indexOf('email')];
         if (!email || !email.includes('@')) {
-          throw new Error('Invalid email address')
+          throw new Error('Invalid email address');
         }
 
         if (mockUsers.find(u => u.email === email)) {
-          throw new Error('User already exists')
+          throw new Error('User already exists');
         }
 
         // Create mock user
@@ -592,49 +638,50 @@ export class MockAuthProvider implements AuthProvider {
               email_notifications: true,
               sms_notifications: false,
               push_notifications: true,
-              digest_frequency: 'weekly'
-            }
+              digest_frequency: 'weekly',
+            },
           },
           two_factor_enabled: false,
           email_verified: true,
-          password_changed_at: new Date()
-        }
+          password_changed_at: new Date(),
+        };
 
-        mockUsers.push(newUser)
-        result.created_users.push(newUser)
-        result.successful_imports++
+        mockUsers.push(newUser);
+        result.created_users.push(newUser);
+        result.successful_imports++;
       } catch (error) {
-        result.failed_imports++
+        result.failed_imports++;
         result.errors.push({
           row: index + 2, // +2 because index is 0-based and we skip header
           email: values[headers.indexOf('email')],
-          errors: [error instanceof Error ? error.message : 'Unknown error']
-        })
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        });
       }
-    })
+    });
 
-    return result
+    return result;
   }
 
   // Mock utility methods
   getMockUsers(): User[] {
-    return [...mockUsers]
+    return [...mockUsers];
   }
 
   getMockOrganizations(): Organization[] {
-    return [...mockOrganizations]
+    return [...mockOrganizations];
   }
 
   clearMockData(): void {
-    this.currentUser = null
-    this.sessionToken = null
+    this.currentUser = null;
+    this.sessionToken = null;
+    this.saveSession(null, null);
     // Reset to original data
-    mockUsers.splice(3) // Remove any added users beyond the first 3
+    mockUsers.splice(3); // Remove any added users beyond the first 3
   }
 }
 
 // Export singleton instance
-export const authProvider = new MockAuthProvider()
+export const authProvider = new MockAuthProvider();
 
 // Export singleton instance
 export const mockAuthProvider = new MockAuthProvider();

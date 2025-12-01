@@ -6,7 +6,7 @@ async function applyMigrations() {
   const migrations = [
     'database/migrations/0025_extraction_pipeline_core.sql',
     'database/migrations/0026_import_and_rollback.sql',
-    'database/migrations/0027_metrics_and_monitoring.sql'
+    'database/migrations/0027_metrics_and_monitoring.sql',
   ];
 
   console.log('Starting extraction pipeline migrations...');
@@ -56,7 +56,7 @@ async function applyMigrations() {
   process.exit(0);
 }
 
-applyMigrations().catch((error) => {
+applyMigrations().catch(error => {
   console.error('Migration failed:', error);
   process.exit(1);
 });

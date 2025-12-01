@@ -14,7 +14,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import {
   Activity,
   AlertTriangle,
@@ -177,7 +185,7 @@ export default function AIServiceHealthMonitor() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -193,15 +201,10 @@ export default function AIServiceHealthMonitor() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             Last updated: {format(lastRefresh, 'HH:mm:ss')}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManualRefresh}
-            disabled={isLoading}
-          >
+          <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={isLoading}>
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -238,30 +241,29 @@ export default function AIServiceHealthMonitor() {
             <OverallIcon className={`h-5 w-5 ${overallConfig.text}`} />
             Overall System Health
           </CardTitle>
-          <CardDescription>
-            Aggregated health status across all AI services
-          </CardDescription>
+          <CardDescription>Aggregated health status across all AI services</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Badge className={overallConfig.badge}>{overallStatus.toUpperCase()}</Badge>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {Array.isArray(health?.services)
-                  ? health.services.filter((s) => s.status === 'healthy').length
+                  ? health.services.filter(s => s.status === 'healthy').length
                   : health?.services
-                  ? Object.values(health.services).filter((s: unknown) => s.status === 'healthy').length
-                  : 0}{' '}
+                    ? Object.values(health.services).filter((s: unknown) => s.status === 'healthy')
+                        .length
+                    : 0}{' '}
                 /{' '}
                 {Array.isArray(health?.services)
                   ? health.services.length
                   : health?.services
-                  ? Object.keys(health.services).length
-                  : 0}{' '}
+                    ? Object.keys(health.services).length
+                    : 0}{' '}
                 services healthy
               </span>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Last check: {health?.lastUpdated ? format(new Date(health.lastUpdated), 'PPp') : '-'}
             </div>
           </div>
@@ -273,20 +275,22 @@ export default function AIServiceHealthMonitor() {
         {(Array.isArray(health?.services)
           ? health.services
           : health?.services
-          ? Object.entries(health.services).map(([serviceName, serviceData]: [string, unknown]) => ({
-              service: serviceName,
-              status: serviceData.status,
-              uptime: 0,
-              lastCheck: serviceData.lastUsed || new Date().toISOString(),
-              metrics: {
-                responseTime: parseInt(serviceData.avgLatency) || 0,
-                requestCount: serviceData.requests24h || 0,
-                errorRate: serviceData.errorRate || 0,
-                successRate: 1 - (serviceData.errorRate || 0),
-              },
-            }))
-          : []
-        ).map((service) => {
+            ? Object.entries(health.services).map(
+                ([serviceName, serviceData]: [string, unknown]) => ({
+                  service: serviceName,
+                  status: serviceData.status,
+                  uptime: 0,
+                  lastCheck: serviceData.lastUsed || new Date().toISOString(),
+                  metrics: {
+                    responseTime: parseInt(serviceData.avgLatency) || 0,
+                    requestCount: serviceData.requests24h || 0,
+                    errorRate: serviceData.errorRate || 0,
+                    successRate: 1 - (serviceData.errorRate || 0),
+                  },
+                })
+              )
+            : []
+        ).map(service => {
           const config = getStatusColor(service.status);
           const Icon = config.icon;
           const info = SERVICE_INFO[service.service as keyof typeof SERVICE_INFO];
@@ -294,7 +298,7 @@ export default function AIServiceHealthMonitor() {
           return (
             <Card
               key={service.service}
-              className={`cursor-pointer transition-all hover:shadow-md border-l-4 ${config.border} ${config.bg}`}
+              className={`cursor-pointer border-l-4 transition-all hover:shadow-md ${config.border} ${config.bg}`}
               onClick={() => setSelectedService(service)}
             >
               <CardHeader>
@@ -303,7 +307,7 @@ export default function AIServiceHealthMonitor() {
                     <span className="text-2xl">{info?.icon}</span>
                     <div>
                       <CardTitle className="text-base">{info?.name || service.service}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="mt-1 flex items-center gap-2">
                         <Icon className={`h-3 w-3 ${config.text}`} />
                         <Badge className={`${config.badge} text-xs`}>
                           {service.status.toUpperCase()}
@@ -311,16 +315,14 @@ export default function AIServiceHealthMonitor() {
                       </div>
                     </div>
                   </div>
-                  <Activity className="h-5 w-5 text-muted-foreground" />
+                  <Activity className="text-muted-foreground h-5 w-5" />
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-muted-foreground">Response Time</div>
-                    <div className="font-semibold">
-                      {service.metrics.responseTime}ms
-                    </div>
+                    <div className="font-semibold">{service.metrics.responseTime}ms</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Success Rate</div>
@@ -339,8 +341,8 @@ export default function AIServiceHealthMonitor() {
                     </div>
                   </div>
                 </div>
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="border-t pt-2">
+                  <div className="text-muted-foreground flex items-center justify-between text-xs">
                     <span>Uptime: {service.uptime.toFixed(2)}%</span>
                     <span>Last check: {format(new Date(service.lastCheck), 'HH:mm:ss')}</span>
                   </div>
@@ -366,9 +368,7 @@ export default function AIServiceHealthMonitor() {
                 </>
               )}
             </DialogTitle>
-            <DialogDescription>
-              Detailed health metrics and performance data
-            </DialogDescription>
+            <DialogDescription>Detailed health metrics and performance data</DialogDescription>
           </DialogHeader>
 
           {selectedService && serviceDetails && (
@@ -378,44 +378,44 @@ export default function AIServiceHealthMonitor() {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <Zap className="h-6 w-6 mx-auto text-primary mb-2" />
+                      <Zap className="text-primary mx-auto mb-2 h-6 w-6" />
                       <div className="text-2xl font-bold">
                         {serviceDetails.metrics.responseTime}ms
                       </div>
-                      <div className="text-xs text-muted-foreground">Response Time</div>
+                      <div className="text-muted-foreground text-xs">Response Time</div>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <Activity className="h-6 w-6 mx-auto text-green-600 mb-2" />
+                      <Activity className="mx-auto mb-2 h-6 w-6 text-green-600" />
                       <div className="text-2xl font-bold">
                         {serviceDetails.metrics.requestCount}
                       </div>
-                      <div className="text-xs text-muted-foreground">Total Requests</div>
+                      <div className="text-muted-foreground text-xs">Total Requests</div>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <CheckCircle2 className="h-6 w-6 mx-auto text-green-600 mb-2" />
+                      <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-green-600" />
                       <div className="text-2xl font-bold">
                         {(serviceDetails.metrics.successRate * 100).toFixed(1)}%
                       </div>
-                      <div className="text-xs text-muted-foreground">Success Rate</div>
+                      <div className="text-muted-foreground text-xs">Success Rate</div>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <XCircle className="h-6 w-6 mx-auto text-red-600 mb-2" />
+                      <XCircle className="mx-auto mb-2 h-6 w-6 text-red-600" />
                       <div className="text-2xl font-bold">
                         {(serviceDetails.metrics.errorRate * 100).toFixed(1)}%
                       </div>
-                      <div className="text-xs text-muted-foreground">Error Rate</div>
+                      <div className="text-muted-foreground text-xs">Error Rate</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -458,14 +458,14 @@ export default function AIServiceHealthMonitor() {
                         {serviceDetails.errors.map((error, index) => (
                           <div
                             key={index}
-                            className="p-3 rounded-lg bg-red-50 border border-red-200"
+                            className="rounded-lg border border-red-200 bg-red-50 p-3"
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="text-sm font-medium text-red-900">
                                   {error.message}
                                 </div>
-                                <div className="text-xs text-red-600 mt-1">
+                                <div className="mt-1 text-xs text-red-600">
                                   {format(new Date(error.timestamp), 'PPpp')}
                                 </div>
                               </div>
@@ -482,13 +482,11 @@ export default function AIServiceHealthMonitor() {
               {/* Additional Info */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <div className="text-sm text-muted-foreground">Uptime</div>
-                  <div className="text-lg font-semibold">
-                    {serviceDetails.uptime.toFixed(2)}%
-                  </div>
+                  <div className="text-muted-foreground text-sm">Uptime</div>
+                  <div className="text-lg font-semibold">{serviceDetails.uptime.toFixed(2)}%</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Last Health Check</div>
+                  <div className="text-muted-foreground text-sm">Last Health Check</div>
                   <div className="text-lg font-semibold">
                     {format(new Date(serviceDetails.lastCheck), 'PPp')}
                   </div>

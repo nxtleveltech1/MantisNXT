@@ -12,7 +12,7 @@ for (let i = 0; i < lines.length; i++) {
   // Check for L1 pattern: number followed by dot (escaped or not)
   if (/^\d+\\?\.\s+[A-Z]/.test(line) && !line.includes('•') && !line.includes('o')) {
     l1Count++;
-    console.log(`  Line ${i+1}: "${line.substring(0, 60)}"`);
+    console.log(`  Line ${i + 1}: "${line.substring(0, 60)}"`);
     if (l1Count >= 12) break;
   }
 }
@@ -27,7 +27,7 @@ for (let i = 0; i < lines.length; i++) {
   // Check for L5: five numbers
   if (/^\d+\.\d+\.\d+\.\d+\.\d+/.test(line)) {
     l5Count++;
-    console.log(`  Line ${i+1}: "${line.substring(0, 60)}"`);
+    console.log(`  Line ${i + 1}: "${line.substring(0, 60)}"`);
     console.log(`    Raw: "${raw.substring(0, 60)}"`);
     console.log(`    First char code: ${raw.charCodeAt(0)}`);
     if (l5Count >= 5) break;
@@ -35,4 +35,3 @@ for (let i = 0; i < lines.length; i++) {
 }
 
 console.log(`\nFound ${l5Count} L5 categories`);
-

@@ -32,11 +32,7 @@ export const INVALIDATION_PATTERNS: Record<CacheInvalidationEventType, string[]>
     'inventory-analytics.*',
     'dashboard-metrics.*',
   ],
-  'inventory.bulk_updated': [
-    'inventory-list.*',
-    'inventory-analytics.*',
-    'dashboard-metrics.*',
-  ],
+  'inventory.bulk_updated': ['inventory-list.*', 'inventory-analytics.*', 'dashboard-metrics.*'],
   'inventory.stock_movement': [
     'inventory-item-.*',
     'inventory-list.*',
@@ -46,52 +42,25 @@ export const INVALIDATION_PATTERNS: Record<CacheInvalidationEventType, string[]>
   ],
 
   // Product events
-  'product.created': [
-    'products-list.*',
-    'inventory-list.*',
-    'dashboard-metrics.*',
-  ],
-  'product.updated': [
-    'products-list.*',
-    'product-.*',
-    'inventory-list.*',
-  ],
-  'product.deleted': [
-    'products-list.*',
-    'product-.*',
-    'inventory-list.*',
-    'dashboard-metrics.*',
-  ],
+  'product.created': ['products-list.*', 'inventory-list.*', 'dashboard-metrics.*'],
+  'product.updated': ['products-list.*', 'product-.*', 'inventory-list.*'],
+  'product.deleted': ['products-list.*', 'product-.*', 'inventory-list.*', 'dashboard-metrics.*'],
 
   // Supplier events
-  'supplier.created': [
-    'suppliers-list.*',
-    'dashboard-metrics.*',
-    'supplier-analytics.*',
-  ],
+  'supplier.created': ['suppliers-list.*', 'dashboard-metrics.*', 'supplier-analytics.*'],
   'supplier.updated': [
     'suppliers-list.*',
     'supplier-.*',
     'supplier-metrics-.*',
     'supplier-inventory-.*',
   ],
-  'supplier.deleted': [
-    'suppliers-list.*',
-    'supplier-.*',
-    'dashboard-metrics.*',
-  ],
+  'supplier.deleted': ['suppliers-list.*', 'supplier-.*', 'dashboard-metrics.*'],
 
   // Analytics events
-  'analytics.new': [
-    'analytics-overview.*',
-    'analytics-.*',
-    'dashboard-analytics.*',
-  ],
+  'analytics.new': ['analytics-overview.*', 'analytics-.*', 'dashboard-analytics.*'],
 
   // Dashboard events
-  'dashboard.refresh': [
-    'dashboard-.*',
-  ],
+  'dashboard.refresh': ['dashboard-.*'],
 
   // Global cache clear
   'cache.clear_all': [
@@ -126,12 +95,8 @@ export function getSpecificPatterns(
 
   // Add bulk entity patterns
   if (payload.entityIds) {
-    payload.entityIds.forEach((id) => {
-      specificPatterns.push(
-        `inventory-item-${id}`,
-        `product-${id}`,
-        `supplier-${id}`
-      );
+    payload.entityIds.forEach(id => {
+      specificPatterns.push(`inventory-item-${id}`, `product-${id}`, `supplier-${id}`);
     });
   }
 
@@ -169,7 +134,7 @@ export function patternToRegex(pattern: string): RegExp {
  * Test if a cache key matches any of the given patterns
  */
 export function matchesCacheKey(key: string, patterns: string[]): boolean {
-  return patterns.some((pattern) => {
+  return patterns.some(pattern => {
     const regex = patternToRegex(pattern);
     return regex.test(key);
   });
@@ -186,36 +151,26 @@ export const QueryKeys = {
   dashboardAnalytics: () => ['dashboard-analytics'] as const,
 
   // Inventory queries
-  inventoryList: (filters?: Record<string, unknown>) =>
-    ['inventory-list', filters] as const,
-  inventoryItem: (id: string) =>
-    [`inventory-item-${id}`] as const,
-  inventoryBySupplier: (supplierId: string) =>
-    [`supplier-inventory-${supplierId}`] as const,
-  inventoryByCategory: (category: string) =>
-    [`inventory-category-${category}`] as const,
+  inventoryList: (filters?: Record<string, unknown>) => ['inventory-list', filters] as const,
+  inventoryItem: (id: string) => [`inventory-item-${id}`] as const,
+  inventoryBySupplier: (supplierId: string) => [`supplier-inventory-${supplierId}`] as const,
+  inventoryByCategory: (category: string) => [`inventory-category-${category}`] as const,
   inventoryAnalytics: (filters?: Record<string, unknown>) =>
     ['inventory-analytics', filters] as const,
 
   // Supplier queries
-  supplierList: (filters?: Record<string, unknown>) =>
-    ['suppliers-list', filters] as const,
-  supplier: (id: string) =>
-    [`supplier-${id}`] as const,
-  supplierMetrics: (id: string) =>
-    [`supplier-metrics-${id}`] as const,
+  supplierList: (filters?: Record<string, unknown>) => ['suppliers-list', filters] as const,
+  supplier: (id: string) => [`supplier-${id}`] as const,
+  supplierMetrics: (id: string) => [`supplier-metrics-${id}`] as const,
 
   // Analytics queries
   analyticsOverview: (filters?: Record<string, unknown>) =>
     ['analytics-overview', filters] as const,
-  stockMovements: (filters?: Record<string, unknown>) =>
-    ['stock-movements', filters] as const,
+  stockMovements: (filters?: Record<string, unknown>) => ['stock-movements', filters] as const,
 
   // Product queries
-  productsList: (filters?: Record<string, unknown>) =>
-    ['products-list', filters] as const,
-  product: (id: string) =>
-    [`product-${id}`] as const,
+  productsList: (filters?: Record<string, unknown>) => ['products-list', filters] as const,
+  product: (id: string) => [`product-${id}`] as const,
 } as const;
 
 /**

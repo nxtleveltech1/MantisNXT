@@ -2,7 +2,22 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, SortAsc, SortDesc, X, Tag, Calendar, Hash, DollarSign, Package, User, Building2, Eye, EyeOff } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  SortAsc,
+  SortDesc,
+  X,
+  Tag,
+  Calendar,
+  Hash,
+  DollarSign,
+  Package,
+  User,
+  Building2,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { designTokens } from '../design-system';
 
 // Search Interfaces
@@ -31,7 +46,18 @@ export interface SearchConfig {
 
 export interface SearchFilter {
   field: string;
-  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'gt' | 'lt' | 'gte' | 'lte' | 'between' | 'in' | 'not_in';
+  operator:
+    | 'equals'
+    | 'contains'
+    | 'startsWith'
+    | 'endsWith'
+    | 'gt'
+    | 'lt'
+    | 'gte'
+    | 'lte'
+    | 'between'
+    | 'in'
+    | 'not_in';
   value: unknown;
   values?: unknown[]; // For 'between', 'in', 'not_in' operators
   active: boolean;
@@ -98,65 +124,71 @@ class AdvancedSearchEngine<T = unknown> {
     return results;
   }
 
-  private performTextSearch(results: SearchResult<T>[], query: string, activeFields: string[]): SearchResult<T>[] {
-    const searchFields = this.config.fields.filter(f =>
-      f.searchable !== false && (activeFields.length === 0 || activeFields.includes(f.key))
+  private performTextSearch(
+    results: SearchResult<T>[],
+    query: string,
+    activeFields: string[]
+  ): SearchResult<T>[] {
+    const searchFields = this.config.fields.filter(
+      f => f.searchable !== false && (activeFields.length === 0 || activeFields.includes(f.key))
     );
 
-    return results.map(result => {
-      let totalScore = 0;
-      const matches: unknown[] = [];
+    return results
+      .map(result => {
+        let totalScore = 0;
+        const matches: unknown[] = [];
 
-      searchFields.forEach(field => {
-        const value = this.getFieldValue(result.item, field.key);
-        if (value == null) return;
+        searchFields.forEach(field => {
+          const value = this.getFieldValue(result.item, field.key);
+          if (value == null) return;
 
-        const stringValue = String(value).toLowerCase();
-        const queryLower = query.toLowerCase();
+          const stringValue = String(value).toLowerCase();
+          const queryLower = query.toLowerCase();
 
-        let fieldScore = 0;
-        const positions: number[] = [];
+          let fieldScore = 0;
+          const positions: number[] = [];
 
-        // Exact match (highest score)
-        if (stringValue === queryLower) {
-          fieldScore = 100 * (field.weight || 1);
-          positions.push(0);
-        }
-        // Starts with query
-        else if (stringValue.startsWith(queryLower)) {
-          fieldScore = 80 * (field.weight || 1);
-          positions.push(0);
-        }
-        // Contains query
-        else if (stringValue.includes(queryLower)) {
-          fieldScore = 60 * (field.weight || 1);
-          const index = stringValue.indexOf(queryLower);
-          positions.push(index);
-        }
-        // Fuzzy search if enabled
-        else if (this.config.enableFuzzySearch) {
-          const fuzzyScore = this.calculateFuzzyScore(queryLower, stringValue);
-          if (fuzzyScore > 0.3) {
-            fieldScore = fuzzyScore * 40 * (field.weight || 1);
+          // Exact match (highest score)
+          if (stringValue === queryLower) {
+            fieldScore = 100 * (field.weight || 1);
+            positions.push(0);
           }
-        }
+          // Starts with query
+          else if (stringValue.startsWith(queryLower)) {
+            fieldScore = 80 * (field.weight || 1);
+            positions.push(0);
+          }
+          // Contains query
+          else if (stringValue.includes(queryLower)) {
+            fieldScore = 60 * (field.weight || 1);
+            const index = stringValue.indexOf(queryLower);
+            positions.push(index);
+          }
+          // Fuzzy search if enabled
+          else if (this.config.enableFuzzySearch) {
+            const fuzzyScore = this.calculateFuzzyScore(queryLower, stringValue);
+            if (fuzzyScore > 0.3) {
+              fieldScore = fuzzyScore * 40 * (field.weight || 1);
+            }
+          }
 
-        if (fieldScore > 0) {
-          totalScore += fieldScore;
-          matches.push({
-            field: field.key,
-            value: stringValue,
-            positions
-          });
-        }
-      });
+          if (fieldScore > 0) {
+            totalScore += fieldScore;
+            matches.push({
+              field: field.key,
+              value: stringValue,
+              positions,
+            });
+          }
+        });
 
-      return {
-        ...result,
-        score: totalScore,
-        matches
-      };
-    }).filter(result => result.score > 0)
+        return {
+          ...result,
+          score: totalScore,
+          matches,
+        };
+      })
+      .filter(result => result.score > 0)
       .sort((a, b) => b.score - a.score);
   }
 
@@ -234,7 +266,11 @@ class AdvancedSearchEngine<T = unknown> {
     }
   }
 
-  private sortResults(results: SearchResult<T>[], sortField?: string, direction: 'asc' | 'desc' = 'asc'): SearchResult<T>[] {
+  private sortResults(
+    results: SearchResult<T>[],
+    sortField?: string,
+    direction: 'asc' | 'desc' = 'asc'
+  ): SearchResult<T>[] {
     if (!sortField) {
       return results.sort((a, b) => b.score - a.score); // Sort by relevance score
     }
@@ -297,7 +333,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
   showFieldSelector = true,
   showFilters = true,
   showSavedSearches = true,
-  enableVoiceSearch = false
+  enableVoiceSearch = false,
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
     query: '',
@@ -305,7 +341,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
     sortDirection: 'asc',
     activeFields: [],
     savedSearches: [],
-    ...initialState
+    ...initialState,
   });
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -313,16 +349,22 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
   const searchEngine = useMemo(() => new AdvancedSearchEngine(config), [config]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const debouncedSearch = useCallback((state: SearchState) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  const debouncedSearch = useCallback(
+    (state: SearchState) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
 
-    debounceRef.current = setTimeout(() => {
-      const results = searchEngine.search(data, state);
-      onSearch(results.map(r => r.item), state);
-    }, config.debounceMs || 300);
-  }, [searchEngine, data, onSearch, config.debounceMs]);
+      debounceRef.current = setTimeout(() => {
+        const results = searchEngine.search(data, state);
+        onSearch(
+          results.map(r => r.item),
+          state
+        );
+      }, config.debounceMs || 300);
+    },
+    [searchEngine, data, onSearch, config.debounceMs]
+  );
 
   useEffect(() => {
     debouncedSearch(searchState);
@@ -335,14 +377,14 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
   const addFilter = useCallback((filter: Omit<SearchFilter, 'active'>) => {
     setSearchState(prev => ({
       ...prev,
-      filters: [...prev.filters, { ...filter, active: true }]
+      filters: [...prev.filters, { ...filter, active: true }],
     }));
   }, []);
 
   const removeFilter = useCallback((index: number) => {
     setSearchState(prev => ({
       ...prev,
-      filters: prev.filters.filter((_, i) => i !== index)
+      filters: prev.filters.filter((_, i) => i !== index),
     }));
   }, []);
 
@@ -351,7 +393,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
       ...prev,
       filters: prev.filters.map((filter, i) =>
         i === index ? { ...filter, active: !filter.active } : filter
-      )
+      ),
     }));
   }, []);
 
@@ -410,7 +452,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
 
         .search-button.active {
           color: ${designTokens.colors.primary.DEFAULT};
-          background: ${designTokens.colors.primary.DEFAULT}/10;
+          background: ${designTokens.colors.primary.DEFAULT} / 10;
         }
 
         .advanced-panel {
@@ -479,13 +521,13 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
 
       {/* Main Search Input */}
       <div className="search-input-container">
-        <Search className="w-5 h-5 text-muted-foreground absolute left-3" />
+        <Search className="text-muted-foreground absolute left-3 h-5 w-5" />
         <input
           type="text"
           className="search-input"
           placeholder={placeholder}
           value={searchState.query}
-          onChange={(e) => updateSearchState({ query: e.target.value })}
+          onChange={e => updateSearchState({ query: e.target.value })}
           onFocus={() => setIsExpanded(true)}
         />
 
@@ -496,24 +538,28 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
               onClick={() => setShowAdvanced(!showAdvanced)}
               title="Advanced Filters"
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="h-4 w-4" />
               {searchState.filters.filter(f => f.active).length > 0 && (
-                <span className="ml-1 text-xs">{searchState.filters.filter(f => f.active).length}</span>
+                <span className="ml-1 text-xs">
+                  {searchState.filters.filter(f => f.active).length}
+                </span>
               )}
             </button>
           )}
 
           <button
             className="search-button"
-            onClick={() => updateSearchState({
-              sortDirection: searchState.sortDirection === 'asc' ? 'desc' : 'asc'
-            })}
+            onClick={() =>
+              updateSearchState({
+                sortDirection: searchState.sortDirection === 'asc' ? 'desc' : 'asc',
+              })
+            }
             title={`Sort ${searchState.sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}
           >
             {searchState.sortDirection === 'asc' ? (
-              <SortAsc className="w-4 h-4" />
+              <SortAsc className="h-4 w-4" />
             ) : (
-              <SortDesc className="w-4 h-4" />
+              <SortDesc className="h-4 w-4" />
             )}
           </button>
         </div>
@@ -532,12 +578,14 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
             {/* Field Selector */}
             {showFieldSelector && (
               <div className="field-selector">
-                <span className="text-sm font-medium text-muted-foreground mb-2">Search in:</span>
+                <span className="text-muted-foreground mb-2 text-sm font-medium">Search in:</span>
                 {config.fields
                   .filter(field => field.searchable !== false)
                   .map(field => {
                     const Icon = field.icon;
-                    const isActive = searchState.activeFields.length === 0 || searchState.activeFields.includes(field.key);
+                    const isActive =
+                      searchState.activeFields.length === 0 ||
+                      searchState.activeFields.includes(field.key);
 
                     return (
                       <button
@@ -550,7 +598,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
                           updateSearchState({ activeFields: newActiveFields });
                         }}
                       >
-                        {Icon && <Icon className="w-3 h-3" />}
+                        {Icon && <Icon className="h-3 w-3" />}
                         {field.label}
                       </button>
                     );
@@ -561,10 +609,10 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
             {/* Active Filters */}
             {searchState.filters.length > 0 && (
               <div className="filters-section">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Filters:</span>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm font-medium">Filters:</span>
                   <button
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground text-xs"
                     onClick={() => updateSearchState({ filters: [] })}
                   >
                     Clear All
@@ -573,22 +621,20 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
 
                 {searchState.filters.map((filter, index) => (
                   <div key={index} className={`filter-item ${filter.active ? '' : 'inactive'}`}>
-                    <button
-                      className="text-xs"
-                      onClick={() => toggleFilter(index)}
-                    >
-                      {filter.active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                    <button className="text-xs" onClick={() => toggleFilter(index)}>
+                      {filter.active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                     </button>
 
                     <span className="text-sm">
-                      {config.fields.find(f => f.key === filter.field)?.label || filter.field} {filter.operator} {String(filter.value)}
+                      {config.fields.find(f => f.key === filter.field)?.label || filter.field}{' '}
+                      {filter.operator} {String(filter.value)}
                     </span>
 
                     <button
-                      className="ml-auto text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground ml-auto"
                       onClick={() => removeFilter(index)}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
@@ -597,11 +643,11 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
 
             {/* Sort Controls */}
             <div className="sort-controls">
-              <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+              <span className="text-muted-foreground text-sm font-medium">Sort by:</span>
               <select
                 className="sort-select"
                 value={searchState.sortField || ''}
-                onChange={(e) => updateSearchState({ sortField: e.target.value || undefined })}
+                onChange={e => updateSearchState({ sortField: e.target.value || undefined })}
               >
                 <option value="">Relevance</option>
                 {config.fields
@@ -630,7 +676,7 @@ export interface FilterBuilderProps {
 export const FilterBuilder: React.FC<FilterBuilderProps> = ({
   fields,
   onAddFilter,
-  className = ''
+  className = '',
 }) => {
   const [selectedField, setSelectedField] = useState('');
   const [selectedOperator, setSelectedOperator] = useState<SearchFilter['operator']>('equals');
@@ -642,7 +688,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
     onAddFilter({
       field: selectedField,
       operator: selectedOperator,
-      value: filterValue
+      value: filterValue,
     });
 
     setFilterValue('');
@@ -651,7 +697,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
   const getOperatorsForField = (field: SearchableField) => {
     const operators: { value: SearchFilter['operator']; label: string }[] = [
       { value: 'equals', label: 'Equals' },
-      { value: 'contains', label: 'Contains' }
+      { value: 'contains', label: 'Contains' },
     ];
 
     if (field.type === 'text') {
@@ -672,10 +718,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
     }
 
     if (field.options) {
-      operators.push(
-        { value: 'in', label: 'In' },
-        { value: 'not_in', label: 'Not in' }
-      );
+      operators.push({ value: 'in', label: 'In' }, { value: 'not_in', label: 'Not in' });
     }
 
     return operators;
@@ -688,8 +731,8 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
     <div className={`filter-builder flex items-center gap-2 ${className}`}>
       <select
         value={selectedField}
-        onChange={(e) => setSelectedField(e.target.value)}
-        className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
+        onChange={e => setSelectedField(e.target.value)}
+        className="border-border bg-background text-foreground rounded-sm border px-3 py-2"
       >
         <option value="">Select field...</option>
         {fields
@@ -705,8 +748,8 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
         <>
           <select
             value={selectedOperator}
-            onChange={(e) => setSelectedOperator(e.target.value as SearchFilter['operator'])}
-            className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
+            onChange={e => setSelectedOperator(e.target.value as SearchFilter['operator'])}
+            className="border-border bg-background text-foreground rounded-sm border px-3 py-2"
           >
             {operators.map(op => (
               <option key={op.value} value={op.value}>
@@ -718,8 +761,8 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
           {selectedFieldObj?.options ? (
             <select
               value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-              className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
+              onChange={e => setFilterValue(e.target.value)}
+              className="border-border bg-background text-foreground rounded-sm border px-3 py-2"
             >
               <option value="">Select value...</option>
               {selectedFieldObj.options.map(option => (
@@ -730,17 +773,21 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
             </select>
           ) : (
             <input
-              type={selectedFieldObj?.type === 'number' || selectedFieldObj?.type === 'currency' ? 'number' : 'text'}
+              type={
+                selectedFieldObj?.type === 'number' || selectedFieldObj?.type === 'currency'
+                  ? 'number'
+                  : 'text'
+              }
               value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
+              onChange={e => setFilterValue(e.target.value)}
               placeholder="Enter value..."
-              className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
+              className="border-border bg-background text-foreground rounded-sm border px-3 py-2"
             />
           )}
 
           <button
             onClick={handleAddFilter}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 transition-colors"
             disabled={!filterValue}
           >
             Add Filter
@@ -761,12 +808,12 @@ export const createProductSearchConfig = (): SearchConfig => ({
     { key: 'supplier.name', label: 'Supplier', type: 'text', icon: Building2, weight: 1.5 },
     { key: 'price', label: 'Price', type: 'currency', icon: DollarSign, sortable: true },
     { key: 'stock', label: 'Stock', type: 'number', sortable: true },
-    { key: 'lastUpdated', label: 'Last Updated', type: 'date', icon: Calendar, sortable: true }
+    { key: 'lastUpdated', label: 'Last Updated', type: 'date', icon: Calendar, sortable: true },
   ],
   enableFuzzySearch: true,
   defaultSort: 'name',
   defaultSortDirection: 'asc',
-  debounceMs: 250
+  debounceMs: 250,
 });
 
 export const createSupplierSearchConfig = (): SearchConfig => ({
@@ -777,15 +824,20 @@ export const createSupplierSearchConfig = (): SearchConfig => ({
     { key: 'email', label: 'Email', type: 'text', weight: 1.5 },
     { key: 'phone', label: 'Phone', type: 'text' },
     { key: 'category', label: 'Category', type: 'enum', icon: Tag },
-    { key: 'status', label: 'Status', type: 'enum', options: [
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' },
-      { value: 'pending', label: 'Pending' }
-    ]},
-    { key: 'createdAt', label: 'Created Date', type: 'date', icon: Calendar, sortable: true }
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'pending', label: 'Pending' },
+      ],
+    },
+    { key: 'createdAt', label: 'Created Date', type: 'date', icon: Calendar, sortable: true },
   ],
   enableFuzzySearch: true,
   defaultSort: 'name',
   defaultSortDirection: 'asc',
-  debounceMs: 300
+  debounceMs: 300,
 });

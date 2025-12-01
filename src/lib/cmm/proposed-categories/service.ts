@@ -1,10 +1,7 @@
 // @ts-nocheck
 
 import { query } from '@/lib/database/unified-connection';
-import type {
-  ProposedCategoryUpsertParams,
-  RecordProposalResult,
-} from './types';
+import type { ProposedCategoryUpsertParams, RecordProposalResult } from './types';
 import {
   linkProposedCategoryToProduct,
   normalizeCategoryLabel,
@@ -73,7 +70,12 @@ export async function recordProposedCategoryForProduct(
         updated_at = NOW()
       WHERE supplier_product_id = $1
     `,
-    [supplierProductId, params.confidence ?? null, params.reasoning ?? null, params.provider ?? null]
+    [
+      supplierProductId,
+      params.confidence ?? null,
+      params.reasoning ?? null,
+      params.provider ?? null,
+    ]
   );
 
   return {
@@ -83,7 +85,9 @@ export async function recordProposedCategoryForProduct(
   };
 }
 
-export async function listProposedCategories(status: 'pending' | 'approved' | 'rejected' = 'pending') {
+export async function listProposedCategories(
+  status: 'pending' | 'approved' | 'rejected' = 'pending'
+) {
   const result = await query(
     `
       SELECT 
@@ -143,10 +147,9 @@ async function createCategoryFromProposal(
       category_id: string;
       level: number;
       path: string;
-    }>(
-      `SELECT category_id, level, path FROM core.category WHERE category_id = $1`,
-      [parentCategoryId]
-    );
+    }>(`SELECT category_id, level, path FROM core.category WHERE category_id = $1`, [
+      parentCategoryId,
+    ]);
     if (parentResult.rows.length > 0) {
       const parent = parentResult.rows[0];
       level = parent.level + 1;
@@ -308,4 +311,3 @@ export async function rejectProposedCategory(
 
   return { affected_products: resetProducts.rowCount ?? 0 };
 }
-

@@ -14,7 +14,7 @@ export {
   closePool,
   DatabaseManager,
   db,
-  enterpriseDb
+  enterpriseDb,
 } from '../database';
 
 export { PoolClient } from 'pg';

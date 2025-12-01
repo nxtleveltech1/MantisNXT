@@ -1,2 +1,2 @@
-export { OAuthButton } from './OAuthButton'
-export { FormDivider } from './FormDivider'
+export { OAuthButton } from './OAuthButton';
+export { FormDivider } from './FormDivider';

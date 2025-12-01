@@ -1,17 +1,17 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
-import { SCHEMA } from '@/lib/db/schema-contract'
-import type { MarketIntelSnapshot } from './types'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
+import { SCHEMA } from '@/lib/db/schema-contract';
+import type { MarketIntelSnapshot } from './types';
 
-const SNAPSHOT_TABLE = PRICING_TABLES.MARKET_INTEL_SNAPSHOT
+const SNAPSHOT_TABLE = PRICING_TABLES.MARKET_INTEL_SNAPSHOT;
 
 export class MarketIntelligenceService {
   async recordSnapshots(snapshots: MarketIntelSnapshot[]): Promise<void> {
-    if (snapshots.length === 0) return
+    if (snapshots.length === 0) return;
 
-    const insertValues: string[] = []
-    const params: unknown[] = []
-    let idx = 1
+    const insertValues: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
 
     for (const snapshot of snapshots) {
       insertValues.push(
@@ -20,8 +20,8 @@ export class MarketIntelligenceService {
           $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++},
           $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++},
           $${idx++}, $${idx++}, $${idx++}
-        )`,
-      )
+        )`
+      );
       params.push(
         snapshot.snapshot_id,
         snapshot.org_id,
@@ -41,8 +41,8 @@ export class MarketIntelligenceService {
         JSON.stringify(snapshot.elasticity_signals ?? {}),
         JSON.stringify(snapshot.raw_payload ?? {}),
         snapshot.hash,
-        snapshot.is_anomaly ?? false,
-      )
+        snapshot.is_anomaly ?? false
+      );
     }
 
     await query(
@@ -71,19 +71,19 @@ export class MarketIntelligenceService {
         VALUES ${insertValues.join(', ')}
         ON CONFLICT (org_id, hash) DO NOTHING
       `,
-      params,
-    )
+      params
+    );
   }
 
   async listSnapshots(orgId: string, filters?: { competitorId?: string; limit?: number }) {
-    const conditions = ['org_id = $1']
-    const params: unknown[] = [orgId]
+    const conditions = ['org_id = $1'];
+    const params: unknown[] = [orgId];
     if (filters?.competitorId) {
-      params.push(filters.competitorId)
-      conditions.push(`competitor_id = $${params.length}`)
+      params.push(filters.competitorId);
+      conditions.push(`competitor_id = $${params.length}`);
     }
 
-    const limitClause = `LIMIT ${filters?.limit ?? 100}`
+    const limitClause = `LIMIT ${filters?.limit ?? 100}`;
     const result = await query<MarketIntelSnapshot>(
       `
         SELECT *
@@ -92,9 +92,9 @@ export class MarketIntelligenceService {
         ORDER BY observed_at DESC
         ${limitClause}
       `,
-      params,
-    )
-    return result.rows
+      params
+    );
+    return result.rows;
   }
 
   async exportSnapshots(
@@ -102,23 +102,23 @@ export class MarketIntelligenceService {
     format: 'json' | 'csv' | 'excel',
     filters?: { competitorId?: string }
   ) {
-    const rows = await this.listSnapshots(orgId, filters)
+    const rows = await this.listSnapshots(orgId, filters);
 
     if (format === 'json') {
-      return JSON.stringify(rows, null, 2)
+      return JSON.stringify(rows, null, 2);
     }
 
     if (format === 'excel') {
-      const XLSX = await import('xlsx')
-      const workbook = XLSX.utils.book_new()
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.utils.book_new();
 
       // Prepare data
-      const data = rows.map((row) => {
-        const pricing = row.pricing as Record<string, unknown>
-        const availability = row.availability as Record<string, unknown>
-        const pricePosition = row.price_position as Record<string, unknown>
-        const productDetails = row.product_details as Record<string, unknown>
-        const identifiers = row.identifiers as Record<string, unknown>
+      const data = rows.map(row => {
+        const pricing = row.pricing as Record<string, unknown>;
+        const availability = row.availability as Record<string, unknown>;
+        const pricePosition = row.price_position as Record<string, unknown>;
+        const productDetails = row.product_details as Record<string, unknown>;
+        const identifiers = row.identifiers as Record<string, unknown>;
 
         return {
           'Snapshot ID': row.snapshot_id,
@@ -126,22 +126,22 @@ export class MarketIntelligenceService {
           'Competitor ID': row.competitor_id,
           'Match ID': row.match_id ?? '',
           'Product Title': productDetails?.title ?? '',
-          'SKU': identifiers?.sku ?? '',
-          'UPC': identifiers?.upc ?? '',
-          'EAN': identifiers?.ean ?? '',
+          SKU: identifiers?.sku ?? '',
+          UPC: identifiers?.upc ?? '',
+          EAN: identifiers?.ean ?? '',
           'Regular Price': pricing?.regular_price ?? '',
           'Sale Price': pricing?.sale_price ?? '',
-          'Currency': pricing?.currency ?? 'USD',
+          Currency: pricing?.currency ?? 'USD',
           'Availability Status': availability?.status ?? '',
           'Stock Quantity': availability?.quantity ?? '',
           'Market Position Rank': pricePosition?.rank ?? '',
           'Market Share Estimate': row.market_share_estimate ?? '',
           'Is Anomaly': row.is_anomaly ? 'Yes' : 'No',
           'Product URL': identifiers?.url ?? productDetails?.url ?? '',
-        }
-      })
+        };
+      });
 
-      const worksheet = XLSX.utils.json_to_sheet(data)
+      const worksheet = XLSX.utils.json_to_sheet(data);
 
       // Auto-size columns
       const colWidths = [
@@ -162,13 +162,13 @@ export class MarketIntelligenceService {
         { wch: 18 }, // Market Share Estimate
         { wch: 12 }, // Is Anomaly
         { wch: 50 }, // Product URL
-      ]
-      worksheet['!cols'] = colWidths
+      ];
+      worksheet['!cols'] = colWidths;
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Market Intelligence')
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Market Intelligence');
 
       // Generate Excel buffer
-      return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+      return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     }
 
     // CSV format
@@ -182,13 +182,13 @@ export class MarketIntelligenceService {
       'availability_status',
       'market_position_rank',
       'currency',
-    ]
-    const lines = [header.join(',')]
+    ];
+    const lines = [header.join(',')];
 
     for (const row of rows) {
-      const pricing = row.pricing as Record<string, unknown>
-      const availability = row.availability as Record<string, unknown>
-      const pricePosition = row.price_position as Record<string, unknown>
+      const pricing = row.pricing as Record<string, unknown>;
+      const availability = row.availability as Record<string, unknown>;
+      const pricePosition = row.price_position as Record<string, unknown>;
       lines.push(
         [
           row.snapshot_id,
@@ -201,12 +201,12 @@ export class MarketIntelligenceService {
           pricePosition?.rank ?? '',
           pricing?.currency ?? '',
         ]
-          .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
-          .join(','),
-      )
+          .map(value => `"${String(value ?? '').replace(/"/g, '""')}"`)
+          .join(',')
+      );
     }
 
-    return lines.join('\n')
+    return lines.join('\n');
   }
 
   /**
@@ -217,23 +217,23 @@ export class MarketIntelligenceService {
     productId: string,
     matchIds: string[]
   ): Promise<{
-    internalPrice: number
+    internalPrice: number;
     competitorPrices: Array<{
-      competitorId: string
-      competitorName: string
-      price: number
-      currency: string
-      observedAt: Date
-    }>
-    rank: number // 1 = lowest, higher = more expensive
-    percentile: number // 0-100
-    spread: number // price difference between lowest and highest
-    marketMedian: number
-    marketAverage: number
-    position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest'
+      competitorId: string;
+      competitorName: string;
+      price: number;
+      currency: string;
+      observedAt: Date;
+    }>;
+    rank: number; // 1 = lowest, higher = more expensive
+    percentile: number; // 0-100
+    spread: number; // price difference between lowest and highest
+    marketMedian: number;
+    marketAverage: number;
+    position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest';
   } | null> {
     if (matchIds.length === 0) {
-      return null
+      return null;
     }
 
     // Get internal product price
@@ -245,22 +245,22 @@ export class MarketIntelligenceService {
         LIMIT 1
       `,
       [productId]
-    )
+    );
 
     if (internalPriceResult.rows.length === 0) {
-      return null
+      return null;
     }
 
-    const internalPrice = internalPriceResult.rows[0].price
-    const currency = internalPriceResult.rows[0].currency || 'USD'
+    const internalPrice = internalPriceResult.rows[0].price;
+    const currency = internalPriceResult.rows[0].currency || 'USD';
 
     // Get latest snapshots for matched products
     const latestSnapshots = await query<{
-      snapshot_id: string
-      competitor_id: string
-      pricing: unknown
-      observed_at: Date
-      competitor_name?: string
+      snapshot_id: string;
+      competitor_id: string;
+      pricing: unknown;
+      observed_at: Date;
+      competitor_name?: string;
     }>(
       `
         SELECT DISTINCT ON (snap.competitor_id)
@@ -276,19 +276,19 @@ export class MarketIntelligenceService {
         ORDER BY snap.competitor_id, snap.observed_at DESC
       `,
       [orgId, matchIds]
-    )
+    );
 
     const competitorPrices: Array<{
-      competitorId: string
-      competitorName: string
-      price: number
-      currency: string
-      observedAt: Date
-    }> = []
+      competitorId: string;
+      competitorName: string;
+      price: number;
+      currency: string;
+      observedAt: Date;
+    }> = [];
 
     for (const snapshot of latestSnapshots.rows) {
-      const pricing = snapshot.pricing as Record<string, unknown>
-      const price = (pricing?.sale_price || pricing?.regular_price) as number | undefined
+      const pricing = snapshot.pricing as Record<string, unknown>;
+      const price = (pricing?.sale_price || pricing?.regular_price) as number | undefined;
 
       if (price && typeof price === 'number') {
         competitorPrices.push({
@@ -297,7 +297,7 @@ export class MarketIntelligenceService {
           price,
           currency: (pricing?.currency as string) || currency,
           observedAt: snapshot.observed_at,
-        })
+        });
       }
     }
 
@@ -311,33 +311,37 @@ export class MarketIntelligenceService {
         marketMedian: internalPrice,
         marketAverage: internalPrice,
         position: 'at_median',
-      }
+      };
     }
 
     // Calculate market statistics
-    const allPrices = [internalPrice, ...competitorPrices.map((cp) => cp.price)].sort((a, b) => a - b)
-    const sortedCompetitorPrices = [...competitorPrices.map((cp) => cp.price)].sort((a, b) => a - b)
+    const allPrices = [internalPrice, ...competitorPrices.map(cp => cp.price)].sort(
+      (a, b) => a - b
+    );
+    const sortedCompetitorPrices = [...competitorPrices.map(cp => cp.price)].sort((a, b) => a - b);
 
-    const marketMedian = sortedCompetitorPrices[Math.floor(sortedCompetitorPrices.length / 2)]
-    const marketAverage = sortedCompetitorPrices.reduce((sum, p) => sum + p, 0) / sortedCompetitorPrices.length
-    const spread = sortedCompetitorPrices[sortedCompetitorPrices.length - 1] - sortedCompetitorPrices[0]
+    const marketMedian = sortedCompetitorPrices[Math.floor(sortedCompetitorPrices.length / 2)];
+    const marketAverage =
+      sortedCompetitorPrices.reduce((sum, p) => sum + p, 0) / sortedCompetitorPrices.length;
+    const spread =
+      sortedCompetitorPrices[sortedCompetitorPrices.length - 1] - sortedCompetitorPrices[0];
 
     // Find rank (1 = lowest)
-    const rank = allPrices.indexOf(internalPrice) + 1
-    const percentile = (rank / allPrices.length) * 100
+    const rank = allPrices.indexOf(internalPrice) + 1;
+    const percentile = (rank / allPrices.length) * 100;
 
     // Determine position
-    let position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest'
+    let position: 'lowest' | 'below_median' | 'at_median' | 'above_median' | 'highest';
     if (rank === 1) {
-      position = 'lowest'
+      position = 'lowest';
     } else if (rank === allPrices.length) {
-      position = 'highest'
+      position = 'highest';
     } else if (internalPrice < marketMedian) {
-      position = 'below_median'
+      position = 'below_median';
     } else if (internalPrice > marketMedian) {
-      position = 'above_median'
+      position = 'above_median';
     } else {
-      position = 'at_median'
+      position = 'at_median';
     }
 
     return {
@@ -349,7 +353,7 @@ export class MarketIntelligenceService {
       marketMedian,
       marketAverage,
       position,
-    }
+    };
   }
 
   /**
@@ -360,31 +364,31 @@ export class MarketIntelligenceService {
     productId: string,
     matchIds: string[]
   ): Promise<number> {
-    const positioning = await this.getPricePositioning(orgId, productId, matchIds)
+    const positioning = await this.getPricePositioning(orgId, productId, matchIds);
 
     if (!positioning || positioning.competitorPrices.length === 0) {
-      return 0
+      return 0;
     }
 
     // Simple market share estimation based on price position
     // Lower price = higher market share assumption (can be refined with actual sales data)
-    const baseShare = 100 / (positioning.competitorPrices.length + 1) // Equal share baseline
+    const baseShare = 100 / (positioning.competitorPrices.length + 1); // Equal share baseline
 
     // Adjust based on price position
     // Lowest price gets 2x base, highest gets 0.5x base, others scale linearly
-    let shareMultiplier = 1.0
+    let shareMultiplier = 1.0;
 
     if (positioning.position === 'lowest') {
-      shareMultiplier = 2.0
+      shareMultiplier = 2.0;
     } else if (positioning.position === 'highest') {
-      shareMultiplier = 0.5
+      shareMultiplier = 0.5;
     } else if (positioning.position === 'below_median') {
-      shareMultiplier = 1.5
+      shareMultiplier = 1.5;
     } else if (positioning.position === 'above_median') {
-      shareMultiplier = 0.75
+      shareMultiplier = 0.75;
     }
 
-    return Math.round(baseShare * shareMultiplier * 100) / 100
+    return Math.round(baseShare * shareMultiplier * 100) / 100;
   }
 
   /**
@@ -395,19 +399,19 @@ export class MarketIntelligenceService {
     productId: string,
     matchIds: string[]
   ): Promise<{
-    elasticity: number // < 1 = inelastic, > 1 = elastic
-    confidence: number // 0-100
+    elasticity: number; // < 1 = inelastic, > 1 = elastic
+    confidence: number; // 0-100
     signals: Array<{
-      type: string
-      value: number
-      description: string
-    }>
+      type: string;
+      value: number;
+      description: string;
+    }>;
   }> {
     // Get price history for all competitors
     const priceHistory = await query<{
-      competitor_id: string
-      pricing: unknown
-      observed_at: Date
+      competitor_id: string;
+      pricing: unknown;
+      observed_at: Date;
     }>(
       `
         SELECT competitor_id, pricing, observed_at
@@ -418,7 +422,7 @@ export class MarketIntelligenceService {
         ORDER BY observed_at DESC
       `,
       [orgId, matchIds]
-    )
+    );
 
     if (priceHistory.rows.length < 2) {
       return {
@@ -431,14 +435,16 @@ export class MarketIntelligenceService {
             description: 'Not enough historical data to calculate elasticity',
           },
         ],
-      }
+      };
     }
 
     // Simple elasticity calculation based on price variance
-    const prices = priceHistory.rows.map((row) => {
-      const pricing = row.pricing as Record<string, unknown>
-      return (pricing?.sale_price || pricing?.regular_price) as number | undefined
-    }).filter((p): p is number => typeof p === 'number')
+    const prices = priceHistory.rows
+      .map(row => {
+        const pricing = row.pricing as Record<string, unknown>;
+        return (pricing?.sale_price || pricing?.regular_price) as number | undefined;
+      })
+      .filter((p): p is number => typeof p === 'number');
 
     if (prices.length < 2) {
       return {
@@ -451,17 +457,18 @@ export class MarketIntelligenceService {
             description: 'Not enough valid price data',
           },
         ],
-      }
+      };
     }
 
-    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length
-    const priceVariance = prices.reduce((sum, p) => sum + Math.pow(p - avgPrice, 2), 0) / prices.length
-    const priceStdDev = Math.sqrt(priceVariance)
-    const coefficientOfVariation = priceStdDev / avgPrice
+    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    const priceVariance =
+      prices.reduce((sum, p) => sum + Math.pow(p - avgPrice, 2), 0) / prices.length;
+    const priceStdDev = Math.sqrt(priceVariance);
+    const coefficientOfVariation = priceStdDev / avgPrice;
 
     // Estimate elasticity: higher price volatility suggests more elastic market
     // This is a simplified calculation - real elasticity requires demand data
-    const estimatedElasticity = Math.max(0.5, Math.min(2.0, 1.0 + coefficientOfVariation))
+    const estimatedElasticity = Math.max(0.5, Math.min(2.0, 1.0 + coefficientOfVariation));
 
     const signals = [
       {
@@ -474,13 +481,13 @@ export class MarketIntelligenceService {
         value: prices.length,
         description: `Analysis based on ${prices.length} price observations`,
       },
-    ]
+    ];
 
     return {
       elasticity: Math.round(estimatedElasticity * 100) / 100,
       confidence: Math.min(100, Math.round((prices.length / 20) * 100)),
       signals,
-    }
+    };
   }
 
   /**
@@ -489,31 +496,33 @@ export class MarketIntelligenceService {
   async identifyAssortmentGaps(
     orgId: string,
     competitorId?: string
-  ): Promise<Array<{
-    competitorId: string
-    competitorName: string
-    productTitle: string
-    productUrl?: string
-    identifiers: Record<string, unknown>
-    pricing: Record<string, unknown>
-    detectedAt: Date
-  }>> {
-    const conditions = ['snap.org_id = $1', 'snap.match_id IS NULL']
-    const params: unknown[] = [orgId]
+  ): Promise<
+    Array<{
+      competitorId: string;
+      competitorName: string;
+      productTitle: string;
+      productUrl?: string;
+      identifiers: Record<string, unknown>;
+      pricing: Record<string, unknown>;
+      detectedAt: Date;
+    }>
+  > {
+    const conditions = ['snap.org_id = $1', 'snap.match_id IS NULL'];
+    const params: unknown[] = [orgId];
 
     if (competitorId) {
-      params.push(competitorId)
-      conditions.push(`snap.competitor_id = $${params.length}`)
+      params.push(competitorId);
+      conditions.push(`snap.competitor_id = $${params.length}`);
     }
 
     const result = await query<{
-      snapshot_id: string
-      competitor_id: string
-      competitor_name: string
-      identifiers: unknown
-      pricing: unknown
-      product_details: unknown
-      observed_at: Date
+      snapshot_id: string;
+      competitor_id: string;
+      competitor_name: string;
+      identifiers: unknown;
+      pricing: unknown;
+      product_details: unknown;
+      observed_at: Date;
     }>(
       `
         SELECT DISTINCT ON (snap.competitor_id, (snap.product_details->>'title'))
@@ -531,12 +540,12 @@ export class MarketIntelligenceService {
         LIMIT 100
       `,
       params
-    )
+    );
 
-    return result.rows.map((row) => {
-      const productDetails = row.product_details as Record<string, unknown>
-      const identifiers = row.identifiers as Record<string, unknown>
-      const pricing = row.pricing as Record<string, unknown>
+    return result.rows.map(row => {
+      const productDetails = row.product_details as Record<string, unknown>;
+      const identifiers = row.identifiers as Record<string, unknown>;
+      const pricing = row.pricing as Record<string, unknown>;
 
       return {
         competitorId: row.competitor_id,
@@ -546,8 +555,8 @@ export class MarketIntelligenceService {
         identifiers,
         pricing,
         detectedAt: row.observed_at,
-      }
-    })
+      };
+    });
   }
 
   /**
@@ -557,32 +566,37 @@ export class MarketIntelligenceService {
     orgId: string,
     competitorId?: string,
     sinceDays = 30
-  ): Promise<Array<{
-    competitorId: string
-    competitorName: string
-    productTitle: string
-    productUrl?: string
-    identifiers: Record<string, unknown>
-    pricing: Record<string, unknown>
-    firstDetectedAt: Date
-  }>> {
-    const conditions = ['snap.org_id = $1', `snap.observed_at >= NOW() - INTERVAL '${sinceDays} days'`]
-    const params: unknown[] = [orgId]
+  ): Promise<
+    Array<{
+      competitorId: string;
+      competitorName: string;
+      productTitle: string;
+      productUrl?: string;
+      identifiers: Record<string, unknown>;
+      pricing: Record<string, unknown>;
+      firstDetectedAt: Date;
+    }>
+  > {
+    const conditions = [
+      'snap.org_id = $1',
+      `snap.observed_at >= NOW() - INTERVAL '${sinceDays} days'`,
+    ];
+    const params: unknown[] = [orgId];
 
     if (competitorId) {
-      params.push(competitorId)
-      conditions.push(`snap.competitor_id = $${params.length}`)
+      params.push(competitorId);
+      conditions.push(`snap.competitor_id = $${params.length}`);
     }
 
     // Find products first seen in the time window (not seen before)
     const result = await query<{
-      snapshot_id: string
-      competitor_id: string
-      competitor_name: string
-      identifiers: unknown
-      pricing: unknown
-      product_details: unknown
-      first_seen: Date
+      snapshot_id: string;
+      competitor_id: string;
+      competitor_name: string;
+      identifiers: unknown;
+      pricing: unknown;
+      product_details: unknown;
+      first_seen: Date;
     }>(
       `
         WITH first_observations AS (
@@ -623,12 +637,12 @@ export class MarketIntelligenceService {
         LIMIT 100
       `,
       params
-    )
+    );
 
-    return result.rows.map((row) => {
-      const productDetails = row.product_details as Record<string, unknown>
-      const identifiers = row.identifiers as Record<string, unknown>
-      const pricing = row.pricing as Record<string, unknown>
+    return result.rows.map(row => {
+      const productDetails = row.product_details as Record<string, unknown>;
+      const identifiers = row.identifiers as Record<string, unknown>;
+      const pricing = row.pricing as Record<string, unknown>;
 
       return {
         competitorId: row.competitor_id,
@@ -638,8 +652,8 @@ export class MarketIntelligenceService {
         identifiers,
         pricing,
         firstDetectedAt: row.first_seen,
-      }
-    })
+      };
+    });
   }
 
   /**
@@ -649,19 +663,21 @@ export class MarketIntelligenceService {
     orgId: string,
     productId: string,
     matchIds: string[]
-  ): Promise<Array<{
-    competitorId: string
-    competitorName: string
-    responseTimeHours: number
-    priceChange: number
-    priceChangePercent: number
-    respondedAt: Date
-  }>> {
+  ): Promise<
+    Array<{
+      competitorId: string;
+      competitorName: string;
+      responseTimeHours: number;
+      priceChange: number;
+      priceChangePercent: number;
+      respondedAt: Date;
+    }>
+  > {
     // Get our price changes from price_history table
     const ourPriceChanges = await query<{
-      old_price: number | null
-      new_price: number
-      changed_at: Date
+      old_price: number | null;
+      new_price: number;
+      changed_at: Date;
     }>(
       `
         SELECT 
@@ -676,28 +692,28 @@ export class MarketIntelligenceService {
         LIMIT 10
       `,
       [orgId, productId]
-    )
+    );
 
     if (ourPriceChanges.rows.length === 0) {
-      return []
+      return [];
     }
 
     const responses: Array<{
-      competitorId: string
-      competitorName: string
-      responseTimeHours: number
-      priceChange: number
-      priceChangePercent: number
-      respondedAt: Date
-    }> = []
+      competitorId: string;
+      competitorName: string;
+      responseTimeHours: number;
+      priceChange: number;
+      priceChangePercent: number;
+      respondedAt: Date;
+    }> = [];
 
     for (const priceChange of ourPriceChanges.rows) {
       // Get competitor prices before and after our change
       const competitorPrices = await query<{
-        competitor_id: string
-        competitor_name: string
-        pricing: unknown
-        observed_at: Date
+        competitor_id: string;
+        competitor_name: string;
+        pricing: unknown;
+        observed_at: Date;
       }>(
         `
           SELECT DISTINCT ON (snap.competitor_id)
@@ -713,20 +729,21 @@ export class MarketIntelligenceService {
           ORDER BY snap.competitor_id, ABS(EXTRACT(EPOCH FROM (snap.observed_at - $3)))
         `,
         [orgId, matchIds, priceChange.changed_at]
-      )
+      );
 
       for (const competitor of competitorPrices.rows) {
-        const pricing = competitor.pricing as Record<string, unknown>
-        const price = (pricing?.sale_price || pricing?.regular_price) as number | undefined
+        const pricing = competitor.pricing as Record<string, unknown>;
+        const price = (pricing?.sale_price || pricing?.regular_price) as number | undefined;
 
         if (price) {
-          const timeDiff = competitor.observed_at.getTime() - priceChange.changed_at.getTime()
-          const responseTimeHours = timeDiff / (1000 * 60 * 60)
+          const timeDiff = competitor.observed_at.getTime() - priceChange.changed_at.getTime();
+          const responseTimeHours = timeDiff / (1000 * 60 * 60);
 
           if (responseTimeHours > 0 && responseTimeHours < 720) {
             // Response within 30 days
-            const priceChangeAmount = price - priceChange.new_price
-            const priceChangePercent = ((price - priceChange.new_price) / priceChange.new_price) * 100
+            const priceChangeAmount = price - priceChange.new_price;
+            const priceChangePercent =
+              ((price - priceChange.new_price) / priceChange.new_price) * 100;
 
             responses.push({
               competitorId: competitor.competitor_id,
@@ -735,13 +752,13 @@ export class MarketIntelligenceService {
               priceChange: priceChangeAmount,
               priceChangePercent: Math.round(priceChangePercent * 100) / 100,
               respondedAt: competitor.observed_at,
-            })
+            });
           }
         }
       }
     }
 
-    return responses.sort((a, b) => a.responseTimeHours - b.responseTimeHours)
+    return responses.sort((a, b) => a.responseTimeHours - b.responseTimeHours);
   }
 
   /**
@@ -752,36 +769,36 @@ export class MarketIntelligenceService {
     productId: string,
     matchIds: string[]
   ): Promise<{
-    internalTotalCost: number
+    internalTotalCost: number;
     competitorCosts: Array<{
-      competitorId: string
-      competitorName: string
-      basePrice: number
-      shippingCost: number
-      totalCost: number
-      currency: string
-    }>
+      competitorId: string;
+      competitorName: string;
+      basePrice: number;
+      shippingCost: number;
+      totalCost: number;
+      currency: string;
+    }>;
     cheapestOption: {
-      competitorId: string
-      competitorName: string
-      totalCost: number
-    } | null
+      competitorId: string;
+      competitorName: string;
+      totalCost: number;
+    } | null;
   }> {
-    const positioning = await this.getPricePositioning(orgId, productId, matchIds)
+    const positioning = await this.getPricePositioning(orgId, productId, matchIds);
 
     if (!positioning) {
       return {
         internalTotalCost: 0,
         competitorCosts: [],
         cheapestOption: null,
-      }
+      };
     }
 
     // Get our shipping cost (placeholder - should come from actual shipping config)
-    const internalShippingCost = 0 // TODO: Get from shipping configuration
+    const internalShippingCost = 0; // TODO: Get from shipping configuration
 
-    const competitorCosts = positioning.competitorPrices.map((cp) => {
-      const shippingCost = 0 // TODO: Extract from snapshot.shipping JSONB
+    const competitorCosts = positioning.competitorPrices.map(cp => {
+      const shippingCost = 0; // TODO: Extract from snapshot.shipping JSONB
       return {
         competitorId: cp.competitorId,
         competitorName: cp.competitorName,
@@ -789,25 +806,28 @@ export class MarketIntelligenceService {
         shippingCost,
         totalCost: cp.price + shippingCost,
         currency: cp.currency,
-      }
-    })
+      };
+    });
 
     const allCosts = [
-      { competitorId: 'internal', competitorName: 'Us', totalCost: positioning.internalPrice + internalShippingCost },
-      ...competitorCosts.map((cc) => ({
+      {
+        competitorId: 'internal',
+        competitorName: 'Us',
+        totalCost: positioning.internalPrice + internalShippingCost,
+      },
+      ...competitorCosts.map(cc => ({
         competitorId: cc.competitorId,
         competitorName: cc.competitorName,
         totalCost: cc.totalCost,
       })),
-    ]
+    ];
 
-    const cheapest = allCosts.reduce((min, curr) => (curr.totalCost < min.totalCost ? curr : min))
+    const cheapest = allCosts.reduce((min, curr) => (curr.totalCost < min.totalCost ? curr : min));
 
     return {
       internalTotalCost: positioning.internalPrice + internalShippingCost,
       competitorCosts,
       cheapestOption: cheapest.competitorId === 'internal' ? null : cheapest,
-    }
+    };
   }
 }
-

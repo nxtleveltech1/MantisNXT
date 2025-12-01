@@ -53,7 +53,10 @@ export class RedisSessionStore {
   /**
    * Create new session
    */
-  async create(sessionId: string, data: Omit<SessionData, 'createdAt' | 'lastAccess' | 'expiresAt'>): Promise<void> {
+  async create(
+    sessionId: string,
+    data: Omit<SessionData, 'createdAt' | 'lastAccess' | 'expiresAt'>
+  ): Promise<void> {
     const client = await getRedisClient();
     const now = Date.now();
 
@@ -61,14 +64,10 @@ export class RedisSessionStore {
       ...data,
       createdAt: now,
       lastAccess: now,
-      expiresAt: now + (this.options.ttl * 1000),
+      expiresAt: now + this.options.ttl * 1000,
     };
 
-    await client.setEx(
-      this.getKey(sessionId),
-      this.options.ttl,
-      JSON.stringify(sessionData)
-    );
+    await client.setEx(this.getKey(sessionId), this.options.ttl, JSON.stringify(sessionData));
   }
 
   /**
@@ -112,11 +111,7 @@ export class RedisSessionStore {
         lastAccess: Date.now(),
       };
 
-      await client.setEx(
-        this.getKey(sessionId),
-        this.options.ttl,
-        JSON.stringify(updated)
-      );
+      await client.setEx(this.getKey(sessionId), this.options.ttl, JSON.stringify(updated));
 
       return true;
     } catch (error) {
@@ -142,11 +137,7 @@ export class RedisSessionStore {
 
       existing.lastAccess = Date.now();
 
-      await client.setEx(
-        this.getKey(sessionId),
-        this.options.ttl,
-        JSON.stringify(existing)
-      );
+      await client.setEx(this.getKey(sessionId), this.options.ttl, JSON.stringify(existing));
 
       return true;
     } catch (error) {

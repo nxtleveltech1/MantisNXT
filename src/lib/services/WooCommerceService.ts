@@ -180,15 +180,9 @@ export class WooCommerceService {
       throw new Error('WooCommerce config missing consumer secret');
     }
 
-    const version =
-      config.version ||
-      (legacyConfig.version as string | undefined) ||
-      'wc/v3';
+    const version = config.version || (legacyConfig.version as string | undefined) || 'wc/v3';
 
-    const timeout =
-      config.timeout ||
-      (legacyConfig.timeout as number | undefined) ||
-      30000;
+    const timeout = config.timeout || (legacyConfig.timeout as number | undefined) || 30000;
 
     const verifySslFlag =
       config.verifySsl ??
@@ -214,10 +208,7 @@ export class WooCommerceService {
       },
       signature_method: 'HMAC-SHA256',
       hash_function(base_string, key) {
-        return crypto
-          .createHmac('sha256', key)
-          .update(base_string)
-          .digest('base64');
+        return crypto.createHmac('sha256', key).update(base_string).digest('base64');
       },
     });
   }
@@ -256,14 +247,16 @@ export class WooCommerceService {
     const authorized = this.oauth.authorize(requestData);
     const authHeader = this.oauth.toHeader(authorized);
 
-    // Debug logging for signature verification
-    console.log('[WooCommerce OAuth Debug]', {
-      method,
-      url,
-      queryParams: oauthData,
-      signatureParams: Object.keys(authorized).sort(),
-      authorizationHeader: authHeader.Authorization?.substring(0, 100) + '...',
-    });
+    // Debug logging disabled by default - enable with WOOCOMMERCE_DEBUG=true env var
+    // if (process.env.WOOCOMMERCE_DEBUG === 'true') {
+    //   console.log('[WooCommerce OAuth Debug]', {
+    //     method,
+    //     url,
+    //     queryParams: oauthData,
+    //     signatureParams: Object.keys(authorized).sort(),
+    //     authorizationHeader: authHeader.Authorization?.substring(0, 100) + '...',
+    //   });
+    // }
 
     // Build query string for actual request
     const queryParams = new URLSearchParams();
@@ -275,9 +268,7 @@ export class WooCommerceService {
       });
     }
 
-    const fullUrl = queryParams.toString()
-      ? `${url}?${queryParams.toString()}`
-      : url;
+    const fullUrl = queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
 
     // Make request
     const response = await fetch(fullUrl, {
@@ -294,9 +285,7 @@ export class WooCommerceService {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(
-        `WooCommerce API Error (${response.status}): ${
-          error.message || response.statusText
-        }`
+        `WooCommerce API Error (${response.status}): ${error.message || response.statusText}`
       );
     }
 
@@ -363,11 +352,13 @@ export class WooCommerceService {
     create?: WooCommerceProduct[];
     update?: WooCommerceProduct[];
     delete?: number[];
-  }): Promise<WooCommerceResponse<{
-    create: WooCommerceProduct[];
-    update: WooCommerceProduct[];
-    delete: WooCommerceProduct[];
-  }>> {
+  }): Promise<
+    WooCommerceResponse<{
+      create: WooCommerceProduct[];
+      update: WooCommerceProduct[];
+      delete: WooCommerceProduct[];
+    }>
+  > {
     return this.request('POST', '/products/batch', data);
   }
 
@@ -435,7 +426,10 @@ export class WooCommerceService {
     return this.request<WooCommerceCustomer>('PUT', `/customers/${id}`, customer);
   }
 
-  async deleteCustomer(id: number, force = false): Promise<WooCommerceResponse<WooCommerceCustomer>> {
+  async deleteCustomer(
+    id: number,
+    force = false
+  ): Promise<WooCommerceResponse<WooCommerceCustomer>> {
     return this.request<WooCommerceCustomer>('DELETE', `/customers/${id}`, null, { force });
   }
 
@@ -497,15 +491,8 @@ export class WooCommerceService {
   /**
    * Verify webhook signature
    */
-  verifyWebhookSignature(
-    payload: string,
-    signature: string,
-    secret: string
-  ): boolean {
-    const hash = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('base64');
+  verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+    const hash = crypto.createHmac('sha256', secret).update(payload).digest('base64');
 
     return hash === signature;
   }
@@ -522,9 +509,8 @@ export class WooCommerceService {
     if (operation !== 'set') {
       const { data: product } = await this.getProduct(productId);
       const currentQuantity = product.stock_quantity || 0;
-      newQuantity = operation === 'increase'
-        ? currentQuantity + quantity
-        : currentQuantity - quantity;
+      newQuantity =
+        operation === 'increase' ? currentQuantity + quantity : currentQuantity - quantity;
     }
 
     return this.updateProduct(productId, {

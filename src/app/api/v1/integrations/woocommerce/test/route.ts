@@ -7,7 +7,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         'Content-Type': 'application/json',
       },
     });
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    
+
     return createErrorResponse(error, 500);
   }
 }

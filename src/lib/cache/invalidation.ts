@@ -7,7 +7,7 @@
  * Uses revalidatePath() and revalidateTag() to ensure fresh data after changes.
  */
 
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export class CacheInvalidator {
   /**
@@ -16,30 +16,30 @@ export class CacheInvalidator {
    */
   static invalidateSupplier(supplierId: string, supplierName?: string) {
     // Invalidate specific supplier pages
-    revalidatePath(`/api/suppliers/${supplierId}`)
-    revalidatePath(`/api/suppliers/${supplierId}/inventory`)
-    revalidatePath(`/api/suppliers/v3/${supplierId}`)
-    revalidatePath(`/suppliers/${supplierId}`)
+    revalidatePath(`/api/suppliers/${supplierId}`);
+    revalidatePath(`/api/suppliers/${supplierId}/inventory`);
+    revalidatePath(`/api/suppliers/v3/${supplierId}`);
+    revalidatePath(`/suppliers/${supplierId}`);
 
     // Invalidate list pages (all variants)
-    revalidatePath('/api/suppliers')
-    revalidatePath('/api/suppliers/v3')
-    revalidatePath('/api/suppliers/enhanced')
-    revalidatePath('/api/suppliers/real-data')
-    revalidatePath('/suppliers')
+    revalidatePath('/api/suppliers');
+    revalidatePath('/api/suppliers/v3');
+    revalidatePath('/api/suppliers/enhanced');
+    revalidatePath('/api/suppliers/real-data');
+    revalidatePath('/suppliers');
 
     // Invalidate by tag
-    revalidateTag('suppliers')
-    revalidateTag(`supplier-${supplierId}`)
+    revalidateTag('suppliers');
+    revalidateTag(`supplier-${supplierId}`);
 
     // Invalidate search/discovery if name provided
     if (supplierName) {
-      revalidateTag(`supplier-search-${supplierName.toLowerCase()}`)
-      revalidatePath('/api/suppliers/discovery')
-      revalidatePath('/api/suppliers/v3/ai/discover')
+      revalidateTag(`supplier-search-${supplierName.toLowerCase()}`);
+      revalidatePath('/api/suppliers/discovery');
+      revalidatePath('/api/suppliers/v3/ai/discover');
     }
 
-    console.log('🔄 Cache invalidated for supplier:', supplierId)
+    console.log('🔄 Cache invalidated for supplier:', supplierId);
   }
 
   /**
@@ -48,26 +48,26 @@ export class CacheInvalidator {
    */
   static invalidateProduct(productId: string, supplierId?: string) {
     // Invalidate specific product pages
-    revalidatePath(`/api/products/${productId}`)
-    revalidatePath(`/api/inventory/${productId}`) // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
-    revalidatePath(`/products/${productId}`)
+    revalidatePath(`/api/products/${productId}`);
+    revalidatePath(`/api/inventory/${productId}`); // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
+    revalidatePath(`/products/${productId}`);
 
     // Invalidate list pages
-    revalidatePath('/api/products')
-    revalidatePath('/api/inventory') // Use /api/inventory instead of deprecated /api/inventory/products
-    revalidatePath('/api/products/catalog')
-    revalidatePath('/products')
+    revalidatePath('/api/products');
+    revalidatePath('/api/inventory'); // Use /api/inventory instead of deprecated /api/inventory/products
+    revalidatePath('/api/products/catalog');
+    revalidatePath('/products');
 
     // Invalidate by tag
-    revalidateTag('products')
-    revalidateTag(`product-${productId}`)
+    revalidateTag('products');
+    revalidateTag(`product-${productId}`);
 
     // Cascade to supplier if provided
     if (supplierId) {
-      this.invalidateSupplier(supplierId)
+      this.invalidateSupplier(supplierId);
     }
 
-    console.log('🔄 Cache invalidated for product:', productId)
+    console.log('🔄 Cache invalidated for product:', productId);
   }
 
   /**
@@ -76,31 +76,31 @@ export class CacheInvalidator {
    */
   static invalidateInventory(itemId?: string, supplierId?: string) {
     if (itemId) {
-      revalidatePath(`/api/inventory/${itemId}`)
-      revalidatePath(`/api/inventory/detailed/${itemId}`)
-      revalidatePath(`/api/v2/inventory/${itemId}`)
-      revalidateTag(`inventory-${itemId}`)
+      revalidatePath(`/api/inventory/${itemId}`);
+      revalidatePath(`/api/inventory/detailed/${itemId}`);
+      revalidatePath(`/api/v2/inventory/${itemId}`);
+      revalidateTag(`inventory-${itemId}`);
     }
 
     // Invalidate all inventory list endpoints
-    revalidatePath('/api/inventory')
-    revalidatePath('/api/inventory/complete')
-    revalidatePath('/api/inventory/enhanced')
-    revalidatePath('/api/inventory/items')
-    revalidatePath('/api/inventory/analytics')
-    revalidatePath('/api/v2/inventory')
-    revalidatePath('/api/inventory_items')
-    revalidatePath('/inventory')
+    revalidatePath('/api/inventory');
+    revalidatePath('/api/inventory/complete');
+    revalidatePath('/api/inventory/enhanced');
+    revalidatePath('/api/inventory/items');
+    revalidatePath('/api/inventory/analytics');
+    revalidatePath('/api/v2/inventory');
+    revalidatePath('/api/inventory_items');
+    revalidatePath('/inventory');
 
     // Invalidate tags
-    revalidateTag('inventory')
+    revalidateTag('inventory');
 
     // Cascade to supplier if provided
     if (supplierId) {
-      this.invalidateSupplier(supplierId)
+      this.invalidateSupplier(supplierId);
     }
 
-    console.log('🔄 Cache invalidated for inventory', itemId || '(all)')
+    console.log('🔄 Cache invalidated for inventory', itemId || '(all)');
   }
 
   /**
@@ -109,24 +109,24 @@ export class CacheInvalidator {
    */
   static invalidatePurchaseOrder(poId: string, supplierId?: string) {
     // Invalidate specific PO pages
-    revalidatePath(`/api/purchase-orders/${poId}`)
-    revalidatePath(`/purchase-orders/${poId}`)
+    revalidatePath(`/api/purchase-orders/${poId}`);
+    revalidatePath(`/purchase-orders/${poId}`);
 
     // Invalidate list pages
-    revalidatePath('/api/purchase-orders')
-    revalidatePath('/api/purchase-orders/analytics')
-    revalidatePath('/purchase-orders')
+    revalidatePath('/api/purchase-orders');
+    revalidatePath('/api/purchase-orders/analytics');
+    revalidatePath('/purchase-orders');
 
     // Invalidate tags
-    revalidateTag('purchase-orders')
-    revalidateTag(`po-${poId}`)
+    revalidateTag('purchase-orders');
+    revalidateTag(`po-${poId}`);
 
     // Cascade to supplier if provided
     if (supplierId) {
-      this.invalidateSupplier(supplierId)
+      this.invalidateSupplier(supplierId);
     }
 
-    console.log('🔄 Cache invalidated for PO:', poId)
+    console.log('🔄 Cache invalidated for PO:', poId);
   }
 
   /**
@@ -134,15 +134,15 @@ export class CacheInvalidator {
    * Call after: CREATE stock movement operations
    */
   static invalidateStockMovements(inventoryItemId?: string) {
-    revalidatePath('/api/stock-movements')
-    revalidateTag('stock-movements')
+    revalidatePath('/api/stock-movements');
+    revalidateTag('stock-movements');
 
     if (inventoryItemId) {
       // Also invalidate the related inventory item
-      this.invalidateInventory(inventoryItemId)
+      this.invalidateInventory(inventoryItemId);
     }
 
-    console.log('🔄 Cache invalidated for stock movements')
+    console.log('🔄 Cache invalidated for stock movements');
   }
 
   /**
@@ -151,14 +151,14 @@ export class CacheInvalidator {
    */
   static invalidateWarehouse(warehouseId?: string) {
     if (warehouseId) {
-      revalidatePath(`/api/warehouses/${warehouseId}`)
-      revalidateTag(`warehouse-${warehouseId}`)
+      revalidatePath(`/api/warehouses/${warehouseId}`);
+      revalidateTag(`warehouse-${warehouseId}`);
     }
 
-    revalidatePath('/api/warehouses')
-    revalidateTag('warehouses')
+    revalidatePath('/api/warehouses');
+    revalidateTag('warehouses');
 
-    console.log('🔄 Cache invalidated for warehouse', warehouseId || '(all)')
+    console.log('🔄 Cache invalidated for warehouse', warehouseId || '(all)');
   }
 
   /**
@@ -166,19 +166,19 @@ export class CacheInvalidator {
    * Call after: Any major data change that affects dashboard
    */
   static invalidateAnalytics() {
-    revalidatePath('/api/analytics/comprehensive')
-    revalidatePath('/api/analytics/dashboard')
-    revalidatePath('/api/analytics/system')
-    revalidatePath('/api/analytics/predictions')
-    revalidatePath('/api/analytics/recommendations')
-    revalidatePath('/api/analytics/anomalies')
-    revalidatePath('/api/dashboard/real-stats')
-    revalidatePath('/api/dashboard_metrics')
+    revalidatePath('/api/analytics/comprehensive');
+    revalidatePath('/api/analytics/dashboard');
+    revalidatePath('/api/analytics/system');
+    revalidatePath('/api/analytics/predictions');
+    revalidatePath('/api/analytics/recommendations');
+    revalidatePath('/api/analytics/anomalies');
+    revalidatePath('/api/dashboard/real-stats');
+    revalidatePath('/api/dashboard_metrics');
 
-    revalidateTag('analytics')
-    revalidateTag('dashboard')
+    revalidateTag('analytics');
+    revalidateTag('dashboard');
 
-    console.log('🔄 Cache invalidated for analytics')
+    console.log('🔄 Cache invalidated for analytics');
   }
 
   /**
@@ -186,10 +186,10 @@ export class CacheInvalidator {
    * Call after: CREATE, UPDATE, DELETE alert operations
    */
   static invalidateAlerts() {
-    revalidatePath('/api/alerts')
-    revalidateTag('alerts')
+    revalidatePath('/api/alerts');
+    revalidateTag('alerts');
 
-    console.log('🔄 Cache invalidated for alerts')
+    console.log('🔄 Cache invalidated for alerts');
   }
 
   /**
@@ -197,19 +197,19 @@ export class CacheInvalidator {
    * Use sparingly, only for system-wide changes
    */
   static invalidateAll() {
-    revalidatePath('/', 'layout')  // Invalidate entire app
+    revalidatePath('/', 'layout'); // Invalidate entire app
 
     // Invalidate all tags
-    revalidateTag('suppliers')
-    revalidateTag('products')
-    revalidateTag('inventory')
-    revalidateTag('purchase-orders')
-    revalidateTag('warehouses')
-    revalidateTag('analytics')
-    revalidateTag('alerts')
-    revalidateTag('stock-movements')
+    revalidateTag('suppliers');
+    revalidateTag('products');
+    revalidateTag('inventory');
+    revalidateTag('purchase-orders');
+    revalidateTag('warehouses');
+    revalidateTag('analytics');
+    revalidateTag('alerts');
+    revalidateTag('stock-movements');
 
-    console.log('💥 ALL cache invalidated')
+    console.log('💥 ALL cache invalidated');
   }
 
   /**
@@ -217,47 +217,47 @@ export class CacheInvalidator {
    * Automatically invalidates related caches
    */
   static cascadeInvalidation(options: {
-    type: 'supplier' | 'product' | 'inventory' | 'po' | 'warehouse'
-    id: string
+    type: 'supplier' | 'product' | 'inventory' | 'po' | 'warehouse';
+    id: string;
     includedRelations?: {
-      supplierId?: string
-      inventoryItemId?: string
-      warehouseId?: string
-    }
-    invalidateAnalytics?: boolean
+      supplierId?: string;
+      inventoryItemId?: string;
+      warehouseId?: string;
+    };
+    invalidateAnalytics?: boolean;
   }) {
-    const { type, id, includedRelations = {}, invalidateAnalytics = true } = options
+    const { type, id, includedRelations = {}, invalidateAnalytics = true } = options;
 
     switch (type) {
       case 'supplier':
-        this.invalidateSupplier(id)
+        this.invalidateSupplier(id);
         // Suppliers affect inventory and products
-        this.invalidateInventory()
-        this.invalidateProduct('*') // Wildcard for all products
-        break
+        this.invalidateInventory();
+        this.invalidateProduct('*'); // Wildcard for all products
+        break;
 
       case 'product':
-        this.invalidateProduct(id, includedRelations.supplierId)
-        this.invalidateInventory() // Products affect inventory
-        break
+        this.invalidateProduct(id, includedRelations.supplierId);
+        this.invalidateInventory(); // Products affect inventory
+        break;
 
       case 'inventory':
-        this.invalidateInventory(id, includedRelations.supplierId)
-        break
+        this.invalidateInventory(id, includedRelations.supplierId);
+        break;
 
       case 'po':
-        this.invalidatePurchaseOrder(id, includedRelations.supplierId)
-        break
+        this.invalidatePurchaseOrder(id, includedRelations.supplierId);
+        break;
 
       case 'warehouse':
-        this.invalidateWarehouse(id)
-        this.invalidateInventory() // Warehouses affect inventory
-        break
+        this.invalidateWarehouse(id);
+        this.invalidateInventory(); // Warehouses affect inventory
+        break;
     }
 
     // Optionally invalidate analytics (most mutations affect it)
     if (invalidateAnalytics) {
-      this.invalidateAnalytics()
+      this.invalidateAnalytics();
     }
   }
 }
@@ -277,24 +277,24 @@ export function invalidateCache(
   type: 'supplier' | 'product' | 'inventory' | 'po' | 'warehouse' | 'all',
   id?: string,
   options?: {
-    supplierId?: string
-    skipAnalytics?: boolean
+    supplierId?: string;
+    skipAnalytics?: boolean;
   }
 ) {
   if (type === 'all') {
-    CacheInvalidator.invalidateAll()
-    return
+    CacheInvalidator.invalidateAll();
+    return;
   }
 
   if (!id) {
-    console.error('❌ Cache invalidation requires an ID for type:', type)
-    return
+    console.error('❌ Cache invalidation requires an ID for type:', type);
+    return;
   }
 
   CacheInvalidator.cascadeInvalidation({
     type,
     id,
     includedRelations: { supplierId: options?.supplierId },
-    invalidateAnalytics: !options?.skipAnalytics
-  })
+    invalidateAnalytics: !options?.skipAnalytics,
+  });
 }

@@ -70,20 +70,22 @@ export interface AuditTrail {
 }
 
 export class FinancialCompliance {
-
   // VAT Compliance
-  static calculateVAT(netAmount: number, vatRate: number = 15): {
+  static calculateVAT(
+    netAmount: number,
+    vatRate: number = 15
+  ): {
     netAmount: number;
     vatAmount: number;
     grossAmount: number;
   } {
-    const vatAmount = Math.round((netAmount * vatRate / 100) * 100) / 100;
+    const vatAmount = Math.round(((netAmount * vatRate) / 100) * 100) / 100;
     const grossAmount = netAmount + vatAmount;
 
     return {
       netAmount,
       vatAmount,
-      grossAmount
+      grossAmount,
     };
   }
 
@@ -131,7 +133,7 @@ export class FinancialCompliance {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -149,8 +151,8 @@ export class FinancialCompliance {
     badDebts: number;
     summary: Record<string, number>;
   } {
-    const periodTransactions = transactions.filter(t =>
-      t.periodMonth === period.month && t.periodYear === period.year
+    const periodTransactions = transactions.filter(
+      t => t.periodMonth === period.month && t.periodYear === period.year
     );
 
     const sales = periodTransactions.filter(t => t.transactionType === 'sale');
@@ -173,12 +175,20 @@ export class FinancialCompliance {
       capitalItems: capitalItemsVAT,
       badDebts: 0, // To be calculated separately
       summary: {
-        'Standard Rated Sales': sales.filter(t => t.vatCategory === 'standard').reduce((sum, t) => sum + t.netAmount, 0),
-        'Zero Rated Sales': sales.filter(t => t.vatCategory === 'zero').reduce((sum, t) => sum + t.netAmount, 0),
-        'Exempt Sales': sales.filter(t => t.vatCategory === 'exempt').reduce((sum, t) => sum + t.netAmount, 0),
-        'Standard Rated Purchases': purchases.filter(t => t.vatCategory === 'standard').reduce((sum, t) => sum + t.netAmount, 0),
-        'Capital Item Purchases': capitalItems.reduce((sum, t) => sum + t.netAmount, 0)
-      }
+        'Standard Rated Sales': sales
+          .filter(t => t.vatCategory === 'standard')
+          .reduce((sum, t) => sum + t.netAmount, 0),
+        'Zero Rated Sales': sales
+          .filter(t => t.vatCategory === 'zero')
+          .reduce((sum, t) => sum + t.netAmount, 0),
+        'Exempt Sales': sales
+          .filter(t => t.vatCategory === 'exempt')
+          .reduce((sum, t) => sum + t.netAmount, 0),
+        'Standard Rated Purchases': purchases
+          .filter(t => t.vatCategory === 'standard')
+          .reduce((sum, t) => sum + t.netAmount, 0),
+        'Capital Item Purchases': capitalItems.reduce((sum, t) => sum + t.netAmount, 0),
+      },
     };
   }
 
@@ -188,15 +198,32 @@ export class FinancialCompliance {
 
     // Base recognition based on BEE level
     switch (spend.supplierBEELevel) {
-      case 1: recognition = 135; break;
-      case 2: recognition = 125; break;
-      case 3: recognition = 110; break;
-      case 4: recognition = 100; break;
-      case 5: recognition = 80; break;
-      case 6: recognition = 60; break;
-      case 7: recognition = 50; break;
-      case 8: recognition = 10; break;
-      default: recognition = 0;
+      case 1:
+        recognition = 135;
+        break;
+      case 2:
+        recognition = 125;
+        break;
+      case 3:
+        recognition = 110;
+        break;
+      case 4:
+        recognition = 100;
+        break;
+      case 5:
+        recognition = 80;
+        break;
+      case 6:
+        recognition = 60;
+        break;
+      case 7:
+        recognition = 50;
+        break;
+      case 8:
+        recognition = 10;
+        break;
+      default:
+        recognition = 0;
     }
 
     // EME and QSE bonus
@@ -235,16 +262,16 @@ export class FinancialCompliance {
 
     const recognizedSpend = beeSpends.reduce((sum, s) => {
       const recognition = this.calculateBEERecognition(s);
-      return sum + (s.spendAmount * recognition / 100);
+      return sum + (s.spendAmount * recognition) / 100;
     }, 0);
 
     const recommendations: string[] = [];
 
-    if ((beeSpend / totalSpend) < 0.70) {
+    if (beeSpend / totalSpend < 0.7) {
       recommendations.push('Increase BEE spend to achieve 70% target');
     }
 
-    if ((recognizedSpend / totalSpend) < 0.40) {
+    if (recognizedSpend / totalSpend < 0.4) {
       recommendations.push('Focus on higher BEE level suppliers for better recognition');
     }
 
@@ -256,17 +283,33 @@ export class FinancialCompliance {
       recognizedSpend,
       recognizedPercentage: (recognizedSpend / totalSpend) * 100,
       breakdown: {
-        'Level 1 Suppliers': beeSpends.filter(s => s.supplierBEELevel === 1).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Level 2 Suppliers': beeSpends.filter(s => s.supplierBEELevel === 2).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Level 3 Suppliers': beeSpends.filter(s => s.supplierBEELevel === 3).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Level 4+ Suppliers': beeSpends.filter(s => s.supplierBEELevel >= 4).reduce((sum, s) => sum + s.spendAmount, 0),
+        'Level 1 Suppliers': beeSpends
+          .filter(s => s.supplierBEELevel === 1)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Level 2 Suppliers': beeSpends
+          .filter(s => s.supplierBEELevel === 2)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Level 3 Suppliers': beeSpends
+          .filter(s => s.supplierBEELevel === 3)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Level 4+ Suppliers': beeSpends
+          .filter(s => s.supplierBEELevel >= 4)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
         'EME Suppliers': beeSpends.filter(s => s.isEME).reduce((sum, s) => sum + s.spendAmount, 0),
-        'QSE Suppliers': beeSpends.filter(s => s.isQSE && !s.isEME).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Black Owned': beeSpends.filter(s => s.isBlackOwned).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Women Owned': beeSpends.filter(s => s.isWomenOwned).reduce((sum, s) => sum + s.spendAmount, 0),
-        'Youth Owned': beeSpends.filter(s => s.isYouthOwned).reduce((sum, s) => sum + s.spendAmount, 0)
+        'QSE Suppliers': beeSpends
+          .filter(s => s.isQSE && !s.isEME)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Black Owned': beeSpends
+          .filter(s => s.isBlackOwned)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Women Owned': beeSpends
+          .filter(s => s.isWomenOwned)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
+        'Youth Owned': beeSpends
+          .filter(s => s.isYouthOwned)
+          .reduce((sum, s) => sum + s.spendAmount, 0),
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -291,7 +334,7 @@ export class FinancialCompliance {
       changes,
       reason,
       ipAddress,
-      userAgent
+      userAgent,
     };
   }
 
@@ -308,30 +351,37 @@ export class FinancialCompliance {
     suspiciousActivity: AuditTrail[];
     summary: string;
   } {
-    const periodTrail = auditTrail.filter(a =>
-      a.timestamp >= startDate && a.timestamp <= endDate
+    const periodTrail = auditTrail.filter(a => a.timestamp >= startDate && a.timestamp <= endDate);
+
+    const userActivity = periodTrail.reduce(
+      (acc, entry) => {
+        acc[entry.userId] = (acc[entry.userId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
     );
 
-    const userActivity = periodTrail.reduce((acc, entry) => {
-      acc[entry.userId] = (acc[entry.userId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const entityActivity = periodTrail.reduce(
+      (acc, entry) => {
+        acc[entry.entityType] = (acc[entry.entityType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const entityActivity = periodTrail.reduce((acc, entry) => {
-      acc[entry.entityType] = (acc[entry.entityType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const actionBreakdown = periodTrail.reduce((acc, entry) => {
-      acc[entry.action] = (acc[entry.action] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const actionBreakdown = periodTrail.reduce(
+      (acc, entry) => {
+        acc[entry.action] = (acc[entry.action] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     // Detect suspicious activity
     const suspiciousActivity = periodTrail.filter(entry => {
       // Multiple deletes by same user
-      const userDeletes = periodTrail.filter(a =>
-        a.userId === entry.userId && a.action === 'delete'
+      const userDeletes = periodTrail.filter(
+        a => a.userId === entry.userId && a.action === 'delete'
       ).length;
 
       // Actions outside business hours
@@ -351,7 +401,7 @@ export class FinancialCompliance {
       entityActivity,
       actionBreakdown,
       suspiciousActivity,
-      summary: `${periodTrail.length} total actions by ${Object.keys(userActivity).length} users. ${suspiciousActivity.length} suspicious activities detected.`
+      summary: `${periodTrail.length} total actions by ${Object.keys(userActivity).length} users. ${suspiciousActivity.length} suspicious activities detected.`,
     };
   }
 
@@ -379,7 +429,7 @@ export class FinancialCompliance {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -420,8 +470,8 @@ export class FinancialCompliance {
     }
 
     // Audit Compliance scoring
-    const recentAudits = auditTrail.filter(a =>
-      (Date.now() - a.timestamp.getTime()) < (30 * 24 * 60 * 60 * 1000) // 30 days
+    const recentAudits = auditTrail.filter(
+      a => Date.now() - a.timestamp.getTime() < 30 * 24 * 60 * 60 * 1000 // 30 days
     );
 
     const suspiciousCount = recentAudits.filter(a => {
@@ -441,7 +491,7 @@ export class FinancialCompliance {
       vatCompliance,
       beeCompliance,
       auditCompliance,
-      recommendations
+      recommendations,
     };
   }
 }

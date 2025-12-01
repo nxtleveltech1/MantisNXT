@@ -19,16 +19,7 @@
     "Product Title",
     "Name"
   ],
-  "category": [
-    "Category",
-    "Materials",
-    "Group",
-    "Group Name",
-    "Class",
-    "Family",
-    "Range",
-    "Type"
-  ],
+  "category": ["Category", "Materials", "Group", "Group Name", "Class", "Family", "Range", "Type"],
   "stock_on_hand": [
     "SUPPLIER SOH",
     "SOH",
@@ -66,18 +57,6 @@
     "STREET INCL",
     "Price Incl VAT"
   ],
-  "vat": [
-    "VAT",
-    "VAT %",
-    "VAT%",
-    "VAT RATE",
-    "Tax",
-    "TAX %",
-    "VAT 15%"
-  ],
-  "currency": [
-    "Currency",
-    "CUR",
-    "Curr"
-  ]
+  "vat": ["VAT", "VAT %", "VAT%", "VAT RATE", "Tax", "TAX %", "VAT 15%"],
+  "currency": ["Currency", "CUR", "Curr"]
 }

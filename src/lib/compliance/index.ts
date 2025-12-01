@@ -7,28 +7,15 @@
 
 // POPIA Compliance
 export * from './popia';
-export type {
-  PersonalInformation,
-  ConsentRecord,
-  DataSubjectRequest,
-  DataBreach
-} from './popia';
+export type { PersonalInformation, ConsentRecord, DataSubjectRequest, DataBreach } from './popia';
 
 // Financial Compliance
 export * from './financial';
-export type {
-  VATTransaction,
-  BEESpend,
-  SARSSubmission,
-  AuditTrail
-} from './financial';
+export type { VATTransaction, BEESpend, SARSSubmission, AuditTrail } from './financial';
 
 // Compliance Reporting
 export * from './reporting';
-export type {
-  ComplianceReport,
-  BEECertificateVerification
-} from './reporting';
+export type { ComplianceReport, BEECertificateVerification } from './reporting';
 
 // Configuration and constants
 export const COMPLIANCE_CONSTANTS = {
@@ -71,7 +58,7 @@ export const COMPLIANCE_CONSTANTS = {
     COMPANY_REGISTRATION_FORMAT: /^\d{4}\/\d{6}\/\d{2}$/,
     VAT_NUMBER_FORMAT: /^\d{10}$/,
     PAYE_NUMBER_FORMAT: /^\d{10}$/,
-  }
+  },
 };
 
 export const DATA_PROTECTION_LEVELS = {
@@ -79,17 +66,17 @@ export const DATA_PROTECTION_LEVELS = {
   INTERNAL: 1,
   CONFIDENTIAL: 2,
   RESTRICTED: 3,
-  SECRET: 4
+  SECRET: 4,
 } as const;
 
 export const SOUTH_AFRICAN_HOLIDAYS = [
   // Fixed holidays
-  { name: 'New Year\'s Day', date: '01-01' },
+  { name: "New Year's Day", date: '01-01' },
   { name: 'Human Rights Day', date: '03-21' },
   { name: 'Freedom Day', date: '04-27' },
-  { name: 'Workers\' Day', date: '05-01' },
+  { name: "Workers' Day", date: '05-01' },
   { name: 'Youth Day', date: '06-16' },
-  { name: 'National Women\'s Day', date: '08-09' },
+  { name: "National Women's Day", date: '08-09' },
   { name: 'Heritage Day', date: '09-24' },
   { name: 'Day of Reconciliation', date: '12-16' },
   { name: 'Christmas Day', date: '12-25' },
@@ -147,7 +134,7 @@ export function formatZAR(amount: number): string {
     style: 'currency',
     currency: 'ZAR',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -156,7 +143,7 @@ export function formatPercentage(value: number, decimals: number = 1): string {
   return new Intl.NumberFormat('en-ZA', {
     style: 'percent',
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    maximumFractionDigits: decimals,
   }).format(value / 100);
 }
 
@@ -165,7 +152,7 @@ export function formatSADate(date: Date): string {
   return new Intl.DateTimeFormat('en-ZA', {
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
   }).format(date);
 }
 
@@ -177,7 +164,7 @@ export function formatSADateTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: false,
   }).format(date);
 }
 
@@ -196,15 +183,14 @@ export function calculateComplianceRisk(
     popia: 0.35,
     bee: 0.25,
     vat: 0.25,
-    audit: 0.15
+    audit: 0.15,
   };
 
-  const weightedScore = (
+  const weightedScore =
     popiaScore * weights.popia +
     beeScore * weights.bee +
     vatScore * weights.vat +
-    auditScore * weights.audit
-  );
+    auditScore * weights.audit;
 
   const factors: string[] = [];
 
@@ -228,7 +214,7 @@ export function calculateComplianceRisk(
   return {
     overallRisk,
     score: Math.round(weightedScore),
-    factors
+    factors,
   };
 }
 
@@ -244,50 +230,50 @@ export function classifyDataSensitivity(dataType: string): {
       level: 'RESTRICTED',
       description: 'Personal identity information including SA ID numbers',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.EMPLOYEE_RECORDS,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     financial: {
       level: 'CONFIDENTIAL',
       description: 'Financial and banking information',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.FINANCIAL_RECORDS,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     biometric: {
       level: 'SECRET',
       description: 'Biometric data including fingerprints and facial recognition',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.EMPLOYEE_RECORDS,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     health: {
       level: 'SECRET',
       description: 'Health and medical information',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.EMPLOYEE_RECORDS,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     contact: {
       level: 'CONFIDENTIAL',
       description: 'Contact information including email and phone numbers',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.CUSTOMER_DATA,
-      encryptionRequired: false
+      encryptionRequired: false,
     },
     employment: {
       level: 'CONFIDENTIAL',
       description: 'Employment and HR related information',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.EMPLOYEE_RECORDS,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     location: {
       level: 'RESTRICTED',
       description: 'Location and GPS tracking data',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.CUSTOMER_DATA,
-      encryptionRequired: true
+      encryptionRequired: true,
     },
     other: {
       level: 'INTERNAL',
       description: 'General business information',
       retentionPeriod: COMPLIANCE_CONSTANTS.POPIA.DATA_RETENTION_PERIODS.CUSTOMER_DATA,
-      encryptionRequired: false
-    }
+      encryptionRequired: false,
+    },
   };
 
   return classifications[dataType] || classifications.other;

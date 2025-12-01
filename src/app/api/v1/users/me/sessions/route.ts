@@ -1,17 +1,17 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
-import { db } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
+import { db } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -23,11 +23,11 @@ export async function GET(request: NextRequest) {
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Get active sessions from database
@@ -61,12 +61,12 @@ export async function GET(request: NextRequest) {
       ORDER BY last_activity_at DESC
     `,
       [user.id]
-    )
+    );
 
     return NextResponse.json(
       {
         success: true,
-        data: result.rows.map((row) => ({
+        data: result.rows.map(row => ({
           id: row.id,
           deviceInfo: row.device_info,
           ipAddress: row.ip_address,
@@ -80,9 +80,9 @@ export async function GET(request: NextRequest) {
         })),
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Get sessions API error:', error)
+    console.error('Get sessions API error:', error);
 
     return NextResponse.json(
       {
@@ -91,10 +91,9 @@ export async function GET(request: NextRequest) {
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

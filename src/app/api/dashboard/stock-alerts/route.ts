@@ -3,8 +3,8 @@
  * Returns critical, warning, and info level stock alerts
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { CORE_TABLES, PUBLIC_VIEWS } from '@/lib/db/schema-contract';
@@ -178,9 +178,10 @@ export async function GET() {
       critical: parseInt(counts.critical_count) || 0,
       warning: parseInt(counts.warning_count) || 0,
       info: parseInt(counts.info_count) || 0,
-      total: (parseInt(counts.critical_count) || 0) +
-             (parseInt(counts.warning_count) || 0) +
-             (parseInt(counts.info_count) || 0),
+      total:
+        (parseInt(counts.critical_count) || 0) +
+        (parseInt(counts.warning_count) || 0) +
+        (parseInt(counts.info_count) || 0),
     };
 
     return NextResponse.json({

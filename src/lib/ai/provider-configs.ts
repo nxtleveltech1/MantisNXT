@@ -190,7 +190,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'anthropic/claude-2.1',
       'anthropic/claude-2',
       'anthropic/claude-instant-1.2',
-      
+
       // === OPENAI MODELS ===
       'openai/gpt-4o',
       'openai/gpt-4o-2024-11-20',
@@ -213,7 +213,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'openai/o1-preview-2024-09-12',
       'openai/o1-mini',
       'openai/o1-mini-2024-09-12',
-      
+
       // === GOOGLE MODELS ===
       'google/gemini-pro-1.5',
       'google/gemini-pro-1.5-exp',
@@ -227,7 +227,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'google/gemma-2-27b-it',
       'google/gemma-2-9b-it',
       'google/gemma-7b-it',
-      
+
       // === META LLAMA MODELS ===
       'meta-llama/llama-3.2-90b-vision-instruct',
       'meta-llama/llama-3.2-11b-vision-instruct',
@@ -242,7 +242,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'meta-llama/llama-guard-2-8b',
       'meta-llama/codellama-70b-instruct',
       'meta-llama/codellama-34b-instruct',
-      
+
       // === MISTRAL MODELS ===
       'mistralai/mistral-large-2411',
       'mistralai/mistral-large-2407',
@@ -259,7 +259,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'mistralai/pixtral-12b',
       'mistralai/ministral-8b',
       'mistralai/ministral-3b',
-      
+
       // === COHERE MODELS ===
       'cohere/command-r-plus',
       'cohere/command-r-plus-08-2024',
@@ -267,7 +267,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'cohere/command-r-08-2024',
       'cohere/command',
       'cohere/command-light',
-      
+
       // === DEEPSEEK MODELS ===
       'deepseek/deepseek-chat',
       'deepseek/deepseek-coder',
@@ -275,7 +275,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'deepseek/deepseek-r1-distill-llama-70b',
       'deepseek/deepseek-r1-distill-qwen-32b',
       'deepseek/deepseek-r1-distill-qwen-14b',
-      
+
       // === QWEN MODELS ===
       'qwen/qwen-2.5-72b-instruct',
       'qwen/qwen-2.5-32b-instruct',
@@ -287,73 +287,73 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       'qwen/qwen-2-vl-72b-instruct',
       'qwen/qwen-2-vl-7b-instruct',
       'qwen/qwq-32b-preview',
-      
+
       // === PERPLEXITY MODELS ===
       'perplexity/llama-3.1-sonar-huge-128k-online',
       'perplexity/llama-3.1-sonar-large-128k-online',
       'perplexity/llama-3.1-sonar-small-128k-online',
       'perplexity/llama-3.1-sonar-large-128k-chat',
       'perplexity/llama-3.1-sonar-small-128k-chat',
-      
+
       // === XAI MODELS ===
       'x-ai/grok-2-1212',
       'x-ai/grok-2-vision-1212',
       'x-ai/grok-beta',
       'x-ai/grok-vision-beta',
-      
+
       // === NVIDIA MODELS ===
       'nvidia/llama-3.1-nemotron-70b-instruct',
       'nvidia/nemotron-4-340b-instruct',
-      
+
       // === INFLECTION MODELS ===
       'inflection/inflection-3-pi',
       'inflection/inflection-3-productivity',
-      
+
       // === NOUS RESEARCH MODELS ===
       'nousresearch/hermes-3-llama-3.1-405b',
       'nousresearch/hermes-3-llama-3.1-70b',
       'nousresearch/nous-hermes-2-mixtral-8x7b-dpo',
       'nousresearch/nous-capybara-7b',
-      
+
       // === PHIND MODELS ===
       'phind/phind-codellama-34b',
-      
+
       // === MICROSOFT MODELS ===
       'microsoft/wizardlm-2-8x22b',
       'microsoft/wizardlm-2-7b',
       'microsoft/phi-3-medium-128k-instruct',
       'microsoft/phi-3-mini-128k-instruct',
-      
+
       // === DATABRICKS MODELS ===
       'databricks/dbrx-instruct',
-      
+
       // === AI21 MODELS ===
       'ai21/jamba-1.5-large',
       'ai21/jamba-1.5-mini',
       'ai21/jamba-instruct',
-      
+
       // === 01.AI MODELS ===
       '01-ai/yi-large',
       '01-ai/yi-34b-chat',
       '01-ai/yi-6b-chat',
-      
+
       // === TOGETHER AI MODELS ===
       'togethercomputer/stripedhyena-nous-7b',
-      
+
       // === HUGGINGFACE MODELS ===
       'huggingfaceh4/zephyr-7b-beta',
-      
+
       // === RWKV MODELS ===
       'rwkv/rwkv-5-world-3b',
-      
+
       // === NEVERSLEEP MODELS ===
       'neversleep/llama-3.1-lumimaid-70b',
       'neversleep/noromaid-mixtral-8x7b-instruct',
-      
+
       // === SAORC MODELS ===
       'sao10k/l3.1-70b-euryale-v2.2',
       'sao10k/l3-70b-euryale-v2.1',
-      
+
       // === ADDITIONAL POPULAR MODELS ===
       'cognitivecomputations/dolphin-mixtral-8x22b',
       'lizpreciatior/lzlv-70b-fp16-hf',
@@ -365,7 +365,8 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     supportsStreaming: true,
     supportsEmbeddings: false,
     requiresApiKey: true,
-    description: 'Unified API for 200+ AI models from OpenAI, Anthropic, Google, Meta, Mistral, and more',
+    description:
+      'Unified API for 200+ AI models from OpenAI, Anthropic, Google, Meta, Mistral, and more',
   },
   kilocode: {
     id: 'kilocode',

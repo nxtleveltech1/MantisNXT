@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * Mobile AI Interface - Optimized for mobile devices
@@ -11,15 +11,15 @@
  * - Bottom sheet design
  */
 
-import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+import React, { useState, useEffect, useRef } from 'react';
+import { useChat } from 'ai/react';
 import type { PanInfo } from 'framer-motion';
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Brain,
   Send,
@@ -33,12 +33,12 @@ import {
   DollarSign,
   MessageCircle,
   Zap,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface MobileAIInterfaceV5Props {
-  onClose?: () => void
-  apiEndpoint?: string
-  startMinimized?: boolean
+  onClose?: () => void;
+  apiEndpoint?: string;
+  startMinimized?: boolean;
 }
 
 const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
@@ -47,35 +47,29 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
   startMinimized = false,
 }) => {
   // Vercel AI SDK v5 useChat hook
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-  } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: apiEndpoint,
-  })
+  });
 
   // State
-  const [isMinimized, setIsMinimized] = useState(startMinimized)
-  const [isListening, setIsListening] = useState(false)
-  const [insights, setInsights] = useState<unknown[]>([])
-  const [activeTab, setActiveTab] = useState<'chat' | 'insights'>('chat')
+  const [isMinimized, setIsMinimized] = useState(startMinimized);
+  const [isListening, setIsListening] = useState(false);
+  const [insights, setInsights] = useState<unknown[]>([]);
+  const [activeTab, setActiveTab] = useState<'chat' | 'insights'>('chat');
 
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Load quick insights
   useEffect(() => {
-    loadQuickInsights()
-  }, [])
+    loadQuickInsights();
+  }, []);
 
   const loadQuickInsights = async () => {
     try {
@@ -91,27 +85,27 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           },
           includeActions: false,
         }),
-      })
+      });
 
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         if (data.success) {
-          setInsights((data.data.insights || []).slice(0, 3))
+          setInsights((data.data.insights || []).slice(0, 3));
         }
       }
     } catch (error) {
-      console.error('Failed to load insights:', error)
+      console.error('Failed to load insights:', error);
     }
-  }
+  };
 
   // Handle drag to minimize
   const handleDragEnd = (_event: unknown, info: PanInfo) => {
     if (info.offset.y > 100) {
-      setIsMinimized(true)
+      setIsMinimized(true);
     } else if (info.offset.y < -100) {
-      setIsMinimized(false)
+      setIsMinimized(false);
     }
-  }
+  };
 
   // Quick prompts for mobile
   const quickActions = [
@@ -119,21 +113,21 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
     { id: 2, label: 'Cost Savings', icon: DollarSign },
     { id: 3, label: 'Risk Check', icon: AlertTriangle },
     { id: 4, label: 'New Ideas', icon: Lightbulb },
-  ]
+  ];
 
   // Get insight icon
   const getInsightIcon = (type: string) => {
     switch (type) {
       case 'opportunity':
-        return <Lightbulb className="h-4 w-4 text-green-600" />
+        return <Lightbulb className="h-4 w-4 text-green-600" />;
       case 'risk':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case 'trend':
-        return <TrendingUp className="h-4 w-4 text-blue-600" />
+        return <TrendingUp className="h-4 w-4 text-blue-600" />;
       default:
-        return <Sparkles className="h-4 w-4 text-purple-600" />
+        return <Sparkles className="h-4 w-4 text-purple-600" />;
     }
-  }
+  };
 
   return (
     <AnimatePresence>
@@ -146,21 +140,24 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-x-0 bottom-0 z-50 h-[85vh] bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl flex flex-col"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-3xl bg-white shadow-2xl dark:bg-gray-900"
         >
           {/* Drag Handle */}
-          <div className="flex items-center justify-center py-2 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="flex items-center justify-center border-b border-gray-200 py-2 dark:border-gray-700">
+            <div className="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600" />
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-white dark:border-gray-700">
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5" />
               <span className="font-semibold">AI Assistant</span>
               {isLoading && (
-                <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Badge
+                  variant="secondary"
+                  className="border-white/30 bg-white/20 text-xs text-white"
+                >
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                   Thinking
                 </Badge>
               )}
@@ -195,22 +192,22 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
               onClick={() => setActiveTab('chat')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'chat'
-                  ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
+                  ? 'border-b-2 border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400'
                   : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              <MessageCircle className="h-4 w-4 inline mr-2" />
+              <MessageCircle className="mr-2 inline h-4 w-4" />
               Chat
             </button>
             <button
               onClick={() => setActiveTab('insights')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'insights'
-                  ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
+                  ? 'border-b-2 border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400'
                   : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              <Zap className="h-4 w-4 inline mr-2" />
+              <Zap className="mr-2 inline h-4 w-4" />
               Insights
             </button>
           </div>
@@ -218,13 +215,13 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           {/* Content */}
           <div className="flex-1 overflow-hidden">
             {activeTab === 'chat' ? (
-              <div className="flex flex-col h-full">
+              <div className="flex h-full flex-col">
                 {/* Messages */}
                 <ScrollArea className="flex-1 px-4 py-3">
                   <div className="space-y-3">
                     {messages.length === 0 && (
-                      <div className="text-center py-8">
-                        <Brain className="h-12 w-12 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+                      <div className="py-8 text-center">
+                        <Brain className="mx-auto mb-3 h-12 w-12 text-purple-600 dark:text-purple-400" />
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           Hi! Ask me anything about procurement.
                         </p>
@@ -240,16 +237,16 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                             message.role === 'user'
-                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-tr-sm'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-sm'
+                              ? 'rounded-tr-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                              : 'rounded-tl-sm bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
                           }`}
                         >
                           <div className="text-sm leading-relaxed whitespace-pre-wrap">
                             {message.content}
                           </div>
-                          <div className="text-xs opacity-70 mt-1">
+                          <div className="mt-1 text-xs opacity-70">
                             {new Date(message.createdAt || Date.now()).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
@@ -265,7 +262,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                         animate={{ opacity: 1 }}
                         className="flex justify-start"
                       >
-                        <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-2xl rounded-tl-sm">
+                        <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2 dark:bg-gray-800">
                           <div className="flex items-center gap-2">
                             <div className="flex gap-1">
                               {[0, 1, 2].map(i => (
@@ -273,7 +270,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                                   key={i}
                                   animate={{ scale: [1, 1.2, 1] }}
                                   transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                                  className="w-2 h-2 bg-purple-600 dark:bg-purple-400 rounded-full"
+                                  className="h-2 w-2 rounded-full bg-purple-600 dark:bg-purple-400"
                                 />
                               ))}
                             </div>
@@ -288,7 +285,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
 
                 {/* Quick Actions */}
                 {messages.length === 0 && (
-                  <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="border-t border-gray-200 px-4 py-2 dark:border-gray-700">
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {quickActions.map(action => (
                         <Button
@@ -296,12 +293,12 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            handleInputChange({ target: { value: action.label } } as unknown)
-                            inputRef.current?.focus()
+                            handleInputChange({ target: { value: action.label } } as unknown);
+                            inputRef.current?.focus();
                           }}
                           className="flex-shrink-0 text-xs"
                         >
-                          <action.icon className="h-3 w-3 mr-1" />
+                          <action.icon className="mr-1 h-3 w-3" />
                           {action.label}
                         </Button>
                       ))}
@@ -310,7 +307,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                 )}
 
                 {/* Input */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                   <form onSubmit={handleSubmit} className="flex gap-2">
                     <Input
                       ref={inputRef}
@@ -318,7 +315,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                       onChange={handleInputChange}
                       placeholder="Type your message..."
                       disabled={isLoading}
-                      className="flex-1 text-sm dark:bg-gray-700 dark:border-gray-600"
+                      className="flex-1 text-sm dark:border-gray-600 dark:bg-gray-700"
                     />
                     <Button
                       type="submit"
@@ -336,11 +333,11 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
               </div>
             ) : (
               // Insights Tab
-              (<ScrollArea className="h-full px-4 py-3">
+              <ScrollArea className="h-full px-4 py-3">
                 <div className="space-y-3">
                   {insights.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Sparkles className="h-12 w-12 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+                    <div className="py-8 text-center">
+                      <Sparkles className="mx-auto mb-3 h-12 w-12 text-purple-600 dark:text-purple-400" />
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         No insights available
                       </p>
@@ -357,21 +354,23 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
                               {getInsightIcon(insight.type)}
-                              <div className="flex-1 min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <Badge
-                                  variant={insight.type === 'opportunity' ? 'default' : 'destructive'}
-                                  className="text-xs mb-2"
+                                  variant={
+                                    insight.type === 'opportunity' ? 'default' : 'destructive'
+                                  }
+                                  className="mb-2 text-xs"
                                 >
                                   {insight.type.toUpperCase()}
                                 </Badge>
-                                <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-1">
+                                <h4 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
                                   {insight.title}
                                 </h4>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                                <p className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                   {insight.summary}
                                 </p>
                                 {insight.impact?.financial > 0 && (
-                                  <div className="flex items-center gap-1 mt-2">
+                                  <div className="mt-2 flex items-center gap-1">
                                     <DollarSign className="h-3 w-3 text-blue-600" />
                                     <span className="text-xs font-medium text-blue-600">
                                       ${(insight.impact.financial / 1000).toFixed(0)}K
@@ -386,7 +385,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                     ))
                   )}
                 </div>
-              </ScrollArea>)
+              </ScrollArea>
             )}
           </div>
         </motion.div>
@@ -398,16 +397,16 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           animate={{ scale: 1 }}
           exit={{ scale: 0 }}
           onClick={() => setIsMinimized(false)}
-          className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center"
+          className="fixed right-4 bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg"
         >
           <Brain className="h-6 w-6" />
           {isLoading && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-green-500" />
           )}
         </motion.button>
       )}
     </AnimatePresence>
   );
-}
+};
 
-export default MobileAIInterfaceV5
+export default MobileAIInterfaceV5;

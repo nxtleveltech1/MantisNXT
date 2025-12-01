@@ -228,5 +228,3 @@ export class MigrationRunner {
 }
 
 export default MigrationRunner;
-
-

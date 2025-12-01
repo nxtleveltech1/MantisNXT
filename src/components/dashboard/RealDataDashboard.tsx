@@ -1,32 +1,32 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BulletproofErrorBoundary } from '@/components/ui/BulletproofErrorBoundary'
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BulletproofErrorBoundary } from '@/components/ui/BulletproofErrorBoundary';
 import {
   ConditionalLoader,
   MetricCardSkeleton,
   ActivityFeedSkeleton,
   AlertPanelSkeleton,
-  EmptyState
-} from '@/components/ui/BulletproofLoadingStates'
+  EmptyState,
+} from '@/components/ui/BulletproofLoadingStates';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Building2,
   CheckCircle,
@@ -52,8 +52,8 @@ import {
   Bell,
   Clock,
   Target,
-  MoreVertical
-} from "lucide-react";
+  MoreVertical,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // React Query hooks for optimized caching and performance
@@ -65,22 +65,15 @@ import {
   useRealTimeSuppliers,
   useRealTimeInventory,
   useSupplierMutations,
-  useAlerts
+  useAlerts,
 } from '@/hooks/useRealTimeDataFixed';
 
 // Date utilities for safe timestamp handling
-import {
-  safeRelativeTime
-} from '@/lib/utils/dateUtils';
+import { safeRelativeTime } from '@/lib/utils/dateUtils';
 
 // Data validation utilities
-import type {
-  ValidatedActivityItem,
-  ValidatedAlertItem} from '@/lib/utils/dataValidation';
-import {
-  validateActivityItems,
-  errorLogger
-} from '@/lib/utils/dataValidation';
+import type { ValidatedActivityItem, ValidatedAlertItem } from '@/lib/utils/dataValidation';
+import { validateActivityItems, errorLogger } from '@/lib/utils/dataValidation';
 
 import { processAlertsData } from '@/lib/utils/alertValidationEnhancements';
 
@@ -91,8 +84,8 @@ interface MetricCardProps {
   change?: number;
   changeLabel?: string;
   icon: React.ReactNode;
-  trend?: "up" | "down";
-  color?: "blue" | "green" | "yellow" | "red" | "purple";
+  trend?: 'up' | 'down';
+  color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple';
   href?: string;
   loading?: boolean;
   onClick?: () => void;
@@ -109,55 +102,55 @@ const MetricCard: React.FC<MetricCardProps> = ({
   change,
   changeLabel,
   icon,
-  trend = "up",
-  color = "blue",
+  trend = 'up',
+  color = 'blue',
   href,
   loading = false,
-  onClick
+  onClick,
 }) => {
   // Enhanced color scheme with semantic tokens and rings
   const colorScheme = {
     blue: {
-      icon: "bg-primary/10 text-primary ring-1 ring-primary/20",
-      gradient: "from-primary/5 via-background to-background",
-      change: trend === "up" ? "text-success" : "text-destructive"
+      icon: 'bg-primary/10 text-primary ring-1 ring-primary/20',
+      gradient: 'from-primary/5 via-background to-background',
+      change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     green: {
-      icon: "bg-success/10 text-success ring-1 ring-success/20",
-      gradient: "from-success/5 via-background to-background",
-      change: trend === "up" ? "text-success" : "text-destructive"
+      icon: 'bg-success/10 text-success ring-1 ring-success/20',
+      gradient: 'from-success/5 via-background to-background',
+      change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     yellow: {
-      icon: "bg-warning/10 text-warning ring-1 ring-warning/20",
-      gradient: "from-warning/5 via-background to-background",
-      change: trend === "up" ? "text-success" : "text-destructive"
+      icon: 'bg-warning/10 text-warning ring-1 ring-warning/20',
+      gradient: 'from-warning/5 via-background to-background',
+      change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     red: {
-      icon: "bg-destructive/10 text-destructive ring-1 ring-destructive/20",
-      gradient: "from-destructive/5 via-background to-background",
-      change: trend === "up" ? "text-success" : "text-destructive"
+      icon: 'bg-destructive/10 text-destructive ring-1 ring-destructive/20',
+      gradient: 'from-destructive/5 via-background to-background',
+      change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     purple: {
-      icon: "bg-accent/10 text-accent ring-1 ring-accent/20",
-      gradient: "from-accent/5 via-background to-background",
-      change: trend === "up" ? "text-success" : "text-destructive"
-    }
+      icon: 'bg-accent/10 text-accent ring-1 ring-accent/20',
+      gradient: 'from-accent/5 via-background to-background',
+      change: trend === 'up' ? 'text-success' : 'text-destructive',
+    },
   };
 
-  const CardWrapper = href ? "a" : "div";
-  const cardProps = href ? { href } : onClick ? { onClick, role: "button", tabIndex: 0 } : {};
+  const CardWrapper = href ? 'a' : 'div';
+  const cardProps = href ? { href } : onClick ? { onClick, role: 'button', tabIndex: 0 } : {};
 
   if (loading) {
     return (
-      <Card className="animate-pulse border border-border/50">
+      <Card className="border-border/50 animate-pulse border">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div className="space-y-2 flex-1">
-              <div className="h-4 bg-muted rounded w-20"></div>
-              <div className="h-8 bg-muted rounded w-16"></div>
-              <div className="h-3 bg-muted rounded w-24"></div>
+            <div className="flex-1 space-y-2">
+              <div className="bg-muted h-4 w-20 rounded"></div>
+              <div className="bg-muted h-8 w-16 rounded"></div>
+              <div className="bg-muted h-3 w-24 rounded"></div>
             </div>
-            <div className="h-12 w-12 bg-muted rounded-xl"></div>
+            <div className="bg-muted h-12 w-12 rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
@@ -167,13 +160,13 @@ const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden transition-all duration-300",
-        "shadow-sm hover:shadow-lg hover:border-primary/20 hover:-translate-y-1",
-        "border border-border/50",
-        href || onClick ? "cursor-pointer" : ""
+        'group relative overflow-hidden transition-all duration-300',
+        'hover:border-primary/20 shadow-sm hover:-translate-y-1 hover:shadow-lg',
+        'border-border/50 border',
+        href || onClick ? 'cursor-pointer' : ''
       )}
       {...cardProps}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onClick();
@@ -183,9 +176,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
       {/* Subtle gradient background */}
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br opacity-40 transition-opacity duration-300",
+          'absolute inset-0 bg-gradient-to-br opacity-40 transition-opacity duration-300',
           `bg-gradient-to-br ${colorScheme[color].gradient}`,
-          "group-hover:opacity-60"
+          'group-hover:opacity-60'
         )}
       />
 
@@ -193,51 +186,54 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-2">
             {/* Label with proper typography */}
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               {title}
             </p>
 
             {/* Large metric value */}
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-bold tabular-nums tracking-tight">
-                {value}
-              </p>
+              <p className="text-3xl font-bold tracking-tight tabular-nums">{value}</p>
               {(href || onClick) && (
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                <ArrowUpRight className="text-muted-foreground h-4 w-4 -translate-x-2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
               )}
             </div>
 
             {/* Change indicator with refined styling */}
             {change !== undefined && (
               <div className="flex items-center gap-1.5">
-                <div className={cn(
-                  "flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium",
-                  trend === "up"
-                    ? "bg-success/10 text-success"
-                    : "bg-destructive/10 text-destructive"
-                )}>
-                  {trend === "up" ? (
+                <div
+                  className={cn(
+                    'flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium',
+                    trend === 'up'
+                      ? 'bg-success/10 text-success'
+                      : 'bg-destructive/10 text-destructive'
+                  )}
+                >
+                  {trend === 'up' ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
-                  <span>{change > 0 ? "+" : ""}{change}%</span>
+                  <span>
+                    {change > 0 ? '+' : ''}
+                    {change}%
+                  </span>
                 </div>
                 {changeLabel && (
-                  <span className="text-xs text-muted-foreground">
-                    {changeLabel}
-                  </span>
+                  <span className="text-muted-foreground text-xs">{changeLabel}</span>
                 )}
               </div>
             )}
           </div>
 
           {/* Refined icon presentation */}
-          <div className={cn(
-            "p-3 rounded-xl transition-all duration-300",
-            colorScheme[color].icon,
-            "group-hover:scale-110"
-          )}>
+          <div
+            className={cn(
+              'rounded-xl p-3 transition-all duration-300',
+              colorScheme[color].icon,
+              'group-hover:scale-110'
+            )}
+          >
             {icon}
           </div>
         </div>
@@ -250,29 +246,44 @@ const MetricCard: React.FC<MetricCardProps> = ({
 const ActivityFeed: React.FC<{ activities: ActivityItem[] }> = ({ activities }) => {
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'supplier_added': return <Building2 className="h-4 w-4" />;
-      case 'inventory_update': return <Package className="h-4 w-4" />;
-      case 'price_change': return <DollarSign className="h-4 w-4" />;
-      case 'delivery_received': return <Truck className="h-4 w-4" />;
-      case 'contract_signed': return <Award className="h-4 w-4" />;
-      default: return <Activity className="h-4 w-4" />;
+      case 'supplier_added':
+        return <Building2 className="h-4 w-4" />;
+      case 'inventory_update':
+        return <Package className="h-4 w-4" />;
+      case 'price_change':
+        return <DollarSign className="h-4 w-4" />;
+      case 'delivery_received':
+        return <Truck className="h-4 w-4" />;
+      case 'contract_signed':
+        return <Award className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-destructive/10 text-destructive ring-1 ring-destructive/20';
-      case 'medium': return 'bg-warning/10 text-warning ring-1 ring-warning/20';
-      case 'low': return 'bg-success/10 text-success ring-1 ring-success/20';
-      default: return 'bg-muted text-muted-foreground ring-1 ring-border';
+      case 'high':
+        return 'bg-destructive/10 text-destructive ring-1 ring-destructive/20';
+      case 'medium':
+        return 'bg-warning/10 text-warning ring-1 ring-warning/20';
+      case 'low':
+        return 'bg-success/10 text-success ring-1 ring-success/20';
+      default:
+        return 'bg-muted text-muted-foreground ring-1 ring-border';
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  const getStatusVariant = (
+    status: string
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
-      case 'completed': return 'default';
-      case 'failed': return 'destructive';
-      default: return 'secondary';
+      case 'completed':
+        return 'default';
+      case 'failed':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -289,54 +300,51 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[] }> = ({ activities }) 
         <div
           key={activity.id}
           className={cn(
-            "group relative",
-            "flex items-start gap-4 p-4 rounded-lg",
-            "border border-border/50 bg-card",
-            "hover:border-primary/30 hover:bg-accent/5",
-            "transition-all duration-300",
-            "animate-in fade-in-0 slide-in-from-right-4",
+            'group relative',
+            'flex items-start gap-4 rounded-lg p-4',
+            'border-border/50 bg-card border',
+            'hover:border-primary/30 hover:bg-accent/5',
+            'transition-all duration-300',
+            'animate-in fade-in-0 slide-in-from-right-4',
             // Stagger animations for first 3 items
             index < 3 && `animation-delay-${index * 100}`
           )}
         >
           {/* Enhanced icon with pulse effect for recent items */}
-          <div className={cn(
-            "relative flex-shrink-0 p-2.5 rounded-lg transition-all duration-300",
-            getPriorityColor(activity.priority),
-            "group-hover:scale-110"
-          )}>
+          <div
+            className={cn(
+              'relative flex-shrink-0 rounded-lg p-2.5 transition-all duration-300',
+              getPriorityColor(activity.priority),
+              'group-hover:scale-110'
+            )}
+          >
             {getActivityIcon(activity.type)}
 
             {/* Pulse indicator for very recent items */}
             {isRecent(activity.timestamp) && (
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
+                <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+                <span className="bg-primary relative inline-flex h-3 w-3 rounded-full" />
               </span>
             )}
           </div>
 
-          <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1.5">
             {/* Title and status inline */}
             <div className="flex items-center justify-between gap-2">
-              <h4 className="text-sm font-semibold truncate">
-                {activity.title}
-              </h4>
-              <Badge
-                variant={getStatusVariant(activity.status)}
-                className="text-xs shrink-0"
-              >
+              <h4 className="truncate text-sm font-semibold">{activity.title}</h4>
+              <Badge variant={getStatusVariant(activity.status)} className="shrink-0 text-xs">
                 {activity.status}
               </Badge>
             </div>
 
             {/* Description with better line height */}
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+            <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
               {activity.description}
             </p>
 
             {/* Metadata footer */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 <span>{safeRelativeTime(activity.timestamp, 'Unknown time')}</span>
@@ -349,8 +357,8 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[] }> = ({ activities }) 
           </div>
 
           {/* Hover action indicator */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <Eye className="h-4 w-4 text-muted-foreground" />
+          <div className="opacity-0 transition-opacity group-hover:opacity-100">
+            <Eye className="text-muted-foreground h-4 w-4" />
           </div>
         </div>
       ))}
@@ -362,35 +370,35 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[] }> = ({ activities }) 
 const AlertPanel: React.FC<{ alerts: AlertItem[] }> = ({ alerts }) => {
   const severityConfig = {
     critical: {
-      bg: "bg-destructive/5 dark:bg-destructive/10",
-      border: "border-l-4 border-l-destructive",
-      icon: "text-destructive",
-      badge: "bg-destructive/10 text-destructive border-destructive/20"
+      bg: 'bg-destructive/5 dark:bg-destructive/10',
+      border: 'border-l-4 border-l-destructive',
+      icon: 'text-destructive',
+      badge: 'bg-destructive/10 text-destructive border-destructive/20',
     },
     error: {
-      bg: "bg-destructive/5 dark:bg-destructive/10",
-      border: "border-l-4 border-l-destructive",
-      icon: "text-destructive",
-      badge: "bg-destructive/10 text-destructive border-destructive/20"
+      bg: 'bg-destructive/5 dark:bg-destructive/10',
+      border: 'border-l-4 border-l-destructive',
+      icon: 'text-destructive',
+      badge: 'bg-destructive/10 text-destructive border-destructive/20',
     },
     warning: {
-      bg: "bg-warning/5 dark:bg-warning/10",
-      border: "border-l-4 border-l-warning",
-      icon: "text-warning",
-      badge: "bg-warning/10 text-warning border-warning/20"
+      bg: 'bg-warning/5 dark:bg-warning/10',
+      border: 'border-l-4 border-l-warning',
+      icon: 'text-warning',
+      badge: 'bg-warning/10 text-warning border-warning/20',
     },
     info: {
-      bg: "bg-primary/5 dark:bg-primary/10",
-      border: "border-l-4 border-l-primary",
-      icon: "text-primary",
-      badge: "bg-primary/10 text-primary border-primary/20"
+      bg: 'bg-primary/5 dark:bg-primary/10',
+      border: 'border-l-4 border-l-primary',
+      icon: 'text-primary',
+      badge: 'bg-primary/10 text-primary border-primary/20',
     },
     success: {
-      bg: "bg-success/5 dark:bg-success/10",
-      border: "border-l-4 border-l-success",
-      icon: "text-success",
-      badge: "bg-success/10 text-success border-success/20"
-    }
+      bg: 'bg-success/5 dark:bg-success/10',
+      border: 'border-l-4 border-l-success',
+      icon: 'text-success',
+      badge: 'bg-success/10 text-success border-success/20',
+    },
   };
 
   const unreadAlerts = alerts.filter(alert => !alert.isRead).slice(0, 10);
@@ -401,29 +409,30 @@ const AlertPanel: React.FC<{ alerts: AlertItem[] }> = ({ alerts }) => {
         <div
           key={alert.id}
           className={cn(
-            "relative overflow-hidden rounded-lg border transition-all duration-300",
-            "hover:shadow-md hover:-translate-x-1",
-            severityConfig[alert.severity as keyof typeof severityConfig]?.bg || severityConfig.info.bg,
-            severityConfig[alert.severity as keyof typeof severityConfig]?.border || severityConfig.info.border,
-            "animate-in fade-in-0 slide-in-from-right-4",
+            'relative overflow-hidden rounded-lg border transition-all duration-300',
+            'hover:-translate-x-1 hover:shadow-md',
+            severityConfig[alert.severity as keyof typeof severityConfig]?.bg ||
+              severityConfig.info.bg,
+            severityConfig[alert.severity as keyof typeof severityConfig]?.border ||
+              severityConfig.info.border,
+            'animate-in fade-in-0 slide-in-from-right-4',
             index < 3 && `animation-delay-${index * 100}`
           )}
         >
-          <div className="p-4 space-y-2">
+          <div className="space-y-2 p-4">
             {/* Header with severity icon */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2 flex-1">
-                <AlertTriangle className={cn(
-                  "h-4 w-4 mt-0.5 shrink-0",
-                  severityConfig[alert.severity as keyof typeof severityConfig]?.icon || severityConfig.info.icon
-                )} />
-                <div className="space-y-1 flex-1">
-                  <h4 className="text-sm font-semibold leading-tight">
-                    {alert.title}
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {alert.message}
-                  </p>
+              <div className="flex flex-1 items-start gap-2">
+                <AlertTriangle
+                  className={cn(
+                    'mt-0.5 h-4 w-4 shrink-0',
+                    severityConfig[alert.severity as keyof typeof severityConfig]?.icon ||
+                      severityConfig.info.icon
+                  )}
+                />
+                <div className="flex-1 space-y-1">
+                  <h4 className="text-sm leading-tight font-semibold">{alert.title}</h4>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{alert.message}</p>
                 </div>
               </div>
 
@@ -443,17 +452,18 @@ const AlertPanel: React.FC<{ alerts: AlertItem[] }> = ({ alerts }) => {
             </div>
 
             {/* Footer metadata */}
-            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+            <div className="border-border/30 flex items-center justify-between border-t pt-2">
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-xs",
-                  severityConfig[alert.severity as keyof typeof severityConfig]?.badge || severityConfig.info.badge
+                  'text-xs',
+                  severityConfig[alert.severity as keyof typeof severityConfig]?.badge ||
+                    severityConfig.info.badge
                 )}
               >
                 {alert.type.replace('_', ' ')}
               </Badge>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <Clock className="h-3 w-3" />
                 <span>{safeRelativeTime(alert.createdAt, 'Unknown time')}</span>
               </div>
@@ -485,7 +495,7 @@ const RealDataDashboard: React.FC = () => {
     activities: rawActivities,
     loading: dashboardLoading,
     error: dashboardError,
-    realTimeData
+    realTimeData,
   } = useRealTimeDashboard();
 
   // Safely validate and normalize activities
@@ -501,19 +511,19 @@ const RealDataDashboard: React.FC = () => {
   const {
     data: suppliersData,
     isLoading: suppliersLoading,
-    error: suppliersError
+    error: suppliersError,
   } = useRealTimeSuppliers({
     status: ['active', 'preferred'],
-    includeMetrics: true
+    includeMetrics: true,
   });
 
   const {
     data: inventoryData,
     isLoading: inventoryLoading,
-    error: inventoryError
+    error: inventoryError,
   } = useRealTimeInventory({
     includeAlerts: true,
-    includeMetrics: true
+    includeMetrics: true,
   });
 
   const { createSupplier } = useSupplierMutations();
@@ -528,9 +538,13 @@ const RealDataDashboard: React.FC = () => {
       totalSuppliers: suppliers.length,
       activeSuppliers: suppliers.filter((s: unknown) => s.status === 'active').length,
       strategicPartners: suppliers.filter((s: unknown) => s.tier === 'strategic').length,
-      avgSupplierRating: suppliers.length > 0
-        ? suppliers.reduce((sum: number, s: unknown) => sum + (s.performance?.overallRating || 0), 0) / suppliers.length
-        : 0,
+      avgSupplierRating:
+        suppliers.length > 0
+          ? suppliers.reduce(
+              (sum: number, s: unknown) => sum + (s.performance?.overallRating || 0),
+              0
+            ) / suppliers.length
+          : 0,
       totalInventoryValue: metrics.totalValue || 0,
       totalInventoryItems: metrics.totalItems || 0,
       lowStockAlerts: metrics.lowStockItems || 0,
@@ -554,13 +568,15 @@ const RealDataDashboard: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        dashboardQuery.refetch(),
-        realTimeData.refetch?.(),
-        (suppliersData as unknown)?.refetch?.(),
-        (inventoryData as unknown)?.refetch?.(),
-        alertsQuery.refetch?.()
-      ].filter(Boolean));
+      await Promise.all(
+        [
+          dashboardQuery.refetch(),
+          realTimeData.refetch?.(),
+          (suppliersData as unknown)?.refetch?.(),
+          (inventoryData as unknown)?.refetch?.(),
+          alertsQuery.refetch?.(),
+        ].filter(Boolean)
+      );
     } catch (error) {
       errorLogger.logError('dashboard-refresh', error, 'Error refreshing dashboard data');
     } finally {
@@ -569,19 +585,25 @@ const RealDataDashboard: React.FC = () => {
   };
 
   // Prefer React Query data when available (cached and faster)
-  const loading = dashboardQuery.isLoading || dashboardLoading || suppliersLoading || inventoryLoading || alertsQuery.isLoading;
-  const error = dashboardQuery.error || dashboardError || suppliersError || inventoryError || alertsQuery.error;
+  const loading =
+    dashboardQuery.isLoading ||
+    dashboardLoading ||
+    suppliersLoading ||
+    inventoryLoading ||
+    alertsQuery.isLoading;
+  const error =
+    dashboardQuery.error || dashboardError || suppliersError || inventoryError || alertsQuery.error;
 
   // Prevent hydration mismatches by showing loading state until mounted
   if (!mounted) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-64 mb-4"></div>
-          <div className="h-4 bg-muted rounded w-96 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-muted rounded-lg"></div>
+          <div className="bg-muted mb-4 h-8 w-64 rounded"></div>
+          <div className="bg-muted mb-6 h-4 w-96 rounded"></div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-muted h-32 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -592,31 +614,34 @@ const RealDataDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Section with enhanced spacing */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-in fade-in-0 slide-in-from-top-4 duration-400">
+      <div className="animate-in fade-in-0 slide-in-from-top-4 flex flex-col gap-4 duration-400 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
             Real-Time Dashboard
             {!dashboardQuery.isLoading && dashboardQuery.data && (
-              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                <Zap className="h-3 w-3 mr-1" />
+              <Badge
+                variant="secondary"
+                className="bg-primary/10 text-primary border-primary/20 text-xs"
+              >
+                <Zap className="mr-1 h-3 w-3" />
                 Cached
               </Badge>
             )}
             {realTimeData.connected && (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success border border-success/20">
-                <div className="h-2 w-2 bg-success rounded-full animate-pulse"></div>
+              <div className="bg-success/10 text-success border-success/20 flex items-center gap-1.5 rounded-md border px-2 py-1">
+                <div className="bg-success h-2 w-2 animate-pulse rounded-full"></div>
                 <span className="text-xs font-medium">Live</span>
               </div>
             )}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
             Live data from your supplier and inventory management systems
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-40">
-              <Calendar className="h-4 w-4 mr-2" />
+              <Calendar className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -631,16 +656,18 @@ const RealDataDashboard: React.FC = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="active:scale-95 transition-transform duration-100"
+            className="transition-transform duration-100 active:scale-95"
           >
-            <RefreshCw className={cn(
-              "h-4 w-4 mr-2 transition-transform duration-500",
-              refreshing && "animate-spin"
-            )} />
+            <RefreshCw
+              className={cn(
+                'mr-2 h-4 w-4 transition-transform duration-500',
+                refreshing && 'animate-spin'
+              )}
+            />
             Refresh
           </Button>
           <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="mr-2 h-4 w-4" />
             Settings
           </Button>
         </div>
@@ -654,56 +681,56 @@ const RealDataDashboard: React.FC = () => {
         onRetry={handleRefresh}
         loadingComponent={<MetricCardSkeleton count={4} />}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {[
             {
-              title: "Total Suppliers",
+              title: 'Total Suppliers',
               value: computedMetrics.totalSuppliers.toLocaleString(),
               change: 8,
-              changeLabel: "vs last month",
+              changeLabel: 'vs last month',
               icon: <Building2 className="h-6 w-6" />,
-              color: "blue" as const,
-              href: "/suppliers",
-              loading: suppliersLoading
+              color: 'blue' as const,
+              href: '/suppliers',
+              loading: suppliersLoading,
             },
             {
-              title: "Active Suppliers",
+              title: 'Active Suppliers',
               value: computedMetrics.activeSuppliers.toLocaleString(),
               change: 5,
-              changeLabel: "vs last month",
+              changeLabel: 'vs last month',
               icon: <CheckCircle className="h-6 w-6" />,
-              color: "green" as const,
-              loading: suppliersLoading
+              color: 'green' as const,
+              loading: suppliersLoading,
             },
             {
-              title: "Inventory Value",
+              title: 'Inventory Value',
               value: new Intl.NumberFormat('en-ZA', {
                 style: 'currency',
                 currency: 'ZAR',
-                minimumFractionDigits: 0
+                minimumFractionDigits: 0,
               }).format(computedMetrics.totalInventoryValue),
               change: 3.2,
-              changeLabel: "vs last month",
+              changeLabel: 'vs last month',
               icon: <Package className="h-6 w-6" />,
-              color: "purple" as const,
-              href: "/inventory",
-              loading: inventoryLoading
+              color: 'purple' as const,
+              href: '/inventory',
+              loading: inventoryLoading,
             },
             {
-              title: "Stock Alerts",
+              title: 'Stock Alerts',
               value: computedMetrics.lowStockAlerts + computedMetrics.outOfStockItems,
               change: -12,
-              trend: "down" as const,
-              changeLabel: "vs last week",
+              trend: 'down' as const,
+              changeLabel: 'vs last week',
               icon: <AlertTriangle className="h-6 w-6" />,
-              color: "red" as const,
-              loading: inventoryLoading
-            }
+              color: 'red' as const,
+              loading: inventoryLoading,
+            },
           ].map((metric, i) => (
             <div
               key={i}
               className={cn(
-                "animate-in fade-in-0 slide-in-from-bottom-4 duration-400",
+                'animate-in fade-in-0 slide-in-from-bottom-4 duration-400',
                 `animation-delay-${i * 100}`
               )}
             >
@@ -714,51 +741,69 @@ const RealDataDashboard: React.FC = () => {
       </ConditionalLoader>
 
       {/* Main Content Tabs with enhanced styling */}
-      <Tabs defaultValue="overview" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-6 duration-500 animation-delay-400">
-        <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+      <Tabs
+        defaultValue="overview"
+        className="animate-in fade-in-0 slide-in-from-bottom-6 animation-delay-400 space-y-6 duration-500"
+      >
+        <TabsList className="bg-muted/50 grid w-full grid-cols-4 p-1">
+          <TabsTrigger
+            value="overview"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             Overview
           </TabsTrigger>
-          <TabsTrigger value="suppliers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger
+            value="suppliers"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             Suppliers
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger
+            value="inventory"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             Inventory
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger
+            value="analytics"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             Analytics
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="space-y-6 lg:col-span-8">
               {/* Performance Overview with enhanced design */}
-              <Card className="shadow-sm border border-border/50">
+              <Card className="border-border/50 border shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                    <Target className="h-5 w-5 text-primary" />
+                    <Target className="text-primary h-5 w-5" />
                     System Performance
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Real-time performance metrics and system health
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
+                      <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">Supplier Performance</span>
-                        <span className="text-sm text-muted-foreground tabular-nums">
+                        <span className="text-muted-foreground text-sm tabular-nums">
                           {computedMetrics.avgSupplierRating.toFixed(1)}/5.0
                         </span>
                       </div>
-                      <Progress value={(computedMetrics.avgSupplierRating / 5) * 100} className="h-2" />
+                      <Progress
+                        value={(computedMetrics.avgSupplierRating / 5) * 100}
+                        className="h-2"
+                      />
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
+                      <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">Inventory Accuracy</span>
-                        <span className="text-sm text-muted-foreground tabular-nums">98.5%</span>
+                        <span className="text-muted-foreground text-sm tabular-nums">98.5%</span>
                       </div>
                       <Progress value={98.5} className="h-2" />
                     </div>
@@ -767,13 +812,13 @@ const RealDataDashboard: React.FC = () => {
               </Card>
 
               {/* Recent Activity with enhanced design */}
-              <Card className="shadow-sm border border-border/50">
+              <Card className="border-border/50 border shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                    <Activity className="h-5 w-5 text-primary" />
+                    <Activity className="text-primary h-5 w-5" />
                     Recent Activity
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Latest updates and system events
                   </CardDescription>
                 </CardHeader>
@@ -799,12 +844,12 @@ const RealDataDashboard: React.FC = () => {
             </div>
 
             {/* Right Sidebar - 4 columns */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="space-y-6 lg:col-span-4">
               {/* Alerts with enhanced design */}
-              <Card className="shadow-sm border border-border/50">
+              <Card className="border-border/50 border shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                    <Bell className="h-5 w-5 text-primary" />
+                    <Bell className="text-primary h-5 w-5" />
                     Active Alerts
                     {alerts.filter(a => !a.isRead).length > 0 && (
                       <Badge variant="destructive" className="ml-auto">
@@ -812,7 +857,7 @@ const RealDataDashboard: React.FC = () => {
                       </Badge>
                     )}
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     System notifications and warnings
                   </CardDescription>
                 </CardHeader>
@@ -825,7 +870,7 @@ const RealDataDashboard: React.FC = () => {
                     loadingComponent={<AlertPanelSkeleton count={3} />}
                     emptyComponent={
                       <EmptyState
-                        icon={<CheckCircle className="h-8 w-8 text-success" />}
+                        icon={<CheckCircle className="text-success h-8 w-8" />}
                         title="No Active Alerts"
                         description="All systems are running smoothly. You'll be notified when attention is needed."
                       />
@@ -837,29 +882,31 @@ const RealDataDashboard: React.FC = () => {
               </Card>
 
               {/* Quick Actions with enhanced design */}
-              <Card className="shadow-sm border border-border/50">
+              <Card className="border-border/50 border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold tracking-tight">Quick Actions</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardTitle className="text-lg font-semibold tracking-tight">
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm">
                     Common tasks and operations
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button className="w-full justify-start" variant="outline" asChild>
                     <a href="/suppliers/new">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Add Supplier
                     </a>
                   </Button>
                   <Button className="w-full justify-start" variant="outline" asChild>
                     <a href="/inventory/add">
-                      <Package className="h-4 w-4 mr-2" />
+                      <Package className="mr-2 h-4 w-4" />
                       Add Inventory Item
                     </a>
                   </Button>
                   <Button className="w-full justify-start" variant="outline" asChild>
                     <a href="/reports">
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="mr-2 h-4 w-4" />
                       Generate Report
                     </a>
                   </Button>
@@ -870,7 +917,7 @@ const RealDataDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="suppliers" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <MetricCard
               title="Total Suppliers"
               value={computedMetrics.totalSuppliers}
@@ -907,7 +954,7 @@ const RealDataDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <MetricCard
               title="Total Items"
               value={computedMetrics.totalInventoryItems}
@@ -921,7 +968,7 @@ const RealDataDashboard: React.FC = () => {
               value={new Intl.NumberFormat('en-ZA', {
                 style: 'currency',
                 currency: 'ZAR',
-                notation: 'compact'
+                notation: 'compact',
               }).format(computedMetrics.totalInventoryValue)}
               change={5.2}
               icon={<DollarSign className="h-6 w-6" />}
@@ -950,7 +997,7 @@ const RealDataDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <MetricCard
               title="Data Quality"
               value="96.8%"

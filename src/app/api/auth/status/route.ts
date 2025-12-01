@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -13,9 +13,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         email: 'test@mantisnxt.com',
         name: 'Test User',
         role: 'admin',
-        permissions: ['admin', 'suppliers.read', 'suppliers.write', 'pricelist.upload']
+        permissions: ['admin', 'suppliers.read', 'suppliers.write', 'pricelist.upload'],
       },
-      message: 'Authentication status retrieved successfully'
+      message: 'Authentication status retrieved successfully',
     });
   } catch (error) {
     console.error('Auth status error:', error);
@@ -24,11 +24,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         success: false,
         authenticated: false,
         message: 'Failed to retrieve authentication status',
-        error: 'AUTH_STATUS_ERROR'
+        error: 'AUTH_STATUS_ERROR',
       },
       { status: 500 }
     );
   }
 }
-
-

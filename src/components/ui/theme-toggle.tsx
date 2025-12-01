@@ -62,38 +62,25 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 transition-all duration-200 hover:bg-accent"
+          className="hover:bg-accent h-9 w-9 transition-all duration-200"
         >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Sun className="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+          <Moon className="absolute h-4 w-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="theme-transition">
-        <DropdownMenuItem
-          onClick={() => handleThemeChange('light')}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={() => handleThemeChange('light')} className="cursor-pointer">
           <Sun className="mr-2 h-4 w-4" />
           <span>Light</span>
-          {theme === 'light' && (
-            <span className="ml-auto text-xs text-primary">✓</span>
-          )}
+          {theme === 'light' && <span className="text-primary ml-auto text-xs">✓</span>}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleThemeChange('dark')}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={() => handleThemeChange('dark')} className="cursor-pointer">
           <Moon className="mr-2 h-4 w-4" />
           <span>Dark</span>
-          {theme === 'dark' && (
-            <span className="ml-auto text-xs text-primary">✓</span>
-          )}
+          {theme === 'dark' && <span className="text-primary ml-auto text-xs">✓</span>}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleThemeChange('system')}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={() => handleThemeChange('system')} className="cursor-pointer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -109,9 +96,7 @@ export function ThemeToggle() {
             <line x1="12" x2="12" y1="17" y2="21" />
           </svg>
           <span>System</span>
-          {theme === 'system' && (
-            <span className="ml-auto text-xs text-primary">✓</span>
-          )}
+          {theme === 'system' && <span className="text-primary ml-auto text-xs">✓</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

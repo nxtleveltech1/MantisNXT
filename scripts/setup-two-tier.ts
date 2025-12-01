@@ -56,7 +56,9 @@ async function main() {
   const issohUrl = requireEnv('ENTERPRISE_DATABASE_URL');
   const adminUrl = process.env.DB_ADMIN_URL || process.env.DATABASE_URL;
   if (!adminUrl) {
-    console.warn('No DB_ADMIN_URL/DATABASE_URL provided for elevated ops; using provided DSNs. You may need owner privileges.');
+    console.warn(
+      'No DB_ADMIN_URL/DATABASE_URL provided for elevated ops; using provided DSNs. You may need owner privileges.'
+    );
   }
 
   // Pools: try elevated admin for initialization where required
@@ -66,7 +68,10 @@ async function main() {
   const issohInitDsn = adminUrl ? retargetDsn(adminUrl, issohDbName) : issohUrl;
 
   const sppPool = new Pool({ connectionString: sppInitDsn, ssl: { rejectUnauthorized: false } });
-  const issohPool = new Pool({ connectionString: issohInitDsn, ssl: { rejectUnauthorized: false } });
+  const issohPool = new Pool({
+    connectionString: issohInitDsn,
+    ssl: { rejectUnauthorized: false },
+  });
 
   console.log('=== Initializing SPP database (spp schema) ===');
   await runSqlFile(sppPool, 'database/scripts/spp_init_min.sql');
@@ -142,7 +147,7 @@ async function main() {
   console.log('=== Two-tier setup finished ===');
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Setup failed:', err);
   process.exit(1);
 });

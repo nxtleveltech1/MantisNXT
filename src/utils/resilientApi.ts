@@ -5,7 +5,6 @@
  * Bulletproof API layer with comprehensive error handling and retry mechanisms
  */
 
-
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
@@ -489,7 +488,11 @@ export class ResilientApiClient {
     );
   }
 
-  async patch<T>(url: string, data?: unknown, config?: Partial<ApiConfig>): Promise<ApiResponse<T>> {
+  async patch<T>(
+    url: string,
+    data?: unknown,
+    config?: Partial<ApiConfig>
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(
       url,
       {

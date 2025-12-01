@@ -21,10 +21,13 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     if (!org_id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Organization ID is required',
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Organization ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     // Build query with filters
@@ -98,11 +101,14 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching review queue:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch review queue',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch review queue',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -160,18 +166,24 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation error',
-        details: error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          details: error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     console.error('Error processing review action:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to process review action',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to process review action',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

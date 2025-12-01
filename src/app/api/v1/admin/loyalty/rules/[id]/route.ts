@@ -9,14 +9,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for updating rule
 const updateRuleSchema = z.object({
@@ -55,7 +51,6 @@ export async function GET(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // const result = await LoyaltyRuleService.getById(id, user.organizationId);
@@ -102,7 +97,6 @@ export async function PATCH(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // Parse and validate body
     const body = await request.json();
@@ -154,7 +148,6 @@ export async function DELETE(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // await LoyaltyRuleService.delete(id, user.organizationId);

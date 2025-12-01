@@ -8,8 +8,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 async function applyMigration() {
-  const databaseUrl =
-    process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL environment variable is required');
@@ -64,12 +63,8 @@ async function applyMigration() {
     }
 
     // Check count
-    const countResult = await pool.query(
-      'SELECT COUNT(*) as count FROM core.stock_location'
-    );
-    console.log(
-      `\n📦 Total locations in database: ${countResult.rows[0].count}`
-    );
+    const countResult = await pool.query('SELECT COUNT(*) as count FROM core.stock_location');
+    console.log(`\n📦 Total locations in database: ${countResult.rows[0].count}`);
   } catch (error: any) {
     console.error('❌ Migration failed:', error.message);
     if (error.code) {

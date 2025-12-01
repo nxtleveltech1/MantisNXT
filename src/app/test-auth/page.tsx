@@ -1,75 +1,70 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 export default function TestAuthPage() {
-  const [authStatus, setAuthStatus] = useState<unknown>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [authStatus, setAuthStatus] = useState<unknown>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const testAuth = async () => {
-    setLoading(true)
-    setError(null)
-    
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('/api/auth/status')
-      const data = await response.json()
-      setAuthStatus(data)
+      const response = await fetch('/api/auth/status');
+      const data = await response.json();
+      setAuthStatus(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const testHealth = async () => {
-    setLoading(true)
-    setError(null)
-    
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('/api/health')
-      const data = await response.json()
-      setAuthStatus(data)
+      const response = await fetch('/api/health');
+      const data = await response.json();
+      setAuthStatus(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const testSuppliers = async () => {
-    setLoading(true)
-    setError(null)
-    
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('/api/suppliers')
-      const data = await response.json()
-      setAuthStatus(data)
+      const response = await fetch('/api/suppliers');
+      const data = await response.json();
+      setAuthStatus(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    testAuth()
-  }, [])
+    testAuth();
+  }, []);
 
-  const breadcrumbs = [
-    { label: "Test Authentication" }
-  ]
+  const breadcrumbs = [{ label: 'Test Authentication' }];
 
   return (
-    <AppLayout
-      title="Authentication Test"
-      breadcrumbs={breadcrumbs}
-    >
+    <AppLayout title="Authentication Test" breadcrumbs={breadcrumbs}>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -91,9 +86,7 @@ export default function TestAuthPage() {
             {error && (
               <Alert className="border-red-200 bg-red-50">
                 <XCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-900">
-                  Error: {error}
-                </AlertDescription>
+                <AlertDescription className="text-red-900">Error: {error}</AlertDescription>
               </Alert>
             )}
 
@@ -102,7 +95,7 @@ export default function TestAuthPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-900">
                   <strong>API Response:</strong>
-                  <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto">
+                  <pre className="mt-2 overflow-auto rounded border bg-white p-2 text-xs">
                     {JSON.stringify(authStatus, null, 2)}
                   </pre>
                 </AlertDescription>
@@ -138,7 +131,5 @@ export default function TestAuthPage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
-
-

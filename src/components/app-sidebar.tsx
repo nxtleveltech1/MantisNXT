@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from 'react';
+import Link from 'next/link';
 import {
   Activity,
   Bot,
@@ -17,12 +17,12 @@ import {
   TrendingUp,
   Users,
   Settings as SettingsIcon,
-} from "lucide-react"
+} from 'lucide-react';
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavSecondary } from '@/components/nav-secondary';
+import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -31,358 +31,358 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/sidebar';
 
 export const sidebarData = {
   user: {
-    name: "John Doe",
-    email: "admin@mantisnxt.com",
-    avatar: "/avatars/jd.jpg",
+    name: 'John Doe',
+    email: 'admin@mantisnxt.com',
+    avatar: '/avatars/jd.jpg',
   },
   navMain: [
     {
-      title: "Dashboard (AI)",
-      url: "/",
+      title: 'Dashboard (AI)',
+      url: '/',
       icon: LayoutDashboard,
       isActive: true,
     },
     {
-      title: "Analytics",
-      url: "/analytics",
+      title: 'Analytics',
+      url: '/analytics',
       icon: TrendingUp,
     },
     {
-      title: "System Health",
-      url: "/system-health",
+      title: 'System Health',
+      url: '/system-health',
       icon: Activity,
     },
     {
-      title: "Suppliers",
-      url: "/suppliers",
+      title: 'Suppliers',
+      url: '/suppliers',
       icon: Building2,
       items: [
         {
-          title: "Supplier Dashboard",
-          url: "/suppliers",
+          title: 'Supplier Dashboard',
+          url: '/suppliers',
         },
         {
-          title: "Supplier Inventory Portfolio",
-          url: "/nxt-spp",
+          title: 'Supplier Inventory Portfolio',
+          url: '/nxt-spp',
         },
         {
-          title: "AI Price Extraction",
-          url: "/nxt-spp?tab=ai-price-extraction",
+          title: 'AI Price Extraction',
+          url: '/nxt-spp?tab=ai-price-extraction',
         },
         {
-          title: "Supplier Rules Engine",
-          url: "/nxt-spp/rules",
+          title: 'Supplier Rules Engine',
+          url: '/nxt-spp/rules',
         },
         {
-          title: "Supplier Profiles",
-          url: "/nxt-spp/profiles",
+          title: 'Supplier Profiles',
+          url: '/nxt-spp/profiles',
         },
         {
-          title: "Supplier Directory",
-          url: "/directories/suppliers",
+          title: 'Supplier Directory',
+          url: '/directories/suppliers',
         },
         {
-          title: "Performance",
-          url: "/suppliers/performance",
+          title: 'Performance',
+          url: '/suppliers/performance',
         },
       ],
     },
     {
-      title: "Inventory",
-      url: "/inventory",
+      title: 'Inventory',
+      url: '/inventory',
       icon: Package,
       items: [
         {
-          title: "Inventory Overview",
-          url: "/inventory",
+          title: 'Inventory Overview',
+          url: '/inventory',
         },
         {
-          title: "Locations",
-          url: "/inventory/locations",
+          title: 'Locations',
+          url: '/inventory/locations',
         },
       ],
     },
     {
-      title: "Pricing Optimization",
-      url: "/pricing-optimization",
+      title: 'Pricing Optimization',
+      url: '/pricing-optimization',
       icon: LineChart,
       items: [
         {
-          title: "Overview",
-          url: "/pricing-optimization",
+          title: 'Overview',
+          url: '/pricing-optimization',
         },
         {
-          title: "Rules",
-          url: "/pricing-optimization/rules",
+          title: 'Rules',
+          url: '/pricing-optimization/rules',
         },
         {
-          title: "Optimization Runs",
-          url: "/pricing-optimization/optimization",
+          title: 'Optimization Runs',
+          url: '/pricing-optimization/optimization',
         },
         {
-          title: "Analytics",
-          url: "/pricing-optimization/analytics",
+          title: 'Analytics',
+          url: '/pricing-optimization/analytics',
         },
         {
-          title: "Competitive Intelligence",
-          url: "/pricing-optimization/competitive-intelligence",
+          title: 'Competitive Intelligence',
+          url: '/pricing-optimization/competitive-intelligence',
         },
         {
-          title: "Competitors",
-          url: "/pricing-optimization/competitive-intelligence/competitors",
+          title: 'Competitors',
+          url: '/pricing-optimization/competitive-intelligence/competitors',
         },
         {
-          title: "Scraping Jobs",
-          url: "/pricing-optimization/competitive-intelligence/jobs",
+          title: 'Scraping Jobs',
+          url: '/pricing-optimization/competitive-intelligence/jobs',
         },
         {
-          title: "Product Matches",
-          url: "/pricing-optimization/competitive-intelligence/matches",
+          title: 'Product Matches',
+          url: '/pricing-optimization/competitive-intelligence/matches',
         },
         {
-          title: "Alerts",
-          url: "/pricing-optimization/competitive-intelligence/alerts",
+          title: 'Alerts',
+          url: '/pricing-optimization/competitive-intelligence/alerts',
         },
         {
-          title: "Price Positioning",
-          url: "/pricing-optimization/competitive-intelligence/positioning",
+          title: 'Price Positioning',
+          url: '/pricing-optimization/competitive-intelligence/positioning',
         },
         {
-          title: "Price History",
-          url: "/pricing-optimization/competitive-intelligence/history",
+          title: 'Price History',
+          url: '/pricing-optimization/competitive-intelligence/history',
         },
         {
-          title: "Trend Analysis",
-          url: "/pricing-optimization/competitive-intelligence/trends",
+          title: 'Trend Analysis',
+          url: '/pricing-optimization/competitive-intelligence/trends',
         },
         {
-          title: "Settings",
-          url: "/pricing-optimization/competitive-intelligence/settings",
+          title: 'Settings',
+          url: '/pricing-optimization/competitive-intelligence/settings',
         },
       ],
     },
     {
-      title: "Categories",
-      url: "/catalog/categories",
+      title: 'Categories',
+      url: '/catalog/categories',
       icon: Layout,
       items: [
         {
-          title: "Dashboard",
-          url: "/catalog/categories",
+          title: 'Dashboard',
+          url: '/catalog/categories',
         },
         {
-          title: "AI Categorization",
-          url: "/catalog/categories/ai-categorization",
+          title: 'AI Categorization',
+          url: '/catalog/categories/ai-categorization',
         },
         {
-          title: "Categories",
-          url: "/catalog/categories/categories",
+          title: 'Categories',
+          url: '/catalog/categories/categories',
         },
         {
-          title: "Tags",
-          url: "/catalog/tags/ai-tagging",
+          title: 'Tags',
+          url: '/catalog/tags/ai-tagging',
         },
         {
-          title: "Analytics",
-          url: "/catalog/categories/analytics",
+          title: 'Analytics',
+          url: '/catalog/categories/analytics',
         },
         {
-          title: "Exceptions",
-          url: "/catalog/categories/exceptions",
+          title: 'Exceptions',
+          url: '/catalog/categories/exceptions',
         },
       ],
     },
     {
-      title: "Customers",
-      url: "/customers",
+      title: 'Customers',
+      url: '/customers',
       icon: Users,
       items: [
         {
-          title: "All Customers",
-          url: "/customers",
+          title: 'All Customers',
+          url: '/customers',
         },
         {
-          title: "Add Customer",
-          url: "/customers/new",
+          title: 'Add Customer',
+          url: '/customers/new',
         },
       ],
     },
     {
-      title: "Loyalty",
-      url: "/admin/loyalty/programs",
+      title: 'Loyalty',
+      url: '/admin/loyalty/programs',
       icon: Gift,
       items: [
         {
-          title: "Programs",
-          url: "/admin/loyalty/programs",
+          title: 'Programs',
+          url: '/admin/loyalty/programs',
         },
         {
-          title: "Rewards",
-          url: "/admin/loyalty/rewards",
+          title: 'Rewards',
+          url: '/admin/loyalty/rewards',
         },
         {
-          title: "Rules",
-          url: "/admin/loyalty/rules",
+          title: 'Rules',
+          url: '/admin/loyalty/rules',
         },
         {
-          title: "Redemptions",
-          url: "/admin/loyalty/redemptions",
+          title: 'Redemptions',
+          url: '/admin/loyalty/redemptions',
         },
         {
-          title: "Analytics",
-          url: "/admin/loyalty/analytics",
+          title: 'Analytics',
+          url: '/admin/loyalty/analytics',
         },
       ],
     },
     {
-      title: "AI Services",
-      url: "/admin/ai/config",
+      title: 'AI Services',
+      url: '/admin/ai/config',
       icon: Bot,
       items: [
         {
-          title: "Configuration",
-          url: "/admin/ai/config",
+          title: 'Configuration',
+          url: '/admin/ai/config',
         },
         {
-          title: "Assistant",
-          url: "/admin/ai/assistant",
+          title: 'Assistant',
+          url: '/admin/ai/assistant',
         },
         {
-          title: "Predictions",
-          url: "/admin/ai/predictions",
+          title: 'Predictions',
+          url: '/admin/ai/predictions',
         },
         {
-          title: "Forecasts",
-          url: "/admin/ai/forecasts",
+          title: 'Forecasts',
+          url: '/admin/ai/forecasts',
         },
         {
-          title: "Alerts",
-          url: "/admin/ai/alerts",
+          title: 'Alerts',
+          url: '/admin/ai/alerts',
         },
         {
-          title: "Dashboards",
-          url: "/admin/ai/dashboards",
+          title: 'Dashboards',
+          url: '/admin/ai/dashboards',
         },
         {
-          title: "Health Monitor",
-          url: "/admin/ai/health",
+          title: 'Health Monitor',
+          url: '/admin/ai/health',
         },
       ],
     },
     {
-      title: "Administration",
-      url: "/admin/settings/general",
+      title: 'Administration',
+      url: '/admin/settings/general',
       icon: SettingsIcon,
       items: [
         {
-          title: "Users & Accounts",
-          url: "/admin/users",
+          title: 'Users & Accounts',
+          url: '/admin/users',
         },
         {
-          title: "Roles & Permissions",
-          url: "/admin/roles",
+          title: 'Roles & Permissions',
+          url: '/admin/roles',
         },
         {
-          title: "General Settings",
-          url: "/admin/settings/general",
+          title: 'General Settings',
+          url: '/admin/settings/general',
         },
         {
-          title: "Currency & Tax",
-          url: "/admin/settings/currency",
+          title: 'Currency & Tax',
+          url: '/admin/settings/currency',
         },
         {
-          title: "Regional Settings",
-          url: "/admin/settings/regional",
+          title: 'Regional Settings',
+          url: '/admin/settings/regional',
         },
         {
-          title: "Email & Notifications",
-          url: "/admin/settings/email",
+          title: 'Email & Notifications',
+          url: '/admin/settings/email',
         },
         {
-          title: "Backup & Recovery",
-          url: "/admin/settings/backup",
+          title: 'Backup & Recovery',
+          url: '/admin/settings/backup',
         },
         {
-          title: "Integrations",
-          url: "/admin/settings/integrations",
+          title: 'Integrations',
+          url: '/admin/settings/integrations',
         },
       ],
     },
     {
-      title: "Financial",
-      url: "/financial/invoices",
+      title: 'Financial',
+      url: '/financial/invoices',
       icon: DollarSign,
       items: [
         {
-          title: "Invoices",
-          url: "/financial/invoices",
+          title: 'Invoices',
+          url: '/financial/invoices',
         },
         {
-          title: "Payments",
-          url: "/financial/payments",
+          title: 'Payments',
+          url: '/financial/payments',
         },
       ],
     },
     {
-      title: "Communication",
-      url: "/communication/messages",
+      title: 'Communication',
+      url: '/communication/messages',
       icon: MessageSquare,
       items: [
         {
-          title: "Messages",
-          url: "/communication/messages",
+          title: 'Messages',
+          url: '/communication/messages',
         },
         {
-          title: "Notifications",
-          url: "/communication/notifications",
+          title: 'Notifications',
+          url: '/communication/notifications',
         },
       ],
     },
     {
-      title: "System Integration",
-      url: "/system/integrations",
+      title: 'System Integration',
+      url: '/system/integrations',
       icon: Plug,
       items: [
         {
-          title: "Integrations",
-          url: "/system/integrations",
+          title: 'Integrations',
+          url: '/system/integrations',
         },
         {
-          title: "API Settings",
-          url: "/system/api",
+          title: 'API Settings',
+          url: '/system/api',
         },
       ],
     },
   ],
   navSecondary: [
     {
-      title: "Support",
-      url: "/support",
+      title: 'Support',
+      url: '/support',
       icon: MessageSquare,
     },
   ],
   projects: [
     {
-      name: "Procurement Ops",
-      url: "/suppliers",
+      name: 'Procurement Ops',
+      url: '/suppliers',
       icon: Building2,
     },
     {
-      name: "Customer Success",
-      url: "/customers",
+      name: 'Customer Success',
+      url: '/customers',
       icon: Users,
     },
     {
-      name: "AI Initiatives",
-      url: "/admin/ai/config",
+      name: 'AI Initiatives',
+      url: '/admin/ai/config',
       icon: Bot,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -397,14 +397,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">MantisNXT</span>
-                  <span className="truncate text-xs text-muted-foreground">Procurement</span>
+                  <span className="text-muted-foreground truncate text-xs">Procurement</span>
                 </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarHeader>
-    <SidebarContent>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
         <NavMain items={sidebarData.navMain} label={null} />
         <NavProjects projects={sidebarData.projects} />
         {sidebarData.navSecondary.length ? (
@@ -415,6 +415,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={sidebarData.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
-

@@ -10,8 +10,7 @@ import { join } from 'path';
 const { Pool } = pg;
 
 async function applyMigration() {
-  const databaseUrl =
-    process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL environment variable is required');
@@ -26,11 +25,7 @@ async function applyMigration() {
 
   try {
     // Read migration file
-    const migrationPath = join(
-      process.cwd(),
-      'migrations',
-      '0031_ai_user_preferences.sql'
-    );
+    const migrationPath = join(process.cwd(), 'migrations', '0031_ai_user_preferences.sql');
     const migrationSql = readFileSync(migrationPath, 'utf8');
 
     console.log('📄 Migration file loaded: 0031_ai_user_preferences.sql');
@@ -59,7 +54,10 @@ async function applyMigration() {
         console.log(`   - ${row.table_name}`);
       });
     } else {
-      console.error('❌ Table verification failed: Expected 2 tables, found', tablesResult.rows.length);
+      console.error(
+        '❌ Table verification failed: Expected 2 tables, found',
+        tablesResult.rows.length
+      );
       process.exit(1);
     }
 
@@ -74,7 +72,9 @@ async function applyMigration() {
 
     console.log('\n📋 Columns in ai_user_preferences:');
     prefsColumnsResult.rows.forEach((row: any) => {
-      console.log(`   - ${row.column_name} (${row.data_type}) ${row.is_nullable === 'NO' ? 'NOT NULL' : ''}`);
+      console.log(
+        `   - ${row.column_name} (${row.data_type}) ${row.is_nullable === 'NO' ? 'NOT NULL' : ''}`
+      );
     });
 
     // Check ai_learning_signals columns
@@ -88,9 +88,10 @@ async function applyMigration() {
 
     console.log('\n📋 Columns in ai_learning_signals:');
     signalsColumnsResult.rows.forEach((row: any) => {
-      console.log(`   - ${row.column_name} (${row.data_type}) ${row.is_nullable === 'NO' ? 'NOT NULL' : ''}`);
+      console.log(
+        `   - ${row.column_name} (${row.data_type}) ${row.is_nullable === 'NO' ? 'NOT NULL' : ''}`
+      );
     });
-
   } catch (error: any) {
     console.error('❌ Migration failed:', error.message);
     if (error.code) {

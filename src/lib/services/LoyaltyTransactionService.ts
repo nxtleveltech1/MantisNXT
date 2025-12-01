@@ -15,10 +15,9 @@ import type {
   LoyaltyTransaction,
   TransactionType,
   ReferenceType,
-  CalculatePointsResult} from '@/types/loyalty';
-import {
-  LoyaltyError,
+  CalculatePointsResult,
 } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 // ============================================================================
 // TYPES FOR SERVICE METHODS
@@ -101,7 +100,7 @@ export class LoyaltyTransactionService {
     orgId: string
   ): Promise<LoyaltyTransaction> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         // Validate transaction type and points amount
         this.validateTransaction(params.transactionType, params.pointsAmount);
 
@@ -177,16 +176,10 @@ export class LoyaltyTransactionService {
       });
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyTransactionService] Error creating transaction:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to create transaction',
-        'CREATE_TRANSACTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[LoyaltyTransactionService] Error creating transaction:', error);
+      throw new LoyaltyError('Failed to create transaction', 'CREATE_TRANSACTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -208,11 +201,7 @@ export class LoyaltyTransactionService {
       );
 
       if (customerCheck.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer not found in organization',
-          'CUSTOMER_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer not found in organization', 'CUSTOMER_NOT_FOUND', 404);
       }
 
       const sql = `
@@ -252,10 +241,7 @@ export class LoyaltyTransactionService {
       };
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyTransactionService] Error calculating points:',
-        error
-      );
+      console.error('[LoyaltyTransactionService] Error calculating points:', error);
       throw new LoyaltyError(
         'Failed to calculate points for order',
         'CALCULATE_POINTS_ERROR',
@@ -274,12 +260,7 @@ export class LoyaltyTransactionService {
     options: PaginationOptions = {}
   ): Promise<PaginatedResult<LoyaltyTransaction>> {
     try {
-      const {
-        limit = 50,
-        offset = 0,
-        sortBy = 'created_at',
-        sortOrder = 'DESC',
-      } = options;
+      const { limit = 50, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = options;
 
       // Verify customer belongs to org
       const customerCheck = await query(
@@ -288,11 +269,7 @@ export class LoyaltyTransactionService {
       );
 
       if (customerCheck.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer not found in organization',
-          'CUSTOMER_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer not found in organization', 'CUSTOMER_NOT_FOUND', 404);
       }
 
       // Count query
@@ -326,12 +303,7 @@ export class LoyaltyTransactionService {
         LIMIT $3 OFFSET $4
       `;
 
-      const result = await query<LoyaltyTransaction>(sql, [
-        customerId,
-        orgId,
-        limit,
-        offset,
-      ]);
+      const result = await query<LoyaltyTransaction>(sql, [customerId, orgId, limit, offset]);
 
       return {
         data: result.rows,
@@ -342,10 +314,7 @@ export class LoyaltyTransactionService {
       };
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyTransactionService] Error fetching customer transactions:',
-        error
-      );
+      console.error('[LoyaltyTransactionService] Error fetching customer transactions:', error);
       throw new LoyaltyError(
         'Failed to fetch customer transactions',
         'FETCH_TRANSACTIONS_ERROR',
@@ -385,26 +354,16 @@ export class LoyaltyTransactionService {
       const result = await query<LoyaltyTransaction>(sql, [transactionId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Transaction not found',
-          'TRANSACTION_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Transaction not found', 'TRANSACTION_NOT_FOUND', 404);
       }
 
       return result.rows[0];
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
-      console.error(
-        '[LoyaltyTransactionService] Error fetching transaction:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch transaction',
-        'FETCH_TRANSACTION_ERROR',
-        500,
-        { error }
-      );
+      console.error('[LoyaltyTransactionService] Error fetching transaction:', error);
+      throw new LoyaltyError('Failed to fetch transaction', 'FETCH_TRANSACTION_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -486,16 +445,10 @@ export class LoyaltyTransactionService {
         periodEnd: filters.endDate,
       };
     } catch (error) {
-      console.error(
-        '[LoyaltyTransactionService] Error fetching transaction stats:',
-        error
-      );
-      throw new LoyaltyError(
-        'Failed to fetch transaction statistics',
-        'FETCH_STATS_ERROR',
-        500,
-        { error }
-      );
+      console.error('[LoyaltyTransactionService] Error fetching transaction stats:', error);
+      throw new LoyaltyError('Failed to fetch transaction statistics', 'FETCH_STATS_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -535,10 +488,7 @@ export class LoyaltyTransactionService {
   /**
    * Validate transaction type and points amount
    */
-  private static validateTransaction(
-    transactionType: TransactionType,
-    pointsAmount: number
-  ): void {
+  private static validateTransaction(transactionType: TransactionType, pointsAmount: number): void {
     switch (transactionType) {
       case 'earn':
       case 'bonus':

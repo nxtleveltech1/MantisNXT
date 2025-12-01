@@ -2,10 +2,19 @@
  * Data Encryption Settings - Manage encryption policies and status
  * Configure encryption for sensitive data in compliance with POPIA
  */
-"use client";
+'use client';
 
 import React, { useState } from 'react';
-import { Lock, Key, Shield, Database, AlertTriangle, CheckCircle, Settings, RefreshCw } from 'lucide-react';
+import {
+  Lock,
+  Key,
+  Shield,
+  Database,
+  AlertTriangle,
+  CheckCircle,
+  Settings,
+  RefreshCw,
+} from 'lucide-react';
 
 interface EncryptionStatus {
   category: string;
@@ -41,7 +50,7 @@ export default function DataEncryptionPage() {
       encryptionType: 'AES-256',
       lastRotated: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       status: 'encrypted',
-      recordCount: 15420
+      recordCount: 15420,
     },
     {
       category: 'Financial Data',
@@ -50,7 +59,7 @@ export default function DataEncryptionPage() {
       encryptionType: 'AES-256',
       lastRotated: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
       status: 'encrypted',
-      recordCount: 8756
+      recordCount: 8756,
     },
     {
       category: 'Supplier Contracts',
@@ -58,7 +67,7 @@ export default function DataEncryptionPage() {
       isEncrypted: false,
       encryptionType: 'None',
       status: 'unencrypted',
-      recordCount: 3421
+      recordCount: 3421,
     },
     {
       category: 'User Authentication',
@@ -67,7 +76,7 @@ export default function DataEncryptionPage() {
       encryptionType: 'ChaCha20',
       lastRotated: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       status: 'encrypted',
-      recordCount: 892
+      recordCount: 892,
     },
     {
       category: 'System Logs',
@@ -76,8 +85,8 @@ export default function DataEncryptionPage() {
       encryptionType: 'AES-256',
       lastRotated: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
       status: 'partial',
-      recordCount: 125000
-    }
+      recordCount: 125000,
+    },
   ];
 
   const encryptionKeys: EncryptionKey[] = [
@@ -89,7 +98,7 @@ export default function DataEncryptionPage() {
       createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
       expiresAt: new Date(Date.now() + 275 * 24 * 60 * 60 * 1000),
       status: 'active',
-      usageCount: 45821
+      usageCount: 45821,
     },
     {
       id: 'key-002',
@@ -99,7 +108,7 @@ export default function DataEncryptionPage() {
       createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       expiresAt: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000),
       status: 'active',
-      usageCount: 15420
+      usageCount: 15420,
     },
     {
       id: 'key-003',
@@ -109,7 +118,7 @@ export default function DataEncryptionPage() {
       createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
       expiresAt: new Date(Date.now() + 350 * 24 * 60 * 60 * 1000),
       status: 'active',
-      usageCount: 8756
+      usageCount: 8756,
     },
     {
       id: 'key-004',
@@ -119,8 +128,8 @@ export default function DataEncryptionPage() {
       createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
       expiresAt: new Date(Date.now() + 305 * 24 * 60 * 60 * 1000),
       status: 'active',
-      usageCount: 234
-    }
+      usageCount: 234,
+    },
   ];
 
   const handleKeyRotation = async (keyId: string) => {
@@ -148,11 +157,13 @@ export default function DataEncryptionPage() {
     const classes = {
       encrypted: 'bg-green-100 text-green-800',
       partial: 'bg-yellow-100 text-yellow-800',
-      unencrypted: 'bg-red-100 text-red-800'
+      unencrypted: 'bg-red-100 text-red-800',
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes[status]}`}>
+      <span
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes[status]}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -173,7 +184,7 @@ export default function DataEncryptionPage() {
     return date.toLocaleDateString('en-ZA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -192,11 +203,11 @@ export default function DataEncryptionPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Lock className="h-8 w-8 text-blue-600 mr-3" />
+                <Lock className="mr-3 h-8 w-8 text-blue-600" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Data Encryption</h1>
                   <p className="mt-1 text-sm text-gray-600">
@@ -205,12 +216,12 @@ export default function DataEncryptionPage() {
                 </div>
               </div>
               <div className="flex space-x-3">
-                <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                  <Settings className="h-4 w-4 mr-2" />
+                <button className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                  <Settings className="mr-2 h-4 w-4" />
                   Configure
                 </button>
-                <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                <button className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Rotate Keys
                 </button>
               </div>
@@ -220,10 +231,10 @@ export default function DataEncryptionPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -231,19 +242,15 @@ export default function DataEncryptionPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Encrypted
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
-                      {encryptedCount}
-                    </dd>
+                    <dt className="truncate text-sm font-medium text-gray-500">Encrypted</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{encryptedCount}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -251,19 +258,15 @@ export default function DataEncryptionPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Partial
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
-                      {partialCount}
-                    </dd>
+                    <dt className="truncate text-sm font-medium text-gray-500">Partial</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{partialCount}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -271,19 +274,15 @@ export default function DataEncryptionPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Unencrypted
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
-                      {unencryptedCount}
-                    </dd>
+                    <dt className="truncate text-sm font-medium text-gray-500">Unencrypted</dt>
+                    <dd className="text-2xl font-semibold text-gray-900">{unencryptedCount}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -291,9 +290,7 @@ export default function DataEncryptionPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Records
-                    </dt>
+                    <dt className="truncate text-sm font-medium text-gray-500">Total Records</dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {encryptionStatus.reduce((sum, s) => sum + s.recordCount, 0).toLocaleString()}
                     </dd>
@@ -305,8 +302,8 @@ export default function DataEncryptionPage() {
         </div>
 
         {/* Encryption Status Table */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="mb-8 rounded-lg bg-white shadow">
+          <div className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               Data Category Encryption Status
             </h3>
@@ -315,30 +312,30 @@ export default function DataEncryptionPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Records
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Encryption
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Last Rotated
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {encryptionStatus.map((category, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -349,30 +346,28 @@ export default function DataEncryptionPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                       {category.description}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                       {category.recordCount.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                       {category.encryptionType}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                       {category.lastRotated ? formatDate(category.lastRotated) : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(category.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                       {category.status === 'unencrypted' ? (
                         <button className="text-blue-600 hover:text-blue-500">
                           Enable Encryption
                         </button>
                       ) : (
-                        <button className="text-gray-600 hover:text-gray-500">
-                          Configure
-                        </button>
+                        <button className="text-gray-600 hover:text-gray-500">Configure</button>
                       )}
                     </td>
                   </tr>
@@ -383,8 +378,8 @@ export default function DataEncryptionPage() {
         </div>
 
         {/* Encryption Keys Management */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="rounded-lg bg-white shadow">
+          <div className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               Encryption Keys Management
             </h3>
@@ -393,31 +388,31 @@ export default function DataEncryptionPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Key Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Algorithm
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Expires
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Usage
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {encryptionKeys.map((key) => {
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {encryptionKeys.map(key => {
                   const daysUntilExpiry = getDaysUntilExpiry(key.expiresAt);
                   const isExpiringSoon = daysUntilExpiry <= 30;
 
@@ -426,40 +421,40 @@ export default function DataEncryptionPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {getKeyTypeIcon(key.type)}
-                          <span className="ml-2 text-sm font-medium text-gray-900">
-                            {key.name}
-                          </span>
+                          <span className="ml-2 text-sm font-medium text-gray-900">{key.name}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          key.type === 'master' ? 'bg-yellow-100 text-yellow-800' :
-                          key.type === 'data' ? 'bg-blue-100 text-blue-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            key.type === 'master'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : key.type === 'data'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-purple-100 text-purple-800'
+                          }`}
+                        >
                           {key.type.toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                         {key.algorithm}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                         {formatDate(key.createdAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className={isExpiringSoon ? 'text-red-600 font-medium' : ''}>
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                        <div className={isExpiringSoon ? 'font-medium text-red-600' : ''}>
                           {formatDate(key.expiresAt)}
                           {isExpiringSoon && (
-                            <span className="block text-xs">
-                              ({daysUntilExpiry} days)
-                            </span>
+                            <span className="block text-xs">({daysUntilExpiry} days)</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                         {key.usageCount.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                         <button
                           onClick={() => handleKeyRotation(key.id)}
                           disabled={isRotating === key.id}

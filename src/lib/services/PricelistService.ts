@@ -29,11 +29,9 @@ import type {
   PricelistValidationResult,
   MergeResult,
   MergeProcedureResult,
-  ValidationError} from '../../types/nxt-spp';
-import {
-  PricelistUploadSchema,
-  MergeProcedureResultSchema
+  ValidationError,
 } from '../../types/nxt-spp';
+import { PricelistUploadSchema, MergeProcedureResultSchema } from '../../types/nxt-spp';
 
 export class PricelistService {
   /**
@@ -46,7 +44,7 @@ export class PricelistService {
       filename: request.filename,
       currency: request.currency || 'ZAR',
       valid_from: request.valid_from || new Date(),
-      valid_to: request.valid_to
+      valid_to: request.valid_to,
     });
 
     const query = `
@@ -62,7 +60,7 @@ export class PricelistService {
       validated.filename,
       validated.currency,
       validated.valid_from,
-      validated.valid_to
+      validated.valid_to,
     ];
 
     const result = await dbQuery<PricelistUpload>(query, values);
@@ -71,7 +69,7 @@ export class PricelistService {
       console.error('❌ [PricelistService.createUpload] No rows returned from INSERT:', {
         query,
         values,
-        result
+        result,
       });
       throw new Error('Failed to create upload record - no rows returned');
     }
@@ -82,7 +80,9 @@ export class PricelistService {
 
     if (!normalizedUploadId) {
       // Fallback: fetch upload_id explicitly
-      console.warn('⚠️ [PricelistService.createUpload] Missing upload_id in RETURNING; falling back to SELECT');
+      console.warn(
+        '⚠️ [PricelistService.createUpload] Missing upload_id in RETURNING; falling back to SELECT'
+      );
       const fallback = await dbQuery<{ upload_id: string }>(
         'SELECT upload_id FROM spp.pricelist_upload WHERE supplier_id = $1 AND filename = $2 ORDER BY received_at DESC LIMIT 1',
         [validated.supplier_id, validated.filename]
@@ -94,7 +94,7 @@ export class PricelistService {
       console.error('❌ [PricelistService.createUpload] Upload record structure:', {
         row0: first,
         keys: first ? Object.keys(first) : [],
-        fullResult: result
+        fullResult: result,
       });
       throw new Error('Upload record created but missing upload_id field');
     }
@@ -123,8 +123,8 @@ export class PricelistService {
           const rowNum = i + idx + 1;
           placeholders.push(
             `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-            `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-            `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
+              `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
+              `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
           );
           // Ensure price is never null - use cost_price_ex_vat as fallback, default to 0
           const price = row.price ?? row.cost_price_ex_vat ?? 0;
@@ -157,10 +157,10 @@ export class PricelistService {
       }
 
       // Update upload row count
-      await client.query(
-        'UPDATE spp.pricelist_upload SET row_count = $1 WHERE upload_id = $2',
-        [insertedCount, uploadId]
-      );
+      await client.query('UPDATE spp.pricelist_upload SET row_count = $1 WHERE upload_id = $2', [
+        insertedCount,
+        uploadId,
+      ]);
 
       return insertedCount;
     });
@@ -204,7 +204,7 @@ export class PricelistService {
             field: 'supplier_sku',
             value: null,
             message: 'Supplier SKU is required',
-            severity: 'error'
+            severity: 'error',
           });
         }
         if (!row.name) {
@@ -213,7 +213,7 @@ export class PricelistService {
             field: 'name',
             value: null,
             message: 'Product name is required',
-            severity: 'error'
+            severity: 'error',
           });
         }
         if (!row.price || row.price <= 0) {
@@ -222,7 +222,7 @@ export class PricelistService {
             field: 'price',
             value: row.price,
             message: 'Price must be positive',
-            severity: 'error'
+            severity: 'error',
           });
         }
       });
@@ -241,7 +241,7 @@ export class PricelistService {
         warnings.push({
           row_num: 0,
           type: 'duplicate_sku',
-          message: `Duplicate SKU '${dup.supplier_sku}' found ${dup.count} times`
+          message: `Duplicate SKU '${dup.supplier_sku}' found ${dup.count} times`,
         });
       });
 
@@ -283,27 +283,27 @@ export class PricelistService {
         errors: errors.map(e => ({
           row_num: e.row_num,
           field: e.field,
-          message: e.message
+          message: e.message,
         })),
         summary: {
           new_products: parseInt(newProducts.rows[0].new_count),
           updated_prices: parseInt(stats.total_rows) - parseInt(newProducts.rows[0].new_count),
           discontinued_products: 0,
-          unmapped_categories: parseInt(stats.unmapped_categories)
-        }
+          unmapped_categories: parseInt(stats.unmapped_categories),
+        },
       };
 
       // Update upload status and errors
       const updateStatus = status === 'invalid' ? 'failed' : 'validated';
       await this.updateUploadStatus(uploadId, updateStatus, {
         validation_result: result,
-        errors: errors.length > 0 ? errors : null
+        errors: errors.length > 0 ? errors : null,
       });
 
       return result;
     } catch (error) {
       await this.updateUploadStatus(uploadId, 'failed', {
-        error: error instanceof Error ? error.message : 'Validation failed'
+        error: error instanceof Error ? error.message : 'Validation failed',
       });
       throw error;
     }
@@ -319,7 +319,10 @@ export class PricelistService {
    * @returns MergeResult with success status, metrics, and any errors
    * @throws Error if upload not found or not in validated status
    */
-  async mergePricelist(uploadId: string, options?: { skipInvalidRows?: boolean }): Promise<MergeResult> {
+  async mergePricelist(
+    uploadId: string,
+    options?: { skipInvalidRows?: boolean }
+  ): Promise<MergeResult> {
     const startTime = Date.now();
 
     try {
@@ -330,18 +333,25 @@ export class PricelistService {
       }
 
       if (upload.status !== 'validated' && !options?.skipInvalidRows) {
-        throw new Error(`Upload must be validated before merging. Current status: ${upload.status}`);
+        throw new Error(
+          `Upload must be validated before merging. Current status: ${upload.status}`
+        );
       }
 
       // Check if stored procedure is available via feature flag
       if (isFeatureEnabled(FeatureFlag.USE_MERGE_STORED_PROCEDURE) && !options?.skipInvalidRows) {
         return await this.mergeWithStoredProcedure(uploadId, startTime);
       } else {
-        return await this.mergeWithInlineSQL(uploadId, upload, startTime, options?.skipInvalidRows === true);
+        return await this.mergeWithInlineSQL(
+          uploadId,
+          upload,
+          startTime,
+          options?.skipInvalidRows === true
+        );
       }
     } catch (error) {
       await this.updateUploadStatus(uploadId, 'failed', {
-        error: error instanceof Error ? error.message : 'Merge failed'
+        error: error instanceof Error ? error.message : 'Merge failed',
       });
 
       return {
@@ -351,7 +361,7 @@ export class PricelistService {
         products_updated: 0,
         prices_updated: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
-        duration_ms: Date.now() - startTime
+        duration_ms: Date.now() - startTime,
       };
     }
   }
@@ -370,10 +380,9 @@ export class PricelistService {
   ): Promise<MergeResult> {
     try {
       // Call stored procedure - it returns MergeProcedureResult
-      const result = await dbQuery<MergeProcedureResult>(
-        'SELECT * FROM spp.merge_pricelist($1)',
-        [uploadId]
-      );
+      const result = await dbQuery<MergeProcedureResult>('SELECT * FROM spp.merge_pricelist($1)', [
+        uploadId,
+      ]);
 
       const procResult = result.rows[0];
 
@@ -388,7 +397,7 @@ export class PricelistService {
         products_updated: validated.products_updated,
         prices_updated: validated.prices_updated,
         errors: validated.errors,
-        duration_ms: Date.now() - startTime
+        duration_ms: Date.now() - startTime,
       };
     } catch (error) {
       throw new Error(
@@ -416,16 +425,16 @@ export class PricelistService {
     let pricesUpdated = 0;
     const errors: string[] = [];
 
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       // Detect optional brand_from_supplier column for compatibility
-      let hasBrandColumn = true
+      let hasBrandColumn = true;
       try {
         const brandCheck = await client.query(
           "SELECT 1 FROM information_schema.columns WHERE table_schema='core' AND table_name='supplier_product' AND column_name='brand_from_supplier' LIMIT 1"
-        )
-        hasBrandColumn = (brandCheck.rowCount || 0) > 0
+        );
+        hasBrandColumn = (brandCheck.rowCount || 0) > 0;
       } catch {
-        hasBrandColumn = false
+        hasBrandColumn = false;
       }
       const validRowCondition = `(
         r.supplier_sku IS NOT NULL AND r.supplier_sku <> '' AND
@@ -437,7 +446,7 @@ export class PricelistService {
       // Step 1: Upsert supplier products
       const upsertColumns = hasBrandColumn
         ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
-        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
+        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`;
 
       const upsertSelect = hasBrandColumn
         ? `
@@ -466,11 +475,11 @@ export class PricelistService {
           true as is_active,
           NOW() as first_seen_at,
           NOW() as last_seen_at
-        `
+        `;
 
       const upsertBrandUpdate = hasBrandColumn
         ? `, brand_from_supplier = COALESCE(EXCLUDED.brand_from_supplier, core.supplier_product.brand_from_supplier)`
-        : ''
+        : '';
 
       const upsertQuery = `
         INSERT INTO core.supplier_product (
@@ -527,11 +536,7 @@ export class PricelistService {
           AND (ph.price, ph.currency) IS DISTINCT FROM (new_prices.price, new_prices.currency)
       `;
 
-      await client.query(closePricesQuery, [
-        upload.supplier_id,
-        uploadId,
-        upload.valid_from
-      ]);
+      await client.query(closePricesQuery, [upload.supplier_id, uploadId, upload.valid_from]);
 
       // Step 3: Insert new price history records (guard against missing table)
       const insertPricesQuery = `
@@ -561,15 +566,17 @@ export class PricelistService {
         'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)',
         ['core', 'price_history']
       );
-      
+
       if (!priceHistoryCheck.rows[0]?.exists) {
-        throw new Error('core.price_history table does not exist. Please run migration 0207_restore_core_price_history.sql first.');
+        throw new Error(
+          'core.price_history table does not exist. Please run migration 0207_restore_core_price_history.sql first.'
+        );
       }
 
       const priceResult = await client.query(insertPricesQuery, [
         upload.supplier_id,
         uploadId,
-        upload.valid_from
+        upload.valid_from,
       ]);
 
       pricesUpdated = priceResult.rowCount || 0;
@@ -583,7 +590,7 @@ export class PricelistService {
       // Trigger cache invalidation for catalog refresh
       const { triggerCacheInvalidation } = await import('@/lib/cache/event-invalidation');
       await triggerCacheInvalidation('product.updated', {
-        supplierId: upload.supplier_id
+        supplierId: upload.supplier_id,
       });
     });
 
@@ -594,7 +601,7 @@ export class PricelistService {
       products_updated: productsUpdated,
       prices_updated: pricesUpdated,
       errors,
-      duration_ms: Date.now() - startTime
+      duration_ms: Date.now() - startTime,
     };
   }
 
@@ -671,7 +678,7 @@ export class PricelistService {
 
     return {
       uploads: result.rows,
-      total
+      total,
     };
   }
 
@@ -698,7 +705,7 @@ export class PricelistService {
     return {
       upload,
       rows: rowsResult.rows,
-      row_count: rowsResult.rowCount || 0
+      row_count: rowsResult.rowCount || 0,
     };
   }
 
@@ -755,7 +762,7 @@ export class PricelistService {
           `SELECT COUNT(*) as count
            FROM core.price_history
            WHERE created_at >= NOW() - INTERVAL '7 days'`
-        )
+        ),
       ]);
 
       return {
@@ -764,7 +771,7 @@ export class PricelistService {
         selected_products: parseInt(metricsQueries[2].rows[0]?.count || '0'),
         selected_inventory_value: parseFloat(metricsQueries[3].rows[0]?.total || '0'),
         new_products_count: parseInt(metricsQueries[4].rows[0]?.count || '0'),
-        recent_price_changes_count: parseInt(metricsQueries[5].rows[0]?.count || '0')
+        recent_price_changes_count: parseInt(metricsQueries[5].rows[0]?.count || '0'),
       };
     } catch (error) {
       console.error('[PricelistService] getDashboardMetrics error:', error);
@@ -775,7 +782,7 @@ export class PricelistService {
         selected_products: 0,
         selected_inventory_value: 0,
         new_products_count: 0,
-        recent_price_changes_count: 0
+        recent_price_changes_count: 0,
       };
     }
   }
@@ -786,7 +793,7 @@ export class PricelistService {
   async reprocessUpload(uploadId: string): Promise<PricelistValidationResult> {
     // Reset status to received
     await this.updateUploadStatus(uploadId, 'received', {
-      reprocessed_at: new Date().toISOString()
+      reprocessed_at: new Date().toISOString(),
     });
 
     // Re-validate

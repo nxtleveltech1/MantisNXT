@@ -56,11 +56,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createDashboardSchema.parse(body);
 
-    const dashboard = await DashboardService.createDashboard(
-      user.id,
-      user.org_id,
-      validated
-    );
+    const dashboard = await DashboardService.createDashboard(user.id, user.org_id, validated);
 
     return createdResponse(dashboard);
   } catch (error) {

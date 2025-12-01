@@ -103,75 +103,110 @@ export interface ParsingWarning {
 
 const COLUMN_PATTERNS = {
   sku: {
-    keywords: ['sku', 'code', 'part', 'product code', 'item code', 'part number', 'p/n', 'partno', 'item no'],
+    keywords: [
+      'sku',
+      'code',
+      'part',
+      'product code',
+      'item code',
+      'part number',
+      'p/n',
+      'partno',
+      'item no',
+    ],
     patterns: [/^sku/i, /code$/i, /part.*no/i, /item.*no/i],
-    priority: 1
+    priority: 1,
   },
   supplierSku: {
-    keywords: ['supplier sku', 'vendor code', 'supplier code', 'mfg code', 'manufacturer code', 'vendor part'],
+    keywords: [
+      'supplier sku',
+      'vendor code',
+      'supplier code',
+      'mfg code',
+      'manufacturer code',
+      'vendor part',
+    ],
     patterns: [/supplier.*sku/i, /vendor.*code/i, /mfg.*code/i],
-    priority: 2
+    priority: 2,
   },
   productName: {
-    keywords: ['name', 'title', 'product', 'description', 'item', 'product name', 'item name', 'desc'],
+    keywords: [
+      'name',
+      'title',
+      'product',
+      'description',
+      'item',
+      'product name',
+      'item name',
+      'desc',
+    ],
     patterns: [/^name$/i, /product.*name/i, /item.*name/i, /^desc$/i, /description/i],
-    priority: 1
+    priority: 1,
   },
   brand: {
     keywords: ['brand', 'make', 'manufacturer brand', 'mfg'],
     patterns: [/^brand$/i, /^make$/i, /^mfg$/i],
-    priority: 3
+    priority: 3,
   },
   manufacturer: {
     keywords: ['manufacturer', 'mfr', 'maker', 'oem'],
     patterns: [/manufacturer/i, /^mfr$/i, /^maker$/i, /^oem$/i],
-    priority: 3
+    priority: 3,
   },
   unitPrice: {
-    keywords: ['price', 'cost', 'unit price', 'retail', 'selling price', 'dealer price', 'list price', 'amount'],
+    keywords: [
+      'price',
+      'cost',
+      'unit price',
+      'retail',
+      'selling price',
+      'dealer price',
+      'list price',
+      'amount',
+    ],
     patterns: [/price/i, /cost/i, /retail/i, /selling/i, /dealer/i, /amount/i],
-    priority: 1
+    priority: 1,
   },
   costPrice: {
     keywords: ['cost', 'cost price', 'wholesale', 'dealer cost', 'buy price', 'purchase price'],
     patterns: [/cost.*price/i, /wholesale/i, /dealer.*cost/i, /buy.*price/i],
-    priority: 2
+    priority: 2,
   },
   listPrice: {
     keywords: ['list price', 'msrp', 'rrp', 'retail price', 'suggested price'],
     patterns: [/list.*price/i, /msrp/i, /rrp/i, /retail.*price/i, /suggested/i],
-    priority: 2
+    priority: 2,
   },
   category: {
     keywords: ['category', 'cat', 'type', 'class', 'group', 'family'],
     patterns: [/category/i, /^cat$/i, /^type$/i, /^class$/i, /^group$/i],
-    priority: 3
+    priority: 3,
   },
   stockStatus: {
     keywords: ['stock', 'status', 'availability', 'qty', 'quantity', 'stock status', 'available'],
     patterns: [/stock/i, /status/i, /availability/i, /qty/i, /quantity/i],
-    priority: 4
+    priority: 4,
   },
   minimumQuantity: {
     keywords: ['min qty', 'minimum', 'min order', 'moq'],
     patterns: [/min.*qty/i, /minimum/i, /min.*order/i, /moq/i],
-    priority: 4
+    priority: 4,
   },
   weight: {
     keywords: ['weight', 'wt', 'mass', 'kg', 'lb'],
     patterns: [/weight/i, /^wt$/i, /mass/i, /\bkg\b/i, /\blb\b/i],
-    priority: 5
+    priority: 5,
   },
   upcBarcode: {
     keywords: ['upc', 'barcode', 'universal product code'],
     patterns: [/upc/i, /barcode/i, /universal.*product/i],
-    priority: 4
+    priority: 4,
   },
   eanBarcode: {
     keywords: ['ean', 'ean13', 'european article number'],
     patterns: [/ean/i, /ean13/i, /european.*article/i],
-    priority: 4
-  }
+    priority: 4,
+  },
 };
 
 // =====================================================
@@ -203,7 +238,7 @@ export class PricelistParsingEngine {
         type: 'buffer',
         cellDates: true,
         cellNF: false,
-        cellText: false
+        cellText: false,
       });
 
       // Find best sheet to parse
@@ -214,21 +249,19 @@ export class PricelistParsingEngine {
       const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[bestSheet.name], {
         header: 1,
         raw: false,
-        defval: null
+        defval: null,
       }) as unknown[][];
 
       const structure = this.detectSheetStructure(sheetData);
       const columnMapping = this.createColumnMapping(structure.headers);
 
-      this.debugLog(`Detected structure: headerRow=${structure.headerRow}, dataStart=${structure.dataStartRow}`);
+      this.debugLog(
+        `Detected structure: headerRow=${structure.headerRow}, dataStart=${structure.dataStartRow}`
+      );
       this.debugLog(`Column mapping confidence: ${this.calculateOverallConfidence(columnMapping)}`);
 
       // Parse data rows
-      const { items, errors, warnings } = this.parseDataRows(
-        sheetData,
-        structure,
-        columnMapping
-      );
+      const { items, errors, warnings } = this.parseDataRows(sheetData, structure, columnMapping);
 
       return {
         metadata: {
@@ -242,15 +275,16 @@ export class PricelistParsingEngine {
           dataStartRow: structure.dataStartRow,
           columnMapping,
           confidence: this.calculateOverallConfidence(columnMapping),
-          parsingStrategy: 'intelligent_pattern_matching'
+          parsingStrategy: 'intelligent_pattern_matching',
         },
         items,
         errors,
-        warnings
+        warnings,
       };
-
     } catch (error) {
-      throw new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -358,7 +392,7 @@ export class PricelistParsingEngine {
       headerRow,
       dataStartRow,
       headers,
-      totalRows: sheetData.length
+      totalRows: sheetData.length,
     };
   }
 
@@ -400,7 +434,7 @@ export class PricelistParsingEngine {
           columnIndex: i,
           columnName: header,
           confidence: bestMatch.confidence,
-          transformFunction: bestMatch.transformFunction
+          transformFunction: bestMatch.transformFunction,
         };
       }
     }
@@ -444,12 +478,13 @@ export class PricelistParsingEngine {
       // Apply priority weighting
       score = score * (1 + (patterns.priority - 1) * 0.1);
 
-      if (score > bestScore && score >= 50) { // Minimum confidence threshold
+      if (score > bestScore && score >= 50) {
+        // Minimum confidence threshold
         bestScore = score;
         bestMatch = {
           field: fieldName,
           confidence: Math.min(score, 100),
-          transformFunction: this.getTransformFunction(fieldName)
+          transformFunction: this.getTransformFunction(fieldName),
         };
       }
     }
@@ -474,7 +509,7 @@ export class PricelistParsingEngine {
       dimensionsW: 'parseFloat',
       dimensionsH: 'parseFloat',
       upcBarcode: 'parseBarcode',
-      eanBarcode: 'parseBarcode'
+      eanBarcode: 'parseBarcode',
     };
 
     return transforms[fieldName];
@@ -514,15 +549,14 @@ export class PricelistParsingEngine {
           errors.push({
             row: i + 1,
             message: 'Missing critical fields (SKU, product name, or unit price)',
-            severity: 'error'
+            severity: 'error',
           });
         }
-
       } catch (error) {
         errors.push({
           row: i + 1,
           message: `Failed to parse row: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -548,7 +582,7 @@ export class PricelistParsingEngine {
   ): PricelistItem {
     const item: PricelistItem = {
       rowNumber,
-      rawData: {}
+      rawData: {},
     };
 
     // Store raw data for debugging
@@ -572,7 +606,6 @@ export class PricelistParsingEngine {
 
         // Map to item fields
         (item as unknown)[this.camelCase(fieldName)] = transformedValue;
-
       } catch (error) {
         // Store raw value if transformation fails
         (item as unknown)[this.camelCase(fieldName)] = rawValue;
@@ -585,7 +618,11 @@ export class PricelistParsingEngine {
   /**
    * Transform raw cell value based on field type
    */
-  private transformValue(rawValue: unknown, fieldName: string, transformFunction?: string): unknown {
+  private transformValue(
+    rawValue: unknown,
+    fieldName: string,
+    transformFunction?: string
+  ): unknown {
     if (rawValue === null || rawValue === undefined || rawValue === '') return undefined;
 
     const stringValue = String(rawValue).trim();
@@ -668,7 +705,10 @@ export class PricelistParsingEngine {
   /**
    * Validate parsed item
    */
-  private validateItem(item: PricelistItem, rowNumber: number): {
+  private validateItem(
+    item: PricelistItem,
+    rowNumber: number
+  ): {
     errors: ParsingError[];
     warnings: ParsingWarning[];
   } {
@@ -683,7 +723,7 @@ export class PricelistParsingEngine {
           column: 'unitPrice',
           message: 'Unit price must be greater than 0',
           severity: 'error',
-          rawValue: item.unitPrice
+          rawValue: item.unitPrice,
         });
       } else if (item.unitPrice > 1000000) {
         warnings.push({
@@ -691,7 +731,7 @@ export class PricelistParsingEngine {
           column: 'unitPrice',
           message: 'Unit price seems unusually high',
           suggestion: 'Verify price is correct',
-          rawValue: item.unitPrice
+          rawValue: item.unitPrice,
         });
       }
     }
@@ -703,7 +743,7 @@ export class PricelistParsingEngine {
         column: 'sku',
         message: 'SKU seems too short',
         suggestion: 'Verify SKU is complete',
-        rawValue: item.sku
+        rawValue: item.sku,
       });
     }
 
@@ -714,7 +754,7 @@ export class PricelistParsingEngine {
         column: 'productName',
         message: 'Product name seems too short',
         suggestion: 'Verify product name is complete',
-        rawValue: item.productName
+        rawValue: item.productName,
       });
     }
 
@@ -777,7 +817,7 @@ export class PricelistParsingEngine {
       errorRate: (result.errors.length / Math.max(result.metadata.totalRows, 1)) * 100,
       warningRate: (result.warnings.length / Math.max(result.metadata.totalRows, 1)) * 100,
       confidence: result.metadata.confidence,
-      criticalFieldsCoverage: (mappedCriticalFields / criticalFields.length) * 100
+      criticalFieldsCoverage: (mappedCriticalFields / criticalFields.length) * 100,
     };
   }
 }

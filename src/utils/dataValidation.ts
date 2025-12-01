@@ -5,34 +5,34 @@
  * Handles malformed data, invalid timestamps, and provides safe fallbacks
  */
 
-import { format, isValid, parseISO, formatDistanceToNow } from 'date-fns'
+import { format, isValid, parseISO, formatDistanceToNow } from 'date-fns';
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
 export interface ValidationResult<T> {
-  isValid: boolean
-  data: T | null
-  errors: string[]
-  warnings: string[]
-  sanitized: boolean
+  isValid: boolean;
+  data: T | null;
+  errors: string[];
+  warnings: string[];
+  sanitized: boolean;
 }
 
 export interface TimestampValidationOptions {
-  allowNull?: boolean
-  fallbackToNow?: boolean
-  minDate?: Date
-  maxDate?: Date
-  formats?: string[]
+  allowNull?: boolean;
+  fallbackToNow?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  formats?: string[];
 }
 
 export interface NumberValidationOptions {
-  min?: number
-  max?: number
-  allowNull?: boolean
-  fallback?: number
-  decimals?: number
+  min?: number;
+  max?: number;
+  allowNull?: boolean;
+  fallback?: number;
+  decimals?: number;
 }
 
 // ============================================================================
@@ -52,131 +52,135 @@ export class TimestampValidator {
       fallbackToNow = false,
       minDate = new Date('1970-01-01'),
       maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-      formats = ['yyyy-MM-dd', 'yyyy-MM-dd HH:mm:ss', 'ISO 8601']
-    } = options
+      formats = ['yyyy-MM-dd', 'yyyy-MM-dd HH:mm:ss', 'ISO 8601'],
+    } = options;
 
     const result: ValidationResult<Date> = {
       isValid: false,
       data: null,
       errors: [],
       warnings: [],
-      sanitized: false
-    }
+      sanitized: false,
+    };
 
     // Handle null/undefined
     if (value === null || value === undefined || value === '') {
       if (allowNull) {
-        result.isValid = true
-        return result
+        result.isValid = true;
+        return result;
       }
 
       if (fallbackToNow) {
-        result.data = new Date()
-        result.isValid = true
-        result.sanitized = true
-        result.warnings.push('Null timestamp replaced with current time')
-        return result
+        result.data = new Date();
+        result.isValid = true;
+        result.sanitized = true;
+        result.warnings.push('Null timestamp replaced with current time');
+        return result;
       }
 
-      result.errors.push('Timestamp is required but was null/undefined')
-      return result
+      result.errors.push('Timestamp is required but was null/undefined');
+      return result;
     }
 
-    let date: Date | null = null
+    let date: Date | null = null;
 
     try {
       // Handle Date objects
       if (value instanceof Date) {
-        date = value
+        date = value;
       }
       // Handle strings
       else if (typeof value === 'string') {
         // Try ISO parsing first
         if (value.includes('T') || value.includes('Z')) {
-          date = parseISO(value)
+          date = parseISO(value);
         }
         // Try standard Date parsing
         else {
-          date = new Date(value)
+          date = new Date(value);
         }
       }
       // Handle numbers (Unix timestamps)
       else if (typeof value === 'number') {
         // Detect if it's seconds or milliseconds
-        const timestamp = value > 1e10 ? value : value * 1000
-        date = new Date(timestamp)
+        const timestamp = value > 1e10 ? value : value * 1000;
+        date = new Date(timestamp);
       }
       // Handle objects with timestamp-like properties
       else if (typeof value === 'object') {
         if (value._seconds && value._nanoseconds) {
           // Firestore timestamp
-          date = new Date(value._seconds * 1000 + value._nanoseconds / 1000000)
+          date = new Date(value._seconds * 1000 + value._nanoseconds / 1000000);
         } else if (value.seconds) {
           // Other timestamp formats
-          date = new Date(value.seconds * 1000)
+          date = new Date(value.seconds * 1000);
         } else {
-          result.errors.push(`Unsupported timestamp object format: ${JSON.stringify(value)}`)
-          return result
+          result.errors.push(`Unsupported timestamp object format: ${JSON.stringify(value)}`);
+          return result;
         }
-      }
-      else {
-        result.errors.push(`Unsupported timestamp type: ${typeof value}`)
-        return result
+      } else {
+        result.errors.push(`Unsupported timestamp type: ${typeof value}`);
+        return result;
       }
 
       // Validate the parsed date
       if (!date || !isValid(date)) {
-        result.errors.push(`Invalid date: ${value}`)
+        result.errors.push(`Invalid date: ${value}`);
 
         if (fallbackToNow) {
-          result.data = new Date()
-          result.isValid = true
-          result.sanitized = true
-          result.warnings.push('Invalid timestamp replaced with current time')
+          result.data = new Date();
+          result.isValid = true;
+          result.sanitized = true;
+          result.warnings.push('Invalid timestamp replaced with current time');
         }
 
-        return result
+        return result;
       }
 
       // Check date range
       if (date < minDate) {
-        result.warnings.push(`Date ${date.toISOString()} is before minimum allowed date ${minDate.toISOString()}`)
+        result.warnings.push(
+          `Date ${date.toISOString()} is before minimum allowed date ${minDate.toISOString()}`
+        );
 
         if (fallbackToNow) {
-          result.data = new Date()
-          result.sanitized = true
+          result.data = new Date();
+          result.sanitized = true;
         } else {
-          result.data = minDate
-          result.sanitized = true
+          result.data = minDate;
+          result.sanitized = true;
         }
       } else if (date > maxDate) {
-        result.warnings.push(`Date ${date.toISOString()} is after maximum allowed date ${maxDate.toISOString()}`)
+        result.warnings.push(
+          `Date ${date.toISOString()} is after maximum allowed date ${maxDate.toISOString()}`
+        );
 
         if (fallbackToNow) {
-          result.data = new Date()
-          result.sanitized = true
+          result.data = new Date();
+          result.sanitized = true;
         } else {
-          result.data = maxDate
-          result.sanitized = true
+          result.data = maxDate;
+          result.sanitized = true;
         }
       } else {
-        result.data = date
+        result.data = date;
       }
 
-      result.isValid = true
-
+      result.isValid = true;
     } catch (error) {
-      result.errors.push(`Failed to parse timestamp: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      result.errors.push(
+        `Failed to parse timestamp: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
 
       if (fallbackToNow) {
-        result.data = new Date()
-        result.isValid = true
-        result.sanitized = true
-        result.warnings.push('Failed timestamp parsing, replaced with current time')
+        result.data = new Date();
+        result.isValid = true;
+        result.sanitized = true;
+        result.warnings.push('Failed timestamp parsing, replaced with current time');
       }
     }
 
-    return result
+    return result;
   }
 
   /**
@@ -187,38 +191,35 @@ export class TimestampValidator {
     formatString: string = 'MMM dd, yyyy',
     fallback: string = 'Invalid Date'
   ): string {
-    const validation = this.validate(value, { fallbackToNow: false })
+    const validation = this.validate(value, { fallbackToNow: false });
 
     if (!validation.isValid || !validation.data) {
-      return fallback
+      return fallback;
     }
 
     try {
-      return format(validation.data, formatString)
+      return format(validation.data, formatString);
     } catch (error) {
-      console.warn('Date formatting failed:', error)
-      return fallback
+      console.warn('Date formatting failed:', error);
+      return fallback;
     }
   }
 
   /**
    * Safe relative time formatting
    */
-  static formatRelativeSafe(
-    value: unknown,
-    fallback: string = 'Unknown time'
-  ): string {
-    const validation = this.validate(value, { fallbackToNow: false })
+  static formatRelativeSafe(value: unknown, fallback: string = 'Unknown time'): string {
+    const validation = this.validate(value, { fallbackToNow: false });
 
     if (!validation.isValid || !validation.data) {
-      return fallback
+      return fallback;
     }
 
     try {
-      return formatDistanceToNow(validation.data, { addSuffix: true })
+      return formatDistanceToNow(validation.data, { addSuffix: true });
     } catch (error) {
-      console.warn('Relative time formatting failed:', error)
-      return fallback
+      console.warn('Relative time formatting failed:', error);
+      return fallback;
     }
   }
 
@@ -226,21 +227,21 @@ export class TimestampValidator {
    * Safe timestamp comparison for sorting
    */
   static compareSafe(a: unknown, b: unknown, direction: 'asc' | 'desc' = 'desc'): number {
-    const aValidation = this.validate(a, { fallbackToNow: false, allowNull: true })
-    const bValidation = this.validate(b, { fallbackToNow: false, allowNull: true })
+    const aValidation = this.validate(a, { fallbackToNow: false, allowNull: true });
+    const bValidation = this.validate(b, { fallbackToNow: false, allowNull: true });
 
     // Handle null values (put them at the end)
-    if (!aValidation.isValid && !bValidation.isValid) return 0
-    if (!aValidation.isValid) return direction === 'asc' ? 1 : -1
-    if (!bValidation.isValid) return direction === 'asc' ? -1 : 1
+    if (!aValidation.isValid && !bValidation.isValid) return 0;
+    if (!aValidation.isValid) return direction === 'asc' ? 1 : -1;
+    if (!bValidation.isValid) return direction === 'asc' ? -1 : 1;
 
-    const aTime = aValidation.data!.getTime()
-    const bTime = bValidation.data!.getTime()
+    const aTime = aValidation.data!.getTime();
+    const bTime = bValidation.data!.getTime();
 
     if (direction === 'asc') {
-      return aTime - bTime
+      return aTime - bTime;
     } else {
-      return bTime - aTime
+      return bTime - aTime;
     }
   }
 }
@@ -250,99 +251,91 @@ export class TimestampValidator {
 // ============================================================================
 
 export class NumberValidator {
-  static validate(
-    value: unknown,
-    options: NumberValidationOptions = {}
-  ): ValidationResult<number> {
-    const {
-      min,
-      max,
-      allowNull = false,
-      fallback = 0,
-      decimals
-    } = options
+  static validate(value: unknown, options: NumberValidationOptions = {}): ValidationResult<number> {
+    const { min, max, allowNull = false, fallback = 0, decimals } = options;
 
     const result: ValidationResult<number> = {
       isValid: false,
       data: null,
       errors: [],
       warnings: [],
-      sanitized: false
-    }
+      sanitized: false,
+    };
 
     // Handle null/undefined
     if (value === null || value === undefined || value === '') {
       if (allowNull) {
-        result.isValid = true
-        return result
+        result.isValid = true;
+        return result;
       }
 
-      result.data = fallback
-      result.isValid = true
-      result.sanitized = true
-      result.warnings.push(`Null value replaced with fallback: ${fallback}`)
-      return result
+      result.data = fallback;
+      result.isValid = true;
+      result.sanitized = true;
+      result.warnings.push(`Null value replaced with fallback: ${fallback}`);
+      return result;
     }
 
-    let num: number
+    let num: number;
 
     try {
       if (typeof value === 'number') {
-        num = value
+        num = value;
       } else if (typeof value === 'string') {
         // Clean the string (remove currency symbols, commas, etc.)
-        const cleaned = value.replace(/[^\d.-]/g, '')
-        num = parseFloat(cleaned)
+        const cleaned = value.replace(/[^\d.-]/g, '');
+        num = parseFloat(cleaned);
       } else {
-        result.errors.push(`Cannot convert ${typeof value} to number`)
-        result.data = fallback
-        result.sanitized = true
-        return result
+        result.errors.push(`Cannot convert ${typeof value} to number`);
+        result.data = fallback;
+        result.sanitized = true;
+        return result;
       }
 
       // Check if the result is a valid number
       if (isNaN(num) || !isFinite(num)) {
-        result.errors.push(`Invalid number: ${value}`)
-        result.data = fallback
-        result.sanitized = true
-        result.isValid = true
-        return result
+        result.errors.push(`Invalid number: ${value}`);
+        result.data = fallback;
+        result.sanitized = true;
+        result.isValid = true;
+        return result;
       }
 
       // Apply decimal precision
       if (decimals !== undefined) {
-        const rounded = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals)
+        const rounded = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
         if (rounded !== num) {
-          result.sanitized = true
-          result.warnings.push(`Number rounded to ${decimals} decimal places`)
+          result.sanitized = true;
+          result.warnings.push(`Number rounded to ${decimals} decimal places`);
         }
-        num = rounded
+        num = rounded;
       }
 
       // Check range
       if (min !== undefined && num < min) {
-        result.warnings.push(`Number ${num} is below minimum ${min}`)
-        num = min
-        result.sanitized = true
+        result.warnings.push(`Number ${num} is below minimum ${min}`);
+        num = min;
+        result.sanitized = true;
       }
 
       if (max !== undefined && num > max) {
-        result.warnings.push(`Number ${num} is above maximum ${max}`)
-        num = max
-        result.sanitized = true
+        result.warnings.push(`Number ${num} is above maximum ${max}`);
+        num = max;
+        result.sanitized = true;
       }
 
-      result.data = num
-      result.isValid = true
-
+      result.data = num;
+      result.isValid = true;
     } catch (error) {
-      result.errors.push(`Failed to parse number: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      result.data = fallback
-      result.sanitized = true
-      result.isValid = true
+      result.errors.push(
+        `Failed to parse number: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      result.data = fallback;
+      result.sanitized = true;
+      result.isValid = true;
     }
 
-    return result
+    return result;
   }
 
   /**
@@ -351,24 +344,24 @@ export class NumberValidator {
   static formatSafe(
     value: unknown,
     options: {
-      style?: 'decimal' | 'currency' | 'percent'
-      currency?: string
-      minimumFractionDigits?: number
-      maximumFractionDigits?: number
+      style?: 'decimal' | 'currency' | 'percent';
+      currency?: string;
+      minimumFractionDigits?: number;
+      maximumFractionDigits?: number;
     } = {},
     fallback: string = '0'
   ): string {
-    const validation = this.validate(value, { allowNull: false })
+    const validation = this.validate(value, { allowNull: false });
 
     if (!validation.isValid || validation.data === null) {
-      return fallback
+      return fallback;
     }
 
     try {
-      return new Intl.NumberFormat('en-US', options).format(validation.data)
+      return new Intl.NumberFormat('en-US', options).format(validation.data);
     } catch (error) {
-      console.warn('Number formatting failed:', error)
-      return fallback
+      console.warn('Number formatting failed:', error);
+      return fallback;
     }
   }
 }
@@ -381,12 +374,12 @@ export class StringValidator {
   static validate(
     value: unknown,
     options: {
-      minLength?: number
-      maxLength?: number
-      pattern?: RegExp
-      allowEmpty?: boolean
-      trim?: boolean
-      fallback?: string
+      minLength?: number;
+      maxLength?: number;
+      pattern?: RegExp;
+      allowEmpty?: boolean;
+      trim?: boolean;
+      fallback?: string;
     } = {}
   ): ValidationResult<string> {
     const {
@@ -395,59 +388,59 @@ export class StringValidator {
       pattern,
       allowEmpty = true,
       trim = true,
-      fallback = ''
-    } = options
+      fallback = '',
+    } = options;
 
     const result: ValidationResult<string> = {
       isValid: false,
       data: null,
       errors: [],
       warnings: [],
-      sanitized: false
-    }
+      sanitized: false,
+    };
 
     // Convert to string
-    let str: string
+    let str: string;
     if (value === null || value === undefined) {
-      str = fallback
-      result.sanitized = true
+      str = fallback;
+      result.sanitized = true;
     } else {
-      str = String(value)
+      str = String(value);
     }
 
     // Trim if requested
     if (trim && str !== str.trim()) {
-      str = str.trim()
-      result.sanitized = true
+      str = str.trim();
+      result.sanitized = true;
     }
 
     // Check empty
     if (str === '' && !allowEmpty) {
-      result.errors.push('String cannot be empty')
-      str = fallback
-      result.sanitized = true
+      result.errors.push('String cannot be empty');
+      str = fallback;
+      result.sanitized = true;
     }
 
     // Check length
     if (minLength !== undefined && str.length < minLength) {
-      result.errors.push(`String too short (${str.length} < ${minLength})`)
+      result.errors.push(`String too short (${str.length} < ${minLength})`);
     }
 
     if (maxLength !== undefined && str.length > maxLength) {
-      result.warnings.push(`String too long (${str.length} > ${maxLength}), truncating`)
-      str = str.substring(0, maxLength)
-      result.sanitized = true
+      result.warnings.push(`String too long (${str.length} > ${maxLength}), truncating`);
+      str = str.substring(0, maxLength);
+      result.sanitized = true;
     }
 
     // Check pattern
     if (pattern && !pattern.test(str)) {
-      result.errors.push(`String does not match required pattern`)
+      result.errors.push(`String does not match required pattern`);
     }
 
-    result.data = str
-    result.isValid = result.errors.length === 0
+    result.data = str;
+    result.isValid = result.errors.length === 0;
 
-    return result
+    return result;
   }
 }
 
@@ -460,11 +453,11 @@ export class ArrayValidator {
     value: unknown,
     itemValidator?: (item: unknown, index: number) => ValidationResult<T>,
     options: {
-      minLength?: number
-      maxLength?: number
-      allowEmpty?: boolean
-      removeInvalid?: boolean
-      fallback?: T[]
+      minLength?: number;
+      maxLength?: number;
+      allowEmpty?: boolean;
+      removeInvalid?: boolean;
+      fallback?: T[];
     } = {}
   ): ValidationResult<T[]> {
     const {
@@ -472,80 +465,80 @@ export class ArrayValidator {
       maxLength,
       allowEmpty = true,
       removeInvalid = true,
-      fallback = []
-    } = options
+      fallback = [],
+    } = options;
 
     const result: ValidationResult<T[]> = {
       isValid: false,
       data: null,
       errors: [],
       warnings: [],
-      sanitized: false
-    }
+      sanitized: false,
+    };
 
     // Ensure we have an array
-    let arr: unknown[]
+    let arr: unknown[];
     if (Array.isArray(value)) {
-      arr = value
+      arr = value;
     } else if (value === null || value === undefined) {
-      arr = fallback
-      result.sanitized = true
+      arr = fallback;
+      result.sanitized = true;
     } else {
       // Try to convert single item to array
-      arr = [value]
-      result.sanitized = true
-      result.warnings.push('Single value converted to array')
+      arr = [value];
+      result.sanitized = true;
+      result.warnings.push('Single value converted to array');
     }
 
     // Validate items if validator provided
     if (itemValidator) {
-      const validatedItems: T[] = []
-      let invalidCount = 0
+      const validatedItems: T[] = [];
+      let invalidCount = 0;
 
       arr.forEach((item, index) => {
-        const itemResult = itemValidator(item, index)
+        const itemResult = itemValidator(item, index);
         if (itemResult.isValid && itemResult.data !== null) {
-          validatedItems.push(itemResult.data)
+          validatedItems.push(itemResult.data);
           if (itemResult.sanitized) {
-            result.sanitized = true
+            result.sanitized = true;
           }
         } else {
-          invalidCount++
+          invalidCount++;
           if (!removeInvalid) {
-            result.errors.push(`Invalid item at index ${index}: ${itemResult.errors.join(', ')}`)
+            result.errors.push(`Invalid item at index ${index}: ${itemResult.errors.join(', ')}`);
           }
         }
-      })
+      });
 
       if (invalidCount > 0) {
         if (removeInvalid) {
-          result.warnings.push(`Removed ${invalidCount} invalid items`)
-          result.sanitized = true
+          result.warnings.push(`Removed ${invalidCount} invalid items`);
+          result.sanitized = true;
         }
       }
 
-      arr = validatedItems
+      arr = validatedItems;
     }
 
     // Check length constraints
     if (!allowEmpty && arr.length === 0) {
-      result.errors.push('Array cannot be empty')
+      result.errors.push('Array cannot be empty');
     }
 
     if (minLength !== undefined && arr.length < minLength) {
-      result.errors.push(`Array too short (${arr.length} < ${minLength})`)
+      result.errors.push(`Array too short (${arr.length} < ${minLength})`);
     }
 
     if (maxLength !== undefined && arr.length > maxLength) {
-      result.warnings.push(`Array too long (${arr.length} > ${maxLength}), truncating`)
-      arr = arr.slice(0, maxLength)
-      result.sanitized = true
+      result.warnings.push(`Array too long (${arr.length} > ${maxLength}), truncating`);
+      arr = arr.slice(0, maxLength);
+      result.sanitized = true;
     }
 
-    result.data = arr as T[]
-    result.isValid = result.errors.length === 0
+    result.data = arr as T[];
+    result.isValid = result.errors.length === 0;
 
-    return result
+    return result;
   }
 }
 
@@ -564,14 +557,14 @@ export class DataSanitizer {
         timestamp: new Date(),
         type: 'unknown',
         description: 'Invalid data entry',
-        sanitized: true
-      }
+        sanitized: true,
+      };
     }
 
     const timestampValidation = TimestampValidator.validate(
       data.timestamp || data.created_at || data.date,
       { fallbackToNow: true }
-    )
+    );
 
     return {
       ...data,
@@ -582,15 +575,15 @@ export class DataSanitizer {
       amount: NumberValidator.validate(data.amount, { fallback: 0, decimals: 2 }).data,
       quantity: NumberValidator.validate(data.quantity, { fallback: 0, decimals: 0 }).data,
       status: StringValidator.validate(data.status, { fallback: 'unknown' }).data,
-      sanitized: timestampValidation.sanitized || false
-    }
+      sanitized: timestampValidation.sanitized || false,
+    };
   }
 
   /**
    * Sanitize supplier data
    */
   static sanitizeSupplier(data: unknown): unknown {
-    if (!data || typeof data !== 'object') return null
+    if (!data || typeof data !== 'object') return null;
 
     return {
       ...data,
@@ -600,15 +593,15 @@ export class DataSanitizer {
       phone: StringValidator.validate(data.phone, { allowEmpty: true }).data,
       rating: NumberValidator.validate(data.rating, { min: 0, max: 5, fallback: 0 }).data,
       created_at: TimestampValidator.validate(data.created_at, { fallbackToNow: true }).data,
-      updated_at: TimestampValidator.validate(data.updated_at, { fallbackToNow: true }).data
-    }
+      updated_at: TimestampValidator.validate(data.updated_at, { fallbackToNow: true }).data,
+    };
   }
 
   /**
    * Sanitize inventory item data
    */
   static sanitizeInventoryItem(data: unknown): unknown {
-    if (!data || typeof data !== 'object') return null
+    if (!data || typeof data !== 'object') return null;
 
     return {
       ...data,
@@ -619,33 +612,30 @@ export class DataSanitizer {
       price: NumberValidator.validate(data.price, { min: 0, fallback: 0, decimals: 2 }).data,
       category: StringValidator.validate(data.category, { fallback: 'uncategorized' }).data,
       created_at: TimestampValidator.validate(data.created_at, { fallbackToNow: true }).data,
-      updated_at: TimestampValidator.validate(data.updated_at, { fallbackToNow: true }).data
-    }
+      updated_at: TimestampValidator.validate(data.updated_at, { fallbackToNow: true }).data,
+    };
   }
 
   /**
    * Sanitize array of data with item-specific sanitizer
    */
-  static sanitizeArray<T>(
-    data: unknown,
-    itemSanitizer: (item: unknown) => T | null
-  ): T[] {
+  static sanitizeArray<T>(data: unknown, itemSanitizer: (item: unknown) => T | null): T[] {
     const arrayResult = ArrayValidator.validate(
       data,
-      (item) => {
-        const sanitized = itemSanitizer(item)
+      item => {
+        const sanitized = itemSanitizer(item);
         return {
           isValid: sanitized !== null,
           data: sanitized,
           errors: sanitized === null ? ['Item sanitization failed'] : [],
           warnings: [],
-          sanitized: false
-        }
+          sanitized: false,
+        };
       },
       { removeInvalid: true }
-    )
+    );
 
-    return arrayResult.data || []
+    return arrayResult.data || [];
   }
 }
 
@@ -663,12 +653,8 @@ export class SafeSorter {
     direction: 'asc' | 'desc' = 'desc'
   ): T[] {
     return [...items].sort((a, b) => {
-      return TimestampValidator.compareSafe(
-        getTimestamp(a),
-        getTimestamp(b),
-        direction
-      )
-    })
+      return TimestampValidator.compareSafe(getTimestamp(a), getTimestamp(b), direction);
+    });
   }
 
   /**
@@ -680,15 +666,15 @@ export class SafeSorter {
     direction: 'asc' | 'desc' = 'asc'
   ): T[] {
     return [...items].sort((a, b) => {
-      const aVal = NumberValidator.validate(getNumber(a), { fallback: 0 }).data || 0
-      const bVal = NumberValidator.validate(getNumber(b), { fallback: 0 }).data || 0
+      const aVal = NumberValidator.validate(getNumber(a), { fallback: 0 }).data || 0;
+      const bVal = NumberValidator.validate(getNumber(b), { fallback: 0 }).data || 0;
 
       if (direction === 'asc') {
-        return aVal - bVal
+        return aVal - bVal;
       } else {
-        return bVal - aVal
+        return bVal - aVal;
       }
-    })
+    });
   }
 
   /**
@@ -700,11 +686,11 @@ export class SafeSorter {
     direction: 'asc' | 'desc' = 'asc'
   ): T[] {
     return [...items].sort((a, b) => {
-      const aVal = StringValidator.validate(getString(a), { fallback: '' }).data || ''
-      const bVal = StringValidator.validate(getString(b), { fallback: '' }).data || ''
+      const aVal = StringValidator.validate(getString(a), { fallback: '' }).data || '';
+      const bVal = StringValidator.validate(getString(b), { fallback: '' }).data || '';
 
-      const comparison = aVal.localeCompare(bVal)
-      return direction === 'asc' ? comparison : -comparison
-    })
+      const comparison = aVal.localeCompare(bVal);
+      return direction === 'asc' ? comparison : -comparison;
+    });
   }
 }

@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { pool } from "@/lib/database";
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/database';
 
 export async function GET() {
   try {
@@ -7,7 +7,7 @@ export async function GET() {
     const idle = (pool as unknown).idleCount ?? 0;
     const waiting = (pool as unknown).waitingCount ?? 0;
     const active = total - idle;
-    const utilization = total > 0 ? ((active / total) * 100).toFixed(1) : "0.0";
+    const utilization = total > 0 ? ((active / total) * 100).toFixed(1) : '0.0';
 
     return NextResponse.json(
       {
@@ -19,24 +19,24 @@ export async function GET() {
           utilization: `${utilization}%`,
         },
         queryMetrics: {
-          message: "Detailed query metrics unavailable without enterprise DB manager",
+          message: 'Detailed query metrics unavailable without enterprise DB manager',
         },
         topSlowQueries: [],
         timestamp: new Date().toISOString(),
       },
       {
         headers: {
-          "Cache-Control": "no-cache",
-          "Content-Type": "application/json",
+          'Cache-Control': 'no-cache',
+          'Content-Type': 'application/json',
         },
       }
     );
   } catch (error) {
-    console.error("Failed to fetch query metrics:", error);
+    console.error('Failed to fetch query metrics:', error);
     return NextResponse.json(
       {
-        error: "Failed to fetch query metrics",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch query metrics',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

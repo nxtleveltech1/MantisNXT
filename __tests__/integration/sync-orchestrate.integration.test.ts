@@ -11,13 +11,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import {
-  createMockDatabase,
-  createAuthenticatedRequest,
-} from '../helpers/sync-test-helpers';
-import {
-  mockApiResponse,
-} from '../fixtures/sync-test-data';
+import { createMockDatabase, createAuthenticatedRequest } from '../helpers/sync-test-helpers';
+import { mockApiResponse } from '../fixtures/sync-test-data';
 
 /**
  * Mock implementation of sync orchestrate endpoint
@@ -103,7 +98,8 @@ class SyncOrchestrateHandler {
     sync.batches = [];
 
     // Simulate batch processing
-    const totalItems = (sync.delta.newRecords + sync.delta.updatedRecords + sync.delta.deletedRecords) || 100;
+    const totalItems =
+      sync.delta.newRecords + sync.delta.updatedRecords + sync.delta.deletedRecords || 100;
     const batchSize = 50;
     const batchCount = Math.ceil(totalItems / batchSize);
 
@@ -624,7 +620,7 @@ describe('POST /api/v1/integrations/sync/orchestrate', () => {
       // Create sync in org-1
       const previewRequest = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
           'x-org-id': 'org-1',
         },
         body: { action: 'preview' },
@@ -636,7 +632,7 @@ describe('POST /api/v1/integrations/sync/orchestrate', () => {
       // Try to access from org-2
       const accessRequest = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
           'x-org-id': 'org-2',
         },
         body: {
@@ -654,7 +650,7 @@ describe('POST /api/v1/integrations/sync/orchestrate', () => {
     it('should require X-Org-Id header', async () => {
       const request = {
         headers: {
-          'authorization': 'Bearer token',
+          authorization: 'Bearer token',
         },
         body: { action: 'preview' },
       };

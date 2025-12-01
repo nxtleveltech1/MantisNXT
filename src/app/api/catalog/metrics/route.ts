@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Build conditions for supplier filter
     const params: unknown[] = [];
     let idx = 1;
-    
+
     let totalSupplierProductsCondition = '1=1';
     if (supplierId && supplierId !== 'all') {
       totalSupplierProductsCondition = `sp.supplier_id = $${idx}`;
@@ -94,4 +94,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

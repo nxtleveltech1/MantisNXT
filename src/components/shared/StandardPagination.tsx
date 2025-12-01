@@ -1,16 +1,22 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface StandardPaginationProps {
-  page: number
-  pageCount: number
-  limit: number
-  onPageChange: (page: number) => void
-  onLimitChange: (limit: number) => void
-  limitOptions?: number[]
-  className?: string
+  page: number;
+  pageCount: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  limitOptions?: number[];
+  className?: string;
 }
 
 export function StandardPagination({
@@ -23,7 +29,7 @@ export function StandardPagination({
   className,
 }: StandardPaginationProps) {
   return (
-    <div className={`flex items-center justify-between mt-3 text-sm ${className || ''}`}>
+    <div className={`mt-3 flex items-center justify-between text-sm ${className || ''}`}>
       <div>
         Page {page} of {pageCount}
       </div>
@@ -36,12 +42,18 @@ export function StandardPagination({
         >
           Prev
         </Button>
-        <Select value={String(limit)} onValueChange={(v) => { onLimitChange(parseInt(v, 10)); onPageChange(1) }}>
+        <Select
+          value={String(limit)}
+          onValueChange={v => {
+            onLimitChange(parseInt(v, 10));
+            onPageChange(1);
+          }}
+        >
           <SelectTrigger className="w-24">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {limitOptions.map((n) => (
+            {limitOptions.map(n => (
               <SelectItem key={n} value={String(n)}>
                 {n} / page
               </SelectItem>
@@ -58,6 +70,5 @@ export function StandardPagination({
         </Button>
       </div>
     </div>
-  )
+  );
 }
-

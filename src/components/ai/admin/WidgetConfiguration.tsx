@@ -35,7 +35,15 @@ import { toast } from 'sonner';
 
 interface WidgetConfig {
   dashboardId: string;
-  type: 'metric_card' | 'line_chart' | 'bar_chart' | 'pie_chart' | 'area_chart' | 'table' | 'alert_list' | 'prediction_list';
+  type:
+    | 'metric_card'
+    | 'line_chart'
+    | 'bar_chart'
+    | 'pie_chart'
+    | 'area_chart'
+    | 'table'
+    | 'alert_list'
+    | 'prediction_list';
   title: string;
   dataSource: {
     type: string;
@@ -230,7 +238,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
       ...config,
       config: {
         ...config.config,
-        filters: filters.filter((f) => f.field && f.value),
+        filters: filters.filter(f => f.field && f.value),
       },
     };
 
@@ -243,13 +251,13 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
     switch (config.type) {
       case 'metric_card':
         return (
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+          <Card className="from-primary/10 to-primary/5 bg-gradient-to-br">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary">
+                <div className="text-primary text-4xl font-bold">
                   {previewData[0].value.toLocaleString()}
                 </div>
-                <div className="text-sm text-muted-foreground mt-2">{config.title}</div>
+                <div className="text-muted-foreground mt-2 text-sm">{config.title}</div>
               </div>
             </CardContent>
           </Card>
@@ -314,7 +322,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
 
       default:
         return (
-          <div className="text-center text-muted-foreground p-8">
+          <div className="text-muted-foreground p-8 text-center">
             Preview not available for this widget type
           </div>
         );
@@ -341,7 +349,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {WIDGET_TYPES.map((type) => (
+                  {WIDGET_TYPES.map(type => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
@@ -355,7 +363,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
               <Input
                 id="widget-title"
                 value={config.title}
-                onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                onChange={e => setConfig({ ...config, title: e.target.value })}
                 placeholder="Enter widget title..."
               />
             </div>
@@ -366,7 +374,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
               <Label htmlFor="data-source">Data Source</Label>
               <Select
                 value={config.dataSource.type}
-                onValueChange={(value) =>
+                onValueChange={value =>
                   setConfig({
                     ...config,
                     dataSource: { ...config.dataSource, type: value },
@@ -377,7 +385,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {METRIC_TYPES.map((metric) => (
+                  {METRIC_TYPES.map(metric => (
                     <SelectItem key={metric.value} value={metric.value}>
                       {metric.label}
                     </SelectItem>
@@ -391,7 +399,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                 <Label htmlFor="aggregation">Aggregation</Label>
                 <Select
                   value={config.config.aggregation}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setConfig({
                       ...config,
                       config: { ...config.config, aggregation: value },
@@ -402,7 +410,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {AGGREGATIONS.map((agg) => (
+                    {AGGREGATIONS.map(agg => (
                       <SelectItem key={agg.value} value={agg.value}>
                         {agg.label}
                       </SelectItem>
@@ -419,13 +427,13 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
               <div className="flex items-center gap-4">
                 <Slider
                   value={[config.refreshInterval || 60]}
-                  onValueChange={(value) => setConfig({ ...config, refreshInterval: value[0] })}
+                  onValueChange={value => setConfig({ ...config, refreshInterval: value[0] })}
                   min={30}
                   max={300}
                   step={30}
                   className="flex-1"
                 />
-                <span className="text-sm font-medium w-12">{config.refreshInterval}s</span>
+                <span className="w-12 text-sm font-medium">{config.refreshInterval}s</span>
               </div>
             </div>
           </CardContent>
@@ -436,7 +444,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
             <div className="flex items-center justify-between">
               <CardTitle>Filters</CardTitle>
               <Button size="sm" variant="outline" onClick={handleAddFilter}>
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="mr-1 h-4 w-4" />
                 Add Filter
               </Button>
             </div>
@@ -446,28 +454,28 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
             <ScrollArea className="h-64">
               <div className="space-y-4">
                 {filters.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
+                  <p className="text-muted-foreground py-8 text-center text-sm">
                     No filters added yet
                   </p>
                 ) : (
                   filters.map((filter, index) => (
-                    <div key={index} className="flex gap-2 items-start">
+                    <div key={index} className="flex items-start gap-2">
                       <div className="flex-1 space-y-2">
                         <Input
                           placeholder="Field name"
                           value={filter.field}
-                          onChange={(e) => handleUpdateFilter(index, 'field', e.target.value)}
+                          onChange={e => handleUpdateFilter(index, 'field', e.target.value)}
                         />
                         <div className="grid grid-cols-2 gap-2">
                           <Select
                             value={filter.operator}
-                            onValueChange={(value) => handleUpdateFilter(index, 'operator', value)}
+                            onValueChange={value => handleUpdateFilter(index, 'operator', value)}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {OPERATORS.map((op) => (
+                              {OPERATORS.map(op => (
                                 <SelectItem key={op.value} value={op.value}>
                                   {op.label}
                                 </SelectItem>
@@ -477,16 +485,12 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                           <Input
                             placeholder="Value"
                             value={filter.value}
-                            onChange={(e) => handleUpdateFilter(index, 'value', e.target.value)}
+                            onChange={e => handleUpdateFilter(index, 'value', e.target.value)}
                           />
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFilter(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button variant="ghost" size="sm" onClick={() => handleRemoveFilter(index)}>
+                        <Trash2 className="text-destructive h-4 w-4" />
                       </Button>
                     </div>
                   ))
@@ -497,19 +501,11 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
         </Card>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handlePreview}
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={handlePreview} className="flex-1">
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={createWidgetMutation.isPending}
-            className="flex-1"
-          >
+          <Button onClick={handleSave} disabled={createWidgetMutation.isPending} className="flex-1">
             {createWidgetMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -529,10 +525,10 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
           </CardHeader>
           <CardContent>
             {previewData.length === 0 ? (
-              <div className="flex items-center justify-center h-64 border-2 border-dashed border-muted rounded-lg">
+              <div className="border-muted flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
                 <div className="text-center">
-                  <Eye className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
+                  <Eye className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
+                  <p className="text-muted-foreground text-sm">
                     Click &ldquo;Preview&rdquo; to see your widget
                   </p>
                 </div>
@@ -557,9 +553,9 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                 {CHART_COLORS.map((color, index) => (
                   <button
                     key={color}
-                    className={`w-8 h-8 rounded-full border-2 ${
+                    className={`h-8 w-8 rounded-full border-2 ${
                       config.config.colors?.[0] === color
-                        ? 'border-primary ring-2 ring-primary/20'
+                        ? 'border-primary ring-primary/20 ring-2'
                         : 'border-transparent'
                     }`}
                     style={{ backgroundColor: color }}
@@ -568,7 +564,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                         ...config,
                         config: {
                           ...config.config,
-                          colors: [color, ...CHART_COLORS.filter((c) => c !== color)],
+                          colors: [color, ...CHART_COLORS.filter(c => c !== color)],
                         },
                       })
                     }
@@ -584,7 +580,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                   <input
                     type="checkbox"
                     checked={config.config.showGrid}
-                    onChange={(e) =>
+                    onChange={e =>
                       setConfig({
                         ...config,
                         config: { ...config.config, showGrid: e.target.checked },
@@ -598,7 +594,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                   <input
                     type="checkbox"
                     checked={config.config.showLegend}
-                    onChange={(e) =>
+                    onChange={e =>
                       setConfig({
                         ...config,
                         config: { ...config.config, showLegend: e.target.checked },

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -13,7 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -85,30 +91,29 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
           throw new Error('Failed to load suppliers');
         }
         const result = await response.json();
-        const options =
-          Array.isArray(result?.data)
-            ? result.data
-                .map((item: Record<string, unknown>) => {
-                  const id = String(
-                    item.id ??
-                      item.supplier_id ??
-                      item.supplierId ??
-                      item.uuid ??
-                      '',
-                  ).trim();
-                  if (!id) return null;
-                  const displayName =
-                    (item.name as string) ||
-                    (item.company_name as string) ||
-                    (item.displayName as string) ||
-                    `Supplier ${id.substring(0, 8)}…`;
-                  return { id, name: displayName };
-                })
-                .filter((item: { id: string; name: string } | null): item is {
+        const options = Array.isArray(result?.data)
+          ? result.data
+              .map((item: Record<string, unknown>) => {
+                const id = String(
+                  item.id ?? item.supplier_id ?? item.supplierId ?? item.uuid ?? ''
+                ).trim();
+                if (!id) return null;
+                const displayName =
+                  (item.name as string) ||
+                  (item.company_name as string) ||
+                  (item.displayName as string) ||
+                  `Supplier ${id.substring(0, 8)}…`;
+                return { id, name: displayName };
+              })
+              .filter(
+                (
+                  item: { id: string; name: string } | null
+                ): item is {
                   id: string;
                   name: string;
-                } => Boolean(item))
-            : [];
+                } => Boolean(item)
+              )
+          : [];
 
         if (isMounted) {
           setSuppliers(options);
@@ -118,7 +123,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
         console.error('Failed to load suppliers for location dialog:', error);
         if (isMounted) {
           setSupplierFetchError(
-            error instanceof Error ? error.message : 'Failed to load suppliers',
+            error instanceof Error ? error.message : 'Failed to load suppliers'
           );
         }
       } finally {
@@ -141,8 +146,8 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
       return;
     }
 
-    setSuppliers((prev) => {
-      if (prev.some((supplier) => supplier.id === supplierId)) {
+    setSuppliers(prev => {
+      if (prev.some(supplier => supplier.id === supplierId)) {
         return prev;
       }
       const fallbackLabel = `Supplier ${supplierId.substring(0, 8)}…`;
@@ -159,7 +164,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
 
   const sortedSuppliers = useMemo(
     () => [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
-    [suppliers],
+    [suppliers]
   );
 
   // Validate form
@@ -248,7 +253,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && handleCancel()}>
+    <Dialog open={open} onOpenChange={open => !open && handleCancel()}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -278,12 +283,12 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                 id="name"
                 placeholder="e.g., Main Warehouse, NYC Distribution Center"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 disabled={isSubmitting}
                 maxLength={200}
                 required
               />
-              <p className="text-xs text-muted-foreground">{name.length}/200 characters</p>
+              <p className="text-muted-foreground text-xs">{name.length}/200 characters</p>
             </div>
 
             {/* Type */}
@@ -291,7 +296,11 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
               <Label htmlFor="type">
                 Location Type <span className="text-destructive">*</span>
               </Label>
-              <Select value={type} onValueChange={(value) => setType(value as any)} disabled={isSubmitting}>
+              <Select
+                value={type}
+                onValueChange={value => setType(value as any)}
+                disabled={isSubmitting}
+              >
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
@@ -299,7 +308,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                   <SelectItem value="internal">
                     <div className="flex flex-col items-start">
                       <span className="font-medium">Internal</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Owned warehouse or storage facility
                       </span>
                     </div>
@@ -307,7 +316,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                   <SelectItem value="supplier">
                     <div className="flex flex-col items-start">
                       <span className="font-medium">Supplier</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Supplier-managed location for dropshipping
                       </span>
                     </div>
@@ -315,7 +324,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                   <SelectItem value="consignment">
                     <div className="flex flex-col items-start">
                       <span className="font-medium">Consignment</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Consignment or third-party storage
                       </span>
                     </div>
@@ -337,9 +346,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                 >
                   <SelectTrigger id="supplier_id">
                     <SelectValue
-                      placeholder={
-                        isLoadingSuppliers ? 'Loading suppliers…' : 'Select supplier'
-                      }
+                      placeholder={isLoadingSuppliers ? 'Loading suppliers…' : 'Select supplier'}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,7 +355,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                         Loading suppliers…
                       </SelectItem>
                     ) : sortedSuppliers.length > 0 ? (
-                      sortedSuppliers.map((supplier) => (
+                      sortedSuppliers.map(supplier => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </SelectItem>
@@ -360,11 +367,11 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                     )}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Supplier-managed locations require a linked supplier.
                 </p>
                 {supplierFetchError && (
-                  <p className="text-xs text-destructive">{supplierFetchError}</p>
+                  <p className="text-destructive text-xs">{supplierFetchError}</p>
                 )}
               </div>
             )}
@@ -376,12 +383,12 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                 id="address"
                 placeholder="Full address including street, city, state, and postal code"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={e => setAddress(e.target.value)}
                 disabled={isSubmitting}
                 rows={3}
                 maxLength={500}
               />
-              <p className="text-xs text-muted-foreground">{address.length}/500 characters</p>
+              <p className="text-muted-foreground text-xs">{address.length}/500 characters</p>
             </div>
 
             {/* Active Status */}
@@ -390,7 +397,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
                 <Label htmlFor="is_active" className="cursor-pointer">
                   Active
                 </Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Inactive locations won't appear in location selection dropdowns
                 </p>
               </div>

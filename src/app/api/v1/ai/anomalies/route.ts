@@ -80,10 +80,13 @@ export async function POST(request: NextRequest) {
       detectedAnomalies: result.anomalies,
       summary: {
         total: result.anomaliesDetected,
-        bySeverity: result.anomalies.reduce((acc, a) => {
-          acc[a.severity] = (acc[a.severity] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        bySeverity: result.anomalies.reduce(
+          (acc, a) => {
+            acc[a.severity] = (acc[a.severity] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
       },
       overallHealthScore: result.overallHealthScore,
       recommendations: result.recommendations,

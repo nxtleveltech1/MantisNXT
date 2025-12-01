@@ -17,10 +17,7 @@ export function getJwtSecret(): string {
  * Session timeout configuration
  * Default: 1 hour (3600000 milliseconds)
  */
-export const SESSION_TIMEOUT = parseInt(
-  process.env.SESSION_TIMEOUT || '3600000',
-  10
-);
+export const SESSION_TIMEOUT = parseInt(process.env.SESSION_TIMEOUT || '3600000', 10);
 
 /**
  * JWT token expiry configuration
@@ -47,10 +44,7 @@ export const TOKEN_REFRESH_THRESHOLD = parseInt(
  * Bcrypt hash rounds for password hashing
  * Default: 12 (secure but performant)
  */
-export const BCRYPT_ROUNDS = parseInt(
-  process.env.BCRYPT_ROUNDS || '12',
-  10
-);
+export const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
 
 /**
  * Session cleanup interval (in milliseconds)
@@ -65,28 +59,19 @@ export const SESSION_CLEANUP_INTERVAL = parseInt(
  * Maximum active sessions per user
  * Default: 5
  */
-export const MAX_SESSIONS_PER_USER = parseInt(
-  process.env.MAX_SESSIONS_PER_USER || '5',
-  10
-);
+export const MAX_SESSIONS_PER_USER = parseInt(process.env.MAX_SESSIONS_PER_USER || '5', 10);
 
 /**
  * Password minimum length requirement
  * Default: 8 characters
  */
-export const PASSWORD_MIN_LENGTH = parseInt(
-  process.env.PASSWORD_MIN_LENGTH || '8',
-  10
-);
+export const PASSWORD_MIN_LENGTH = parseInt(process.env.PASSWORD_MIN_LENGTH || '8', 10);
 
 /**
  * Failed login attempt limit before lockout
  * Default: 5 attempts
  */
-export const MAX_FAILED_LOGIN_ATTEMPTS = parseInt(
-  process.env.MAX_FAILED_LOGIN_ATTEMPTS || '5',
-  10
-);
+export const MAX_FAILED_LOGIN_ATTEMPTS = parseInt(process.env.MAX_FAILED_LOGIN_ATTEMPTS || '5', 10);
 
 /**
  * Account lockout duration (in milliseconds)
@@ -114,22 +99,22 @@ export const AUTH_CONFIG = {
     secret: getJwtSecret,
     tokenExpiry: JWT_TOKEN_EXPIRY,
     refreshTokenExpiry: REFRESH_TOKEN_EXPIRY,
-    refreshThreshold: TOKEN_REFRESH_THRESHOLD
+    refreshThreshold: TOKEN_REFRESH_THRESHOLD,
   },
   session: {
     timeout: SESSION_TIMEOUT,
     cleanupInterval: SESSION_CLEANUP_INTERVAL,
-    maxSessionsPerUser: MAX_SESSIONS_PER_USER
+    maxSessionsPerUser: MAX_SESSIONS_PER_USER,
   },
   password: {
     bcryptRounds: BCRYPT_ROUNDS,
-    minLength: PASSWORD_MIN_LENGTH
+    minLength: PASSWORD_MIN_LENGTH,
   },
   security: {
     maxFailedLoginAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
     accountLockoutDuration: ACCOUNT_LOCKOUT_DURATION,
-    rememberMeDuration: REMEMBER_ME_DURATION_DAYS
-  }
+    rememberMeDuration: REMEMBER_ME_DURATION_DAYS,
+  },
 } as const;
 
 /**
@@ -142,14 +127,14 @@ export function validateAuthConfig(): void {
 
   // Validate numeric configurations
   const numericConfigs = {
-    'SESSION_TIMEOUT': SESSION_TIMEOUT,
-    'TOKEN_REFRESH_THRESHOLD': TOKEN_REFRESH_THRESHOLD,
-    'BCRYPT_ROUNDS': BCRYPT_ROUNDS,
-    'SESSION_CLEANUP_INTERVAL': SESSION_CLEANUP_INTERVAL,
-    'MAX_SESSIONS_PER_USER': MAX_SESSIONS_PER_USER,
-    'PASSWORD_MIN_LENGTH': PASSWORD_MIN_LENGTH,
-    'MAX_FAILED_LOGIN_ATTEMPTS': MAX_FAILED_LOGIN_ATTEMPTS,
-    'ACCOUNT_LOCKOUT_DURATION': ACCOUNT_LOCKOUT_DURATION
+    SESSION_TIMEOUT: SESSION_TIMEOUT,
+    TOKEN_REFRESH_THRESHOLD: TOKEN_REFRESH_THRESHOLD,
+    BCRYPT_ROUNDS: BCRYPT_ROUNDS,
+    SESSION_CLEANUP_INTERVAL: SESSION_CLEANUP_INTERVAL,
+    MAX_SESSIONS_PER_USER: MAX_SESSIONS_PER_USER,
+    PASSWORD_MIN_LENGTH: PASSWORD_MIN_LENGTH,
+    MAX_FAILED_LOGIN_ATTEMPTS: MAX_FAILED_LOGIN_ATTEMPTS,
+    ACCOUNT_LOCKOUT_DURATION: ACCOUNT_LOCKOUT_DURATION,
   };
 
   for (const [key, value] of Object.entries(numericConfigs)) {
@@ -205,7 +190,7 @@ export function getAuthConfigStatus(): {
       refreshTokenExpiry: REFRESH_TOKEN_EXPIRY,
       bcryptRounds: BCRYPT_ROUNDS,
       passwordMinLength: PASSWORD_MIN_LENGTH,
-      maxFailedLoginAttempts: MAX_FAILED_LOGIN_ATTEMPTS
-    }
+      maxFailedLoginAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+    },
   };
 }

@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Skeleton } from '@/components/ui/skeleton'
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -22,27 +22,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Search,
   Filter,
@@ -70,82 +65,81 @@ import {
   Activity,
   Mail,
   Phone,
-  Target
-} from 'lucide-react'
-import { allocateToSupplier, deallocateFromSupplier, useInventoryStore } from '@/lib/stores/inventory-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
-import type { Supplier, Product, InventoryItem } from '@/lib/types/inventory'
+  Target,
+} from 'lucide-react';
+import {
+  allocateToSupplier,
+  deallocateFromSupplier,
+  useInventoryStore,
+} from '@/lib/stores/inventory-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import type { Supplier, Product, InventoryItem } from '@/lib/types/inventory';
 
 interface EnrichedProduct extends Product {
-  inventoryItem?: InventoryItem
-  totalStockValue?: number
-  stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock' | 'overstocked'
-  supplierInfo?: Supplier
+  inventoryItem?: InventoryItem;
+  totalStockValue?: number;
+  stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock' | 'overstocked';
+  supplierInfo?: Supplier;
 }
 
 interface SupplierInventoryData {
-  supplier: Supplier
-  products: EnrichedProduct[]
-  totalValue: number
-  totalItems: number
-  lowStockCount: number
-  outOfStockCount: number
-  categories: string[]
-  lastUpdated: string
+  supplier: Supplier;
+  products: EnrichedProduct[];
+  totalValue: number;
+  totalItems: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  categories: string[];
+  lastUpdated: string;
 }
 
 export default function SupplierInventoryView() {
-  const {
-    items,
-    products,
-    suppliers,
-    loading,
-    fetchItems,
-    fetchProducts,
-    fetchSuppliers,
-  } = useInventoryStore()
+  const { items, products, suppliers, loading, fetchItems, fetchProducts, fetchSuppliers } =
+    useInventoryStore();
 
-  const { addNotification } = useNotificationStore()
+  const { addNotification } = useNotificationStore();
 
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all_categories')
-  const [statusFilter, setStatusFilter] = useState<string>('all_statuses')
-  const [showAddToInventory, setShowAddToInventory] = useState(false)
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all_categories');
+  const [statusFilter, setStatusFilter] = useState<string>('all_statuses');
+  const [showAddToInventory, setShowAddToInventory] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        await Promise.all([fetchItems(), fetchProducts(), fetchSuppliers()])
+        await Promise.all([fetchItems(), fetchProducts(), fetchSuppliers()]);
       } catch (error) {
         addNotification({
           type: 'error',
           title: 'Failed to load data',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        })
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
-    }
-    loadData()
-  }, [addNotification, fetchItems, fetchProducts, fetchSuppliers])
+    };
+    loadData();
+  }, [addNotification, fetchItems, fetchProducts, fetchSuppliers]);
 
   // Create enriched supplier inventory data
   const supplierInventoryData = useMemo(() => {
     const data: SupplierInventoryData[] = suppliers.map(supplier => {
-      const supplierProducts = products.filter(p => p.supplier_id === supplier.id)
+      const supplierProducts = products.filter(p => p.supplier_id === supplier.id);
 
       const enrichedProducts: EnrichedProduct[] = supplierProducts.map(product => {
-        const inventoryItem = items.find(item => item.product_id === product.id)
-        const totalStockValue = inventoryItem ?
-          inventoryItem.current_stock * inventoryItem.cost_per_unit_zar : 0
+        const inventoryItem = items.find(item => item.product_id === product.id);
+        const totalStockValue = inventoryItem
+          ? inventoryItem.current_stock * inventoryItem.cost_per_unit_zar
+          : 0;
 
-        let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'overstocked' = 'in_stock'
+        let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'overstocked' = 'in_stock';
         if (inventoryItem) {
-          if (inventoryItem.current_stock === 0) stockStatus = 'out_of_stock'
-          else if (inventoryItem.current_stock <= inventoryItem.reorder_point) stockStatus = 'low_stock'
-          else if (inventoryItem.stock_status === 'overstocked') stockStatus = 'overstocked'
+          if (inventoryItem.current_stock === 0) stockStatus = 'out_of_stock';
+          else if (inventoryItem.current_stock <= inventoryItem.reorder_point)
+            stockStatus = 'low_stock';
+          else if (inventoryItem.stock_status === 'overstocked') stockStatus = 'overstocked';
         } else {
-          stockStatus = 'out_of_stock' // No inventory item means not in stock
+          stockStatus = 'out_of_stock'; // No inventory item means not in stock
         }
 
         return {
@@ -153,15 +147,15 @@ export default function SupplierInventoryView() {
           inventoryItem,
           totalStockValue,
           stockStatus,
-          supplierInfo: supplier
-        }
-      })
+          supplierInfo: supplier,
+        };
+      });
 
-      const totalValue = enrichedProducts.reduce((sum, p) => sum + (p.totalStockValue || 0), 0)
-      const totalItems = enrichedProducts.filter(p => p.inventoryItem).length
-      const lowStockCount = enrichedProducts.filter(p => p.stockStatus === 'low_stock').length
-      const outOfStockCount = enrichedProducts.filter(p => p.stockStatus === 'out_of_stock').length
-      const categories = [...new Set(enrichedProducts.map(p => p.category))]
+      const totalValue = enrichedProducts.reduce((sum, p) => sum + (p.totalStockValue || 0), 0);
+      const totalItems = enrichedProducts.filter(p => p.inventoryItem).length;
+      const lowStockCount = enrichedProducts.filter(p => p.stockStatus === 'low_stock').length;
+      const outOfStockCount = enrichedProducts.filter(p => p.stockStatus === 'out_of_stock').length;
+      const categories = [...new Set(enrichedProducts.map(p => p.category))];
 
       return {
         supplier,
@@ -171,56 +165,69 @@ export default function SupplierInventoryView() {
         lowStockCount,
         outOfStockCount,
         categories,
-        lastUpdated: new Date().toISOString()
-      }
-    })
+        lastUpdated: new Date().toISOString(),
+      };
+    });
 
-    return data.sort((a, b) => b.totalValue - a.totalValue)
-  }, [suppliers, products, items])
+    return data.sort((a, b) => b.totalValue - a.totalValue);
+  }, [suppliers, products, items]);
 
   const selectedSupplierData = useMemo(() => {
-    return supplierInventoryData.find(data => data.supplier.id === selectedSupplier)
-  }, [supplierInventoryData, selectedSupplier])
+    return supplierInventoryData.find(data => data.supplier.id === selectedSupplier);
+  }, [supplierInventoryData, selectedSupplier]);
 
   // Filter products based on search and filters
   const filteredProducts = useMemo(() => {
-    if (!selectedSupplierData) return []
+    if (!selectedSupplierData) return [];
 
     return selectedSupplierData.products.filter(product => {
-      const matchesSearch = !searchTerm ||
+      const matchesSearch =
+        !searchTerm ||
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCategory = !categoryFilter || categoryFilter === 'all_categories' || product.category === categoryFilter
-      const matchesStatus = !statusFilter || statusFilter === 'all_statuses' || product.stockStatus === statusFilter
+      const matchesCategory =
+        !categoryFilter ||
+        categoryFilter === 'all_categories' ||
+        product.category === categoryFilter;
+      const matchesStatus =
+        !statusFilter || statusFilter === 'all_statuses' || product.stockStatus === statusFilter;
 
-      return matchesSearch && matchesCategory && matchesStatus
-    })
-  }, [selectedSupplierData, searchTerm, categoryFilter, statusFilter])
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [selectedSupplierData, searchTerm, categoryFilter, statusFilter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR',
-      minimumFractionDigits: 0
-    }).format(amount)
-  }
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in_stock':
-        return <Badge variant="default" className="bg-green-100 text-green-800">In Stock</Badge>
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            In Stock
+          </Badge>
+        );
       case 'low_stock':
-        return <Badge variant="outline" className="border-orange-500 text-orange-700">Low Stock</Badge>
+        return (
+          <Badge variant="outline" className="border-orange-500 text-orange-700">
+            Low Stock
+          </Badge>
+        );
       case 'out_of_stock':
-        return <Badge variant="destructive">Out of Stock</Badge>
+        return <Badge variant="destructive">Out of Stock</Badge>;
       case 'overstocked':
-        return <Badge variant="secondary">Overstocked</Badge>
+        return <Badge variant="secondary">Overstocked</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>
+        return <Badge variant="outline">Unknown</Badge>;
     }
-  }
+  };
 
   const handleAddToInventory = async (productIds: string[]) => {
     try {
@@ -228,54 +235,66 @@ export default function SupplierInventoryView() {
       addNotification({
         type: 'success',
         title: 'Products added to inventory',
-        message: `${productIds.length} products added successfully`
-      })
-      setSelectedProducts(new Set())
-      setShowAddToInventory(false)
+        message: `${productIds.length} products added successfully`,
+      });
+      setSelectedProducts(new Set());
+      setShowAddToInventory(false);
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Failed to add products',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-  }
+  };
 
   const handleAllocate = async (inventoryItemId: string, supplierId: string) => {
     if (!supplierId) {
-      addNotification({ type: 'error', title: 'Allocation failed', message: 'Select a supplier first' })
-      return
+      addNotification({
+        type: 'error',
+        title: 'Allocation failed',
+        message: 'Select a supplier first',
+      });
+      return;
     }
 
     try {
-      await allocateToSupplier(inventoryItemId, supplierId, 1)
-      addNotification({ type: 'success', title: 'Allocated', message: '1 unit allocated to supplier' })
+      await allocateToSupplier(inventoryItemId, supplierId, 1);
+      addNotification({
+        type: 'success',
+        title: 'Allocated',
+        message: '1 unit allocated to supplier',
+      });
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Allocation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-  }
+  };
 
   const handleDeallocate = async (inventoryItemId: string, supplierId: string) => {
     if (!supplierId) {
-      addNotification({ type: 'error', title: 'Deallocation failed', message: 'Select a supplier first' })
-      return
+      addNotification({
+        type: 'error',
+        title: 'Deallocation failed',
+        message: 'Select a supplier first',
+      });
+      return;
     }
 
     try {
-      await deallocateFromSupplier(inventoryItemId, supplierId, 1)
-      addNotification({ type: 'success', title: 'Deallocated', message: '1 unit deallocated' })
+      await deallocateFromSupplier(inventoryItemId, supplierId, 1);
+      addNotification({ type: 'success', title: 'Deallocated', message: '1 unit deallocated' });
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Deallocation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -293,7 +312,7 @@ export default function SupplierInventoryView() {
         </div>
 
         {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {[1, 2, 3].map(i => (
             <Card key={i}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -301,7 +320,7 @@ export default function SupplierInventoryView() {
                 <Skeleton className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-8 w-16 mb-1" />
+                <Skeleton className="mb-1 h-8 w-16" />
                 <Skeleton className="h-3 w-24" />
               </CardContent>
             </Card>
@@ -309,15 +328,15 @@ export default function SupplierInventoryView() {
         </div>
 
         {/* Main Content Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           <Card className="lg:col-span-1">
             <CardHeader>
               <Skeleton className="h-6 w-20" />
             </CardHeader>
             <CardContent className="space-y-3">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="p-3 rounded">
-                  <Skeleton className="h-5 w-32 mb-2" />
+                <div key={i} className="rounded p-3">
+                  <Skeleton className="mb-2 h-5 w-32" />
                   <div className="space-y-1">
                     <Skeleton className="h-3 w-20" />
                     <Skeleton className="h-3 w-24" />
@@ -329,15 +348,17 @@ export default function SupplierInventoryView() {
           </Card>
           <Card className="lg:col-span-3">
             <CardContent className="h-64">
-              <div className="flex items-center justify-center h-full">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="ml-3 text-muted-foreground">Loading supplier inventory data...</span>
+              <div className="flex h-full items-center justify-center">
+                <RefreshCw className="text-muted-foreground h-8 w-8 animate-spin" />
+                <span className="text-muted-foreground ml-3">
+                  Loading supplier inventory data...
+                </span>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -352,63 +373,62 @@ export default function SupplierInventoryView() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
           <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Import
           </Button>
         </div>
       </div>
 
       {/* Supplier Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <Building2 className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supplierInventoryData.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Active suppliers with inventory
-            </p>
+            <p className="text-muted-foreground text-xs">Active suppliers with inventory</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Inventory Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(supplierInventoryData.reduce((sum, data) => sum + data.totalValue, 0))}
+              {formatCurrency(
+                supplierInventoryData.reduce((sum, data) => sum + data.totalValue, 0)
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Across all suppliers
-            </p>
+            <p className="text-muted-foreground text-xs">Across all suppliers</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Stock Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {supplierInventoryData.reduce((sum, data) => sum + data.lowStockCount + data.outOfStockCount, 0)}
+              {supplierInventoryData.reduce(
+                (sum, data) => sum + data.lowStockCount + data.outOfStockCount,
+                0
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Items requiring attention
-            </p>
+            <p className="text-muted-foreground text-xs">Items requiring attention</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Supplier List */}
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -423,42 +443,52 @@ export default function SupplierInventoryView() {
           <CardContent className="p-0">
             <div className="max-h-[600px] overflow-y-auto">
               <div className="space-y-1">
-                {supplierInventoryData.map((data) => (
+                {supplierInventoryData.map(data => (
                   <TooltipProvider key={data.supplier.id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className={`w-full text-left p-4 hover:bg-muted/80 transition-all duration-200 group relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                          className={`hover:bg-muted/80 group focus:ring-primary relative w-full p-4 text-left transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:outline-none ${
                             selectedSupplier === data.supplier.id
-                              ? 'bg-primary/10 border-r-3 border-primary shadow-sm'
+                              ? 'bg-primary/10 border-primary border-r-3 shadow-sm'
                               : 'hover:shadow-sm'
                           }`}
                           onClick={() => setSelectedSupplier(data.supplier.id)}
-                          onKeyDown={(e) => {
+                          onKeyDown={e => {
                             if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              setSelectedSupplier(data.supplier.id)
+                              e.preventDefault();
+                              setSelectedSupplier(data.supplier.id);
                             }
                           }}
                           aria-pressed={selectedSupplier === data.supplier.id}
                           aria-label={`Select supplier ${data.supplier.name} with ${data.products.length} products and ${formatCurrency(data.totalValue)} total value`}
                         >
-                          <div className="flex items-start justify-between mb-2">
+                          <div className="mb-2 flex items-start justify-between">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
-                                <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                  {data.supplier.name.split(' ').map(n => n[0]).join('').substr(0, 2)}
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                                  {data.supplier.name
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
+                                    .substr(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium truncate text-sm leading-tight">{data.supplier.name}</p>
-                                <div className="flex items-center gap-1 mt-1">
+                                <p className="truncate text-sm leading-tight font-medium">
+                                  {data.supplier.name}
+                                </p>
+                                <div className="mt-1 flex items-center gap-1">
                                   {data.supplier.preferred_supplier && (
-                                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                    <Star className="h-3 w-3 fill-current text-yellow-500" />
                                   )}
                                   <Badge
-                                    variant={data.supplier.performance_tier === 'platinum' ? 'default' : 'outline'}
-                                    className="text-xs py-0 px-1.5"
+                                    variant={
+                                      data.supplier.performance_tier === 'platinum'
+                                        ? 'default'
+                                        : 'outline'
+                                    }
+                                    className="px-1.5 py-0 text-xs"
                                   >
                                     {data.supplier.performance_tier?.toUpperCase()}
                                   </Badge>
@@ -467,7 +497,7 @@ export default function SupplierInventoryView() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
+                          <div className="text-muted-foreground mb-2 grid grid-cols-2 gap-2 text-xs">
                             <div className="flex items-center gap-1">
                               <Package className="h-3 w-3" />
                               <span>{data.products.length}</span>
@@ -482,9 +512,12 @@ export default function SupplierInventoryView() {
                             <span className="text-sm font-semibold text-green-600">
                               {formatCurrency(data.totalValue)}
                             </span>
-                            {(data.lowStockCount + data.outOfStockCount) > 0 && (
-                              <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 bg-orange-50">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
+                            {data.lowStockCount + data.outOfStockCount > 0 && (
+                              <Badge
+                                variant="outline"
+                                className="border-orange-500 bg-orange-50 text-xs text-orange-700"
+                              >
+                                <AlertTriangle className="mr-1 h-3 w-3" />
                                 {data.lowStockCount + data.outOfStockCount}
                               </Badge>
                             )}
@@ -496,16 +529,19 @@ export default function SupplierInventoryView() {
                               value={(data.totalItems / data.products.length) * 100}
                               className="h-1.5"
                             />
-                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                              <span>{Math.round((data.totalItems / data.products.length) * 100)}% stocked</span>
+                            <div className="text-muted-foreground mt-1 flex justify-between text-xs">
+                              <span>
+                                {Math.round((data.totalItems / data.products.length) * 100)}%
+                                stocked
+                              </span>
                             </div>
                           </div>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="p-3 max-w-xs">
+                      <TooltipContent side="right" className="max-w-xs p-3">
                         <div className="space-y-2">
                           <p className="font-medium">{data.supplier.name}</p>
-                          <div className="text-xs space-y-1">
+                          <div className="space-y-1 text-xs">
                             <div className="flex justify-between">
                               <span>Products:</span>
                               <span>{data.products.length}</span>
@@ -538,61 +574,73 @@ export default function SupplierInventoryView() {
           {selectedSupplierData ? (
             <div className="space-y-6">
               {/* Supplier Header */}
-              <Card className="border-0 shadow-md bg-gradient-to-r from-white to-gray-50">
+              <Card className="border-0 bg-gradient-to-r from-white to-gray-50 shadow-md">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                       <div className="relative">
                         <Avatar className="h-16 w-16 border-4 border-white shadow-lg">
-                          <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-blue-600 to-purple-700 text-white">
-                            {selectedSupplierData.supplier.name.split(' ').map(n => n[0]).join('').substr(0, 2)}
+                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-700 text-lg font-bold text-white">
+                            {selectedSupplierData.supplier.name
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')
+                              .substr(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         {selectedSupplierData.supplier.preferred_supplier && (
-                          <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1">
-                            <Star className="h-3 w-3 text-white fill-current" />
+                          <div className="absolute -top-1 -right-1 rounded-full bg-yellow-500 p-1">
+                            <Star className="h-3 w-3 fill-current text-white" />
                           </div>
                         )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <CardTitle className="text-2xl bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                          <CardTitle className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl text-transparent">
                             {selectedSupplierData.supplier.name}
                           </CardTitle>
                           <div className="flex gap-2">
-                            <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                            <Badge
+                              variant="default"
+                              className="border-green-300 bg-green-100 text-green-800"
+                            >
                               {selectedSupplierData.supplier.status?.toUpperCase()}
                             </Badge>
                             {selectedSupplierData.supplier.performance_tier && (
                               <Badge
-                                variant={selectedSupplierData.supplier.performance_tier === 'platinum' ? 'default' : 'outline'}
-                                className={selectedSupplierData.supplier.performance_tier === 'platinum'
-                                  ? 'bg-purple-100 text-purple-800 border-purple-300'
-                                  : ''
+                                variant={
+                                  selectedSupplierData.supplier.performance_tier === 'platinum'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                className={
+                                  selectedSupplierData.supplier.performance_tier === 'platinum'
+                                    ? 'border-purple-300 bg-purple-100 text-purple-800'
+                                    : ''
                                 }
                               >
-                                <Target className="h-3 w-3 mr-1" />
+                                <Target className="mr-1 h-3 w-3" />
                                 {selectedSupplierData.supplier.performance_tier?.toUpperCase()}
                               </Badge>
                             )}
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-6 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-2">
                             <Package className="h-4 w-4" />
                             <span>{selectedSupplierData.products.length} Products</span>
                           </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <span>{selectedSupplierData.totalItems} In Stock</span>
                           </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-2">
                             <BarChart3 className="h-4 w-4" />
                             <span>{selectedSupplierData.categories.length} Categories</span>
                           </div>
                         </div>
                         {selectedSupplierData.supplier.email && (
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-4 text-xs">
                             <div className="flex items-center gap-1">
                               <Mail className="h-3 w-3" />
                               <span>{selectedSupplierData.supplier.email}</span>
@@ -617,7 +665,7 @@ export default function SupplierInventoryView() {
                               className="hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                               aria-label={`View detailed information for ${selectedSupplierData.supplier.name}`}
                             >
-                              <Eye className="h-4 w-4 mr-2" aria-hidden="true" />
+                              <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                               Details
                             </Button>
                           </TooltipTrigger>
@@ -636,7 +684,7 @@ export default function SupplierInventoryView() {
                               className="hover:bg-green-50 focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
                               aria-label={`Edit supplier information for ${selectedSupplierData.supplier.name}`}
                             >
-                              <Edit className="h-4 w-4 mr-2" aria-hidden="true" />
+                              <Edit className="mr-2 h-4 w-4" aria-hidden="true" />
                               Edit
                             </Button>
                           </TooltipTrigger>
@@ -658,16 +706,16 @@ export default function SupplierInventoryView() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
-                            <ExternalLink className="h-4 w-4 mr-2" />
+                            <ExternalLink className="mr-2 h-4 w-4" />
                             Visit Website
                           </DropdownMenuItem>
                           <DropdownMenuItem>
-                            <FileText className="h-4 w-4 mr-2" />
+                            <FileText className="mr-2 h-4 w-4" />
                             View Contract
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem>
-                            <Settings className="h-4 w-4 mr-2" />
+                            <Settings className="mr-2 h-4 w-4" />
                             Supplier Settings
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -677,26 +725,23 @@ export default function SupplierInventoryView() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-4 gap-6">
-                    <div className="text-center p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
-                      <div className="flex items-center justify-center mb-2">
-                        <DollarSign className="h-6 w-6 text-green-600 mr-1" />
+                    <div className="rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4 text-center">
+                      <div className="mb-2 flex items-center justify-center">
+                        <DollarSign className="mr-1 h-6 w-6 text-green-600" />
                         <div className="text-2xl font-bold text-green-700">
                           {formatCurrency(selectedSupplierData.totalValue)}
                         </div>
                       </div>
                       <p className="text-sm font-medium text-green-600">Total Value</p>
                       <div className="mt-2">
-                        <Progress
-                          value={75}
-                          className="h-2 bg-green-100"
-                        />
-                        <p className="text-xs text-green-500 mt-1">+12% vs last month</p>
+                        <Progress value={75} className="h-2 bg-green-100" />
+                        <p className="mt-1 text-xs text-green-500">+12% vs last month</p>
                       </div>
                     </div>
 
-                    <div className="text-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
-                      <div className="flex items-center justify-center mb-2">
-                        <CheckCircle className="h-6 w-6 text-blue-600 mr-1" />
+                    <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 text-center">
+                      <div className="mb-2 flex items-center justify-center">
+                        <CheckCircle className="mr-1 h-6 w-6 text-blue-600" />
                         <div className="text-2xl font-bold text-blue-700">
                           {selectedSupplierData.totalItems}
                         </div>
@@ -704,18 +749,27 @@ export default function SupplierInventoryView() {
                       <p className="text-sm font-medium text-blue-600">Items in Stock</p>
                       <div className="mt-2">
                         <Progress
-                          value={(selectedSupplierData.totalItems / selectedSupplierData.products.length) * 100}
+                          value={
+                            (selectedSupplierData.totalItems /
+                              selectedSupplierData.products.length) *
+                            100
+                          }
                           className="h-2 bg-blue-100"
                         />
-                        <p className="text-xs text-blue-500 mt-1">
-                          {Math.round((selectedSupplierData.totalItems / selectedSupplierData.products.length) * 100)}% coverage
+                        <p className="mt-1 text-xs text-blue-500">
+                          {Math.round(
+                            (selectedSupplierData.totalItems /
+                              selectedSupplierData.products.length) *
+                              100
+                          )}
+                          % coverage
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
-                      <div className="flex items-center justify-center mb-2">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 mr-1" />
+                    <div className="rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 text-center">
+                      <div className="mb-2 flex items-center justify-center">
+                        <AlertTriangle className="mr-1 h-6 w-6 text-orange-600" />
                         <div className="text-2xl font-bold text-orange-700">
                           {selectedSupplierData.lowStockCount}
                         </div>
@@ -723,18 +777,21 @@ export default function SupplierInventoryView() {
                       <p className="text-sm font-medium text-orange-600">Low Stock</p>
                       <div className="mt-2">
                         <Progress
-                          value={(selectedSupplierData.lowStockCount / selectedSupplierData.totalItems) * 100}
+                          value={
+                            (selectedSupplierData.lowStockCount / selectedSupplierData.totalItems) *
+                            100
+                          }
                           className="h-2 bg-orange-100"
                         />
-                        <p className="text-xs text-orange-500 mt-1">
+                        <p className="mt-1 text-xs text-orange-500">
                           {selectedSupplierData.lowStockCount > 0 ? 'Needs attention' : 'All good'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-center p-4 rounded-lg bg-gradient-to-br from-red-50 to-pink-50 border border-red-200">
-                      <div className="flex items-center justify-center mb-2">
-                        <Package className="h-6 w-6 text-red-600 mr-1" />
+                    <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-4 text-center">
+                      <div className="mb-2 flex items-center justify-center">
+                        <Package className="mr-1 h-6 w-6 text-red-600" />
                         <div className="text-2xl font-bold text-red-700">
                           {selectedSupplierData.outOfStockCount}
                         </div>
@@ -745,7 +802,7 @@ export default function SupplierInventoryView() {
                           value={selectedSupplierData.outOfStockCount > 0 ? 100 : 0}
                           className="h-2 bg-red-100"
                         />
-                        <p className="text-xs text-red-500 mt-1">
+                        <p className="mt-1 text-xs text-red-500">
                           {selectedSupplierData.outOfStockCount > 0 ? 'Urgent action' : 'No issues'}
                         </p>
                       </div>
@@ -761,22 +818,23 @@ export default function SupplierInventoryView() {
                     {/* Search and Quick Actions */}
                     <div className="flex items-center gap-4">
                       <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                         <Input
                           placeholder="Search products, SKUs, or descriptions..."
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 pr-10 h-10 border-2 focus:border-primary transition-all"
+                          onChange={e => setSearchTerm(e.target.value)}
+                          className="focus:border-primary h-10 border-2 pr-10 pl-10 transition-all"
                           aria-label="Search products by name, SKU, or description"
                           aria-describedby="search-help"
                         />
                         <div id="search-help" className="sr-only">
-                          Search through all products for the selected supplier by name, SKU, or description
+                          Search through all products for the selected supplier by name, SKU, or
+                          description
                         </div>
                         {searchTerm && (
                           <button
                             onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transform"
                           >
                             ×
                           </button>
@@ -788,23 +846,31 @@ export default function SupplierInventoryView() {
                         <Button
                           variant={statusFilter === 'low_stock' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setStatusFilter(statusFilter === 'low_stock' ? 'all_statuses' : 'low_stock')}
+                          onClick={() =>
+                            setStatusFilter(
+                              statusFilter === 'low_stock' ? 'all_statuses' : 'low_stock'
+                            )
+                          }
                           className={statusFilter === 'low_stock' ? 'bg-orange-600' : ''}
                           aria-pressed={statusFilter === 'low_stock'}
                           aria-label="Filter products with low stock levels"
                         >
-                          <AlertTriangle className="h-3 w-3 mr-1" aria-hidden="true" />
+                          <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
                           Low Stock
                         </Button>
                         <Button
                           variant={statusFilter === 'out_of_stock' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setStatusFilter(statusFilter === 'out_of_stock' ? 'all_statuses' : 'out_of_stock')}
+                          onClick={() =>
+                            setStatusFilter(
+                              statusFilter === 'out_of_stock' ? 'all_statuses' : 'out_of_stock'
+                            )
+                          }
                           className={statusFilter === 'out_of_stock' ? 'bg-red-600' : ''}
                           aria-pressed={statusFilter === 'out_of_stock'}
                           aria-label="Filter products that are out of stock"
                         >
-                          <Package className="h-3 w-3 mr-1" aria-hidden="true" />
+                          <Package className="mr-1 h-3 w-3" aria-hidden="true" />
                           Out of Stock
                         </Button>
                       </div>
@@ -814,7 +880,7 @@ export default function SupplierInventoryView() {
                     <div className="flex items-center gap-4">
                       <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="w-56" aria-label="Filter by product category">
-                          <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
+                          <Filter className="mr-2 h-4 w-4" aria-hidden="true" />
                           <SelectValue placeholder="All categories" />
                         </SelectTrigger>
                         <SelectContent>
@@ -827,7 +893,7 @@ export default function SupplierInventoryView() {
                           {selectedSupplierData.categories.map(category => (
                             <SelectItem key={category} value={category}>
                               <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                <div className="h-2 w-2 rounded-full bg-blue-500" />
                                 {category.replace('_', ' ').toUpperCase()}
                               </div>
                             </SelectItem>
@@ -837,7 +903,7 @@ export default function SupplierInventoryView() {
 
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-48" aria-label="Filter by stock status">
-                          <Activity className="h-4 w-4 mr-2" aria-hidden="true" />
+                          <Activity className="mr-2 h-4 w-4" aria-hidden="true" />
                           <SelectValue placeholder="All statuses" />
                         </SelectTrigger>
                         <SelectContent>
@@ -872,28 +938,33 @@ export default function SupplierInventoryView() {
                       {selectedProducts.size > 0 && (
                         <Button
                           onClick={() => setShowAddToInventory(true)}
-                          className="whitespace-nowrap bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
+                          className="bg-gradient-to-r from-green-600 to-emerald-600 whitespace-nowrap shadow-lg hover:from-green-700 hover:to-emerald-700"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="mr-2 h-4 w-4" />
                           Add to Inventory ({selectedProducts.size})
                         </Button>
                       )}
                     </div>
 
                     {/* Results Summary */}
-                    {(searchTerm || categoryFilter !== 'all_categories' || statusFilter !== 'all_statuses') && (
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {(searchTerm ||
+                      categoryFilter !== 'all_categories' ||
+                      statusFilter !== 'all_statuses') && (
+                      <div className="flex items-center justify-between border-t pt-2">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
                           <Info className="h-4 w-4" />
-                          <span>Showing {filteredProducts.length} of {selectedSupplierData.products.length} products</span>
+                          <span>
+                            Showing {filteredProducts.length} of{' '}
+                            {selectedSupplierData.products.length} products
+                          </span>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setSearchTerm('')
-                            setCategoryFilter('all_categories')
-                            setStatusFilter('all_statuses')
+                            setSearchTerm('');
+                            setCategoryFilter('all_categories');
+                            setStatusFilter('all_statuses');
                           }}
                         >
                           Clear filters
@@ -917,8 +988,8 @@ export default function SupplierInventoryView() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">
-                      <span className="sr-only">Select</span>
-                    </TableHead>
+                          <span className="sr-only">Select</span>
+                        </TableHead>
                         <TableHead>Product</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Current Stock</TableHead>
@@ -926,47 +997,49 @@ export default function SupplierInventoryView() {
                         <TableHead className="text-right">Total Value</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-center">
-                      <span>Actions</span>
-                      <span className="sr-only">, sortable column</span>
-                    </TableHead>
+                          <span>Actions</span>
+                          <span className="sr-only">, sortable column</span>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProducts.map((product) => (
+                      {filteredProducts.map(product => (
                         <TableRow key={product.id}>
                           <TableCell>
                             <input
                               type="checkbox"
                               checked={selectedProducts.has(product.id)}
-                              onChange={(e) => {
-                                const newSelection = new Set(selectedProducts)
+                              onChange={e => {
+                                const newSelection = new Set(selectedProducts);
                                 if (e.target.checked) {
-                                  newSelection.add(product.id)
+                                  newSelection.add(product.id);
                                 } else {
-                                  newSelection.delete(product.id)
+                                  newSelection.delete(product.id);
                                 }
-                                setSelectedProducts(newSelection)
+                                setSelectedProducts(newSelection);
                               }}
-                              className="rounded focus:ring-2 focus:ring-primary focus:ring-offset-1"
+                              className="focus:ring-primary rounded focus:ring-2 focus:ring-offset-1"
                               aria-label={`Select product ${product.name}`}
                               aria-describedby={`product-${product.id}-details`}
                             />
                             <div id={`product-${product.id}-details`} className="sr-only">
-                              {product.name} - {product.stockStatus} - {product.inventoryItem ? `${product.inventoryItem.current_stock} ${product.unit_of_measure} in stock` : 'Not in inventory'}
+                              {product.name} - {product.stockStatus} -{' '}
+                              {product.inventoryItem
+                                ? `${product.inventoryItem.current_stock} ${product.unit_of_measure} in stock`
+                                : 'Not in inventory'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
                               <p className="font-medium">{product.name}</p>
                               {product.sku && (
-                                <code className="text-sm text-muted-foreground">{product.sku}</code>
+                                <code className="text-muted-foreground text-sm">{product.sku}</code>
                               )}
                               {product.description && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                   {product.description.length > 50
                                     ? `${product.description.substring(0, 50)}...`
-                                    : product.description
-                                  }
+                                    : product.description}
                                 </p>
                               )}
                             </div>
@@ -982,7 +1055,7 @@ export default function SupplierInventoryView() {
                                 <p className="font-medium">
                                   {product.inventoryItem.current_stock} {product.unit_of_measure}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-muted-foreground text-xs">
                                   Reorder: {product.inventoryItem.reorder_point}
                                 </p>
                               </div>
@@ -994,11 +1067,11 @@ export default function SupplierInventoryView() {
                             {formatCurrency(product.unit_cost_zar)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {product.totalStockValue ? formatCurrency(product.totalStockValue) : '-'}
+                            {product.totalStockValue
+                              ? formatCurrency(product.totalStockValue)
+                              : '-'}
                           </TableCell>
-                          <TableCell>
-                            {getStatusBadge(product.stockStatus || 'unknown')}
-                          </TableCell>
+                          <TableCell>{getStatusBadge(product.stockStatus || 'unknown')}</TableCell>
                           <TableCell className="text-center">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -1012,49 +1085,55 @@ export default function SupplierInventoryView() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
+                                  <Eye className="mr-2 h-4 w-4" />
                                   View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
+                                  <Edit className="mr-2 h-4 w-4" />
                                   Edit Product
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {product.inventoryItem ? (
                                   <DropdownMenuItem>
-                                    <BarChart3 className="h-4 w-4 mr-2" />
+                                    <BarChart3 className="mr-2 h-4 w-4" />
                                     Adjust Stock
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem>
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="mr-2 h-4 w-4" />
                                     Add to Inventory
                                   </DropdownMenuItem>
                                 )}
                                 {product.inventoryItem && (
                                   <>
                                     <DropdownMenuItem
-                                      onSelect={(event) => {
-                                        event.preventDefault()
-                                        handleAllocate(product.inventoryItem.id, selectedSupplierData.supplier.id)
+                                      onSelect={event => {
+                                        event.preventDefault();
+                                        handleAllocate(
+                                          product.inventoryItem.id,
+                                          selectedSupplierData.supplier.id
+                                        );
                                       }}
                                     >
-                                      <Upload className="h-4 w-4 mr-2" />
+                                      <Upload className="mr-2 h-4 w-4" />
                                       Allocate 1 Unit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onSelect={(event) => {
-                                        event.preventDefault()
-                                        handleDeallocate(product.inventoryItem.id, selectedSupplierData.supplier.id)
+                                      onSelect={event => {
+                                        event.preventDefault();
+                                        handleDeallocate(
+                                          product.inventoryItem.id,
+                                          selectedSupplierData.supplier.id
+                                        );
                                       }}
                                     >
-                                      <Download className="h-4 w-4 mr-2" />
+                                      <Download className="mr-2 h-4 w-4" />
                                       Deallocate 1 Unit
                                     </DropdownMenuItem>
                                   </>
                                 )}
                                 <DropdownMenuItem>
-                                  <ShoppingCart className="h-4 w-4 mr-2" />
+                                  <ShoppingCart className="mr-2 h-4 w-4" />
                                   Create Order
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -1068,54 +1147,56 @@ export default function SupplierInventoryView() {
               </Card>
             </div>
           ) : (
-            <Card className="lg:col-span-3 border-dashed border-2">
-              <CardContent className="flex items-center justify-center h-96">
-                <div className="text-center space-y-6">
+            <Card className="border-2 border-dashed lg:col-span-3">
+              <CardContent className="flex h-96 items-center justify-center">
+                <div className="space-y-6 text-center">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 animate-pulse" />
-                    <Building2 className="h-16 w-16 mx-auto text-muted-foreground relative z-10" />
+                    <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-blue-600 to-purple-600 opacity-20" />
+                    <Building2 className="text-muted-foreground relative z-10 mx-auto h-16 w-16" />
                   </div>
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold text-gray-900">Select a Supplier</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      Choose a supplier from the list on the left to view their complete inventory details,
-                      product catalog, and stock management information.
+                    <p className="text-muted-foreground mx-auto max-w-md">
+                      Choose a supplier from the list on the left to view their complete inventory
+                      details, product catalog, and stock management information.
                     </p>
                   </div>
-                  <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center justify-center gap-4 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full" />
+                      <div className="h-3 w-3 rounded-full bg-green-500" />
                       <span>In Stock</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full" />
+                      <div className="h-3 w-3 rounded-full bg-orange-500" />
                       <span>Low Stock</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full" />
+                      <div className="h-3 w-3 rounded-full bg-red-500" />
                       <span>Out of Stock</span>
                     </div>
                   </div>
 
                   {/* Quick Stats Preview */}
-                  <div className="grid grid-cols-3 gap-4 pt-6 border-t max-w-md mx-auto">
+                  <div className="mx-auto grid max-w-md grid-cols-3 gap-4 border-t pt-6">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">
                         {supplierInventoryData.length}
                       </div>
-                      <p className="text-xs text-muted-foreground">Suppliers</p>
+                      <p className="text-muted-foreground text-xs">Suppliers</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">
                         {supplierInventoryData.reduce((sum, data) => sum + data.totalItems, 0)}
                       </div>
-                      <p className="text-xs text-muted-foreground">Items in Stock</p>
+                      <p className="text-muted-foreground text-xs">Items in Stock</p>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {formatCurrency(supplierInventoryData.reduce((sum, data) => sum + data.totalValue, 0))}
+                        {formatCurrency(
+                          supplierInventoryData.reduce((sum, data) => sum + data.totalValue, 0)
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">Total Value</p>
+                      <p className="text-muted-foreground text-xs">Total Value</p>
                     </div>
                   </div>
                 </div>
@@ -1135,14 +1216,16 @@ export default function SupplierInventoryView() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Selected Products:</h4>
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h4 className="mb-2 font-medium">Selected Products:</h4>
               <ul className="space-y-1">
                 {Array.from(selectedProducts).map(productId => {
-                  const product = products.find(p => p.id === productId)
+                  const product = products.find(p => p.id === productId);
                   return product ? (
-                    <li key={productId} className="text-sm">{product.name}</li>
-                  ) : null
+                    <li key={productId} className="text-sm">
+                      {product.name}
+                    </li>
+                  ) : null;
                 })}
               </ul>
             </div>
@@ -1158,5 +1241,5 @@ export default function SupplierInventoryView() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

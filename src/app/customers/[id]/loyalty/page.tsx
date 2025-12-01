@@ -11,14 +11,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Award,
-  Gift,
-  History,
-  TrendingUp,
-  Users,
-  Package,
-} from 'lucide-react';
+import { Award, Gift, History, TrendingUp, Users, Package } from 'lucide-react';
 import {
   LoyaltyDashboard,
   TierProgressTracker,
@@ -48,7 +41,7 @@ function LoyaltyPortalContent({ customerId }: { customerId: string }) {
   const [currentPoints, setCurrentPoints] = useState(8500); // Will be fetched from API
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto space-y-6 py-6">
       {/* Page Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Loyalty Rewards</h1>
@@ -86,7 +79,7 @@ function LoyaltyPortalContent({ customerId }: { customerId: string }) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard" className="space-y-4 mt-6">
+        <TabsContent value="dashboard" className="mt-6 space-y-4">
           <LoyaltyDashboard
             customerId={customerId}
             onBrowseRewards={() => setActiveTab('rewards')}
@@ -94,26 +87,23 @@ function LoyaltyPortalContent({ customerId }: { customerId: string }) {
           />
         </TabsContent>
 
-        <TabsContent value="progress" className="space-y-4 mt-6">
+        <TabsContent value="progress" className="mt-6 space-y-4">
           <TierProgressTracker customerId={customerId} />
         </TabsContent>
 
-        <TabsContent value="rewards" className="space-y-4 mt-6">
-          <RewardCatalog
-            customerId={customerId}
-            currentPoints={currentPoints}
-          />
+        <TabsContent value="rewards" className="mt-6 space-y-4">
+          <RewardCatalog customerId={customerId} currentPoints={currentPoints} />
         </TabsContent>
 
-        <TabsContent value="transactions" className="space-y-4 mt-6">
+        <TabsContent value="transactions" className="mt-6 space-y-4">
           <TransactionHistory customerId={customerId} />
         </TabsContent>
 
-        <TabsContent value="redemptions" className="space-y-4 mt-6">
+        <TabsContent value="redemptions" className="mt-6 space-y-4">
           <RedemptionStatus customerId={customerId} />
         </TabsContent>
 
-        <TabsContent value="referrals" className="space-y-4 mt-6">
+        <TabsContent value="referrals" className="mt-6 space-y-4">
           <ReferralProgram customerId={customerId} />
         </TabsContent>
       </Tabs>

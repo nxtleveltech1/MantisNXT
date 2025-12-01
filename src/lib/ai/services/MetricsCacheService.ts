@@ -49,7 +49,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   async setCachedMetric(
     orgId: string,
     data: CacheMetricData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'cache.set',
@@ -76,7 +76,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
             data.timePeriod,
             data.periodStart,
             data.periodEnd,
-          ],
+          ]
         );
       },
       options,
@@ -84,7 +84,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         orgId,
         metricType: data.metricType,
         metricKey: data.metricKey,
-      },
+      }
     );
   }
 
@@ -95,7 +95,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     metricType: AnalyticsMetricType,
     metricKey: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<Record<string, unknown> | null>> {
     return this.executeOperation(
       'cache.get',
@@ -110,7 +110,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
           ORDER BY period_start DESC
           LIMIT 1
           `,
-          [orgId, metricType, metricKey],
+          [orgId, metricType, metricKey]
         );
 
         if (result.rows.length === 0) {
@@ -120,7 +120,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         return result.rows[0].metric_value || null;
       },
       options,
-      { orgId, metricType, metricKey },
+      { orgId, metricType, metricKey }
     );
   }
 
@@ -130,7 +130,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   async invalidateCache(
     orgId: string,
     metricType: AnalyticsMetricType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'cache.invalidate',
@@ -141,13 +141,13 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
           WHERE org_id = $1 AND metric_type = $2
           RETURNING id
           `,
-          [orgId, metricType],
+          [orgId, metricType]
         );
 
         return result.rows.length;
       },
       options,
-      { orgId, metricType },
+      { orgId, metricType }
     );
   }
 
@@ -158,7 +158,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     metricType: AnalyticsMetricType,
     period: TimePeriod,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<CachedMetric[]>> {
     return this.executeOperation(
       'cache.getByPeriod',
@@ -173,13 +173,13 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
           ORDER BY period_start DESC
           LIMIT 100
           `,
-          [orgId, metricType, period],
+          [orgId, metricType, period]
         );
 
-        return result.rows.map((row) => this.mapCachedMetricRow(row));
+        return result.rows.map(row => this.mapCachedMetricRow(row));
       },
       options,
-      { orgId, metricType, period },
+      { orgId, metricType, period }
     );
   }
 
@@ -188,7 +188,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
    */
   async getLatestMetrics(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<CachedMetric[]>> {
     return this.executeOperation(
       'cache.getLatest',
@@ -200,13 +200,13 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
           WHERE org_id = $1
           ORDER BY metric_type, metric_key, calculated_at DESC
           `,
-          [orgId],
+          [orgId]
         );
 
-        return result.rows.map((row) => this.mapCachedMetricRow(row));
+        return result.rows.map(row => this.mapCachedMetricRow(row));
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -215,7 +215,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
    */
   async cleanupOldCache(
     daysOld: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<number>> {
     return this.executeOperation(
       'cache.cleanup',
@@ -226,13 +226,13 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
           WHERE calculated_at < NOW() - INTERVAL '1 day' * $1
           RETURNING id
           `,
-          [daysOld],
+          [daysOld]
         );
 
         return result.rows.length;
       },
       options,
-      { daysOld },
+      { daysOld }
     );
   }
 
@@ -242,7 +242,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   async recalculateMetrics(
     orgId: string,
     metricTypes: AnalyticsMetricType[],
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'cache.recalculate',
@@ -254,7 +254,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
             DELETE FROM analytics_metric_cache
             WHERE org_id = $1 AND metric_type = $2
             `,
-            [orgId, metricType],
+            [orgId, metricType]
           );
         }
 
@@ -264,17 +264,14 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         }
       },
       options,
-      { orgId, metricTypes },
+      { orgId, metricTypes }
     );
   }
 
   /**
    * Calculate and cache a specific metric type
    */
-  private async calculateMetric(
-    orgId: string,
-    metricType: AnalyticsMetricType,
-  ): Promise<void> {
+  private async calculateMetric(orgId: string, metricType: AnalyticsMetricType): Promise<void> {
     const now = new Date();
     const periodStart = new Date(now);
     periodStart.setHours(0, 0, 0, 0);
@@ -326,7 +323,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         'daily',
         periodStart,
         periodEnd,
-      ],
+      ]
     );
   }
 
@@ -336,7 +333,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   private async calculateSalesMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
@@ -350,7 +347,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         AND created_at >= $2
         AND created_at <= $3
       `,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd]
     );
 
     const row = result.rows[0] || {};
@@ -365,9 +362,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   /**
    * Calculate inventory metrics
    */
-  private async calculateInventoryMetrics(
-    orgId: string,
-  ): Promise<Record<string, unknown>> {
+  private async calculateInventoryMetrics(orgId: string): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
       SELECT
@@ -378,7 +373,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
       FROM products
       WHERE org_id = $1
       `,
-      [orgId],
+      [orgId]
     );
 
     const row = result.rows[0] || {};
@@ -396,7 +391,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   private async calculateSupplierMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
@@ -411,7 +406,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
       WHERE s.org_id = $1
       GROUP BY s.org_id
       `,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd]
     );
 
     const row = result.rows[0] || {};
@@ -428,7 +423,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   private async calculateCustomerMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
@@ -440,7 +435,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
       FROM customers
       WHERE org_id = $1
       `,
-      [orgId, periodStart],
+      [orgId, periodStart]
     );
 
     const row = result.rows[0] || {};
@@ -456,7 +451,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   private async calculateFinancialMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<Record<string, unknown>> {
     // Placeholder - would integrate with actual financial data
     return {
@@ -473,7 +468,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   private async calculateOperationalMetrics(
     orgId: string,
     periodStart: Date,
-    periodEnd: Date,
+    periodEnd: Date
   ): Promise<Record<string, unknown>> {
     // Placeholder - would integrate with actual operational data
     return {

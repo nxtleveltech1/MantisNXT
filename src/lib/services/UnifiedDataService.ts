@@ -404,7 +404,10 @@ export class SupplierService {
       if (!orgId) {
         // Try environment variable
         const envOrgId = process.env.DEFAULT_ORG_ID;
-        if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+        if (
+          envOrgId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)
+        ) {
           orgId = envOrgId;
         } else {
           // Try database
@@ -647,7 +650,8 @@ export class InventoryService {
       }
 
       // For offset pagination, derive total from window function
-      const total = result.rows.length > 0 ? parseInt((result.rows[0] as unknown).total_count, 10) : 0;
+      const total =
+        result.rows.length > 0 ? parseInt((result.rows[0] as unknown).total_count, 10) : 0;
       const totalPages = Math.ceil(total / limit);
 
       return createSuccessResponse(

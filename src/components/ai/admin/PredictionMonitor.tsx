@@ -65,7 +65,12 @@ interface AccuracyStats {
 interface GeneratePredictionInput {
   entityType: 'product' | 'supplier' | 'category' | 'customer';
   entityId: string;
-  predictionType: 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels' | 'custom';
+  predictionType:
+    | 'inventory_demand'
+    | 'supplier_performance'
+    | 'price_trends'
+    | 'stock_levels'
+    | 'custom';
   forecastDays?: number;
 }
 
@@ -78,7 +83,11 @@ export default function PredictionMonitor() {
   const [endDate, setEndDate] = useState<string>('');
 
   // Fetch predictions with filters
-  const { data: predictionsData, isLoading, refetch: refetchPredictions } = useQuery({
+  const {
+    data: predictionsData,
+    isLoading,
+    refetch: refetchPredictions,
+  } = useQuery({
     queryKey: [
       'ai-predictions',
       serviceFilter,
@@ -114,22 +123,24 @@ export default function PredictionMonitor() {
       const response = await fetch('/api/v1/ai/predictions/accuracy');
       if (!response.ok) throw new Error('Failed to fetch accuracy stats');
       const result = await response.json();
-      return result.data || {
-        overall: {
-          totalPredictions: 0,
-          pendingPredictions: 0,
-          validatedPredictions: 0,
-          expiredPredictions: 0,
-          averageConfidence: 0,
-          averageAccuracy: 0,
-        },
-      };
+      return (
+        result.data || {
+          overall: {
+            totalPredictions: 0,
+            pendingPredictions: 0,
+            validatedPredictions: 0,
+            expiredPredictions: 0,
+            averageConfidence: 0,
+            averageAccuracy: 0,
+          },
+        }
+      );
     },
   });
 
   // Filter predictions by confidence range
   const filteredPredictions = predictions.filter(
-    (p) =>
+    p =>
       p.confidence_score * 100 >= confidenceRange[0] &&
       p.confidence_score * 100 <= confidenceRange[1]
   );
@@ -138,48 +149,42 @@ export default function PredictionMonitor() {
   const confidenceDistribution = [
     {
       range: '0-20%',
-      count: filteredPredictions.filter((p) => p.confidence_score < 0.2).length,
+      count: filteredPredictions.filter(p => p.confidence_score < 0.2).length,
     },
     {
       range: '20-40%',
-      count: filteredPredictions.filter(
-        (p) => p.confidence_score >= 0.2 && p.confidence_score < 0.4
-      ).length,
+      count: filteredPredictions.filter(p => p.confidence_score >= 0.2 && p.confidence_score < 0.4)
+        .length,
     },
     {
       range: '40-60%',
-      count: filteredPredictions.filter(
-        (p) => p.confidence_score >= 0.4 && p.confidence_score < 0.6
-      ).length,
+      count: filteredPredictions.filter(p => p.confidence_score >= 0.4 && p.confidence_score < 0.6)
+        .length,
     },
     {
       range: '60-80%',
-      count: filteredPredictions.filter(
-        (p) => p.confidence_score >= 0.6 && p.confidence_score < 0.8
-      ).length,
+      count: filteredPredictions.filter(p => p.confidence_score >= 0.6 && p.confidence_score < 0.8)
+        .length,
     },
     {
       range: '80-100%',
-      count: filteredPredictions.filter((p) => p.confidence_score >= 0.8).length,
+      count: filteredPredictions.filter(p => p.confidence_score >= 0.8).length,
     },
   ];
 
   // Get confidence badge color
   const getConfidenceBadge = (confidence: number) => {
     const percent = confidence * 100;
-    if (percent >= 80)
-      return <Badge className="bg-green-600">{percent.toFixed(1)}%</Badge>;
-    if (percent >= 60)
-      return <Badge className="bg-blue-600">{percent.toFixed(1)}%</Badge>;
-    if (percent >= 40)
-      return <Badge className="bg-yellow-600">{percent.toFixed(1)}%</Badge>;
+    if (percent >= 80) return <Badge className="bg-green-600">{percent.toFixed(1)}%</Badge>;
+    if (percent >= 60) return <Badge className="bg-blue-600">{percent.toFixed(1)}%</Badge>;
+    if (percent >= 40) return <Badge className="bg-yellow-600">{percent.toFixed(1)}%</Badge>;
     return <Badge variant="destructive">{percent.toFixed(1)}%</Badge>;
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -200,13 +205,11 @@ export default function PredictionMonitor() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Predictions</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {accuracyStats?.overall.totalPredictions || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">{accuracyStats?.overall.totalPredictions || 0}</div>
+            <p className="text-muted-foreground text-xs">
               {accuracyStats?.overall.pendingPredictions || 0} pending
             </p>
           </CardContent>
@@ -215,7 +218,7 @@ export default function PredictionMonitor() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Confidence</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -230,14 +233,14 @@ export default function PredictionMonitor() {
                   : 0}
               %
             </div>
-            <p className="text-xs text-muted-foreground">Prediction confidence</p>
+            <p className="text-muted-foreground text-xs">Prediction confidence</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Accuracy Rate</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <Target className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -246,7 +249,7 @@ export default function PredictionMonitor() {
                 : 0}
               %
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {accuracyStats?.overall.validatedPredictions || 0} validated
             </p>
           </CardContent>
@@ -294,12 +297,12 @@ export default function PredictionMonitor() {
 
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
           </div>
 
@@ -312,7 +315,7 @@ export default function PredictionMonitor() {
               max={100}
               step={5}
               value={confidenceRange}
-              onValueChange={(value) => setConfidenceRange(value as [number, number])}
+              onValueChange={value => setConfidenceRange(value as [number, number])}
               className="w-full"
             />
           </div>
@@ -360,12 +363,12 @@ export default function PredictionMonitor() {
             <TableBody>
               {filteredPredictions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-muted-foreground text-center">
                     No predictions found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredPredictions.map((prediction) => (
+                filteredPredictions.map(prediction => (
                   <TableRow key={prediction.id}>
                     <TableCell className="font-medium">
                       {prediction.service_type.replace(/_/g, ' ')}
@@ -373,7 +376,7 @@ export default function PredictionMonitor() {
                     <TableCell>
                       {prediction.entity_type}
                       <br />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {prediction.entity_id.slice(0, 8)}...
                       </span>
                     </TableCell>
@@ -431,66 +434,66 @@ export default function PredictionMonitor() {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Confidence</Label>
+                  <Label className="text-muted-foreground text-sm">Confidence</Label>
                   <div className="mt-1">
                     {getConfidenceBadge(selectedPrediction.confidence_score)}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Status</Label>
+                  <Label className="text-muted-foreground text-sm">Status</Label>
                   <div className="mt-1">
                     <Badge variant="outline">{selectedPrediction.status}</Badge>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Accuracy</Label>
+                  <Label className="text-muted-foreground text-sm">Accuracy</Label>
                   <div className="mt-1">
                     {selectedPrediction.accuracy_score ? (
                       <Badge className="bg-green-600">
                         {(selectedPrediction.accuracy_score * 100).toFixed(1)}%
                       </Badge>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Not validated</span>
+                      <span className="text-muted-foreground text-sm">Not validated</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Feedback Received</Label>
+                  <Label className="text-muted-foreground text-sm">Feedback Received</Label>
                   <div className="mt-1 text-sm">
                     {selectedPrediction.feedback_received ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Created</Label>
+                  <Label className="text-muted-foreground text-sm">Created</Label>
                   <div className="mt-1 text-sm">
                     {format(new Date(selectedPrediction.created_at), 'PPpp')}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Expires</Label>
+                  <Label className="text-muted-foreground text-sm">Expires</Label>
                   <div className="mt-1 text-sm">
                     {format(new Date(selectedPrediction.expires_at), 'PPpp')}
                   </div>
                 </div>
               </div>
               <div>
-                <Label className="text-sm text-muted-foreground">Prediction Data</Label>
-                <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-64">
+                <Label className="text-muted-foreground text-sm">Prediction Data</Label>
+                <pre className="bg-muted mt-1 max-h-64 overflow-auto rounded-md p-4 text-sm">
                   {JSON.stringify(selectedPrediction.prediction_data, null, 2)}
                 </pre>
               </div>
               {selectedPrediction.actual_outcome && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Actual Outcome</Label>
-                  <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-64">
+                  <Label className="text-muted-foreground text-sm">Actual Outcome</Label>
+                  <pre className="bg-muted mt-1 max-h-64 overflow-auto rounded-md p-4 text-sm">
                     {JSON.stringify(selectedPrediction.actual_outcome, null, 2)}
                   </pre>
                 </div>
               )}
               {selectedPrediction.metadata && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Metadata</Label>
-                  <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-64">
+                  <Label className="text-muted-foreground text-sm">Metadata</Label>
+                  <pre className="bg-muted mt-1 max-h-64 overflow-auto rounded-md p-4 text-sm">
                     {JSON.stringify(selectedPrediction.metadata, null, 2)}
                   </pre>
                 </div>

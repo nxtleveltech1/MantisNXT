@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import PredictionMonitor from "@/components/ai/admin/PredictionMonitor"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import PredictionMonitor from '@/components/ai/admin/PredictionMonitor';
 
 /**
  * AI Predictions Monitor Admin Page
@@ -13,12 +13,9 @@ import PredictionMonitor from "@/components/ai/admin/PredictionMonitor"
 export default function PredictionsPage() {
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Predictions" },
-      ]}
+      breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Predictions' }]}
     >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Prediction Monitor</h1>
           <p className="text-muted-foreground">
@@ -29,5 +26,5 @@ export default function PredictionsPage() {
         <PredictionMonitor />
       </div>
     </AppLayout>
-  )
+  );
 }

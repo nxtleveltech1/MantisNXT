@@ -325,4 +325,3 @@ export const logSystemEvent = auditLogger.logSystemEvent.bind(auditLogger);
 export const logSecurityEvent = auditLogger.logSecurityEvent.bind(auditLogger);
 export const queryAuditLogs = auditLogger.queryLogs.bind(auditLogger);
 export const getAuditStatistics = auditLogger.getStatistics.bind(auditLogger);
-

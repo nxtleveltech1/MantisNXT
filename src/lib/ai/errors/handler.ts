@@ -17,11 +17,12 @@ import {
 const ErrorMappings = {
   // Zod validation errors
   ZodError: (error: z.ZodError) => {
-    const issues = error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
-    return new ValidationError(
-      `Validation failed: ${issues}`,
-      { metadata: { zodIssues: error.issues } }
-    );
+    const issues = error.issues
+      .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+      .join(', ');
+    return new ValidationError(`Validation failed: ${issues}`, {
+      metadata: { zodIssues: error.issues },
+    });
   },
 
   // Database errors
@@ -187,32 +188,42 @@ export class ErrorHandler {
   formatForUser(error: AIError): string {
     // User-friendly messages based on error code
     const userMessages: Record<AIErrorCode, string> = {
-      [AIErrorCode.TOOL_EXECUTION_FAILED]: 'The requested operation could not be completed. Please try again.',
+      [AIErrorCode.TOOL_EXECUTION_FAILED]:
+        'The requested operation could not be completed. Please try again.',
       [AIErrorCode.TOOL_NOT_FOUND]: 'The requested tool is not available.',
       [AIErrorCode.TOOL_TIMEOUT]: 'The operation is taking longer than expected. Please try again.',
 
-      [AIErrorCode.PROVIDER_UNAVAILABLE]: 'The AI service is temporarily unavailable. Please try again in a moment.',
-      [AIErrorCode.PROVIDER_RATE_LIMITED]: 'Too many requests. Please wait a moment before trying again.',
-      [AIErrorCode.PROVIDER_AUTH_FAILED]: 'Authentication issue with the AI service. Please contact support.',
+      [AIErrorCode.PROVIDER_UNAVAILABLE]:
+        'The AI service is temporarily unavailable. Please try again in a moment.',
+      [AIErrorCode.PROVIDER_RATE_LIMITED]:
+        'Too many requests. Please wait a moment before trying again.',
+      [AIErrorCode.PROVIDER_AUTH_FAILED]:
+        'Authentication issue with the AI service. Please contact support.',
 
       [AIErrorCode.ACCESS_DENIED]: 'You do not have permission to perform this action.',
-      [AIErrorCode.PERMISSION_INSUFFICIENT]: 'You do not have sufficient permissions for this action.',
+      [AIErrorCode.PERMISSION_INSUFFICIENT]:
+        'You do not have sufficient permissions for this action.',
       [AIErrorCode.RESOURCE_NOT_FOUND]: 'The requested resource could not be found.',
 
       [AIErrorCode.SESSION_EXPIRED]: 'Your session has expired. Please refresh and try again.',
       [AIErrorCode.SESSION_INVALID]: 'Your session is invalid. Please log in again.',
       [AIErrorCode.CONTEXT_OVERFLOW]: 'The conversation is too long. Please start a new session.',
 
-      [AIErrorCode.VALIDATION_FAILED]: 'The provided information is not valid. Please check and try again.',
+      [AIErrorCode.VALIDATION_FAILED]:
+        'The provided information is not valid. Please check and try again.',
       [AIErrorCode.SCHEMA_MISMATCH]: 'The data format is incorrect. Please check your input.',
       [AIErrorCode.INVALID_INPUT]: 'The provided input is not valid. Please check and try again.',
 
-      [AIErrorCode.INTERNAL_ERROR]: 'An unexpected error occurred. Please try again or contact support.',
+      [AIErrorCode.INTERNAL_ERROR]:
+        'An unexpected error occurred. Please try again or contact support.',
       [AIErrorCode.DATABASE_ERROR]: 'A data storage issue occurred. Please try again.',
-      [AIErrorCode.NETWORK_ERROR]: 'Network connection issue. Please check your connection and try again.',
+      [AIErrorCode.NETWORK_ERROR]:
+        'Network connection issue. Please check your connection and try again.',
     };
 
-    return userMessages[error.code] || error.suggestedAction || 'An error occurred. Please try again.';
+    return (
+      userMessages[error.code] || error.suggestedAction || 'An error occurred. Please try again.'
+    );
   }
 
   /**

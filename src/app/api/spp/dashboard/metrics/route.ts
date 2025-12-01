@@ -1,13 +1,12 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/database";
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 
 export async function GET() {
   try {
-    const [suppliers, supplierProducts, activeSelection, stockAgg] =
-      await Promise.all([
-        query<{ cnt: string }>("SELECT COUNT(*) AS cnt FROM core.supplier"),
-        query<{ cnt: string }>("SELECT COUNT(*) AS cnt FROM core.supplier_product"),
-        query<{ selection_id: string; selection_name: string; item_count: string }>(`
+    const [suppliers, supplierProducts, activeSelection, stockAgg] = await Promise.all([
+      query<{ cnt: string }>('SELECT COUNT(*) AS cnt FROM core.supplier'),
+      query<{ cnt: string }>('SELECT COUNT(*) AS cnt FROM core.supplier_product'),
+      query<{ selection_id: string; selection_name: string; item_count: string }>(`
           SELECT sel.selection_id, sel.selection_name, COALESCE(items.cnt, 0) AS item_count
           FROM core.inventory_selection sel
           LEFT JOIN LATERAL (
@@ -18,16 +17,18 @@ export async function GET() {
           WHERE sel.status = 'active'
           LIMIT 1
         `),
-        query<{ records: string; total_value: string }>("SELECT COUNT(*) AS records, COALESCE(SUM(total_value), 0) AS total_value FROM core.stock_on_hand"),
-      ]);
+      query<{ records: string; total_value: string }>(
+        'SELECT COUNT(*) AS records, COALESCE(SUM(total_value), 0) AS total_value FROM core.stock_on_hand'
+      ),
+    ]);
 
-    const totalSuppliers = parseInt(suppliers.rows[0]?.cnt || "0", 10);
-    const totalProducts = parseInt(supplierProducts.rows[0]?.cnt || "0", 10);
+    const totalSuppliers = parseInt(suppliers.rows[0]?.cnt || '0', 10);
+    const totalProducts = parseInt(supplierProducts.rows[0]?.cnt || '0', 10);
     const selectedProducts = activeSelection.rows.length
-      ? parseInt(activeSelection.rows[0].item_count || "0", 10)
+      ? parseInt(activeSelection.rows[0].item_count || '0', 10)
       : 0;
-    const stockRecords = parseInt(stockAgg.rows[0]?.records || "0", 10);
-    const totalValue = parseFloat(stockAgg.rows[0]?.total_value || "0");
+    const stockRecords = parseInt(stockAgg.rows[0]?.records || '0', 10);
+    const totalValue = parseFloat(stockAgg.rows[0]?.total_value || '0');
 
     return NextResponse.json({
       success: true,
@@ -63,12 +64,12 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("[API] /api/spp/dashboard/metrics error:", error);
+    console.error('[API] /api/spp/dashboard/metrics error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch dashboard metrics",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to fetch dashboard metrics',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

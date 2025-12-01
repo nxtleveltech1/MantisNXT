@@ -18,7 +18,12 @@ import { mark } from './metrics';
 import { CLIProviderClient, CLIProviderExecutor } from '@/lib/ai/cli-provider';
 
 const DEFAULT_TIMEOUT_MS = 3000; // 3s default for fast responses with parallel processing
-const CLI_NOT_FOUND_PATTERNS = ['ENOENT', 'not found', 'not recognized', 'No such file or directory'];
+const CLI_NOT_FOUND_PATTERNS = [
+  'ENOENT',
+  'not found',
+  'not recognized',
+  'No such file or directory',
+];
 const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
 const hasValidApiKey = (provider: ProviderConfig): boolean => {
@@ -261,8 +266,8 @@ Return ONLY valid JSON matching this schema:
         cliCommand === 'codex'
           ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
           : cliCommand === 'gemini'
-          ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
-          : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
+            ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
+            : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
       throw new Error(
         `CLI command '${cliCommand}' is not installed or not available in PATH. ${installationHint} ` +
           `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
@@ -362,9 +367,9 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
   if (!providerHasApiKey) {
     throw new Error(
       'API key is required for OpenAI API mode. ' +
-      (provider.useCLI 
-        ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
-        : 'Please provide an API key or enable CLI mode.')
+        (provider.useCLI
+          ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
+          : 'Please provide an API key or enable CLI mode.')
     );
   }
 
@@ -515,8 +520,8 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
         cliCommand === 'codex'
           ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
           : cliCommand === 'gemini'
-          ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
-          : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
+            ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
+            : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
 
       throw new Error(
         `CLI command '${cliCommand}' is not installed or not available in PATH. ${installationHint} ` +
@@ -581,12 +586,12 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
     if (!providerHasApiKey) {
       throw new Error(
         'API key is required for Anthropic API mode. ' +
-        (provider.useCLI 
-          ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
-          : 'Please provide an API key or enable CLI mode.')
+          (provider.useCLI
+            ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
+            : 'Please provide an API key or enable CLI mode.')
       );
     }
-    
+
     const anthropic = createAnthropic({
       apiKey: provider.apiKey,
       ...(provider.baseUrl ? { baseURL: provider.baseUrl } : {}),
@@ -623,9 +628,9 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
   if (!providerHasApiKey) {
     throw new Error(
       'API key is required for OpenAI API mode. ' +
-      (provider.useCLI 
-        ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
-        : 'Please provide an API key or enable CLI mode.')
+        (provider.useCLI
+          ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
+          : 'Please provide an API key or enable CLI mode.')
     );
   }
 

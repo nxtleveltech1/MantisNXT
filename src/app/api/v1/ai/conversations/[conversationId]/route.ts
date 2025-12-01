@@ -19,7 +19,7 @@ import { conversationService } from '@/lib/ai/services/conversation-service';
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ conversationId: string }> },
+  context: { params: Promise<{ conversationId: string }> }
 ) {
   try {
     const { conversationId } = await context.params;
@@ -35,7 +35,7 @@ export async function GET(
       orgId,
       userId,
       conversationId,
-      limit,
+      limit
     );
 
     // Get conversation context
@@ -53,7 +53,7 @@ export async function GET(
         limit: limit || messages.length,
         total: messages.length,
         hasMore: false,
-      },
+      }
     );
   } catch (error) {
     return handleAIError(error);
@@ -66,7 +66,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ conversationId: string }> },
+  context: { params: Promise<{ conversationId: string }> }
 ) {
   try {
     const { conversationId } = await context.params;
@@ -82,7 +82,7 @@ export async function DELETE(
       },
       {
         total: deletedCount,
-      },
+      }
     );
   } catch (error) {
     return handleAIError(error);

@@ -8,14 +8,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for tier configuration
 const tierConfigSchema = z.object({
@@ -48,7 +44,6 @@ export async function GET(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // const result = await LoyaltyProgramService.getTierConfig(
@@ -106,7 +101,6 @@ export async function PATCH(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // Parse and validate body
     const body = await request.json();

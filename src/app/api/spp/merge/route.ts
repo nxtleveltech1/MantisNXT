@@ -5,9 +5,9 @@
  * instead of re-processing the file.
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-import type { NextRequest} from 'next/server';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query, withTransaction } from '@/lib/database';
@@ -15,7 +15,7 @@ import { ExtractionCache } from '@/lib/services/ExtractionCache';
 
 const MergeRequestSchema = z.object({
   upload_id: z.string().uuid(),
-  skip_invalid_rows: z.boolean().optional()
+  skip_invalid_rows: z.boolean().optional(),
 });
 
 const extractionCache = new ExtractionCache();
@@ -29,16 +29,21 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
     } catch (error) {
-      console.warn('SPP merge: falling back to query params because body could not be parsed.', error);
+      console.warn(
+        'SPP merge: falling back to query params because body could not be parsed.',
+        error
+      );
     }
     const parsed = MergeRequestSchema.safeParse({
       upload_id: body?.upload_id || qpUploadId,
-      skip_invalid_rows: typeof body?.skip_invalid_rows === 'boolean'
-        ? body.skip_invalid_rows
-        : qpSkip === 'true'
+      skip_invalid_rows:
+        typeof body?.skip_invalid_rows === 'boolean' ? body.skip_invalid_rows : qpSkip === 'true',
     });
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: 'Invalid request', details: parsed.error.issues }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid request', details: parsed.error.issues },
+        { status: 400 }
+      );
     }
     const { upload_id, skip_invalid_rows } = parsed.data;
 
@@ -49,10 +54,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (uploadResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Upload not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Upload not found' }, { status: 404 });
     }
 
     const { validation_job_id, supplier_id } = uploadResult.rows[0];
@@ -69,7 +71,10 @@ export async function POST(request: NextRequest) {
 
     if (!extractionResult) {
       return NextResponse.json(
-        { success: false, error: 'Extraction results not found or expired. Please re-validate the upload.' },
+        {
+          success: false,
+          error: 'Extraction results not found or expired. Please re-validate the upload.',
+        },
         { status: 410 }
       );
     }
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
       : extractionResult.products;
 
     // Perform merge in transaction
-    const mergeResult = await withTransaction(async (client) => {
+    const mergeResult = await withTransaction(async client => {
       let products_created = 0;
       let products_updated = 0;
       let prices_updated = 0;
@@ -114,7 +119,7 @@ export async function POST(request: NextRequest) {
                 product.vat_code,
                 product.min_order_qty,
                 product.lead_time_days,
-                supplier_product_id
+                supplier_product_id,
               ]
             );
 
@@ -129,7 +134,6 @@ export async function POST(request: NextRequest) {
             );
 
             prices_updated++;
-
           } else {
             // Create new product
             const newProduct = await client.query(
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest) {
                 product.barcode,
                 product.vat_code,
                 product.min_order_qty,
-                product.lead_time_days
+                product.lead_time_days,
               ]
             );
 
@@ -183,15 +187,14 @@ export async function POST(request: NextRequest) {
         products_updated,
         prices_updated,
         total_processed: productsToMerge.length,
-        errors
+        errors,
       };
     });
 
     return NextResponse.json({
       success: true,
-      data: mergeResult
+      data: mergeResult,
     });
-
   } catch (error) {
     console.error('Merge error:', error);
 
@@ -200,7 +203,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid request',
-          details: error.issues
+          details: error.issues,
         },
         { status: 400 }
       );
@@ -209,7 +212,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Merge failed'
+        error: error instanceof Error ? error.message : 'Merge failed',
       },
       { status: 500 }
     );

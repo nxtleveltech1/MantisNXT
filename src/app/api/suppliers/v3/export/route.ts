@@ -3,20 +3,20 @@
  * Replaces broken export functionality with working backend implementation
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
-import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
-import { SupplierExportService } from '@/lib/suppliers/services/SupplierExportService'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository';
+import { SupplierExportService } from '@/lib/suppliers/services/SupplierExportService';
 import type {
   SupplierFilters,
   ExportRequest,
-  APIResponse
-} from '@/lib/suppliers/types/SupplierDomain'
+  APIResponse,
+} from '@/lib/suppliers/types/SupplierDomain';
 
 // Initialize services
-const repository = new PostgreSQLSupplierRepository()
-const exportService = new SupplierExportService(repository)
+const repository = new PostgreSQLSupplierRepository();
+const exportService = new SupplierExportService(repository);
 
 // Validation Schema
 const ExportRequestSchema = z.object({
@@ -24,18 +24,20 @@ const ExportRequestSchema = z.object({
   template: z.enum(['basic', 'detailed', 'performance', 'compliance']).default('basic'),
 
   // Filter options
-  filters: z.object({
-    search: z.string().optional(),
-    status: z.array(z.enum(['active', 'inactive', 'pending', 'suspended'])).optional(),
-    tier: z.array(z.enum(['strategic', 'preferred', 'approved', 'conditional'])).optional(),
-    category: z.array(z.string()).optional(),
-    tags: z.array(z.string()).optional(),
-    country: z.array(z.string()).optional(),
-    minRating: z.number().min(0).max(5).optional(),
-    maxRating: z.number().min(0).max(5).optional(),
-    createdAfter: z.string().datetime().optional(),
-    createdBefore: z.string().datetime().optional()
-  }).default({}),
+  filters: z
+    .object({
+      search: z.string().optional(),
+      status: z.array(z.enum(['active', 'inactive', 'pending', 'suspended'])).optional(),
+      tier: z.array(z.enum(['strategic', 'preferred', 'approved', 'conditional'])).optional(),
+      category: z.array(z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+      country: z.array(z.string()).optional(),
+      minRating: z.number().min(0).max(5).optional(),
+      maxRating: z.number().min(0).max(5).optional(),
+      createdAfter: z.string().datetime().optional(),
+      createdBefore: z.string().datetime().optional(),
+    })
+    .default({}),
 
   // Include options
   includePerformance: z.boolean().default(false),
@@ -44,50 +46,54 @@ const ExportRequestSchema = z.object({
 
   // Metadata
   title: z.string().optional(),
-  description: z.string().optional()
-})
+  description: z.string().optional(),
+});
 
 function createErrorResponse(message: string, status: number = 400): NextResponse {
   const response: APIResponse<null> = {
     success: false,
     data: null,
     error: message,
-    timestamp: new Date().toISOString()
-  }
+    timestamp: new Date().toISOString(),
+  };
 
-  return NextResponse.json(response, { status })
+  return NextResponse.json(response, { status });
 }
 
 // POST /api/suppliers/v3/export - Export suppliers
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    const validationResult = ExportRequestSchema.safeParse(body)
+    const validationResult = ExportRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return createErrorResponse(
         `Validation failed: ${validationResult.error.issues.map(e => e.message).join(', ')}`
-      )
+      );
     }
 
-    const parsed = validationResult.data
+    const parsed = validationResult.data;
     const exportRequest: ExportRequest = {
       format: parsed.format,
       template: parsed.template,
       filters: {
         ...parsed.filters,
-        createdAfter: parsed.filters.createdAfter ? new Date(parsed.filters.createdAfter) : undefined,
-        createdBefore: parsed.filters.createdBefore ? new Date(parsed.filters.createdBefore) : undefined
+        createdAfter: parsed.filters.createdAfter
+          ? new Date(parsed.filters.createdAfter)
+          : undefined,
+        createdBefore: parsed.filters.createdBefore
+          ? new Date(parsed.filters.createdBefore)
+          : undefined,
       },
       includePerformance: parsed.includePerformance,
       includeContacts: parsed.includeContacts,
       includeAddresses: parsed.includeAddresses,
       title: parsed.title,
-      description: parsed.description
-    }
+      description: parsed.description,
+    };
 
-    const exportResult = await exportService.exportSuppliers(exportRequest)
-    const payload = new Uint8Array(exportResult.data)
+    const exportResult = await exportService.exportSuppliers(exportRequest);
+    const payload = new Uint8Array(exportResult.data);
 
     // Return file as download
     return new NextResponse(payload, {
@@ -97,44 +103,46 @@ export async function POST(request: NextRequest) {
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,
         'Content-Length': exportResult.size.toString(),
         'X-Export-Record-Count': exportResult.recordCount.toString(),
-        'X-Export-Timestamp': new Date().toISOString()
-      }
-    })
+        'X-Export-Timestamp': new Date().toISOString(),
+      },
+    });
   } catch (error) {
-    console.error('Error exporting suppliers:', error)
+    console.error('Error exporting suppliers:', error);
     return createErrorResponse(
       `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       500
-    )
+    );
   }
 }
 
 // GET /api/suppliers/v3/export - Quick export with query parameters
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     // Parse query parameters
-    const format = searchParams.get('format') as 'csv' | 'excel' | 'pdf' | 'json' || 'csv'
-    const template = searchParams.get('template') as 'basic' | 'detailed' | 'performance' | 'compliance' || 'basic'
+    const format = (searchParams.get('format') as 'csv' | 'excel' | 'pdf' | 'json') || 'csv';
+    const template =
+      (searchParams.get('template') as 'basic' | 'detailed' | 'performance' | 'compliance') ||
+      'basic';
 
     // Build filters from query params
-    const filters: SupplierFilters = {}
+    const filters: SupplierFilters = {};
 
     if (searchParams.get('search')) {
-      filters.search = searchParams.get('search') || ''
+      filters.search = searchParams.get('search') || '';
     }
     if (searchParams.get('status')) {
-      const statusParam = searchParams.get('status')
-      filters.status = statusParam ? statusParam.split(',') as unknown : []
+      const statusParam = searchParams.get('status');
+      filters.status = statusParam ? (statusParam.split(',') as unknown) : [];
     }
     if (searchParams.get('tier')) {
-      const tierParam = searchParams.get('tier')
-      filters.tier = tierParam ? tierParam.split(',') as unknown : []
+      const tierParam = searchParams.get('tier');
+      filters.tier = tierParam ? (tierParam.split(',') as unknown) : [];
     }
     if (searchParams.get('category')) {
-      const categoryParam = searchParams.get('category')
-      filters.category = categoryParam ? categoryParam.split(',') : []
+      const categoryParam = searchParams.get('category');
+      filters.category = categoryParam ? categoryParam.split(',') : [];
     }
 
     const exportRequest: ExportRequest = {
@@ -143,11 +151,11 @@ export async function GET(request: NextRequest) {
       filters,
       includePerformance: searchParams.get('includePerformance') === 'true',
       includeContacts: searchParams.get('includeContacts') === 'true',
-      includeAddresses: searchParams.get('includeAddresses') === 'true'
-    }
+      includeAddresses: searchParams.get('includeAddresses') === 'true',
+    };
 
-    const exportResult = await exportService.exportSuppliers(exportRequest)
-    const payload = new Uint8Array(exportResult.data)
+    const exportResult = await exportService.exportSuppliers(exportRequest);
+    const payload = new Uint8Array(exportResult.data);
 
     return new NextResponse(payload, {
       status: 200,
@@ -155,14 +163,14 @@ export async function GET(request: NextRequest) {
         'Content-Type': exportResult.mimeType,
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,
         'Content-Length': exportResult.size.toString(),
-        'X-Export-Record-Count': exportResult.recordCount.toString()
-      }
-    })
+        'X-Export-Record-Count': exportResult.recordCount.toString(),
+      },
+    });
   } catch (error) {
-    console.error('Error in quick export:', error)
+    console.error('Error in quick export:', error);
     return createErrorResponse(
       `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       500
-    )
+    );
   }
 }

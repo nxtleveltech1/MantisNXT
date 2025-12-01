@@ -10,7 +10,12 @@ import { dataExtractor } from './extractors';
 import { dataProcessor } from './processor';
 import { supplierCache } from './cache';
 import { DISCOVERY_CONFIG } from './config';
-import type { SupplierScore, SupplierRiskAssessment, SupplierPerformancePrediction, SupplierComparison } from './ai-analytics';
+import type {
+  SupplierScore,
+  SupplierRiskAssessment,
+  SupplierPerformancePrediction,
+  SupplierComparison,
+} from './ai-analytics';
 import { supplierAIAnalytics } from './ai-analytics';
 
 export class SupplierDiscoveryEngine {
@@ -159,12 +164,12 @@ export class SupplierDiscoveryEngine {
       const batchPromises = batch.map(request =>
         this.discoverSupplier(request).catch(
           error =>
-            (({
+            ({
               success: false,
               error: error.message,
               processingTime: 0,
-              sourcesUsed: []
-            }) as SupplierDiscoveryResponse)
+              sourcesUsed: [],
+            }) as SupplierDiscoveryResponse
         )
       );
 
@@ -337,7 +342,11 @@ export class SupplierDiscoveryEngine {
    */
   async predictSupplierPerformance(
     supplierId: number,
-    predictionType: 'on_time_delivery' | 'quality_score' | 'cost_trend' | 'order_volume' = 'on_time_delivery',
+    predictionType:
+      | 'on_time_delivery'
+      | 'quality_score'
+      | 'cost_trend'
+      | 'order_volume' = 'on_time_delivery',
     forecastDays: number = 30
   ): Promise<SupplierPerformancePrediction> {
     console.log(`Discovery Engine: Predicting ${predictionType} for supplier ${supplierId}`);
@@ -401,13 +410,16 @@ export class SupplierDiscoveryEngine {
       // Generate overall recommendation
       let recommendation: string;
       if (overallHealth === 'excellent') {
-        recommendation = 'Preferred supplier - maintain strong relationship and consider expanding partnership';
+        recommendation =
+          'Preferred supplier - maintain strong relationship and consider expanding partnership';
       } else if (overallHealth === 'good') {
-        recommendation = 'Reliable supplier - continue monitoring performance and address minor issues';
+        recommendation =
+          'Reliable supplier - continue monitoring performance and address minor issues';
       } else if (overallHealth === 'fair') {
         recommendation = 'Secondary supplier - monitor closely and develop improvement plan';
       } else {
-        recommendation = 'High-risk supplier - consider alternative suppliers and implement strict oversight';
+        recommendation =
+          'High-risk supplier - consider alternative suppliers and implement strict oversight';
       }
 
       // Collect urgent actions
@@ -441,7 +453,9 @@ export class SupplierDiscoveryEngine {
       };
     } catch (error) {
       console.error('Discovery Engine: Failed to get AI insights:', error);
-      throw new Error(`Failed to get supplier insights: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get supplier insights: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

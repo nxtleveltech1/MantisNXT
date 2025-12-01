@@ -1,10 +1,10 @@
 /**
  * Firecrawl Web Scraping Service
- * 
+ *
  * Note: Firecrawl is NOT an LLM provider - it's a web scraping/crawling service.
  * This service provides web scraping capabilities that can be used to extract
  * content before sending to AI providers for analysis.
- * 
+ *
  * API Documentation: https://docs.firecrawl.dev
  */
 
@@ -247,7 +247,9 @@ export class FirecrawlService {
 /**
  * Create a Firecrawl service instance from environment variables or config
  */
-export function createFirecrawlService(config?: { apiKey?: string; baseUrl?: string }): FirecrawlService {
+export function createFirecrawlService(config?: {
+  apiKey?: string;
+  baseUrl?: string;
+}): FirecrawlService {
   return new FirecrawlService(config);
 }
-

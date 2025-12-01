@@ -128,7 +128,12 @@ class SyncOrchestrator {
     }
 
     sync.batches.push(batchResult);
-    this.progressTracker.update(syncId, batchResult.created, batchResult.updated, batchResult.failed);
+    this.progressTracker.update(
+      syncId,
+      batchResult.created,
+      batchResult.updated,
+      batchResult.failed
+    );
 
     return batchResult;
   }
@@ -193,7 +198,7 @@ class SyncOrchestrator {
   async syncWithIdempotency(syncId: string, config: any) {
     // Check if sync with same idempotency key already exists
     const existing = Array.from(this.syncs.values()).find(
-      (s) => s.idempotencyKey === config.idempotencyKey && s.state !== 'draft'
+      s => s.idempotencyKey === config.idempotencyKey && s.state !== 'draft'
     );
 
     if (existing) {
@@ -238,7 +243,12 @@ describe('SyncOrchestrator', () => {
     mockWooService = createMockWooCommerceService();
     mockOdooService = createMockOdooService();
     mockProgressTracker = createMockSyncProgressTracker();
-    orchestrator = new SyncOrchestrator(mockDb, mockWooService, mockOdooService, mockProgressTracker);
+    orchestrator = new SyncOrchestrator(
+      mockDb,
+      mockWooService,
+      mockOdooService,
+      mockProgressTracker
+    );
   });
 
   afterEach(() => {
@@ -311,7 +321,7 @@ describe('SyncOrchestrator', () => {
       const syncBefore = orchestrator.getSync(syncId);
       const timeBefore = syncBefore.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       await orchestrator.transitionState(syncId, 'queued');
       const syncAfter = orchestrator.getSync(syncId);
@@ -350,7 +360,11 @@ describe('SyncOrchestrator', () => {
 
       for (let i = 0; i < allItems.length; i += batchSize) {
         const batch = allItems.slice(i, i + batchSize);
-        const result = await orchestrator.processBatch(syncId, Math.floor(i / batchSize) + 1, batch);
+        const result = await orchestrator.processBatch(
+          syncId,
+          Math.floor(i / batchSize) + 1,
+          batch
+        );
 
         totalCreated += result.created;
         totalUpdated += result.updated;
@@ -566,7 +580,9 @@ describe('SyncOrchestrator', () => {
       const summary = await orchestrator.completeSync(syncId);
 
       expect(summary.totalBatches).toBe(2);
-      expect(summary.totalCreated + summary.totalUpdated + summary.totalFailed).toBeGreaterThanOrEqual(0);
+      expect(
+        summary.totalCreated + summary.totalUpdated + summary.totalFailed
+      ).toBeGreaterThanOrEqual(0);
     });
   });
 

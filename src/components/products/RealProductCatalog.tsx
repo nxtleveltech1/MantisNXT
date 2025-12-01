@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -20,20 +20,20 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   Search,
   SortAsc,
@@ -47,62 +47,62 @@ import {
   Download,
   Grid3X3,
   List,
-  Loader2
-} from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
+  Loader2,
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCatalogItem {
-  id: string
-  sku: string
-  name: string
-  description: string
-  price: number
-  currency: string
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
   supplier: {
-    id: string
-    name: string
-  }
+    id: string;
+    name: string;
+  };
   pricelist: {
-    id: string
-    name: string
-    validFrom: string
-    validTo: string | null
-  }
-  category?: string
-  brand?: string
-  inStock: boolean
-  lastUpdated: string
+    id: string;
+    name: string;
+    validFrom: string;
+    validTo: string | null;
+  };
+  category?: string;
+  brand?: string;
+  inStock: boolean;
+  lastUpdated: string;
 }
 
 interface CatalogResponse {
-  products: ProductCatalogItem[]
+  products: ProductCatalogItem[];
   pagination: {
-    total: number
-    limit: number
-    offset: number
-    hasMore: boolean
-  }
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
   filters: {
     priceRange: {
-      min: number
-      max: number
-      average: number
-    }
-  }
+      min: number;
+      max: number;
+      average: number;
+    };
+  };
   metadata: {
-    lastUpdated: string
-    dataSource: string
-    totalValue: number
-  }
+    lastUpdated: string;
+    dataSource: string;
+    totalValue: number;
+  };
 }
 
 interface CatalogFilters {
-  search: string
-  supplier: string
-  priceRange: string
-  sortBy: string
-  sortOrder: 'asc' | 'desc'
+  search: string;
+  supplier: string;
+  priceRange: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
 
 const INITIAL_FILTERS: CatalogFilters = {
@@ -110,143 +110,157 @@ const INITIAL_FILTERS: CatalogFilters = {
   supplier: '',
   priceRange: '',
   sortBy: 'name',
-  sortOrder: 'asc'
-}
+  sortOrder: 'asc',
+};
 
-const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
-const ANY_PRICE_VALUE = '__any-price__'
+const ALL_SUPPLIERS_VALUE = '__all-suppliers__';
+const ANY_PRICE_VALUE = '__any-price__';
 
 export default function RealProductCatalog() {
-  const { toast } = useToast()
-  const [products, setProducts] = useState<ProductCatalogItem[]>([])
-  const [suppliers, setSuppliers] = useState<{id: string, name: string}[]>([])
-  const [filters, setFilters] = useState<CatalogFilters>(INITIAL_FILTERS)
+  const { toast } = useToast();
+  const [products, setProducts] = useState<ProductCatalogItem[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
+  const [filters, setFilters] = useState<CatalogFilters>(INITIAL_FILTERS);
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 20,
     offset: 0,
-    hasMore: false
-  })
+    hasMore: false,
+  });
   const [metadata, setMetadata] = useState({
     lastUpdated: '',
     dataSource: '',
     totalValue: 0,
-    priceRange: { min: 0, max: 0, average: 0 }
-  })
-  const [selectedProduct, setSelectedProduct] = useState<ProductCatalogItem | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+    priceRange: { min: 0, max: 0, average: 0 },
+  });
+  const [selectedProduct, setSelectedProduct] = useState<ProductCatalogItem | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
-  const fetchProducts = useCallback(async (resetOffset = false) => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const searchParams = new URLSearchParams({
-        limit: pagination.limit.toString(),
-        offset: resetOffset ? '0' : pagination.offset.toString(),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.supplier && { supplier: filters.supplier }),
-        ...(filters.priceRange && { priceRange: filters.priceRange }),
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
-      })
+  const fetchProducts = useCallback(
+    async (resetOffset = false) => {
+      setLoading(true);
+      setError(null);
 
-      const response = await fetch(`/api/products/catalog?${searchParams}`)
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      try {
+        const searchParams = new URLSearchParams({
+          limit: pagination.limit.toString(),
+          offset: resetOffset ? '0' : pagination.offset.toString(),
+          ...(filters.search && { search: filters.search }),
+          ...(filters.supplier && { supplier: filters.supplier }),
+          ...(filters.priceRange && { priceRange: filters.priceRange }),
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder,
+        });
+
+        const response = await fetch(`/api/products/catalog?${searchParams}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: CatalogResponse = await response.json();
+
+        if (resetOffset) {
+          setProducts(data.products);
+          setPagination({ ...data.pagination, offset: 0 });
+        } else {
+          setProducts(prev =>
+            pagination.offset === 0 ? data.products : [...prev, ...data.products]
+          );
+          setPagination(data.pagination);
+        }
+
+        setMetadata({
+          ...data.metadata,
+          priceRange: data.filters.priceRange,
+        });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch products';
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      const data: CatalogResponse = await response.json()
-      
-      if (resetOffset) {
-        setProducts(data.products)
-        setPagination({ ...data.pagination, offset: 0 })
-      } else {
-        setProducts(prev => pagination.offset === 0 ? data.products : [...prev, ...data.products])
-        setPagination(data.pagination)
-      }
-      
-      setMetadata({
-        ...data.metadata,
-        priceRange: data.filters.priceRange
-      })
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch products'
-      setError(errorMessage)
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, pagination.limit, pagination.offset, toast])
+    },
+    [filters, pagination.limit, pagination.offset, toast]
+  );
 
   const fetchSuppliers = useCallback(async () => {
     try {
-      const response = await fetch('/api/suppliers/real-data?limit=100')
+      const response = await fetch('/api/suppliers/real-data?limit=100');
       if (response.ok) {
-        const data = await response.json()
-        setSuppliers(data.suppliers.map((s: unknown) => ({ id: s.id, name: s.name })))
+        const data = await response.json();
+        setSuppliers(data.suppliers.map((s: unknown) => ({ id: s.id, name: s.name })));
       }
     } catch (err) {
-      console.error('Failed to fetch suppliers:', err)
+      console.error('Failed to fetch suppliers:', err);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchProducts(true)
-  }, [fetchProducts, filters])
+    fetchProducts(true);
+  }, [fetchProducts, filters]);
 
   useEffect(() => {
-    fetchSuppliers()
-  }, [fetchSuppliers])
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
   const handleFilterChange = useCallback((key: keyof CatalogFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-  }, [])
+    setFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   const handleSort = useCallback((sortBy: string) => {
     setFilters(prev => ({
       ...prev,
       sortBy,
-      sortOrder: prev.sortBy === sortBy && prev.sortOrder === 'asc' ? 'desc' : 'asc'
-    }))
-  }, [])
+      sortOrder: prev.sortBy === sortBy && prev.sortOrder === 'asc' ? 'desc' : 'asc',
+    }));
+  }, []);
 
   const loadMoreProducts = useCallback(() => {
     if (pagination.hasMore && !loading) {
-      setPagination(prev => ({ ...prev, offset: prev.offset + prev.limit }))
-      fetchProducts(false)
+      setPagination(prev => ({ ...prev, offset: prev.offset + prev.limit }));
+      fetchProducts(false);
     }
-  }, [pagination.hasMore, loading, fetchProducts])
+  }, [pagination.hasMore, loading, fetchProducts]);
 
   const clearFilters = useCallback(() => {
-    setFilters(INITIAL_FILTERS)
-  }, [])
+    setFilters(INITIAL_FILTERS);
+  }, []);
 
   const priceRangeOptions = useMemo(() => {
-    if (metadata.priceRange.max === 0) return []
-    const { min, max } = metadata.priceRange
+    if (metadata.priceRange.max === 0) return [];
+    const { min, max } = metadata.priceRange;
     const ranges = [
       { label: `Under R${Math.round(max * 0.1).toLocaleString()}`, value: `0-${max * 0.1}` },
-      { label: `R${Math.round(max * 0.1).toLocaleString()} - R${Math.round(max * 0.5).toLocaleString()}`, value: `${max * 0.1}-${max * 0.5}` },
-      { label: `R${Math.round(max * 0.5).toLocaleString()} - R${Math.round(max * 0.8).toLocaleString()}`, value: `${max * 0.5}-${max * 0.8}` },
-      { label: `Over R${Math.round(max * 0.8).toLocaleString()}`, value: `${max * 0.8}-${max}` }
-    ]
-    return ranges
-  }, [metadata.priceRange])
+      {
+        label: `R${Math.round(max * 0.1).toLocaleString()} - R${Math.round(max * 0.5).toLocaleString()}`,
+        value: `${max * 0.1}-${max * 0.5}`,
+      },
+      {
+        label: `R${Math.round(max * 0.5).toLocaleString()} - R${Math.round(max * 0.8).toLocaleString()}`,
+        value: `${max * 0.5}-${max * 0.8}`,
+      },
+      { label: `Over R${Math.round(max * 0.8).toLocaleString()}`, value: `${max * 0.8}-${max}` },
+    ];
+    return ranges;
+  }, [metadata.priceRange]);
 
   const ProductCard = ({ product }: { product: ProductCatalogItem }) => (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedProduct(product)}>
+    <Card
+      className="cursor-pointer transition-shadow hover:shadow-lg"
+      onClick={() => setSelectedProduct(product)}
+    >
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
+        <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-sm font-medium truncate">{product.name}</CardTitle>
-            <p className="text-xs text-muted-foreground">{product.sku}</p>
+            <CardTitle className="truncate text-sm font-medium">{product.name}</CardTitle>
+            <p className="text-muted-foreground text-xs">{product.sku}</p>
           </div>
           <Badge variant={product.inStock ? 'default' : 'secondary'}>
             {product.inStock ? 'In Stock' : 'Out of Stock'}
@@ -255,8 +269,8 @@ export default function RealProductCatalog() {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground truncate">{product.description}</p>
-          <div className="flex justify-between items-center">
+          <p className="text-muted-foreground truncate text-xs">{product.description}</p>
+          <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-green-600">
               {formatCurrency(product.price, product.currency)}
             </span>
@@ -267,22 +281,23 @@ export default function RealProductCatalog() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   return (
     <div className="space-y-6">
       {/* Header with Stats */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold">Product Catalog</h1>
           <p className="text-muted-foreground">
-            {pagination.total.toLocaleString()} products • Total Value: {formatCurrency(metadata.totalValue, 'ZAR')}
+            {pagination.total.toLocaleString()} products • Total Value:{' '}
+            {formatCurrency(metadata.totalValue, 'ZAR')}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => fetchProducts(true)}
             disabled={loading}
           >
@@ -306,14 +321,14 @@ export default function RealProductCatalog() {
       </div>
 
       {/* Data Quality Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm font-medium">Data Freshness</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Updated {new Date(metadata.lastUpdated).toLocaleTimeString()}
                 </p>
               </div>
@@ -326,9 +341,7 @@ export default function RealProductCatalog() {
               <Building2 className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-sm font-medium">Active Suppliers</p>
-                <p className="text-xs text-muted-foreground">
-                  {suppliers.length} suppliers
-                </p>
+                <p className="text-muted-foreground text-xs">{suppliers.length} suppliers</p>
               </div>
             </div>
           </CardContent>
@@ -339,7 +352,7 @@ export default function RealProductCatalog() {
               <TrendingUp className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm font-medium">Average Price</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {formatCurrency(metadata.priceRange.average, 'ZAR')}
                 </p>
               </div>
@@ -352,7 +365,7 @@ export default function RealProductCatalog() {
               <AlertCircle className="h-5 w-5 text-yellow-500" />
               <div>
                 <p className="text-sm font-medium">Data Source</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {metadata.dataSource.replace('_', ' ').toUpperCase()}
                 </p>
               </div>
@@ -364,20 +377,20 @@ export default function RealProductCatalog() {
       {/* Advanced Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 placeholder="Search products..."
                 className="pl-9"
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={e => handleFilterChange('search', e.target.value)}
               />
             </div>
-            
+
             <Select
               value={filters.supplier || ALL_SUPPLIERS_VALUE}
-              onValueChange={(value) =>
+              onValueChange={value =>
                 handleFilterChange('supplier', value === ALL_SUPPLIERS_VALUE ? '' : value)
               }
             >
@@ -396,7 +409,7 @@ export default function RealProductCatalog() {
 
             <Select
               value={filters.priceRange || ANY_PRICE_VALUE}
-              onValueChange={(value) =>
+              onValueChange={value =>
                 handleFilterChange('priceRange', value === ANY_PRICE_VALUE ? '' : value)
               }
             >
@@ -413,7 +426,10 @@ export default function RealProductCatalog() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+            <Select
+              value={filters.sortBy}
+              onValueChange={value => handleFilterChange('sortBy', value)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -429,26 +445,44 @@ export default function RealProductCatalog() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
+                onClick={() =>
+                  handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')
+                }
               >
-                {filters.sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                {filters.sortOrder === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
               >
-                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                {viewMode === 'grid' ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid3X3 className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
-          
+
           {(filters.search || filters.supplier || filters.priceRange) && (
             <div className="mt-4 flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
+              <span className="text-muted-foreground text-sm">Active filters:</span>
               {filters.search && <Badge variant="secondary">{filters.search}</Badge>}
-              {filters.supplier && <Badge variant="secondary">{suppliers.find(s => s.id === filters.supplier)?.name}</Badge>}
-              {filters.priceRange && <Badge variant="secondary">{priceRangeOptions.find(r => r.value === filters.priceRange)?.label}</Badge>}
+              {filters.supplier && (
+                <Badge variant="secondary">
+                  {suppliers.find(s => s.id === filters.supplier)?.name}
+                </Badge>
+              )}
+              {filters.priceRange && (
+                <Badge variant="secondary">
+                  {priceRangeOptions.find(r => r.value === filters.priceRange)?.label}
+                </Badge>
+              )}
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Clear All
               </Button>
@@ -470,7 +504,7 @@ export default function RealProductCatalog() {
       )}
 
       {loading && products.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -478,8 +512,8 @@ export default function RealProductCatalog() {
                 <Skeleton className="h-3 w-1/2" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-3 w-full mb-2" />
-                <Skeleton className="h-3 w-2/3 mb-4" />
+                <Skeleton className="mb-2 h-3 w-full" />
+                <Skeleton className="mb-4 h-3 w-2/3" />
                 <div className="flex justify-between">
                   <Skeleton className="h-6 w-20" />
                   <Skeleton className="h-5 w-16" />
@@ -489,7 +523,7 @@ export default function RealProductCatalog() {
           ))}
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -499,21 +533,22 @@ export default function RealProductCatalog() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted"
+                <TableHead
+                  className="hover:bg-muted cursor-pointer"
                   onClick={() => handleSort('name')}
                 >
                   Product {filters.sortBy === 'name' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
                 </TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted"
+                <TableHead
+                  className="hover:bg-muted cursor-pointer"
                   onClick={() => handleSort('supplier')}
                 >
-                  Supplier {filters.sortBy === 'supplier' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
+                  Supplier{' '}
+                  {filters.sortBy === 'supplier' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted"
+                <TableHead
+                  className="hover:bg-muted cursor-pointer"
                   onClick={() => handleSort('price')}
                 >
                   Price {filters.sortBy === 'price' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
@@ -528,7 +563,7 @@ export default function RealProductCatalog() {
                   <TableCell>
                     <div>
                       <p className="font-medium">{product.name}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-xs">
+                      <p className="text-muted-foreground max-w-xs truncate text-xs">
                         {product.description}
                       </p>
                     </div>
@@ -544,11 +579,7 @@ export default function RealProductCatalog() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedProduct(product)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedProduct(product)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -584,20 +615,20 @@ export default function RealProductCatalog() {
                 <DialogTitle>{selectedProduct.name}</DialogTitle>
                 <DialogDescription>{selectedProduct.sku}</DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Description</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Description</h4>
                     <p className="text-sm">{selectedProduct.description}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Price</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Price</h4>
                     <p className="text-2xl font-bold text-green-600">
                       {formatCurrency(selectedProduct.price, selectedProduct.currency)}
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Status</h4>
                     <Badge variant={selectedProduct.inStock ? 'default' : 'secondary'}>
                       {selectedProduct.inStock ? 'In Stock' : 'Out of Stock'}
                     </Badge>
@@ -605,15 +636,15 @@ export default function RealProductCatalog() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Supplier</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Supplier</h4>
                     <p className="text-sm">{selectedProduct.supplier.name}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Price List</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Price List</h4>
                     <p className="text-sm">{selectedProduct.pricelist.name}</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Last Updated</h4>
+                    <h4 className="text-muted-foreground text-sm font-medium">Last Updated</h4>
                     <p className="text-sm">
                       {new Date(selectedProduct.lastUpdated).toLocaleString()}
                     </p>
@@ -625,5 +656,5 @@ export default function RealProductCatalog() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

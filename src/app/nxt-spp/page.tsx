@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * NXT-SPP Main Page - Supplier Portfolio System
@@ -9,8 +9,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp, Building2, Settings, Sparkles } from 'lucide-react';
+import { Info, Upload, Building2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/components/layout/AppLayout';
@@ -97,92 +96,50 @@ function NxtSppContent() {
   });
 
   return (
-    <AppLayout>
-      <div className="space-y-8">
-        {/* Enhanced Page Header */}
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="relative space-y-6">
-            {/* Title Area with Icon */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25">
-                  <Package className="h-7 w-7" />
-                </div>
-
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-                      Supplier Inventory Portfolio
-                    </h1>
-                    <Badge variant="secondary" className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 border-gray-200">
-                      SIP System
-                    </Badge>
-                  </div>
-
-                  <p className="text-base text-gray-600 max-w-3xl leading-relaxed">
-                    Comprehensive supplier portfolio management: Upload pricelists, manage catalog, and optimize inventory workflows with intelligent automation.
-                  </p>
-                </div>
-              </div>
-
-              {/* Header Actions */}
-              <div className="flex-shrink-0 flex gap-2">
-                <Button
-                  onClick={() => {
-                    setUploadOpen(true);
-                    handleTabChange('upload');
-                  }}
-                  className="h-11 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Upload Pricelist</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const url = `/nxt-spp/rules${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
-                    router.push(url)
-                  }}
-                  className="h-11 px-4 gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Rules Engine
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const url = `/nxt-spp/profiles${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
-                    router.push(url)
-                  }}
-                  className="h-11 px-4 gap-2"
-                >
-                  <Building2 className="h-4 w-4" />
-                  Supplier Profiles
-                </Button>
-              </div>
-            </div>
-
-            {/* Keyboard Shortcuts Section */}
-            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                <Keyboard className="h-4 w-4" />
-                <span>Quick Actions:</span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 border-gray-200 transition-colors">
-                  <Upload className="h-3.5 w-3.5 text-blue-600" />
-                  <kbd className="font-mono text-xs font-semibold text-gray-700">Ctrl+U</kbd>
-                  <span className="text-xs text-gray-600">Upload</span>
-                </Badge>
-
-                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 border-gray-200 transition-colors">
-                  <RefreshCw className="h-3.5 w-3.5 text-green-600" />
-                  <kbd className="font-mono text-xs font-semibold text-gray-700">Ctrl+R</kbd>
-                  <span className="text-xs text-gray-600">Refresh</span>
-                </Badge>
-              </div>
-            </div>
+    <AppLayout
+      title="Supplier Inventory Portfolio"
+      breadcrumbs={[{ label: 'Supplier Inventory Portfolio' }]}
+      showQuickLinks={false}
+    >
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Supplier Inventory Portfolio</h1>
+            <p className="text-muted-foreground mt-1">
+              Comprehensive supplier portfolio management: Upload pricelists, manage catalog, and
+              optimize inventory workflows
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => {
+                setUploadOpen(true);
+                handleTabChange('upload');
+              }}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Pricelist
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `/nxt-spp/rules${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`;
+                router.push(url);
+              }}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Rules Engine
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `/nxt-spp/profiles${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`;
+                router.push(url);
+              }}
+            >
+              <Building2 className="mr-2 h-4 w-4" />
+              Supplier Profiles
+            </Button>
           </div>
         </div>
 
@@ -191,52 +148,20 @@ function NxtSppContent() {
           <Alert className="border-green-200 bg-green-50">
             <Info className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-900">
-              <strong>Upload Complete!</strong> Your catalog has been updated with new and updated products.
+              <strong>Upload Complete!</strong> Your catalog has been updated with new and updated
+              products.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Enhanced Tabbed Navigation */}
+        {/* Tabbed Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <div className="border-b border-border">
-            <TabsList className="inline-flex h-12 items-center justify-start gap-1 rounded-none bg-transparent p-0 w-full">
-              <TabsTrigger
-                value="dashboard"
-                className="group relative inline-flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
-              >
-                <LayoutDashboard className="h-4 w-4 transition-transform group-hover:scale-110" />
-                <span>Dashboard</span>
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="catalog"
-                className="group relative inline-flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
-              >
-                <Table className="h-4 w-4 transition-transform group-hover:scale-110" />
-                <span>Supplier Inventory Portfolio</span>
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="upload"
-                className="group relative inline-flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
-              >
-                <FileUp className="h-4 w-4 transition-transform group-hover:scale-110" />
-                <span>Upload</span>
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="ai-price-extraction"
-                className="group relative inline-flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
-              >
-                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
-                <span>AI Price Extraction</span>
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="catalog">Supplier Inventory Portfolio</TabsTrigger>
+            <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="ai-price-extraction">AI Price Extraction</TabsTrigger>
+          </TabsList>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
@@ -253,16 +178,17 @@ function NxtSppContent() {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Single Upload System:</strong> This is THE ONLY way to upload supplier pricelists.
-                All uploads are validated and merged to the master catalog.
+                <strong>Single Upload System:</strong> This is THE ONLY way to upload supplier
+                pricelists. All uploads are validated and merged to the master catalog.
               </AlertDescription>
             </Alert>
 
             <div className="flex items-center justify-center py-16">
-              <div className="text-center space-y-4">
+              <div className="space-y-4 text-center">
                 <h3 className="text-lg font-medium">Ready to Upload?</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Upload Excel or CSV pricelists. The system will automatically validate data and merge to your catalog.
+                <p className="text-muted-foreground max-w-md text-sm">
+                  Upload Excel or CSV pricelists. The system will automatically validate data and
+                  merge to your catalog.
                 </p>
               </div>
             </div>
@@ -289,16 +215,18 @@ function NxtSppContent() {
 
 export default function NxtSppPage() {
   return (
-    <Suspense fallback={
-      <AppLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-sm text-muted-foreground">Loading...</p>
+    <Suspense
+      fallback={
+        <AppLayout>
+          <div className="flex h-96 items-center justify-center">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+              <p className="text-muted-foreground text-sm">Loading...</p>
+            </div>
           </div>
-        </div>
-      </AppLayout>
-    }>
+        </AppLayout>
+      }
+    >
       <NxtSppContent />
     </Suspense>
   );

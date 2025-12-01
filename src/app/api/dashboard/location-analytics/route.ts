@@ -3,8 +3,8 @@
  * Returns product distribution and inventory metrics by location
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { CORE_TABLES } from '@/lib/db/schema-contract';

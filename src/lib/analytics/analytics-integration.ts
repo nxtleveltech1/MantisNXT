@@ -30,11 +30,11 @@ export interface AnalyticsConfig {
   thresholds: {
     anomaly: {
       sensitivity: number; // 0.1 to 1.0
-      confidence: number;  // 0.7 to 0.99
+      confidence: number; // 0.7 to 0.99
     };
     performance: {
       responseTime: number; // milliseconds
-      errorRate: number;    // 0.0 to 1.0
+      errorRate: number; // 0.0 to 1.0
       resourceUsage: number; // 0.0 to 1.0
     };
     recommendations: {
@@ -43,9 +43,9 @@ export interface AnalyticsConfig {
     };
   };
   intervals: {
-    monitoring: number;    // milliseconds
-    optimization: number;  // milliseconds
-    reporting: number;     // milliseconds
+    monitoring: number; // milliseconds
+    optimization: number; // milliseconds
+    reporting: number; // milliseconds
   };
 }
 
@@ -158,7 +158,6 @@ export class AnalyticsIntegrationService extends EventEmitter {
 
       this.emit('initialized', { organizationId: this.config.organizationId });
       this.emit('statusChanged', this.status);
-
     } catch (error) {
       this.status.status = 'error';
       this.emit('error', error);
@@ -174,21 +173,15 @@ export class AnalyticsIntegrationService extends EventEmitter {
       throw new Error('Analytics service not initialized');
     }
 
-    const [
-      insights,
-      recommendations,
-      anomalies,
-      predictions,
-      performance,
-      optimization
-    ] = await Promise.all([
-      this.getAIInsights(),
-      this.getRecommendations(),
-      this.getAnomalies(),
-      this.getPredictions(),
-      this.getPerformanceMetrics(),
-      this.getOptimizationStatus()
-    ]);
+    const [insights, recommendations, anomalies, predictions, performance, optimization] =
+      await Promise.all([
+        this.getAIInsights(),
+        this.getRecommendations(),
+        this.getAnomalies(),
+        this.getPredictions(),
+        this.getPerformanceMetrics(),
+        this.getOptimizationStatus(),
+      ]);
 
     const dashboard = {
       organizationId: this.config.organizationId,
@@ -205,8 +198,8 @@ export class AnalyticsIntegrationService extends EventEmitter {
         criticalAlerts: anomalies.filter(a => a.severity === 'high').length,
         activeRecommendations: recommendations.filter(r => r.status === 'pending').length,
         performanceScore: performance?.summary?.score || 0,
-        optimizationOpportunities: optimization?.opportunities || 0
-      }
+        optimizationOpportunities: optimization?.opportunities || 0,
+      },
     };
 
     return await this.dashboardManager.enhanceDashboard(dashboard);
@@ -221,21 +214,15 @@ export class AnalyticsIntegrationService extends EventEmitter {
   ): Promise<AnalyticsReport> {
     const period = { start: startDate, end: endDate };
 
-    const [
-      insights,
-      recommendations,
-      anomalies,
-      predictions,
-      performance,
-      optimizations
-    ] = await Promise.all([
-      this.getAIInsights(),
-      this.getRecommendations(),
-      this.getAnomalies(),
-      this.getPredictions(),
-      this.getPerformanceMetrics(),
-      this.getOptimizationHistory()
-    ]);
+    const [insights, recommendations, anomalies, predictions, performance, optimizations] =
+      await Promise.all([
+        this.getAIInsights(),
+        this.getRecommendations(),
+        this.getAnomalies(),
+        this.getPredictions(),
+        this.getPerformanceMetrics(),
+        this.getOptimizationHistory(),
+      ]);
 
     // Calculate summary metrics
     const summary = {
@@ -244,7 +231,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
       recommendationsGenerated: recommendations?.length || 0,
       optimizationsExecuted: optimizations?.completed || 0,
       performanceGains: this.calculatePerformanceGains(performance),
-      costSavings: this.estimateCostSavings(recommendations, optimizations)
+      costSavings: this.estimateCostSavings(recommendations, optimizations),
     };
 
     return {
@@ -255,7 +242,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
       recommendations: recommendations || [],
       performance: performance || {},
       trends: await this.getTrends(startDate, endDate),
-      alerts: anomalies?.filter(a => a.severity === 'high') || []
+      alerts: anomalies?.filter(a => a.severity === 'high') || [],
     };
   }
 
@@ -270,19 +257,20 @@ export class AnalyticsIntegrationService extends EventEmitter {
         case 'inventory':
           result = await this.workflowEngine.executeWorkflow('inventory_optimization', {
             organizationId: this.config.organizationId,
-            ...params
+            ...params,
           });
           break;
 
         case 'supplier':
           result = await this.workflowEngine.executeWorkflow('supplier_optimization', {
             organizationId: this.config.organizationId,
-            ...params
+            ...params,
           });
           break;
 
         case 'performance':
-          result = await this.performanceManager.getOptimizer()
+          result = await this.performanceManager
+            .getOptimizer()
             .generateOptimizationRecommendations(this.config.organizationId);
           break;
 
@@ -298,7 +286,6 @@ export class AnalyticsIntegrationService extends EventEmitter {
 
       this.emit('optimizationExecuted', { type, result });
       return result;
-
     } catch (error) {
       this.emit('optimizationError', { type, error });
       throw error;
@@ -313,10 +300,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
       return [];
     }
 
-    return await this.insightsGenerator.generateInsights(
-      this.config.organizationId,
-      { limit }
-    );
+    return await this.insightsGenerator.generateInsights(this.config.organizationId, { limit });
   }
 
   /**
@@ -343,10 +327,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
       return [];
     }
 
-    return await this.anomalyDetection.getRecentAnomalies(
-      this.config.organizationId,
-      limit
-    );
+    return await this.anomalyDetection.getRecentAnomalies(this.config.organizationId, limit);
   }
 
   /**
@@ -360,13 +341,13 @@ export class AnalyticsIntegrationService extends EventEmitter {
     const [demandForecasts, supplierRisk, marketIntel] = await Promise.all([
       this.predictiveService.predict('demand_forecast', this.config.organizationId, 'organization'),
       this.predictiveService.predict('supplier_risk', this.config.organizationId, 'organization'),
-      this.predictiveService.generateMarketIntelligence(this.config.organizationId)
+      this.predictiveService.generateMarketIntelligence(this.config.organizationId),
     ]);
 
     return {
       demandForecasts,
       supplierRisk,
-      marketIntelligence: marketIntel
+      marketIntelligence: marketIntel,
     };
   }
 
@@ -378,9 +359,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
       return null;
     }
 
-    return await this.performanceManager.getPerformanceDashboard(
-      this.config.organizationId
-    );
+    return await this.performanceManager.getPerformanceDashboard(this.config.organizationId);
   }
 
   /**
@@ -391,17 +370,17 @@ export class AnalyticsIntegrationService extends EventEmitter {
       return null;
     }
 
-    const workflows = await this.workflowEngine.getActiveWorkflows(
-      this.config.organizationId
-    );
+    const workflows = await this.workflowEngine.getActiveWorkflows(this.config.organizationId);
 
     return {
       activeWorkflows: workflows?.length || 0,
       opportunities: workflows?.filter(w => w.status === 'pending')?.length || 0,
-      completedToday: workflows?.filter(w =>
-        w.status === 'completed' &&
-        new Date(w.lastExecution).toDateString() === new Date().toDateString()
-      )?.length || 0
+      completedToday:
+        workflows?.filter(
+          w =>
+            w.status === 'completed' &&
+            new Date(w.lastExecution).toDateString() === new Date().toDateString()
+        )?.length || 0,
     };
   }
 
@@ -409,14 +388,12 @@ export class AnalyticsIntegrationService extends EventEmitter {
    * Get optimization history
    */
   async getOptimizationHistory(): Promise<unknown> {
-    const workflows = await this.workflowEngine.getWorkflowHistory(
-      this.config.organizationId
-    );
+    const workflows = await this.workflowEngine.getWorkflowHistory(this.config.organizationId);
 
     return {
       total: workflows?.length || 0,
       completed: workflows?.filter(w => w.status === 'completed')?.length || 0,
-      failed: workflows?.filter(w => w.status === 'failed')?.length || 0
+      failed: workflows?.filter(w => w.status === 'failed')?.length || 0,
     };
   }
 
@@ -424,7 +401,8 @@ export class AnalyticsIntegrationService extends EventEmitter {
    * Get trends analysis
    */
   async getTrends(startDate: Date, endDate: Date): Promise<unknown[]> {
-    const trends = await this.performanceManager.getMonitor()
+    const trends = await this.performanceManager
+      .getMonitor()
       .getPerformanceTrends(this.config.organizationId, '7d');
 
     return trends || [];
@@ -484,19 +462,19 @@ export class AnalyticsIntegrationService extends EventEmitter {
         recommendations: false,
         automation: false,
         performance: false,
-        dashboard: false
+        dashboard: false,
       },
       lastUpdate: new Date(),
       performance: {
         responseTime: 0,
         errorRate: 0,
-        uptime: 0
+        uptime: 0,
       },
       insights: {
         totalGenerated: 0,
         highPriority: 0,
-        actionable: 0
-      }
+        actionable: 0,
+      },
     };
   }
 
@@ -518,22 +496,25 @@ export class AnalyticsIntegrationService extends EventEmitter {
 
     if (this.config.features.anomalyDetection) {
       initPromises.push(
-        this.anomalyDetection.startMonitoring(this.config.organizationId)
-          .then(() => { this.status.modules.anomaly = true; })
+        this.anomalyDetection.startMonitoring(this.config.organizationId).then(() => {
+          this.status.modules.anomaly = true;
+        })
       );
     }
 
     if (this.config.features.automation) {
       initPromises.push(
-        this.workflowEngine.initializeWorkflows(this.config.organizationId)
-          .then(() => { this.status.modules.automation = true; })
+        this.workflowEngine.initializeWorkflows(this.config.organizationId).then(() => {
+          this.status.modules.automation = true;
+        })
       );
     }
 
     if (this.config.features.performance) {
       initPromises.push(
-        this.performanceManager.initialize(this.config.organizationId)
-          .then(() => { this.status.modules.performance = true; })
+        this.performanceManager.initialize(this.config.organizationId).then(() => {
+          this.status.modules.performance = true;
+        })
       );
     }
 
@@ -650,7 +631,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
     return recommendations.reduce((total, rec) => {
       const avgProjectCost = 50000; // $50k average project cost
       const savingsRate = rec.confidence || 0.1;
-      return total + (avgProjectCost * savingsRate * 0.15); // 15% cost reduction
+      return total + avgProjectCost * savingsRate * 0.15; // 15% cost reduction
     }, 0);
   }
 }
@@ -670,28 +651,28 @@ export function createAnalyticsService(
       recommendations: true,
       automation: true,
       performance: true,
-      aiInsights: true
+      aiInsights: true,
     },
     thresholds: {
       anomaly: {
         sensitivity: 0.8,
-        confidence: 0.85
+        confidence: 0.85,
       },
       performance: {
         responseTime: 1000,
         errorRate: 0.02,
-        resourceUsage: 0.8
+        resourceUsage: 0.8,
       },
       recommendations: {
         minConfidence: 0.7,
-        maxSuggestions: 20
-      }
+        maxSuggestions: 20,
+      },
     },
     intervals: {
-      monitoring: 30000,   // 30 seconds
+      monitoring: 30000, // 30 seconds
       optimization: 300000, // 5 minutes
-      reporting: 3600000   // 1 hour
-    }
+      reporting: 3600000, // 1 hour
+    },
   };
 
   const config = { ...defaultConfig, ...overrides };

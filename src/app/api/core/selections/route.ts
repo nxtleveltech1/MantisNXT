@@ -2,7 +2,7 @@
  * /api/core/selections - Inventory selection management
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 import { InventorySelectionSchema } from '@/types/nxt-spp';
@@ -21,12 +21,12 @@ export async function POST(request: NextRequest) {
       description: validated.description,
       created_by: validated.created_by,
       valid_from: validated.valid_from,
-      valid_to: validated.valid_to ?? undefined
+      valid_to: validated.valid_to ?? undefined,
     });
 
     return NextResponse.json({
       success: true,
-      data: selection
+      data: selection,
     });
   } catch (error) {
     console.error('Create selection error:', error);
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues
+          details: error.issues,
         },
         { status: 400 }
       );
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create selection'
+        error: error instanceof Error ? error.message : 'Failed to create selection',
       },
       { status: 500 }
     );
@@ -61,14 +61,17 @@ export async function GET(request: NextRequest) {
 
     const statusParam = searchParams.get('status');
     const statuses = statusParam
-      ? statusParam.split(',').map(s => s.trim()).filter(Boolean)
+      ? statusParam
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
       : undefined;
 
     const filters = {
       status: statuses as unknown,
       created_by: searchParams.get('created_by') || undefined,
       limit: parseInt(searchParams.get('limit') || '50'),
-      offset: parseInt(searchParams.get('offset') || '0')
+      offset: parseInt(searchParams.get('offset') || '0'),
     };
 
     const result = await inventorySelectionService.listSelections(filters);
@@ -80,15 +83,15 @@ export async function GET(request: NextRequest) {
         limit: filters.limit,
         offset: filters.offset,
         total: result.total,
-        totalPages: Math.ceil(result.total / filters.limit)
-      }
+        totalPages: Math.ceil(result.total / filters.limit),
+      },
     });
   } catch (error) {
     console.error('List selections error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to list selections'
+        error: error instanceof Error ? error.message : 'Failed to list selections',
       },
       { status: 500 }
     );

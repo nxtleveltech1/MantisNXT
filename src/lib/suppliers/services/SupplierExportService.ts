@@ -3,14 +3,10 @@
  * Replaces broken export functionality with comprehensive reporting system
  */
 
-import type { SupplierRepository } from '../core/SupplierRepository'
-import type {
-  Supplier,
-  ExportRequest,
-  ExportResult
-} from '../types/SupplierDomain'
+import type { SupplierRepository } from '../core/SupplierRepository';
+import type { Supplier, ExportRequest, ExportResult } from '../types/SupplierDomain';
 
-type ExportedSupplierJSON = Record<string, unknown>
+type ExportedSupplierJSON = Record<string, unknown>;
 
 export class SupplierExportService {
   constructor(private repository: SupplierRepository) {}
@@ -19,111 +15,111 @@ export class SupplierExportService {
     // Fetch supplier data based on filters
     const result = await this.repository.findMany({
       ...request.filters,
-      limit: 10000 // Large limit for exports
-    })
+      limit: 10000, // Large limit for exports
+    });
 
-    const suppliers = result.suppliers
+    const suppliers = result.suppliers;
 
     switch (request.format) {
       case 'csv':
-        return this.exportToCSV(suppliers, request)
+        return this.exportToCSV(suppliers, request);
       case 'excel':
-        return this.exportToExcel(suppliers, request)
+        return this.exportToExcel(suppliers, request);
       case 'pdf':
-        return this.exportToPDF(suppliers, request)
+        return this.exportToPDF(suppliers, request);
       case 'json':
-        return this.exportToJSON(suppliers, request)
+        return this.exportToJSON(suppliers, request);
       default:
-        throw new Error(`Unsupported export format: ${request.format}`)
+        throw new Error(`Unsupported export format: ${request.format}`);
     }
   }
 
   private async exportToCSV(suppliers: Supplier[], request: ExportRequest): Promise<ExportResult> {
-    const headers = this.getCSVHeaders(request)
-    const rows = suppliers.map(supplier => this.supplierToCSVRow(supplier, request))
+    const headers = this.getCSVHeaders(request);
+    const rows = suppliers.map(supplier => this.supplierToCSVRow(supplier, request));
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => this.escapeCSVCell(cell)).join(','))
-    ].join('\n')
+      ...rows.map(row => row.map(cell => this.escapeCSVCell(cell)).join(',')),
+    ].join('\n');
 
-    const data = Buffer.from(csvContent, 'utf-8')
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-    const template = request.template ?? 'default'
+    const data = Buffer.from(csvContent, 'utf-8');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const template = request.template ?? 'default';
 
     return {
       filename: `suppliers-${template}-${timestamp}.csv`,
       data,
       mimeType: 'text/csv',
       size: data.length,
-      recordCount: suppliers.length
-    }
+      recordCount: suppliers.length,
+    };
   }
 
-  private async exportToExcel(suppliers: Supplier[], request: ExportRequest): Promise<ExportResult> {
+  private async exportToExcel(
+    suppliers: Supplier[],
+    request: ExportRequest
+  ): Promise<ExportResult> {
     // For now, we'll create a CSV-like format
     // In production, you'd use a library like exceljs
-    const headers = this.getCSVHeaders(request)
-    const rows = suppliers.map(supplier => this.supplierToCSVRow(supplier, request))
+    const headers = this.getCSVHeaders(request);
+    const rows = suppliers.map(supplier => this.supplierToCSVRow(supplier, request));
 
     // Simple Excel-compatible CSV
-    const csvContent = [
-      headers.join('\t'),
-      ...rows.map(row => row.join('\t'))
-    ].join('\n')
+    const csvContent = [headers.join('\t'), ...rows.map(row => row.join('\t'))].join('\n');
 
-    const data = Buffer.from('\ufeff' + csvContent, 'utf-8') // Add BOM for Excel
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-    const template = request.template ?? 'default'
+    const data = Buffer.from('\ufeff' + csvContent, 'utf-8'); // Add BOM for Excel
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const template = request.template ?? 'default';
 
     return {
       filename: `suppliers-${template}-${timestamp}.xlsx`,
       data,
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       size: data.length,
-      recordCount: suppliers.length
-    }
+      recordCount: suppliers.length,
+    };
   }
 
   private async exportToPDF(suppliers: Supplier[], request: ExportRequest): Promise<ExportResult> {
     // PDF generation would require a library like puppeteer or pdfkit
     // For now, we'll create a simple HTML-based report
-    const html = this.generateHTMLReport(suppliers, request)
-    const data = Buffer.from(html, 'utf-8')
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-    const template = request.template ?? 'default'
+    const html = this.generateHTMLReport(suppliers, request);
+    const data = Buffer.from(html, 'utf-8');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const template = request.template ?? 'default';
 
     return {
       filename: `suppliers-${template}-${timestamp}.html`,
       data,
       mimeType: 'text/html',
       size: data.length,
-      recordCount: suppliers.length
-    }
+      recordCount: suppliers.length,
+    };
   }
 
   private async exportToJSON(suppliers: Supplier[], request: ExportRequest): Promise<ExportResult> {
-    const template = request.template ?? 'default'
+    const template = request.template ?? 'default';
     const exportData = {
       metadata: {
         exportDate: new Date().toISOString(),
         template,
         recordCount: suppliers.length,
-        filters: request.filters
+        filters: request.filters,
       },
-      suppliers: suppliers.map(supplier => this.formatSupplierForJSON(supplier, request))
-    }
+      suppliers: suppliers.map(supplier => this.formatSupplierForJSON(supplier, request)),
+    };
 
-    const data = Buffer.from(JSON.stringify(exportData, null, 2), 'utf-8')
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const data = Buffer.from(JSON.stringify(exportData, null, 2), 'utf-8');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
     return {
       filename: `suppliers-${template}-${timestamp}.json`,
       data,
       mimeType: 'application/json',
       size: data.length,
-      recordCount: suppliers.length
-    }
+      recordCount: suppliers.length,
+    };
   }
 
   private getCSVHeaders(request: ExportRequest): string[] {
@@ -134,8 +130,8 @@ export class SupplierExportService {
       'Status',
       'Tier',
       'Category',
-      'Subcategory'
-    ]
+      'Subcategory',
+    ];
 
     if (request.template === 'detailed' || request.template === 'compliance') {
       baseHeaders.push(
@@ -147,7 +143,7 @@ export class SupplierExportService {
         'Employee Count',
         'Annual Revenue',
         'Currency'
-      )
+      );
     }
 
     if (request.includeContacts || request.template === 'detailed') {
@@ -156,17 +152,11 @@ export class SupplierExportService {
         'Primary Contact Title',
         'Primary Contact Email',
         'Primary Contact Phone'
-      )
+      );
     }
 
     if (request.includeAddresses || request.template === 'detailed') {
-      baseHeaders.push(
-        'Primary Address',
-        'City',
-        'State',
-        'Country',
-        'Postal Code'
-      )
+      baseHeaders.push('Primary Address', 'City', 'State', 'Country', 'Postal Code');
     }
 
     if (request.includePerformance || request.template === 'performance') {
@@ -180,26 +170,21 @@ export class SupplierExportService {
         'Quality Acceptance %',
         'Response Time (hrs)',
         'Defect Rate %'
-      )
+      );
     }
 
     if (request.template === 'compliance') {
-      baseHeaders.push(
-        'Compliance Status',
-        'Last Audit Date',
-        'Certifications',
-        'Risk Level'
-      )
+      baseHeaders.push('Compliance Status', 'Last Audit Date', 'Certifications', 'Risk Level');
     }
 
-    baseHeaders.push('Created Date', 'Last Updated')
+    baseHeaders.push('Created Date', 'Last Updated');
 
-    return baseHeaders
+    return baseHeaders;
   }
 
   private supplierToCSVRow(supplier: Supplier, request: ExportRequest): string[] {
-    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? ''
-    const primarySubcategory = supplier.subcategory ?? ''
+    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? '';
+    const primarySubcategory = supplier.subcategory ?? '';
 
     const row = [
       supplier.id,
@@ -208,8 +193,8 @@ export class SupplierExportService {
       supplier.status,
       supplier.tier,
       primaryCategory,
-      primarySubcategory
-    ]
+      primarySubcategory,
+    ];
 
     if (request.template === 'detailed' || request.template === 'compliance') {
       row.push(
@@ -221,25 +206,25 @@ export class SupplierExportService {
         supplier.businessInfo.employeeCount?.toString() || '',
         supplier.businessInfo.annualRevenue?.toString() || '',
         supplier.businessInfo.currency
-      )
+      );
     }
 
     if (request.includeContacts || request.template === 'detailed') {
-      const primaryContact = supplier.contacts.find(c => c.isPrimary) || supplier.contacts[0]
+      const primaryContact = supplier.contacts.find(c => c.isPrimary) || supplier.contacts[0];
       if (primaryContact) {
         row.push(
           primaryContact.name,
           primaryContact.title,
           primaryContact.email,
           primaryContact.phone
-        )
+        );
       } else {
-        row.push('', '', '', '')
+        row.push('', '', '', '');
       }
     }
 
     if (request.includeAddresses || request.template === 'detailed') {
-      const primaryAddress = supplier.addresses.find(a => a.isPrimary) || supplier.addresses[0]
+      const primaryAddress = supplier.addresses.find(a => a.isPrimary) || supplier.addresses[0];
       if (primaryAddress) {
         row.push(
           primaryAddress.addressLine1,
@@ -247,14 +232,14 @@ export class SupplierExportService {
           primaryAddress.state,
           primaryAddress.country,
           primaryAddress.postalCode
-        )
+        );
       } else {
-        row.push('', '', '', '', '')
+        row.push('', '', '', '', '');
       }
     }
 
     if (request.includePerformance || request.template === 'performance') {
-      const perf = supplier.performance
+      const perf = supplier.performance;
       row.push(
         perf.overallRating.toString(),
         perf.qualityRating.toString(),
@@ -265,7 +250,7 @@ export class SupplierExportService {
         perf.metrics.qualityAcceptanceRate.toString(),
         perf.metrics.responseTime.toString(),
         perf.metrics.defectRate.toString()
-      )
+      );
     }
 
     if (request.template === 'compliance') {
@@ -275,20 +260,20 @@ export class SupplierExportService {
         '', // Last audit date
         '', // Certifications
         this.calculateRiskLevel(supplier)
-      )
+      );
     }
 
     row.push(
       supplier.createdAt.toISOString().split('T')[0],
       supplier.updatedAt.toISOString().split('T')[0]
-    )
+    );
 
-    return row
+    return row;
   }
 
   private formatSupplierForJSON(supplier: Supplier, request: ExportRequest): ExportedSupplierJSON {
-    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? null
-    const primarySubcategory = supplier.subcategory ?? null
+    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? null;
+    const primarySubcategory = supplier.subcategory ?? null;
 
     const formatted: ExportedSupplierJSON = {
       id: supplier.id,
@@ -300,39 +285,39 @@ export class SupplierExportService {
       subcategory: primarySubcategory,
       tags: supplier.tags,
       createdAt: supplier.createdAt.toISOString(),
-      updatedAt: supplier.updatedAt.toISOString()
-    }
+      updatedAt: supplier.updatedAt.toISOString(),
+    };
 
     if (request.template === 'detailed' || request.template === 'compliance') {
-      formatted.businessInfo = supplier.businessInfo
+      formatted.businessInfo = supplier.businessInfo;
     }
 
     if (request.includeContacts || request.template === 'detailed') {
-      formatted.contacts = supplier.contacts
+      formatted.contacts = supplier.contacts;
     }
 
     if (request.includeAddresses || request.template === 'detailed') {
-      formatted.addresses = supplier.addresses
+      formatted.addresses = supplier.addresses;
     }
 
     if (request.includePerformance || request.template === 'performance') {
-      formatted.performance = supplier.performance
+      formatted.performance = supplier.performance;
     }
 
     if (request.template === 'compliance') {
       formatted.compliance = {
         status: 'Compliant',
-        riskLevel: this.calculateRiskLevel(supplier)
-      }
+        riskLevel: this.calculateRiskLevel(supplier),
+      };
     }
 
-    return formatted
+    return formatted;
   }
 
   private generateHTMLReport(suppliers: Supplier[], request: ExportRequest): string {
-    const template = request.template ?? 'default'
-    const title = `Supplier ${template.charAt(0).toUpperCase() + template.slice(1)} Report`
-    const date = new Date().toLocaleDateString()
+    const template = request.template ?? 'default';
+    const title = `Supplier ${template.charAt(0).toUpperCase() + template.slice(1)} Report`;
+    const date = new Date().toLocaleDateString();
 
     let html = `
 <!DOCTYPE html>
@@ -368,21 +353,21 @@ export class SupplierExportService {
                 <th>Status</th>
                 <th>Tier</th>
                 <th>Category</th>
-    `
+    `;
 
     if (request.includePerformance || request.template === 'performance') {
-      html += '<th>Rating</th>'
+      html += '<th>Rating</th>';
     }
 
     html += `
             </tr>
         </thead>
         <tbody>
-    `
+    `;
 
     suppliers.forEach(supplier => {
-      const statusClass = `status-${supplier.status}`
-      const tierClass = `tier-${supplier.tier}`
+      const statusClass = `status-${supplier.status}`;
+      const tierClass = `tier-${supplier.tier}`;
 
       html += `
             <tr>
@@ -391,37 +376,37 @@ export class SupplierExportService {
                 <td class="${statusClass}">${supplier.status}</td>
                 <td class="${tierClass}">${supplier.tier}</td>
                 <td>${supplier.category}</td>
-      `
+      `;
 
       if (request.includePerformance || request.template === 'performance') {
-        html += `<td>${supplier.performance.overallRating.toFixed(1)}</td>`
+        html += `<td>${supplier.performance.overallRating.toFixed(1)}</td>`;
       }
 
-      html += '</tr>'
-    })
+      html += '</tr>';
+    });
 
     html += `
         </tbody>
     </table>
 </body>
 </html>
-    `
+    `;
 
-    return html
+    return html;
   }
 
   private escapeCSVCell(value: string): string {
     if (value.includes(',') || value.includes('"') || value.includes('\n')) {
       return `"${value.replace(/"/g, '""')}"`;
     }
-    return value
+    return value;
   }
 
   private calculateRiskLevel(supplier: Supplier): string {
     // Simple risk calculation based on performance
-    const rating = supplier.performance.overallRating
-    if (rating >= 4.0) return 'Low'
-    if (rating >= 3.0) return 'Medium'
-    return 'High'
+    const rating = supplier.performance.overallRating;
+    if (rating >= 4.0) return 'Low';
+    if (rating >= 3.0) return 'Medium';
+    return 'High';
   }
 }

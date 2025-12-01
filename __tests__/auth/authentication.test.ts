@@ -273,15 +273,15 @@ describe('Authentication Service', () => {
     });
 
     it('should reject invalid password', async () => {
-      await expect(
-        authService.login('login@example.com', 'WrongPassword')
-      ).rejects.toThrow('Invalid credentials');
+      await expect(authService.login('login@example.com', 'WrongPassword')).rejects.toThrow(
+        'Invalid credentials'
+      );
     });
 
     it('should reject non-existent user', async () => {
-      await expect(
-        authService.login('nonexistent@example.com', 'AnyPassword')
-      ).rejects.toThrow('Invalid credentials');
+      await expect(authService.login('nonexistent@example.com', 'AnyPassword')).rejects.toThrow(
+        'Invalid credentials'
+      );
     });
 
     it('should generate valid JWT token on login', async () => {
@@ -295,9 +295,7 @@ describe('Authentication Service', () => {
     it('should track failed login attempts', async () => {
       // Attempt login with wrong password 3 times
       for (let i = 0; i < 3; i++) {
-        await expect(
-          authService.login('login@example.com', 'WrongPassword')
-        ).rejects.toThrow();
+        await expect(authService.login('login@example.com', 'WrongPassword')).rejects.toThrow();
       }
 
       const result = await pool.query(
@@ -311,23 +309,19 @@ describe('Authentication Service', () => {
     it('should lock account after 5 failed attempts', async () => {
       // Attempt login with wrong password 5 times
       for (let i = 0; i < 5; i++) {
-        await expect(
-          authService.login('login@example.com', 'WrongPassword')
-        ).rejects.toThrow();
+        await expect(authService.login('login@example.com', 'WrongPassword')).rejects.toThrow();
       }
 
       // Next attempt should indicate account is locked
-      await expect(
-        authService.login('login@example.com', 'TestPassword123!')
-      ).rejects.toThrow('Account is locked');
+      await expect(authService.login('login@example.com', 'TestPassword123!')).rejects.toThrow(
+        'Account is locked'
+      );
     });
 
     it('should reset failed attempts on successful login', async () => {
       // Fail twice
       for (let i = 0; i < 2; i++) {
-        await expect(
-          authService.login('login@example.com', 'WrongPassword')
-        ).rejects.toThrow();
+        await expect(authService.login('login@example.com', 'WrongPassword')).rejects.toThrow();
       }
 
       // Successful login
@@ -391,11 +385,7 @@ describe('Authentication Service', () => {
     });
 
     it('should change password with valid old password', async () => {
-      const result = await authService.changePassword(
-        userId,
-        'OldPassword123!',
-        'NewPassword456!'
-      );
+      const result = await authService.changePassword(userId, 'OldPassword123!', 'NewPassword456!');
 
       expect(result).toBe(true);
 
@@ -459,10 +449,9 @@ describe('Authentication Service', () => {
 
       await authService.logout(userId, sessionId);
 
-      const result = await pool.query(
-        'SELECT status FROM auth.user_sessions WHERE id = $1',
-        [sessionId]
-      );
+      const result = await pool.query('SELECT status FROM auth.user_sessions WHERE id = $1', [
+        sessionId,
+      ]);
 
       expect(result.rows[0].status).toBe('revoked');
     });

@@ -62,8 +62,7 @@ export function safeRelativeTime(
     const diffMs = date.getTime() - now.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-    return new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
-      .format(diffHours, 'hour');
+    return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(diffHours, 'hour');
   } catch (error) {
     console.warn('Failed to format relative time:', timestamp, error);
     return fallback;
@@ -81,7 +80,7 @@ export function safeFormatDate(
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   },
   fallback: string = 'Unknown'
 ): string {

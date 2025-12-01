@@ -107,26 +107,17 @@
       {
         "name": "Quality Assurance",
         "description": "Comprehensive quality validation system for database, API, security, and performance",
-        "files": [
-          "src/lib/quality/qa-validator.ts",
-          "src/app/api/quality/validate/route.ts"
-        ]
+        "files": ["src/lib/quality/qa-validator.ts", "src/app/api/quality/validate/route.ts"]
       },
       {
         "name": "Audit Logging",
         "description": "Complete audit logging system for tracking user actions and system events",
-        "files": [
-          "src/lib/audit/audit-logger.ts",
-          "src/app/api/audit/logs/route.ts"
-        ]
+        "files": ["src/lib/audit/audit-logger.ts", "src/app/api/audit/logs/route.ts"]
       },
       {
         "name": "Database Migration System",
         "description": "Database migration runner with rollback capabilities and schema management",
-        "files": [
-          "src/lib/database/migration-runner.ts",
-          "scripts/integration-setup.ts"
-        ]
+        "files": ["src/lib/database/migration-runner.ts", "scripts/integration-setup.ts"]
       },
       {
         "name": "File Upload System",
@@ -139,10 +130,7 @@
       {
         "name": "Layout System",
         "description": "Self-contained layout system with navigation, breadcrumbs, and responsive design",
-        "files": [
-          "src/components/layout/SelfContainedLayout.tsx",
-          "src/app/layout.tsx"
-        ]
+        "files": ["src/components/layout/SelfContainedLayout.tsx", "src/app/layout.tsx"]
       },
       {
         "name": "Purchase Orders",
@@ -155,18 +143,12 @@
       {
         "name": "Analytics System",
         "description": "Analytics dashboard with reporting, metrics, and data visualization",
-        "files": [
-          "src/app/analytics/page.tsx",
-          "src/components/analytics/AnalyticsDashboard.tsx"
-        ]
+        "files": ["src/app/analytics/page.tsx", "src/components/analytics/AnalyticsDashboard.tsx"]
       },
       {
         "name": "Invoice Management",
         "description": "Invoice management system with supplier integration and financial tracking",
-        "files": [
-          "src/app/invoices/page.tsx",
-          "src/components/invoices/InvoiceManagement.tsx"
-        ]
+        "files": ["src/app/invoices/page.tsx", "src/components/invoices/InvoiceManagement.tsx"]
       },
       {
         "name": "Security Compliance",
@@ -181,10 +163,7 @@
       {
         "name": "API Middleware",
         "description": "Comprehensive API middleware system with authentication, authorization, and security",
-        "files": [
-          "src/lib/api/middleware.ts",
-          "src/middleware/auth.ts"
-        ]
+        "files": ["src/lib/api/middleware.ts", "src/middleware/auth.ts"]
       }
     ]
   }

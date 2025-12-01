@@ -6,21 +6,14 @@
  */
 
 import type { NextRequest } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { anomalyService } from '@/lib/ai/services/anomaly-service';
 
 /**
  * GET /api/v1/ai/anomalies/[id]
  * Get anomaly details by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await authenticateRequest(request);
     const { id } = await params;
@@ -28,10 +21,13 @@ export async function GET(
     const anomaly = await anomalyService.getAnomalyById(id, user.organizationId);
 
     if (!anomaly) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Anomaly not found',
-      }), { status: 404 });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Anomaly not found',
+        }),
+        { status: 404 }
+      );
     }
 
     return successResponse(anomaly);
@@ -44,10 +40,7 @@ export async function GET(
  * PATCH /api/v1/ai/anomalies/[id]
  * Update anomaly status (acknowledge or resolve)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await authenticateRequest(request);
     const { id } = await params;
@@ -59,11 +52,7 @@ export async function PATCH(
 
     switch (action) {
       case 'acknowledge':
-        result = await anomalyService.acknowledgeAnomaly(
-          id,
-          user.id,
-          user.organizationId
-        );
+        result = await anomalyService.acknowledgeAnomaly(id, user.id, user.organizationId);
         break;
 
       case 'resolve':
@@ -76,10 +65,13 @@ export async function PATCH(
         break;
 
       default:
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Invalid action. Use "acknowledge" or "resolve"',
-        }), { status: 400 });
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid action. Use "acknowledge" or "resolve"',
+          }),
+          { status: 400 }
+        );
     }
 
     return successResponse({
@@ -106,12 +98,7 @@ export async function DELETE(
     const body = await request.json().catch(() => ({}));
     const { notes } = body;
 
-    const result = await anomalyService.markFalsePositive(
-      id,
-      user.id,
-      notes,
-      user.organizationId
-    );
+    const result = await anomalyService.markFalsePositive(id, user.id, notes, user.organizationId);
 
     return successResponse({
       ...result,

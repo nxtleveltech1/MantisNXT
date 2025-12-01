@@ -1,17 +1,17 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
-import { db } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
+import { db } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -23,11 +23,11 @@ export async function GET(request: NextRequest) {
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Get preferences from database
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       WHERE user_id = $1
     `,
       [user.id]
-    )
+    );
 
     if (result.rows.length === 0) {
       // Return default preferences
@@ -100,10 +100,10 @@ export async function GET(request: NextRequest) {
           },
         },
         { status: 200 }
-      )
+      );
     }
 
-    const prefs = result.rows[0]
+    const prefs = result.rows[0];
 
     return NextResponse.json(
       {
@@ -137,9 +137,9 @@ export async function GET(request: NextRequest) {
         },
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Get preferences API error:', error)
+    console.error('Get preferences API error:', error);
 
     return NextResponse.json(
       {
@@ -148,19 +148,19 @@ export async function GET(request: NextRequest) {
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -172,11 +172,11 @@ export async function PUT(request: NextRequest) {
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -186,11 +186,11 @@ export async function PUT(request: NextRequest) {
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Parse request body
-    const body = await request.json()
+    const body = await request.json();
     const {
       language,
       timezone,
@@ -203,7 +203,7 @@ export async function PUT(request: NextRequest) {
       accessibility,
       dashboardLayout,
       quickActions,
-    } = body
+    } = body;
 
     // Upsert preferences
     await db.query(
@@ -274,7 +274,7 @@ export async function PUT(request: NextRequest) {
         dashboardLayout ? JSON.stringify(dashboardLayout) : null,
         quickActions ? JSON.stringify(quickActions) : null,
       ]
-    )
+    );
 
     return NextResponse.json(
       {
@@ -282,9 +282,9 @@ export async function PUT(request: NextRequest) {
         message: 'Preferences updated successfully',
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Update preferences API error:', error)
+    console.error('Update preferences API error:', error);
 
     return NextResponse.json(
       {
@@ -293,10 +293,9 @@ export async function PUT(request: NextRequest) {
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

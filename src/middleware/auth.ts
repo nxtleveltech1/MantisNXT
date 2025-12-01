@@ -29,14 +29,10 @@ function toAuthenticatedUser(payload: string | JwtPayload): AuthenticatedUser {
     throw new Error('Invalid token payload');
   }
 
-  const {
-    userId,
-    email,
-    name,
-    role,
-    permissions,
-    organizationId,
-  } = payload as Record<string, unknown>;
+  const { userId, email, name, role, permissions, organizationId } = payload as Record<
+    string,
+    unknown
+  >;
 
   if (
     typeof userId !== 'string' ||
@@ -47,8 +43,7 @@ function toAuthenticatedUser(payload: string | JwtPayload): AuthenticatedUser {
     throw new Error('Invalid token payload');
   }
 
-  const resolvedName =
-    typeof name === 'string' && name.trim().length > 0 ? name : email;
+  const resolvedName = typeof name === 'string' && name.trim().length > 0 ? name : email;
 
   const normalizedPermissions = Array.isArray(permissions)
     ? permissions.filter((permission): permission is string => typeof permission === 'string')
@@ -226,4 +221,3 @@ export function getUserFromRequest(request: NextRequest): AuthenticatedUser | nu
     return null;
   }
 }
-

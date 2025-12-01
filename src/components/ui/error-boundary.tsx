@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import type { ReactNode } from 'react';
 import React, { Component } from 'react';
@@ -125,12 +125,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (!error) return false;
 
     // Auto-retry for network errors, chunk load errors, etc.
-    const autoRetryPatterns = [
-      /loading chunk/i,
-      /network error/i,
-      /fetch/i,
-      /timeout/i,
-    ];
+    const autoRetryPatterns = [/loading chunk/i, /network error/i, /fetch/i, /timeout/i];
 
     return autoRetryPatterns.some(pattern => pattern.test(error.message));
   };
@@ -192,49 +187,49 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
   const getContainerClasses = () => {
     switch (level) {
       case 'page':
-        return "min-h-[400px] p-8";
+        return 'min-h-[400px] p-8';
       case 'section':
-        return "min-h-[200px] p-6";
+        return 'min-h-[200px] p-6';
       default:
-        return "min-h-[100px] p-4";
+        return 'min-h-[100px] p-4';
     }
   };
 
   const canRetry = retryCount < 3;
-  const isNetworkError = error?.message?.toLowerCase().includes('network') ||
-                        error?.message?.toLowerCase().includes('fetch');
+  const isNetworkError =
+    error?.message?.toLowerCase().includes('network') ||
+    error?.message?.toLowerCase().includes('fetch');
 
   return (
     <Card className={`border-red-200 bg-red-50/50 ${getContainerClasses()}`}>
-      <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+      <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
         {getErrorIcon()}
 
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-red-900">
-            {level === 'page' ? 'Page Error' : level === 'section' ? 'Section Error' : 'Component Error'}
+            {level === 'page'
+              ? 'Page Error'
+              : level === 'section'
+                ? 'Section Error'
+                : 'Component Error'}
           </h3>
 
-          <p className="text-red-700 max-w-md">
+          <p className="max-w-md text-red-700">
             {isNetworkError
               ? "We're having trouble connecting to our servers. Please check your internet connection and try again."
-              : "Something went wrong while loading this content. Our team has been notified."
-            }
+              : 'Something went wrong while loading this content. Our team has been notified.'}
           </p>
 
           {context && (
-            <Badge variant="outline" className="text-red-600 border-red-300">
+            <Badge variant="outline" className="border-red-300 text-red-600">
               {context}
             </Badge>
           )}
 
-          {retryCount > 0 && (
-            <p className="text-sm text-red-600">
-              Retry attempt: {retryCount}/3
-            </p>
-          )}
+          {retryCount > 0 && <p className="text-sm text-red-600">Retry attempt: {retryCount}/3</p>}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           {canRetry && (
             <Button
               onClick={resetError}
@@ -242,19 +237,19 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               size="sm"
               className="border-red-300 text-red-700 hover:bg-red-100"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
           )}
 
           {level === 'page' && (
             <Button
-              onClick={() => window.location.href = '/'}
+              onClick={() => (window.location.href = '/')}
               variant="outline"
               size="sm"
               className="border-red-300 text-red-700 hover:bg-red-100"
             >
-              <Home className="h-4 w-4 mr-2" />
+              <Home className="mr-2 h-4 w-4" />
               Go Home
             </Button>
           )}
@@ -265,7 +260,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
             size="sm"
             className="border-red-300 text-red-700 hover:bg-red-100"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Reload Page
           </Button>
         </div>
@@ -276,16 +271,16 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-100"
+              className="text-red-600 hover:bg-red-100 hover:text-red-700"
             >
               {showDetails ? (
                 <>
-                  <ChevronUp className="h-4 w-4 mr-2" />
+                  <ChevronUp className="mr-2 h-4 w-4" />
                   Hide Details
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4 mr-2" />
+                  <ChevronDown className="mr-2 h-4 w-4" />
                   Show Details
                 </>
               )}
@@ -293,33 +288,33 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
           </CollapsibleTrigger>
 
           <CollapsibleContent className="mt-4">
-            <div className="bg-red-100 border border-red-200 rounded-lg p-3 text-left">
+            <div className="rounded-lg border border-red-200 bg-red-100 p-3 text-left">
               <div className="space-y-2">
                 <div>
-                  <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">
+                  <p className="text-xs font-semibold tracking-wider text-red-800 uppercase">
                     Error Message
                   </p>
-                  <p className="text-sm text-red-700 font-mono break-all">
+                  <p className="font-mono text-sm break-all text-red-700">
                     {error?.message || 'Unknown error'}
                   </p>
                 </div>
 
                 {error?.stack && (
                   <div>
-                    <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">
+                    <p className="text-xs font-semibold tracking-wider text-red-800 uppercase">
                       Stack Trace
                     </p>
-                    <pre className="text-xs text-red-600 font-mono overflow-auto max-h-32 whitespace-pre-wrap">
+                    <pre className="max-h-32 overflow-auto font-mono text-xs whitespace-pre-wrap text-red-600">
                       {error.stack}
                     </pre>
                   </div>
                 )}
 
                 <div>
-                  <p className="text-xs font-semibold text-red-800 uppercase tracking-wider">
+                  <p className="text-xs font-semibold tracking-wider text-red-800 uppercase">
                     Error ID
                   </p>
-                  <p className="text-xs text-red-600 font-mono">
+                  <p className="font-mono text-xs text-red-600">
                     {Date.now().toString(36).toUpperCase()}
                   </p>
                 </div>
@@ -333,15 +328,15 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 };
 
 // Specialized error boundaries for different UI levels
-export const PageErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
+export const PageErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = props => (
   <ErrorBoundary {...props} level="page" />
 );
 
-export const SectionErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
+export const SectionErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = props => (
   <ErrorBoundary {...props} level="section" />
 );
 
-export const ComponentErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
+export const ComponentErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = props => (
   <ErrorBoundary {...props} level="component" />
 );
 

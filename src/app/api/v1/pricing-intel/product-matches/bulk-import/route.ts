@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { ProductMatchService } from '@/lib/services/pricing-intel/ProductMatchService'
-import { getOrgId } from '../../_helpers'
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { ProductMatchService } from '@/lib/services/pricing-intel/ProductMatchService';
+import { getOrgId } from '../../_helpers';
 
 const bulkImportSchema = z.object({
   matches: z.array(
@@ -21,20 +21,20 @@ const bulkImportSchema = z.object({
       match_method: z.enum(['manual', 'upc', 'fuzzy', 'ai']).optional(),
     })
   ),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const orgId = await getOrgId(request, body)
+    const body = await request.json();
+    const orgId = await getOrgId(request, body);
 
-    const validated = bulkImportSchema.parse(body)
+    const validated = bulkImportSchema.parse(body);
 
-    const service = new ProductMatchService()
+    const service = new ProductMatchService();
     const results = {
       successful: [] as Array<{ match_id: string; competitor_product_id: string }>,
       failed: [] as Array<{ competitor_product_id: string; error: string }>,
-    }
+    };
 
     for (const match of validated.matches) {
       try {
@@ -53,16 +53,16 @@ export async function POST(request: NextRequest) {
           match_confidence: match.match_confidence ?? 50,
           match_method: match.match_method ?? 'manual',
           status: 'pending',
-        })
+        });
         results.successful.push({
           match_id: created.match_id,
           competitor_product_id: match.competitor_product_id,
-        })
+        });
       } catch (error) {
         results.failed.push({
           competitor_product_id: match.competitor_product_id,
           error: error instanceof Error ? error.message : 'Unknown error',
-        })
+        });
       }
     }
 
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
         results,
       },
       error: null,
-    })
+    });
   } catch (error) {
-    console.error('Error bulk importing matches:', error)
+    console.error('Error bulk importing matches:', error);
     return NextResponse.json(
       {
         data: null,
@@ -86,12 +86,6 @@ export async function POST(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
-
-
-
-
-
-

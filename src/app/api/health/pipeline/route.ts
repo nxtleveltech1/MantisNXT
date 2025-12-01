@@ -3,7 +3,7 @@
  * Tracks cache performance, batch processing metrics, and query performance
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { CacheManager } from '@/lib/pipeline/cache-manager';
 import { pool } from '@/lib/database/unified-connection';
@@ -65,7 +65,9 @@ function generateRecommendations(stats: unknown): string[] {
   }
 
   if (dbConnections > 15) {
-    recommendations.push('⚠️ High database connection usage - Consider connection pooling optimization');
+    recommendations.push(
+      '⚠️ High database connection usage - Consider connection pooling optimization'
+    );
   }
 
   if (recommendations.length === 0) {

@@ -17,7 +17,10 @@ const readSecretFile = (filePath: string): string | undefined => {
     const contents = fs.readFileSync(resolvedPath, 'utf8');
     return normalizeValue(contents);
   } catch (error) {
-    console.warn(`AI secret file read failed for ${filePath}:`, error instanceof Error ? error.message : error);
+    console.warn(
+      `AI secret file read failed for ${filePath}:`,
+      error instanceof Error ? error.message : error
+    );
     return undefined;
   }
 };

@@ -19,10 +19,7 @@ import { extractFromCSV } from './CSVExtractor';
 import { mapColumns, validateMapping } from './ColumnMapper';
 import { detectBrand } from './BrandDetector';
 import { detectCurrency } from './CurrencyNormalizer';
-import {
-  calculateMetadataConfidence,
-  calculateOverallConfidence,
-} from './ConfidenceScorer';
+import { calculateMetadataConfidence, calculateOverallConfidence } from './ConfidenceScorer';
 
 /**
  * Detect file type from filename or content
@@ -53,12 +50,7 @@ function detectFileType(
     }
 
     // PDF files start with %PDF
-    if (
-      content[0] === 0x25 &&
-      content[1] === 0x50 &&
-      content[2] === 0x44 &&
-      content[3] === 0x46
-    ) {
+    if (content[0] === 0x25 && content[1] === 0x50 && content[2] === 0x44 && content[3] === 0x46) {
       return 'pdf';
     }
 
@@ -177,34 +169,22 @@ export class ExtractionEngine {
       }
 
       // Detect brand
-      const brandColumnValues =
-        columnMappings.mapping.brand
-          ? rows.map((r) => r.brand).filter(Boolean)
-          : [];
+      const brandColumnValues = columnMappings.mapping.brand
+        ? rows.map(r => r.brand).filter(Boolean)
+        : [];
 
-      const brandDetection = detectBrand(
-        filename,
-        sheetData.sheetName,
-        brandColumnValues
-      );
+      const brandDetection = detectBrand(filename, sheetData.sheetName, brandColumnValues);
 
       // Detect currency (from first valid row)
-      const firstValidRow = rows.find((r) => r.price > 0);
+      const firstValidRow = rows.find(r => r.price > 0);
       const detectedCurrency = firstValidRow
         ? firstValidRow.currency
         : config?.defaultCurrency || 'ZAR';
 
       // Calculate confidence scores
-      const metadataConfidence = calculateMetadataConfidence(
-        columnMappings,
-        brandDetection,
-        rows
-      );
+      const metadataConfidence = calculateMetadataConfidence(columnMappings, brandDetection, rows);
 
-      const extractionConfidence = calculateOverallConfidence(
-        metadataConfidence,
-        rows
-      );
+      const extractionConfidence = calculateOverallConfidence(metadataConfidence, rows);
 
       // Collect row-level warnings
       for (const row of rows) {
@@ -229,8 +209,8 @@ export class ExtractionEngine {
         detectedCurrency,
         headerRow: 0, // Would need to track this from extractors
         totalRows: sheetData.totalRows,
-        validRows: rows.filter((r) => r.is_valid).length,
-        invalidRows: rows.filter((r) => !r.is_valid).length,
+        validRows: rows.filter(r => r.is_valid).length,
+        invalidRows: rows.filter(r => !r.is_valid).length,
         columnMappings,
         extractionConfidence,
         processingTimeMs: Date.now() - startTime,
@@ -263,10 +243,7 @@ export class ExtractionEngine {
   /**
    * Create empty metadata for error cases
    */
-  private createEmptyMetadata(
-    filename: string,
-    startTime: number
-  ): ExtractedMetadata {
+  private createEmptyMetadata(filename: string, startTime: number): ExtractedMetadata {
     return {
       filename,
       fileType: 'excel',

@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Edit, Trash2, CheckCircle2 } from 'lucide-react';
-import type { PricingRule} from '@/lib/db/pricing-schema';
+import type { PricingRule } from '@/lib/db/pricing-schema';
 import { PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 
 export function PricingRuleManager() {
@@ -125,11 +125,11 @@ export function PricingRuleManager() {
     <div className="space-y-6">
       {/* Header & Filters */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
+        <div className="flex flex-1 items-center gap-4">
           <Input
             placeholder="Search rules..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="max-w-sm"
           />
           <Select value={filterType} onValueChange={setFilterType}>
@@ -168,18 +168,18 @@ export function PricingRuleManager() {
       <div className="space-y-4">
         {loading ? (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-8 text-center">
               Loading rules...
             </CardContent>
           </Card>
         ) : rules.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-8 text-center">
               No pricing rules found. Create your first rule to get started.
             </CardContent>
           </Card>
         ) : (
-          rules.map((rule) => (
+          rules.map(rule => (
             <Card key={rule.rule_id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -211,18 +211,14 @@ export function PricingRuleManager() {
                     <Button variant="ghost" size="icon">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteRule(rule.rule_id)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => deleteRule(rule.rule_id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                   <div>
                     <Label className="text-muted-foreground">Priority</Label>
                     <p className="font-medium">{rule.priority}</p>
@@ -295,7 +291,7 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
         <Input
           id="name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={e => setFormData({ ...formData, name: e.target.value })}
           required
         />
       </div>
@@ -304,7 +300,7 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
         <Input
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={e => setFormData({ ...formData, description: e.target.value })}
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -312,7 +308,9 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
           <Label htmlFor="rule_type">Rule Type</Label>
           <Select
             value={formData.rule_type}
-            onValueChange={(value) => setFormData({ ...formData, rule_type: value as PricingRuleType })}
+            onValueChange={value =>
+              setFormData({ ...formData, rule_type: value as PricingRuleType })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -328,7 +326,9 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
           <Label htmlFor="strategy">Strategy</Label>
           <Select
             value={formData.strategy}
-            onValueChange={(value) => setFormData({ ...formData, strategy: value as PricingStrategy })}
+            onValueChange={value =>
+              setFormData({ ...formData, strategy: value as PricingStrategy })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -350,7 +350,7 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
             min="1"
             max="100"
             value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+            onChange={e => setFormData({ ...formData, priority: parseInt(e.target.value) })}
           />
         </div>
         <div>
@@ -359,11 +359,13 @@ function CreateRuleForm({ onSuccess }: { onSuccess: () => void }) {
             id="margin"
             type="number"
             value={formData.margin_percent}
-            onChange={(e) => setFormData({ ...formData, margin_percent: parseFloat(e.target.value) })}
+            onChange={e => setFormData({ ...formData, margin_percent: parseFloat(e.target.value) })}
           />
         </div>
       </div>
-      <Button type="submit" className="w-full">Create Rule</Button>
+      <Button type="submit" className="w-full">
+        Create Rule
+      </Button>
     </form>
   );
 }

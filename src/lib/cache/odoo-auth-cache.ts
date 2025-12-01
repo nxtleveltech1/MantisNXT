@@ -61,13 +61,7 @@ export class OdooAuthCache {
   /**
    * Set cached authentication
    */
-  set(
-    serverUrl: string,
-    database: string,
-    username: string,
-    uid: number,
-    ttl?: number
-  ): void {
+  set(serverUrl: string, database: string, username: string, uid: number, ttl?: number): void {
     const key = this.getCacheKey(serverUrl, database, username);
     const now = Date.now();
     const expiresAt = now + (ttl || this.defaultTTL);
@@ -109,9 +103,12 @@ export class OdooAuthCache {
    */
   private startCleanup(): void {
     // Run cleanup every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000
+    );
   }
 
   /**
@@ -185,10 +182,7 @@ class AuthRequestQueue {
    * Execute authentication with queue serialization
    * Ensures only one auth request per unique config at a time
    */
-  async execute(
-    key: string,
-    authFn: () => Promise<number>
-  ): Promise<number> {
+  async execute(key: string, authFn: () => Promise<number>): Promise<number> {
     // Check if auth is already in progress for this key
     const existingPromise = this.queue.get(key);
     if (existingPromise) {
@@ -197,11 +191,10 @@ class AuthRequestQueue {
     }
 
     // Create new auth promise
-    const authPromise = authFn()
-      .finally(() => {
-        // Remove from queue when complete
-        this.queue.delete(key);
-      });
+    const authPromise = authFn().finally(() => {
+      // Remove from queue when complete
+      this.queue.delete(key);
+    });
 
     this.queue.set(key, authPromise);
     return authPromise;

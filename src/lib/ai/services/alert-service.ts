@@ -316,11 +316,7 @@ export class AIAlertService {
   /**
    * Acknowledge an alert
    */
-  async acknowledgeAlert(
-    alertId: string,
-    userId: string,
-    orgId: string
-  ): Promise<Alert> {
+  async acknowledgeAlert(alertId: string, userId: string, orgId: string): Promise<Alert> {
     try {
       return await withTransaction(async (client: PoolClient) => {
         // First verify the alert exists and belongs to the org
@@ -504,7 +500,7 @@ export class AIAlertService {
         low: 0,
       };
 
-      severityResult.rows.forEach((row) => {
+      severityResult.rows.forEach(row => {
         by_severity[row.severity] = parseInt(row.count, 10);
       });
 
@@ -517,7 +513,7 @@ export class AIAlertService {
       let unresolved_count = 0;
       let acknowledged_count = 0;
 
-      statusResult.rows.forEach((row) => {
+      statusResult.rows.forEach(row => {
         const count = parseInt(row.count, 10);
         if (row.is_resolved) {
           by_status.resolved += count;
@@ -532,7 +528,7 @@ export class AIAlertService {
       });
 
       const by_service: Record<string, number> = {};
-      serviceResult.rows.forEach((row) => {
+      serviceResult.rows.forEach(row => {
         by_service[row.service_type] = parseInt(row.count, 10);
       });
 
@@ -557,10 +553,10 @@ export class AIAlertService {
    */
   async deleteAlert(alertId: string, orgId: string): Promise<void> {
     try {
-      const result = await query(
-        'DELETE FROM ai_alert WHERE id = $1 AND org_id = $2',
-        [alertId, orgId]
-      );
+      const result = await query('DELETE FROM ai_alert WHERE id = $1 AND org_id = $2', [
+        alertId,
+        orgId,
+      ]);
 
       if (result.rowCount === 0) {
         throw new AlertError(`Alert not found: ${alertId}`);
@@ -578,11 +574,7 @@ export class AIAlertService {
   /**
    * Batch acknowledge multiple alerts
    */
-  async batchAcknowledgeAlerts(
-    alertIds: string[],
-    userId: string,
-    orgId: string
-  ): Promise<number> {
+  async batchAcknowledgeAlerts(alertIds: string[], userId: string, orgId: string): Promise<number> {
     try {
       const result = await query(
         `

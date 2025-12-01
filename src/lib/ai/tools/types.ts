@@ -49,11 +49,13 @@ export type ToolDefinition = z.infer<typeof toolDefinitionSchema>;
 export const toolResultSchema = z.object({
   success: z.boolean(),
   data: z.unknown().optional(),
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.unknown().optional(),
-  }).optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+      details: z.unknown().optional(),
+    })
+    .optional(),
   executionTimeMs: z.number().int().min(0),
   auditInfo: z.object({
     toolName: z.string(),
@@ -153,11 +155,7 @@ export class ToolExecutionTimeoutError extends ToolError {
 
 export class ToolNotFoundError extends ToolError {
   constructor(toolName: string) {
-    super(
-      `Tool '${toolName}' not found in registry`,
-      'TOOL_NOT_FOUND',
-      toolName
-    );
+    super(`Tool '${toolName}' not found in registry`, 'TOOL_NOT_FOUND', toolName);
     this.name = 'ToolNotFoundError';
   }
 }

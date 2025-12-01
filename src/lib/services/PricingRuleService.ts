@@ -147,7 +147,7 @@ export class PricingRuleService {
         input.priority,
         new Date(),
         null,
-      ],
+      ]
     );
 
     return this.parseRule(result.rows[0]);
@@ -252,7 +252,7 @@ export class PricingRuleService {
         FROM ${PRICING_TABLES.PRICING_RULES}
         WHERE id = $1
       `,
-      [ruleId],
+      [ruleId]
     );
 
     if (result.rows.length === 0) {
@@ -265,14 +265,17 @@ export class PricingRuleService {
   /**
    * Update a pricing rule
    */
-  static async updateRule(ruleId: string, input: UpdatePricingRuleInput): Promise<PricingRule | null> {
+  static async updateRule(
+    ruleId: string,
+    input: UpdatePricingRuleInput
+  ): Promise<PricingRule | null> {
     const existingResult = await query<DbPricingRuleRow>(
       `
         SELECT *
         FROM ${PRICING_TABLES.PRICING_RULES}
         WHERE id = $1
       `,
-      [ruleId],
+      [ruleId]
     );
 
     if (existingResult.rows.length === 0) {
@@ -358,7 +361,7 @@ export class PricingRuleService {
         WHERE id = $${paramCount}
         RETURNING *
       `,
-      params,
+      params
     );
 
     return this.parseRule(result.rows[0]);
@@ -368,17 +371,19 @@ export class PricingRuleService {
    * Delete a pricing rule
    */
   static async deleteRule(ruleId: string): Promise<boolean> {
-    const result = await query(
-      `DELETE FROM ${PRICING_TABLES.PRICING_RULES} WHERE id = $1`,
-      [ruleId],
-    );
+    const result = await query(`DELETE FROM ${PRICING_TABLES.PRICING_RULES} WHERE id = $1`, [
+      ruleId,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 
   /**
    * Activate or deactivate a pricing rule
    */
-  static async toggleRuleActivation(ruleId: string, isActive: boolean): Promise<PricingRule | null> {
+  static async toggleRuleActivation(
+    ruleId: string,
+    isActive: boolean
+  ): Promise<PricingRule | null> {
     const result = await query<DbPricingRuleRow>(
       `
         UPDATE ${PRICING_TABLES.PRICING_RULES}
@@ -386,7 +391,7 @@ export class PricingRuleService {
         WHERE id = $2
         RETURNING *
       `,
-      [isActive, ruleId],
+      [isActive, ruleId]
     );
 
     if (result.rows.length === 0) {
@@ -439,7 +444,10 @@ export class PricingRuleService {
   /**
    * Calculate price for a product based on applicable rules
    */
-  static async calculateProductPrice(productId: string, baseCost?: number): Promise<ProductPriceCalculation> {
+  static async calculateProductPrice(
+    productId: string,
+    baseCost?: number
+  ): Promise<ProductPriceCalculation> {
     const productResult = await query<unknown>(
       `
         SELECT p.*, sp.cost
@@ -448,7 +456,7 @@ export class PricingRuleService {
         WHERE p.product_id = $1
         LIMIT 1
       `,
-      [productId],
+      [productId]
     );
 
     if (productResult.rows.length === 0) {
@@ -526,7 +534,12 @@ export class PricingRuleService {
   /**
    * Apply a single pricing rule to calculate adjustment
    */
-  private static applyRule(rule: PricingRule, currentPrice: number, cost: number, product: unknown): number {
+  private static applyRule(
+    rule: PricingRule,
+    currentPrice: number,
+    cost: number,
+    product: unknown
+  ): number {
     const config = rule.config;
 
     switch (rule.rule_type) {
@@ -575,17 +588,23 @@ export class PricingRuleService {
     }
 
     if (rule1.applies_to_categories && rule2.applies_to_categories) {
-      const overlap = rule1.applies_to_categories.some(cat => rule2.applies_to_categories!.includes(cat));
+      const overlap = rule1.applies_to_categories.some(cat =>
+        rule2.applies_to_categories!.includes(cat)
+      );
       if (overlap) return true;
     }
 
     if (rule1.applies_to_brands && rule2.applies_to_brands) {
-      const overlap = rule1.applies_to_brands.some(brand => rule2.applies_to_brands!.includes(brand));
+      const overlap = rule1.applies_to_brands.some(brand =>
+        rule2.applies_to_brands!.includes(brand)
+      );
       if (overlap) return true;
     }
 
     if (rule1.applies_to_products && rule2.applies_to_products) {
-      const overlap = rule1.applies_to_products.some(prod => rule2.applies_to_products!.includes(prod));
+      const overlap = rule1.applies_to_products.some(prod =>
+        rule2.applies_to_products!.includes(prod)
+      );
       if (overlap) return true;
     }
 
@@ -597,15 +616,19 @@ export class PricingRuleService {
    */
   private static hasContradictoryConfig(rule1: PricingRule, rule2: PricingRule): boolean {
     if (
-      (rule1.strategy === PricingStrategy.MAXIMIZE_REVENUE && rule2.strategy === PricingStrategy.MAXIMIZE_VOLUME) ||
-      (rule2.strategy === PricingStrategy.MAXIMIZE_REVENUE && rule1.strategy === PricingStrategy.MAXIMIZE_VOLUME)
+      (rule1.strategy === PricingStrategy.MAXIMIZE_REVENUE &&
+        rule2.strategy === PricingStrategy.MAXIMIZE_VOLUME) ||
+      (rule2.strategy === PricingStrategy.MAXIMIZE_REVENUE &&
+        rule1.strategy === PricingStrategy.MAXIMIZE_VOLUME)
     ) {
       return true;
     }
 
     if (
-      (rule1.strategy === PricingStrategy.PREMIUM_POSITIONING && rule2.strategy === PricingStrategy.VALUE_POSITIONING) ||
-      (rule2.strategy === PricingStrategy.PREMIUM_POSITIONING && rule1.strategy === PricingStrategy.VALUE_POSITIONING)
+      (rule1.strategy === PricingStrategy.PREMIUM_POSITIONING &&
+        rule2.strategy === PricingStrategy.VALUE_POSITIONING) ||
+      (rule2.strategy === PricingStrategy.PREMIUM_POSITIONING &&
+        rule1.strategy === PricingStrategy.VALUE_POSITIONING)
     ) {
       return true;
     }
@@ -686,7 +709,7 @@ export class PricingRuleService {
 
   private static extractConfig(
     row: DbPricingRuleRow,
-    conditions: Record<string, unknown>,
+    conditions: Record<string, unknown>
   ): PricingRule['config'] {
     const rawConfig =
       typeof conditions.config === 'object' && conditions.config !== null
@@ -720,7 +743,7 @@ export class PricingRuleService {
 
   private static extractApplies(
     conditions: Record<string, unknown>,
-    row: DbPricingRuleRow,
+    row: DbPricingRuleRow
   ): {
     categories: string[];
     brands: string[];
@@ -827,4 +850,3 @@ export class PricingRuleService {
     }
   }
 }
-

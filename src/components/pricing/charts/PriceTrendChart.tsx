@@ -1,6 +1,6 @@
 /**
  * Price Trend Chart Component
- * 
+ *
  * Displays historical price trends over time using Recharts
  */
 
@@ -34,7 +34,7 @@ interface PriceTrendChartProps {
 export function PriceTrendChart({ data, loading }: PriceTrendChartProps) {
   if (loading) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         Loading price trends...
       </div>
     );
@@ -42,7 +42,7 @@ export function PriceTrendChart({ data, loading }: PriceTrendChartProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         No price trend data available
       </div>
     );
@@ -50,9 +50,10 @@ export function PriceTrendChart({ data, loading }: PriceTrendChartProps) {
 
   // Format data for chart
   const chartData = data.map(point => ({
-    date: typeof point.date === 'string' 
-      ? new Date(point.date).toLocaleDateString() 
-      : point.date.toLocaleDateString(),
+    date:
+      typeof point.date === 'string'
+        ? new Date(point.date).toLocaleDateString()
+        : point.date.toLocaleDateString(),
     'Average Price': Number(point.avg_price),
     'Min Price': Number(point.min_price),
     'Max Price': Number(point.max_price),
@@ -62,41 +63,32 @@ export function PriceTrendChart({ data, loading }: PriceTrendChartProps) {
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
-          dataKey="date" 
-          tick={{ fontSize: 12 }}
-          angle={-45}
-          textAnchor="end"
-          height={80}
-        />
-        <YAxis 
-          tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `$${value.toFixed(2)}`}
-        />
-        <Tooltip 
+        <XAxis dataKey="date" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+        <YAxis tick={{ fontSize: 12 }} tickFormatter={value => `$${value.toFixed(2)}`} />
+        <Tooltip
           formatter={(value: number) => `$${value.toFixed(2)}`}
           labelStyle={{ color: '#000' }}
         />
         <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="Average Price" 
-          stroke="#8884d8" 
+        <Line
+          type="monotone"
+          dataKey="Average Price"
+          stroke="#8884d8"
           strokeWidth={2}
           dot={{ r: 4 }}
           activeDot={{ r: 6 }}
         />
-        <Line 
-          type="monotone" 
-          dataKey="Min Price" 
-          stroke="#82ca9d" 
+        <Line
+          type="monotone"
+          dataKey="Min Price"
+          stroke="#82ca9d"
           strokeWidth={1}
           strokeDasharray="5 5"
         />
-        <Line 
-          type="monotone" 
-          dataKey="Max Price" 
-          stroke="#ffc658" 
+        <Line
+          type="monotone"
+          dataKey="Max Price"
+          stroke="#ffc658"
           strokeWidth={1}
           strokeDasharray="5 5"
         />
@@ -104,4 +96,3 @@ export function PriceTrendChart({ data, loading }: PriceTrendChartProps) {
     </ResponsiveContainer>
   );
 }
-

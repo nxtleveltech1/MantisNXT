@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * AI Insights Dashboard - Comprehensive AI Features Hub
@@ -12,13 +12,13 @@
  * - Market trends analysis
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Brain,
   Sparkles,
@@ -35,19 +35,19 @@ import {
   Activity,
   MessageCircle,
   Info,
-} from 'lucide-react'
-import AIChatInterfaceV5 from '@/components/ai/ChatInterfaceV5'
-import AIInsightCards, { type AIInsight as InsightCardInsight } from '@/components/ai/InsightCards'
+} from 'lucide-react';
+import AIChatInterfaceV5 from '@/components/ai/ChatInterfaceV5';
+import AIInsightCards, { type AIInsight as InsightCardInsight } from '@/components/ai/InsightCards';
 
-type AIInsight = InsightCardInsight
+type AIInsight = InsightCardInsight;
 
 export default function AIInsightsPage() {
   // State
-  const [insights, setInsights] = useState<AIInsight[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [activeTab, setActiveTab] = useState('overview')
+  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Statistics
   const [stats, setStats] = useState({
@@ -56,13 +56,14 @@ export default function AIInsightsPage() {
     risks: 0,
     potentialSavings: 0,
     confidenceAverage: 0,
-  })
+  });
 
   const calculateStats = useCallback((insightsList: AIInsight[]) => {
-    const opportunities = insightsList.filter(i => i.type === 'opportunity').length
-    const risks = insightsList.filter(i => i.type === 'risk').length
-    const savings = insightsList.reduce((sum, i) => sum + (i.impact.financial || 0), 0)
-    const avgConfidence = insightsList.reduce((sum, i) => sum + i.confidence, 0) / (insightsList.length || 1)
+    const opportunities = insightsList.filter(i => i.type === 'opportunity').length;
+    const risks = insightsList.filter(i => i.type === 'risk').length;
+    const savings = insightsList.reduce((sum, i) => sum + (i.impact.financial || 0), 0);
+    const avgConfidence =
+      insightsList.reduce((sum, i) => sum + i.confidence, 0) / (insightsList.length || 1);
 
     setStats({
       totalInsights: insightsList.length,
@@ -70,14 +71,14 @@ export default function AIInsightsPage() {
       risks,
       potentialSavings: savings,
       confidenceAverage: Math.round(avgConfidence),
-    })
-  }, [])
+    });
+  }, []);
 
   // Load insights from API
   const loadInsights = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const response = await fetch('/api/ai/insights/generate', {
         method: 'POST',
@@ -91,58 +92,56 @@ export default function AIInsightsPage() {
           },
           includeActions: true,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to load insights')
+        throw new Error('Failed to load insights');
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        setInsights(data.data.insights || [])
-        calculateStats(data.data.insights || [])
+        setInsights(data.data.insights || []);
+        calculateStats(data.data.insights || []);
       } else {
-        throw new Error(data.error || 'Unknown error')
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (err) {
-      console.error('Failed to load insights:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load AI insights')
+      console.error('Failed to load insights:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load AI insights');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [calculateStats])
+  }, [calculateStats]);
 
   // Load AI insights on mount
   useEffect(() => {
-    loadInsights()
-  }, [loadInsights])
+    loadInsights();
+  }, [loadInsights]);
 
   // Handle insight action
   const handleInsightAction = (insightId: string, action: unknown) => {
-    console.log('Insight action triggered:', insightId, action)
+    console.log('Insight action triggered:', insightId, action);
     // Implement action handling logic
-  }
+  };
 
   // Handle insight status change
   const handleInsightStatusChange = (insightId: string, status: AIInsight['status']) => {
     setInsights(prev =>
-      prev.map(insight =>
-        insight.id === insightId ? { ...insight, status } : insight
-      )
-    )
-  }
+      prev.map(insight => (insight.id === insightId ? { ...insight, status } : insight))
+    );
+  };
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto max-w-7xl space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900 dark:text-white">
             <Brain className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             AI Insights Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="mt-1 text-gray-600 dark:text-gray-400">
             Comprehensive AI-powered intelligence and recommendations
           </p>
         </div>
@@ -157,11 +156,7 @@ export default function AIInsightsPage() {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Export
           </Button>
@@ -169,8 +164,8 @@ export default function AIInsightsPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-0 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg dark:from-purple-900/20 dark:to-indigo-900/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Total Insights
@@ -182,14 +177,14 @@ export default function AIInsightsPage() {
                 {stats.totalInsights}
               </span>
               <Badge variant="secondary" className="text-xs">
-                <Sparkles className="h-3 w-3 mr-1" />
+                <Sparkles className="mr-1 h-3 w-3" />
                 Active
               </Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+        <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg dark:from-green-900/20 dark:to-emerald-900/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Opportunities
@@ -205,7 +200,7 @@ export default function AIInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20">
+        <Card className="border-0 bg-gradient-to-br from-red-50 to-rose-50 shadow-lg dark:from-red-900/20 dark:to-rose-900/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Risks Identified
@@ -221,7 +216,7 @@ export default function AIInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+        <Card className="border-0 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-lg dark:from-blue-900/20 dark:to-cyan-900/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Potential Savings
@@ -240,17 +235,12 @@ export default function AIInsightsPage() {
 
       {/* Error Alert */}
       {error && (
-        <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+        <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
           <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
           <AlertDescription className="text-red-800 dark:text-red-300">
-            <div className="font-semibold mb-1">Error Loading Insights</div>
+            <div className="mb-1 font-semibold">Error Loading Insights</div>
             <div>{error}</div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={loadInsights}
-            >
+            <Button variant="outline" size="sm" className="mt-2" onClick={loadInsights}>
               Retry
             </Button>
           </AlertDescription>
@@ -280,7 +270,7 @@ export default function AIInsightsPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* AI Chat Interface */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
@@ -304,19 +294,17 @@ export default function AIInsightsPage() {
                   <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                   Quick Insights
                 </CardTitle>
-                <CardDescription>
-                  AI-generated recommendations and alerts
-                </CardDescription>
+                <CardDescription>AI-generated recommendations and alerts</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px]">
                   {loading ? (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex h-full items-center justify-center">
                       <RefreshCw className="h-8 w-8 animate-spin text-purple-600 dark:text-purple-400" />
                     </div>
                   ) : insights.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <Info className="h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" />
+                    <div className="flex h-full flex-col items-center justify-center text-center">
+                      <Info className="mb-4 h-12 w-12 text-gray-400 dark:text-gray-600" />
                       <p className="text-gray-600 dark:text-gray-400">
                         No insights available. Refresh to generate new insights.
                       </p>
@@ -326,9 +314,9 @@ export default function AIInsightsPage() {
                       {insights.slice(0, 5).map(insight => (
                         <div
                           key={insight.id}
-                          className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                          className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-purple-300 dark:border-gray-700 dark:hover:border-purple-700"
                         >
-                          <div className="flex items-start justify-between mb-2">
+                          <div className="mb-2 flex items-start justify-between">
                             <Badge
                               variant={insight.type === 'opportunity' ? 'default' : 'destructive'}
                               className="text-xs"
@@ -339,10 +327,10 @@ export default function AIInsightsPage() {
                               {insight.confidence}% confident
                             </span>
                           </div>
-                          <h4 className="font-semibold text-sm mb-1 text-gray-900 dark:text-white">
+                          <h4 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
                             {insight.title}
                           </h4>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                          <p className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                             {insight.summary}
                           </p>
                           {insight.impact.financial > 0 && (
@@ -382,7 +370,7 @@ export default function AIInsightsPage() {
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -393,11 +381,15 @@ export default function AIInsightsPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Suppliers</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Active Suppliers
+                    </span>
                     <span className="font-bold text-gray-900 dark:text-white">24</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Performance Score</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Performance Score
+                    </span>
                     <span className="font-bold text-green-600 dark:text-green-400">92%</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -422,11 +414,15 @@ export default function AIInsightsPage() {
                     <span className="font-bold text-orange-600 dark:text-orange-400">12</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Overstock Items</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Overstock Items
+                    </span>
                     <span className="font-bold text-yellow-600 dark:text-yellow-400">8</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Optimization Score</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Optimization Score
+                    </span>
                     <span className="font-bold text-green-600 dark:text-green-400">87%</span>
                   </div>
                 </div>
@@ -447,11 +443,15 @@ export default function AIInsightsPage() {
                     <span className="font-bold text-red-600 dark:text-red-400">+8%</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Demand Forecast</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Demand Forecast
+                    </span>
                     <span className="font-bold text-blue-600 dark:text-blue-400">High</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Competitive Index</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Competitive Index
+                    </span>
                     <span className="font-bold text-purple-600 dark:text-purple-400">6.8/10</span>
                   </div>
                 </div>
@@ -459,18 +459,18 @@ export default function AIInsightsPage() {
             </Card>
           </div>
 
-          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-blue-800 dark:text-blue-300">
-              <div className="font-semibold mb-1">AI Analytics Engine Active</div>
+              <div className="mb-1 font-semibold">AI Analytics Engine Active</div>
               <div>
-                Continuously analyzing procurement data to identify trends, opportunities, and risks.
-                Last updated: {new Date().toLocaleString()}
+                Continuously analyzing procurement data to identify trends, opportunities, and
+                risks. Last updated: {new Date().toLocaleString()}
               </div>
             </AlertDescription>
           </Alert>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -117,10 +117,7 @@ export class ConflictResolver {
    */
   private async detectConflictType(conflict: Conflict): Promise<ConflictType> {
     // Check for data mismatch (different values for same field)
-    const mismatchedFields = this.findMismatchedFields(
-      conflict.sourceData,
-      conflict.targetData
-    );
+    const mismatchedFields = this.findMismatchedFields(conflict.sourceData, conflict.targetData);
 
     if (mismatchedFields.length > 0) {
       console.log(
@@ -226,10 +223,7 @@ export class ConflictResolver {
    * - DuplicateKey: Skip
    * - RetryExhausted: Manual
    */
-  getConflictStrategy(
-    conflictType: ConflictType,
-    retryCount: number
-  ): ResolutionStrategy {
+  getConflictStrategy(conflictType: ConflictType, retryCount: number): ResolutionStrategy {
     switch (conflictType) {
       case 'DataMismatch':
         // Retry data mismatches up to 3 times (might be timing issue)
@@ -304,7 +298,8 @@ export class ConflictResolver {
    * Calculate exponential backoff delay
    */
   private calculateBackoffDelay(retryCount: number): number {
-    const exponentialDelay = this.RETRY_BACKOFF_BASE * Math.pow(this.RETRY_BACKOFF_MULTIPLIER, retryCount);
+    const exponentialDelay =
+      this.RETRY_BACKOFF_BASE * Math.pow(this.RETRY_BACKOFF_MULTIPLIER, retryCount);
     return Math.min(exponentialDelay, this.MAX_BACKOFF);
   }
 
@@ -349,9 +344,7 @@ export class ConflictResolver {
         ]
       );
 
-      console.log(
-        `[ConflictResolver] Recorded conflict ${conflictId} for manual review`
-      );
+      console.log(`[ConflictResolver] Recorded conflict ${conflictId} for manual review`);
     } catch (error) {
       console.error('[ConflictResolver] Failed to record conflict:', error);
       // Don't throw - conflict recording shouldn't break sync
@@ -364,7 +357,9 @@ export class ConflictResolver {
   async getUnresolvedConflicts(
     syncId: string,
     limit: number = 100
-  ): Promise<Array<{ id: string; itemId: string; type: ConflictType; data: Record<string, unknown> }>> {
+  ): Promise<
+    Array<{ id: string; itemId: string; type: ConflictType; data: Record<string, unknown> }>
+  > {
     try {
       const result = await query(
         `SELECT id, item_id, conflict_type, data
@@ -396,11 +391,7 @@ export class ConflictResolver {
     customData?: Record<string, unknown>
   ): Promise<void> {
     try {
-      const setClauses = [
-        'is_resolved = true',
-        'resolution_action = $1',
-        'resolved_at = NOW()',
-      ];
+      const setClauses = ['is_resolved = true', 'resolution_action = $1', 'resolved_at = NOW()'];
       const values: unknown[] = [resolution];
       let paramIndex = 2;
 

@@ -3,7 +3,7 @@
  * Endpoint: /api/suppliers/discovery/health
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { supplierDiscoveryEngine } from '@/lib/supplier-discovery/engine';
 
@@ -21,13 +21,12 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       system: healthCheck.details,
       statistics,
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     const statusCode = healthCheck.healthy ? 200 : 503;
 
     return NextResponse.json(response, { status: statusCode });
-
   } catch (error) {
     console.error('Health check error:', error);
 
@@ -36,7 +35,7 @@ export async function GET(request: NextRequest) {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
-        version: '1.0.0'
+        version: '1.0.0',
       },
       { status: 503 }
     );
@@ -54,9 +53,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Discovery engine initialized successfully',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Engine initialization error:', error);
 
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Failed to initialize discovery engine',
         details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -83,9 +81,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Discovery engine cleanup completed',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Engine cleanup error:', error);
 
@@ -94,7 +91,7 @@ export async function DELETE(request: NextRequest) {
         success: false,
         error: 'Failed to cleanup discovery engine',
         details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

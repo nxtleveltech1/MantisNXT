@@ -250,10 +250,7 @@ export class PredictionService {
    * @param input - Prediction input data
    * @returns Created prediction
    */
-  async createPrediction(
-    orgId: string,
-    input: CreatePredictionInput
-  ): Promise<Prediction> {
+  async createPrediction(orgId: string, input: CreatePredictionInput): Promise<Prediction> {
     try {
       return await withTransaction(async (client: PoolClient) => {
         const {
@@ -415,10 +412,7 @@ export class PredictionService {
         // Calculate accuracy if not provided
         let accuracyScore = input.accuracy;
         if (!accuracyScore && input.actualOutcome) {
-          accuracyScore = this.calculateAccuracy(
-            prediction.prediction_data,
-            input.actualOutcome
-          );
+          accuracyScore = this.calculateAccuracy(prediction.prediction_data, input.actualOutcome);
         }
 
         // Update metadata with notes if provided
@@ -514,10 +508,7 @@ export class PredictionService {
         const result = await client.query(deleteQuery, params);
 
         // Also cleanup ai_predictions cache
-        await client.query(
-          'DELETE FROM ai_predictions WHERE expires_at < $1',
-          [cutoffDate]
-        );
+        await client.query('DELETE FROM ai_predictions WHERE expires_at < $1', [cutoffDate]);
 
         return result.rowCount || 0;
       });

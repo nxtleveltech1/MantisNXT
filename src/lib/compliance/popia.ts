@@ -8,10 +8,24 @@
 export interface PersonalInformation {
   id: string;
   dataSubjectId: string;
-  dataType: 'identity' | 'contact' | 'financial' | 'biometric' | 'location' | 'employment' | 'health' | 'other';
+  dataType:
+    | 'identity'
+    | 'contact'
+    | 'financial'
+    | 'biometric'
+    | 'location'
+    | 'employment'
+    | 'health'
+    | 'other';
   data: unknown;
   purpose: string;
-  legalBasis: 'consent' | 'contract' | 'legal_obligation' | 'vital_interests' | 'public_task' | 'legitimate_interests';
+  legalBasis:
+    | 'consent'
+    | 'contract'
+    | 'legal_obligation'
+    | 'vital_interests'
+    | 'public_task'
+    | 'legitimate_interests';
   consentGiven: boolean;
   consentDate?: Date;
   retentionPeriod: number; // in days
@@ -73,7 +87,6 @@ export interface DataBreach {
 }
 
 export class POPIACompliance {
-
   // Consent Management
   static recordConsent(
     dataSubjectId: string,
@@ -96,7 +109,7 @@ export class POPIACompliance {
       ipAddress,
       userAgent,
       version: 1,
-      isActive: true
+      isActive: true,
     };
   }
 
@@ -104,7 +117,7 @@ export class POPIACompliance {
     return {
       consentGiven: false,
       withdrawalDate: new Date(),
-      isActive: false
+      isActive: false,
     };
   }
 
@@ -132,7 +145,10 @@ export class POPIACompliance {
     return new Date() > expiryDate;
   }
 
-  static getExpiringData(data: PersonalInformation[], daysThreshold: number = 30): PersonalInformation[] {
+  static getExpiringData(
+    data: PersonalInformation[],
+    daysThreshold: number = 30
+  ): PersonalInformation[] {
     const threshold = new Date();
     threshold.setDate(threshold.getDate() + daysThreshold);
 
@@ -144,8 +160,8 @@ export class POPIACompliance {
 
   // Data Subject Rights
   static processAccessRequest(dataSubjectId: string, data: PersonalInformation[]): unknown {
-    const subjectData = data.filter(item =>
-      item.dataSubjectId === dataSubjectId && !item.deletedAt
+    const subjectData = data.filter(
+      item => item.dataSubjectId === dataSubjectId && !item.deletedAt
     );
 
     return {
@@ -159,17 +175,18 @@ export class POPIACompliance {
         source: item.source,
         processor: item.processor,
         createdAt: item.createdAt,
-        updatedAt: item.updatedAt
+        updatedAt: item.updatedAt,
       })),
-      totalRecords: subjectData.length
+      totalRecords: subjectData.length,
     };
   }
 
   static processPortabilityRequest(dataSubjectId: string, data: PersonalInformation[]): unknown {
-    const subjectData = data.filter(item =>
-      item.dataSubjectId === dataSubjectId &&
-      !item.deletedAt &&
-      (item.legalBasis === 'consent' || item.legalBasis === 'contract')
+    const subjectData = data.filter(
+      item =>
+        item.dataSubjectId === dataSubjectId &&
+        !item.deletedAt &&
+        (item.legalBasis === 'consent' || item.legalBasis === 'contract')
     );
 
     return {
@@ -179,15 +196,15 @@ export class POPIACompliance {
       data: subjectData.map(item => ({
         dataType: item.dataType,
         data: item.data,
-        createdAt: item.createdAt
-      }))
+        createdAt: item.createdAt,
+      })),
     };
   }
 
   static processErasureRequest(dataSubjectId: string): Partial<PersonalInformation> {
     return {
       deletedAt: new Date(),
-      data: null // Anonymize the data
+      data: null, // Anonymize the data
     };
   }
 
@@ -207,9 +224,11 @@ export class POPIACompliance {
       notificationRequired = true;
     }
 
-    if (breach.dataTypesAffected?.includes('financial') ||
-        breach.dataTypesAffected?.includes('identity') ||
-        breach.dataTypesAffected?.includes('biometric')) {
+    if (
+      breach.dataTypesAffected?.includes('financial') ||
+      breach.dataTypesAffected?.includes('identity') ||
+      breach.dataTypesAffected?.includes('biometric')
+    ) {
       riskLevel = 'critical';
       notificationRequired = true;
       timeframe = '24 hours';
@@ -255,17 +274,15 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
   }
 
   // Privacy Impact Assessment
-  static conductPIA(
-    processing: {
-      purpose: string;
-      dataTypes: string[];
-      dataSubjects: string[];
-      legalBasis: string;
-      retentionPeriod: number;
-      thirdPartySharing: boolean;
-      crossBorderTransfer: boolean;
-    }
-  ): {
+  static conductPIA(processing: {
+    purpose: string;
+    dataTypes: string[];
+    dataSubjects: string[];
+    legalBasis: string;
+    retentionPeriod: number;
+    thirdPartySharing: boolean;
+    crossBorderTransfer: boolean;
+  }): {
     riskScore: number;
     risks: string[];
     recommendations: string[];
@@ -291,12 +308,13 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     // Assess scale and scope
     if (processing.dataSubjects.includes('children')) {
       riskScore += 25;
-      risks.push('Processing children\'s personal information');
+      risks.push("Processing children's personal information");
       recommendations.push('Obtain parental consent and implement additional safeguards');
     }
 
     // Assess retention period
-    if (processing.retentionPeriod > 2555) { // 7 years
+    if (processing.retentionPeriod > 2555) {
+      // 7 years
       riskScore += 15;
       risks.push('Long retention period increases risk');
       recommendations.push('Review and justify retention period');
@@ -326,7 +344,7 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
       riskScore,
       risks,
       recommendations,
-      approved
+      approved,
     };
   }
 
@@ -342,16 +360,20 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
   } {
     const now = new Date();
     const activeData = personalInfo.filter(item => !item.deletedAt);
-    const expiredData = personalInfo.filter(item => this.isRetentionExpired(item) && !item.deletedAt);
+    const expiredData = personalInfo.filter(
+      item => this.isRetentionExpired(item) && !item.deletedAt
+    );
     const activeConsents = consents.filter(c => c.isActive);
-    const recentBreaches = breaches.filter(b =>
-      (now.getTime() - b.incidentDate.getTime()) < (90 * 24 * 60 * 60 * 1000) // 90 days
+    const recentBreaches = breaches.filter(
+      b => now.getTime() - b.incidentDate.getTime() < 90 * 24 * 60 * 60 * 1000 // 90 days
     );
 
     const recommendations: string[] = [];
 
     if (expiredData.length > 0) {
-      recommendations.push(`${expiredData.length} records have exceeded retention period and should be deleted`);
+      recommendations.push(
+        `${expiredData.length} records have exceeded retention period and should be deleted`
+      );
     }
 
     if (activeData.some(item => item.isMinorData && !item.parentalConsent)) {
@@ -359,7 +381,9 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     }
 
     if (recentBreaches.length > 0) {
-      recommendations.push(`${recentBreaches.length} data breaches in the last 90 days require follow-up`);
+      recommendations.push(
+        `${recentBreaches.length} data breaches in the last 90 days require follow-up`
+      );
     }
 
     return {
@@ -370,30 +394,36 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
         totalConsents: consents.length,
         activeConsents: activeConsents.length,
         recentBreaches: recentBreaches.length,
-        complianceScore: Math.max(0, 100 - (expiredData.length * 2) - (recentBreaches.length * 10))
+        complianceScore: Math.max(0, 100 - expiredData.length * 2 - recentBreaches.length * 10),
       },
       details: {
         dataTypeBreakdown: this.getDataTypeBreakdown(activeData),
         legalBasisBreakdown: this.getLegalBasisBreakdown(activeData),
         retentionAnalysis: this.getRetentionAnalysis(activeData),
-        consentAnalysis: this.getConsentAnalysis(activeConsents)
+        consentAnalysis: this.getConsentAnalysis(activeConsents),
       },
-      recommendations
+      recommendations,
     };
   }
 
   private static getDataTypeBreakdown(data: PersonalInformation[]): Record<string, number> {
-    return data.reduce((acc, item) => {
-      acc[item.dataType] = (acc[item.dataType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return data.reduce(
+      (acc, item) => {
+        acc[item.dataType] = (acc[item.dataType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }
 
   private static getLegalBasisBreakdown(data: PersonalInformation[]): Record<string, number> {
-    return data.reduce((acc, item) => {
-      acc[item.legalBasis] = (acc[item.legalBasis] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return data.reduce(
+      (acc, item) => {
+        acc[item.legalBasis] = (acc[item.legalBasis] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }
 
   private static getRetentionAnalysis(data: PersonalInformation[]): unknown {
@@ -401,7 +431,7 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     return {
       averageRetention: periods.reduce((a, b) => a + b, 0) / periods.length,
       maxRetention: Math.max(...periods),
-      minRetention: Math.min(...periods)
+      minRetention: Math.min(...periods),
     };
   }
 
@@ -410,7 +440,7 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
       explicitConsents: consents.filter(c => c.consentMethod === 'explicit').length,
       impliedConsents: consents.filter(c => c.consentMethod === 'implied').length,
       optInConsents: consents.filter(c => c.consentMethod === 'opt_in').length,
-      optOutConsents: consents.filter(c => c.consentMethod === 'opt_out').length
+      optOutConsents: consents.filter(c => c.consentMethod === 'opt_out').length,
     };
   }
 }

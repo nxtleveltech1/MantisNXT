@@ -3,37 +3,37 @@
  * Provides bulletproof error handling with exponential backoff and advanced retry mechanisms
  */
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import { toast } from 'sonner'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
 export interface RetryConfig {
-  maxRetries: number
-  baseDelay: number
-  maxDelay: number
-  backoffMultiplier: number
-  jitter: boolean
-  retryCondition?: (error: Error, attempt: number) => boolean
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  jitter: boolean;
+  retryCondition?: (error: Error, attempt: number) => boolean;
 }
 
 export interface ErrorRecoveryState {
-  isRetrying: boolean
-  retryCount: number
-  lastError: Error | null
-  canRetry: boolean
-  nextRetryDelay: number
+  isRetrying: boolean;
+  retryCount: number;
+  lastError: Error | null;
+  canRetry: boolean;
+  nextRetryDelay: number;
 }
 
 export interface ErrorRecoveryOptions {
-  retryConfig?: Partial<RetryConfig>
-  onError?: (error: Error, attempt: number) => void
-  onRetrySuccess?: (attempt: number) => void
-  onMaxRetriesReached?: (error: Error) => void
-  silentRetries?: boolean
-  showToast?: boolean
+  retryConfig?: Partial<RetryConfig>;
+  onError?: (error: Error, attempt: number) => void;
+  onRetrySuccess?: (attempt: number) => void;
+  onMaxRetriesReached?: (error: Error) => void;
+  silentRetries?: boolean;
+  showToast?: boolean;
 }
 
 // ============================================================================
@@ -48,13 +48,13 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   jitter: true,
   retryCondition: (error: Error, attempt: number) => {
     // Retry on network errors, timeouts, and 5xx server errors
-    if (error.name === 'NetworkError' || error.name === 'TimeoutError') return true
-    if (error.message.includes('fetch')) return true
-    if (error.message.includes('timeout')) return true
-    if (error.message.includes('5')) return true
-    return attempt === 1 // Always retry at least once
-  }
-}
+    if (error.name === 'NetworkError' || error.name === 'TimeoutError') return true;
+    if (error.message.includes('fetch')) return true;
+    if (error.message.includes('timeout')) return true;
+    if (error.message.includes('5')) return true;
+    return attempt === 1; // Always retry at least once
+  },
+};
 
 // ============================================================================
 // RETRY UTILITY FUNCTIONS
@@ -70,14 +70,14 @@ function calculateDelay(
   backoffMultiplier: number,
   jitter: boolean
 ): number {
-  const exponentialDelay = baseDelay * Math.pow(backoffMultiplier, attempt - 1)
-  const delayWithCap = Math.min(exponentialDelay, maxDelay)
+  const exponentialDelay = baseDelay * Math.pow(backoffMultiplier, attempt - 1);
+  const delayWithCap = Math.min(exponentialDelay, maxDelay);
 
-  if (!jitter) return delayWithCap
+  if (!jitter) return delayWithCap;
 
   // Add random jitter (±25%)
-  const jitterAmount = delayWithCap * 0.25
-  return delayWithCap + (Math.random() - 0.5) * 2 * jitterAmount
+  const jitterAmount = delayWithCap * 0.25;
+  return delayWithCap + (Math.random() - 0.5) * 2 * jitterAmount;
 }
 
 /**
@@ -86,17 +86,17 @@ function calculateDelay(
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new Error('Aborted'))
-      return
+      reject(new Error('Aborted'));
+      return;
     }
 
-    const timeoutId = setTimeout(resolve, ms)
+    const timeoutId = setTimeout(resolve, ms);
 
     signal?.addEventListener('abort', () => {
-      clearTimeout(timeoutId)
-      reject(new Error('Aborted'))
-    })
-  })
+      clearTimeout(timeoutId);
+      reject(new Error('Aborted'));
+    });
+  });
 }
 
 // ============================================================================
@@ -110,185 +110,190 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
     onRetrySuccess,
     onMaxRetriesReached,
     silentRetries = false,
-    showToast = true
-  } = options
+    showToast = true,
+  } = options;
 
-  const retryConfig = useMemo(() => ({
-    ...DEFAULT_RETRY_CONFIG,
-    ...userRetryConfig
-  }), [userRetryConfig])
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const retryConfig = useMemo(
+    () => ({
+      ...DEFAULT_RETRY_CONFIG,
+      ...userRetryConfig,
+    }),
+    [userRetryConfig]
+  );
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [state, setState] = useState<ErrorRecoveryState>({
     isRetrying: false,
     retryCount: 0,
     lastError: null,
     canRetry: true,
-    nextRetryDelay: retryConfig.baseDelay
-  })
+    nextRetryDelay: retryConfig.baseDelay,
+  });
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort()
-    }
-  }, [])
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   /**
    * Execute function with automatic retry and error recovery
    */
-  const executeWithRetry = useCallback(async <T>(
-    operation: () => Promise<T>,
-    customConfig?: Partial<RetryConfig>
-  ): Promise<T> => {
-    const config = { ...retryConfig, ...customConfig }
-    let lastError: Error
+  const executeWithRetry = useCallback(
+    async <T>(operation: () => Promise<T>, customConfig?: Partial<RetryConfig>): Promise<T> => {
+      const config = { ...retryConfig, ...customConfig };
+      let lastError: Error;
 
-    // Cancel any existing retry operations
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = new AbortController()
+      // Cancel any existing retry operations
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
 
-    setState(prev => ({
-      ...prev,
-      isRetrying: false,
-      retryCount: 0,
-      lastError: null,
-      canRetry: true
-    }))
+      setState(prev => ({
+        ...prev,
+        isRetrying: false,
+        retryCount: 0,
+        lastError: null,
+        canRetry: true,
+      }));
 
-    for (let attempt = 1; attempt <= config.maxRetries + 1; attempt++) {
-      try {
-        // Update state for retry attempts
-        if (attempt > 1) {
-          setState(prev => ({
-            ...prev,
-            isRetrying: true,
-            retryCount: attempt - 1,
-            nextRetryDelay: calculateDelay(
-              attempt,
+      for (let attempt = 1; attempt <= config.maxRetries + 1; attempt++) {
+        try {
+          // Update state for retry attempts
+          if (attempt > 1) {
+            setState(prev => ({
+              ...prev,
+              isRetrying: true,
+              retryCount: attempt - 1,
+              nextRetryDelay: calculateDelay(
+                attempt,
+                config.baseDelay,
+                config.maxDelay,
+                config.backoffMultiplier,
+                config.jitter
+              ),
+            }));
+
+            // Wait before retry
+            const delay = calculateDelay(
+              attempt - 1,
               config.baseDelay,
               config.maxDelay,
               config.backoffMultiplier,
               config.jitter
-            )
-          }))
+            );
 
-          // Wait before retry
-          const delay = calculateDelay(
-            attempt - 1,
-            config.baseDelay,
-            config.maxDelay,
-            config.backoffMultiplier,
-            config.jitter
-          )
+            await sleep(delay, abortControllerRef.current?.signal);
 
-          await sleep(delay, abortControllerRef.current?.signal)
-
-          if (!silentRetries && showToast) {
-            toast.info(`Retrying... (Attempt ${attempt - 1}/${config.maxRetries})`)
-          }
-        }
-
-        const result = await operation()
-
-        // Success - reset state
-        setState(prev => ({
-          ...prev,
-          isRetrying: false,
-          retryCount: 0,
-          lastError: null,
-          canRetry: true,
-          nextRetryDelay: config.baseDelay
-        }))
-
-        if (attempt > 1) {
-          onRetrySuccess?.(attempt - 1)
-          if (showToast) {
-            toast.success(`Operation succeeded after ${attempt - 1} retries`)
-          }
-        }
-
-        return result
-      } catch (error) {
-        lastError = error as Error
-
-        // Update state with error
-        setState(prev => ({
-          ...prev,
-          lastError: lastError,
-          canRetry: attempt <= config.maxRetries &&
-                   (config.retryCondition?.(lastError, attempt) ?? true)
-        }))
-
-        onError?.(lastError, attempt)
-
-        // Check if we should retry
-        const shouldRetry =
-          attempt <= config.maxRetries &&
-          (config.retryCondition?.(lastError, attempt) ?? true)
-
-        if (!shouldRetry) {
-          setState(prev => ({ ...prev, isRetrying: false, canRetry: false }))
-
-          if (attempt > config.maxRetries) {
-            onMaxRetriesReached?.(lastError)
-            if (showToast) {
-              toast.error(`Failed after ${config.maxRetries} retries: ${lastError.message}`)
+            if (!silentRetries && showToast) {
+              toast.info(`Retrying... (Attempt ${attempt - 1}/${config.maxRetries})`);
             }
           }
 
-          throw lastError
+          const result = await operation();
+
+          // Success - reset state
+          setState(prev => ({
+            ...prev,
+            isRetrying: false,
+            retryCount: 0,
+            lastError: null,
+            canRetry: true,
+            nextRetryDelay: config.baseDelay,
+          }));
+
+          if (attempt > 1) {
+            onRetrySuccess?.(attempt - 1);
+            if (showToast) {
+              toast.success(`Operation succeeded after ${attempt - 1} retries`);
+            }
+          }
+
+          return result;
+        } catch (error) {
+          lastError = error as Error;
+
+          // Update state with error
+          setState(prev => ({
+            ...prev,
+            lastError: lastError,
+            canRetry:
+              attempt <= config.maxRetries && (config.retryCondition?.(lastError, attempt) ?? true),
+          }));
+
+          onError?.(lastError, attempt);
+
+          // Check if we should retry
+          const shouldRetry =
+            attempt <= config.maxRetries && (config.retryCondition?.(lastError, attempt) ?? true);
+
+          if (!shouldRetry) {
+            setState(prev => ({ ...prev, isRetrying: false, canRetry: false }));
+
+            if (attempt > config.maxRetries) {
+              onMaxRetriesReached?.(lastError);
+              if (showToast) {
+                toast.error(`Failed after ${config.maxRetries} retries: ${lastError.message}`);
+              }
+            }
+
+            throw lastError;
+          }
         }
       }
-    }
 
-    throw lastError!
-  }, [retryConfig, onError, onRetrySuccess, onMaxRetriesReached, silentRetries, showToast])
+      throw lastError!;
+    },
+    [retryConfig, onError, onRetrySuccess, onMaxRetriesReached, silentRetries, showToast]
+  );
 
   /**
    * Manual retry function
    */
-  const retry = useCallback(async <T>(operation: () => Promise<T>): Promise<T> => {
-    if (!state.canRetry) {
-      throw new Error('Cannot retry: maximum retries reached')
-    }
+  const retry = useCallback(
+    async <T>(operation: () => Promise<T>): Promise<T> => {
+      if (!state.canRetry) {
+        throw new Error('Cannot retry: maximum retries reached');
+      }
 
-    return executeWithRetry(operation)
-  }, [state.canRetry, executeWithRetry])
+      return executeWithRetry(operation);
+    },
+    [state.canRetry, executeWithRetry]
+  );
 
   /**
    * Cancel ongoing retry operations
    */
   const cancelRetries = useCallback(() => {
-    abortControllerRef.current?.abort()
+    abortControllerRef.current?.abort();
     setState(prev => ({
       ...prev,
       isRetrying: false,
-      canRetry: false
-    }))
-  }, [])
+      canRetry: false,
+    }));
+  }, []);
 
   /**
    * Reset error recovery state
    */
   const reset = useCallback(() => {
-    abortControllerRef.current?.abort()
+    abortControllerRef.current?.abort();
     setState({
       isRetrying: false,
       retryCount: 0,
       lastError: null,
       canRetry: true,
-      nextRetryDelay: retryConfig.baseDelay
-    })
-  }, [retryConfig.baseDelay])
+      nextRetryDelay: retryConfig.baseDelay,
+    });
+  }, [retryConfig.baseDelay]);
 
   return {
     ...state,
     executeWithRetry,
     retry,
     cancelRetries,
-    reset
-  }
+    reset,
+  };
 }
 
 // ============================================================================
@@ -306,47 +311,49 @@ export function useApiRetry(baseUrl?: string) {
       maxDelay: 10000,
       retryCondition: (error: Error, attempt: number) => {
         // Don't retry on 4xx client errors (except 408, 429)
-        if (error.message.includes('400') ||
-            error.message.includes('401') ||
-            error.message.includes('403') ||
-            error.message.includes('404')) {
-          return false
+        if (
+          error.message.includes('400') ||
+          error.message.includes('401') ||
+          error.message.includes('403') ||
+          error.message.includes('404')
+        ) {
+          return false;
         }
 
         // Retry on network errors, timeouts, and 5xx errors
-        return true
-      }
+        return true;
+      },
     },
-    showToast: true
-  })
+    showToast: true,
+  });
 
-  const fetchWithRetry = useCallback(async <T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> => {
-    const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint
+  const fetchWithRetry = useCallback(
+    async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+      const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 
-    return errorRecovery.executeWithRetry(async () => {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
+      return errorRecovery.executeWithRetry(async () => {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      return response.json()
-    })
-  }, [baseUrl, errorRecovery])
+        return response.json();
+      });
+    },
+    [baseUrl, errorRecovery]
+  );
 
   return {
     ...errorRecovery,
-    fetchWithRetry
-  }
+    fetchWithRetry,
+  };
 }
 
 /**
@@ -367,17 +374,17 @@ export function useDatabaseRetry() {
           'lock',
           'busy',
           'ECONNRESET',
-          'ECONNREFUSED'
-        ]
+          'ECONNREFUSED',
+        ];
 
         return retryableErrors.some(keyword =>
           error.message.toLowerCase().includes(keyword.toLowerCase())
-        )
-      }
+        );
+      },
     },
     silentRetries: true,
-    showToast: false
-  })
+    showToast: false,
+  });
 }
 
 /**
@@ -391,15 +398,16 @@ export function useFormRetry() {
       jitter: false,
       retryCondition: (error: Error, attempt: number) => {
         // Only retry once on network errors
-        return attempt === 1 && (
-          error.message.includes('network') ||
-          error.message.includes('timeout') ||
-          error.message.includes('fetch')
-        )
-      }
+        return (
+          attempt === 1 &&
+          (error.message.includes('network') ||
+            error.message.includes('timeout') ||
+            error.message.includes('fetch'))
+        );
+      },
     },
-    showToast: true
-  })
+    showToast: true,
+  });
 }
 
 // ============================================================================
@@ -407,21 +415,21 @@ export function useFormRetry() {
 // ============================================================================
 
 export interface ErrorRecoveryContextValue {
-  globalRetryConfig: RetryConfig
-  updateGlobalConfig: (config: Partial<RetryConfig>) => void
-  reportError: (error: Error, context: string) => void
+  globalRetryConfig: RetryConfig;
+  updateGlobalConfig: (config: Partial<RetryConfig>) => void;
+  reportError: (error: Error, context: string) => void;
 }
 
-import { createContext, useContext } from 'react'
+import { createContext, useContext } from 'react';
 
-const ErrorRecoveryContext = createContext<ErrorRecoveryContextValue | null>(null)
+const ErrorRecoveryContext = createContext<ErrorRecoveryContextValue | null>(null);
 
 export function useErrorRecoveryContext() {
-  const context = useContext(ErrorRecoveryContext)
+  const context = useContext(ErrorRecoveryContext);
   if (!context) {
-    throw new Error('useErrorRecoveryContext must be used within ErrorRecoveryProvider')
+    throw new Error('useErrorRecoveryContext must be used within ErrorRecoveryProvider');
   }
-  return context
+  return context;
 }
 
 // ============================================================================
@@ -433,41 +441,41 @@ export function useErrorRecoveryContext() {
  */
 export function useSafeAsync<T>() {
   const [state, setState] = useState<{
-    data: T | null
-    error: Error | null
-    isLoading: boolean
+    data: T | null;
+    error: Error | null;
+    isLoading: boolean;
   }>({
     data: null,
     error: null,
-    isLoading: false
-  })
+    isLoading: false,
+  });
 
-  const errorRecovery = useErrorRecovery()
+  const errorRecovery = useErrorRecovery();
 
-  const execute = useCallback(async (
-    operation: () => Promise<T>,
-    options?: { showLoading?: boolean }
-  ) => {
-    const { showLoading = true } = options || {}
+  const execute = useCallback(
+    async (operation: () => Promise<T>, options?: { showLoading?: boolean }) => {
+      const { showLoading = true } = options || {};
 
-    if (showLoading) {
-      setState(prev => ({ ...prev, isLoading: true, error: null }))
-    }
+      if (showLoading) {
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
+      }
 
-    try {
-      const result = await errorRecovery.executeWithRetry(operation)
-      setState({ data: result, error: null, isLoading: false })
-      return result
-    } catch (error) {
-      setState({ data: null, error: error as Error, isLoading: false })
-      throw error
-    }
-  }, [errorRecovery])
+      try {
+        const result = await errorRecovery.executeWithRetry(operation);
+        setState({ data: result, error: null, isLoading: false });
+        return result;
+      } catch (error) {
+        setState({ data: null, error: error as Error, isLoading: false });
+        throw error;
+      }
+    },
+    [errorRecovery]
+  );
 
   const reset = useCallback(() => {
-    setState({ data: null, error: null, isLoading: false })
-    errorRecovery.reset()
-  }, [errorRecovery])
+    setState({ data: null, error: null, isLoading: false });
+    errorRecovery.reset();
+  }, [errorRecovery]);
 
   return {
     ...state,
@@ -475,8 +483,8 @@ export function useSafeAsync<T>() {
     reset,
     retry: errorRecovery.retry,
     isRetrying: errorRecovery.isRetrying,
-    retryCount: errorRecovery.retryCount
-  }
+    retryCount: errorRecovery.retryCount,
+  };
 }
 
-export default useErrorRecovery
+export default useErrorRecovery;

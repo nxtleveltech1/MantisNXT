@@ -34,7 +34,8 @@ export class AIWebSearchService {
   private googleCx?: string;
   private braveApiKey?: string;
   private exaApiKey?: string;
-  private searchProvider: 'serper' | 'tavily' | 'google' | 'brave' | 'exa' | 'duckduckgo' = 'serper';
+  private searchProvider: 'serper' | 'tavily' | 'google' | 'brave' | 'exa' | 'duckduckgo' =
+    'serper';
 
   constructor(config?: {
     serperApiKey?: string;
@@ -269,13 +270,16 @@ export class AIWebSearchService {
       ...(location && { country: location }),
     });
 
-    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'X-Subscription-Token': this.braveApiKey,
-      },
-    });
+    const response = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Subscription-Token': this.braveApiKey,
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -298,10 +302,7 @@ export class AIWebSearchService {
   /**
    * Search using Exa (Semantic Search) API
    */
-  private async searchWithExa(
-    query: string,
-    maxResults: number
-  ): Promise<WebSearchResult[]> {
+  private async searchWithExa(query: string, maxResults: number): Promise<WebSearchResult[]> {
     if (!this.exaApiKey) {
       throw new Error('EXA_API_KEY not configured');
     }

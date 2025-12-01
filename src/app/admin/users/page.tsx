@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Download, Upload, Plus, Users, Activity, Shield, User as UserIcon } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Download, Upload, Plus, Users, Activity, Shield, User as UserIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { authProvider } from '@/lib/auth/mock-provider'
-import type { User } from '@/types/auth'
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { authProvider } from '@/lib/auth/mock-provider';
+import type { User } from '@/types/auth';
 
-import { UserTable } from '@/components/admin/users/UserTable'
+import { UserTable } from '@/components/admin/users/UserTable';
 import type { UserFilterState } from '@/components/admin/users/UserFilters';
-import { UserFilters } from '@/components/admin/users/UserFilters'
+import { UserFilters } from '@/components/admin/users/UserFilters';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const [filters, setFilters] = useState<UserFilterState>({
     search: '',
@@ -29,22 +29,22 @@ export default function UsersPage() {
     status: 'all',
     createdFrom: undefined,
     createdTo: undefined,
-  })
+  });
 
   const loadUsers = useCallback(async () => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
-      const response = await fetch('/api/v1/admin/users')
-      const result = await response.json()
+      const response = await fetch('/api/v1/admin/users');
+      const result = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        throw new Error(result.message || 'Failed to load users')
+        throw new Error(result.message || 'Failed to load users');
       }
 
       // Transform API response to match User type
@@ -77,97 +77,95 @@ export default function UsersPage() {
         two_factor_enabled: u.twoFactorEnabled || false,
         email_verified: u.emailVerified || false,
         password_changed_at: new Date(),
-      }))
+      }));
 
-      setUsers(userList)
+      setUsers(userList);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load users')
+      setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router])
+  }, [router]);
 
   useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+    loadUsers();
+  }, [loadUsers]);
 
   // Get unique departments for filter
   const departments = useMemo(() => {
-    return Array.from(new Set(users.map((u) => u.department))).sort()
-  }, [users])
+    return Array.from(new Set(users.map(u => u.department))).sort();
+  }, [users]);
 
   // Filter users based on all active filters
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
+    return users.filter(user => {
       // Search filter
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
+        const searchLower = filters.search.toLowerCase();
         const matchesSearch =
           user.name.toLowerCase().includes(searchLower) ||
           user.email.toLowerCase().includes(searchLower) ||
-          user.department.toLowerCase().includes(searchLower)
-        if (!matchesSearch) return false
+          user.department.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
       }
 
       // Role filter
       if (filters.role !== 'all' && user.role !== filters.role) {
-        return false
+        return false;
       }
 
       // Department filter
       if (filters.department !== 'all' && user.department !== filters.department) {
-        return false
+        return false;
       }
 
       // Status filter
       if (filters.status !== 'all') {
-        const isActive = filters.status === 'active'
-        if (user.is_active !== isActive) return false
+        const isActive = filters.status === 'active';
+        if (user.is_active !== isActive) return false;
       }
 
       // Date range filters
       if (filters.createdFrom) {
-        const userDate = new Date(user.created_at)
-        if (userDate < filters.createdFrom) return false
+        const userDate = new Date(user.created_at);
+        if (userDate < filters.createdFrom) return false;
       }
 
       if (filters.createdTo) {
-        const userDate = new Date(user.created_at)
+        const userDate = new Date(user.created_at);
         // Set to end of day for inclusive comparison
-        const toDate = new Date(filters.createdTo)
-        toDate.setHours(23, 59, 59, 999)
-        if (userDate > toDate) return false
+        const toDate = new Date(filters.createdTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (userDate > toDate) return false;
       }
 
-      return true
-    })
-  }, [users, filters])
+      return true;
+    });
+  }, [users, filters]);
 
   const handleDeleteUser = async (user: User) => {
     if (
-      !window.confirm(
-        `Are you sure you want to delete ${user.name}? This action cannot be undone.`
-      )
+      !window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)
     ) {
-      return
+      return;
     }
 
     try {
       const response = await fetch(`/api/v1/admin/users/${user.id}`, {
         method: 'DELETE',
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to delete user')
+        throw new Error(result.message || 'Failed to delete user');
       }
 
-      await loadUsers()
+      await loadUsers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete user')
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
     }
-  }
+  };
 
   const toggleUserStatus = async (user: User) => {
     try {
@@ -179,31 +177,31 @@ export default function UsersPage() {
         body: JSON.stringify({
           isActive: !user.is_active,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to update user status')
+        throw new Error(result.message || 'Failed to update user status');
       }
 
-      await loadUsers()
+      await loadUsers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user status')
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
     }
-  }
+  };
 
   const handleBulkAction = async (selectedUsers: User[], action: string) => {
-    if (selectedUsers.length === 0) return
+    if (selectedUsers.length === 0) return;
 
-    const confirmMessage = `Are you sure you want to ${action} ${selectedUsers.length} user(s)?`
-    if (action === 'delete' && !window.confirm(confirmMessage)) return
+    const confirmMessage = `Are you sure you want to ${action} ${selectedUsers.length} user(s)?`;
+    if (action === 'delete' && !window.confirm(confirmMessage)) return;
 
     try {
       switch (action) {
         case 'activate':
           await Promise.all(
-            selectedUsers.map((user) =>
+            selectedUsers.map(user =>
               fetch(`/api/v1/admin/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
@@ -212,11 +210,11 @@ export default function UsersPage() {
                 body: JSON.stringify({ isActive: true }),
               })
             )
-          )
-          break
+          );
+          break;
         case 'deactivate':
           await Promise.all(
-            selectedUsers.map((user) =>
+            selectedUsers.map(user =>
               fetch(`/api/v1/admin/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
@@ -225,33 +223,33 @@ export default function UsersPage() {
                 body: JSON.stringify({ isActive: false }),
               })
             )
-          )
-          break
+          );
+          break;
         case 'delete':
           await Promise.all(
-            selectedUsers.map((user) =>
+            selectedUsers.map(user =>
               fetch(`/api/v1/admin/users/${user.id}`, {
                 method: 'DELETE',
               })
             )
-          )
-          break
+          );
+          break;
         case 'assign-role':
           // Navigate to bulk operations page
-          router.push('/admin/users/bulk')
-          return
+          router.push('/admin/users/bulk');
+          return;
       }
 
-      await loadUsers()
+      await loadUsers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${action} users`)
+      setError(err instanceof Error ? err.message : `Failed to ${action} users`);
     }
-  }
+  };
 
   const exportUsers = () => {
     const csvContent = [
       'Name,Email,Role,Department,Status,Created Date,Last Login',
-      ...filteredUsers.map((user) =>
+      ...filteredUsers.map(user =>
         [
           user.name,
           user.email,
@@ -262,18 +260,18 @@ export default function UsersPage() {
           user.last_login ? new Date(user.last_login).toLocaleDateString('en-ZA') : 'Never',
         ].join(',')
       ),
-    ].join('\n')
+    ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `users-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const resetFilters = () => {
     setFilters({
@@ -283,57 +281,45 @@ export default function UsersPage() {
       status: 'all',
       createdFrom: undefined,
       createdTo: undefined,
-    })
-  }
+    });
+  };
 
   if (isLoading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Admin', href: '/admin' },
-          { label: 'Users' },
-        ]}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AppLayout breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Users' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: 'Admin', href: '/admin' },
-        { label: 'Users' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Users' }]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-3xl font-bold">User Management</h1>
-            <p className="text-muted-foreground">
-              Manage user accounts, roles, and permissions
-            </p>
+            <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button onClick={exportUsers} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
 
             <Link href="/admin/users/bulk">
               <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="mr-2 h-4 w-4" />
                 Bulk Import
               </Button>
             </Link>
 
             <Link href="/admin/users/new">
               <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add User
               </Button>
             </Link>
@@ -348,11 +334,11 @@ export default function UsersPage() {
         )}
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{users.length}</div>
@@ -362,11 +348,11 @@ export default function UsersPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-chart-2">
-                {users.filter((u) => u.is_active).length}
+              <div className="text-chart-2 text-3xl font-bold">
+                {users.filter(u => u.is_active).length}
               </div>
             </CardContent>
           </Card>
@@ -374,11 +360,11 @@ export default function UsersPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">2FA Enabled</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+              <Shield className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {users.filter((u) => u.two_factor_enabled).length}
+                {users.filter(u => u.two_factor_enabled).length}
               </div>
             </CardContent>
           </Card>
@@ -386,11 +372,11 @@ export default function UsersPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Administrators</CardTitle>
-              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <UserIcon className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {users.filter((u) => u.role === 'admin' || u.role === 'super_admin').length}
+                {users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}
               </div>
             </CardContent>
           </Card>
@@ -411,9 +397,7 @@ export default function UsersPage() {
               <Users className="h-5 w-5" />
               Users ({filteredUsers.length})
             </CardTitle>
-            <CardDescription>
-              View and manage all users in your organization
-            </CardDescription>
+            <CardDescription>View and manage all users in your organization</CardDescription>
           </CardHeader>
           <CardContent>
             <UserTable
@@ -426,5 +410,5 @@ export default function UsersPage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }

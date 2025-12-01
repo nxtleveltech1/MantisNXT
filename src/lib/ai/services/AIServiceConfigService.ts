@@ -89,7 +89,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async getConfigByServiceId(
     orgId: string,
     serviceId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig | null>> {
     return this.executeOperation(
       'config.getByServiceId',
@@ -100,7 +100,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE org_id = $1 AND service_id = $2
           LIMIT 1
           `,
-          [orgId, serviceId],
+          [orgId, serviceId]
         );
 
         if (result.rows.length === 0) {
@@ -110,7 +110,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         return this.mapConfigRow(result.rows[0]);
       },
       options,
-      { orgId, serviceId },
+      { orgId, serviceId }
     );
   }
 
@@ -120,7 +120,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async getConfigByServiceName(
     orgId: string,
     serviceLabel: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig | null>> {
     const label = (serviceLabel || '').trim();
     return this.executeOperation(
@@ -137,7 +137,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           ORDER BY c.updated_at DESC
           LIMIT 1
           `,
-          [label, orgId],
+          [label, orgId]
         );
 
         if (result.rows.length > 0) {
@@ -154,7 +154,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           ORDER BY c.updated_at DESC
           LIMIT 1
           `,
-          [label],
+          [label]
         );
 
         if (fallback.rows.length > 0) {
@@ -171,7 +171,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           ORDER BY c.updated_at DESC
           LIMIT 1
           `,
-          [label],
+          [label]
         );
 
         if (fuzzy.rows.length === 0) {
@@ -181,7 +181,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         return this.mapConfigRow(fuzzy.rows[0]);
       },
       options,
-      { orgId, serviceLabel: label },
+      { orgId, serviceLabel: label }
     );
   }
 
@@ -191,7 +191,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async createConfig(
     orgId: string,
     config: CreateConfigData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig>> {
     return this.executeOperation(
       'config.create',
@@ -214,13 +214,13 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
             JSON.stringify(config.config || {}),
             config.rateLimitPerHour || 1000,
             config.createdBy,
-          ],
+          ]
         );
 
         return this.mapConfigRow(result.rows[0]);
       },
       options,
-      { orgId, serviceType: config.serviceType },
+      { orgId, serviceType: config.serviceType }
     );
   }
 
@@ -230,7 +230,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async updateConfig(
     configId: string,
     updates: UpdateConfigData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig>> {
     return this.executeOperation(
       'config.update',
@@ -277,7 +277,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $${paramIndex}
           RETURNING *
           `,
-          values,
+          values
         );
 
         if (result.rows.length === 0) {
@@ -287,7 +287,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         return this.mapConfigRow(result.rows[0]);
       },
       options,
-      { configId },
+      { configId }
     );
   }
 
@@ -296,7 +296,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
    */
   async deleteConfig(
     configId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'config.delete',
@@ -307,7 +307,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $1
           RETURNING id
           `,
-          [configId],
+          [configId]
         );
 
         if (result.rows.length === 0) {
@@ -315,7 +315,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { configId },
+      { configId }
     );
   }
 
@@ -325,7 +325,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async getConfig(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig | null>> {
     return this.executeOperation(
       'config.get',
@@ -335,7 +335,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           SELECT * FROM ai_service_config
           WHERE org_id = $1 AND service_type = $2
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         if (result.rows.length === 0) {
@@ -345,7 +345,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         return this.mapConfigRow(result.rows[0]);
       },
       options,
-      { orgId, serviceType },
+      { orgId, serviceType }
     );
   }
 
@@ -354,7 +354,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
    */
   async listConfigs(
     orgId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AIServiceConfig[]>> {
     return this.executeOperation(
       'config.list',
@@ -365,13 +365,13 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE org_id = $1
           ORDER BY service_type
           `,
-          [orgId],
+          [orgId]
         );
 
-        return result.rows.map((row) => this.mapConfigRow(row));
+        return result.rows.map(row => this.mapConfigRow(row));
       },
       options,
-      { orgId },
+      { orgId }
     );
   }
 
@@ -381,7 +381,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async enableService(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'config.enable',
@@ -393,17 +393,15 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE org_id = $1 AND service_type = $2
           RETURNING id
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         if (result.rows.length === 0) {
-          throw new Error(
-            `No configuration found for service type ${serviceType}`,
-          );
+          throw new Error(`No configuration found for service type ${serviceType}`);
         }
       },
       options,
-      { orgId, serviceType, action: 'enable' },
+      { orgId, serviceType, action: 'enable' }
     );
   }
 
@@ -413,7 +411,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async disableService(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'config.disable',
@@ -425,17 +423,15 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE org_id = $1 AND service_type = $2
           RETURNING id
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         if (result.rows.length === 0) {
-          throw new Error(
-            `No configuration found for service type ${serviceType}`,
-          );
+          throw new Error(`No configuration found for service type ${serviceType}`);
         }
       },
       options,
-      { orgId, serviceType, action: 'disable' },
+      { orgId, serviceType, action: 'disable' }
     );
   }
 
@@ -447,7 +443,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
     serviceType: AIServiceType,
     provider: AIProvider,
     modelName: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'config.updateProvider',
@@ -459,17 +455,15 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE org_id = $3 AND service_type = $4
           RETURNING id
           `,
-          [provider, modelName, orgId, serviceType],
+          [provider, modelName, orgId, serviceType]
         );
 
         if (result.rows.length === 0) {
-          throw new Error(
-            `No configuration found for service type ${serviceType}`,
-          );
+          throw new Error(`No configuration found for service type ${serviceType}`);
         }
       },
       options,
-      { orgId, serviceType, provider, modelName },
+      { orgId, serviceType, provider, modelName }
     );
   }
 
@@ -478,7 +472,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
    */
   async testConnection(
     configId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<ConnectionTestResult>> {
     return this.executeOperation(
       'config.testConnection',
@@ -488,7 +482,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           `
           SELECT * FROM ai_service_config WHERE id = $1
           `,
-          [configId],
+          [configId]
         );
 
         if (configResult.rows.length === 0) {
@@ -517,8 +511,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           };
         } catch (error) {
           const latencyMs = Date.now() - startTime;
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
 
           return {
             success: false,
@@ -530,7 +523,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { configId },
+      { configId }
     );
   }
 
@@ -540,7 +533,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async checkRateLimit(
     orgId: string,
     serviceType: AIServiceType,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<RateLimitStatus>> {
     return this.executeOperation(
       'config.checkRateLimit',
@@ -551,13 +544,11 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           SELECT rate_limit_per_hour FROM ai_service_config
           WHERE org_id = $1 AND service_type = $2
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         if (configResult.rows.length === 0) {
-          throw new Error(
-            `No configuration found for service type ${serviceType}`,
-          );
+          throw new Error(`No configuration found for service type ${serviceType}`);
         }
 
         const limit = configResult.rows[0].rate_limit_per_hour;
@@ -571,7 +562,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
             AND service_type = $2
             AND created_at >= NOW() - INTERVAL '1 hour'
           `,
-          [orgId, serviceType],
+          [orgId, serviceType]
         );
 
         const currentUsage = parseInt(usageResult.rows[0]?.usage_count || '0');
@@ -591,7 +582,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         };
       },
       options,
-      { orgId, serviceType },
+      { orgId, serviceType }
     );
   }
 
@@ -601,7 +592,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   async updateRateLimit(
     configId: string,
     rateLimit: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'config.updateRateLimit',
@@ -617,7 +608,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $2
           RETURNING id
           `,
-          [rateLimit, configId],
+          [rateLimit, configId]
         );
 
         if (result.rows.length === 0) {
@@ -625,7 +616,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { configId, rateLimit },
+      { configId, rateLimit }
     );
   }
 

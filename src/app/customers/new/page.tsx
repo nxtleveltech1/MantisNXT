@@ -23,11 +23,11 @@ export default function NewCustomerPage() {
       city: '',
       state: '',
       postal_code: '',
-      country: ''
+      country: '',
     },
     tags: [] as string[],
     metadata: {} as Record<string, unknown>,
-    notes: ''
+    notes: '',
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -62,7 +62,7 @@ export default function NewCustomerPage() {
         address,
         tags,
         metadata,
-        notes: formData.notes || null
+        notes: formData.notes || null,
       };
 
       const response = await fetch('/api/v1/customers', {
@@ -88,11 +88,13 @@ export default function NewCustomerPage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -102,8 +104,8 @@ export default function NewCustomerPage() {
       ...prev,
       address: {
         ...prev.address,
-        [name]: value
-      }
+        [name]: value,
+      },
     }));
   };
 
@@ -111,7 +113,7 @@ export default function NewCustomerPage() {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tagInput.trim()],
       }));
       setTagInput('');
     }
@@ -120,7 +122,7 @@ export default function NewCustomerPage() {
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter(tag => tag !== tagToRemove),
     }));
   };
 
@@ -130,8 +132,8 @@ export default function NewCustomerPage() {
         ...prev,
         metadata: {
           ...prev.metadata,
-          [metadataKey.trim()]: metadataValue.trim()
-        }
+          [metadataKey.trim()]: metadataValue.trim(),
+        },
       }));
       setMetadataKey('');
       setMetadataValue('');
@@ -144,7 +146,7 @@ export default function NewCustomerPage() {
       delete newMetadata[keyToRemove];
       return {
         ...prev,
-        metadata: newMetadata
+        metadata: newMetadata,
       };
     });
   };
@@ -152,23 +154,21 @@ export default function NewCustomerPage() {
   return (
     <AppLayout
       title="Add New Customer"
-      breadcrumbs={[
-        { label: 'Customers', href: '/customers' },
-        { label: 'New Customer' },
-      ]}
+      breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'New Customer' }]}
     >
       <div>
-        <p className="text-gray-600 mb-6">Create a new customer record with complete information</p>
+        <p className="mb-6 text-gray-600">Create a new customer record with complete information</p>
 
         <div className="max-w-4xl">
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-8">
-
+          <form onSubmit={handleSubmit} className="space-y-8 rounded-lg bg-white p-6 shadow">
             {/* Basic Information Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">
                     Customer Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -178,13 +178,13 @@ export default function NewCustomerPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="John Doe"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -194,13 +194,13 @@ export default function NewCustomerPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="john@example.com"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="phone" className="mb-2 block text-sm font-medium text-gray-700">
                     Phone
                   </label>
                   <input
@@ -209,13 +209,13 @@ export default function NewCustomerPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="company" className="mb-2 block text-sm font-medium text-gray-700">
                     Company
                   </label>
                   <input
@@ -224,7 +224,7 @@ export default function NewCustomerPage() {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="Acme Corp"
                   />
                 </div>
@@ -233,10 +233,12 @@ export default function NewCustomerPage() {
 
             {/* Classification Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Classification</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">
+                Classification
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label htmlFor="segment" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="segment" className="mb-2 block text-sm font-medium text-gray-700">
                     Customer Segment
                   </label>
                   <select
@@ -244,7 +246,7 @@ export default function NewCustomerPage() {
                     name="segment"
                     value={formData.segment}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="individual">Individual</option>
                     <option value="startup">Startup</option>
@@ -255,7 +257,7 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="status" className="mb-2 block text-sm font-medium text-gray-700">
                     Status
                   </label>
                   <select
@@ -263,7 +265,7 @@ export default function NewCustomerPage() {
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="prospect">Prospect</option>
                     <option value="active">Active</option>
@@ -277,10 +279,15 @@ export default function NewCustomerPage() {
 
             {/* Financial & Timeline Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Financial & Timeline</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">
+                Financial & Timeline
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
-                  <label htmlFor="lifetime_value" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="lifetime_value"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
                     Lifetime Value ($)
                   </label>
                   <input
@@ -291,13 +298,16 @@ export default function NewCustomerPage() {
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="acquisition_date" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="acquisition_date"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
                     Acquisition Date
                   </label>
                   <input
@@ -306,12 +316,15 @@ export default function NewCustomerPage() {
                     name="acquisition_date"
                     value={formData.acquisition_date}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="last_interaction_date" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="last_interaction_date"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
                     Last Interaction Date
                   </label>
                   <input
@@ -320,7 +333,7 @@ export default function NewCustomerPage() {
                     name="last_interaction_date"
                     value={formData.last_interaction_date}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -328,10 +341,10 @@ export default function NewCustomerPage() {
 
             {/* Address Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Address</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">Address</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="street" className="mb-2 block text-sm font-medium text-gray-700">
                     Street Address
                   </label>
                   <input
@@ -340,13 +353,13 @@ export default function NewCustomerPage() {
                     name="street"
                     value={formData.address.street}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="123 Main Street"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="city" className="mb-2 block text-sm font-medium text-gray-700">
                     City
                   </label>
                   <input
@@ -355,13 +368,13 @@ export default function NewCustomerPage() {
                     name="city"
                     value={formData.address.city}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="New York"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="state" className="mb-2 block text-sm font-medium text-gray-700">
                     State/Province
                   </label>
                   <input
@@ -370,13 +383,16 @@ export default function NewCustomerPage() {
                     name="state"
                     value={formData.address.state}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="NY"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="postal_code"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
                     Postal Code
                   </label>
                   <input
@@ -385,13 +401,13 @@ export default function NewCustomerPage() {
                     name="postal_code"
                     value={formData.address.postal_code}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="10001"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="country" className="mb-2 block text-sm font-medium text-gray-700">
                     Country
                   </label>
                   <input
@@ -400,7 +416,7 @@ export default function NewCustomerPage() {
                     name="country"
                     value={formData.address.country}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="United States"
                   />
                 </div>
@@ -409,21 +425,21 @@ export default function NewCustomerPage() {
 
             {/* Tags Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Tags</h3>
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">Tags</h3>
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="Add a tag (e.g., vip, high-value, referral)"
                   />
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
                   >
                     <Plus className="h-4 w-4" />
                     Add Tag
@@ -434,7 +450,7 @@ export default function NewCustomerPage() {
                     {formData.tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                        className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
                       >
                         {tag}
                         <button
@@ -453,28 +469,30 @@ export default function NewCustomerPage() {
 
             {/* Metadata Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Custom Metadata</h3>
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">
+                Custom Metadata
+              </h3>
               <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                   <input
                     type="text"
                     value={metadataKey}
-                    onChange={(e) => setMetadataKey(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={e => setMetadataKey(e.target.value)}
+                    className="rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="Key (e.g., referral_source)"
                   />
                   <input
                     type="text"
                     value={metadataValue}
-                    onChange={(e) => setMetadataValue(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddMetadata())}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={e => setMetadataValue(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddMetadata())}
+                    className="rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     placeholder="Value (e.g., google_ads)"
                   />
                   <button
                     type="button"
                     onClick={handleAddMetadata}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-2 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
                   >
                     <Plus className="h-4 w-4" />
                     Add Metadata
@@ -485,7 +503,7 @@ export default function NewCustomerPage() {
                     {Object.entries(formData.metadata).map(([key, value]) => (
                       <div
                         key={key}
-                        className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg border border-gray-200"
+                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
                       >
                         <div className="flex-1">
                           <span className="font-medium text-gray-700">{key}:</span>{' '}
@@ -507,9 +525,11 @@ export default function NewCustomerPage() {
 
             {/* Notes Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Additional Notes</h3>
+              <h3 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-900">
+                Additional Notes
+              </h3>
               <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
                   Notes
                 </label>
                 <textarea
@@ -518,22 +538,22 @@ export default function NewCustomerPage() {
                   value={formData.notes}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   placeholder="Additional information about the customer..."
                 />
               </div>
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center gap-4 pt-4 border-t">
+            <div className="flex items-center gap-4 border-t pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
                     Creating...
                   </>
                 ) : (
@@ -547,7 +567,7 @@ export default function NewCustomerPage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50"
               >
                 Cancel
               </button>

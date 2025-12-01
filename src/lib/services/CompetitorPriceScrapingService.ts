@@ -1,6 +1,6 @@
 /**
  * Competitor Price Scraping Service
- * 
+ *
  * Handles collection of competitor pricing data through various methods:
  * - Manual entry
  * - API integration
@@ -41,10 +41,7 @@ export class CompetitorPriceScrapingService {
   /**
    * Save competitor price to database
    */
-  static async saveCompetitorPrice(
-    orgId: string,
-    input: CompetitorPriceInput
-  ): Promise<string> {
+  static async saveCompetitorPrice(orgId: string, input: CompetitorPriceInput): Promise<string> {
     const competitorPriceId = uuidv4();
 
     const result = await query<{ competitor_price_id: string }>(
@@ -115,14 +112,16 @@ export class CompetitorPriceScrapingService {
   /**
    * Get competitor prices for a product
    */
-  static async getCompetitorPrices(productId: string): Promise<Array<{
-    competitor_price_id: string;
-    competitor_name: string;
-    price: number;
-    currency: string;
-    availability: string;
-    last_checked: Date;
-  }>> {
+  static async getCompetitorPrices(productId: string): Promise<
+    Array<{
+      competitor_price_id: string;
+      competitor_name: string;
+      price: number;
+      currency: string;
+      availability: string;
+      last_checked: Date;
+    }>
+  > {
     const result = await query(
       `
       SELECT 
@@ -148,9 +147,7 @@ export class CompetitorPriceScrapingService {
   /**
    * Mark competitor prices as inactive (soft delete)
    */
-  static async deactivateCompetitorPrices(
-    competitorPriceIds: string[]
-  ): Promise<number> {
+  static async deactivateCompetitorPrices(competitorPriceIds: string[]): Promise<number> {
     if (competitorPriceIds.length === 0) return 0;
 
     const result = await query(
@@ -168,11 +165,13 @@ export class CompetitorPriceScrapingService {
   /**
    * Get all active competitors being tracked
    */
-  static async getActiveCompetitors(): Promise<Array<{
-    competitor_name: string;
-    products_tracked: number;
-    last_updated: Date;
-  }>> {
+  static async getActiveCompetitors(): Promise<
+    Array<{
+      competitor_name: string;
+      products_tracked: number;
+      last_updated: Date;
+    }>
+  > {
     const result = await query(
       `
       SELECT 
@@ -210,12 +209,3 @@ export class CompetitorPriceScrapingService {
     return result.rowCount || 0;
   }
 }
-
-
-
-
-
-
-
-
-

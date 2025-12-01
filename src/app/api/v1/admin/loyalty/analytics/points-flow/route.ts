@@ -7,13 +7,9 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // GET - Get points flow analysis
 export async function GET(request: NextRequest) {

@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import React from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Filter } from 'lucide-react'
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Filter } from 'lucide-react';
 
 export function InventoryFilters() {
   return (
@@ -14,14 +14,5 @@ export function InventoryFilters() {
         Filters
       </Button>
     </div>
-  )
+  );
 }
-
-
-
-
-
-
-
-
-

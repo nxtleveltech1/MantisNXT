@@ -63,9 +63,7 @@ export function useInventoryByCategory(dateRange: string = 'month') {
   return useQuery({
     queryKey: ['dashboard', 'inventory-by-category', dateRange],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/dashboard/inventory-by-category?range=${dateRange}`
-      );
+      const response = await fetch(`/api/dashboard/inventory-by-category?range=${dateRange}`);
       if (!response.ok) {
         throw new Error('Failed to fetch inventory by category');
       }

@@ -90,60 +90,52 @@ export default function CompetitiveIntelligenceDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Competitors Tracked</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.totalCompetitors?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Active monitoring
-              </p>
+              <p className="text-muted-foreground text-xs">Active monitoring</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Scraping Jobs</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.activeJobs?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Running now
-              </p>
+              <p className="text-muted-foreground text-xs">Running now</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Data Snapshots</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
+              <Eye className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.totalSnapshots?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Total collected
-              </p>
+              <p className="text-muted-foreground text-xs">Total collected</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Open Alerts</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.openAlerts?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Requires attention
-              </p>
+              <p className="text-muted-foreground text-xs">Requires attention</p>
             </CardContent>
           </Card>
         </div>
@@ -153,65 +145,57 @@ export default function CompetitiveIntelligenceDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Products Tracked</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <Target className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.productsTracked?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Matched products
-              </p>
+              <p className="text-muted-foreground text-xs">Matched products</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Price Breaches (30d)</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.priceBreaches?.toLocaleString() || '0'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Competitor undercuts
-              </p>
+              <p className="text-muted-foreground text-xs">Competitor undercuts</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Market Share Estimate</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <BarChart3 className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? '...' : metrics?.marketShareEstimate?.toFixed(1) || '0'}%
               </div>
-              <p className="text-xs text-muted-foreground">
-                Based on pricing competitiveness
-              </p>
+              <p className="text-muted-foreground text-xs">Based on pricing competitiveness</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/competitive-intelligence/competitors">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
+                  <Users className="text-primary h-5 w-5" />
                   <CardTitle>Competitor Management</CardTitle>
                 </div>
-                <CardDescription>
-                  Add, edit, and manage competitor profiles
-                </CardDescription>
+                <CardDescription>Add, edit, and manage competitor profiles</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Manage profiles</span>
+                  <span className="text-muted-foreground text-sm">Manage profiles</span>
                   <Badge variant="secondary">
                     {loading ? '...' : metrics?.totalCompetitors || '0'}
                   </Badge>
@@ -220,42 +204,36 @@ export default function CompetitiveIntelligenceDashboardPage() {
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/competitive-intelligence/jobs">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Play className="h-5 w-5 text-primary" />
+                  <Play className="text-primary h-5 w-5" />
                   <CardTitle>Scraping Jobs</CardTitle>
                 </div>
-                <CardDescription>
-                  Schedule and monitor web scraping jobs
-                </CardDescription>
+                <CardDescription>Schedule and monitor web scraping jobs</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Active jobs</span>
-                  <Badge variant="outline">
-                    {loading ? '...' : metrics?.activeJobs || '0'}
-                  </Badge>
+                  <span className="text-muted-foreground text-sm">Active jobs</span>
+                  <Badge variant="outline">{loading ? '...' : metrics?.activeJobs || '0'}</Badge>
                 </div>
               </CardContent>
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
+          <Card className="cursor-pointer transition-shadow hover:shadow-lg" asChild>
             <Link href="/pricing-optimization/competitive-intelligence/alerts">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-primary" />
+                  <AlertCircle className="text-primary h-5 w-5" />
                   <CardTitle>Alerts & Notifications</CardTitle>
                 </div>
-                <CardDescription>
-                  Configure and view competitive alerts
-                </CardDescription>
+                <CardDescription>Configure and view competitive alerts</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Open alerts</span>
+                  <span className="text-muted-foreground text-sm">Open alerts</span>
                   <Badge variant="destructive">
                     {loading ? '...' : metrics?.openAlerts || '0'}
                   </Badge>
@@ -273,9 +251,11 @@ export default function CompetitiveIntelligenceDashboardPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading recent activity...</div>
+              <div className="text-muted-foreground py-8 text-center">
+                Loading recent activity...
+              </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 No recent activity to display. Start monitoring competitors to see data here.
               </div>
             )}
@@ -285,4 +265,3 @@ export default function CompetitiveIntelligenceDashboardPage() {
     </AppLayout>
   );
 }
-

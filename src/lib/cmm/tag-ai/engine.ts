@@ -63,18 +63,27 @@ export async function enrichProductWithAI(
     try {
       // Use configured web research provider, or auto-detect based on available API keys
       // Prioritize configured provider and API key from options
-      const webProvider = options.webResearchProvider || 
-        (options.webResearchApiKey && options.webResearchProvider 
-          ? options.webResearchProvider 
-          : (process.env.TAVILY_API_KEY ? 'tavily' :
-             process.env.SERPER_API_KEY ? 'serper' :
-             process.env.BRAVE_API_KEY ? 'brave' :
-             process.env.EXA_API_KEY ? 'exa' :
-             (process.env.GOOGLE_CUSTOM_SEARCH_API_KEY && process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID) ? 'google_custom_search' :
-             undefined));
-      
+      const webProvider =
+        options.webResearchProvider ||
+        (options.webResearchApiKey && options.webResearchProvider
+          ? options.webResearchProvider
+          : process.env.TAVILY_API_KEY
+            ? 'tavily'
+            : process.env.SERPER_API_KEY
+              ? 'serper'
+              : process.env.BRAVE_API_KEY
+                ? 'brave'
+                : process.env.EXA_API_KEY
+                  ? 'exa'
+                  : process.env.GOOGLE_CUSTOM_SEARCH_API_KEY &&
+                      process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID
+                    ? 'google_custom_search'
+                    : undefined);
+
       if (!webProvider || webProvider === 'manual') {
-        console.warn(`[engine] Web research skipped: no provider configured (webResearchProvider=${options.webResearchProvider}, hasApiKey=${!!options.webResearchApiKey})`);
+        console.warn(
+          `[engine] Web research skipped: no provider configured (webResearchProvider=${options.webResearchProvider}, hasApiKey=${!!options.webResearchApiKey})`
+        );
       } else {
         webResearchResults = await researchProduct(
           product.supplier_sku,
@@ -84,8 +93,8 @@ export async function enrichProductWithAI(
             provider: webProvider as any,
             apiKey: options.webResearchApiKey,
             // For Google Custom Search, we need engine ID
-            ...(webProvider === 'google_custom_search' && options.webResearchEngineId 
-              ? { apiUrl: options.webResearchEngineId } 
+            ...(webProvider === 'google_custom_search' && options.webResearchEngineId
+              ? { apiUrl: options.webResearchEngineId }
               : {}),
           }
         );
@@ -95,15 +104,20 @@ export async function enrichProductWithAI(
     }
   }
 
-  const webResearchContext = webResearchResults.length > 0
-    ? `\n\nWeb Research Results:\n${webResearchResults.map((r, idx) => 
-        `${idx + 1}. ${r.title || 'N/A'}\n   ${r.description || ''}\n   Source: ${r.source}`
-      ).join('\n\n')}`
-    : '';
+  const webResearchContext =
+    webResearchResults.length > 0
+      ? `\n\nWeb Research Results:\n${webResearchResults
+          .map(
+            (r, idx) =>
+              `${idx + 1}. ${r.title || 'N/A'}\n   ${r.description || ''}\n   Source: ${r.source}`
+          )
+          .join('\n\n')}`
+      : '';
 
-  const existingTagsList = existingTags.length > 0
-    ? `\n\nExisting Tags:\n${existingTags.map(t => `- ${t.name} (${t.type})`).join('\n')}`
-    : '';
+  const existingTagsList =
+    existingTags.length > 0
+      ? `\n\nExisting Tags:\n${existingTags.map(t => `- ${t.name} (${t.type})`).join('\n')}`
+      : '';
 
   // Check if product name is SKU (needs correction)
   const nameIsSku = product.name_from_supplier === product.supplier_sku;
@@ -156,33 +170,36 @@ Return ONLY valid JSON matching this schema:
 }`;
 
   const providerKey = provider.provider?.toLowerCase();
-  
+
   // Check if CLI mode is enabled - try CLI first
   if (provider.useCLI) {
-    const cliCommand = provider.cliCommand || (providerKey === 'google' ? 'gemini' : providerKey === 'openai' ? 'codex' : '');
-    
+    const cliCommand =
+      provider.cliCommand ||
+      (providerKey === 'google' ? 'gemini' : providerKey === 'openai' ? 'codex' : '');
+
     if (!cliCommand) {
       throw new Error(
         'CLI mode is enabled but no CLI command specified. Please configure cliCommand in provider settings.'
       );
     }
-    
+
     // Check if CLI command exists before trying to use it
     // Use a longer timeout for the initial check to avoid false negatives
     const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand);
     if (!cliCheck.installed) {
-      const installationHint = cliCommand === 'codex' 
-        ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
-        : cliCommand === 'gemini'
-        ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
-        : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
-      
+      const installationHint =
+        cliCommand === 'codex'
+          ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
+          : cliCommand === 'gemini'
+            ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
+            : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
+
       throw new Error(
         `CLI command '${cliCommand}' is not installed or not available in PATH. ${installationHint} ` +
-        `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
+          `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
       );
     }
-    
+
     try {
       const cliConfig = {
         provider: providerKey as any,
@@ -195,71 +212,83 @@ Return ONLY valid JSON matching this schema:
         workingDirectory: provider.cliWorkingDirectory,
         timeout: timeoutMs,
       };
-      
+
       // Clean model name to remove suffixes like "medium", "high", etc.
-      const cleanedModelName = modelName 
-        ? modelName.trim().replace(/\s+(medium|high|low|fast|slow)$/i, '').replace(/\(medium\)|\(high\)|\(low\)/gi, '').trim()
+      const cleanedModelName = modelName
+        ? modelName
+            .trim()
+            .replace(/\s+(medium|high|low|fast|slow)$/i, '')
+            .replace(/\(medium\)|\(high\)|\(low\)/gi, '')
+            .trim()
         : 'gpt-5.1-codex-max';
-      
+
       const cliClient = new CLIProviderClient(cliConfig);
       const result = await withTimeout(
         cliClient.generateText(prompt, { model: cleanedModelName }),
         timeoutMs,
         `cli enrichProduct generateText (${cleanedModelName || 'default'})`
       );
-      
+
       return parseStructuredJsonResponse(result, ProductEnrichmentSchema);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`[engine] CLI enrichProduct failed:`, err);
-      
+
       // If CLI command doesn't exist or not found, don't fall back to API mode
-      if (errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not available')) {
+      if (
+        errorMessage.includes('ENOENT') ||
+        errorMessage.includes('not found') ||
+        errorMessage.includes('not available')
+      ) {
         throw new Error(
           `CLI command '${cliCommand}' not found or not available. Please install it or disable CLI mode and use API mode with an API key.`
         );
       }
-      
+
       // Only fall through to API mode if CLI execution fails BUT:
       // 1. CLI command exists (already checked above)
       // 2. Valid API key is provided (not dummy/empty)
       // 3. This is an execution error, not installation error
       mark('providerFallbacks');
-      const hasValidApiKey = provider.apiKey && 
-        provider.apiKey !== 'dummy' && 
-        typeof provider.apiKey === 'string' && 
+      const hasValidApiKey =
+        provider.apiKey &&
+        provider.apiKey !== 'dummy' &&
+        typeof provider.apiKey === 'string' &&
         provider.apiKey.trim().length > 0;
-      
+
       if (hasValidApiKey) {
-        console.warn(`[engine] CLI execution failed (${errorMessage}), falling back to API mode with provided API key`);
+        console.warn(
+          `[engine] CLI execution failed (${errorMessage}), falling back to API mode with provided API key`
+        );
         // Continue to API mode below
       } else {
         // CLI failed and no valid API key - throw error
         throw new Error(
           `CLI execution failed: ${errorMessage}. ` +
-          `CLI mode is enabled but execution failed and no valid API key is provided for fallback. ` +
-          `Please check CLI installation and authentication, or disable CLI mode and provide an API key for API mode.`
+            `CLI mode is enabled but execution failed and no valid API key is provided for fallback. ` +
+            `Please check CLI installation and authentication, or disable CLI mode and provide an API key for API mode.`
         );
       }
     }
   }
-  
+
   if (providerKey === 'anthropic') {
     // Skip if no API key and CLI mode already failed
-    const hasValidApiKey = provider.apiKey && 
-      provider.apiKey !== 'dummy' && 
-      typeof provider.apiKey === 'string' && 
+    const hasValidApiKey =
+      provider.apiKey &&
+      provider.apiKey !== 'dummy' &&
+      typeof provider.apiKey === 'string' &&
       provider.apiKey.trim().length > 0;
-    
+
     if (!hasValidApiKey) {
       throw new Error(
         'API key is required for Anthropic API mode. ' +
-        (provider.useCLI 
-          ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
-          : 'Please provide an API key or enable CLI mode.')
+          (provider.useCLI
+            ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
+            : 'Please provide an API key or enable CLI mode.')
       );
     }
-    
+
     const anthropic = createAnthropic({
       apiKey: provider.apiKey,
       ...(provider.baseUrl ? { baseURL: provider.baseUrl } : {}),
@@ -296,20 +325,21 @@ Return ONLY valid JSON matching this schema:
 
   // OpenAI or compatible
   // Skip if no API key and not CLI mode (or CLI already failed)
-  const hasValidApiKey = provider.apiKey && 
-    provider.apiKey !== 'dummy' && 
-    typeof provider.apiKey === 'string' && 
+  const hasValidApiKey =
+    provider.apiKey &&
+    provider.apiKey !== 'dummy' &&
+    typeof provider.apiKey === 'string' &&
     provider.apiKey.trim().length > 0;
-  
+
   if (!hasValidApiKey) {
     throw new Error(
       'API key is required for OpenAI API mode. ' +
-      (provider.useCLI 
-        ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
-        : 'Please provide an API key or enable CLI mode.')
+        (provider.useCLI
+          ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
+          : 'Please provide an API key or enable CLI mode.')
     );
   }
-  
+
   const openai = createOpenAI({
     apiKey: provider.apiKey,
     ...(provider.baseUrl ? { baseURL: provider.baseUrl } : {}),
@@ -390,9 +420,10 @@ ${p.attrs_json ? `- Attributes: ${JSON.stringify(p.attrs_json, null, 2)}` : ''}`
     })
     .join('\n\n');
 
-  const existingTagsList = existingTags.length > 0
-    ? `\n\nExisting Tags Available:\n${existingTags.map(t => `- ${t.name} (${t.type}, id: ${t.tag_id})`).join('\n')}`
-    : '\n\nNo existing tags available. Create new tag suggestions.';
+  const existingTagsList =
+    existingTags.length > 0
+      ? `\n\nExisting Tags Available:\n${existingTags.map(t => `- ${t.name} (${t.type}, id: ${t.tag_id})`).join('\n')}`
+      : '\n\nNo existing tags available. Create new tag suggestions.';
 
   const prompt = `You are suggesting tags for ${products.length} products in an inventory management system. Analyze each product and suggest appropriate tags for categorization and filtering.
 
@@ -435,12 +466,12 @@ Return ONLY valid JSON matching this schema:
 }`;
 
   let providerKey = provider.provider?.toLowerCase();
-  
+
   // Map openai_compatible and openrouter to openai for engine compatibility
   if (providerKey === 'openai_compatible' || providerKey === 'openrouter') {
     providerKey = 'openai';
   }
-  
+
   if (providerKey === 'anthropic') {
     const anthropic = createAnthropic({
       apiKey: provider.apiKey,
@@ -451,9 +482,9 @@ Return ONLY valid JSON matching this schema:
       // Calculate maxOutputTokens based on batch size
       const estimatedTokensPerProduct = 400;
       const baseOutputTokens = 1000;
-      const calculatedMaxOutput = baseOutputTokens + (products.length * estimatedTokensPerProduct);
+      const calculatedMaxOutput = baseOutputTokens + products.length * estimatedTokensPerProduct;
       const maxOutputTokens = Math.min(calculatedMaxOutput, 8000); // Claude max is typically 4096, but some models support more
-      
+
       const opts: unknown = {
         model,
         schema: BatchTagSuggestionSchema,
@@ -467,7 +498,7 @@ Return ONLY valid JSON matching this schema:
         timeoutMs,
         `anthropic batch generateObject (${modelName || 'default'})`
       );
-      
+
       // Check if response was truncated
       if (result.finishReason === 'length') {
         console.warn(
@@ -475,7 +506,7 @@ Return ONLY valid JSON matching this schema:
         );
         throw new Error('Response truncated due to token limit');
       }
-      
+
       console.log(
         `[engine] suggestTagsBatch success (anthropic schema) provider=${provider.provider} model=${modelName} suggestions=${(result.object as BatchTagSuggestion | null)?.suggestions?.length ?? 0}`
       );
@@ -483,11 +514,11 @@ Return ONLY valid JSON matching this schema:
     } catch (err: unknown) {
       const errorMsg = String(err?.message || '');
       const isTruncationError = errorMsg.includes('truncated') || errorMsg.includes('length');
-      
+
       mark('providerFallbacks');
       const jsonPrompt = `${prompt}\n\nIMPORTANT: Respond with ONLY valid JSON matching the schema.${isTruncationError ? ' If you cannot complete all products, return as many as possible with valid JSON.' : ''}`;
-      const fallbackMaxTokens = isTruncationError 
-        ? Math.min((products.length * 500) + 2000, 8000)
+      const fallbackMaxTokens = isTruncationError
+        ? Math.min(products.length * 500 + 2000, 8000)
         : 4000;
       const textOpts: unknown = { model, prompt: jsonPrompt, maxOutputTokens: fallbackMaxTokens };
       if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
@@ -496,14 +527,12 @@ Return ONLY valid JSON matching this schema:
         timeoutMs,
         `anthropic batch generateText JSON-mode (${modelName || 'default'})`
       );
-      
+
       // Check if fallback also truncated
       if (text.finishReason === 'length') {
-        console.warn(
-          `[engine] suggestTagsBatch fallback also truncated. Attempting JSON repair.`
-        );
+        console.warn(`[engine] suggestTagsBatch fallback also truncated. Attempting JSON repair.`);
       }
-      
+
       const parsed = parseStructuredJsonResponse(text.text, BatchTagSuggestionSchema);
       console.log(
         `[engine] suggestTagsBatch success (anthropic JSON fallback) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`
@@ -514,35 +543,38 @@ Return ONLY valid JSON matching this schema:
 
   // OpenAI or compatible (including OpenRouter)
   // Ensure baseURL is set correctly for OpenRouter
-  const baseUrl = provider.baseUrl 
+  const baseUrl = provider.baseUrl
     ? provider.baseUrl.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '')
     : undefined;
-  
+
   // Check if this is OpenRouter - use direct fetch since AI SDK has issues with OpenRouter
-  const isOpenRouter = provider.provider?.toLowerCase() === 'openrouter' || baseUrl?.includes('openrouter.ai');
-  
-  console.log(`[engine] suggestTagsBatch creating client: provider=${provider.provider}, baseUrl=${baseUrl}, hasApiKey=${!!provider.apiKey}, isOpenRouter=${isOpenRouter}`);
-  
+  const isOpenRouter =
+    provider.provider?.toLowerCase() === 'openrouter' || baseUrl?.includes('openrouter.ai');
+
+  console.log(
+    `[engine] suggestTagsBatch creating client: provider=${provider.provider}, baseUrl=${baseUrl}, hasApiKey=${!!provider.apiKey}, isOpenRouter=${isOpenRouter}`
+  );
+
   // For OpenRouter, use direct fetch API (AI SDK has issues with OpenRouter baseURL)
   if (isOpenRouter) {
     try {
       console.log(`[engine] Using direct fetch for OpenRouter: model=${modelName}`);
-      
+
       // Calculate maxOutputTokens based on batch size
       const estimatedTokensPerProduct = 400;
       const baseOutputTokens = 1000;
-      const calculatedMaxOutput = baseOutputTokens + (products.length * estimatedTokensPerProduct);
+      const calculatedMaxOutput = baseOutputTokens + products.length * estimatedTokensPerProduct;
       const maxOutputTokens = Math.min(
         calculatedMaxOutput,
         modelName?.includes('gpt-4') || modelName?.includes('o1') ? 16000 : 8000
       );
-      
+
       // Direct fetch to OpenRouter API
       const response = await withTimeout(
         fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${provider.apiKey}`,
+            Authorization: `Bearer ${provider.apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': 'http://localhost:3000',
             'X-Title': 'MantisNXT',
@@ -557,19 +589,21 @@ Return ONLY valid JSON matching this schema:
         timeoutMs,
         `openrouter direct fetch (${modelName || 'default'})`
       );
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
       }
-      
+
       const data = await response.json();
       const responseText = data.choices?.[0]?.message?.content || '';
-      
+
       if (responseText) {
         const parsed = parseStructuredJsonResponse(responseText, BatchTagSuggestionSchema);
         if (parsed) {
-          console.log(`[engine] suggestTagsBatch success (OpenRouter direct fetch) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`);
+          console.log(
+            `[engine] suggestTagsBatch success (OpenRouter direct fetch) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`
+          );
           return parsed;
         }
       }
@@ -580,7 +614,7 @@ Return ONLY valid JSON matching this schema:
       throw openRouterErr; // Don't fall back - if direct fetch fails, something is wrong
     }
   }
-  
+
   const openai = createOpenAI({
     apiKey: provider.apiKey,
     ...(baseUrl ? { baseURL: baseUrl } : {}),
@@ -591,7 +625,7 @@ Return ONLY valid JSON matching this schema:
     // Estimate: ~300-500 tokens per product suggestion, with safety margin
     const estimatedTokensPerProduct = 400;
     const baseOutputTokens = 1000;
-    const calculatedMaxOutput = baseOutputTokens + (products.length * estimatedTokensPerProduct);
+    const calculatedMaxOutput = baseOutputTokens + products.length * estimatedTokensPerProduct;
     // Cap at reasonable limits: 8000 for most models, 16000 for larger models
     const maxOutputTokens = Math.min(
       calculatedMaxOutput,
@@ -612,7 +646,7 @@ Return ONLY valid JSON matching this schema:
         timeoutMs,
         `openai batch generateObject (${modelName})`
       );
-      
+
       // Check if response was truncated
       if (result.finishReason === 'length') {
         console.warn(
@@ -620,7 +654,7 @@ Return ONLY valid JSON matching this schema:
         );
         throw new Error('Response truncated due to token limit');
       }
-      
+
       console.log(
         `[engine] suggestTagsBatch success (openai schema) provider=${provider.provider} model=${modelName} suggestions=${(result.object as BatchTagSuggestion | null)?.suggestions?.length ?? 0}`
       );
@@ -635,7 +669,7 @@ Return ONLY valid JSON matching this schema:
         timeoutMs,
         `openai batch generateText JSON-mode (${modelName || 'default'})`
       );
-      
+
       // Check if response was truncated
       if (text.finishReason === 'length') {
         console.warn(
@@ -651,7 +685,7 @@ Return ONLY valid JSON matching this schema:
         }
         throw new Error('Response truncated and could not be repaired');
       }
-      
+
       const parsed = parseStructuredJsonResponse(text.text, BatchTagSuggestionSchema);
       console.log(
         `[engine] suggestTagsBatch success (openai JSON-mode) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`
@@ -661,16 +695,25 @@ Return ONLY valid JSON matching this schema:
   } catch (err: unknown) {
     const errorMsg = String(err?.message || '');
     const isTruncationError = errorMsg.includes('truncated') || errorMsg.includes('length');
-    
+
     // Log full error details for OpenRouter debugging
-    if (provider.provider?.toLowerCase() === 'openrouter' || provider.baseUrl?.includes('openrouter')) {
+    if (
+      provider.provider?.toLowerCase() === 'openrouter' ||
+      provider.baseUrl?.includes('openrouter')
+    ) {
       console.error(
         `[engine] suggestTagsBatch OpenRouter error - provider=${provider.provider}, baseUrl=${baseUrl}, model=${modelName}, apiKeyPrefix=${provider.apiKey?.substring(0, 20)}...`,
         err
       );
       // If it's an auth error, log more details
-      if (errorMsg.includes('User not found') || errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
-        console.error(`[engine] OpenRouter auth error - check: 1) API key is valid sk-or-v1-... format, 2) Key exists in OpenRouter account, 3) baseURL is exactly 'https://openrouter.ai/api/v1' (no trailing slash)`);
+      if (
+        errorMsg.includes('User not found') ||
+        errorMsg.includes('401') ||
+        errorMsg.includes('Unauthorized')
+      ) {
+        console.error(
+          `[engine] OpenRouter auth error - check: 1) API key is valid sk-or-v1-... format, 2) Key exists in OpenRouter account, 3) baseURL is exactly 'https://openrouter.ai/api/v1' (no trailing slash)`
+        );
       }
     } else {
       console.error(
@@ -678,7 +721,7 @@ Return ONLY valid JSON matching this schema:
         err
       );
     }
-    
+
     // If truncated, try with even higher token limit or return partial results
     if (isTruncationError) {
       console.warn(
@@ -687,7 +730,7 @@ Return ONLY valid JSON matching this schema:
       mark('providerFallbacks');
       const jsonPrompt = `${prompt}\n\nIMPORTANT: Respond with ONLY valid JSON matching the schema. If you cannot complete all products, return as many as possible with valid JSON.`;
       const fallbackMaxTokens = Math.min(
-        (products.length * 500) + 2000,
+        products.length * 500 + 2000,
         modelName?.includes('gpt-4') || modelName?.includes('o1') ? 16000 : 8000
       );
       const textOpts: unknown = { model, prompt: jsonPrompt, maxOutputTokens: fallbackMaxTokens };
@@ -724,9 +767,8 @@ Return ONLY valid JSON matching this schema:
       );
       return parsed;
     }
-    
+
     // If all else fails, return null
     return null;
   }
 }
-

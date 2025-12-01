@@ -1,5 +1,5 @@
 // @ts-nocheck
-"use client"
+'use client';
 
 import React from 'react';
 import {
@@ -10,7 +10,7 @@ import {
   Database,
   FilterX,
   CheckCircle2,
-  InboxOff
+  InboxOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,41 +31,30 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   icon,
   action,
-  className = ''
+  className = '',
 }) => (
   <div
     className={`flex flex-col items-center justify-center p-8 text-center ${className}`}
     role="status"
     aria-live="polite"
   >
-    <div className="mb-4 text-muted-foreground opacity-50" aria-hidden="true">
+    <div className="text-muted-foreground mb-4 opacity-50" aria-hidden="true">
       {icon || <Inbox className="h-12 w-12" />}
     </div>
 
-    <h3 className="text-lg font-semibold text-foreground mb-2">
-      {title}
-    </h3>
+    <h3 className="text-foreground mb-2 text-lg font-semibold">{title}</h3>
 
-    <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-      {description}
-    </p>
+    <p className="text-muted-foreground mb-4 max-w-sm text-sm">{description}</p>
 
     {action && (
-      <Button
-        onClick={action.onClick}
-        variant="default"
-        size="sm"
-        aria-label={action.label}
-      >
+      <Button onClick={action.onClick} variant="default" size="sm" aria-label={action.label}>
         {action.label}
       </Button>
     )}
   </div>
 );
 
-export const NoAlertsEmptyState: React.FC<{ onRefresh?: () => void }> = ({
-  onRefresh
-}) => (
+export const NoAlertsEmptyState: React.FC<{ onRefresh?: () => void }> = ({ onRefresh }) => (
   <EmptyState
     icon={<CheckCircle2 className="h-12 w-12" />}
     title="No Active Alerts"
@@ -74,9 +63,7 @@ export const NoAlertsEmptyState: React.FC<{ onRefresh?: () => void }> = ({
   />
 );
 
-export const NoActivitiesEmptyState: React.FC<{ onRefresh?: () => void }> = ({
-  onRefresh
-}) => (
+export const NoActivitiesEmptyState: React.FC<{ onRefresh?: () => void }> = ({ onRefresh }) => (
   <EmptyState
     icon={<AlertCircle className="h-12 w-12" />}
     title="No Recent Activities"
@@ -85,9 +72,7 @@ export const NoActivitiesEmptyState: React.FC<{ onRefresh?: () => void }> = ({
   />
 );
 
-export const NoInventoryEmptyState: React.FC<{ onAdd?: () => void }> = ({
-  onAdd
-}) => (
+export const NoInventoryEmptyState: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => (
   <EmptyState
     icon={<PackageX className="h-12 w-12" />}
     title="No Inventory Items"
@@ -96,9 +81,7 @@ export const NoInventoryEmptyState: React.FC<{ onAdd?: () => void }> = ({
   />
 );
 
-export const NoSearchResultsEmptyState: React.FC<{ onClear?: () => void }> = ({
-  onClear
-}) => (
+export const NoSearchResultsEmptyState: React.FC<{ onClear?: () => void }> = ({ onClear }) => (
   <EmptyState
     icon={<SearchX className="h-12 w-12" />}
     title="No Results Found"
@@ -107,9 +90,7 @@ export const NoSearchResultsEmptyState: React.FC<{ onClear?: () => void }> = ({
   />
 );
 
-export const NoDataEmptyState: React.FC<{ onRetry?: () => void }> = ({
-  onRetry
-}) => (
+export const NoDataEmptyState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
   <EmptyState
     icon={<Database className="h-12 w-12" />}
     title="No Data Available"
@@ -119,7 +100,7 @@ export const NoDataEmptyState: React.FC<{ onRetry?: () => void }> = ({
 );
 
 export const NoFilteredResultsEmptyState: React.FC<{ onClearFilters?: () => void }> = ({
-  onClearFilters
+  onClearFilters,
 }) => (
   <EmptyState
     icon={<FilterX className="h-12 w-12" />}
@@ -129,7 +110,7 @@ export const NoFilteredResultsEmptyState: React.FC<{ onClearFilters?: () => void
   />
 );
 
-export const CardEmptyState: React.FC<EmptyStateProps> = (props) => (
+export const CardEmptyState: React.FC<EmptyStateProps> = props => (
   <Card className="border-dashed">
     <CardContent className="pt-6">
       <EmptyState {...props} />
@@ -142,7 +123,7 @@ export const InlineEmptyState: React.FC<{
   message: string;
 }> = ({ icon, message }) => (
   <div
-    className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground"
+    className="text-muted-foreground flex items-center justify-center gap-2 p-4 text-sm"
     role="status"
     aria-live="polite"
   >
@@ -153,14 +134,8 @@ export const InlineEmptyState: React.FC<{
   </div>
 );
 
-export const MinimalEmptyState: React.FC<{ message: string }> = ({
-  message
-}) => (
-  <div
-    className="text-center py-6 text-sm text-muted-foreground"
-    role="status"
-    aria-live="polite"
-  >
+export const MinimalEmptyState: React.FC<{ message: string }> = ({ message }) => (
+  <div className="text-muted-foreground py-6 text-center text-sm" role="status" aria-live="polite">
     {message}
   </div>
 );

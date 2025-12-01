@@ -12,7 +12,7 @@ import {
   getPoolStatus,
   closePool,
   DatabaseManager,
-  db
+  db,
 } from '../../lib/database/unified-connection';
 
 // Import enterpriseDb from the enterprise connection manager
@@ -28,7 +28,7 @@ export {
   closePool,
   DatabaseManager,
   db,
-  enterpriseDb
+  enterpriseDb,
 };
 
 // Export the db instance as default for backwards compatibility

@@ -7,14 +7,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for stock update
 const updateStockSchema = z.object({
@@ -36,7 +32,6 @@ export async function PATCH(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // Parse and validate body
     const body = await request.json();

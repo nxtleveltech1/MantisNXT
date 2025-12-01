@@ -1,12 +1,18 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Search,
   Grid3x3,
@@ -30,89 +36,89 @@ import {
   BarChart3,
   Tag,
   RefreshCw,
-  Download
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+  Download,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Enhanced Product Interface
 interface Product {
-  id: string
-  sku: string
-  name: string
-  description: string
-  category: string
-  subcategory?: string
-  brand: string
-  unitPrice: number
-  currency: string
-  stockQuantity: number
-  reorderPoint: number
-  unitOfMeasure: string
-  weight?: number
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  brand: string;
+  unitPrice: number;
+  currency: string;
+  stockQuantity: number;
+  reorderPoint: number;
+  unitOfMeasure: string;
+  weight?: number;
   dimensions?: {
-    length: number
-    width: number
-    height: number
-    unit: string
-  }
+    length: number;
+    width: number;
+    height: number;
+    unit: string;
+  };
   images: Array<{
-    url: string
-    alt: string
-    isPrimary: boolean
-  }>
+    url: string;
+    alt: string;
+    isPrimary: boolean;
+  }>;
   supplier: {
-    id: string
-    name: string
-    code: string
-    rating: number
-    deliveryTime: number
-    reliability: number
-  }
+    id: string;
+    name: string;
+    code: string;
+    rating: number;
+    deliveryTime: number;
+    reliability: number;
+  };
   metadata: {
-    createdAt: Date
-    updatedAt: Date
-    lastOrderDate?: Date
-    totalOrders: number
-    averageOrderQuantity: number
-    popularity: number
-    seasonality?: 'high' | 'medium' | 'low'
+    createdAt: Date;
+    updatedAt: Date;
+    lastOrderDate?: Date;
+    totalOrders: number;
+    averageOrderQuantity: number;
+    popularity: number;
+    seasonality?: 'high' | 'medium' | 'low';
     trends: {
-      priceChange: number
-      demandChange: number
-      stockMovement: number
-    }
-  }
+      priceChange: number;
+      demandChange: number;
+      stockMovement: number;
+    };
+  };
   compliance: {
-    certifications: string[]
-    hazardous: boolean
-    restricted: boolean
+    certifications: string[];
+    hazardous: boolean;
+    restricted: boolean;
     documentation: Array<{
-      type: string
-      url: string
-      expiryDate?: Date
-    }>
-  }
-  tags: string[]
-  isActive: boolean
-  isFavorite?: boolean
-  isNew?: boolean
-  isOnSale?: boolean
+      type: string;
+      url: string;
+      expiryDate?: Date;
+    }>;
+  };
+  tags: string[];
+  isActive: boolean;
+  isFavorite?: boolean;
+  isNew?: boolean;
+  isOnSale?: boolean;
 }
 
 interface ProductCatalogGridProps {
-  products: Product[]
-  loading?: boolean
-  onProductSelect?: (product: Product) => void
-  onAddToCart?: (product: Product, quantity: number) => void
-  onToggleFavorite?: (productId: string) => void
-  enableBulkActions?: boolean
-  showSupplierInfo?: boolean
-  showStockLevels?: boolean
-  showPriceHistory?: boolean
-  viewMode?: 'grid' | 'list'
-  itemsPerPage?: number
-  autoRefresh?: boolean
-  refreshInterval?: number
+  products: Product[];
+  loading?: boolean;
+  onProductSelect?: (product: Product) => void;
+  onAddToCart?: (product: Product, quantity: number) => void;
+  onToggleFavorite?: (productId: string) => void;
+  enableBulkActions?: boolean;
+  showSupplierInfo?: boolean;
+  showStockLevels?: boolean;
+  showPriceHistory?: boolean;
+  viewMode?: 'grid' | 'list';
+  itemsPerPage?: number;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
 }
 
 const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
@@ -128,170 +134,193 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
   viewMode: initialViewMode = 'grid',
   itemsPerPage = 24,
   autoRefresh = false,
-  refreshInterval = 30000
+  refreshInterval = 30000,
 }) => {
   // State Management
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000])
-  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all')
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'stock' | 'popularity' | 'updated'>('name')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
-  const [showFilters, setShowFilters] = useState(false)
-  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>(
+    'all'
+  );
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'stock' | 'popularity' | 'updated'>(
+    'name'
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Auto-refresh functionality
   React.useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      setLastRefresh(new Date())
-    }, refreshInterval)
+      setLastRefresh(new Date());
+    }, refreshInterval);
 
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval])
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval]);
 
   // Computed Values
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(products.map(p => p.category)))
-    return cats.sort()
-  }, [products])
+    const cats = Array.from(new Set(products.map(p => p.category)));
+    return cats.sort();
+  }, [products]);
 
   const brands = useMemo(() => {
-    const brandsSet = Array.from(new Set(products.map(p => p.brand)))
-    return brandsSet.sort()
-  }, [products])
+    const brandsSet = Array.from(new Set(products.map(p => p.brand)));
+    return brandsSet.sort();
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = products
+    let filtered = products;
 
     // Search filter
     if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(term) ||
-        p.sku.toLowerCase().includes(term) ||
-        p.description.toLowerCase().includes(term) ||
-        p.brand.toLowerCase().includes(term) ||
-        p.category.toLowerCase().includes(term) ||
-        p.tags.some(tag => tag.toLowerCase().includes(term))
-      )
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        p =>
+          p.name.toLowerCase().includes(term) ||
+          p.sku.toLowerCase().includes(term) ||
+          p.description.toLowerCase().includes(term) ||
+          p.brand.toLowerCase().includes(term) ||
+          p.category.toLowerCase().includes(term) ||
+          p.tags.some(tag => tag.toLowerCase().includes(term))
+      );
     }
 
     // Category filter
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category))
+      filtered = filtered.filter(p => selectedCategories.includes(p.category));
     }
 
     // Brand filter
     if (selectedBrands.length > 0) {
-      filtered = filtered.filter(p => selectedBrands.includes(p.brand))
+      filtered = filtered.filter(p => selectedBrands.includes(p.brand));
     }
 
     // Price range filter
-    filtered = filtered.filter(p =>
-      p.unitPrice >= priceRange[0] && p.unitPrice <= priceRange[1]
-    )
+    filtered = filtered.filter(p => p.unitPrice >= priceRange[0] && p.unitPrice <= priceRange[1]);
 
     // Stock filter
     if (stockFilter !== 'all') {
       filtered = filtered.filter(p => {
         switch (stockFilter) {
           case 'in_stock':
-            return p.stockQuantity > p.reorderPoint
+            return p.stockQuantity > p.reorderPoint;
           case 'low_stock':
-            return p.stockQuantity > 0 && p.stockQuantity <= p.reorderPoint
+            return p.stockQuantity > 0 && p.stockQuantity <= p.reorderPoint;
           case 'out_of_stock':
-            return p.stockQuantity === 0
+            return p.stockQuantity === 0;
           default:
-            return true
+            return true;
         }
-      })
+      });
     }
 
     // Sorting
     filtered.sort((a, b) => {
-      let comparison = 0
+      let comparison = 0;
       switch (sortBy) {
         case 'name':
-          comparison = a.name.localeCompare(b.name)
-          break
+          comparison = a.name.localeCompare(b.name);
+          break;
         case 'price':
-          comparison = a.unitPrice - b.unitPrice
-          break
+          comparison = a.unitPrice - b.unitPrice;
+          break;
         case 'stock':
-          comparison = a.stockQuantity - b.stockQuantity
-          break
+          comparison = a.stockQuantity - b.stockQuantity;
+          break;
         case 'popularity':
-          comparison = a.metadata.popularity - b.metadata.popularity
-          break
+          comparison = a.metadata.popularity - b.metadata.popularity;
+          break;
         case 'updated':
-          comparison = a.metadata.updatedAt.getTime() - b.metadata.updatedAt.getTime()
-          break
+          comparison = a.metadata.updatedAt.getTime() - b.metadata.updatedAt.getTime();
+          break;
       }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
-    return filtered
-  }, [products, searchTerm, selectedCategories, selectedBrands, priceRange, stockFilter, sortBy, sortOrder])
+    return filtered;
+  }, [
+    products,
+    searchTerm,
+    selectedCategories,
+    selectedBrands,
+    priceRange,
+    stockFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  )
+  );
 
   // Helper Functions
   const getStockStatus = (product: Product) => {
-    if (product.stockQuantity === 0) return { label: 'Out of Stock', color: 'error', icon: XCircle }
-    if (product.stockQuantity <= product.reorderPoint) return { label: 'Low Stock', color: 'warning', icon: AlertTriangle }
-    return { label: 'In Stock', color: 'success', icon: CheckCircle }
-  }
+    if (product.stockQuantity === 0)
+      return { label: 'Out of Stock', color: 'error', icon: XCircle };
+    if (product.stockQuantity <= product.reorderPoint)
+      return { label: 'Low Stock', color: 'warning', icon: AlertTriangle };
+    return { label: 'In Stock', color: 'success', icon: CheckCircle };
+  };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency
-    }).format(amount)
-  }
+      currency,
+    }).format(amount);
+  };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
-    }).format(date)
-  }
+      year: 'numeric',
+    }).format(date);
+  };
 
   // Event Handlers
-  const handleProductSelect = useCallback((product: Product) => {
-    onProductSelect?.(product)
-  }, [onProductSelect])
+  const handleProductSelect = useCallback(
+    (product: Product) => {
+      onProductSelect?.(product);
+    },
+    [onProductSelect]
+  );
 
-  const handleAddToCart = useCallback((product: Product, quantity: number = 1) => {
-    onAddToCart?.(product, quantity)
-  }, [onAddToCart])
+  const handleAddToCart = useCallback(
+    (product: Product, quantity: number = 1) => {
+      onAddToCart?.(product, quantity);
+    },
+    [onAddToCart]
+  );
 
-  const handleToggleFavorite = useCallback((productId: string) => {
-    onToggleFavorite?.(productId)
-  }, [onToggleFavorite])
+  const handleToggleFavorite = useCallback(
+    (productId: string) => {
+      onToggleFavorite?.(productId);
+    },
+    [onToggleFavorite]
+  );
 
   const clearFilters = () => {
-    setSearchTerm('')
-    setSelectedCategories([])
-    setSelectedBrands([])
-    setPriceRange([0, 10000])
-    setStockFilter('all')
-    setSortBy('name')
-    setSortOrder('asc')
-    setCurrentPage(1)
-  }
+    setSearchTerm('');
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setPriceRange([0, 10000]);
+    setStockFilter('all');
+    setSortBy('name');
+    setSortOrder('asc');
+    setCurrentPage(1);
+  };
 
   // Loading State
   if (loading) {
@@ -300,35 +329,35 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
         <div className="flex items-center justify-center py-16">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="p-4 bg-primary-100 rounded-full"
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="bg-primary-100 rounded-full p-4"
           >
-            <RefreshCw className="h-8 w-8 text-primary-600" />
+            <RefreshCw className="text-primary-600 h-8 w-8" />
           </motion.div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform" />
             <Input
               placeholder="Search products by name, SKU, brand, or tags..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 text-base bg-white border-2 border-neutral-200 focus:border-primary-400 rounded-xl shadow-sm"
+              onChange={e => setSearchTerm(e.target.value)}
+              className="focus:border-primary-400 h-12 rounded-xl border-2 border-neutral-200 bg-white pl-12 text-base shadow-sm"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-neutral-100 rounded-lg p-1">
+          <div className="flex items-center rounded-lg bg-neutral-100 p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
@@ -354,18 +383,20 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
             onClick={() => setShowFilters(!showFilters)}
             className="h-10 px-4"
           >
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
             Filters
             {(selectedCategories.length + selectedBrands.length > 0 || stockFilter !== 'all') && (
               <Badge variant="secondary" className="ml-2">
-                {selectedCategories.length + selectedBrands.length + (stockFilter !== 'all' ? 1 : 0)}
+                {selectedCategories.length +
+                  selectedBrands.length +
+                  (stockFilter !== 'all' ? 1 : 0)}
               </Badge>
             )}
           </Button>
 
           {/* Sort Controls */}
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as unknown)}>
-            <SelectTrigger className="w-32 h-10">
+          <Select value={sortBy} onValueChange={value => setSortBy(value as unknown)}>
+            <SelectTrigger className="h-10 w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -396,26 +427,31 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-blue-50">
+            <Card className="border-primary-200 from-primary-50 border-2 bg-gradient-to-r to-blue-50">
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                   {/* Category Filter */}
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Categories</p>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                    <p className="mb-3 block text-sm font-semibold text-gray-700">Categories</p>
+                    <div className="max-h-32 space-y-2 overflow-y-auto">
                       {categories.map(category => (
-                        <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                        <label
+                          key={category}
+                          className="flex cursor-pointer items-center space-x-2"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedCategories.includes(category)}
-                            onChange={(e) => {
+                            onChange={e => {
                               if (e.target.checked) {
-                                setSelectedCategories([...selectedCategories, category])
+                                setSelectedCategories([...selectedCategories, category]);
                               } else {
-                                setSelectedCategories(selectedCategories.filter(c => c !== category))
+                                setSelectedCategories(
+                                  selectedCategories.filter(c => c !== category)
+                                );
                               }
                             }}
-                            className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                            className="text-primary-600 focus:ring-primary-500 h-4 w-4 rounded border-gray-300"
                           />
                           <span className="text-sm text-gray-700">{category}</span>
                         </label>
@@ -425,21 +461,21 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
                   {/* Brand Filter */}
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Brands</p>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                    <p className="mb-3 block text-sm font-semibold text-gray-700">Brands</p>
+                    <div className="max-h-32 space-y-2 overflow-y-auto">
                       {brands.map(brand => (
-                        <label key={brand} className="flex items-center space-x-2 cursor-pointer">
+                        <label key={brand} className="flex cursor-pointer items-center space-x-2">
                           <input
                             type="checkbox"
                             checked={selectedBrands.includes(brand)}
-                            onChange={(e) => {
+                            onChange={e => {
                               if (e.target.checked) {
-                                setSelectedBrands([...selectedBrands, brand])
+                                setSelectedBrands([...selectedBrands, brand]);
                               } else {
-                                setSelectedBrands(selectedBrands.filter(b => b !== brand))
+                                setSelectedBrands(selectedBrands.filter(b => b !== brand));
                               }
                             }}
-                            className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                            className="text-primary-600 focus:ring-primary-500 h-4 w-4 rounded border-gray-300"
                           />
                           <span className="text-sm text-gray-700">{brand}</span>
                         </label>
@@ -449,8 +485,11 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
                   {/* Stock Filter */}
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Stock Status</p>
-                    <Select value={stockFilter} onValueChange={(value) => setStockFilter(value as unknown)}>
+                    <p className="mb-3 block text-sm font-semibold text-gray-700">Stock Status</p>
+                    <Select
+                      value={stockFilter}
+                      onValueChange={value => setStockFilter(value as unknown)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -471,15 +510,11 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                       onClick={clearFilters}
                       className="justify-start"
                     >
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="mr-2 h-4 w-4" />
                       Clear All
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="justify-start"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="sm" className="justify-start">
+                      <Download className="mr-2 h-4 w-4" />
                       Export Results
                     </Button>
                   </div>
@@ -492,11 +527,11 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
       {/* Results Summary */}
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             Showing {paginatedProducts.length} of {filteredProducts.length} products
           </span>
           {autoRefresh && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
               <Activity className="h-3 w-3" />
               Last updated: {formatDate(lastRefresh)}
             </div>
@@ -505,15 +540,13 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
         {enableBulkActions && selectedProducts.size > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {selectedProducts.size} selected
-            </span>
+            <span className="text-sm font-medium">{selectedProducts.size} selected</span>
             <Button variant="outline" size="sm">
-              <ShoppingCart className="h-4 w-4 mr-2" />
+              <ShoppingCart className="mr-2 h-4 w-4" />
               Add to Cart
             </Button>
             <Button variant="outline" size="sm">
-              <Heart className="h-4 w-4 mr-2" />
+              <Heart className="mr-2 h-4 w-4" />
               Add to Favorites
             </Button>
           </div>
@@ -524,32 +557,32 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-16"
+          className="py-16 text-center"
         >
-          <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No products found</h3>
-          <p className="text-muted-foreground mb-6">
-            Try adjusting your filters or search terms
-          </p>
+          <Package className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <h3 className="mb-2 text-xl font-semibold">No products found</h3>
+          <p className="text-muted-foreground mb-6">Try adjusting your filters or search terms</p>
           <Button onClick={clearFilters} variant="outline">
             Clear All Filters
           </Button>
         </motion.div>
       ) : (
-        <div className={cn(
-          "grid gap-6 transition-all duration-300",
-          viewMode === 'grid'
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            : "grid-cols-1"
-        )}>
+        <div
+          className={cn(
+            'grid gap-6 transition-all duration-300',
+            viewMode === 'grid'
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              : 'grid-cols-1'
+          )}
+        >
           <AnimatePresence mode="popLayout">
-            {paginatedProducts.map((product) => {
-              const stockStatus = getStockStatus(product)
-              const StockIcon = stockStatus.icon
+            {paginatedProducts.map(product => {
+              const stockStatus = getStockStatus(product);
+              const StockIcon = stockStatus.icon;
 
               return viewMode === 'grid' ? (
                 // Grid View Card
-                (<motion.div
+                <motion.div
                   key={product.id}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -560,23 +593,25 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                   onMouseEnter={() => setHoveredProduct(product.id)}
                   onMouseLeave={() => setHoveredProduct(null)}
                 >
-                  <Card className={cn(
-                    "h-full transition-all duration-300 cursor-pointer border-2",
-                    "hover:shadow-2xl hover:scale-[1.02] hover:border-primary-300",
-                    "group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-primary-50"
-                  )}>
+                  <Card
+                    className={cn(
+                      'h-full cursor-pointer border-2 transition-all duration-300',
+                      'hover:border-primary-300 hover:scale-[1.02] hover:shadow-2xl',
+                      'group-hover:to-primary-50 group-hover:bg-gradient-to-br group-hover:from-white'
+                    )}
+                  >
                     {/* Product Image & Status Badges */}
                     <div className="relative p-4 pb-2">
-                      <div className="aspect-square bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-xl overflow-hidden mb-4 relative">
+                      <div className="relative mb-4 aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100">
                         {product.images.length > 0 ? (
                           <img
                             src={product.images[0].url}
                             alt={product.images[0].alt}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full">
+                          <div className="flex h-full items-center justify-center">
                             <Package className="h-16 w-16 text-neutral-300" />
                           </div>
                         )}
@@ -585,44 +620,48 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                         <div className="absolute top-3 left-3 flex flex-col gap-2">
                           {product.isNew && (
                             <Badge className="bg-primary-500 text-white shadow-lg">
-                              <Sparkles className="h-3 w-3 mr-1" />
+                              <Sparkles className="mr-1 h-3 w-3" />
                               New
                             </Badge>
                           )}
                           {product.isOnSale && (
                             <Badge className="bg-error-500 text-white shadow-lg">
-                              <Tag className="h-3 w-3 mr-1" />
+                              <Tag className="mr-1 h-3 w-3" />
                               Sale
                             </Badge>
                           )}
                         </div>
 
                         {/* Action Buttons */}
-                        <div className={cn(
-                          "absolute top-3 right-3 flex flex-col gap-2 transition-opacity duration-300",
-                          hoveredProduct === product.id ? "opacity-100" : "opacity-0"
-                        )}>
+                        <div
+                          className={cn(
+                            'absolute top-3 right-3 flex flex-col gap-2 transition-opacity duration-300',
+                            hoveredProduct === product.id ? 'opacity-100' : 'opacity-0'
+                          )}
+                        >
                           <Button
                             size="sm"
                             variant="secondary"
                             className="h-8 w-8 p-0 shadow-lg"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleToggleFavorite(product.id)
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleToggleFavorite(product.id);
                             }}
                           >
-                            <Heart className={cn(
-                              "h-4 w-4",
-                              product.isFavorite ? "fill-current text-red-500" : ""
-                            )} />
+                            <Heart
+                              className={cn(
+                                'h-4 w-4',
+                                product.isFavorite ? 'fill-current text-red-500' : ''
+                              )}
+                            />
                           </Button>
                           <Button
                             size="sm"
                             variant="secondary"
                             className="h-8 w-8 p-0 shadow-lg"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleProductSelect(product)
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleProductSelect(product);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -631,38 +670,43 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                       </div>
 
                       {/* Stock Status */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <StockIcon className={cn("h-4 w-4", {
-                          "text-success-600": stockStatus.color === 'success',
-                          "text-warning-600": stockStatus.color === 'warning',
-                          "text-error-600": stockStatus.color === 'error'
-                        })} />
+                      <div className="mb-3 flex items-center gap-2">
+                        <StockIcon
+                          className={cn('h-4 w-4', {
+                            'text-success-600': stockStatus.color === 'success',
+                            'text-warning-600': stockStatus.color === 'warning',
+                            'text-error-600': stockStatus.color === 'error',
+                          })}
+                        />
                         <Badge
                           variant="outline"
-                          className={cn("text-xs", {
-                            "border-success-300 text-success-700 bg-success-50": stockStatus.color === 'success',
-                            "border-warning-300 text-warning-700 bg-warning-50": stockStatus.color === 'warning',
-                            "border-error-300 text-error-700 bg-error-50": stockStatus.color === 'error'
+                          className={cn('text-xs', {
+                            'border-success-300 text-success-700 bg-success-50':
+                              stockStatus.color === 'success',
+                            'border-warning-300 text-warning-700 bg-warning-50':
+                              stockStatus.color === 'warning',
+                            'border-error-300 text-error-700 bg-error-50':
+                              stockStatus.color === 'error',
                           })}
                         >
                           {stockStatus.label}
                         </Badge>
-                        <span className="text-xs text-muted-foreground ml-auto">
+                        <span className="text-muted-foreground ml-auto text-xs">
                           {product.stockQuantity} {product.unitOfMeasure}
                         </span>
                       </div>
                     </div>
 
                     {/* Product Details */}
-                    <CardContent className="px-4 pb-4 pt-0">
+                    <CardContent className="px-4 pt-0 pb-4">
                       <div className="space-y-3">
                         {/* Title & SKU */}
                         <div>
-                          <h3 className="font-semibold text-gray-900 leading-tight mb-1 line-clamp-2 group-hover:text-primary-700 transition-colors">
+                          <h3 className="group-hover:text-primary-700 mb-1 line-clamp-2 leading-tight font-semibold text-gray-900 transition-colors">
                             {product.name}
                           </h3>
                           <div className="flex items-center gap-2">
-                            <code className="text-xs bg-neutral-100 px-2 py-1 rounded font-mono">
+                            <code className="rounded bg-neutral-100 px-2 py-1 font-mono text-xs">
                               {product.sku}
                             </code>
                             <Badge variant="outline" className="text-xs">
@@ -677,16 +721,14 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                             <div className="text-2xl font-bold text-gray-900">
                               {formatCurrency(product.unitPrice, product.currency)}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               per {product.unitOfMeasure}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium text-gray-700">
-                              {product.brand}
-                            </div>
+                            <div className="text-sm font-medium text-gray-700">{product.brand}</div>
                             {showSupplierInfo && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                                 <Building2 className="h-3 w-3" />
                                 {product.supplier.name}
                               </div>
@@ -698,10 +740,12 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                         {product.metadata.trends && (
                           <div className="flex items-center gap-4 text-xs">
                             {product.metadata.trends.priceChange !== 0 && (
-                              <div className={cn("flex items-center gap-1", {
-                                "text-success-600": product.metadata.trends.priceChange < 0,
-                                "text-error-600": product.metadata.trends.priceChange > 0
-                              })}>
+                              <div
+                                className={cn('flex items-center gap-1', {
+                                  'text-success-600': product.metadata.trends.priceChange < 0,
+                                  'text-error-600': product.metadata.trends.priceChange > 0,
+                                })}
+                              >
                                 {product.metadata.trends.priceChange > 0 ? (
                                   <TrendingUp className="h-3 w-3" />
                                 ) : (
@@ -710,7 +754,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                                 {Math.abs(product.metadata.trends.priceChange)}%
                               </div>
                             )}
-                            <div className="flex items-center gap-1 text-muted-foreground">
+                            <div className="text-muted-foreground flex items-center gap-1">
                               <BarChart3 className="h-3 w-3" />
                               {product.metadata.popularity}% popular
                             </div>
@@ -719,25 +763,25 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
                         {/* Action Button */}
                         <Button
-                          className="w-full group-hover:bg-primary-600 group-hover:text-white transition-colors"
+                          className="group-hover:bg-primary-600 w-full transition-colors group-hover:text-white"
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleAddToCart(product)
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleAddToCart(product);
                           }}
                           disabled={product.stockQuantity === 0}
                         >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          <ShoppingCart className="mr-2 h-4 w-4" />
                           {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>)
+                </motion.div>
               ) : (
                 // List View Row
-                (<motion.div
+                <motion.div
                   key={product.id}
                   layout
                   initial={{ opacity: 0, x: -20 }}
@@ -745,34 +789,34 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-l-transparent hover:border-l-primary-500">
+                  <Card className="hover:border-l-primary-500 cursor-pointer border-l-4 border-l-transparent transition-all duration-300 hover:shadow-lg">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-6">
                         {/* Product Image */}
-                        <div className="w-20 h-20 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-xl overflow-hidden flex-shrink-0">
+                        <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100">
                           {product.images.length > 0 ? (
                             <img
                               src={product.images[0].url}
                               alt={product.images[0].alt}
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                               loading="lazy"
                             />
                           ) : (
-                            <div className="flex items-center justify-center h-full">
+                            <div className="flex h-full items-center justify-center">
                               <Package className="h-8 w-8 text-neutral-300" />
                             </div>
                           )}
                         </div>
 
                         {/* Product Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1 min-w-0 mr-4">
-                              <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate">
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-2 flex items-start justify-between">
+                            <div className="mr-4 min-w-0 flex-1">
+                              <h3 className="mb-1 truncate text-lg font-semibold text-gray-900">
                                 {product.name}
                               </h3>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
-                                <code className="bg-neutral-100 px-2 py-1 rounded font-mono">
+                              <div className="text-muted-foreground mb-2 flex items-center gap-3 text-sm">
+                                <code className="rounded bg-neutral-100 px-2 py-1 font-mono">
                                   {product.sku}
                                 </code>
                                 <span>{product.brand}</span>
@@ -780,22 +824,24 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                                   {product.category}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-gray-600 line-clamp-2">
+                              <p className="line-clamp-2 text-sm text-gray-600">
                                 {product.description}
                               </p>
                             </div>
 
                             {/* Price & Stock */}
-                            <div className="text-right flex-shrink-0">
-                              <div className="text-2xl font-bold text-gray-900 mb-1">
+                            <div className="flex-shrink-0 text-right">
+                              <div className="mb-1 text-2xl font-bold text-gray-900">
                                 {formatCurrency(product.unitPrice, product.currency)}
                               </div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <StockIcon className={cn("h-4 w-4", {
-                                  "text-success-600": stockStatus.color === 'success',
-                                  "text-warning-600": stockStatus.color === 'warning',
-                                  "text-error-600": stockStatus.color === 'error'
-                                })} />
+                              <div className="mb-2 flex items-center gap-2">
+                                <StockIcon
+                                  className={cn('h-4 w-4', {
+                                    'text-success-600': stockStatus.color === 'success',
+                                    'text-warning-600': stockStatus.color === 'warning',
+                                    'text-error-600': stockStatus.color === 'error',
+                                  })}
+                                />
                                 <span className="text-sm font-medium">
                                   {product.stockQuantity} {product.unitOfMeasure}
                                 </span>
@@ -808,15 +854,15 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                             {showSupplierInfo && (
                               <div className="flex items-center gap-4 text-sm">
                                 <div className="flex items-center gap-2">
-                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <Building2 className="text-muted-foreground h-4 w-4" />
                                   <span>{product.supplier.name}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                  <Star className="h-4 w-4 fill-current text-yellow-500" />
                                   <span>{product.supplier.rating}/5</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <Clock className="text-muted-foreground h-4 w-4" />
                                   <span>{product.supplier.deliveryTime} days</span>
                                 </div>
                               </div>
@@ -826,36 +872,38 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleToggleFavorite(product.id)
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleToggleFavorite(product.id);
                                 }}
                               >
-                                <Heart className={cn(
-                                  "h-4 w-4",
-                                  product.isFavorite ? "fill-current text-red-500" : ""
-                                )} />
+                                <Heart
+                                  className={cn(
+                                    'h-4 w-4',
+                                    product.isFavorite ? 'fill-current text-red-500' : ''
+                                  )}
+                                />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleProductSelect(product)
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleProductSelect(product);
                                 }}
                               >
-                                <Eye className="h-4 w-4 mr-2" />
+                                <Eye className="mr-2 h-4 w-4" />
                                 View
                               </Button>
                               <Button
                                 size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleAddToCart(product)
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleAddToCart(product);
                                 }}
                                 disabled={product.stockQuantity === 0}
                               >
-                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                <ShoppingCart className="mr-2 h-4 w-4" />
                                 {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                               </Button>
                             </div>
@@ -864,7 +912,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>)
+                </motion.div>
               );
             })}
           </AnimatePresence>
@@ -874,7 +922,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-6">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Page {currentPage} of {totalPages}
             </span>
           </div>
@@ -892,18 +940,18 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
             {/* Page Numbers */}
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
+                const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
                 return (
                   <Button
                     key={page}
                     variant={page === currentPage ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentPage(page)}
-                    className="w-10 h-10 p-0"
+                    className="h-10 w-10 p-0"
                   >
                     {page}
                   </Button>
-                )
+                );
               })}
             </div>
 
@@ -920,6 +968,6 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
       )}
     </div>
   );
-}
+};
 
-export default ProductCatalogGrid
+export default ProductCatalogGrid;

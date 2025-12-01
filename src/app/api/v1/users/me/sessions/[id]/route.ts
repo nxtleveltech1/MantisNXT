@@ -1,20 +1,17 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
-import { db } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
+import { db } from '@/lib/database';
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -26,11 +23,11 @@ export async function DELETE(
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -40,10 +37,10 @@ export async function DELETE(
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
-    const sessionId = params.id
+    const sessionId = params.id;
 
     // Verify the session belongs to the user
     const sessionCheck = await db.query(
@@ -53,7 +50,7 @@ export async function DELETE(
       WHERE id = $1 AND user_id = $2
     `,
       [sessionId, user.id]
-    )
+    );
 
     if (sessionCheck.rows.length === 0) {
       return NextResponse.json(
@@ -63,7 +60,7 @@ export async function DELETE(
           message: 'Session not found',
         },
         { status: 404 }
-      )
+      );
     }
 
     // Don't allow revoking the current session
@@ -75,7 +72,7 @@ export async function DELETE(
           message: 'Cannot revoke your current session',
         },
         { status: 400 }
-      )
+      );
     }
 
     // Revoke the session
@@ -86,7 +83,7 @@ export async function DELETE(
       WHERE id = $1
     `,
       [sessionId]
-    )
+    );
 
     return NextResponse.json(
       {
@@ -94,9 +91,9 @@ export async function DELETE(
         message: 'Session revoked successfully',
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Revoke session API error:', error)
+    console.error('Revoke session API error:', error);
 
     return NextResponse.json(
       {
@@ -105,10 +102,9 @@ export async function DELETE(
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

@@ -1,12 +1,9 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
-import type {
-  CompetitorProfile,
-  CompetitorDataSource,
-} from './types'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
+import type { CompetitorProfile, CompetitorDataSource } from './types';
 
-const COMPETITOR_TABLE = PRICING_TABLES.COMPETITOR_PROFILE
-const DATA_SOURCE_TABLE = PRICING_TABLES.COMPETITOR_DATA_SOURCE
+const COMPETITOR_TABLE = PRICING_TABLES.COMPETITOR_PROFILE;
+const DATA_SOURCE_TABLE = PRICING_TABLES.COMPETITOR_DATA_SOURCE;
 
 export class CompetitorProfileService {
   async list(orgId: string): Promise<CompetitorProfile[]> {
@@ -17,9 +14,9 @@ export class CompetitorProfileService {
         WHERE org_id = $1 AND deleted_at IS NULL
         ORDER BY company_name
       `,
-      [orgId],
-    )
-    return result.rows
+      [orgId]
+    );
+    return result.rows;
   }
 
   async get(orgId: string, competitorId: string): Promise<CompetitorProfile | null> {
@@ -29,14 +26,17 @@ export class CompetitorProfileService {
         FROM ${COMPETITOR_TABLE}
         WHERE org_id = $1 AND competitor_id = $2 AND deleted_at IS NULL
       `,
-      [orgId, competitorId],
-    )
-    return result.rows[0] ?? null
+      [orgId, competitorId]
+    );
+    return result.rows[0] ?? null;
   }
 
   async create(
     orgId: string,
-    input: Omit<CompetitorProfile, 'competitor_id' | 'org_id' | 'created_at' | 'updated_at' | 'deleted_at'>,
+    input: Omit<
+      CompetitorProfile,
+      'competitor_id' | 'org_id' | 'created_at' | 'updated_at' | 'deleted_at'
+    >
   ): Promise<CompetitorProfile> {
     const result = await query<CompetitorProfile>(
       `
@@ -88,15 +88,15 @@ export class CompetitorProfileService {
         input.notes ?? null,
         input.created_by ?? null,
         input.updated_by ?? null,
-      ],
-    )
-    return result.rows[0]
+      ]
+    );
+    return result.rows[0];
   }
 
   async update(
     orgId: string,
     competitorId: string,
-    input: Partial<CompetitorProfile>,
+    input: Partial<CompetitorProfile>
   ): Promise<CompetitorProfile | null> {
     const result = await query<CompetitorProfile>(
       `
@@ -131,9 +131,9 @@ export class CompetitorProfileService {
         input.robots_txt_behavior ?? null,
         input.notes ?? null,
         input.updated_by ?? null,
-      ],
-    )
-    return result.rows[0] ?? null
+      ]
+    );
+    return result.rows[0] ?? null;
   }
 
   async archive(orgId: string, competitorId: string): Promise<void> {
@@ -143,8 +143,8 @@ export class CompetitorProfileService {
         SET deleted_at = NOW()
         WHERE org_id = $1 AND competitor_id = $2
       `,
-      [orgId, competitorId],
-    )
+      [orgId, competitorId]
+    );
   }
 
   async listDataSources(orgId: string, competitorId: string): Promise<CompetitorDataSource[]> {
@@ -155,15 +155,15 @@ export class CompetitorProfileService {
         WHERE org_id = $1 AND competitor_id = $2
         ORDER BY created_at DESC
       `,
-      [orgId, competitorId],
-    )
-    return result.rows
+      [orgId, competitorId]
+    );
+    return result.rows;
   }
 
   async addDataSource(
     orgId: string,
     competitorId: string,
-    payload: Omit<CompetitorDataSource, 'data_source_id' | 'org_id' | 'created_at' | 'updated_at'>,
+    payload: Omit<CompetitorDataSource, 'data_source_id' | 'org_id' | 'created_at' | 'updated_at'>
   ): Promise<CompetitorDataSource> {
     const result = await query<CompetitorDataSource>(
       `
@@ -212,9 +212,9 @@ export class CompetitorProfileService {
         payload.last_status ?? null,
         payload.health_status ?? 'unknown',
         JSON.stringify(payload.metadata ?? {}),
-      ],
-    )
-    return result.rows[0]
+      ]
+    );
+    return result.rows[0];
   }
 
   async deleteDataSource(orgId: string, dataSourceId: string): Promise<void> {
@@ -223,8 +223,7 @@ export class CompetitorProfileService {
         DELETE FROM ${DATA_SOURCE_TABLE}
         WHERE org_id = $1 AND data_source_id = $2
       `,
-      [orgId, dataSourceId],
-    )
+      [orgId, dataSourceId]
+    );
   }
 }
-

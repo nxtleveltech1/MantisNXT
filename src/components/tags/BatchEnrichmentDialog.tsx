@@ -1,19 +1,26 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { Sparkles, Loader2, CheckCircle2 } from "lucide-react"
-import { toast } from "sonner"
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BatchEnrichmentDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  productIds: string[]
-  onComplete?: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  productIds: string[];
+  onComplete?: () => void;
 }
 
 export function BatchEnrichmentDialog({
@@ -22,69 +29,72 @@ export function BatchEnrichmentDialog({
   productIds,
   onComplete,
 }: BatchEnrichmentDialogProps) {
-  const [isEnriching, setIsEnriching] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [applyChanges, setApplyChanges] = useState(false)
-  const [webResearchEnabled, setWebResearchEnabled] = useState(true)
-  const [results, setResults] = useState<{ success: number; failed: number }>({ success: 0, failed: 0 })
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [applyChanges, setApplyChanges] = useState(false);
+  const [webResearchEnabled, setWebResearchEnabled] = useState(true);
+  const [results, setResults] = useState<{ success: number; failed: number }>({
+    success: 0,
+    failed: 0,
+  });
 
   const handleEnrich = async () => {
     if (productIds.length === 0) {
-      toast.error("No products selected")
-      return
+      toast.error('No products selected');
+      return;
     }
 
-    setIsEnriching(true)
-    setProgress(0)
-    setResults({ success: 0, failed: 0 })
+    setIsEnriching(true);
+    setProgress(0);
+    setResults({ success: 0, failed: 0 });
 
     try {
-      const response = await fetch("/api/tags/enrich/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/tags/enrich/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productIds,
           applyChanges,
           webResearchEnabled,
         }),
-      })
+      });
 
       if (!response.ok) {
         // Handle HTTP errors
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorMessage
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
         } catch {
           // If response is not JSON, use status text
         }
-        throw new Error(errorMessage)
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
-        setProgress(100)
-        setResults({ success: data.count || 0, failed: productIds.length - (data.count || 0) })
-        toast.success(`Enriched ${data.count || 0} product(s) successfully`)
+        setProgress(100);
+        setResults({ success: data.count || 0, failed: productIds.length - (data.count || 0) });
+        toast.success(`Enriched ${data.count || 0} product(s) successfully`);
         if (onComplete) {
-          onComplete()
+          onComplete();
         }
         setTimeout(() => {
-          onOpenChange(false)
-        }, 2000)
+          onOpenChange(false);
+        }, 2000);
       } else {
-        setResults({ success: 0, failed: productIds.length })
-        toast.error(data.message || "Failed to enrich products")
+        setResults({ success: 0, failed: productIds.length });
+        toast.error(data.message || 'Failed to enrich products');
       }
     } catch (error) {
-      setResults({ success: 0, failed: productIds.length })
-      const errorMessage = error instanceof Error ? error.message : "Failed to enrich products"
-      toast.error(errorMessage)
-      console.error("Enrichment error:", error)
+      setResults({ success: 0, failed: productIds.length });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enrich products';
+      toast.error(errorMessage);
+      console.error('Enrichment error:', error);
     } finally {
-      setIsEnriching(false)
+      setIsEnriching(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,7 +105,8 @@ export function BatchEnrichmentDialog({
             Batch Product Enrichment
           </DialogTitle>
           <DialogDescription>
-            Enrich {productIds.length} product(s) with AI: correct names, generate descriptions, and suggest tags
+            Enrich {productIds.length} product(s) with AI: correct names, generate descriptions, and
+            suggest tags
           </DialogDescription>
         </DialogHeader>
 
@@ -105,7 +116,7 @@ export function BatchEnrichmentDialog({
               <Checkbox
                 id="batch-apply-changes"
                 checked={applyChanges}
-                onCheckedChange={(checked) => setApplyChanges(checked === true)}
+                onCheckedChange={checked => setApplyChanges(checked === true)}
                 disabled={isEnriching}
               />
               <Label htmlFor="batch-apply-changes">Apply changes to database</Label>
@@ -114,7 +125,7 @@ export function BatchEnrichmentDialog({
               <Checkbox
                 id="batch-web-research"
                 checked={webResearchEnabled}
-                onCheckedChange={(checked) => setWebResearchEnabled(checked === true)}
+                onCheckedChange={checked => setWebResearchEnabled(checked === true)}
                 disabled={isEnriching}
               />
               <Label htmlFor="batch-web-research">Enable web research</Label>
@@ -132,7 +143,7 @@ export function BatchEnrichmentDialog({
           )}
 
           {!isEnriching && results.success > 0 && (
-            <div className="rounded-lg bg-green-50 p-4 border border-green-200">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircle2 className="h-5 w-5" />
                 <span className="font-medium">
@@ -168,6 +179,5 @@ export function BatchEnrichmentDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

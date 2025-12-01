@@ -13,7 +13,7 @@ const TAG_PROPOSAL_MIGRATION = 'database/migrations/0039_fix_schema_migrations_d
 
 async function checkColumns() {
   console.log('🔍 Checking for AI tagging columns...');
-  
+
   const checkSql = `
     SELECT column_name
     FROM information_schema.columns
@@ -21,12 +21,12 @@ async function checkColumns() {
       AND table_name = 'supplier_product'
       AND column_name IN ('ai_tagging_status', 'ai_tag_confidence', 'ai_tagged_at', 'ai_tag_provider')
   `;
-  
+
   const result = await query<{ column_name: string }>(checkSql);
   const existingColumns = new Set(result.rows.map(r => r.column_name));
   const required = ['ai_tagging_status', 'ai_tag_confidence', 'ai_tagged_at', 'ai_tag_provider'];
   const missing = required.filter(col => !existingColumns.has(col));
-  
+
   return { missing, existingColumns };
 }
 
@@ -51,9 +51,7 @@ async function checkProposalTables() {
   const proposalProductRequired = ['tag_proposal_id', 'resolved_at'];
 
   const proposalPresent = new Set(proposalColumns.rows.map(r => r.column_name));
-  const proposalProductsPresent = new Set(
-    proposalProductsColumns.rows.map(r => r.column_name)
-  );
+  const proposalProductsPresent = new Set(proposalProductsColumns.rows.map(r => r.column_name));
 
   const missingProposalColumns = proposalRequired.filter(col => !proposalPresent.has(col));
   const missingProposalProductColumns = proposalProductRequired.filter(
@@ -65,10 +63,10 @@ async function checkProposalTables() {
 
 async function applyMigration(file: string) {
   console.log(`📝 Applying migration ${file}...`);
-  
+
   const migrationPath = join(process.cwd(), file);
   const migrationSql = readFileSync(migrationPath, 'utf-8');
-  
+
   // Split by semicolons but keep function definitions intact
   const statements: string[] = [];
   let current = '';
@@ -99,7 +97,7 @@ async function applyMigration(file: string) {
   if (current.trim().length > 0) {
     statements.push(current.trim());
   }
-  
+
   for (const statement of statements) {
     if (statement.trim()) {
       try {
@@ -112,16 +110,16 @@ async function applyMigration(file: string) {
       }
     }
   }
-  
+
   console.log('✅ Migration applied');
 }
 
 async function verifyFix() {
   console.log('✅ Verifying fix...');
-  
+
   const { missing } = await checkColumns();
   const { missingProposalColumns, missingProposalProductColumns } = await checkProposalTables();
-  
+
   const missingProposalInfo =
     missingProposalColumns.length > 0 || missingProposalProductColumns.length > 0;
 
@@ -130,9 +128,7 @@ async function verifyFix() {
   } else {
     console.error(`❌ Still missing columns: ${missing.join(', ')}`);
     if (missingProposalColumns.length) {
-      console.error(
-        `❌ core.ai_tag_proposal missing: ${missingProposalColumns.join(', ')}`
-      );
+      console.error(`❌ core.ai_tag_proposal missing: ${missingProposalColumns.join(', ')}`);
     }
     if (missingProposalProductColumns.length) {
       console.error(
@@ -148,19 +144,19 @@ async function verifyFix() {
     FROM core.supplier_product
     GROUP BY ai_tagging_status
   `);
-  
+
   console.log('📊 Current product status distribution:');
   statusCheck.rows.forEach(row => {
     console.log(`   ${row.ai_tagging_status || 'NULL'}: ${row.count}`);
   });
-  
+
   return true;
 }
 
 async function main() {
   try {
     const { missing } = await checkColumns();
-    
+
     if (missing.length === 0) {
       console.log('✅ All AI tagging columns already exist!');
     } else {
@@ -168,14 +164,13 @@ async function main() {
       console.log('🔧 Applying migration 0035...');
       await applyMigration(SUPPLIER_MIGRATION);
     }
-    
-    const { missingProposalColumns, missingProposalProductColumns } =
-      await checkProposalTables();
+
+    const { missingProposalColumns, missingProposalProductColumns } = await checkProposalTables();
     if (missingProposalColumns.length || missingProposalProductColumns.length) {
       console.log(
         `❌ Missing proposal columns: ${[
           ...missingProposalColumns,
-          ...missingProposalProductColumns
+          ...missingProposalProductColumns,
         ].join(', ')}`
       );
       console.log('🔧 Applying migration 0039...');
@@ -183,7 +178,7 @@ async function main() {
     }
 
     const success = await verifyFix();
-    
+
     if (success) {
       console.log('\n✅ AI tagging schema fixed successfully!');
       process.exit(0);
@@ -198,12 +193,3 @@ async function main() {
 }
 
 main();
-
-
-
-
-
-
-
-
-

@@ -5,7 +5,7 @@
  * DELETE /api/v1/ai/config/[service] - Delete config
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -30,8 +30,9 @@ export async function GET(
     const user = await authenticateRequest(request);
     const serviceType = extractServiceType({ service });
 
-    const found = (await getConfig(user.org_id, serviceType))
-      || (await upsertConfig(user.org_id, serviceType, { config: {}, enabled: false }))
+    const found =
+      (await getConfig(user.org_id, serviceType)) ||
+      (await upsertConfig(user.org_id, serviceType, { config: {}, enabled: false }));
 
     return successResponse(found);
   } catch (error) {
@@ -58,7 +59,7 @@ export async function PATCH(
     const updated = await upsertConfig(user.org_id, serviceType, {
       config: validated.config,
       enabled: validated.enabled,
-    })
+    });
 
     return successResponse(updated);
   } catch (error) {
@@ -80,7 +81,7 @@ export async function DELETE(
     const user = await authenticateRequest(request);
     const serviceType = extractServiceType({ service });
 
-    await deleteConfig(user.org_id, serviceType)
+    await deleteConfig(user.org_id, serviceType);
     return noContentResponse();
   } catch (error) {
     return handleAIError(error);

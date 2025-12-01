@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import AILoyaltyAnalytics from "@/components/loyalty/admin/AILoyaltyAnalytics"
-import LoyaltyLeaderboard from "@/components/loyalty/admin/LoyaltyLeaderboard"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import AILoyaltyAnalytics from '@/components/loyalty/admin/AILoyaltyAnalytics';
+import LoyaltyLeaderboard from '@/components/loyalty/admin/LoyaltyLeaderboard';
 
 /**
  * AI-Powered Loyalty Analytics Admin Page
@@ -23,14 +23,14 @@ export default function LoyaltyAnalyticsPage() {
   return (
     <AppLayout
       breadcrumbs={[
-        { label: "Loyalty & Rewards", href: "/admin/loyalty" },
-        { label: "AI Analytics" },
+        { label: 'Loyalty & Rewards', href: '/admin/loyalty' },
+        { label: 'AI Analytics' },
       ]}
     >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <AILoyaltyAnalytics />
         <LoyaltyLeaderboard />
       </div>
     </AppLayout>
-  )
+  );
 }

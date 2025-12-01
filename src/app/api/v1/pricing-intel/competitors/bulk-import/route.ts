@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { CompetitorProfileService } from '@/lib/services/pricing-intel/CompetitorProfileService'
-import { getOrgId } from '../../_helpers'
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { CompetitorProfileService } from '@/lib/services/pricing-intel/CompetitorProfileService';
+import { getOrgId } from '../../_helpers';
 
 const bulkImportSchema = z.object({
   competitors: z.array(
@@ -12,33 +12,33 @@ const bulkImportSchema = z.object({
       notes: z.string().optional(),
     })
   ),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const orgId = await getOrgId(request, body)
+    const body = await request.json();
+    const orgId = await getOrgId(request, body);
 
-    const validated = bulkImportSchema.parse(body)
+    const validated = bulkImportSchema.parse(body);
 
-    const service = new CompetitorProfileService()
+    const service = new CompetitorProfileService();
     const results = {
       successful: [] as Array<{ competitor_id: string; company_name: string }>,
       failed: [] as Array<{ company_name: string; error: string }>,
-    }
+    };
 
     for (const competitor of validated.competitors) {
       try {
-        const created = await service.create(orgId, competitor)
+        const created = await service.create(orgId, competitor);
         results.successful.push({
           competitor_id: created.competitor_id,
           company_name: created.company_name,
-        })
+        });
       } catch (error) {
         results.failed.push({
           company_name: competitor.company_name,
           error: error instanceof Error ? error.message : 'Unknown error',
-        })
+        });
       }
     }
 
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
         results,
       },
       error: null,
-    })
+    });
   } catch (error) {
-    console.error('Error bulk importing competitors:', error)
+    console.error('Error bulk importing competitors:', error);
     return NextResponse.json(
       {
         data: null,
@@ -62,12 +62,6 @@ export async function POST(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
-
-
-
-
-
-

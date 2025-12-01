@@ -41,9 +41,7 @@ class CriticalFixesVerifier {
   private results: VerificationResult[] = [];
 
   constructor() {
-    const connectionString =
-      process.env.NEON_SPP_DATABASE_URL ||
-      process.env.DATABASE_URL;
+    const connectionString = process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL;
 
     if (!connectionString) {
       throw new Error(
@@ -67,8 +65,8 @@ class CriticalFixesVerifier {
   private addResult(test: string, passed: boolean, details?: string, warning = false) {
     this.results.push({ test, passed, details: details || '', warning });
 
-    const status = passed ? '✓' : (warning ? '⚠' : '✗');
-    const statusColor = passed ? 'green' : (warning ? 'yellow' : 'red');
+    const status = passed ? '✓' : warning ? '⚠' : '✗';
+    const statusColor = passed ? 'green' : warning ? 'yellow' : 'red';
 
     this.log(`  ${status} ${test}`, statusColor);
     if (details) {
@@ -89,14 +87,13 @@ class CriticalFixesVerifier {
       `);
       client.release();
 
-      this.addResult(
-        'Database Connection',
-        true,
-        `Connected to ${result.rows[0].db_name}`
-      );
+      this.addResult('Database Connection', true, `Connected to ${result.rows[0].db_name}`);
 
       this.log(`  Database: ${result.rows[0].db_name}`, 'cyan');
-      this.log(`  Version: ${result.rows[0].db_version.split(' ')[0]} ${result.rows[0].db_version.split(' ')[1]}`, 'cyan');
+      this.log(
+        `  Version: ${result.rows[0].db_version.split(' ')[0]} ${result.rows[0].db_version.split(' ')[1]}`,
+        'cyan'
+      );
     } catch (error) {
       this.addResult(
         'Database Connection',
@@ -188,7 +185,9 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testAutoIncrement(client: { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> }): Promise<void> {
+  private async testAutoIncrement(client: {
+    query: (sql: string, params?: any[]) => Promise<{ rows: any[] }>;
+  }): Promise<void> {
     this.log('\n→ Testing auto-increment functionality...', 'blue');
 
     // Test analytics_anomalies
@@ -203,15 +202,14 @@ class CriticalFixesVerifier {
 
       const anomalyId = anomalyResult.rows[0]?.anomaly_id;
 
-      await client.query(`
+      await client.query(
+        `
         DELETE FROM core.analytics_anomalies WHERE anomaly_id = $1
-      `, [anomalyId]);
-
-      this.addResult(
-        'Analytics Anomalies Auto-Increment',
-        true,
-        `Generated ID: ${anomalyId}`
+      `,
+        [anomalyId]
       );
+
+      this.addResult('Analytics Anomalies Auto-Increment', true, `Generated ID: ${anomalyId}`);
     } catch (error) {
       this.addResult(
         'Analytics Anomalies Auto-Increment',
@@ -232,15 +230,14 @@ class CriticalFixesVerifier {
 
       const predictionId = predictionResult.rows[0]?.prediction_id;
 
-      await client.query(`
+      await client.query(
+        `
         DELETE FROM core.analytics_predictions WHERE prediction_id = $1
-      `, [predictionId]);
-
-      this.addResult(
-        'Analytics Predictions Auto-Increment',
-        true,
-        `Generated ID: ${predictionId}`
+      `,
+        [predictionId]
       );
+
+      this.addResult('Analytics Predictions Auto-Increment', true, `Generated ID: ${predictionId}`);
     } catch (error) {
       this.addResult(
         'Analytics Predictions Auto-Increment',
@@ -305,11 +302,7 @@ class CriticalFixesVerifier {
       `);
 
       if (idxResult.rows.length > 0) {
-        this.addResult(
-          'Contact Person GIN Index',
-          true,
-          'idx_supplier_contact_person_gin'
-        );
+        this.addResult('Contact Person GIN Index', true, 'idx_supplier_contact_person_gin');
       } else {
         this.addResult(
           'Contact Person GIN Index',
@@ -341,7 +334,9 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testJSONBOperations(client: { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> }): Promise<void> {
+  private async testJSONBOperations(client: {
+    query: (sql: string, params?: any[]) => Promise<{ rows: any[] }>;
+  }): Promise<void> {
     this.log('\n→ Testing JSONB operations...', 'blue');
 
     try {
@@ -350,11 +345,12 @@ class CriticalFixesVerifier {
         name: 'Test Contact',
         email: 'test@example.com',
         phone: '+1-555-0100',
-        title: 'Test Manager'
+        title: 'Test Manager',
       };
 
       // Create test supplier
-      const insertResult = await client.query(`
+      const insertResult = await client.query(
+        `
         INSERT INTO core.supplier (
           supplier_name,
           contact_person,
@@ -366,23 +362,29 @@ class CriticalFixesVerifier {
           1,
           1
         ) RETURNING supplier_id
-      `, [JSON.stringify(testData)]);
+      `,
+        [JSON.stringify(testData)]
+      );
 
       const supplierId = insertResult.rows[0]?.supplier_id;
 
       // Query JSONB field
-      const queryResult = await client.query(`
+      const queryResult = await client.query(
+        `
         SELECT
           contact_person,
           contact_person->>'name' as contact_name,
           contact_person->>'email' as contact_email
         FROM core.supplier
         WHERE supplier_id = $1
-      `, [supplierId]);
+      `,
+        [supplierId]
+      );
 
       // Verify data
       const retrieved = queryResult.rows[0];
-      const dataMatches = retrieved &&
+      const dataMatches =
+        retrieved &&
         retrieved.contact_name === testData.name &&
         retrieved.contact_email === testData.email;
 
@@ -393,9 +395,12 @@ class CriticalFixesVerifier {
       );
 
       // Clean up test data
-      await client.query(`
+      await client.query(
+        `
         DELETE FROM core.supplier WHERE supplier_id = $1
-      `, [supplierId]);
+      `,
+        [supplierId]
+      );
 
       this.addResult('Test Data Cleanup', true, 'Test supplier removed');
     } catch (error) {

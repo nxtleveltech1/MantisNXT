@@ -1,134 +1,138 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import React, { useState, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Loader2, Save, Database, Trash2, AlertTriangle } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+} from '@/components/ui/select';
+import { Loader2, Save, Database, Trash2, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface RetentionPolicy {
-  retention_days_snapshots: number
-  retention_days_alerts: number
-  retention_days_jobs: number
-  archival_strategy: 'delete' | 'archive' | 'compress'
-  last_archive_run_at?: string
+  retention_days_snapshots: number;
+  retention_days_alerts: number;
+  retention_days_jobs: number;
+  archival_strategy: 'delete' | 'archive' | 'compress';
+  last_archive_run_at?: string;
 }
 
 export default function DataRetentionPage() {
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [executing, setExecuting] = useState(false)
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [executing, setExecuting] = useState(false);
   const [policy, setPolicy] = useState<RetentionPolicy>({
     retention_days_snapshots: 365,
     retention_days_alerts: 180,
     retention_days_jobs: 90,
     archival_strategy: 'delete',
-  })
+  });
 
   useEffect(() => {
-    fetchPolicy()
-  }, [])
+    fetchPolicy();
+  }, []);
 
   const fetchPolicy = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch('/api/v1/pricing-intel/data-retention')
-      const data = await response.json()
+      const response = await fetch('/api/v1/pricing-intel/data-retention');
+      const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error.message)
+        throw new Error(data.error.message);
       }
 
       if (data.data) {
-        setPolicy(data.data)
+        setPolicy(data.data);
       }
     } catch (error) {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to load retention policy',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSave = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
       const response = await fetch('/api/v1/pricing-intel/data-retention', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(policy),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error.message)
+        throw new Error(data.error.message);
       }
 
       toast({
         title: 'Success',
         description: 'Data retention policy updated successfully',
-      })
+      });
 
-      setPolicy(data.data)
+      setPolicy(data.data);
     } catch (error) {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to save retention policy',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleExecute = async () => {
-    if (!confirm('This will permanently delete or archive data according to the retention policy. Continue?')) {
-      return
+    if (
+      !confirm(
+        'This will permanently delete or archive data according to the retention policy. Continue?'
+      )
+    ) {
+      return;
     }
 
-    setExecuting(true)
+    setExecuting(true);
     try {
       const response = await fetch('/api/v1/pricing-intel/data-retention', {
         method: 'PUT',
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error.message)
+        throw new Error(data.error.message);
       }
 
       toast({
         title: 'Success',
         description: `Retention policy executed: ${data.data.snapshotsDeleted} snapshots, ${data.data.alertsDeleted} alerts, ${data.data.jobsArchived} jobs processed`,
-      })
+      });
 
-      await fetchPolicy()
+      await fetchPolicy();
     } catch (error) {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to execute retention policy',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setExecuting(false)
+      setExecuting(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -145,10 +149,10 @@ export default function DataRetentionPage() {
         ]}
       >
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -164,7 +168,7 @@ export default function DataRetentionPage() {
         { label: 'Data Retention' },
       ]}
     >
-      <div className="space-y-6 max-w-4xl">
+      <div className="max-w-4xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Data Retention Policy</h1>
           <p className="text-muted-foreground mt-1">
@@ -192,16 +196,16 @@ export default function DataRetentionPage() {
                   min="30"
                   max="3650"
                   value={policy.retention_days_snapshots}
-                  onChange={(e) =>
+                  onChange={e =>
                     setPolicy({
                       ...policy,
                       retention_days_snapshots: parseInt(e.target.value, 10) || 365,
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Keep market intelligence snapshots for {policy.retention_days_snapshots} days
-                  ({(policy.retention_days_snapshots / 365).toFixed(1)} years)
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Keep market intelligence snapshots for {policy.retention_days_snapshots} days (
+                  {(policy.retention_days_snapshots / 365).toFixed(1)} years)
                 </p>
               </div>
 
@@ -213,16 +217,16 @@ export default function DataRetentionPage() {
                   min="30"
                   max="3650"
                   value={policy.retention_days_alerts}
-                  onChange={(e) =>
+                  onChange={e =>
                     setPolicy({
                       ...policy,
                       retention_days_alerts: parseInt(e.target.value, 10) || 180,
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Keep competitive alerts for {policy.retention_days_alerts} days
-                  ({(policy.retention_days_alerts / 365).toFixed(1)} years)
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Keep competitive alerts for {policy.retention_days_alerts} days (
+                  {(policy.retention_days_alerts / 365).toFixed(1)} years)
                 </p>
               </div>
 
@@ -234,16 +238,16 @@ export default function DataRetentionPage() {
                   min="30"
                   max="3650"
                   value={policy.retention_days_jobs}
-                  onChange={(e) =>
+                  onChange={e =>
                     setPolicy({
                       ...policy,
                       retention_days_jobs: parseInt(e.target.value, 10) || 90,
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Keep scraping job records for {policy.retention_days_jobs} days
-                  ({(policy.retention_days_jobs / 365).toFixed(1)} years)
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Keep scraping job records for {policy.retention_days_jobs} days (
+                  {(policy.retention_days_jobs / 365).toFixed(1)} years)
                 </p>
               </div>
 
@@ -264,20 +268,19 @@ export default function DataRetentionPage() {
                     <SelectItem value="compress">Compress & Store</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs">
                   {policy.archival_strategy === 'delete' &&
                     'Data will be permanently deleted after retention period'}
                   {policy.archival_strategy === 'archive' &&
                     'Data will be moved to archive storage'}
-                  {policy.archival_strategy === 'compress' &&
-                    'Data will be compressed and stored'}
+                  {policy.archival_strategy === 'compress' && 'Data will be compressed and stored'}
                 </p>
               </div>
             </div>
 
             {policy.last_archive_run_at && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
+              <div className="bg-muted rounded-lg p-4">
+                <p className="text-muted-foreground text-sm">
                   Last archive run: {new Date(policy.last_archive_run_at).toLocaleString()}
                 </p>
               </div>
@@ -319,10 +322,10 @@ export default function DataRetentionPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-400" />
               <div className="space-y-1">
                 <p className="font-medium text-amber-900 dark:text-amber-100">
                   Important: Data Retention
@@ -330,7 +333,8 @@ export default function DataRetentionPage() {
                 <p className="text-sm text-amber-800 dark:text-amber-200">
                   Executing the retention policy will permanently delete or archive data older than
                   the specified retention periods. This action cannot be undone. It is recommended
-                  to test with shorter retention periods first and ensure you have backups if needed.
+                  to test with shorter retention periods first and ensure you have backups if
+                  needed.
                 </p>
               </div>
             </div>
@@ -338,11 +342,5 @@ export default function DataRetentionPage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
-
-
-
-
-
-

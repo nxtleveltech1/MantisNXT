@@ -3,25 +3,34 @@
  * Handles timestamp errors, provides safe sorting, and graceful degradation
  */
 
-'use client'
+'use client';
 
-import React, { useState, useMemo, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { BulletproofDataLoader, ActivityDataLoader } from '@/components/ui/BulletproofDataLoader'
-import { InventoryBoundary } from '@/components/error-boundaries/GranularErrorBoundary'
-import { InvalidDateFallback, InvalidNumberFallback } from '@/components/fallbacks/FallbackComponents'
+import React, { useState, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { BulletproofDataLoader, ActivityDataLoader } from '@/components/ui/BulletproofDataLoader';
+import { InventoryBoundary } from '@/components/error-boundaries/GranularErrorBoundary';
+import {
+  InvalidDateFallback,
+  InvalidNumberFallback,
+} from '@/components/fallbacks/FallbackComponents';
 import {
   TimestampValidator,
   NumberValidator,
   StringValidator,
   DataSanitizer,
-  SafeSorter
-} from '@/utils/dataValidation'
+  SafeSorter,
+} from '@/utils/dataValidation';
 import {
   Clock,
   Package,
@@ -41,100 +50,111 @@ import {
   Calendar,
   Hash,
   DollarSign,
-  Info
-} from 'lucide-react'
-import { format, formatDistanceToNow } from 'date-fns'
+  Info,
+} from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
 export interface ActivityItem {
-  id: string
-  timestamp?: any
-  created_at?: any
-  updated_at?: any
-  type: string
-  description: string
-  amount?: number
-  quantity?: number
-  status?: string
-  user?: string
-  metadata?: Record<string, any>
+  id: string;
+  timestamp?: any;
+  created_at?: any;
+  updated_at?: any;
+  type: string;
+  description: string;
+  amount?: number;
+  quantity?: number;
+  status?: string;
+  user?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface ActivityListProps {
-  loadActivities: () => Promise<ActivityItem[]>
-  title?: string
-  showFilters?: boolean
-  showStats?: boolean
-  allowExport?: boolean
-  maxItems?: number
-  autoRefresh?: boolean
-  refreshInterval?: number
-  onItemClick?: (item: ActivityItem) => void
-  className?: string
+  loadActivities: () => Promise<ActivityItem[]>;
+  title?: string;
+  showFilters?: boolean;
+  showStats?: boolean;
+  allowExport?: boolean;
+  maxItems?: number;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+  onItemClick?: (item: ActivityItem) => void;
+  className?: string;
 }
 
 export interface ActivityStats {
-  total: number
-  validTimestamps: number
-  invalidTimestamps: number
-  sanitizedItems: number
+  total: number;
+  validTimestamps: number;
+  invalidTimestamps: number;
+  sanitizedItems: number;
   dateRange?: {
-    earliest: Date
-    latest: Date
-  }
+    earliest: Date;
+    latest: Date;
+  };
 }
 
 // ============================================================================
 // ACTIVITY SANITIZATION
 // ============================================================================
 
-function sanitizeActivity(item: any): ActivityItem & { sanitized: boolean; validationErrors: string[] } {
-  const validationErrors: string[] = []
-  let sanitized = false
+function sanitizeActivity(
+  item: any
+): ActivityItem & { sanitized: boolean; validationErrors: string[] } {
+  const validationErrors: string[] = [];
+  let sanitized = false;
 
   // Sanitize ID
-  const idResult = StringValidator.validate(item.id, { fallback: `activity-${Date.now()}-${Math.random()}` })
+  const idResult = StringValidator.validate(item.id, {
+    fallback: `activity-${Date.now()}-${Math.random()}`,
+  });
   if (idResult.sanitized) {
-    sanitized = true
-    validationErrors.push('Generated fallback ID')
+    sanitized = true;
+    validationErrors.push('Generated fallback ID');
   }
 
   // Sanitize timestamps
   const timestampResult = TimestampValidator.validate(
     item.timestamp || item.created_at || item.date,
     { fallbackToNow: false, allowNull: true }
-  )
+  );
   if (timestampResult.sanitized) {
-    sanitized = true
+    sanitized = true;
   }
   if (timestampResult.errors.length > 0) {
-    validationErrors.push(...timestampResult.errors)
+    validationErrors.push(...timestampResult.errors);
   }
 
-  const createdAtResult = TimestampValidator.validate(
-    item.created_at,
-    { fallbackToNow: false, allowNull: true }
-  )
+  const createdAtResult = TimestampValidator.validate(item.created_at, {
+    fallbackToNow: false,
+    allowNull: true,
+  });
 
-  const updatedAtResult = TimestampValidator.validate(
-    item.updated_at,
-    { fallbackToNow: false, allowNull: true }
-  )
+  const updatedAtResult = TimestampValidator.validate(item.updated_at, {
+    fallbackToNow: false,
+    allowNull: true,
+  });
 
   // Sanitize other fields
-  const typeResult = StringValidator.validate(item.type, { fallback: 'general' })
-  const descriptionResult = StringValidator.validate(item.description, { fallback: 'No description available' })
-  const amountResult = NumberValidator.validate(item.amount, { allowNull: true, decimals: 2 })
-  const quantityResult = NumberValidator.validate(item.quantity, { allowNull: true, decimals: 0 })
-  const statusResult = StringValidator.validate(item.status, { fallback: 'unknown' })
-  const userResult = StringValidator.validate(item.user, { allowNull: true })
+  const typeResult = StringValidator.validate(item.type, { fallback: 'general' });
+  const descriptionResult = StringValidator.validate(item.description, {
+    fallback: 'No description available',
+  });
+  const amountResult = NumberValidator.validate(item.amount, { allowNull: true, decimals: 2 });
+  const quantityResult = NumberValidator.validate(item.quantity, { allowNull: true, decimals: 0 });
+  const statusResult = StringValidator.validate(item.status, { fallback: 'unknown' });
+  const userResult = StringValidator.validate(item.user, { allowNull: true });
 
-  if (typeResult.sanitized || descriptionResult.sanitized ||
-      amountResult.sanitized || quantityResult.sanitized || statusResult.sanitized) {
-    sanitized = true
+  if (
+    typeResult.sanitized ||
+    descriptionResult.sanitized ||
+    amountResult.sanitized ||
+    quantityResult.sanitized ||
+    statusResult.sanitized
+  ) {
+    sanitized = true;
   }
 
   return {
@@ -150,43 +170,45 @@ function sanitizeActivity(item: any): ActivityItem & { sanitized: boolean; valid
     user: userResult.data,
     metadata: item.metadata || {},
     sanitized,
-    validationErrors
-  }
+    validationErrors,
+  };
 }
 
 // ============================================================================
 // ACTIVITY STATS CALCULATOR
 // ============================================================================
 
-function calculateActivityStats(activities: (ActivityItem & { sanitized: boolean })[]): ActivityStats {
-  let validTimestamps = 0
-  let invalidTimestamps = 0
-  let sanitizedItems = 0
-  let earliest: Date | null = null
-  let latest: Date | null = null
+function calculateActivityStats(
+  activities: (ActivityItem & { sanitized: boolean })[]
+): ActivityStats {
+  let validTimestamps = 0;
+  let invalidTimestamps = 0;
+  let sanitizedItems = 0;
+  let earliest: Date | null = null;
+  let latest: Date | null = null;
 
   activities.forEach(activity => {
-    if (activity.sanitized) sanitizedItems++
+    if (activity.sanitized) sanitizedItems++;
 
-    const timestamp = activity.timestamp || activity.created_at
+    const timestamp = activity.timestamp || activity.created_at;
     if (timestamp && TimestampValidator.validate(timestamp).isValid) {
-      validTimestamps++
+      validTimestamps++;
 
-      const date = TimestampValidator.validate(timestamp).data!
-      if (!earliest || date < earliest) earliest = date
-      if (!latest || date > latest) latest = date
+      const date = TimestampValidator.validate(timestamp).data!;
+      if (!earliest || date < earliest) earliest = date;
+      if (!latest || date > latest) latest = date;
     } else {
-      invalidTimestamps++
+      invalidTimestamps++;
     }
-  })
+  });
 
   return {
     total: activities.length,
     validTimestamps,
     invalidTimestamps,
     sanitizedItems,
-    dateRange: earliest && latest ? { earliest, latest } : undefined
-  }
+    dateRange: earliest && latest ? { earliest, latest } : undefined,
+  };
 }
 
 // ============================================================================
@@ -195,58 +217,58 @@ function calculateActivityStats(activities: (ActivityItem & { sanitized: boolean
 
 const ActivityFormatter = {
   timestamp: (value: any, fallback: string = 'Invalid Date'): string => {
-    const result = TimestampValidator.validate(value)
-    if (!result.isValid || !result.data) return fallback
+    const result = TimestampValidator.validate(value);
+    if (!result.isValid || !result.data) return fallback;
 
     try {
-      return format(result.data, 'MMM dd, yyyy HH:mm')
+      return format(result.data, 'MMM dd, yyyy HH:mm');
     } catch {
-      return fallback
+      return fallback;
     }
   },
 
   relativeTime: (value: any, fallback: string = 'Unknown time'): string => {
-    const result = TimestampValidator.validate(value)
-    if (!result.isValid || !result.data) return fallback
+    const result = TimestampValidator.validate(value);
+    if (!result.isValid || !result.data) return fallback;
 
     try {
-      return formatDistanceToNow(result.data, { addSuffix: true })
+      return formatDistanceToNow(result.data, { addSuffix: true });
     } catch {
-      return fallback
+      return fallback;
     }
   },
 
   amount: (value: any, fallback: string = '—'): string => {
-    const result = NumberValidator.validate(value, { allowNull: true })
-    if (!result.isValid || result.data === null) return fallback
+    const result = NumberValidator.validate(value, { allowNull: true });
+    if (!result.isValid || result.data === null) return fallback;
 
     return NumberValidator.formatSafe(result.data, {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2
-    })
+      minimumFractionDigits: 2,
+    });
   },
 
   quantity: (value: any, fallback: string = '—'): string => {
-    const result = NumberValidator.validate(value, { allowNull: true })
-    if (!result.isValid || result.data === null) return fallback
+    const result = NumberValidator.validate(value, { allowNull: true });
+    if (!result.isValid || result.data === null) return fallback;
 
     return NumberValidator.formatSafe(result.data, {
       style: 'decimal',
-      maximumFractionDigits: 0
-    })
-  }
-}
+      maximumFractionDigits: 0,
+    });
+  },
+};
 
 // ============================================================================
 // ACTIVITY STATUS INDICATOR
 // ============================================================================
 
 const ActivityStatusIndicator: React.FC<{
-  activity: ActivityItem & { sanitized: boolean; validationErrors: string[] }
+  activity: ActivityItem & { sanitized: boolean; validationErrors: string[] };
 }> = ({ activity }) => {
-  const hasTimestampIssues = !activity.timestamp && !activity.created_at
-  const hasValidationErrors = activity.validationErrors.length > 0
+  const hasTimestampIssues = !activity.timestamp && !activity.created_at;
+  const hasValidationErrors = activity.validationErrors.length > 0;
 
   if (hasTimestampIssues || hasValidationErrors) {
     return (
@@ -256,29 +278,29 @@ const ActivityStatusIndicator: React.FC<{
           Issues: {activity.validationErrors.length}
         </Badge>
       </div>
-    )
+    );
   }
 
   if (activity.sanitized) {
     return (
       <div className="flex items-center gap-1">
         <Info className="h-3 w-3 text-blue-500" />
-        <Badge variant="outline" className="text-xs bg-blue-50">
+        <Badge variant="outline" className="bg-blue-50 text-xs">
           Sanitized
         </Badge>
       </div>
-    )
+    );
   }
 
   return (
     <div className="flex items-center gap-1">
       <CheckCircle className="h-3 w-3 text-green-500" />
-      <Badge variant="outline" className="text-xs bg-green-50">
+      <Badge variant="outline" className="bg-green-50 text-xs">
         Valid
       </Badge>
     </div>
-  )
-}
+  );
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -294,29 +316,35 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
   autoRefresh = false,
   refreshInterval = 30000,
   onItemClick,
-  className = ''
+  className = '',
 }) => {
   // State management
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterType, setFilterType] = useState<string>('all')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [sortField, setSortField] = useState<'timestamp' | 'type' | 'amount'>('timestamp')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const [showValidationIssues, setShowValidationIssues] = useState(false)
-  const [showSanitized, setShowSanitized] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortField, setSortField] = useState<'timestamp' | 'type' | 'amount'>('timestamp');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showValidationIssues, setShowValidationIssues] = useState(false);
+  const [showSanitized, setShowSanitized] = useState(true);
 
   // Handle sorting change
-  const handleSort = useCallback((field: 'timestamp' | 'type' | 'amount') => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('desc')
-    }
-  }, [sortField])
+  const handleSort = useCallback(
+    (field: 'timestamp' | 'type' | 'amount') => {
+      if (sortField === field) {
+        setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortDirection('desc');
+      }
+    },
+    [sortField]
+  );
 
   // Render sort button
-  const SortButton: React.FC<{ field: 'timestamp' | 'type' | 'amount'; children: React.ReactNode }> = ({ field, children }) => (
+  const SortButton: React.FC<{
+    field: 'timestamp' | 'type' | 'amount';
+    children: React.ReactNode;
+  }> = ({ field, children }) => (
     <Button
       variant="ghost"
       size="sm"
@@ -325,12 +353,16 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
     >
       {children}
       {sortField === field ? (
-        sortDirection === 'asc' ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />
+        sortDirection === 'asc' ? (
+          <ArrowUp className="ml-1 h-3 w-3" />
+        ) : (
+          <ArrowDown className="ml-1 h-3 w-3" />
+        )
       ) : (
         <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />
       )}
     </Button>
-  )
+  );
 
   return (
     <InventoryBoundary className={className}>
@@ -347,7 +379,11 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                 size="sm"
                 onClick={() => setShowValidationIssues(!showValidationIssues)}
               >
-                {showValidationIssues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showValidationIssues ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
                 Issues
               </Button>
             </div>
@@ -365,47 +401,48 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
             errorTitle="Activity Loading Error"
             className="space-y-4"
           >
-            {(activities) => {
+            {activities => {
               // Sanitize all activities
-              const sanitizedActivities = activities.map(sanitizeActivity)
+              const sanitizedActivities = activities.map(sanitizeActivity);
 
               // Calculate stats
-              const stats = calculateActivityStats(sanitizedActivities)
+              const stats = calculateActivityStats(sanitizedActivities);
 
               // Filter activities
               const filteredActivities = useMemo(() => {
-                let filtered = sanitizedActivities
+                let filtered = sanitizedActivities;
 
                 // Search filter
                 if (searchTerm) {
-                  const term = searchTerm.toLowerCase()
-                  filtered = filtered.filter(activity =>
-                    activity.description.toLowerCase().includes(term) ||
-                    activity.type.toLowerCase().includes(term) ||
-                    activity.user?.toLowerCase().includes(term)
-                  )
+                  const term = searchTerm.toLowerCase();
+                  filtered = filtered.filter(
+                    activity =>
+                      activity.description.toLowerCase().includes(term) ||
+                      activity.type.toLowerCase().includes(term) ||
+                      activity.user?.toLowerCase().includes(term)
+                  );
                 }
 
                 // Type filter
                 if (filterType !== 'all') {
-                  filtered = filtered.filter(activity => activity.type === filterType)
+                  filtered = filtered.filter(activity => activity.type === filterType);
                 }
 
                 // Status filter
                 if (filterStatus !== 'all') {
-                  filtered = filtered.filter(activity => activity.status === filterStatus)
+                  filtered = filtered.filter(activity => activity.status === filterStatus);
                 }
 
                 // Validation issues filter
                 if (showValidationIssues) {
-                  filtered = filtered.filter(activity =>
-                    activity.validationErrors.length > 0 || !activity.timestamp
-                  )
+                  filtered = filtered.filter(
+                    activity => activity.validationErrors.length > 0 || !activity.timestamp
+                  );
                 }
 
                 // Sanitized filter
                 if (!showSanitized) {
-                  filtered = filtered.filter(activity => !activity.sanitized)
+                  filtered = filtered.filter(activity => !activity.sanitized);
                 }
 
                 // Sort activities safely
@@ -413,27 +450,36 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                   case 'timestamp':
                     return SafeSorter.byTimestamp(
                       filtered,
-                      (item) => item.timestamp || item.created_at,
+                      item => item.timestamp || item.created_at,
                       sortDirection
-                    )
+                    );
                   case 'type':
-                    return SafeSorter.byString(filtered, (item) => item.type, sortDirection)
+                    return SafeSorter.byString(filtered, item => item.type, sortDirection);
                   case 'amount':
-                    return SafeSorter.byNumber(filtered, (item) => item.amount, sortDirection)
+                    return SafeSorter.byNumber(filtered, item => item.amount, sortDirection);
                   default:
-                    return filtered
+                    return filtered;
                 }
-              }, [sanitizedActivities, searchTerm, filterType, filterStatus, showValidationIssues, showSanitized, sortField, sortDirection])
+              }, [
+                sanitizedActivities,
+                searchTerm,
+                filterType,
+                filterStatus,
+                showValidationIssues,
+                showSanitized,
+                sortField,
+                sortDirection,
+              ]);
 
               // Get unique types and statuses for filters
-              const uniqueTypes = [...new Set(sanitizedActivities.map(a => a.type))]
-              const uniqueStatuses = [...new Set(sanitizedActivities.map(a => a.status))]
+              const uniqueTypes = [...new Set(sanitizedActivities.map(a => a.type))];
+              const uniqueStatuses = [...new Set(sanitizedActivities.map(a => a.status))];
 
               return (
                 <div className="space-y-4">
                   {/* Stats Display */}
                   {showStats && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                       <Card className="p-3">
                         <div className="flex items-center gap-2">
                           <Hash className="h-4 w-4 text-blue-500" />
@@ -480,11 +526,11 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                   {showFilters && (
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="flex items-center gap-2">
-                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <Search className="text-muted-foreground h-4 w-4" />
                         <Input
                           placeholder="Search activities..."
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onChange={e => setSearchTerm(e.target.value)}
                           className="w-64"
                         />
                       </div>
@@ -496,7 +542,9 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                         <SelectContent>
                           <SelectItem value="all">All Types</SelectItem>
                           {uniqueTypes.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -508,7 +556,9 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                         <SelectContent>
                           <SelectItem value="all">All Status</SelectItem>
                           {uniqueStatuses.map(status => (
-                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -517,7 +567,7 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
 
                   {/* Sorting Controls */}
                   <div className="flex items-center gap-2 border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Sort by:</span>
+                    <span className="text-muted-foreground text-sm">Sort by:</span>
                     <SortButton field="timestamp">
                       <Clock className="mr-1 h-3 w-3" />
                       Time
@@ -533,18 +583,18 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                   </div>
 
                   {/* Activity List */}
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {filteredActivities.slice(0, maxItems).map((activity) => (
+                  <div className="max-h-96 space-y-2 overflow-y-auto">
+                    {filteredActivities.slice(0, maxItems).map(activity => (
                       <Card
                         key={activity.id}
-                        className={`p-3 transition-colors hover:bg-muted/50 ${
+                        className={`hover:bg-muted/50 p-3 transition-colors ${
                           onItemClick ? 'cursor-pointer' : ''
                         } ${activity.sanitized ? 'border-blue-200' : ''}`}
                         onClick={() => onItemClick?.(activity)}
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
                                 {activity.type}
                               </Badge>
@@ -557,20 +607,26 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                               <ActivityStatusIndicator activity={activity} />
                             </div>
 
-                            <p className="text-sm font-medium mb-1 truncate">
+                            <p className="mb-1 truncate text-sm font-medium">
                               {activity.description}
                             </p>
 
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="text-muted-foreground flex items-center gap-4 text-xs">
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {activity.timestamp || activity.created_at ? (
                                   <>
                                     <span>
-                                      {ActivityFormatter.timestamp(activity.timestamp || activity.created_at)}
+                                      {ActivityFormatter.timestamp(
+                                        activity.timestamp || activity.created_at
+                                      )}
                                     </span>
                                     <span className="text-xs opacity-60">
-                                      ({ActivityFormatter.relativeTime(activity.timestamp || activity.created_at)})
+                                      (
+                                      {ActivityFormatter.relativeTime(
+                                        activity.timestamp || activity.created_at
+                                      )}
+                                      )
                                     </span>
                                   </>
                                 ) : (
@@ -592,9 +648,7 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                                 </div>
                               )}
 
-                              {activity.user && (
-                                <span>by {activity.user}</span>
-                              )}
+                              {activity.user && <span>by {activity.user}</span>}
                             </div>
 
                             {/* Show validation errors if any */}
@@ -602,7 +656,8 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                               <Alert className="mt-2 border-yellow-200 bg-yellow-50">
                                 <AlertTriangle className="h-3 w-3 text-yellow-600" />
                                 <AlertDescription className="text-xs text-yellow-800">
-                                  <strong>Data Issues:</strong> {activity.validationErrors.join(', ')}
+                                  <strong>Data Issues:</strong>{' '}
+                                  {activity.validationErrors.join(', ')}
                                 </AlertDescription>
                               </Alert>
                             )}
@@ -616,16 +671,16 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                         <div className="text-muted-foreground">
                           {searchTerm || filterType !== 'all' || filterStatus !== 'all' ? (
                             <div>
-                              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <Search className="mx-auto mb-2 h-8 w-8 opacity-50" />
                               <p>No activities match your current filters.</p>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="mt-2"
                                 onClick={() => {
-                                  setSearchTerm('')
-                                  setFilterType('all')
-                                  setFilterStatus('all')
+                                  setSearchTerm('');
+                                  setFilterType('all');
+                                  setFilterStatus('all');
                                 }}
                               >
                                 Clear Filters
@@ -633,7 +688,7 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                             </div>
                           ) : (
                             <div>
-                              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <Activity className="mx-auto mb-2 h-8 w-8 opacity-50" />
                               <p>No activities found.</p>
                             </div>
                           )}
@@ -645,20 +700,20 @@ export const BulletproofActivityList: React.FC<ActivityListProps> = ({
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Showing {maxItems} of {filteredActivities.length} activities.
-                          Use filters to narrow down results.
+                          Showing {maxItems} of {filteredActivities.length} activities. Use filters
+                          to narrow down results.
                         </AlertDescription>
                       </Alert>
                     )}
                   </div>
                 </div>
-              )
+              );
             }}
           </ActivityDataLoader>
         </CardContent>
       </Card>
     </InventoryBoundary>
-  )
-}
+  );
+};
 
-export default BulletproofActivityList
+export default BulletproofActivityList;

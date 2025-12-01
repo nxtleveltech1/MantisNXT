@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/database';
 
 export async function GET() {
   try {
@@ -15,7 +15,7 @@ export async function GET() {
         COUNT(*) FILTER (WHERE status = 'draft') as draft_orders,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_orders
       FROM purchase_orders
-    `
+    `;
 
     // Get top categories by value
     const topCategoriesQuery = `
@@ -29,7 +29,7 @@ export async function GET() {
       GROUP BY category
       ORDER BY value DESC
       LIMIT 5
-    `
+    `;
 
     // Get recent purchase orders
     const recentOrdersQuery = `
@@ -46,7 +46,7 @@ export async function GET() {
       WHERE po.status != 'cancelled'
       ORDER BY po.created_at DESC
       LIMIT 10
-    `
+    `;
 
     // Get department breakdown
     const departmentBreakdownQuery = `
@@ -60,31 +60,27 @@ export async function GET() {
       GROUP BY department
       ORDER BY value DESC
       LIMIT 10
-    `
+    `;
 
     // Execute all queries in parallel
-    const [
-      analyticsResult,
-      topCategoriesResult,
-      recentOrdersResult,
-      departmentBreakdownResult
-    ] = await Promise.all([
-      pool.query(analyticsQuery),
-      pool.query(topCategoriesQuery),
-      pool.query(recentOrdersQuery),
-      pool.query(departmentBreakdownQuery)
-    ])
+    const [analyticsResult, topCategoriesResult, recentOrdersResult, departmentBreakdownResult] =
+      await Promise.all([
+        pool.query(analyticsQuery),
+        pool.query(topCategoriesQuery),
+        pool.query(recentOrdersQuery),
+        pool.query(departmentBreakdownQuery),
+      ]);
 
-    const analyticsRow = analyticsResult.rows[0]
+    const analyticsRow = analyticsResult.rows[0];
 
     // Calculate additional metrics
-    const avgCycleTime = 72 // Mock calculation - could be derived from approval timestamps
-    const onTimeDeliveryRate = 89.2 // Mock calculation
-    const budgetUtilization = 68.5 // Mock calculation
-    const qualityScore = 94.5 // Mock calculation
-    const costSavings = 125000 // Mock calculation
-    const contractCompliance = 96.8 // Mock calculation
-    const supplierPerformance = 91.3 // Mock calculation
+    const avgCycleTime = 72; // Mock calculation - could be derived from approval timestamps
+    const onTimeDeliveryRate = 89.2; // Mock calculation
+    const budgetUtilization = 68.5; // Mock calculation
+    const qualityScore = 94.5; // Mock calculation
+    const costSavings = 125000; // Mock calculation
+    const contractCompliance = 96.8; // Mock calculation
+    const supplierPerformance = 91.3; // Mock calculation
 
     const analytics = {
       totalOrders: parseInt(analyticsRow.total_orders),
@@ -103,10 +99,12 @@ export async function GET() {
       contractCompliance,
       supplierPerformance,
       topCategories: topCategoriesResult.rows.map(row => ({
-        name: (row.category || 'Unknown').replace(/[_-]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        name: (row.category || 'Unknown')
+          .replace(/[_-]/g, ' ')
+          .replace(/\b\w/g, (l: string) => l.toUpperCase()),
         value: parseFloat(row.value || '0'),
         count: parseInt(row.count),
-        avgValue: parseFloat(row.avg_value || '0')
+        avgValue: parseFloat(row.avg_value || '0'),
       })),
       recentOrders: recentOrdersResult.rows.map(row => ({
         poNumber: row.po_number,
@@ -115,31 +113,31 @@ export async function GET() {
         status: row.status,
         createdAt: row.created_at,
         supplier: row.supplier_name,
-        requestedBy: row.requested_by
+        requestedBy: row.requested_by,
       })),
       departmentBreakdown: departmentBreakdownResult.rows.map(row => ({
         department: row.department,
         value: parseFloat(row.value || '0'),
         count: parseInt(row.count),
-        avgValue: parseFloat(row.avg_value || '0')
-      }))
-    }
+        avgValue: parseFloat(row.avg_value || '0'),
+      })),
+    };
 
-    console.log('Purchase Orders Analytics Response:', analytics)
+    console.log('Purchase Orders Analytics Response:', analytics);
 
     return NextResponse.json({
       success: true,
-      data: analytics
-    })
+      data: analytics,
+    });
   } catch (error) {
-    console.error('Error fetching purchase orders analytics:', error)
+    console.error('Error fetching purchase orders analytics:', error);
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch purchase orders analytics',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }

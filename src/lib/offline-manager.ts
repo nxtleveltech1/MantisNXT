@@ -49,7 +49,7 @@ class OfflineManager {
       syncInterval: 30 * 1000, // 30 seconds
       enableBackgroundSync: true,
       criticalEndpoints: ['/api/alerts', '/api/dashboard', '/api/inventory'],
-      ...config
+      ...config,
     };
 
     this.initializeOfflineSupport();
@@ -89,9 +89,11 @@ class OfflineManager {
 
   private notifyConnectionChange(isOnline: boolean) {
     // Dispatch custom event for components to listen to
-    window.dispatchEvent(new CustomEvent('connectionChange', {
-      detail: { isOnline }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('connectionChange', {
+        detail: { isOnline },
+      })
+    );
 
     // Invalidate queries if we're back online
     if (isOnline && this.queryClient) {
@@ -122,7 +124,7 @@ class OfflineManager {
       timestamp: Date.now(),
       expiry: Date.now() + ttl,
       priority,
-      size: this.calculateSize(data)
+      size: this.calculateSize(data),
     };
 
     // Check cache size limits
@@ -167,7 +169,9 @@ class OfflineManager {
       if (entryToRemove) {
         currentSize -= entryToRemove.size;
         this.cache.delete(entryToRemove.key);
-        console.log(`🗑️ Removed cache entry: ${entryToRemove.key} (${this.formatBytes(entryToRemove.size)})`);
+        console.log(
+          `🗑️ Removed cache entry: ${entryToRemove.key} (${this.formatBytes(entryToRemove.size)})`
+        );
       } else {
         break;
       }
@@ -222,7 +226,7 @@ class OfflineManager {
       id: `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
       retryCount: 0,
-      ...operation
+      ...operation,
     };
 
     this.syncQueue.push(syncOp);
@@ -253,7 +257,9 @@ class OfflineManager {
         if (operation.retryCount < operation.maxRetries) {
           operation.retryCount++;
           this.syncQueue.push(operation);
-          console.log(`🔄 Retrying operation: ${operation.endpoint} (${operation.retryCount}/${operation.maxRetries})`);
+          console.log(
+            `🔄 Retrying operation: ${operation.endpoint} (${operation.retryCount}/${operation.maxRetries})`
+          );
         } else {
           console.error(`💀 Max retries exceeded for operation: ${operation.endpoint}`);
         }
@@ -359,7 +365,7 @@ class OfflineManager {
       cacheEntries: this.cache.size,
       cacheSize: this.formatBytes(this.getCurrentCacheSize()),
       syncQueueLength: this.syncQueue.length,
-      lastSync: this.getLastSyncTime()
+      lastSync: this.getLastSyncTime(),
     };
   }
 
@@ -435,7 +441,7 @@ export const useOfflineManager = () => {
     addToSyncQueue: offlineManager.addToSyncQueue.bind(offlineManager),
     clearCache: offlineManager.clearCache.bind(offlineManager),
     clearSyncQueue: offlineManager.clearSyncQueue.bind(offlineManager),
-    prefetchCriticalData: offlineManager.prefetchCriticalData.bind(offlineManager)
+    prefetchCriticalData: offlineManager.prefetchCriticalData.bind(offlineManager),
   };
 };
 

@@ -50,15 +50,14 @@ function MetricCard({
   trend,
   badge,
 }: MetricCardProps) {
-  const TrendIcon = trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
+  const TrendIcon =
+    trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-sm rounded-xl">
-      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
-        <CardTitle className="text-sm font-semibold text-gray-900">
-          {title}
-        </CardTitle>
-        <div className={cn('p-2 rounded-lg', iconColor)}>
+    <Card className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="text-sm font-semibold text-gray-900">{title}</CardTitle>
+        <div className={cn('rounded-lg p-2', iconColor)}>
           <Icon className="h-4 w-4" />
         </div>
       </CardHeader>
@@ -67,26 +66,29 @@ function MetricCard({
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-bold text-gray-900">{value}</div>
             {badge && (
-              <Badge variant={badge.variant} className="text-xs bg-gray-100 text-gray-700 border-gray-200">
+              <Badge
+                variant={badge.variant}
+                className="border-gray-200 bg-gray-100 text-xs text-gray-700"
+              >
                 {badge.text}
               </Badge>
             )}
           </div>
 
-          {description && (
-            <div className="text-xs text-gray-600">{description}</div>
-          )}
+          {description && <div className="text-xs text-gray-600">{description}</div>}
 
           {trend && (
-            <div className={cn(
-              'flex items-center gap-1 text-xs font-medium',
-              trend.direction === 'up' && 'text-green-600',
-              trend.direction === 'down' && 'text-red-600',
-              trend.direction === 'neutral' && 'text-gray-600'
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-1 text-xs font-medium',
+                trend.direction === 'up' && 'text-green-600',
+                trend.direction === 'down' && 'text-red-600',
+                trend.direction === 'neutral' && 'text-gray-600'
+              )}
+            >
               <TrendIcon className="h-3 w-3" />
               <span>{Math.abs(trend.value)}%</span>
-              <span className="text-gray-500 font-normal">vs last period</span>
+              <span className="font-normal text-gray-500">vs last period</span>
             </div>
           )}
         </div>
@@ -105,7 +107,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
   const newProductsCount = metrics?.new_products_count || 0;
 
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4', className)}>
+    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2', className)}>
       {/* Total Suppliers */}
       <MetricCard
         title="Active Suppliers"
@@ -115,7 +117,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
         iconColor="bg-blue-100 text-blue-600"
         badge={{
           text: 'Active',
-          variant: 'default'
+          variant: 'default',
         }}
       />
 
@@ -130,7 +132,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
           newProductsCount > 0
             ? {
                 value: Math.round((newProductsCount / totalProducts) * 100),
-                direction: 'up'
+                direction: 'up',
               }
             : undefined
         }
@@ -140,16 +142,17 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* New Products Alert */}
       {newProductsCount > 0 && (
-        <Card className="md:col-span-2 border border-blue-200 bg-blue-50 shadow-sm rounded-xl">
+        <Card className="rounded-xl border border-blue-200 bg-blue-50 shadow-sm md:col-span-2">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <div className="p-2 rounded-lg bg-blue-100">
+              <div className="rounded-lg bg-blue-100 p-2">
                 <Sparkles className="h-5 w-5 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-1">New Products Available</h3>
+                <h3 className="mb-1 font-semibold text-blue-900">New Products Available</h3>
                 <p className="text-sm text-blue-700">
-                  <strong>{newProductsCount}</strong> new products have been added to the catalog. Review them in the catalog view.
+                  <strong>{newProductsCount}</strong> new products have been added to the catalog.
+                  Review them in the catalog view.
                 </p>
               </div>
             </div>
@@ -159,17 +162,17 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* Price Changes Alert */}
       {(metrics?.recent_price_changes_count || 0) > 0 && (
-        <Card className="md:col-span-2 border border-amber-200 bg-amber-50 shadow-sm rounded-xl">
+        <Card className="rounded-xl border border-amber-200 bg-amber-50 shadow-sm md:col-span-2">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <div className="p-2 rounded-lg bg-amber-100">
+              <div className="rounded-lg bg-amber-100 p-2">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-amber-900 mb-1">Price Changes Detected</h3>
+                <h3 className="mb-1 font-semibold text-amber-900">Price Changes Detected</h3>
                 <p className="text-sm text-amber-700">
-                  <strong>{metrics?.recent_price_changes_count || 0}</strong> products have price updates in the last 30 days.
-                  Review changes to ensure competitive pricing.
+                  <strong>{metrics?.recent_price_changes_count || 0}</strong> products have price
+                  updates in the last 30 days. Review changes to ensure competitive pricing.
                 </p>
               </div>
             </div>

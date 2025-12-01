@@ -1,11 +1,6 @@
 import { type ZodSchema, type ZodError } from 'zod';
 import type { ApiResponse } from '@/lib/api/base';
-import type {
-  AITextResult,
-  AIChatResult,
-  AIEmbeddingResult,
-  AIStreamChunk,
-} from '@/types/ai';
+import type { AITextResult, AIChatResult, AIEmbeddingResult, AIStreamChunk } from '@/types/ai';
 
 export interface StructuredParseOptions<TSchema extends ZodSchema | undefined = undefined> {
   schema?: TSchema;
@@ -40,7 +35,7 @@ export interface ResponseQualityScore {
 export class ResponseProcessor {
   parseStructuredResponse<TData = unknown, TSchema extends ZodSchema | undefined = undefined>(
     response: string | AITextResult | AIChatResult,
-    options: StructuredParseOptions<TSchema> = {},
+    options: StructuredParseOptions<TSchema> = {}
   ): StructuredParseResult<TData> {
     const raw = this.extractPrimaryText(response);
     const issues: string[] = [];
@@ -76,7 +71,7 @@ export class ResponseProcessor {
   }
 
   extractData(
-    result: string | AITextResult | AIChatResult | AIEmbeddingResult,
+    result: string | AITextResult | AIChatResult | AIEmbeddingResult
   ): Record<string, unknown> {
     if (typeof result === 'string') {
       return { text: result };
@@ -110,7 +105,10 @@ export class ResponseProcessor {
     };
   }
 
-  validateResponse<TData>(schema: ZodSchema<TData>, data: unknown): ResponseValidationResult<TData> {
+  validateResponse<TData>(
+    schema: ZodSchema<TData>,
+    data: unknown
+  ): ResponseValidationResult<TData> {
     const parsed = schema.safeParse(data);
     if (parsed.success) {
       return { valid: true, data: parsed.data };
@@ -147,7 +145,7 @@ export class ResponseProcessor {
       notes.push('Response lacks sentence punctuation; may be malformed.');
     }
 
-    const overall = Number(((completeness * 0.5) + (structure * 0.5)).toFixed(2));
+    const overall = Number((completeness * 0.5 + structure * 0.5).toFixed(2));
 
     return {
       completeness: Number(completeness.toFixed(2)),
@@ -208,6 +206,6 @@ export class ResponseProcessor {
   }
 
   private formatZodErrors(error: ZodError): string[] {
-    return error.issues.map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`);
+    return error.issues.map(issue => `${issue.path.join('.') || 'root'}: ${issue.message}`);
   }
 }

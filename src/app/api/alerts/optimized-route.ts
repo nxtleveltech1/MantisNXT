@@ -3,7 +3,7 @@
  * Production-grade implementation with caching, batching, and efficient querying
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database/unified-connection';
 import { z } from 'zod';
@@ -11,14 +11,18 @@ import { SWRCache } from '@/lib/pipeline/cache-manager';
 
 // Validation schemas
 const SearchAlertsSchema = z.object({
-  type: z.array(z.enum(['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue'])).optional(),
+  type: z
+    .array(
+      z.enum(['low_stock', 'out_of_stock', 'expiry_warning', 'quality_issue', 'performance_issue'])
+    )
+    .optional(),
   severity: z.array(z.enum(['low', 'medium', 'high', 'critical'])).optional(),
   status: z.array(z.enum(['active', 'acknowledged', 'resolved', 'snoozed'])).optional(),
   itemId: z.string().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['createdAt', 'severity', 'type', 'status', 'priority']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc')
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
 /**
@@ -29,7 +33,7 @@ const alertsCache = new SWRCache<unknown[]>(
     ttl: 60 * 1000, // 1 minute
     staleTime: 30 * 1000, // 30 seconds
     maxSize: 100,
-    namespace: 'alerts'
+    namespace: 'alerts',
   },
   async (key: string) => {
     console.log('🔄 Cache miss - generating alerts from database');
@@ -138,14 +142,13 @@ async function generateRealTimeAlertsOptimized() {
       resolvedBy: null,
       resolvedAt: null,
       snoozedUntil: null,
-      escalationLevel: 0
+      escalationLevel: 0,
     }));
 
     const duration = Date.now() - startTime;
     console.log(`✅ Generated ${alerts.length} alerts in ${duration}ms`);
 
     return alerts;
-
   } catch (error) {
     console.error('❌ Error generating real-time alerts:', error);
     return [];
@@ -167,7 +170,7 @@ export async function GET(request: NextRequest) {
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
       sortBy: searchParams.get('sortBy') || 'createdAt',
-      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc'
+      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
     };
 
     const validatedParams = SearchAlertsSchema.parse(queryParams);
@@ -214,8 +217,8 @@ export async function GET(request: NextRequest) {
         out_of_stock: allAlerts.filter(a => a.type === 'out_of_stock').length,
         expiry_warning: 0,
         quality_issue: 0,
-        performance_issue: 0
-      }
+        performance_issue: 0,
+      },
     };
 
     console.log(`✅ Returning ${paginatedAlerts.length} alerts from ${total} total`);
@@ -229,31 +232,36 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
         hasNext: validatedParams.page < totalPages,
-        hasPrev: validatedParams.page > 1
+        hasPrev: validatedParams.page > 1,
       },
       metrics,
       filters: validatedParams,
       _meta: {
         cached: true,
-        cacheStats: alertsCache.getStats()
-      }
+        cacheStats: alertsCache.getStats(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Error fetching alerts:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.issues
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid query parameters',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

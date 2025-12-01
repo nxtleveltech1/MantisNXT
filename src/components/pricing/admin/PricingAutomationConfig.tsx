@@ -71,7 +71,7 @@ export default function PricingAutomationConfig() {
       queryClient.invalidateQueries({ queryKey: ['pricing-automation-config', orgId] });
       toast.success('Pricing automation configuration updated successfully');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Failed to update configuration: ${error.message}`);
     },
   });
@@ -115,14 +115,14 @@ export default function PricingAutomationConfig() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="enable-ai">Enable AI Recommendations</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Generate AI-powered pricing suggestions for all products
                 </p>
               </div>
               <Switch
                 id="enable-ai"
                 checked={config.enable_ai_recommendations}
-                onCheckedChange={(checked) =>
+                onCheckedChange={checked =>
                   setConfig({ ...config, enable_ai_recommendations: checked })
                 }
               />
@@ -133,14 +133,14 @@ export default function PricingAutomationConfig() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="enable-auto">Enable Auto-Activation</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Automatically apply AI recommendations when confidence is high
                 </p>
               </div>
               <Switch
                 id="enable-auto"
                 checked={config.enable_auto_activation}
-                onCheckedChange={(checked) =>
+                onCheckedChange={checked =>
                   setConfig({ ...config, enable_auto_activation: checked })
                 }
                 disabled={!config.enable_ai_recommendations}
@@ -160,7 +160,7 @@ export default function PricingAutomationConfig() {
                     max="100"
                     step="0.1"
                     value={config.auto_activation_confidence_threshold}
-                    onChange={(e) =>
+                    onChange={e =>
                       setConfig({
                         ...config,
                         auto_activation_confidence_threshold: parseFloat(e.target.value),
@@ -168,7 +168,7 @@ export default function PricingAutomationConfig() {
                     }
                     className="w-32"
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Recommendations with confidence ≥ {config.auto_activation_confidence_threshold}%
                     will be automatically applied
                   </span>
@@ -181,14 +181,14 @@ export default function PricingAutomationConfig() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="require-review">Require Review for High-Impact Changes</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Flag recommendations with significant price changes for manual review
                 </p>
               </div>
               <Switch
                 id="require-review"
                 checked={config.require_review_for_high_impact}
-                onCheckedChange={(checked) =>
+                onCheckedChange={checked =>
                   setConfig({ ...config, require_review_for_high_impact: checked })
                 }
               />
@@ -205,7 +205,7 @@ export default function PricingAutomationConfig() {
                     max="100"
                     step="1"
                     value={config.high_impact_threshold_percent}
-                    onChange={(e) =>
+                    onChange={e =>
                       setConfig({
                         ...config,
                         high_impact_threshold_percent: parseFloat(e.target.value),
@@ -213,7 +213,7 @@ export default function PricingAutomationConfig() {
                     }
                     className="w-32"
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Price changes &gt; {config.high_impact_threshold_percent}% will require review
                   </span>
                 </div>
@@ -244,11 +244,11 @@ export default function PricingAutomationConfig() {
                   max="1000"
                   step="0.1"
                   value={config.default_margin_percent}
-                  onChange={(e) =>
+                  onChange={e =>
                     setConfig({ ...config, default_margin_percent: parseFloat(e.target.value) })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Applied when no pricing rule matches
                 </p>
               </div>
@@ -262,11 +262,11 @@ export default function PricingAutomationConfig() {
                   max="100"
                   step="0.1"
                   value={config.min_margin_percent}
-                  onChange={(e) =>
+                  onChange={e =>
                     setConfig({ ...config, min_margin_percent: parseFloat(e.target.value) })
                   }
                 />
-                <p className="text-xs text-muted-foreground">Hard minimum for all products</p>
+                <p className="text-muted-foreground text-xs">Hard minimum for all products</p>
               </div>
 
               <div className="space-y-2">
@@ -278,14 +278,14 @@ export default function PricingAutomationConfig() {
                   max="1000"
                   step="1"
                   value={config.max_price_increase_percent}
-                  onChange={(e) =>
+                  onChange={e =>
                     setConfig({
                       ...config,
                       max_price_increase_percent: parseFloat(e.target.value),
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Maximum allowed price increase from cost
                 </p>
               </div>
@@ -308,14 +308,14 @@ export default function PricingAutomationConfig() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="enable-batch">Enable Batch Processing</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Process multiple products simultaneously for faster pricing updates
                 </p>
               </div>
               <Switch
                 id="enable-batch"
                 checked={config.enable_batch_processing}
-                onCheckedChange={(checked) =>
+                onCheckedChange={checked =>
                   setConfig({ ...config, enable_batch_processing: checked })
                 }
               />
@@ -331,12 +331,10 @@ export default function PricingAutomationConfig() {
                   max="1000"
                   step="1"
                   value={config.batch_size}
-                  onChange={(e) =>
-                    setConfig({ ...config, batch_size: parseInt(e.target.value) })
-                  }
+                  onChange={e => setConfig({ ...config, batch_size: parseInt(e.target.value) })}
                   className="w-32"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Number of products to process per batch
                 </p>
               </div>
@@ -346,7 +344,12 @@ export default function PricingAutomationConfig() {
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['pricing-automation-config', orgId] })}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ['pricing-automation-config', orgId] })
+            }
+          >
             Reset
           </Button>
           <Button onClick={handleSave} disabled={updateConfigMutation.isPending}>

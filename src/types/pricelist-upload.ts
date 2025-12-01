@@ -138,7 +138,12 @@ export interface ValidationError {
   rowIndex: number;
   field: string;
   value: unknown;
-  errorType: 'missing_required' | 'invalid_format' | 'invalid_value' | 'duplicate' | 'constraint_violation';
+  errorType:
+    | 'missing_required'
+    | 'invalid_format'
+    | 'invalid_value'
+    | 'duplicate'
+    | 'constraint_violation';
   message: string;
   severity: 'error';
 }

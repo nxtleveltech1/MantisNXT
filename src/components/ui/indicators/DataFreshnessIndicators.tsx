@@ -13,13 +13,19 @@ import {
   TrendingUp,
   Activity,
   Radio,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 import { designTokens } from '../design-system';
 
 // Data Freshness Types
 export type FreshnessLevel = 'realtime' | 'fresh' | 'stale' | 'outdated' | 'unknown';
-export type DataChangeType = 'created' | 'updated' | 'deleted' | 'price_changed' | 'stock_changed' | 'status_changed';
+export type DataChangeType =
+  | 'created'
+  | 'updated'
+  | 'deleted'
+  | 'price_changed'
+  | 'stock_changed'
+  | 'status_changed';
 
 export interface DataFreshnessInfo {
   lastUpdated: Date;
@@ -88,21 +94,31 @@ class FreshnessCalculator {
 
   static getFreshnessColor(level: FreshnessLevel): string {
     switch (level) {
-      case 'realtime': return designTokens.colors.success.DEFAULT;
-      case 'fresh': return designTokens.colors.primary.DEFAULT;
-      case 'stale': return designTokens.colors.warning.DEFAULT;
-      case 'outdated': return designTokens.colors.destructive.DEFAULT;
-      default: return designTokens.colors.muted.foreground;
+      case 'realtime':
+        return designTokens.colors.success.DEFAULT;
+      case 'fresh':
+        return designTokens.colors.primary.DEFAULT;
+      case 'stale':
+        return designTokens.colors.warning.DEFAULT;
+      case 'outdated':
+        return designTokens.colors.destructive.DEFAULT;
+      default:
+        return designTokens.colors.muted.foreground;
     }
   }
 
   static getSyncStatusIcon(status: DataFreshnessInfo['syncStatus']) {
     switch (status) {
-      case 'synced': return CheckCircle;
-      case 'syncing': return RefreshCw;
-      case 'error': return AlertCircle;
-      case 'offline': return WifiOff;
-      default: return Clock;
+      case 'synced':
+        return CheckCircle;
+      case 'syncing':
+        return RefreshCw;
+      case 'error':
+        return AlertCircle;
+      case 'offline':
+        return WifiOff;
+      default:
+        return Clock;
     }
   }
 }
@@ -126,7 +142,7 @@ const defaultConfig: FreshnessConfig = {
   showConfidence: true,
   showChangeCount: true,
   showSyncStatus: true,
-  enableNotifications: false
+  enableNotifications: false,
 };
 
 export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
@@ -136,7 +152,7 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   size = 'md',
   showTooltip = true,
   onRefresh,
-  className = ''
+  className = '',
 }) => {
   const mergedConfig = useMemo(() => ({ ...defaultConfig, ...config }), [config]);
   const [isHovered, setIsHovered] = useState(false);
@@ -176,10 +192,7 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   if (variant === 'minimal') {
     return (
       <div className={baseClasses}>
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: freshnessColor }}
-        />
+        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: freshnessColor }} />
         {mergedConfig.showRelativeTime && (
           <span className="text-muted-foreground">{relativeTime}</span>
         )}
@@ -190,20 +203,25 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   if (variant === 'badge') {
     return (
       <div
-        className={`
-          ${baseClasses}
-          px-2 py-1 rounded-full border
-          ${freshnessLevel === 'realtime' ? 'bg-success/10 border-success text-success' :
-            freshnessLevel === 'fresh' ? 'bg-primary/10 border-primary text-primary' :
-            freshnessLevel === 'stale' ? 'bg-warning/10 border-warning text-warning' :
-            'bg-destructive/10 border-destructive text-destructive'}
-        `}
+        className={` ${baseClasses} rounded-full border px-2 py-1 ${
+          freshnessLevel === 'realtime'
+            ? 'bg-success/10 border-success text-success'
+            : freshnessLevel === 'fresh'
+              ? 'bg-primary/10 border-primary text-primary'
+              : freshnessLevel === 'stale'
+                ? 'bg-warning/10 border-warning text-warning'
+                : 'bg-destructive/10 border-destructive text-destructive'
+        } `}
       >
         <motion.div
           animate={data.syncStatus === 'syncing' ? { rotate: 360 } : {}}
-          transition={{ duration: 1, repeat: data.syncStatus === 'syncing' ? Infinity : 0, ease: "linear" }}
+          transition={{
+            duration: 1,
+            repeat: data.syncStatus === 'syncing' ? Infinity : 0,
+            ease: 'linear',
+          }}
         >
-          <SyncIcon className="w-3 h-3" />
+          <SyncIcon className="h-3 w-3" />
         </motion.div>
         <span className="capitalize">{freshnessLevel}</span>
       </div>
@@ -238,8 +256,13 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
         }
 
         @keyframes pulse-freshness {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
         }
 
         .freshness-glow {
@@ -251,60 +274,48 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
       <div className="flex items-center gap-2">
         {/* Status Icon with Animation */}
         <motion.div
-          className={`
-            ${freshnessLevel === 'realtime' ? 'freshness-pulse' : ''}
-            ${data.syncStatus === 'syncing' ? 'animate-spin' : ''}
-          `}
+          className={` ${freshnessLevel === 'realtime' ? 'freshness-pulse' : ''} ${data.syncStatus === 'syncing' ? 'animate-spin' : ''} `}
           animate={data.syncStatus === 'syncing' ? { rotate: 360 } : {}}
-          transition={{ duration: 1, repeat: data.syncStatus === 'syncing' ? Infinity : 0, ease: "linear" }}
+          transition={{
+            duration: 1,
+            repeat: data.syncStatus === 'syncing' ? Infinity : 0,
+            ease: 'linear',
+          }}
         >
-          <SyncIcon
-            className={`w-4 h-4`}
-            style={{ color: freshnessColor }}
-          />
+          <SyncIcon className={`h-4 w-4`} style={{ color: freshnessColor }} />
         </motion.div>
 
         {/* Freshness Level */}
-        <span
-          className="font-medium capitalize"
-          style={{ color: freshnessColor }}
-        >
+        <span className="font-medium capitalize" style={{ color: freshnessColor }}>
           {freshnessLevel}
         </span>
 
         {/* Relative Time */}
         {mergedConfig.showRelativeTime && (
-          <span className="text-muted-foreground">
-            {relativeTime}
-          </span>
+          <span className="text-muted-foreground">{relativeTime}</span>
         )}
 
         {/* Change Count */}
-        {mergedConfig.showChangeCount && data.changesSinceLastView && data.changesSinceLastView > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="
-              px-1.5 py-0.5 text-xs rounded-full
-              bg-primary text-primary-foreground
-              freshness-glow
-            "
-          >
-            +{data.changesSinceLastView}
-          </motion.span>
-        )}
+        {mergedConfig.showChangeCount &&
+          data.changesSinceLastView &&
+          data.changesSinceLastView > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="bg-primary text-primary-foreground freshness-glow rounded-full px-1.5 py-0.5 text-xs"
+            >
+              +{data.changesSinceLastView}
+            </motion.span>
+          )}
 
         {/* Refresh Button */}
         {onRefresh && (
           <button
             onClick={onRefresh}
-            className="
-              p-1 rounded hover:bg-muted transition-colors
-              text-muted-foreground hover:text-foreground
-            "
+            className="hover:bg-muted text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
             title="Refresh data"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="h-3 w-3" />
           </button>
         )}
       </div>
@@ -321,10 +332,10 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
           >
             <div className="space-y-2">
               {/* Status Row */}
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="font-medium">Status:</span>
                 <div className="flex items-center gap-1">
-                  <SyncIcon className="w-3 h-3" style={{ color: freshnessColor }} />
+                  <SyncIcon className="h-3 w-3" style={{ color: freshnessColor }} />
                   <span style={{ color: freshnessColor }} className="capitalize">
                     {data.syncStatus}
                   </span>
@@ -332,16 +343,14 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
               </div>
 
               {/* Last Updated */}
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="font-medium">Updated:</span>
-                <span className="text-muted-foreground">
-                  {data.lastUpdated.toLocaleString()}
-                </span>
+                <span className="text-muted-foreground">{data.lastUpdated.toLocaleString()}</span>
               </div>
 
               {/* Data Source */}
               {data.dataSource && (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="font-medium">Source:</span>
                   <span className="text-muted-foreground">{data.dataSource}</span>
                 </div>
@@ -349,16 +358,16 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
 
               {/* Confidence Score */}
               {mergedConfig.showConfidence && data.confidence !== undefined && (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="font-medium">Confidence:</span>
                   <div className="flex items-center gap-1">
-                    <div className="w-12 h-1 bg-muted rounded-full overflow-hidden">
+                    <div className="bg-muted h-1 w-12 overflow-hidden rounded-full">
                       <div
-                        className="h-full bg-primary transition-all duration-300"
+                        className="bg-primary h-full transition-all duration-300"
                         style={{ width: `${data.confidence * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {Math.round(data.confidence * 100)}%
                     </span>
                   </div>
@@ -367,7 +376,7 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
 
               {/* Next Sync */}
               {data.nextSyncTime && (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="font-medium">Next sync:</span>
                   <span className="text-muted-foreground">
                     {FreshnessCalculator.getRelativeTimeString(data.nextSyncTime)}
@@ -378,10 +387,13 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
               {/* Recent Changes */}
               {data.recentChanges && data.recentChanges.length > 0 && (
                 <div className="border-t pt-2">
-                  <div className="font-medium mb-1">Recent changes:</div>
-                  <div className="space-y-1 max-h-20 overflow-y-auto">
+                  <div className="mb-1 font-medium">Recent changes:</div>
+                  <div className="max-h-20 space-y-1 overflow-y-auto">
                     {data.recentChanges.slice(0, 3).map(change => (
-                      <div key={change.id} className="text-xs text-muted-foreground flex items-center gap-1">
+                      <div
+                        key={change.id}
+                        className="text-muted-foreground flex items-center gap-1 text-xs"
+                      >
                         <ChangeTypeIcon type={change.type} />
                         <span>{change.field || change.type}</span>
                         <span>·</span>
@@ -402,13 +414,20 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
 // Change Type Icon Component
 const ChangeTypeIcon: React.FC<{ type: DataChangeType }> = ({ type }) => {
   switch (type) {
-    case 'created': return <Sparkles className="w-3 h-3 text-success" />;
-    case 'updated': return <RefreshCw className="w-3 h-3 text-primary" />;
-    case 'deleted': return <AlertCircle className="w-3 h-3 text-destructive" />;
-    case 'price_changed': return <TrendingUp className="w-3 h-3 text-warning" />;
-    case 'stock_changed': return <Activity className="w-3 h-3 text-primary" />;
-    case 'status_changed': return <Radio className="w-3 h-3 text-muted-foreground" />;
-    default: return <Clock className="w-3 h-3 text-muted-foreground" />;
+    case 'created':
+      return <Sparkles className="text-success h-3 w-3" />;
+    case 'updated':
+      return <RefreshCw className="text-primary h-3 w-3" />;
+    case 'deleted':
+      return <AlertCircle className="text-destructive h-3 w-3" />;
+    case 'price_changed':
+      return <TrendingUp className="text-warning h-3 w-3" />;
+    case 'stock_changed':
+      return <Activity className="text-primary h-3 w-3" />;
+    case 'status_changed':
+      return <Radio className="text-muted-foreground h-3 w-3" />;
+    default:
+      return <Clock className="text-muted-foreground h-3 w-3" />;
   }
 };
 
@@ -426,7 +445,7 @@ export const RealTimeStatus: React.FC<RealTimeStatusProps> = ({
   lastHeartbeat,
   reconnectAttempts = 0,
   onReconnect,
-  className = ''
+  className = '',
 }) => {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -436,9 +455,9 @@ export const RealTimeStatus: React.FC<RealTimeStatusProps> = ({
           transition={{ duration: 2, repeat: isConnected ? Infinity : 0 }}
         >
           {isConnected ? (
-            <Wifi className="w-4 h-4 text-success" />
+            <Wifi className="text-success h-4 w-4" />
           ) : (
-            <WifiOff className="w-4 h-4 text-destructive" />
+            <WifiOff className="text-destructive h-4 w-4" />
           )}
         </motion.div>
 
@@ -448,13 +467,11 @@ export const RealTimeStatus: React.FC<RealTimeStatusProps> = ({
       </div>
 
       {!isConnected && reconnectAttempts > 0 && (
-        <span className="text-xs text-muted-foreground">
-          ({reconnectAttempts} attempts)
-        </span>
+        <span className="text-muted-foreground text-xs">({reconnectAttempts} attempts)</span>
       )}
 
       {lastHeartbeat && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           Last: {FreshnessCalculator.getRelativeTimeString(lastHeartbeat)}
         </span>
       )}
@@ -462,7 +479,7 @@ export const RealTimeStatus: React.FC<RealTimeStatusProps> = ({
       {!isConnected && onReconnect && (
         <button
           onClick={onReconnect}
-          className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-2 py-1 text-xs transition-colors"
         >
           Reconnect
         </button>
@@ -488,7 +505,7 @@ export const DataQualityScore: React.FC<DataQualityScoreProps> = ({
   score,
   factors,
   showBreakdown = false,
-  className = ''
+  className = '',
 }) => {
   const getScoreColor = (score: number) => {
     if (score >= 0.9) return designTokens.colors.success.DEFAULT;
@@ -508,8 +525,8 @@ export const DataQualityScore: React.FC<DataQualityScoreProps> = ({
   return (
     <div className={`data-quality-score ${className}`}>
       <div className="flex items-center gap-2">
-        <div className="relative w-8 h-8">
-          <svg viewBox="0 0 36 36" className="w-8 h-8 transform -rotate-90">
+        <div className="relative h-8 w-8">
+          <svg viewBox="0 0 36 36" className="h-8 w-8 -rotate-90 transform">
             <path
               d="M18 2.0845
                 a 15.9155 15.9155 0 0 1 0 31.831
@@ -537,11 +554,9 @@ export const DataQualityScore: React.FC<DataQualityScoreProps> = ({
         </div>
 
         <div>
-          <div className="text-sm font-medium">
-            Data Quality: {Math.round(score * 100)}%
-          </div>
+          <div className="text-sm font-medium">Data Quality: {Math.round(score * 100)}%</div>
           {showBreakdown && factors && (
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-muted-foreground space-y-1 text-xs">
               <div>Completeness: {Math.round(factors.completeness * 100)}%</div>
               <div>Accuracy: {Math.round(factors.accuracy * 100)}%</div>
               <div>Timeliness: {Math.round(factors.timeliness * 100)}%</div>
@@ -564,7 +579,7 @@ export interface DataChangeVisualizationProps {
 export const DataChangeVisualization: React.FC<DataChangeVisualizationProps> = ({
   changes,
   timeWindow = 'day',
-  className = ''
+  className = '',
 }) => {
   const groupedChanges = useMemo(() => {
     const now = new Date();
@@ -600,27 +615,27 @@ export const DataChangeVisualization: React.FC<DataChangeVisualizationProps> = (
 
   return (
     <div className={`data-change-visualization ${className}`}>
-      <div className="flex items-end gap-1 h-16">
+      <div className="flex h-16 items-end gap-1">
         {Object.entries(groupedChanges).map(([timeKey, timeChanges]) => (
           <div
             key={timeKey}
-            className="flex flex-col items-center gap-1 flex-1"
+            className="flex flex-1 flex-col items-center gap-1"
             title={`${timeChanges.length} changes at ${timeKey}`}
           >
             <motion.div
               initial={{ height: 0 }}
               animate={{ height: `${(timeChanges.length / maxCount) * 100}%` }}
               transition={{ duration: 0.3, delay: Math.random() * 0.1 }}
-              className="bg-primary rounded-t w-full min-h-[2px]"
+              className="bg-primary min-h-[2px] w-full rounded-t"
             />
-            <span className="text-xs text-muted-foreground truncate w-full text-center">
+            <span className="text-muted-foreground w-full truncate text-center text-xs">
               {timeKey}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="mt-2 text-xs text-muted-foreground text-center">
+      <div className="text-muted-foreground mt-2 text-center text-xs">
         {changes.length} changes in the last {timeWindow}
       </div>
     </div>
@@ -645,14 +660,17 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
   config = {},
   onRefreshAll,
   onRefreshItem,
-  className = ''
+  className = '',
 }) => {
   const mergedConfig = useMemo(() => ({ ...defaultConfig, ...config }), [config]);
 
   const freshnessStats = useMemo(() => {
     const stats = { realtime: 0, fresh: 0, stale: 0, outdated: 0 };
     items.forEach(item => {
-      const level = FreshnessCalculator.calculateFreshnessLevel(item.freshnessInfo.lastUpdated, mergedConfig);
+      const level = FreshnessCalculator.calculateFreshnessLevel(
+        item.freshnessInfo.lastUpdated,
+        mergedConfig
+      );
       stats[level]++;
     });
     return stats;
@@ -662,12 +680,12 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
     const totalItems = items.length;
     if (totalItems === 0) return 1;
 
-    const score = (
-      freshnessStats.realtime * 1.0 +
-      freshnessStats.fresh * 0.8 +
-      freshnessStats.stale * 0.5 +
-      freshnessStats.outdated * 0.2
-    ) / totalItems;
+    const score =
+      (freshnessStats.realtime * 1.0 +
+        freshnessStats.fresh * 0.8 +
+        freshnessStats.stale * 0.5 +
+        freshnessStats.outdated * 0.2) /
+      totalItems;
 
     return score;
   }, [freshnessStats, items.length]);
@@ -679,23 +697,23 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
         <div className="flex items-center gap-4">
           <DataQualityScore score={overallScore} />
 
-          <div className="text-sm space-y-1">
+          <div className="space-y-1 text-sm">
             <div className="font-medium">Data Freshness Overview</div>
-            <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-success" />
+                <div className="bg-success h-2 w-2 rounded-full" />
                 {freshnessStats.realtime} Real-time
               </span>
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className="bg-primary h-2 w-2 rounded-full" />
                 {freshnessStats.fresh} Fresh
               </span>
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-warning" />
+                <div className="bg-warning h-2 w-2 rounded-full" />
                 {freshnessStats.stale} Stale
               </span>
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-destructive" />
+                <div className="bg-destructive h-2 w-2 rounded-full" />
                 {freshnessStats.outdated} Outdated
               </span>
             </div>
@@ -705,9 +723,9 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
         {onRefreshAll && (
           <button
             onClick={onRefreshAll}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 transition-colors"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="h-4 w-4" />
             Refresh All
           </button>
         )}
@@ -718,7 +736,7 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
         {items.map(item => (
           <div
             key={item.id}
-            className="flex items-center justify-between p-3 rounded-md border bg-card"
+            className="bg-card flex items-center justify-between rounded-md border p-3"
           >
             <div className="flex items-center gap-3">
               <span className="font-medium">{item.name}</span>

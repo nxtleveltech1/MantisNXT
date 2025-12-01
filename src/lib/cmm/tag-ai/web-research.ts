@@ -25,7 +25,7 @@ export async function researchProduct(
   options: WebResearchOptions = {}
 ): Promise<WebResearchResult[]> {
   const cacheKey = `${sku}:${productName}`.toLowerCase();
-  
+
   // Check cache
   if (options.cacheEnabled !== false) {
     const cached = researchCache.get(cacheKey);
@@ -39,35 +39,47 @@ export async function researchProduct(
 
   // Determine provider: use configured one, or check available API keys
   // Prioritize options.provider if it's a valid provider name (not 'manual', 'undefined', or empty)
-  let provider = options.provider && options.provider !== 'manual' && options.provider.trim().length > 0
-    ? options.provider 
-    : undefined;
-  
+  let provider =
+    options.provider && options.provider !== 'manual' && options.provider.trim().length > 0
+      ? options.provider
+      : undefined;
+
   if (!provider) {
     // If options.apiKey is provided, try to infer provider from it (but this is less reliable)
     // Otherwise, auto-detect based on available API keys (priority: tavily > serper > brave > exa > google > serpapi)
     if (options.apiKey) {
       // If API key is provided but no provider specified, we can't reliably determine provider
       // Log a warning and try environment variables
-      console.warn(`[web-research] API key provided but provider not specified, attempting auto-detection from environment variables`);
+      console.warn(
+        `[web-research] API key provided but provider not specified, attempting auto-detection from environment variables`
+      );
     }
-    
-    if (process.env.TAVILY_API_KEY || options.apiKey) provider = 'tavily'; // Default to tavily if API key provided
+
+    if (process.env.TAVILY_API_KEY || options.apiKey)
+      provider = 'tavily'; // Default to tavily if API key provided
     else if (process.env.SERPER_API_KEY) provider = 'serper';
     else if (process.env.BRAVE_API_KEY) provider = 'brave';
     else if (process.env.EXA_API_KEY) provider = 'exa';
-    else if (process.env.GOOGLE_CUSTOM_SEARCH_API_KEY && process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID) provider = 'google_custom_search';
+    else if (process.env.GOOGLE_CUSTOM_SEARCH_API_KEY && process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID)
+      provider = 'google_custom_search';
     else if (process.env.SERPAPI_KEY) provider = 'serpapi';
     else provider = 'manual';
   }
-  
+
   // Validate provider is supported
-  const supportedProviders = ['tavily', 'serper', 'brave', 'exa', 'google_custom_search', 'serpapi'];
+  const supportedProviders = [
+    'tavily',
+    'serper',
+    'brave',
+    'exa',
+    'google_custom_search',
+    'serpapi',
+  ];
   if (provider && !supportedProviders.includes(provider)) {
     console.warn(`[web-research] Unsupported provider "${provider}", falling back to manual mode`);
     provider = 'manual';
   }
-  
+
   const searchQuery = `${productName} ${sku} ${description || ''}`.trim();
 
   try {
@@ -87,7 +99,9 @@ export async function researchProduct(
       results = await researchWithSerpAPI(searchQuery, options);
     } else {
       // Manual/fallback - return empty results
-      console.warn(`[web-research] Provider "${provider}" not supported or manual mode, returning empty results`);
+      console.warn(
+        `[web-research] Provider "${provider}" not supported or manual mode, returning empty results`
+      );
       return [];
     }
 
@@ -324,7 +338,7 @@ async function researchWithBrave(
     const response = await fetch(url, {
       headers: {
         'X-Subscription-Token': apiKey,
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     });
 
@@ -424,7 +438,7 @@ export async function researchProductsBatch(
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
     const batchResults = await Promise.all(
-      batch.map(async (product) => {
+      batch.map(async product => {
         const research = await researchProduct(
           product.sku,
           product.productName,
@@ -441,10 +455,9 @@ export async function researchProductsBatch(
 
     // Rate limiting delay
     if (i + batchSize < products.length) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
   return results;
 }
-

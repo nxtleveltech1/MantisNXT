@@ -1,7 +1,7 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { query } from '@/lib/database/unified-connection'
-import type { SupplierContact } from '@/types/supplier'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database/unified-connection';
+import type { SupplierContact } from '@/types/supplier';
 
 /**
  * GET /api/directories/suppliers
@@ -10,11 +10,11 @@ import type { SupplierContact } from '@/types/supplier'
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || undefined
-    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 1000
-    const offset = (page - 1) * limit
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || undefined;
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 1000;
+    const offset = (page - 1) * limit;
 
     // Use the simplest possible query - just get suppliers from core.supplier (the actual table)
     // Only return active suppliers (exclude deleted/inactive)
@@ -31,47 +31,49 @@ export async function GET(request: NextRequest) {
         updated_at
       FROM core.supplier
       WHERE active = true
-    `
-    const params: unknown[] = []
-    let paramIndex = 1
+    `;
+    const params: unknown[] = [];
+    let paramIndex = 1;
 
     if (search) {
-      suppliersQuery += ` AND (name ILIKE $${paramIndex} OR code ILIKE $${paramIndex})`
-      params.push(`%${search}%`)
-      paramIndex++
+      suppliersQuery += ` AND (name ILIKE $${paramIndex} OR code ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
     }
 
-    suppliersQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
-    params.push(limit, offset)
+    suppliersQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
 
     // Get suppliers
-    const suppliersResult = await query(suppliersQuery, params)
-    const suppliers = suppliersResult.rows || []
-    
+    const suppliersResult = await query(suppliersQuery, params);
+    const suppliers = suppliersResult.rows || [];
+
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Suppliers Directory] Fetched ${suppliers.length} active suppliers (filtered by active = true)`)
+      console.log(
+        `[Suppliers Directory] Fetched ${suppliers.length} active suppliers (filtered by active = true)`
+      );
     }
 
     // Get count (only active suppliers)
-    let countQuery = `SELECT COUNT(*) as count FROM core.supplier WHERE active = true`
-    const countParams: unknown[] = []
-    let countParamIndex = 1
+    let countQuery = `SELECT COUNT(*) as count FROM core.supplier WHERE active = true`;
+    const countParams: unknown[] = [];
+    let countParamIndex = 1;
 
     if (search) {
-      countQuery += ` AND (name ILIKE $${countParamIndex} OR code ILIKE $${countParamIndex})`
-      countParams.push(`%${search}%`)
-      countParamIndex++
+      countQuery += ` AND (name ILIKE $${countParamIndex} OR code ILIKE $${countParamIndex})`;
+      countParams.push(`%${search}%`);
+      countParamIndex++;
     }
 
-    const countResult = await query(countQuery, countParams)
-    const total = parseInt(countResult.rows[0]?.count ?? '0', 10)
+    const countResult = await query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0]?.count ?? '0', 10);
 
     // Get contacts for all suppliers
-    const supplierIds = suppliers.map((s: unknown) => s.id).filter(Boolean)
-    
-    const contactsBySupplier: Record<string, SupplierContact[]> = {}
-    
+    const supplierIds = suppliers.map((s: unknown) => s.id).filter(Boolean);
+
+    const contactsBySupplier: Record<string, SupplierContact[]> = {};
+
     if (supplierIds.length > 0) {
       try {
         const contactsQuery = `
@@ -90,15 +92,15 @@ export async function GET(request: NextRequest) {
           FROM supplier_contacts
           WHERE CAST(supplier_id AS TEXT) = ANY($1)
           AND is_active = true
-        `
+        `;
 
-        const contactsResult = await query(contactsQuery, [supplierIds])
+        const contactsResult = await query(contactsQuery, [supplierIds]);
 
         // Group contacts by supplier_id
         contactsResult.rows?.forEach((contact: unknown) => {
-          const supplierId = String(contact.supplier_id)
+          const supplierId = String(contact.supplier_id);
           if (!contactsBySupplier[supplierId]) {
-            contactsBySupplier[supplierId] = []
+            contactsBySupplier[supplierId] = [];
           }
           contactsBySupplier[supplierId].push({
             id: String(contact.id),
@@ -111,19 +113,19 @@ export async function GET(request: NextRequest) {
             department: contact.department,
             isPrimary: contact.is_primary || false,
             isActive: contact.is_active !== false,
-          })
-        })
+          });
+        });
       } catch (contactError) {
         // If contacts table doesn't exist or has issues, just continue without contacts
-        console.warn('Could not fetch contacts:', contactError)
+        console.warn('Could not fetch contacts:', contactError);
       }
     }
 
     // Combine suppliers with contacts
     const suppliersWithContacts = suppliers.map((supplier: unknown) => {
-      const supplierId = String(supplier.id)
-      const contactInfo = supplier.contact_info || {}
-      
+      const supplierId = String(supplier.id);
+      const contactInfo = supplier.contact_info || {};
+
       return {
         id: supplierId,
         name: supplier.name,
@@ -136,8 +138,8 @@ export async function GET(request: NextRequest) {
         tags: [],
         contacts: contactsBySupplier[supplierId] || [],
         addresses: [],
-      }
-    })
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -148,12 +150,12 @@ export async function GET(request: NextRequest) {
         limit,
         totalPages: Math.ceil(total / limit),
       },
-    })
+    });
   } catch (error) {
-    console.error('Error fetching suppliers directory:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorStack = error instanceof Error ? error.stack : undefined
-    
+    console.error('Error fetching suppliers directory:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
     return NextResponse.json(
       {
         success: false,
@@ -161,7 +163,6 @@ export async function GET(request: NextRequest) {
         details: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
       { status: 500 }
-    )
+    );
   }
 }
-

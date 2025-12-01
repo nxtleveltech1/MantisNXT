@@ -124,7 +124,9 @@ export class MCPBridge {
     }
 
     // Placeholder implementation
-    throw new Error(`MCP tool execution not yet implemented for server '${serverName}', tool '${toolName}'`);
+    throw new Error(
+      `MCP tool execution not yet implemented for server '${serverName}', tool '${toolName}'`
+    );
   }
 
   /**
@@ -150,9 +152,9 @@ export class MCPBridge {
     }
 
     // Remove associated tools from registry
-    const toolsToRemove = toolRegistry.listTools().filter(
-      tool => tool.metadata?.mcpServer === serverName
-    );
+    const toolsToRemove = toolRegistry
+      .listTools()
+      .filter(tool => tool.metadata?.mcpServer === serverName);
 
     toolsToRemove.forEach(tool => {
       toolRegistry.unregisterTool(tool.name);

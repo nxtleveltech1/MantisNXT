@@ -1,11 +1,11 @@
 import type { ErrorInfo, ReactNode } from 'react';
-import React, { Component } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import React, { Component } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertTriangle,
   RefreshCw,
@@ -17,79 +17,79 @@ import {
   Download,
   Send,
   ChevronDown,
-  ChevronUp
-} from 'lucide-react'
+  ChevronUp,
+} from 'lucide-react';
 
 interface ErrorBoundaryState {
-  hasError: boolean
-  error?: Error
-  errorInfo?: ErrorInfo
-  errorId: string
-  timestamp: Date
-  expanded: boolean
+  hasError: boolean;
+  error?: Error;
+  errorInfo?: ErrorInfo;
+  errorId: string;
+  timestamp: Date;
+  expanded: boolean;
 }
 
 interface ErrorBoundaryProps {
-  children: ReactNode
-  fallback?: ReactNode
-  onError?: (error: Error, errorInfo: ErrorInfo, errorId: string) => void
-  showDetails?: boolean
-  enableReporting?: boolean
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo, errorId: string) => void;
+  showDetails?: boolean;
+  enableReporting?: boolean;
 }
 
 interface ErrorDetails {
-  message: string
-  stack?: string
-  componentStack?: string
-  userAgent: string
-  url: string
-  timestamp: Date
-  userId?: string
-  sessionId?: string
-  buildVersion?: string
+  message: string;
+  stack?: string;
+  componentStack?: string;
+  userAgent: string;
+  url: string;
+  timestamp: Date;
+  userId?: string;
+  sessionId?: string;
+  buildVersion?: string;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  private retryCount = 0
-  private maxRetries = 3
+  private retryCount = 0;
+  private maxRetries = 3;
 
   constructor(props: ErrorBoundaryProps) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       errorId: '',
       timestamp: new Date(),
-      expanded: false
-    }
+      expanded: false,
+    };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    const errorId = `ERR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const errorId = `ERR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return {
       hasError: true,
       error,
       errorId,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    const { onError } = this.props
-    const { errorId } = this.state
+    const { onError } = this.props;
+    const { errorId } = this.state;
 
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     this.setState({
       error,
-      errorInfo
-    })
+      errorInfo,
+    });
 
     // Call custom error handler
-    onError?.(error, errorInfo, errorId)
+    onError?.(error, errorInfo, errorId);
 
     // Log to external service in production
     if (process.env.NODE_ENV === 'production') {
-      this.reportError(error, errorInfo, errorId)
+      this.reportError(error, errorInfo, errorId);
     }
   }
 
@@ -104,8 +104,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         timestamp: new Date(),
         userId: this.getUserId(),
         sessionId: this.getSessionId(),
-        buildVersion: process.env.NEXT_PUBLIC_BUILD_VERSION
-      }
+        buildVersion: process.env.NEXT_PUBLIC_BUILD_VERSION,
+      };
 
       // In a real app, send to error reporting service
       // await fetch('/api/errors', {
@@ -116,42 +116,42 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
       // Error reported to logging service
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError)
+      console.error('Failed to report error:', reportingError);
     }
-  }
+  };
 
   private getUserId = (): string | undefined => {
     // Get user ID from authentication context, localStorage, etc.
-    return localStorage.getItem('userId') || undefined
-  }
+    return localStorage.getItem('userId') || undefined;
+  };
 
   private getSessionId = (): string | undefined => {
     // Get session ID from sessionStorage or generate one
-    let sessionId = sessionStorage.getItem('sessionId')
+    let sessionId = sessionStorage.getItem('sessionId');
     if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      sessionStorage.setItem('sessionId', sessionId)
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('sessionId', sessionId);
     }
-    return sessionId
-  }
+    return sessionId;
+  };
 
   private handleRetry = () => {
     if (this.retryCount < this.maxRetries) {
-      this.retryCount++
+      this.retryCount++;
       this.setState({
         hasError: false,
         error: undefined,
-        errorInfo: undefined
-      })
+        errorInfo: undefined,
+      });
     }
-  }
+  };
 
   private handleRefresh = () => {
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   private copyErrorDetails = () => {
-    const { error, errorInfo, errorId, timestamp } = this.state
+    const { error, errorInfo, errorId, timestamp } = this.state;
 
     const details = {
       errorId,
@@ -160,21 +160,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       stack: error?.stack,
       componentStack: errorInfo?.componentStack,
       url: window.location.href,
-      userAgent: navigator.userAgent
-    }
+      userAgent: navigator.userAgent,
+    };
 
-    navigator.clipboard.writeText(JSON.stringify(details, null, 2))
+    navigator.clipboard
+      .writeText(JSON.stringify(details, null, 2))
       .then(() => {
         // Show success notification
-        console.log('Error details copied to clipboard')
+        console.log('Error details copied to clipboard');
       })
       .catch(err => {
-        console.error('Failed to copy error details:', err)
-      })
-  }
+        console.error('Failed to copy error details:', err);
+      });
+  };
 
   private downloadErrorReport = () => {
-    const { error, errorInfo, errorId, timestamp } = this.state
+    const { error, errorInfo, errorId, timestamp } = this.state;
 
     const report = {
       errorId,
@@ -182,57 +183,57 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       error: {
         message: error?.message,
         stack: error?.stack,
-        name: error?.name
+        name: error?.name,
       },
       errorInfo: {
-        componentStack: errorInfo?.componentStack
+        componentStack: errorInfo?.componentStack,
       },
       environment: {
         url: window.location.href,
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
-        buildVersion: process.env.NEXT_PUBLIC_BUILD_VERSION
-      }
-    }
+        buildVersion: process.env.NEXT_PUBLIC_BUILD_VERSION,
+      },
+    };
 
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `error-report-${errorId}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `error-report-${errorId}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   private formatStackTrace = (stack?: string): string[] => {
-    if (!stack) return []
-    return stack.split('\n').filter(line => line.trim())
-  }
+    if (!stack) return [];
+    return stack.split('\n').filter(line => line.trim());
+  };
 
   render() {
-    const { children, fallback, showDetails = true, enableReporting = true } = this.props
-    const { hasError, error, errorInfo, errorId, timestamp, expanded } = this.state
+    const { children, fallback, showDetails = true, enableReporting = true } = this.props;
+    const { hasError, error, errorInfo, errorId, timestamp, expanded } = this.state;
 
     if (hasError) {
       if (fallback) {
-        return fallback
+        return fallback;
       }
 
-      const canRetry = this.retryCount < this.maxRetries
+      const canRetry = this.retryCount < this.maxRetries;
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+        <div className="bg-muted/30 flex min-h-screen items-center justify-center p-4">
           <Card className="w-full max-w-4xl">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-full">
+                <div className="rounded-full bg-red-100 p-2">
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="flex-1">
                   <CardTitle className="text-red-800">Something went wrong</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-sm">
                     An unexpected error occurred. We&apos;ve been notified and are working on it.
                   </p>
                 </div>
@@ -247,25 +248,25 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               <Alert className="border-red-200 bg-red-50">
                 <Bug className="h-4 w-4" />
                 <AlertDescription className="text-red-800">
-                  <div className="font-medium mb-1">{error?.name || 'Error'}</div>
+                  <div className="mb-1 font-medium">{error?.name || 'Error'}</div>
                   <div className="text-sm">{error?.message || 'An unknown error occurred'}</div>
                 </AlertDescription>
               </Alert>
 
               {/* Error Metadata */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="text-muted-foreground h-4 w-4" />
                   <span className="text-muted-foreground">Time:</span>
                   <span className="font-mono">{timestamp.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <User className="text-muted-foreground h-4 w-4" />
                   <span className="text-muted-foreground">User:</span>
                   <span className="font-mono">{this.getUserId() || 'Anonymous'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                  <Monitor className="text-muted-foreground h-4 w-4" />
                   <span className="text-muted-foreground">Session:</span>
                   <span className="font-mono text-xs">{this.getSessionId()?.slice(0, 12)}...</span>
                 </div>
@@ -275,12 +276,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               <div className="flex flex-wrap gap-2">
                 {canRetry && (
                   <Button onClick={this.handleRetry} className="flex-1 sm:flex-none">
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again ({this.maxRetries - this.retryCount} left)
                   </Button>
                 )}
-                <Button variant="outline" onClick={this.handleRefresh} className="flex-1 sm:flex-none">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                <Button
+                  variant="outline"
+                  onClick={this.handleRefresh}
+                  className="flex-1 sm:flex-none"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Refresh Page
                 </Button>
                 {showDetails && (
@@ -289,7 +294,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                     onClick={() => this.setState({ expanded: !expanded })}
                     className="flex-1 sm:flex-none"
                   >
-                    {expanded ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                    {expanded ? (
+                      <ChevronUp className="mr-2 h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                    )}
                     {expanded ? 'Hide' : 'Show'} Details
                   </Button>
                 )}
@@ -303,16 +312,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                       <CardTitle className="text-sm">Error Details</CardTitle>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" onClick={this.copyErrorDetails}>
-                          <Copy className="h-4 w-4 mr-1" />
+                          <Copy className="mr-1 h-4 w-4" />
                           Copy
                         </Button>
                         <Button variant="ghost" size="sm" onClick={this.downloadErrorReport}>
-                          <Download className="h-4 w-4 mr-1" />
+                          <Download className="mr-1 h-4 w-4" />
                           Download
                         </Button>
                         {enableReporting && (
                           <Button variant="ghost" size="sm">
-                            <Send className="h-4 w-4 mr-1" />
+                            <Send className="mr-1 h-4 w-4" />
                             Report
                           </Button>
                         )}
@@ -328,13 +337,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                       </TabsList>
 
                       <TabsContent value="error" className="mt-4">
-                        <ScrollArea className="h-64 w-full rounded border p-3 bg-muted/30">
-                          <pre className="text-xs font-mono leading-relaxed">
+                        <ScrollArea className="bg-muted/30 h-64 w-full rounded border p-3">
+                          <pre className="font-mono text-xs leading-relaxed">
                             {this.formatStackTrace(error?.stack).map((line, index) => (
                               <div
                                 key={index}
                                 className={`${
-                                  line.includes('at ') ? 'text-blue-600' : 'text-muted-foreground'
+                                  line.includes('at') ? 'text-blue-600' : 'text-muted-foreground'
                                 }`}
                               >
                                 {line}
@@ -345,8 +354,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                       </TabsContent>
 
                       <TabsContent value="component" className="mt-4">
-                        <ScrollArea className="h-64 w-full rounded border p-3 bg-muted/30">
-                          <pre className="text-xs font-mono leading-relaxed text-muted-foreground">
+                        <ScrollArea className="bg-muted/30 h-64 w-full rounded border p-3">
+                          <pre className="text-muted-foreground font-mono text-xs leading-relaxed">
                             {errorInfo?.componentStack || 'No component stack available'}
                           </pre>
                         </ScrollArea>
@@ -354,28 +363,28 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
                       <TabsContent value="environment" className="mt-4">
                         <div className="space-y-3 text-sm">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <div>
                               <span className="font-medium">URL:</span>
-                              <div className="font-mono text-xs mt-1 p-2 bg-muted rounded">
+                              <div className="bg-muted mt-1 rounded p-2 font-mono text-xs">
                                 {window.location.href}
                               </div>
                             </div>
                             <div>
                               <span className="font-medium">User Agent:</span>
-                              <div className="font-mono text-xs mt-1 p-2 bg-muted rounded">
+                              <div className="bg-muted mt-1 rounded p-2 font-mono text-xs">
                                 {navigator.userAgent}
                               </div>
                             </div>
                             <div>
                               <span className="font-medium">Build Version:</span>
-                              <div className="font-mono text-xs mt-1 p-2 bg-muted rounded">
+                              <div className="bg-muted mt-1 rounded p-2 font-mono text-xs">
                                 {process.env.NEXT_PUBLIC_BUILD_VERSION || 'Unknown'}
                               </div>
                             </div>
                             <div>
                               <span className="font-medium">Error ID:</span>
-                              <div className="font-mono text-xs mt-1 p-2 bg-muted rounded">
+                              <div className="bg-muted mt-1 rounded p-2 font-mono text-xs">
                                 {errorId}
                               </div>
                             </div>
@@ -388,25 +397,27 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               )}
 
               {/* Help Text */}
-              <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded">
+              <div className="text-muted-foreground bg-muted/30 rounded p-3 text-xs">
                 <p className="mb-1">
                   <strong>What happened?</strong> An unexpected error occurred in the application.
                 </p>
                 <p className="mb-1">
-                  <strong>What can you do?</strong> Try refreshing the page or retrying the action. If the problem persists, please contact support.
+                  <strong>What can you do?</strong> Try refreshing the page or retrying the action.
+                  If the problem persists, please contact support.
                 </p>
                 <p>
-                  <strong>Need help?</strong> Include the error ID ({errorId}) when contacting support.
+                  <strong>Need help?</strong> Include the error ID ({errorId}) when contacting
+                  support.
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
-      )
+      );
     }
 
-    return children
+    return children;
   }
 }
 
-export default ErrorBoundary
+export default ErrorBoundary;

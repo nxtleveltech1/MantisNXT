@@ -70,7 +70,9 @@ export async function GET(request: NextRequest) {
           );
           fixed.push(supplier.id);
         } catch (error) {
-          errors.push(`${supplier.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `${supplier.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
     }
@@ -94,4 +96,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

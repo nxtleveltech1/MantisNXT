@@ -1,14 +1,14 @@
-"use client"
+'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Switch } from "@/components/ui/switch"
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -16,24 +16,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cn, formatDate } from "@/lib/utils"
-import type { InventoryAlert, InventoryItem } from "@/types/inventory"
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn, formatDate } from '@/lib/utils';
+import type { InventoryAlert, InventoryItem } from '@/types/inventory';
 import {
   AlertTriangle,
   CheckCircle,
@@ -57,68 +57,68 @@ import {
   AlertCircle,
   Info,
   Warning,
-  X
-} from "lucide-react"
+  X,
+} from 'lucide-react';
 
 // Enhanced Alert Types
 export interface EnhancedInventoryAlert extends InventoryAlert {
-  itemSku: string
-  itemName: string
-  currentStock: number
-  reorderPoint: number
-  maxStock: number
-  supplierName?: string
-  location: string
-  estimatedStockoutDate?: Date
-  suggestedAction: string
-  impactLevel: 'low' | 'medium' | 'high' | 'critical'
+  itemSku: string;
+  itemName: string;
+  currentStock: number;
+  reorderPoint: number;
+  maxStock: number;
+  supplierName?: string;
+  location: string;
+  estimatedStockoutDate?: Date;
+  suggestedAction: string;
+  impactLevel: 'low' | 'medium' | 'high' | 'critical';
   autoResolution?: {
-    enabled: boolean
-    action: 'create_po' | 'transfer_stock' | 'adjust_reorder_point'
-    threshold: number
-  }
+    enabled: boolean;
+    action: 'create_po' | 'transfer_stock' | 'adjust_reorder_point';
+    threshold: number;
+  };
 }
 
 export interface AlertRule {
-  id: string
-  name: string
-  description: string
-  type: EnhancedInventoryAlert['type']
-  isActive: boolean
+  id: string;
+  name: string;
+  description: string;
+  type: EnhancedInventoryAlert['type'];
+  isActive: boolean;
   conditions: {
-    stockThreshold?: number
-    daysBeforeExpiry?: number
-    valueThreshold?: number
-    categories?: string[]
-    suppliers?: string[]
-    warehouses?: string[]
-  }
+    stockThreshold?: number;
+    daysBeforeExpiry?: number;
+    valueThreshold?: number;
+    categories?: string[];
+    suppliers?: string[];
+    warehouses?: string[];
+  };
   actions: {
     notifications: {
-      email: boolean
-      sms: boolean
-      inApp: boolean
-      recipients: string[]
-    }
+      email: boolean;
+      sms: boolean;
+      inApp: boolean;
+      recipients: string[];
+    };
     autoActions: {
-      createPO: boolean
-      transferStock: boolean
-      adjustReorderPoint: boolean
-    }
-  }
-  priority: 'low' | 'medium' | 'high' | 'critical'
-  createdAt: Date
-  updatedAt: Date
+      createPO: boolean;
+      transferStock: boolean;
+      adjustReorderPoint: boolean;
+    };
+  };
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface NotificationChannel {
-  id: string
-  type: 'email' | 'sms' | 'webhook' | 'slack'
-  name: string
-  isActive: boolean
-  configuration: Record<string, unknown>
-  testLastSent?: Date
-  testStatus?: 'success' | 'failed'
+  id: string;
+  type: 'email' | 'sms' | 'webhook' | 'slack';
+  name: string;
+  isActive: boolean;
+  configuration: Record<string, unknown>;
+  testLastSent?: Date;
+  testStatus?: 'success' | 'failed';
 }
 
 // Sample data
@@ -147,8 +147,8 @@ const sampleAlerts: EnhancedInventoryAlert[] = [
     autoResolution: {
       enabled: true,
       action: 'create_po',
-      threshold: 5
-    }
+      threshold: 5,
+    },
   },
   {
     id: 'alert_002',
@@ -174,8 +174,8 @@ const sampleAlerts: EnhancedInventoryAlert[] = [
     autoResolution: {
       enabled: false,
       action: 'create_po',
-      threshold: 1
-    }
+      threshold: 1,
+    },
   },
   {
     id: 'alert_003',
@@ -197,7 +197,7 @@ const sampleAlerts: EnhancedInventoryAlert[] = [
     acknowledgedBy: undefined,
     acknowledgedAt: undefined,
     createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+    dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
   },
   {
     id: 'alert_004',
@@ -219,9 +219,9 @@ const sampleAlerts: EnhancedInventoryAlert[] = [
     acknowledgedBy: undefined,
     acknowledgedAt: undefined,
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  }
-]
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  },
+];
 
 const sampleAlertRules: AlertRule[] = [
   {
@@ -231,24 +231,24 @@ const sampleAlertRules: AlertRule[] = [
     type: 'low_stock',
     isActive: true,
     conditions: {
-      stockThreshold: 10
+      stockThreshold: 10,
     },
     actions: {
       notifications: {
         email: true,
         sms: false,
         inApp: true,
-        recipients: ['warehouse@company.com', 'purchasing@company.com']
+        recipients: ['warehouse@company.com', 'purchasing@company.com'],
       },
       autoActions: {
         createPO: true,
         transferStock: false,
-        adjustReorderPoint: false
-      }
+        adjustReorderPoint: false,
+      },
     },
     priority: 'critical',
     createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-09-01')
+    updatedAt: new Date('2024-09-01'),
   },
   {
     id: 'rule_002',
@@ -257,74 +257,72 @@ const sampleAlertRules: AlertRule[] = [
     type: 'expiry_warning',
     isActive: true,
     conditions: {
-      daysBeforeExpiry: 30
+      daysBeforeExpiry: 30,
     },
     actions: {
       notifications: {
         email: true,
         sms: false,
         inApp: true,
-        recipients: ['operations@company.com']
+        recipients: ['operations@company.com'],
       },
       autoActions: {
         createPO: false,
         transferStock: false,
-        adjustReorderPoint: false
-      }
+        adjustReorderPoint: false,
+      },
     },
     priority: 'medium',
     createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-08-15')
-  }
-]
+    updatedAt: new Date('2024-08-15'),
+  },
+];
 
 interface StockAlertSystemProps {
-  items?: InventoryItem[]
-  onAlertAction?: (alertId: string, action: string) => void
+  items?: InventoryItem[];
+  onAlertAction?: (alertId: string, action: string) => void;
 }
 
-const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
-  items = [],
-  onAlertAction
-}) => {
-  const [alerts, setAlerts] = useState<EnhancedInventoryAlert[]>(sampleAlerts)
-  const [alertRules, setAlertRules] = useState<AlertRule[]>(sampleAlertRules)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [severityFilter, setSeverityFilter] = useState<string>("")
-  const [typeFilter, setTypeFilter] = useState<string>("")
-  const [activeTab, setActiveTab] = useState("alerts")
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [autoActionsEnabled, setAutoActionsEnabled] = useState(true)
-  const [selectedAlert, setSelectedAlert] = useState<EnhancedInventoryAlert | null>(null)
+const StockAlertSystem: React.FC<StockAlertSystemProps> = ({ items = [], onAlertAction }) => {
+  const [alerts, setAlerts] = useState<EnhancedInventoryAlert[]>(sampleAlerts);
+  const [alertRules, setAlertRules] = useState<AlertRule[]>(sampleAlertRules);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [severityFilter, setSeverityFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('alerts');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [autoActionsEnabled, setAutoActionsEnabled] = useState(true);
+  const [selectedAlert, setSelectedAlert] = useState<EnhancedInventoryAlert | null>(null);
 
   // Filter alerts
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {
-      const matchesSearch = searchQuery === "" ||
+      const matchesSearch =
+        searchQuery === '' ||
         alert.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         alert.itemSku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        alert.message.toLowerCase().includes(searchQuery.toLowerCase())
+        alert.message.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSeverity = severityFilter === "" || alert.severity === severityFilter
-      const matchesType = typeFilter === "" || alert.type === typeFilter
+      const matchesSeverity = severityFilter === '' || alert.severity === severityFilter;
+      const matchesType = typeFilter === '' || alert.type === typeFilter;
 
-      return matchesSearch && matchesSeverity && matchesType && alert.isActive
-    })
-  }, [alerts, searchQuery, severityFilter, typeFilter])
+      return matchesSearch && matchesSeverity && matchesType && alert.isActive;
+    });
+  }, [alerts, searchQuery, severityFilter, typeFilter]);
 
   // Calculate alert metrics
   const alertMetrics = useMemo(() => {
-    const activeAlerts = alerts.filter(a => a.isActive)
-    const criticalAlerts = activeAlerts.filter(a => a.severity === 'critical').length
-    const warningAlerts = activeAlerts.filter(a => a.severity === 'warning').length
-    const infoAlerts = activeAlerts.filter(a => a.severity === 'info').length
+    const activeAlerts = alerts.filter(a => a.isActive);
+    const criticalAlerts = activeAlerts.filter(a => a.severity === 'critical').length;
+    const warningAlerts = activeAlerts.filter(a => a.severity === 'warning').length;
+    const infoAlerts = activeAlerts.filter(a => a.severity === 'info').length;
 
-    const acknowledgedAlerts = activeAlerts.filter(a => a.acknowledgedBy).length
-    const unacknowledgedAlerts = activeAlerts.length - acknowledgedAlerts
+    const acknowledgedAlerts = activeAlerts.filter(a => a.acknowledgedBy).length;
+    const unacknowledgedAlerts = activeAlerts.length - acknowledgedAlerts;
 
-    const overdueAlerts = activeAlerts.filter(a =>
-      a.dueDate && new Date(a.dueDate) < new Date()
-    ).length
+    const overdueAlerts = activeAlerts.filter(
+      a => a.dueDate && new Date(a.dueDate) < new Date()
+    ).length;
 
     return {
       total: activeAlerts.length,
@@ -333,67 +331,71 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
       info: infoAlerts,
       acknowledged: acknowledgedAlerts,
       unacknowledged: unacknowledgedAlerts,
-      overdue: overdueAlerts
-    }
-  }, [alerts])
+      overdue: overdueAlerts,
+    };
+  }, [alerts]);
 
   // Handle alert acknowledgment
   const handleAcknowledgeAlert = useCallback((alertId: string) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === alertId
-        ? {
-            ...alert,
-            acknowledgedBy: 'current.user@company.com',
-            acknowledgedAt: new Date()
-          }
-        : alert
-    ))
-  }, [])
+    setAlerts(prev =>
+      prev.map(alert =>
+        alert.id === alertId
+          ? {
+              ...alert,
+              acknowledgedBy: 'current.user@company.com',
+              acknowledgedAt: new Date(),
+            }
+          : alert
+      )
+    );
+  }, []);
 
   // Handle alert resolution
   const handleResolveAlert = useCallback((alertId: string) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === alertId
-        ? { ...alert, isActive: false }
-        : alert
-    ))
-  }, [])
+    setAlerts(prev =>
+      prev.map(alert => (alert.id === alertId ? { ...alert, isActive: false } : alert))
+    );
+  }, []);
 
   // Handle auto-action execution
-  const handleExecuteAutoAction = useCallback((alertId: string, action: string) => {
+  const handleExecuteAutoAction = useCallback(
+    (alertId: string, action: string) => {
+      // Simulate action execution
+      setAlerts(prev =>
+        prev.map(alert =>
+          alert.id === alertId
+            ? {
+                ...alert,
+                suggestedAction: `${action} executed successfully`,
+                acknowledgedBy: 'system.auto@company.com',
+                acknowledgedAt: new Date(),
+              }
+            : alert
+        )
+      );
 
-    // Simulate action execution
-    setAlerts(prev => prev.map(alert =>
-      alert.id === alertId
-        ? {
-            ...alert,
-            suggestedAction: `${action} executed successfully`,
-            acknowledgedBy: 'system.auto@company.com',
-            acknowledgedAt: new Date()
-          }
-        : alert
-    ))
-
-    onAlertAction?.(alertId, action)
-  }, [onAlertAction])
+      onAlertAction?.(alertId, action);
+    },
+    [onAlertAction]
+  );
 
   const getSeverityColor = (severity: string): string => {
     const colors = {
-      critical: "bg-red-100 text-red-800 border-red-200",
-      warning: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      info: "bg-blue-100 text-blue-800 border-blue-200"
-    }
-    return colors[severity as keyof typeof colors] || colors.info
-  }
+      critical: 'bg-red-100 text-red-800 border-red-200',
+      warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      info: 'bg-blue-100 text-blue-800 border-blue-200',
+    };
+    return colors[severity as keyof typeof colors] || colors.info;
+  };
 
   const getSeverityIcon = (severity: string) => {
     const icons = {
       critical: <AlertTriangle className="h-4 w-4" />,
       warning: <Warning className="h-4 w-4" />,
-      info: <Info className="h-4 w-4" />
-    }
-    return icons[severity as keyof typeof icons] || icons.info
-  }
+      info: <Info className="h-4 w-4" />,
+    };
+    return icons[severity as keyof typeof icons] || icons.info;
+  };
 
   const getTypeIcon = (type: string) => {
     const icons = {
@@ -402,34 +404,34 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
       overstock: <Package className="h-4 w-4" />,
       expiry_warning: <Calendar className="h-4 w-4" />,
       quality_issue: <AlertCircle className="h-4 w-4" />,
-      location_discrepancy: <Target className="h-4 w-4" />
-    }
-    return icons[type as keyof typeof icons] || icons.low_stock
-  }
+      location_discrepancy: <Target className="h-4 w-4" />,
+    };
+    return icons[type as keyof typeof icons] || icons.low_stock;
+  };
 
   const getImpactColor = (impact: string): string => {
     const colors = {
-      low: "text-green-600",
-      medium: "text-yellow-600",
-      high: "text-orange-600",
-      critical: "text-red-600"
-    }
-    return colors[impact as keyof typeof colors] || colors.medium
-  }
+      low: 'text-green-600',
+      medium: 'text-yellow-600',
+      high: 'text-orange-600',
+      critical: 'text-red-600',
+    };
+    return colors[impact as keyof typeof colors] || colors.medium;
+  };
 
   // Auto-refresh alerts every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       // In a real app, this would fetch fresh alerts from the API
-    }, 30000)
+    }, 30000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Stock Alert System</h1>
           <p className="text-muted-foreground">
@@ -438,19 +440,18 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <Bell className={cn("h-4 w-4", notificationsEnabled ? "text-green-600" : "text-gray-400")} />
-            <Switch
-              checked={notificationsEnabled}
-              onCheckedChange={setNotificationsEnabled}
+            <Bell
+              className={cn('h-4 w-4', notificationsEnabled ? 'text-green-600' : 'text-gray-400')}
             />
+            <Switch checked={notificationsEnabled} onCheckedChange={setNotificationsEnabled} />
             <span className="text-sm">Notifications</span>
           </div>
           <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="mr-2 h-4 w-4" />
             Configure
           </Button>
           <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>
         </div>
@@ -467,14 +468,14 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
         {/* Active Alerts Tab */}
         <TabsContent value="alerts" className="space-y-6">
           {/* Alert Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Alerts</p>
+                    <p className="text-muted-foreground text-sm">Total Alerts</p>
                     <p className="text-2xl font-bold">{alertMetrics.total}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {alertMetrics.unacknowledged} unacknowledged
                     </p>
                   </div>
@@ -487,9 +488,9 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Critical Alerts</p>
+                    <p className="text-muted-foreground text-sm">Critical Alerts</p>
                     <p className="text-2xl font-bold text-red-600">{alertMetrics.critical}</p>
-                    <p className="text-xs text-muted-foreground">Require immediate action</p>
+                    <p className="text-muted-foreground text-xs">Require immediate action</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500" />
                 </div>
@@ -500,9 +501,9 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Overdue Alerts</p>
+                    <p className="text-muted-foreground text-sm">Overdue Alerts</p>
                     <p className="text-2xl font-bold text-orange-600">{alertMetrics.overdue}</p>
-                    <p className="text-xs text-muted-foreground">Past due date</p>
+                    <p className="text-muted-foreground text-xs">Past due date</p>
                   </div>
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
@@ -513,11 +514,11 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Auto-Actions</p>
+                    <p className="text-muted-foreground text-sm">Auto-Actions</p>
                     <p className="text-2xl font-bold text-green-600">
                       {alerts.filter(a => a.autoResolution?.enabled).length}
                     </p>
-                    <p className="text-xs text-muted-foreground">Automated responses</p>
+                    <p className="text-muted-foreground text-xs">Automated responses</p>
                   </div>
                   <Zap className="h-8 w-8 text-green-500" />
                 </div>
@@ -528,14 +529,14 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
           {/* Search and Filters */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
                     <Input
                       placeholder="Search alerts by item, SKU, or message..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={e => setSearchQuery(e.target.value)}
                       className="pl-8"
                     />
                   </div>
@@ -565,7 +566,7 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                     </SelectContent>
                   </Select>
                   <Button variant="outline" size="sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Refresh
                   </Button>
                 </div>
@@ -590,17 +591,20 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAlerts.map((alert) => (
-                    <TableRow key={alert.id} className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => setSelectedAlert(alert)}>
+                  {filteredAlerts.map(alert => (
+                    <TableRow
+                      key={alert.id}
+                      className="hover:bg-muted/50 cursor-pointer"
+                      onClick={() => setSelectedAlert(alert)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className={cn("p-2 rounded-lg", getSeverityColor(alert.severity))}>
+                          <div className={cn('rounded-lg p-2', getSeverityColor(alert.severity))}>
                             {getTypeIcon(alert.type)}
                           </div>
                           <div>
                             <div className="font-medium">{alert.title}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               {alert.message.slice(0, 50)}...
                             </div>
                           </div>
@@ -609,13 +613,13 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                       <TableCell>
                         <div>
                           <div className="font-medium">{alert.itemName}</div>
-                          <div className="text-sm text-muted-foreground">{alert.itemSku}</div>
+                          <div className="text-muted-foreground text-sm">{alert.itemSku}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{alert.currentStock} units</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Reorder: {alert.reorderPoint} | Max: {alert.maxStock}
                           </div>
                           <Progress
@@ -631,7 +635,7 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className={cn("font-medium", getImpactColor(alert.impactLevel))}>
+                        <span className={cn('font-medium', getImpactColor(alert.impactLevel))}>
                           {alert.impactLevel.toUpperCase()}
                         </span>
                       </TableCell>
@@ -658,18 +662,18 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                             </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Manual</span>
+                          <span className="text-muted-foreground text-xs">Manual</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center gap-1 justify-end">
+                        <div className="flex items-center justify-end gap-1">
                           {!alert.acknowledgedBy && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleAcknowledgeAlert(alert.id)
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleAcknowledgeAlert(alert.id);
                               }}
                             >
                               <CheckCircle className="h-4 w-4" />
@@ -679,9 +683,9 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleExecuteAutoAction(alert.id, alert.autoResolution!.action)
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleExecuteAutoAction(alert.id, alert.autoResolution!.action);
                               }}
                             >
                               <Zap className="h-4 w-4" />
@@ -690,9 +694,9 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleResolveAlert(alert.id)
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleResolveAlert(alert.id);
                             }}
                           >
                             <X className="h-4 w-4" />
@@ -709,30 +713,36 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
 
         {/* Alert Rules Tab */}
         <TabsContent value="rules" className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Alert Rules Configuration</h3>
               <p className="text-muted-foreground">Define when and how alerts are triggered</p>
             </div>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Rule
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {alertRules.map((rule) => (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {alertRules.map(rule => (
               <Card key={rule.id}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{rule.name}</span>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={
-                        rule.priority === 'critical' ? 'border-red-300 text-red-700' :
-                        rule.priority === 'high' ? 'border-orange-300 text-orange-700' :
-                        rule.priority === 'medium' ? 'border-yellow-300 text-yellow-700' :
-                        'border-gray-300 text-gray-700'
-                      }>
+                      <Badge
+                        variant="outline"
+                        className={
+                          rule.priority === 'critical'
+                            ? 'border-red-300 text-red-700'
+                            : rule.priority === 'high'
+                              ? 'border-orange-300 text-orange-700'
+                              : rule.priority === 'medium'
+                                ? 'border-yellow-300 text-yellow-700'
+                                : 'border-gray-300 text-gray-700'
+                        }
+                      >
                         {rule.priority.toUpperCase()}
                       </Badge>
                       <Switch checked={rule.isActive} />
@@ -741,12 +751,12 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">{rule.description}</p>
+                    <p className="text-muted-foreground text-sm">{rule.description}</p>
 
                     <Separator />
 
                     <div>
-                      <h5 className="font-medium mb-2">Conditions</h5>
+                      <h5 className="mb-2 font-medium">Conditions</h5>
                       <div className="space-y-1 text-sm">
                         {rule.conditions.stockThreshold && (
                           <div>Stock threshold: {rule.conditions.stockThreshold} units</div>
@@ -761,23 +771,23 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                     </div>
 
                     <div>
-                      <h5 className="font-medium mb-2">Actions</h5>
+                      <h5 className="mb-2 font-medium">Actions</h5>
                       <div className="flex flex-wrap gap-2">
                         {rule.actions.notifications.email && (
                           <Badge variant="outline">
-                            <Mail className="h-3 w-3 mr-1" />
+                            <Mail className="mr-1 h-3 w-3" />
                             Email
                           </Badge>
                         )}
                         {rule.actions.notifications.sms && (
                           <Badge variant="outline">
-                            <Phone className="h-3 w-3 mr-1" />
+                            <Phone className="mr-1 h-3 w-3" />
                             SMS
                           </Badge>
                         )}
                         {rule.actions.autoActions.createPO && (
                           <Badge variant="outline">
-                            <ShoppingCart className="h-3 w-3 mr-1" />
+                            <ShoppingCart className="mr-1 h-3 w-3" />
                             Auto PO
                           </Badge>
                         )}
@@ -807,31 +817,42 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {alerts.filter(a => !a.isActive || a.acknowledgedBy).slice(0, 10).map((alert) => (
-                  <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("p-2 rounded-lg opacity-60", getSeverityColor(alert.severity))}>
-                        {getTypeIcon(alert.type)}
-                      </div>
-                      <div>
-                        <div className="font-medium">{alert.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {alert.itemName} • {formatDate(alert.createdAt)}
+                {alerts
+                  .filter(a => !a.isActive || a.acknowledgedBy)
+                  .slice(0, 10)
+                  .map(alert => (
+                    <div
+                      key={alert.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'rounded-lg p-2 opacity-60',
+                            getSeverityColor(alert.severity)
+                          )}
+                        >
+                          {getTypeIcon(alert.type)}
+                        </div>
+                        <div>
+                          <div className="font-medium">{alert.title}</div>
+                          <div className="text-muted-foreground text-sm">
+                            {alert.itemName} • {formatDate(alert.createdAt)}
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <Badge variant="outline" className="opacity-60">
+                          {alert.acknowledgedBy ? 'Resolved' : 'Expired'}
+                        </Badge>
+                        {alert.acknowledgedAt && (
+                          <div className="text-muted-foreground mt-1 text-xs">
+                            {formatDate(alert.acknowledgedAt)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="opacity-60">
-                        {alert.acknowledgedBy ? 'Resolved' : 'Expired'}
-                      </Badge>
-                      {alert.acknowledgedAt && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {formatDate(alert.acknowledgedAt)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -839,25 +860,28 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Alert Type Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {['low_stock', 'out_of_stock', 'overstock', 'expiry_warning'].map((type) => {
-                    const count = alerts.filter(a => a.type === type && a.isActive).length
-                    const percentage = alertMetrics.total > 0 ? (count / alertMetrics.total) * 100 : 0
+                  {['low_stock', 'out_of_stock', 'overstock', 'expiry_warning'].map(type => {
+                    const count = alerts.filter(a => a.type === type && a.isActive).length;
+                    const percentage =
+                      alertMetrics.total > 0 ? (count / alertMetrics.total) * 100 : 0;
                     return (
                       <div key={type} className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="capitalize">{type.replace('_', ' ')}</span>
-                          <span>{count} ({percentage.toFixed(1)}%)</span>
+                          <span>
+                            {count} ({percentage.toFixed(1)}%)
+                          </span>
                         </div>
                         <Progress value={percentage} className="h-2" />
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>
@@ -872,11 +896,11 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-green-600">2.3h</div>
-                      <div className="text-sm text-muted-foreground">Avg Response Time</div>
+                      <div className="text-muted-foreground text-sm">Avg Response Time</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-blue-600">94%</div>
-                      <div className="text-sm text-muted-foreground">SLA Compliance</div>
+                      <div className="text-muted-foreground text-sm">SLA Compliance</div>
                     </div>
                   </div>
                   <Separator />
@@ -919,7 +943,7 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
               {/* Alert Summary */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium mb-2">Item Information</h4>
+                  <h4 className="mb-2 font-medium">Item Information</h4>
                   <div className="space-y-1 text-sm">
                     <div>Name: {selectedAlert.itemName}</div>
                     <div>SKU: {selectedAlert.itemSku}</div>
@@ -928,7 +952,7 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium mb-2">Stock Levels</h4>
+                  <h4 className="mb-2 font-medium">Stock Levels</h4>
                   <div className="space-y-1 text-sm">
                     <div>Current: {selectedAlert.currentStock} units</div>
                     <div>Reorder Point: {selectedAlert.reorderPoint} units</div>
@@ -945,16 +969,14 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
 
               {/* Alert Details */}
               <div>
-                <h4 className="font-medium mb-2">Alert Details</h4>
-                <div className="p-3 bg-muted rounded-lg text-sm">
-                  {selectedAlert.message}
-                </div>
+                <h4 className="mb-2 font-medium">Alert Details</h4>
+                <div className="bg-muted rounded-lg p-3 text-sm">{selectedAlert.message}</div>
               </div>
 
               {/* Suggested Action */}
               <div>
-                <h4 className="font-medium mb-2">Suggested Action</h4>
-                <div className="p-3 border border-blue-200 bg-blue-50 rounded-lg text-sm">
+                <h4 className="mb-2 font-medium">Suggested Action</h4>
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
                   {selectedAlert.suggestedAction}
                 </div>
               </div>
@@ -964,8 +986,8 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                 <Alert>
                   <Zap className="h-4 w-4" />
                   <AlertDescription>
-                    Auto-resolution is enabled for this alert. The system will automatically {' '}
-                    {selectedAlert.autoResolution.action.replace('_', ' ')} when stock reaches {' '}
+                    Auto-resolution is enabled for this alert. The system will automatically{' '}
+                    {selectedAlert.autoResolution.action.replace('_', ' ')} when stock reaches{' '}
                     {selectedAlert.autoResolution.threshold} units.
                   </AlertDescription>
                 </Alert>
@@ -977,33 +999,36 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      handleAcknowledgeAlert(selectedAlert.id)
-                      setSelectedAlert(null)
+                      handleAcknowledgeAlert(selectedAlert.id);
+                      setSelectedAlert(null);
                     }}
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="mr-2 h-4 w-4" />
                     Acknowledge
                   </Button>
                 )}
                 {selectedAlert.autoResolution?.enabled && (
                   <Button
                     onClick={() => {
-                      handleExecuteAutoAction(selectedAlert.id, selectedAlert.autoResolution!.action)
-                      setSelectedAlert(null)
+                      handleExecuteAutoAction(
+                        selectedAlert.id,
+                        selectedAlert.autoResolution!.action
+                      );
+                      setSelectedAlert(null);
                     }}
                   >
-                    <Zap className="h-4 w-4 mr-2" />
+                    <Zap className="mr-2 h-4 w-4" />
                     Execute Auto Action
                   </Button>
                 )}
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    handleResolveAlert(selectedAlert.id)
-                    setSelectedAlert(null)
+                    handleResolveAlert(selectedAlert.id);
+                    setSelectedAlert(null);
                   }}
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="mr-2 h-4 w-4" />
                   Resolve Alert
                 </Button>
               </div>
@@ -1012,7 +1037,7 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
         </Dialog>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default StockAlertSystem
+export default StockAlertSystem;

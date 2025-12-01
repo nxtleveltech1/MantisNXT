@@ -1,20 +1,17 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
-import { db } from '@/lib/database'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
+import { db } from '@/lib/database';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -26,11 +23,11 @@ export async function GET(
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -40,13 +37,13 @@ export async function GET(
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Check admin permissions
     const isAdmin = user.roles.some(
-      (r) => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    )
+      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
+    );
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -56,10 +53,10 @@ export async function GET(
           message: 'Admin access required',
         },
         { status: 403 }
-      )
+      );
     }
 
-    const userId = params.id
+    const userId = params.id;
 
     // Get user details
     const result = await db.query(
@@ -102,7 +99,7 @@ export async function GET(
       GROUP BY u.id, o.id, o.name
     `,
       [userId, user.orgId]
-    )
+    );
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -112,10 +109,10 @@ export async function GET(
           message: 'User not found',
         },
         { status: 404 }
-      )
+      );
     }
 
-    const row = result.rows[0]
+    const row = result.rows[0];
 
     return NextResponse.json(
       {
@@ -144,9 +141,9 @@ export async function GET(
         },
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Get user API error:', error)
+    console.error('Get user API error:', error);
 
     return NextResponse.json(
       {
@@ -155,22 +152,19 @@ export async function GET(
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -182,11 +176,11 @@ export async function PUT(
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -196,13 +190,13 @@ export async function PUT(
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Check admin permissions
     const isAdmin = user.roles.some(
-      (r) => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    )
+      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
+    );
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -212,15 +206,15 @@ export async function PUT(
           message: 'Admin access required',
         },
         { status: 403 }
-      )
+      );
     }
 
-    const userId = params.id
-    const body = await request.json()
+    const userId = params.id;
+    const body = await request.json();
 
     // Update user using auth provider
-    const { authProvider } = await import('@/lib/auth/mock-provider')
-    await authProvider.updateUser(userId, body as any)
+    const { authProvider } = await import('@/lib/auth/mock-provider');
+    await authProvider.updateUser(userId, body as any);
 
     return NextResponse.json(
       {
@@ -228,9 +222,9 @@ export async function PUT(
         message: 'User updated successfully',
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Update user API error:', error)
+    console.error('Update user API error:', error);
 
     return NextResponse.json(
       {
@@ -239,22 +233,19 @@ export async function PUT(
         message: error instanceof Error ? error.message : 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -266,11 +257,11 @@ export async function DELETE(
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -280,13 +271,13 @@ export async function DELETE(
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Check admin permissions
     const isAdmin = user.roles.some(
-      (r) => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    )
+      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
+    );
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -296,10 +287,10 @@ export async function DELETE(
           message: 'Admin access required',
         },
         { status: 403 }
-      )
+      );
     }
 
-    const userId = params.id
+    const userId = params.id;
 
     // Don't allow deleting yourself
     if (userId === user.id) {
@@ -310,7 +301,7 @@ export async function DELETE(
           message: 'Cannot delete your own account',
         },
         { status: 400 }
-      )
+      );
     }
 
     // Soft delete user (set is_active = false)
@@ -321,7 +312,7 @@ export async function DELETE(
       WHERE id = $1
     `,
       [userId]
-    )
+    );
 
     return NextResponse.json(
       {
@@ -329,9 +320,9 @@ export async function DELETE(
         message: 'User deleted successfully',
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Delete user API error:', error)
+    console.error('Delete user API error:', error);
 
     return NextResponse.json(
       {
@@ -340,10 +331,9 @@ export async function DELETE(
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

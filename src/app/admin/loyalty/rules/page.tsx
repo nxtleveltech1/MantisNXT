@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import RuleEngineBuilder from "@/components/loyalty/admin/RuleEngineBuilder"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import RuleEngineBuilder from '@/components/loyalty/admin/RuleEngineBuilder';
 
 /**
  * Loyalty Rules Admin Page
@@ -13,12 +13,9 @@ import RuleEngineBuilder from "@/components/loyalty/admin/RuleEngineBuilder"
 export default function LoyaltyRulesPage() {
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "Loyalty & Rewards", href: "/admin/loyalty" },
-        { label: "Rules" },
-      ]}
+      breadcrumbs={[{ label: 'Loyalty & Rewards', href: '/admin/loyalty' }, { label: 'Rules' }]}
     >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Loyalty Rules</h1>
           <p className="text-muted-foreground">
@@ -29,5 +26,5 @@ export default function LoyaltyRulesPage() {
         <RuleEngineBuilder />
       </div>
     </AppLayout>
-  )
+  );
 }

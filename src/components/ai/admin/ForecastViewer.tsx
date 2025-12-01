@@ -82,9 +82,7 @@ interface Product {
 export default function ForecastViewer() {
   const queryClient = useQueryClient();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
-  const [selectedHorizon, setSelectedHorizon] = useState<
-    'daily' | 'weekly' | 'monthly'
-  >('daily');
+  const [selectedHorizon, setSelectedHorizon] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Fetch REAL products from inventory
   const { data: products = [] } = useQuery<Product[]>({
@@ -163,8 +161,15 @@ export default function ForecastViewer() {
     if (!forecastsData?.forecasts.length) return;
 
     const csvData = [
-      ['Date', 'Predicted Quantity', 'Lower Bound', 'Upper Bound', 'Actual Quantity', 'Accuracy Score'],
-      ...forecastsData.forecasts.map((f) => [
+      [
+        'Date',
+        'Predicted Quantity',
+        'Lower Bound',
+        'Upper Bound',
+        'Actual Quantity',
+        'Accuracy Score',
+      ],
+      ...forecastsData.forecasts.map(f => [
         f.forecast_date,
         f.predicted_quantity,
         f.lower_bound,
@@ -174,7 +179,7 @@ export default function ForecastViewer() {
       ]),
     ];
 
-    const csv = csvData.map((row) => row.join(',')).join('\n');
+    const csv = csvData.map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -186,21 +191,20 @@ export default function ForecastViewer() {
     toast.success('Forecast exported successfully');
   };
 
-  const selectedProduct = products.find((p) => p.id === selectedProductId);
+  const selectedProduct = products.find(p => p.id === selectedProductId);
 
   // Transform forecasts into chart data format
-  const chartData = forecastsData?.forecasts.map((f) => ({
-    date: f.forecast_date,
-    predicted_quantity: f.predicted_quantity,
-    lower_bound: f.lower_bound,
-    upper_bound: f.upper_bound,
-    actual_quantity: f.actual_quantity,
-  })) || [];
+  const chartData =
+    forecastsData?.forecasts.map(f => ({
+      date: f.forecast_date,
+      predicted_quantity: f.predicted_quantity,
+      lower_bound: f.lower_bound,
+      upper_bound: f.upper_bound,
+      actual_quantity: f.actual_quantity,
+    })) || [];
 
   // Get current horizon metrics
-  const currentMetrics = accuracyMetrics?.by_horizon.find(
-    (m) => m.horizon === selectedHorizon
-  );
+  const currentMetrics = accuracyMetrics?.by_horizon.find(m => m.horizon === selectedHorizon);
 
   return (
     <div className="space-y-6">
@@ -239,7 +243,7 @@ export default function ForecastViewer() {
                   <SelectValue placeholder="Select a product..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {products.map((product) => (
+                  {products.map(product => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name} ({product.sku})
                     </SelectItem>
@@ -249,7 +253,10 @@ export default function ForecastViewer() {
             </div>
             <div className="space-y-2">
               <Label>Horizon</Label>
-              <Tabs value={selectedHorizon} onValueChange={(v) => setSelectedHorizon(v as 'daily' | 'weekly' | 'monthly')}>
+              <Tabs
+                value={selectedHorizon}
+                onValueChange={v => setSelectedHorizon(v as 'daily' | 'weekly' | 'monthly')}
+              >
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="daily">Daily</TabsTrigger>
                   <TabsTrigger value="weekly">Weekly</TabsTrigger>
@@ -269,14 +276,15 @@ export default function ForecastViewer() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Average Accuracy</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {(currentMetrics.average_accuracy * 100).toFixed(1)}%
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {currentMetrics.forecasts_with_actuals} of {currentMetrics.total_forecasts} with actuals
+                  <p className="text-muted-foreground text-xs">
+                    {currentMetrics.forecasts_with_actuals} of {currentMetrics.total_forecasts} with
+                    actuals
                   </p>
                 </CardContent>
               </Card>
@@ -284,26 +292,26 @@ export default function ForecastViewer() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">MAPE</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Calendar className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {(currentMetrics.mean_absolute_percentage_error * 100).toFixed(2)}%
                   </div>
-                  <p className="text-xs text-muted-foreground">Mean Absolute % Error</p>
+                  <p className="text-muted-foreground text-xs">Mean Absolute % Error</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">MAE</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Calendar className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {currentMetrics.mean_absolute_error.toFixed(2)}
                   </div>
-                  <p className="text-xs text-muted-foreground">Mean Absolute Error</p>
+                  <p className="text-muted-foreground text-xs">Mean Absolute Error</p>
                 </CardContent>
               </Card>
             </div>
@@ -318,9 +326,7 @@ export default function ForecastViewer() {
                   <CardDescription>
                     {selectedProduct?.name} - {selectedHorizon} forecast
                     {forecastsData?.forecasts.length && (
-                      <span className="ml-2">
-                        ({forecastsData.forecasts.length} data points)
-                      </span>
+                      <span className="ml-2">({forecastsData.forecasts.length} data points)</span>
                     )}
                   </CardDescription>
                 </div>
@@ -353,19 +359,16 @@ export default function ForecastViewer() {
             <CardContent>
               {forecastLoading ? (
                 <div className="flex items-center justify-center p-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                 </div>
               ) : chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(date) => format(new Date(date), 'MMM d')}
-                    />
+                    <XAxis dataKey="date" tickFormatter={date => format(new Date(date), 'MMM d')} />
                     <YAxis />
                     <Tooltip
-                      labelFormatter={(date) => format(new Date(date), 'PPP')}
+                      labelFormatter={date => format(new Date(date), 'PPP')}
                       formatter={(value: number) => [value.toFixed(0), '']}
                     />
                     <Legend />
@@ -414,7 +417,9 @@ export default function ForecastViewer() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center p-12">
-                  <p className="text-muted-foreground">No forecast data available. Generate a forecast to get started.</p>
+                  <p className="text-muted-foreground">
+                    No forecast data available. Generate a forecast to get started.
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -429,25 +434,21 @@ export default function ForecastViewer() {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <Label className="text-sm text-muted-foreground">Total Forecasts</Label>
-                    <div className="mt-1 text-sm font-medium">
-                      {forecastsData.forecasts.length}
-                    </div>
+                    <Label className="text-muted-foreground text-sm">Total Forecasts</Label>
+                    <div className="mt-1 text-sm font-medium">{forecastsData.forecasts.length}</div>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">Horizon</Label>
-                    <div className="mt-1 text-sm font-medium capitalize">
-                      {selectedHorizon}
-                    </div>
+                    <Label className="text-muted-foreground text-sm">Horizon</Label>
+                    <div className="mt-1 text-sm font-medium capitalize">{selectedHorizon}</div>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">With Actuals</Label>
+                    <Label className="text-muted-foreground text-sm">With Actuals</Label>
                     <div className="mt-1 text-sm font-medium">
                       {forecastsData.forecasts.filter(f => f.actual_quantity !== null).length}
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm text-muted-foreground">Algorithm</Label>
+                    <Label className="text-muted-foreground text-sm">Algorithm</Label>
                     <div className="mt-1 text-sm font-medium">
                       {forecastsData.forecasts[0]?.algorithm_used || 'N/A'}
                     </div>
@@ -456,8 +457,8 @@ export default function ForecastViewer() {
 
                 {forecastsData.forecasts[0]?.metadata && (
                   <div className="mt-4">
-                    <Label className="text-sm text-muted-foreground">AI Metadata</Label>
-                    <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-32">
+                    <Label className="text-muted-foreground text-sm">AI Metadata</Label>
+                    <pre className="bg-muted mt-1 max-h-32 overflow-auto rounded-md p-4 text-sm">
                       {JSON.stringify(forecastsData.forecasts[0].metadata, null, 2)}
                     </pre>
                   </div>

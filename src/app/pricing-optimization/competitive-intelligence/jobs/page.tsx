@@ -112,14 +112,12 @@ export default function ScrapingJobsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Active Jobs</CardTitle>
-            <CardDescription>
-              Manage scheduled and on-demand scraping jobs
-            </CardDescription>
+            <CardDescription>Manage scheduled and on-demand scraping jobs</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : jobs.length > 0 ? (
               <Table>
@@ -135,13 +133,11 @@ export default function ScrapingJobsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {jobs.map((job) => (
+                  {jobs.map(job => (
                     <TableRow key={job.job_id}>
                       <TableCell className="font-medium">{job.job_name}</TableCell>
                       <TableCell>
-                        {job.competitor_name || (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        {job.competitor_name || <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{job.schedule_type}</Badge>
@@ -151,7 +147,7 @@ export default function ScrapingJobsPage() {
                         <div className="flex items-center gap-2">
                           {job.last_run_at ? (
                             <>
-                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              <Clock className="text-muted-foreground h-3 w-3" />
                               <span className="text-sm">{formatDate(job.last_run_at)}</span>
                             </>
                           ) : (
@@ -169,7 +165,9 @@ export default function ScrapingJobsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/pricing-optimization/competitive-intelligence/jobs/${job.job_id}`}>
+                            <Link
+                              href={`/pricing-optimization/competitive-intelligence/jobs/${job.job_id}`}
+                            >
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>
@@ -193,7 +191,7 @@ export default function ScrapingJobsPage() {
                               // TODO: Implement delete
                             }}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -203,9 +201,9 @@ export default function ScrapingJobsPage() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">No scraping jobs yet</p>
-                <p className="text-sm text-muted-foreground mb-4">
+                <AlertCircle className="text-muted-foreground mb-4 h-12 w-12" />
+                <p className="mb-2 text-lg font-medium">No scraping jobs yet</p>
+                <p className="text-muted-foreground mb-4 text-sm">
                   Create a scraping job to start collecting competitive intelligence data
                 </p>
                 <Button asChild>
@@ -222,4 +220,3 @@ export default function ScrapingJobsPage() {
     </AppLayout>
   );
 }
-

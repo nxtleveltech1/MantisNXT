@@ -5,7 +5,7 @@
 
 export const runtime = 'nodejs';
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query as dbQuery } from '@/lib/database/unified-connection';
 import type { TaggingStats } from '@/lib/cmm/ai-tagging/types';
@@ -20,14 +20,18 @@ export async function GET(request: NextRequest) {
         AND table_name = 'supplier_product'
         AND column_name IN ('ai_tagging_status', 'ai_tag_confidence', 'ai_tagged_at', 'ai_tag_provider')
     `;
-    
+
     const columnCheck = await dbQuery<{ column_name: string }>(columnCheckSql);
     const existingColumns = new Set(columnCheck.rows.map(r => r.column_name));
-    
+
     if (existingColumns.size < 4) {
-      const missing = ['ai_tagging_status', 'ai_tag_confidence', 'ai_tagged_at', 'ai_tag_provider']
-        .filter(col => !existingColumns.has(col));
-      
+      const missing = [
+        'ai_tagging_status',
+        'ai_tag_confidence',
+        'ai_tagged_at',
+        'ai_tag_provider',
+      ].filter(col => !existingColumns.has(col));
+
       console.error('[API] Missing AI tagging columns:', missing);
       return NextResponse.json(
         {
@@ -185,4 +189,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

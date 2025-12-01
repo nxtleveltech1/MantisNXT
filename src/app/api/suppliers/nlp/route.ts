@@ -1,25 +1,28 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { supplier_id, instruction } = body
+    const body = await request.json();
+    const { supplier_id, instruction } = body;
 
     if (!supplier_id || !instruction) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'supplier_id and instruction are required' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'supplier_id and instruction are required',
+        },
+        { status: 400 }
+      );
     }
 
     // Mock NLP processing - in a real implementation, this would call an AI service
     // For now, return a basic rule configuration based on common patterns
-    let ruleConfig = {}
-    
+    let ruleConfig = {};
+
     // Simple pattern matching for common rule types
-    const instructionLower = instruction.toLowerCase()
-    
+    const instructionLower = instruction.toLowerCase();
+
     if (instructionLower.includes('join') || instructionLower.includes('merge')) {
       ruleConfig = {
         operation: 'join',
@@ -27,9 +30,9 @@ export async function POST(request: NextRequest) {
         description: 'Join datasets based on specified columns',
         parameters: {
           join_type: 'inner',
-          join_columns: ['Product Title', 'Description']
-        }
-      }
+          join_columns: ['Product Title', 'Description'],
+        },
+      };
     } else if (instructionLower.includes('validate') || instructionLower.includes('check')) {
       ruleConfig = {
         operation: 'validate',
@@ -37,9 +40,9 @@ export async function POST(request: NextRequest) {
         description: 'Validate data against specified criteria',
         parameters: {
           validation_type: 'required_fields',
-          required_columns: ['SKU', 'Price']
-        }
-      }
+          required_columns: ['SKU', 'Price'],
+        },
+      };
     } else if (instructionLower.includes('map') || instructionLower.includes('transform')) {
       ruleConfig = {
         operation: 'map',
@@ -49,10 +52,10 @@ export async function POST(request: NextRequest) {
           mappings: {
             'Part#': 'SKU',
             'NETT EXCL': 'priceExVat',
-            'Materials': 'category'
-          }
-        }
-      }
+            Materials: 'category',
+          },
+        },
+      };
     } else {
       // Default transformation rule
       ruleConfig = {
@@ -60,21 +63,24 @@ export async function POST(request: NextRequest) {
         type: 'data_transformation',
         description: instruction,
         parameters: {
-          transformation_steps: []
-        }
-      }
+          transformation_steps: [],
+        },
+      };
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: ruleConfig,
-      message: 'Rule configuration generated successfully'
-    })
+      message: 'Rule configuration generated successfully',
+    });
   } catch (error: any) {
-    console.error('NLP rule generation API error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error?.message || 'Failed to generate rule configuration' 
-    }, { status: 500 })
+    console.error('NLP rule generation API error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error?.message || 'Failed to generate rule configuration',
+      },
+      { status: 500 }
+    );
   }
 }

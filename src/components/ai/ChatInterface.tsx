@@ -1,19 +1,13 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import {
   Brain,
@@ -40,62 +34,62 @@ import {
   Clock,
   Maximize2,
   Minimize2,
-  ShieldCheck
-} from "lucide-react"
+  ShieldCheck,
+} from 'lucide-react';
 
 // Types for AI Chat System
 interface ChatMessage {
-  id: string
-  content: string
-  type: 'user' | 'ai' | 'system'
-  timestamp: Date
+  id: string;
+  content: string;
+  type: 'user' | 'ai' | 'system';
+  timestamp: Date;
   metadata?: {
-    confidence?: number
-    sources?: string[]
-    actions?: ChatAction[]
-    suggestions?: string[]
-    context?: unknown
-  }
+    confidence?: number;
+    sources?: string[];
+    actions?: ChatAction[];
+    suggestions?: string[];
+    context?: unknown;
+  };
   reactions?: {
-    helpful?: boolean
-    accurate?: boolean
-  }
+    helpful?: boolean;
+    accurate?: boolean;
+  };
 }
 
 interface ChatAction {
-  id: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  action: string
-  data?: unknown
-  variant?: 'default' | 'primary' | 'secondary' | 'destructive'
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  action: string;
+  data?: unknown;
+  variant?: 'default' | 'primary' | 'secondary' | 'destructive';
 }
 
 interface QuickPrompt {
-  id: string
-  text: string
-  category: string
-  icon: React.ComponentType<{ className?: string }>
-  description: string
+  id: string;
+  text: string;
+  category: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
 }
 
 interface AIContext {
-  currentProject?: string
-  recentQueries?: string[]
+  currentProject?: string;
+  recentQueries?: string[];
   userPreferences?: {
-    verbosity: 'concise' | 'detailed' | 'comprehensive'
-    focusAreas: string[]
-    alertThreshold: number
-  }
-  sessionData?: unknown
+    verbosity: 'concise' | 'detailed' | 'comprehensive';
+    focusAreas: string[];
+    alertThreshold: number;
+  };
+  sessionData?: unknown;
 }
 
 interface AIChatInterfaceProps {
-  onActionTrigger?: (action: ChatAction) => void
-  initialContext?: AIContext
-  compactMode?: boolean
-  enableVoice?: boolean
-  enableFileUpload?: boolean
+  onActionTrigger?: (action: ChatAction) => void;
+  initialContext?: AIContext;
+  compactMode?: boolean;
+  enableVoice?: boolean;
+  enableFileUpload?: boolean;
 }
 
 const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
@@ -103,22 +97,22 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   initialContext,
   compactMode = false,
   enableVoice = true,
-  enableFileUpload = true
+  enableFileUpload = true,
 }) => {
   // State Management
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [inputMessage, setInputMessage] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [context, setContext] = useState<AIContext>(initialContext || {})
-  const [isExpanded, setIsExpanded] = useState(!compactMode)
-  const [error, setError] = useState<string | null>(null)
-  const [typingIndicator, setTypingIndicator] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [context, setContext] = useState<AIContext>(initialContext || {});
+  const [isExpanded, setIsExpanded] = useState(!compactMode);
+  const [error, setError] = useState<string | null>(null);
+  const [typingIndicator, setTypingIndicator] = useState(false);
 
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const speechRecognition = useRef<unknown>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const speechRecognition = useRef<unknown>(null);
 
   // Quick prompts for common queries
   const quickPrompts: QuickPrompt[] = [
@@ -127,44 +121,44 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       text: 'Analyze our top suppliers performance',
       category: 'Analysis',
       icon: BarChart3,
-      description: 'Get comprehensive supplier performance analytics'
+      description: 'Get comprehensive supplier performance analytics',
     },
     {
       id: 'cost_optimization',
       text: 'Find cost optimization opportunities',
       category: 'Optimization',
       icon: DollarSign,
-      description: 'Identify potential savings in procurement'
+      description: 'Identify potential savings in procurement',
     },
     {
       id: 'risk_assessment',
       text: 'Show current supply chain risks',
       category: 'Risk',
       icon: AlertTriangle,
-      description: 'Review and assess supply chain vulnerabilities'
+      description: 'Review and assess supply chain vulnerabilities',
     },
     {
       id: 'market_trends',
       text: 'What are the latest market trends?',
       category: 'Intelligence',
       icon: TrendingUp,
-      description: 'Get current market intelligence and trends'
+      description: 'Get current market intelligence and trends',
     },
     {
       id: 'supplier_recommendation',
       text: 'Recommend new suppliers for technology products',
       category: 'Discovery',
       icon: Building2,
-      description: 'AI-powered supplier discovery and recommendations'
+      description: 'AI-powered supplier discovery and recommendations',
     },
     {
       id: 'compliance_check',
       text: 'Check compliance status across suppliers',
       category: 'Compliance',
       icon: ShieldCheck,
-      description: 'Review supplier compliance and certifications'
-    }
-  ]
+      description: 'Review supplier compliance and certifications',
+    },
+  ];
 
   // Initialize chat with welcome message
   useEffect(() => {
@@ -179,61 +173,64 @@ How can I assist you today?`,
         metadata: {
           confidence: 100,
           suggestions: [
-            "Analyze supplier performance",
-            "Find cost savings opportunities",
-            "Check supply chain risks",
-            "Discover new suppliers"
-          ]
-        }
-      }
-      setMessages([welcomeMessage])
+            'Analyze supplier performance',
+            'Find cost savings opportunities',
+            'Check supply chain risks',
+            'Discover new suppliers',
+          ],
+        },
+      };
+      setMessages([welcomeMessage]);
     }
-  }, [messages.length])
+  }, [messages.length]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, typingIndicator])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, typingIndicator]);
 
   // Initialize speech recognition
   useEffect(() => {
     if (enableVoice && 'webkitSpeechRecognition' in window) {
-      speechRecognition.current = new (window as unknown).webkitSpeechRecognition()
-      speechRecognition.current.continuous = false
-      speechRecognition.current.interimResults = false
-      speechRecognition.current.lang = 'en-US'
+      speechRecognition.current = new (window as unknown).webkitSpeechRecognition();
+      speechRecognition.current.continuous = false;
+      speechRecognition.current.interimResults = false;
+      speechRecognition.current.lang = 'en-US';
 
       speechRecognition.current.onresult = (event: unknown) => {
-        const transcript = event.results[0][0].transcript
-        setInputMessage(transcript)
-        setIsListening(false)
-      }
+        const transcript = event.results[0][0].transcript;
+        setInputMessage(transcript);
+        setIsListening(false);
+      };
 
       speechRecognition.current.onerror = () => {
-        setIsListening(false)
-        setError("Voice recognition error. Please try again.")
-      }
+        setIsListening(false);
+        setError('Voice recognition error. Please try again.');
+      };
     }
-  }, [enableVoice])
+  }, [enableVoice]);
 
   // Process AI message with simulated AI responses
   const processAIMessage = useCallback(async (userMessage: string) => {
-    setIsProcessing(true)
-    setTypingIndicator(true)
-    setError(null)
+    setIsProcessing(true);
+    setTypingIndicator(true);
+    setError(null);
 
     try {
       // Simulate AI processing delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Generate contextual AI response based on user input
-      let aiResponse = ""
-      let actions: ChatAction[] = []
-      let suggestions: string[] = []
-      const confidence = 85
+      let aiResponse = '';
+      let actions: ChatAction[] = [];
+      let suggestions: string[] = [];
+      const confidence = 85;
 
       // Analyze user intent and generate appropriate response
-      if (userMessage.toLowerCase().includes('supplier') && userMessage.toLowerCase().includes('performance')) {
+      if (
+        userMessage.toLowerCase().includes('supplier') &&
+        userMessage.toLowerCase().includes('performance')
+      ) {
         aiResponse = `I've analyzed your supplier performance data. Here's what I found:
 
 **Top Performing Suppliers:**
@@ -248,7 +245,7 @@ How can I assist you today?`,
 **Recommendations:**
 • Consider expanding relationship with TechFlow Solutions
 • Review underperforming suppliers for potential replacement
-• Implement performance-based incentives`
+• Implement performance-based incentives`;
 
         actions = [
           {
@@ -256,24 +253,26 @@ How can I assist you today?`,
             label: 'View Full Report',
             icon: FileText,
             action: 'open_supplier_report',
-            variant: 'primary'
+            variant: 'primary',
           },
           {
             id: 'export_data',
             label: 'Export Data',
             icon: Download,
             action: 'export_performance_data',
-            variant: 'secondary'
-          }
-        ]
+            variant: 'secondary',
+          },
+        ];
 
         suggestions = [
-          "Show me risk analysis for these suppliers",
-          "Compare costs with market benchmarks",
-          "Find alternative suppliers"
-        ]
-
-      } else if (userMessage.toLowerCase().includes('cost') && userMessage.toLowerCase().includes('optimization')) {
+          'Show me risk analysis for these suppliers',
+          'Compare costs with market benchmarks',
+          'Find alternative suppliers',
+        ];
+      } else if (
+        userMessage.toLowerCase().includes('cost') &&
+        userMessage.toLowerCase().includes('optimization')
+      ) {
         aiResponse = `I've identified several cost optimization opportunities:
 
 **Immediate Opportunities:**
@@ -289,7 +288,7 @@ How can I assist you today?`,
    - Reduce safety stock by 15% using demand forecasting
    - Optimize reorder points for top 50 SKUs
 
-**Total Potential Savings: $342,000**`
+**Total Potential Savings: $342,000**`;
 
         actions = [
           {
@@ -297,23 +296,22 @@ How can I assist you today?`,
             label: 'Create Action Plan',
             icon: Target,
             action: 'create_optimization_plan',
-            variant: 'primary'
+            variant: 'primary',
           },
           {
             id: 'schedule_meetings',
             label: 'Schedule Negotiations',
             icon: Clock,
             action: 'schedule_supplier_meetings',
-            variant: 'secondary'
-          }
-        ]
+            variant: 'secondary',
+          },
+        ];
 
         suggestions = [
-          "Show me detailed savings breakdown",
-          "Create implementation timeline",
-          "Analyze risk of consolidation"
-        ]
-
+          'Show me detailed savings breakdown',
+          'Create implementation timeline',
+          'Analyze risk of consolidation',
+        ];
       } else if (userMessage.toLowerCase().includes('risk')) {
         aiResponse = `**Supply Chain Risk Analysis:**
 
@@ -331,7 +329,7 @@ How can I assist you today?`,
 • Strong backup supplier network for 80% of categories
 • Excellent compliance track record
 
-**Risk Score: Medium (6.2/10)**`
+**Risk Score: Medium (6.2/10)**`;
 
         actions = [
           {
@@ -339,23 +337,22 @@ How can I assist you today?`,
             label: 'Create Mitigation Plan',
             icon: ShieldCheck,
             action: 'create_risk_plan',
-            variant: 'primary'
+            variant: 'primary',
           },
           {
             id: 'assess_alternatives',
             label: 'Find Alternative Suppliers',
             icon: Search,
             action: 'search_alternative_suppliers',
-            variant: 'secondary'
-          }
-        ]
+            variant: 'secondary',
+          },
+        ];
 
         suggestions = [
-          "Show detailed risk scores by category",
-          "Create supplier diversification plan",
-          "Set up risk monitoring alerts"
-        ]
-
+          'Show detailed risk scores by category',
+          'Create supplier diversification plan',
+          'Set up risk monitoring alerts',
+        ];
       } else {
         // Generic helpful response
         aiResponse = `I understand you're looking for assistance with procurement and supplier management. I can help you with:
@@ -366,14 +363,14 @@ How can I assist you today?`,
 • **Market Intelligence** - Latest trends, pricing, and supplier insights
 • **Procurement Planning** - Strategic sourcing and supplier discovery
 
-What specific area would you like me to focus on?`
+What specific area would you like me to focus on?`;
 
         suggestions = [
-          "Analyze supplier performance",
-          "Find cost savings opportunities",
-          "Check supply chain risks",
-          "Discover new suppliers"
-        ]
+          'Analyze supplier performance',
+          'Find cost savings opportunities',
+          'Check supply chain risks',
+          'Discover new suppliers',
+        ];
       }
 
       const aiMessage: ChatMessage = {
@@ -384,109 +381,112 @@ What specific area would you like me to focus on?`
         metadata: {
           confidence,
           actions,
-          suggestions
-        }
-      }
+          suggestions,
+        },
+      };
 
-      setMessages(prev => [...prev, aiMessage])
-
+      setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
-      setError("I encountered an error processing your request. Please try again.")
-      console.error("AI processing error:", err)
+      setError('I encountered an error processing your request. Please try again.');
+      console.error('AI processing error:', err);
     } finally {
-      setIsProcessing(false)
-      setTypingIndicator(false)
+      setIsProcessing(false);
+      setTypingIndicator(false);
     }
-  }, [])
+  }, []);
 
   // Send message handler
   const sendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || isProcessing) return
+    if (!inputMessage.trim() || isProcessing) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: inputMessage.trim(),
       type: 'user',
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    };
 
-    setMessages(prev => [...prev, userMessage])
-    setInputMessage("")
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
 
     // Process AI response
-    await processAIMessage(userMessage.content)
-  }, [inputMessage, isProcessing, processAIMessage])
+    await processAIMessage(userMessage.content);
+  }, [inputMessage, isProcessing, processAIMessage]);
 
   // Handle quick prompt selection
   const handleQuickPrompt = (prompt: QuickPrompt) => {
-    setInputMessage(prompt.text)
-    inputRef.current?.focus()
-  }
+    setInputMessage(prompt.text);
+    inputRef.current?.focus();
+  };
 
   // Handle voice input
   const toggleVoiceInput = () => {
-    if (!speechRecognition.current) return
+    if (!speechRecognition.current) return;
 
     if (isListening) {
-      speechRecognition.current.stop()
-      setIsListening(false)
+      speechRecognition.current.stop();
+      setIsListening(false);
     } else {
-      speechRecognition.current.start()
-      setIsListening(true)
+      speechRecognition.current.start();
+      setIsListening(true);
     }
-  }
+  };
 
   // Handle message reactions
   const handleReaction = (messageId: string, reaction: 'helpful' | 'accurate') => {
-    setMessages(prev => prev.map(msg =>
-      msg.id === messageId
-        ? {
-            ...msg,
-            reactions: {
-              ...msg.reactions,
-              [reaction]: !msg.reactions?.[reaction]
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              reactions: {
+                ...msg.reactions,
+                [reaction]: !msg.reactions?.[reaction],
+              },
             }
-          }
-        : msg
-    ))
-  }
+          : msg
+      )
+    );
+  };
 
   // Handle action triggers
   const handleActionTrigger = (action: ChatAction) => {
-    onActionTrigger?.(action)
+    onActionTrigger?.(action);
 
     // Add system message for action
     const systemMessage: ChatMessage = {
       id: Date.now().toString(),
       content: `Action triggered: ${action.label}`,
       type: 'system',
-      timestamp: new Date()
-    }
-    setMessages(prev => [...prev, systemMessage])
-  }
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, systemMessage]);
+  };
 
   return (
     <TooltipProvider>
-      <div className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden`}>
+      <div
+        className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl`}
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-4">
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-4 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                className="rounded-lg bg-white/20 p-2 backdrop-blur-sm"
               >
                 <Brain className="h-5 w-5" />
               </motion.div>
               <div>
-                <h2 className="font-bold text-lg">AI Assistant</h2>
-                <p className="text-indigo-100 text-sm">Procurement Intelligence</p>
+                <h2 className="text-lg font-bold">AI Assistant</h2>
+                <p className="text-sm text-indigo-100">Procurement Intelligence</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Sparkles className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="border-white/30 bg-white/20 text-white">
+                <Sparkles className="mr-1 h-3 w-3" />
                 Online
               </Badge>
               <Button
@@ -506,14 +506,9 @@ What specific area would you like me to focus on?`
           <Alert className="m-4 border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              <div className="font-semibold mb-1">Error</div>
+              <div className="mb-1 font-semibold">Error</div>
               <div>{error}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setError(null)}
-              >
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setError(null)}>
                 Dismiss
               </Button>
             </AlertDescription>
@@ -521,7 +516,7 @@ What specific area would you like me to focus on?`
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               <AnimatePresence>
@@ -534,15 +529,17 @@ What specific area would you like me to focus on?`
                     transition={{ delay: index * 0.1 }}
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[80%] ${
-                      message.type === 'user'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl rounded-tr-sm'
-                        : message.type === 'system'
-                        ? 'bg-gray-100 text-gray-600 rounded-lg text-center text-sm py-2'
-                        : 'bg-gray-50 text-gray-800 rounded-2xl rounded-tl-sm'
-                    } p-4 shadow-lg`}>
+                    <div
+                      className={`max-w-[80%] ${
+                        message.type === 'user'
+                          ? 'rounded-2xl rounded-tr-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                          : message.type === 'system'
+                            ? 'rounded-lg bg-gray-100 py-2 text-center text-sm text-gray-600'
+                            : 'rounded-2xl rounded-tl-sm bg-gray-50 text-gray-800'
+                      } p-4 shadow-lg`}
+                    >
                       {/* Message Header */}
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="mb-2 flex items-center gap-2">
                         {message.type === 'user' ? (
                           <User className="h-4 w-4" />
                         ) : message.type === 'ai' ? (
@@ -559,51 +556,55 @@ What specific area would you like me to focus on?`
                       </div>
 
                       {/* Message Content */}
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
                       </div>
 
                       {/* AI Message Actions */}
-                      {message.type === 'ai' && message.metadata?.actions && message.metadata.actions.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {message.metadata.actions.map((action) => (
-                            <Button
-                              key={action.id}
-                              variant={action.variant || "outline"}
-                              size="sm"
-                              onClick={() => handleActionTrigger(action)}
-                              className="text-xs"
-                            >
-                              <action.icon className="h-3 w-3 mr-1" />
-                              {action.label}
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Suggestions */}
-                      {message.type === 'ai' && message.metadata?.suggestions && message.metadata.suggestions.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">You might also ask:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {message.metadata.suggestions.map((suggestion, i) => (
+                      {message.type === 'ai' &&
+                        message.metadata?.actions &&
+                        message.metadata.actions.length > 0 && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {message.metadata.actions.map(action => (
                               <Button
-                                key={i}
-                                variant="ghost"
+                                key={action.id}
+                                variant={action.variant || 'outline'}
                                 size="sm"
-                                onClick={() => setInputMessage(suggestion)}
-                                className="text-xs h-auto py-1 px-2 text-gray-600 hover:text-gray-800"
+                                onClick={() => handleActionTrigger(action)}
+                                className="text-xs"
                               >
-                                &ldquo;{suggestion}&rdquo;
+                                <action.icon className="mr-1 h-3 w-3" />
+                                {action.label}
                               </Button>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        )}
+
+                      {/* Suggestions */}
+                      {message.type === 'ai' &&
+                        message.metadata?.suggestions &&
+                        message.metadata.suggestions.length > 0 && (
+                          <div className="mt-4 border-t border-gray-200 pt-3">
+                            <p className="mb-2 text-xs text-gray-600">You might also ask:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {message.metadata.suggestions.map((suggestion, i) => (
+                                <Button
+                                  key={i}
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setInputMessage(suggestion)}
+                                  className="h-auto px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
+                                >
+                                  &ldquo;{suggestion}&rdquo;
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                       {/* Message Actions */}
                       {message.type === 'ai' && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
+                        <div className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-3">
                           <div className="flex gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -663,20 +664,20 @@ What specific area would you like me to focus on?`
                     exit={{ opacity: 0, y: -10 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-gray-100 rounded-2xl rounded-tl-sm p-4 shadow-lg">
+                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 p-4 shadow-lg">
                       <div className="flex items-center gap-2">
                         <Bot className="h-4 w-4 text-indigo-600" />
                         <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
+                          {[0, 1, 2].map(i => (
                             <motion.div
                               key={i}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{
                                 duration: 1,
                                 repeat: Infinity,
-                                delay: i * 0.2
+                                delay: i * 0.2,
                               }}
-                              className="w-2 h-2 bg-indigo-400 rounded-full"
+                              className="h-2 w-2 rounded-full bg-indigo-400"
                             />
                           ))}
                         </div>
@@ -693,20 +694,20 @@ What specific area would you like me to focus on?`
 
           {/* Quick Prompts (when no conversation yet) */}
           {messages.length <= 1 && (
-            <div className="p-4 border-t">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Start:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {quickPrompts.slice(0, 4).map((prompt) => (
+            <div className="border-t p-4">
+              <h3 className="mb-3 text-sm font-medium text-gray-700">Quick Start:</h3>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                {quickPrompts.slice(0, 4).map(prompt => (
                   <Button
                     key={prompt.id}
                     variant="outline"
                     size="sm"
                     onClick={() => handleQuickPrompt(prompt)}
-                    className="justify-start text-left h-auto py-2"
+                    className="h-auto justify-start py-2 text-left"
                   >
-                    <prompt.icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <prompt.icon className="mr-2 h-4 w-4 flex-shrink-0" />
                     <div>
-                      <div className="font-medium text-xs">{prompt.text}</div>
+                      <div className="text-xs font-medium">{prompt.text}</div>
                       <div className="text-xs text-gray-500">{prompt.description}</div>
                     </div>
                   </Button>
@@ -716,20 +717,20 @@ What specific area would you like me to focus on?`
           )}
 
           {/* Input Area */}
-          <div className="p-4 border-t bg-gray-50">
+          <div className="border-t bg-gray-50 p-4">
             <div className="flex gap-2">
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <Input
                   ref={inputRef}
                   placeholder="Ask me anything about procurement, suppliers, or analytics..."
                   value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                  onChange={e => setInputMessage(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                   disabled={isProcessing}
-                  className="pr-20 py-6 text-sm border-2 border-gray-200 focus:border-indigo-400 rounded-xl"
+                  className="rounded-xl border-2 border-gray-200 py-6 pr-20 text-sm focus:border-indigo-400"
                   aria-label="Chat message input"
                 />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
+                <div className="absolute top-1/2 right-2 flex -translate-y-1/2 transform gap-1">
                   {enableVoice && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -740,7 +741,11 @@ What specific area would you like me to focus on?`
                           disabled={isProcessing}
                           className={`h-8 w-8 p-0 ${isListening ? 'text-red-500' : 'text-gray-400'}`}
                         >
-                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          {isListening ? (
+                            <MicOff className="h-4 w-4" />
+                          ) : (
+                            <Mic className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Voice input</TooltipContent>
@@ -766,7 +771,7 @@ What specific area would you like me to focus on?`
               <Button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isProcessing}
-                className="px-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl"
+                className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 text-white hover:from-indigo-600 hover:to-purple-700"
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -775,14 +780,14 @@ What specific area would you like me to focus on?`
                 )}
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
+            <p className="mt-2 text-center text-xs text-gray-500">
               AI assistant may make mistakes. Verify important information.
             </p>
           </div>
         </div>
       </div>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default AIChatInterface
+export default AIChatInterface;

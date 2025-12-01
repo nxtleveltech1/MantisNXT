@@ -40,8 +40,8 @@ describe('SupplierDiscoveryEngine', () => {
       supplierName: 'Test Company Ltd',
       additionalContext: {
         industry: 'Technology',
-        region: 'Gauteng'
-      }
+        region: 'Gauteng',
+      },
     };
 
     const mockDiscoveredData: DiscoveredSupplierData = {
@@ -52,34 +52,34 @@ describe('SupplierDiscoveryEngine', () => {
         city: 'Johannesburg',
         province: 'Gauteng',
         postalCode: '2001',
-        country: 'South Africa'
+        country: 'South Africa',
       },
       contactInfo: {
         phone: '+27 11 123 4567',
         email: 'info@testcompany.co.za',
-        website: 'https://testcompany.co.za'
+        website: 'https://testcompany.co.za',
       },
       businessInfo: {
         industry: 'Technology',
         establishedDate: '2023',
         employeeCount: 50,
-        annualRevenue: 10000000
+        annualRevenue: 10000000,
       },
       compliance: {
         vatNumber: '4123456789',
         beeRating: 'Level 4',
-        certifications: ['ISO 9001']
+        certifications: ['ISO 9001'],
       },
       confidence: {
         overall: 0.85,
         individual: {
           companyName: 0.9,
           address: 0.8,
-          contactInfo: 0.85
-        }
+          contactInfo: 0.85,
+        },
       },
       sources: ['https://example.com', 'https://directory.com'],
-      discoveredAt: new Date()
+      discoveredAt: new Date(),
     };
 
     it('should validate request input', async () => {
@@ -93,7 +93,11 @@ describe('SupplierDiscoveryEngine', () => {
 
     it('should return cached data when available', async () => {
       // Pre-populate cache
-      supplierCache.set(mockRequest.supplierName, mockDiscoveredData, mockRequest.additionalContext);
+      supplierCache.set(
+        mockRequest.supplierName,
+        mockDiscoveredData,
+        mockRequest.additionalContext
+      );
 
       const result = await supplierDiscoveryEngine.discoverSupplier(mockRequest);
 
@@ -117,9 +121,17 @@ describe('SupplierDiscoveryEngine', () => {
       const { dataExtractor } = require('@/lib/supplier-discovery/extractors');
       const { dataProcessor } = require('@/lib/supplier-discovery/processor');
 
-      dataExtractor.extractSupplierData = jest.fn().mockResolvedValue([
-        { field: 'companyName', value: 'Test Company', confidence: 0.9, source: 'test', timestamp: new Date() }
-      ]);
+      dataExtractor.extractSupplierData = jest
+        .fn()
+        .mockResolvedValue([
+          {
+            field: 'companyName',
+            value: 'Test Company',
+            confidence: 0.9,
+            source: 'test',
+            timestamp: new Date(),
+          },
+        ]);
       dataProcessor.processExtractionResults = jest.fn().mockResolvedValue(mockDiscoveredData);
 
       const result = await supplierDiscoveryEngine.discoverSupplier(mockRequest);
@@ -134,7 +146,7 @@ describe('SupplierDiscoveryEngine', () => {
       const requests: SupplierDiscoveryRequest[] = [
         { supplierName: 'Company A' },
         { supplierName: 'Company B' },
-        { supplierName: 'Company C' }
+        { supplierName: 'Company C' },
       ];
 
       const results = await supplierDiscoveryEngine.discoverMultipleSuppliers(requests);
@@ -147,7 +159,7 @@ describe('SupplierDiscoveryEngine', () => {
       const requests: SupplierDiscoveryRequest[] = [
         { supplierName: 'Valid Company' },
         { supplierName: '' }, // Invalid request
-        { supplierName: 'Another Valid Company' }
+        { supplierName: 'Another Valid Company' },
       ];
 
       const results = await supplierDiscoveryEngine.discoverMultipleSuppliers(requests);
@@ -159,7 +171,7 @@ describe('SupplierDiscoveryEngine', () => {
 
   describe('data refresh', () => {
     const mockRequest: SupplierDiscoveryRequest = {
-      supplierName: 'Refresh Test Company'
+      supplierName: 'Refresh Test Company',
     };
 
     it('should clear cache and perform fresh discovery', async () => {
@@ -196,14 +208,14 @@ describe('SupplierDiscoveryEngine', () => {
 
   describe('rate limiting', () => {
     it('should handle concurrent request limits', async () => {
-      const requests = Array(10).fill(0).map((_, i) => ({
-        supplierName: `Concurrent Company ${i}`
-      }));
+      const requests = Array(10)
+        .fill(0)
+        .map((_, i) => ({
+          supplierName: `Concurrent Company ${i}`,
+        }));
 
       // Fire multiple requests simultaneously
-      const promises = requests.map(req =>
-        supplierDiscoveryEngine.discoverSupplier(req)
-      );
+      const promises = requests.map(req => supplierDiscoveryEngine.discoverSupplier(req));
 
       const results = await Promise.all(promises);
 
@@ -216,10 +228,12 @@ describe('SupplierDiscoveryEngine', () => {
   describe('error handling', () => {
     it('should handle extraction errors gracefully', async () => {
       const { dataExtractor } = require('@/lib/supplier-discovery/extractors');
-      dataExtractor.extractSupplierData = jest.fn().mockRejectedValue(new Error('Extraction failed'));
+      dataExtractor.extractSupplierData = jest
+        .fn()
+        .mockRejectedValue(new Error('Extraction failed'));
 
       const result = await supplierDiscoveryEngine.discoverSupplier({
-        supplierName: 'Error Test Company'
+        supplierName: 'Error Test Company',
       });
 
       expect(result.success).toBe(false);
@@ -230,13 +244,17 @@ describe('SupplierDiscoveryEngine', () => {
       const { dataExtractor } = require('@/lib/supplier-discovery/extractors');
       const { dataProcessor } = require('@/lib/supplier-discovery/processor');
 
-      dataExtractor.extractSupplierData = jest.fn().mockResolvedValue([
-        { field: 'test', value: 'test', confidence: 0.5, source: 'test', timestamp: new Date() }
-      ]);
-      dataProcessor.processExtractionResults = jest.fn().mockRejectedValue(new Error('Processing failed'));
+      dataExtractor.extractSupplierData = jest
+        .fn()
+        .mockResolvedValue([
+          { field: 'test', value: 'test', confidence: 0.5, source: 'test', timestamp: new Date() },
+        ]);
+      dataProcessor.processExtractionResults = jest
+        .fn()
+        .mockRejectedValue(new Error('Processing failed'));
 
       const result = await supplierDiscoveryEngine.discoverSupplier({
-        supplierName: 'Processing Error Company'
+        supplierName: 'Processing Error Company',
       });
 
       expect(result.success).toBe(false);
@@ -258,7 +276,7 @@ describe('SupplierDiscoveryEngine', () => {
       const startTime = Date.now();
 
       const result = await supplierDiscoveryEngine.discoverSupplier({
-        supplierName: 'Timing Test Company'
+        supplierName: 'Timing Test Company',
       });
 
       const endTime = Date.now();

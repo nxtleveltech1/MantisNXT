@@ -5,10 +5,7 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import {
-  CacheInvalidationManager,
-  triggerCacheInvalidation,
-} from '@/lib/cache/event-invalidation';
+import { CacheInvalidationManager, triggerCacheInvalidation } from '@/lib/cache/event-invalidation';
 import { cacheEventBus } from '@/lib/cache/event-bus';
 import { createInvalidationEvent } from '@/lib/cache/events';
 
@@ -83,7 +80,7 @@ describe('CacheInvalidationManager', () => {
       );
 
       // Small delay for async invalidation
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const updatedQuery = queryClient.getQueryCache().find({
         queryKey: ['inventory-list', {}],
@@ -105,11 +102,11 @@ describe('CacheInvalidationManager', () => {
         })
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // All related queries should be invalidated
       const queries = queryClient.getQueryCache().getAll();
-      queries.forEach((query) => {
+      queries.forEach(query => {
         expect(query.state.isInvalidated).toBe(true);
       });
     });
@@ -126,7 +123,7 @@ describe('CacheInvalidationManager', () => {
         })
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const unrelatedQuery = queryClient.getQueryCache().find({
         queryKey: ['unrelated-query'],

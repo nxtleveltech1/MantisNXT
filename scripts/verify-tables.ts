@@ -26,7 +26,6 @@ async function verifyTables() {
     result.rows.forEach(row => {
       console.log(`  • spp.${row.table_name} (${row.column_count} columns)`);
     });
-
   } finally {
     await client.end();
   }

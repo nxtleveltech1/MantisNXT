@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sign as signJwt, verify as verifyJwt } from 'jsonwebtoken';
@@ -55,7 +55,8 @@ const mockUsers = [
 
 // JWT secret - allow a harmless placeholder only during static build so Vercel can compile
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-const rawJwtSecret = process.env.JWT_SECRET || (isBuildPhase ? 'build-placeholder-secret' : undefined);
+const rawJwtSecret =
+  process.env.JWT_SECRET || (isBuildPhase ? 'build-placeholder-secret' : undefined);
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 if (!rawJwtSecret) {

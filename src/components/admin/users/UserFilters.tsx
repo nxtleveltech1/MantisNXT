@@ -1,59 +1,47 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Search, Filter, X, Calendar as CalendarIcon } from 'lucide-react'
-import { USER_ROLES } from '@/types/auth'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Search, Filter, X, Calendar as CalendarIcon } from 'lucide-react';
+import { USER_ROLES } from '@/types/auth';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export interface UserFilterState {
-  search: string
-  role: string
-  department: string
-  status: string
-  createdFrom: Date | undefined
-  createdTo: Date | undefined
+  search: string;
+  role: string;
+  department: string;
+  status: string;
+  createdFrom: Date | undefined;
+  createdTo: Date | undefined;
 }
 
 interface UserFiltersProps {
-  departments: string[]
-  filters: UserFilterState
-  onFiltersChange: (filters: UserFilterState) => void
-  onReset: () => void
+  departments: string[];
+  filters: UserFilterState;
+  onFiltersChange: (filters: UserFilterState) => void;
+  onReset: () => void;
 }
 
-export function UserFilters({
-  departments,
-  filters,
-  onFiltersChange,
-  onReset,
-}: UserFiltersProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+export function UserFilters({ departments, filters, onFiltersChange, onReset }: UserFiltersProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const updateFilter = <K extends keyof UserFilterState>(
-    key: K,
-    value: UserFilterState[K]
-  ) => {
-    onFiltersChange({ ...filters, [key]: value })
-  }
+  const updateFilter = <K extends keyof UserFilterState>(key: K, value: UserFilterState[K]) => {
+    onFiltersChange({ ...filters, [key]: value });
+  };
 
   const activeFiltersCount = [
     filters.role !== 'all',
@@ -61,33 +49,33 @@ export function UserFilters({
     filters.status !== 'all',
     filters.createdFrom,
     filters.createdTo,
-  ].filter(Boolean).length
+  ].filter(Boolean).length;
 
   return (
     <Card>
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="space-y-4 p-4">
         {/* Quick Search Bar */}
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col gap-4 md:flex-row">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Search by name, email, or department..."
               value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
+              onChange={e => updateFilter('search', e.target.value)}
               className="pl-10"
             />
           </div>
 
           {/* Quick Filters */}
           <div className="flex gap-2">
-            <Select value={filters.role} onValueChange={(v) => updateFilter('role', v)}>
+            <Select value={filters.role} onValueChange={v => updateFilter('role', v)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                {USER_ROLES.map((role) => (
+                {USER_ROLES.map(role => (
                   <SelectItem key={role.value} value={role.value}>
                     {role.label}
                   </SelectItem>
@@ -95,10 +83,7 @@ export function UserFilters({
               </SelectContent>
             </Select>
 
-            <Select
-              value={filters.status}
-              onValueChange={(v) => updateFilter('status', v)}
-            >
+            <Select value={filters.status} onValueChange={v => updateFilter('status', v)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
@@ -113,16 +98,13 @@ export function UserFilters({
               variant="outline"
               size="icon"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className={cn(
-                'relative',
-                activeFiltersCount > 0 && 'border-primary'
-              )}
+              className={cn('relative', activeFiltersCount > 0 && 'border-primary')}
             >
               <Filter className="h-4 w-4" />
               {activeFiltersCount > 0 && (
                 <Badge
                   variant="destructive"
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
                 >
                   {activeFiltersCount}
                 </Badge>
@@ -133,7 +115,7 @@ export function UserFilters({
 
         {/* Advanced Filters */}
         {showAdvanced && (
-          <div className="border-t pt-4 space-y-4">
+          <div className="space-y-4 border-t pt-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">Advanced Filters</h3>
               <Button
@@ -142,25 +124,25 @@ export function UserFilters({
                 onClick={onReset}
                 disabled={activeFiltersCount === 0}
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="mr-2 h-4 w-4" />
                 Clear All
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Department Filter */}
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select
                   value={filters.department}
-                  onValueChange={(v) => updateFilter('department', v)}
+                  onValueChange={v => updateFilter('department', v)}
                 >
                   <SelectTrigger id="department">
                     <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Departments</SelectItem>
-                    {departments.map((dept) => (
+                    {departments.map(dept => (
                       <SelectItem key={dept} value={dept}>
                         {dept}
                       </SelectItem>
@@ -193,7 +175,7 @@ export function UserFilters({
                     <Calendar
                       mode="single"
                       selected={filters.createdFrom}
-                      onSelect={(date) => updateFilter('createdFrom', date)}
+                      onSelect={date => updateFilter('createdFrom', date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -224,10 +206,8 @@ export function UserFilters({
                     <Calendar
                       mode="single"
                       selected={filters.createdTo}
-                      onSelect={(date) => updateFilter('createdTo', date)}
-                      disabled={(date) =>
-                        filters.createdFrom ? date < filters.createdFrom : false
-                      }
+                      onSelect={date => updateFilter('createdTo', date)}
+                      disabled={date => (filters.createdFrom ? date < filters.createdFrom : false)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -240,10 +220,10 @@ export function UserFilters({
               <div className="flex flex-wrap gap-2">
                 {filters.role !== 'all' && (
                   <Badge variant="secondary" className="gap-1">
-                    Role: {USER_ROLES.find((r) => r.value === filters.role)?.label}
+                    Role: {USER_ROLES.find(r => r.value === filters.role)?.label}
                     <button
                       onClick={() => updateFilter('role', 'all')}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -254,7 +234,7 @@ export function UserFilters({
                     Department: {filters.department}
                     <button
                       onClick={() => updateFilter('department', 'all')}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -265,7 +245,7 @@ export function UserFilters({
                     Status: {filters.status}
                     <button
                       onClick={() => updateFilter('status', 'all')}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -276,7 +256,7 @@ export function UserFilters({
                     From: {format(filters.createdFrom, 'PP')}
                     <button
                       onClick={() => updateFilter('createdFrom', undefined)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -287,7 +267,7 @@ export function UserFilters({
                     To: {format(filters.createdTo, 'PP')}
                     <button
                       onClick={() => updateFilter('createdTo', undefined)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -299,5 +279,5 @@ export function UserFilters({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

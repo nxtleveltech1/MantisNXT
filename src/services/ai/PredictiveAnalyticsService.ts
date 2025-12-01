@@ -62,7 +62,6 @@ export interface TimeSeriesData {
 }
 
 export class PredictiveAnalyticsService {
-
   /**
    * Generate predictive analytics for specified metrics
    */
@@ -88,14 +87,13 @@ export class PredictiveAnalyticsService {
       const modelInfo = {
         accuracy: this.calculateModelAccuracy(predictions),
         lastTraining: new Date().toISOString(),
-        dataPoints: this.getTotalDataPoints(predictions)
+        dataPoints: this.getTotalDataPoints(predictions),
       };
 
       return {
         predictions,
-        modelInfo
+        modelInfo,
       };
-
     } catch (error) {
       console.error('❌ Predictive analytics generation failed:', error);
       throw new Error('Failed to generate predictive analytics');
@@ -133,7 +131,7 @@ export class PredictiveAnalyticsService {
 
       // Sort by severity and confidence
       anomalies.sort((a, b) => {
-        const severityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         return severityOrder[b.severity] - severityOrder[a.severity] || b.confidence - a.confidence;
       });
 
@@ -141,11 +139,10 @@ export class PredictiveAnalyticsService {
         totalAnomalies: anomalies.length,
         criticalCount: anomalies.filter(a => a.severity === 'critical').length,
         newAnomalies: anomalies.filter(a => this.isRecentAnomaly(a.detectedAt)).length,
-        resolvedAnomalies: 0 // Would be calculated from historical anomaly tracking
+        resolvedAnomalies: 0, // Would be calculated from historical anomaly tracking
       };
 
       return { anomalies, summary };
-
     } catch (error) {
       console.error('❌ Anomaly detection failed:', error);
       throw new Error('Failed to detect anomalies');
@@ -155,7 +152,10 @@ export class PredictiveAnalyticsService {
   /**
    * Forecast supplier performance trends
    */
-  async forecastSupplierPerformance(supplierId: string, months: number = 6): Promise<{
+  async forecastSupplierPerformance(
+    supplierId: string,
+    months: number = 6
+  ): Promise<{
     performanceForecast: Array<{
       month: string;
       predictedRating: number;
@@ -178,10 +178,7 @@ export class PredictiveAnalyticsService {
       }
 
       // Generate monthly forecasts
-      const performanceForecast = this.generatePerformanceForecast(
-        historicalPerformance,
-        months
-      );
+      const performanceForecast = this.generatePerformanceForecast(historicalPerformance, months);
 
       // Calculate risk trend
       const riskTrend = this.calculateRiskTrend(historicalPerformance, performanceForecast);
@@ -196,9 +193,8 @@ export class PredictiveAnalyticsService {
       return {
         performanceForecast,
         riskTrend,
-        recommendations
+        recommendations,
       };
-
     } catch (error) {
       console.error('❌ Supplier performance forecasting failed:', error);
       throw new Error('Failed to forecast supplier performance');
@@ -247,9 +243,8 @@ export class PredictiveAnalyticsService {
       return {
         currentTrends,
         predictions,
-        opportunities
+        opportunities,
       };
-
     } catch (error) {
       console.error('❌ Spend pattern analysis failed:', error);
       throw new Error('Failed to analyze spend patterns');
@@ -291,9 +286,8 @@ export class PredictiveAnalyticsService {
       return {
         marketTrends,
         competitiveAnalysis,
-        recommendations
+        recommendations,
       };
-
     } catch (error) {
       console.error('❌ Market intelligence generation failed:', error);
       throw new Error('Failed to generate market intelligence');
@@ -302,7 +296,10 @@ export class PredictiveAnalyticsService {
 
   // Private implementation methods
 
-  private async getHistoricalData(metric: string, request: PredictionRequest): Promise<TimeSeriesData[]> {
+  private async getHistoricalData(
+    metric: string,
+    request: PredictionRequest
+  ): Promise<TimeSeriesData[]> {
     const timeRangeMonths = this.getTimeRangeMonths(request.timeHorizon) * 2; // Get 2x data for training
 
     let query = '';
@@ -346,7 +343,7 @@ export class PredictiveAnalyticsService {
     const result = await pool.query(query, params);
     return result.rows.map(row => ({
       date: row.date.toISOString(),
-      value: parseFloat(row.value) || 0
+      value: parseFloat(row.value) || 0,
     }));
   }
 
@@ -372,7 +369,7 @@ export class PredictiveAnalyticsService {
       currentValue,
       predictedValues: predictions,
       trends,
-      recommendations
+      recommendations,
     };
   }
 
@@ -411,8 +408,8 @@ export class PredictiveAnalyticsService {
           context: {
             entityType: request.entityType,
             entityId: request.entityId || 'system',
-            relatedEntities: []
-          }
+            relatedEntities: [],
+          },
         });
       }
     }
@@ -461,13 +458,13 @@ export class PredictiveAnalyticsService {
       const randomFactor = (Math.random() - 0.5) * 0.2; // Add some noise
 
       const predictedRating = Math.max(1, Math.min(5, baseValue + trendAdjustment + randomFactor));
-      const confidence = Math.max(0.5, 1 - (i * 0.1)); // Decreasing confidence over time
+      const confidence = Math.max(0.5, 1 - i * 0.1); // Decreasing confidence over time
 
       forecast.push({
         month: futureDate.toISOString().slice(0, 7),
         predictedRating: Math.round(predictedRating * 100) / 100,
         confidence: Math.round(confidence * 100) / 100,
-        factors: this.identifyPerformanceFactors(historicalData, i)
+        factors: this.identifyPerformanceFactors(historicalData, i),
       });
     }
 
@@ -494,7 +491,7 @@ export class PredictiveAnalyticsService {
     return {
       current: Math.round(currentRisk * 100) / 100,
       projected: Math.round(projectedRisk * 100) / 100,
-      trend
+      trend,
     };
   }
 
@@ -502,11 +499,16 @@ export class PredictiveAnalyticsService {
 
   private getTimeRangeMonths(horizon: string): number {
     switch (horizon) {
-      case '3months': return 3;
-      case '6months': return 6;
-      case '1year': return 12;
-      case '2years': return 24;
-      default: return 6;
+      case '3months':
+        return 3;
+      case '6months':
+        return 6;
+      case '1year':
+        return 12;
+      case '2years':
+        return 24;
+      default:
+        return 6;
     }
   }
 
@@ -519,11 +521,11 @@ export class PredictiveAnalyticsService {
       const date = new Date();
       date.setMonth(date.getMonth() - months + i);
 
-      const value = baseValue + (trend * i) + (Math.random() - 0.5) * (baseValue * 0.2);
+      const value = baseValue + trend * i + (Math.random() - 0.5) * (baseValue * 0.2);
 
       data.push({
         date: date.toISOString(),
-        value: Math.max(0, value)
+        value: Math.max(0, value),
       });
     }
 
@@ -548,14 +550,14 @@ export class PredictiveAnalyticsService {
       futureDate.setMonth(futureDate.getMonth() + i);
 
       const lastValue = values[values.length - 1];
-      const predictedValue = lastValue + (slope * i);
-      const confidence = Math.max(0.5, 1 - (i * 0.05));
+      const predictedValue = lastValue + slope * i;
+      const confidence = Math.max(0.5, 1 - i * 0.05);
 
       predictions.push({
         date: futureDate.toISOString(),
         value: Math.round(predictedValue * 100) / 100,
         confidence: Math.round(confidence * 100) / 100,
-        factors: ['Historical trend', 'Seasonal adjustment', 'Market conditions']
+        factors: ['Historical trend', 'Seasonal adjustment', 'Market conditions'],
       });
     }
 
@@ -583,7 +585,7 @@ export class PredictiveAnalyticsService {
     return {
       direction,
       strength,
-      volatility: Math.round(volatility * 100) / 100
+      volatility: Math.round(volatility * 100) / 100,
     };
   }
 
@@ -661,27 +663,36 @@ export class PredictiveAnalyticsService {
     return [
       { timestamp: Date.now(), value: 100 },
       { timestamp: Date.now() - 86400000, value: 95 },
-      { timestamp: Date.now() - 172800000, value: 105 }
+      { timestamp: Date.now() - 172800000, value: 105 },
     ];
   }
 
   private getSensitivityThreshold(sensitivity: string): number {
     switch (sensitivity) {
-      case 'low': return 3;
-      case 'medium': return 2;
-      case 'high': return 1.5;
-      default: return 2;
+      case 'low':
+        return 3;
+      case 'medium':
+        return 2;
+      case 'high':
+        return 1.5;
+      default:
+        return 2;
     }
   }
 
   private calculateZScore(dataPoint: unknown, dataset: unknown[]): number {
     const values = dataset.map(d => d.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const std = Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
+    const std = Math.sqrt(
+      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length
+    );
     return (dataPoint.value - mean) / std;
   }
 
-  private calculateAnomalySeverity(zScore: number, threshold: number): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateAnomalySeverity(
+    zScore: number,
+    threshold: number
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const absZScore = Math.abs(zScore);
     if (absZScore > threshold * 2) return 'critical';
     if (absZScore > threshold * 1.5) return 'high';
@@ -727,7 +738,7 @@ export class PredictiveAnalyticsService {
       totalSpend: 100000,
       avgOrderValue: 5000,
       orderFrequency: 12,
-      seasonalityIndex: 1.2
+      seasonalityIndex: 1.2,
     };
   }
 
@@ -735,7 +746,7 @@ export class PredictiveAnalyticsService {
     return {
       nextQuarterSpend: 125000,
       confidence: 0.8,
-      factors: ['Historical growth', 'Market trends']
+      factors: ['Historical growth', 'Market trends'],
     };
   }
 
@@ -745,8 +756,8 @@ export class PredictiveAnalyticsService {
         type: 'cost_saving',
         description: 'Volume discount opportunity',
         impact: 5000,
-        effort: 'low'
-      }
+        effort: 'low',
+      },
     ];
   }
 
@@ -754,7 +765,7 @@ export class PredictiveAnalyticsService {
     return {
       priceDirection: 'stable' as const,
       volatility: 0.15,
-      marketGrowth: 0.05
+      marketGrowth: 0.05,
     };
   }
 
@@ -762,7 +773,7 @@ export class PredictiveAnalyticsService {
     return {
       averagePrice: 1000,
       priceRange: { min: 800, max: 1200 },
-      topSuppliers: []
+      topSuppliers: [],
     };
   }
 
@@ -770,7 +781,11 @@ export class PredictiveAnalyticsService {
     return ['Monitor market trends', 'Consider long-term contracts'];
   }
 
-  private generatePerformanceRecommendations(_historical: unknown[], _forecast: unknown[], risk: unknown): string[] {
+  private generatePerformanceRecommendations(
+    _historical: unknown[],
+    _forecast: unknown[],
+    risk: unknown
+  ): string[] {
     const recommendations = [];
 
     if (risk.trend === 'declining') {
@@ -796,33 +811,31 @@ export class PredictiveAnalyticsService {
    * Monitor supplier risk in real-time
    */
   async monitorSupplierRisk(supplierId: string): Promise<{
-    currentRisk: number
-    riskTrend: 'increasing' | 'decreasing' | 'stable'
+    currentRisk: number;
+    riskTrend: 'increasing' | 'decreasing' | 'stable';
     alerts: Array<{
-      severity: 'low' | 'medium' | 'high' | 'critical'
-      message: string
-      timestamp: string
-    }>
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      message: string;
+      timestamp: string;
+    }>;
     riskFactors: Array<{
-      factor: string
-      impact: number
-      trend: string
-    }>
+      factor: string;
+      impact: number;
+      trend: string;
+    }>;
   }> {
     try {
       // Placeholder implementation - deterministically derives risk from supplierId
-      const seed = supplierId
-        .split('')
-        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const seed = supplierId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
       const currentRisk = 0.3 + (seed % 40) / 100; // Range ~0.3 - 0.7
 
-      const alerts = []
+      const alerts = [];
       if (currentRisk > 0.6) {
         alerts.push({
           severity: 'high' as const,
           message: 'Elevated risk level detected',
-          timestamp: new Date().toISOString()
-        })
+          timestamp: new Date().toISOString(),
+        });
       }
 
       return {
@@ -833,18 +846,18 @@ export class PredictiveAnalyticsService {
           {
             factor: 'Financial stability',
             impact: 0.3,
-            trend: 'stable'
+            trend: 'stable',
           },
           {
             factor: 'Delivery performance',
             impact: 0.2,
-            trend: 'improving'
-          }
-        ]
-      }
+            trend: 'improving',
+          },
+        ],
+      };
     } catch (error) {
-      console.error('Risk monitoring failed:', error)
-      throw new Error('Failed to monitor supplier risk')
+      console.error('Risk monitoring failed:', error);
+      throw new Error('Failed to monitor supplier risk');
     }
   }
 }

@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Building2,
   Star,
@@ -26,42 +26,44 @@ import {
   Target,
   Shield,
   MapPin,
-  Percent
-} from "lucide-react"
+  Percent,
+} from 'lucide-react';
 
-import { formatZAR, formatCompactZAR, getBEELevelColor, formatSADate } from "@/lib/zar-utils"
+import { formatZAR, formatCompactZAR, getBEELevelColor, formatSADate } from '@/lib/zar-utils';
 import {
   ZAR_DASHBOARD_STATS,
   ZAR_DASHBOARD_SUPPLIERS,
   ZAR_DASHBOARD_ACTIVITIES,
   ZAR_FINANCIAL_SUMMARY,
   ZAR_BEE_METRICS,
-  ZAR_PROVINCIAL_SPEND
-} from "@/lib/mock-data/zar-dashboard-data"
+  ZAR_PROVINCIAL_SPEND,
+} from '@/lib/mock-data/zar-dashboard-data';
 
 const sidebarItems = [
-  { icon: HomeIcon, label: "Dashboard", href: "/", active: true },
-  { icon: Building2, label: "Suppliers", href: "/suppliers", badge: "247" },
-  { icon: Users, label: "Add Supplier", href: "/suppliers/new" },
-  { icon: ShoppingCart, label: "Purchase Orders", href: "/purchase-orders", badge: "12" },
-  { icon: Package, label: "Inventory", href: "/inventory" },
-  { icon: CreditCard, label: "Invoices", href: "/invoices", badge: "8" },
-  { icon: DollarSign, label: "Payments", href: "/payments" },
-  { icon: MessageSquare, label: "Messages", href: "/messages", badge: "3" }
-]
+  { icon: HomeIcon, label: 'Dashboard', href: '/', active: true },
+  { icon: Building2, label: 'Suppliers', href: '/suppliers', badge: '247' },
+  { icon: Users, label: 'Add Supplier', href: '/suppliers/new' },
+  { icon: ShoppingCart, label: 'Purchase Orders', href: '/purchase-orders', badge: '12' },
+  { icon: Package, label: 'Inventory', href: '/inventory' },
+  { icon: CreditCard, label: 'Invoices', href: '/invoices', badge: '8' },
+  { icon: DollarSign, label: 'Payments', href: '/payments' },
+  { icon: MessageSquare, label: 'Messages', href: '/messages', badge: '3' },
+];
 
 export default function ZARDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-gray-50">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
       {/* Sidebar - Fixed Width */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white border-r transition-all duration-300 flex flex-col`}>
+      <div
+        className={`${sidebarOpen ? 'w-64' : 'w-16'} flex flex-col border-r bg-white transition-all duration-300`}
+      >
         {/* Sidebar Header */}
-        <div className="h-16 border-b flex items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between border-b px-4">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center">
+              <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg text-white">
                 <Building2 className="h-4 w-4" />
               </div>
               <span className="font-semibold">MantisNXT</span>
@@ -83,14 +85,14 @@ export default function ZARDashboard() {
             <a
               key={index}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 hover:bg-gray-100 transition-colors ${
+              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-100 ${
                 item.active ? 'bg-gray-100' : ''
               }`}
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
               {sidebarOpen && (
                 <>
-                  <span className="text-sm flex-1">{item.label}</span>
+                  <span className="flex-1 text-sm">{item.label}</span>
                   {item.badge && (
                     <Badge variant="secondary" className="text-xs">
                       {item.badge}
@@ -104,8 +106,8 @@ export default function ZARDashboard() {
 
         {/* Sidebar Footer */}
         <div className="border-t p-2">
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 w-full">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white">
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
               <span className="text-xs font-semibold">JD</span>
             </div>
             {sidebarOpen && (
@@ -119,17 +121,19 @@ export default function ZARDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-6 flex-shrink-0">
+        <header className="flex h-16 flex-shrink-0 items-center justify-between border-b bg-white px-6">
           <div>
             <h1 className="text-xl font-semibold">Dashboard Overview</h1>
-            <p className="text-sm text-gray-500">South African Procurement Management - {formatSADate(new Date())}</p>
+            <p className="text-sm text-gray-500">
+              South African Procurement Management - {formatSADate(new Date())}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="icon" className="relative h-8 w-8">
               <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                 3
               </span>
             </Button>
@@ -142,13 +146,15 @@ export default function ZARDashboard() {
         {/* Dashboard Content - Scrollable */}
         <main className="flex-1 overflow-y-auto p-6">
           {/* Key Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Annual Spend</p>
-                    <p className="text-2xl font-bold">{formatCompactZAR(ZAR_FINANCIAL_SUMMARY.totalAnnualSpend)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCompactZAR(ZAR_FINANCIAL_SUMMARY.totalAnnualSpend)}
+                    </p>
                     <p className="text-xs text-gray-500">87.5% Local Suppliers</p>
                   </div>
                   <DollarSign className="h-8 w-8 text-green-500" />
@@ -161,7 +167,9 @@ export default function ZARDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">BEE Compliant Spend</p>
-                    <p className="text-2xl font-bold">{formatCompactZAR(ZAR_BEE_METRICS.beeSpendActual)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCompactZAR(ZAR_BEE_METRICS.beeSpendActual)}
+                    </p>
                     <p className="text-xs text-green-600">+1.6% over target</p>
                   </div>
                   <Shield className="h-8 w-8 text-purple-500" />
@@ -175,7 +183,9 @@ export default function ZARDashboard() {
                   <div>
                     <p className="text-sm text-gray-500">Total Suppliers</p>
                     <p className="text-2xl font-bold">{ZAR_DASHBOARD_STATS.totalSuppliers}</p>
-                    <p className="text-xs text-gray-500">{ZAR_DASHBOARD_STATS.activeSuppliers} Active</p>
+                    <p className="text-xs text-gray-500">
+                      {ZAR_DASHBOARD_STATS.activeSuppliers} Active
+                    </p>
                   </div>
                   <Building2 className="h-8 w-8 text-blue-500" />
                 </div>
@@ -187,8 +197,12 @@ export default function ZARDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Outstanding Payables</p>
-                    <p className="text-2xl font-bold">{formatCompactZAR(ZAR_FINANCIAL_SUMMARY.outstandingPayables)}</p>
-                    <p className="text-xs text-gray-500">Avg {ZAR_FINANCIAL_SUMMARY.averagePaymentDays} days</p>
+                    <p className="text-2xl font-bold">
+                      {formatCompactZAR(ZAR_FINANCIAL_SUMMARY.outstandingPayables)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Avg {ZAR_FINANCIAL_SUMMARY.averagePaymentDays} days
+                    </p>
                   </div>
                   <CreditCard className="h-8 w-8 text-orange-500" />
                 </div>
@@ -197,13 +211,15 @@ export default function ZARDashboard() {
           </div>
 
           {/* Secondary Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">VAT Recoverable</p>
-                    <p className="text-2xl font-bold">{formatCompactZAR(ZAR_FINANCIAL_SUMMARY.vatRecoverable)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCompactZAR(ZAR_FINANCIAL_SUMMARY.vatRecoverable)}
+                    </p>
                   </div>
                   <Percent className="h-8 w-8 text-indigo-500" />
                 </div>
@@ -215,7 +231,9 @@ export default function ZARDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Early Payment Savings</p>
-                    <p className="text-2xl font-bold">{formatCompactZAR(ZAR_FINANCIAL_SUMMARY.earlyPaymentSavings)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCompactZAR(ZAR_FINANCIAL_SUMMARY.earlyPaymentSavings)}
+                    </p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-green-500" />
                 </div>
@@ -248,7 +266,7 @@ export default function ZARDashboard() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* BEE Compliance Overview */}
             <Card className="lg:col-span-2">
               <CardHeader>
@@ -260,33 +278,41 @@ export default function ZARDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between mb-2">
+                    <div className="mb-2 flex justify-between">
                       <span className="text-sm">BEE Compliant Spend</span>
-                      <span className="text-sm font-medium">65.0% ({formatCompactZAR(ZAR_BEE_METRICS.beeSpendActual)})</span>
+                      <span className="text-sm font-medium">
+                        65.0% ({formatCompactZAR(ZAR_BEE_METRICS.beeSpendActual)})
+                      </span>
                     </div>
                     <Progress value={65} className="h-2" />
                   </div>
 
                   <div>
-                    <div className="flex justify-between mb-2">
+                    <div className="mb-2 flex justify-between">
                       <span className="text-sm">Black-Owned Suppliers</span>
-                      <span className="text-sm font-medium">36.0% ({formatCompactZAR(ZAR_BEE_METRICS.blackOwnedSpend)})</span>
+                      <span className="text-sm font-medium">
+                        36.0% ({formatCompactZAR(ZAR_BEE_METRICS.blackOwnedSpend)})
+                      </span>
                     </div>
                     <Progress value={36} className="h-2" />
                   </div>
 
                   <div>
-                    <div className="flex justify-between mb-2">
+                    <div className="mb-2 flex justify-between">
                       <span className="text-sm">Women-Owned Suppliers</span>
-                      <span className="text-sm font-medium">22.5% ({formatCompactZAR(ZAR_BEE_METRICS.womenOwnedSpend)})</span>
+                      <span className="text-sm font-medium">
+                        22.5% ({formatCompactZAR(ZAR_BEE_METRICS.womenOwnedSpend)})
+                      </span>
                     </div>
                     <Progress value={22.5} className="h-2" />
                   </div>
 
                   <div>
-                    <div className="flex justify-between mb-2">
+                    <div className="mb-2 flex justify-between">
                       <span className="text-sm">Youth-Owned Suppliers</span>
-                      <span className="text-sm font-medium">12.5% ({formatCompactZAR(ZAR_BEE_METRICS.youthOwnedSpend)})</span>
+                      <span className="text-sm font-medium">
+                        12.5% ({formatCompactZAR(ZAR_BEE_METRICS.youthOwnedSpend)})
+                      </span>
                     </div>
                     <Progress value={12.5} className="h-2" />
                   </div>
@@ -294,17 +320,22 @@ export default function ZARDashboard() {
 
                 {/* Top Suppliers List */}
                 <div className="mt-6">
-                  <h3 className="font-medium mb-3">Top Performing Suppliers</h3>
+                  <h3 className="mb-3 font-medium">Top Performing Suppliers</h3>
                   <div className="space-y-3">
                     {ZAR_DASHBOARD_SUPPLIERS.map((supplier, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-primary" />
+                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                            <Building2 className="text-primary h-4 w-4" />
                           </div>
                           <div>
                             <p className="text-sm font-medium">{supplier.name}</p>
-                            <p className="text-xs text-gray-500">{supplier.category} • {formatCompactZAR(supplier.totalSpend)} spend</p>
+                            <p className="text-xs text-gray-500">
+                              {supplier.category} • {formatCompactZAR(supplier.totalSpend)} spend
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -337,20 +368,32 @@ export default function ZARDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {ZAR_DASHBOARD_ACTIVITIES.map((activity, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="rounded-lg bg-gray-50 p-3">
                       <div className="flex items-start gap-3">
-                        {activity.type === 'compliance' && <Shield className="h-4 w-4 text-purple-500 mt-0.5" />}
-                        {activity.type === 'payment' && <CreditCard className="h-4 w-4 text-red-500 mt-0.5" />}
-                        {activity.type === 'onboarding' && <Users className="h-4 w-4 text-green-500 mt-0.5" />}
-                        {activity.type === 'purchase_order' && <ShoppingCart className="h-4 w-4 text-blue-500 mt-0.5" />}
-                        {activity.type === 'vat' && <Percent className="h-4 w-4 text-indigo-500 mt-0.5" />}
+                        {activity.type === 'compliance' && (
+                          <Shield className="mt-0.5 h-4 w-4 text-purple-500" />
+                        )}
+                        {activity.type === 'payment' && (
+                          <CreditCard className="mt-0.5 h-4 w-4 text-red-500" />
+                        )}
+                        {activity.type === 'onboarding' && (
+                          <Users className="mt-0.5 h-4 w-4 text-green-500" />
+                        )}
+                        {activity.type === 'purchase_order' && (
+                          <ShoppingCart className="mt-0.5 h-4 w-4 text-blue-500" />
+                        )}
+                        {activity.type === 'vat' && (
+                          <Percent className="mt-0.5 h-4 w-4 text-indigo-500" />
+                        )}
                         <div className="flex-1">
                           <p className="text-sm font-medium">{activity.title}</p>
                           <p className="text-xs text-gray-500">{activity.description}</p>
                           {activity.amount > 0 && (
-                            <p className="text-xs text-gray-600 mt-1">{formatZAR(activity.amount)}</p>
+                            <p className="mt-1 text-xs text-gray-600">
+                              {formatZAR(activity.amount)}
+                            </p>
                           )}
-                          <div className="flex items-center justify-between mt-2">
+                          <div className="mt-2 flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
                               {activity.priority}
                             </Badge>
@@ -375,46 +418,63 @@ export default function ZARDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">Gauteng</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.GP)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(ZAR_PROVINCIAL_SPEND.GP)}
+                      </span>
                     </div>
                     <Progress value={36} className="h-2" />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">Western Cape</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.WC)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(ZAR_PROVINCIAL_SPEND.WC)}
+                      </span>
                     </div>
                     <Progress value={21} className="h-2" />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">KwaZulu-Natal</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.KZN)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(ZAR_PROVINCIAL_SPEND.KZN)}
+                      </span>
                     </div>
                     <Progress value={15} className="h-2" />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">Eastern Cape</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.EC)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(ZAR_PROVINCIAL_SPEND.EC)}
+                      </span>
                     </div>
                     <Progress value={9} className="h-2" />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">Mpumalanga</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.MP)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(ZAR_PROVINCIAL_SPEND.MP)}
+                      </span>
                     </div>
                     <Progress value={7} className="h-2" />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-sm">Other Provinces</span>
-                      <span className="text-sm font-medium">{formatCompactZAR(ZAR_PROVINCIAL_SPEND.LP + ZAR_PROVINCIAL_SPEND.FS + ZAR_PROVINCIAL_SPEND.NW + ZAR_PROVINCIAL_SPEND.NC)}</span>
+                      <span className="text-sm font-medium">
+                        {formatCompactZAR(
+                          ZAR_PROVINCIAL_SPEND.LP +
+                            ZAR_PROVINCIAL_SPEND.FS +
+                            ZAR_PROVINCIAL_SPEND.NW +
+                            ZAR_PROVINCIAL_SPEND.NC
+                        )}
+                      </span>
                     </div>
                     <Progress value={12} className="h-2" />
                   </div>
@@ -426,12 +486,9 @@ export default function ZARDashboard() {
       </div>
 
       {/* Floating Action Button */}
-      <Button
-        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg"
-        size="icon"
-      >
+      <Button className="fixed right-6 bottom-6 h-12 w-12 rounded-full shadow-lg" size="icon">
         <Plus className="h-5 w-5" />
       </Button>
     </div>
-  )
+  );
 }

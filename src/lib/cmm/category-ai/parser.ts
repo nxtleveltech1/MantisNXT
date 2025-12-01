@@ -162,7 +162,3 @@ function repairCandidate(candidate: string): string | null {
     return null;
   }
 }
-
-
-
-

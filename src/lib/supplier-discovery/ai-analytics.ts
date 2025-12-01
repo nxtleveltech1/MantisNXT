@@ -209,9 +209,12 @@ export class SupplierAIAnalytics {
         insights: analysis.insights.map(insight => ({
           category: insight.category,
           finding: insight.description,
-          impact: insight.impact === 'high' || insight.impact === 'critical'
-            ? 'negative'
-            : insight.category === 'opportunity' ? 'positive' : 'neutral',
+          impact:
+            insight.impact === 'high' || insight.impact === 'critical'
+              ? 'negative'
+              : insight.category === 'opportunity'
+                ? 'positive'
+                : 'neutral',
           severity: insight.impact,
         })),
         lastUpdated: new Date(),
@@ -229,7 +232,9 @@ export class SupplierAIAnalytics {
       return supplierScore;
     } catch (error) {
       console.error('AI Analytics: Score supplier failed:', error);
-      throw new Error(`Failed to score supplier: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to score supplier: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -311,12 +316,16 @@ export class SupplierAIAnalytics {
       // Cache result
       await this.cacheRiskAssessment(supplierId, riskAssessment);
 
-      console.log(`AI Analytics: Risk assessment for supplier ${supplierId}: ${riskLevel} (${overallRiskScore}/100)`);
+      console.log(
+        `AI Analytics: Risk assessment for supplier ${supplierId}: ${riskLevel} (${overallRiskScore}/100)`
+      );
 
       return riskAssessment;
     } catch (error) {
       console.error('AI Analytics: Risk assessment failed:', error);
-      throw new Error(`Failed to assess supplier risk: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to assess supplier risk: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -325,7 +334,11 @@ export class SupplierAIAnalytics {
    */
   async predictSupplierPerformance(
     supplierId: number,
-    predictionType: 'on_time_delivery' | 'quality_score' | 'cost_trend' | 'order_volume' = 'on_time_delivery',
+    predictionType:
+      | 'on_time_delivery'
+      | 'quality_score'
+      | 'cost_trend'
+      | 'order_volume' = 'on_time_delivery',
     forecastDays: number = 30
   ): Promise<SupplierPerformancePrediction> {
     try {
@@ -386,12 +399,16 @@ export class SupplierAIAnalytics {
       // Cache result
       await this.cachePrediction(supplierId, predictionType, performancePrediction);
 
-      console.log(`AI Analytics: Prediction for supplier ${supplierId}: ${trend} trend (confidence: ${predictions.confidence})`);
+      console.log(
+        `AI Analytics: Prediction for supplier ${supplierId}: ${trend} trend (confidence: ${predictions.confidence})`
+      );
 
       return performancePrediction;
     } catch (error) {
       console.error('AI Analytics: Performance prediction failed:', error);
-      throw new Error(`Failed to predict supplier performance: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to predict supplier performance: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -407,9 +424,7 @@ export class SupplierAIAnalytics {
       }
 
       // Score all suppliers
-      const scores = await Promise.all(
-        supplierIds.map(id => this.scoreSupplier(id))
-      );
+      const scores = await Promise.all(supplierIds.map(id => this.scoreSupplier(id)));
 
       // Rank suppliers
       const rankedSuppliers = scores
@@ -451,7 +466,12 @@ export class SupplierAIAnalytics {
           supplierName: supplier.name,
           recommendation: this.generateRecommendation(supplier, score),
           reason: this.generateRecommendationReason(supplier, score),
-          priority: supplier.rank <= 2 ? 'high' as const : supplier.rank <= 4 ? 'medium' as const : 'low' as const,
+          priority:
+            supplier.rank <= 2
+              ? ('high' as const)
+              : supplier.rank <= 4
+                ? ('medium' as const)
+                : ('low' as const),
         };
       });
 
@@ -468,12 +488,16 @@ export class SupplierAIAnalytics {
         analysisDate: new Date(),
       };
 
-      console.log(`AI Analytics: Comparison complete. Best performer: ${bestPerformer.name} (${bestPerformer.overallScore}/100)`);
+      console.log(
+        `AI Analytics: Comparison complete. Best performer: ${bestPerformer.name} (${bestPerformer.overallScore}/100)`
+      );
 
       return comparison;
     } catch (error) {
       console.error('AI Analytics: Supplier comparison failed:', error);
-      throw new Error(`Failed to compare suppliers: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to compare suppliers: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -482,14 +506,14 @@ export class SupplierAIAnalytics {
   // ============================================================================
 
   private async fetchSupplierData(supplierId: number): Promise<unknown> {
-    const result = await query(
-      'SELECT * FROM public.suppliers WHERE id = $1',
-      [supplierId]
-    );
+    const result = await query('SELECT * FROM public.suppliers WHERE id = $1', [supplierId]);
     return result.rows[0];
   }
 
-  private calculateScores(supplierData: unknown, analysis: unknown): {
+  private calculateScores(
+    supplierData: unknown,
+    analysis: unknown
+  ): {
     overall: number;
     reliability: number;
     quality: number;
@@ -512,14 +536,13 @@ export class SupplierAIAnalytics {
     };
 
     // Calculate weighted overall score
-    const overall = (
+    const overall =
       scores.reliability * 0.25 +
       scores.quality * 0.25 +
       scores.communication * 0.1 +
       scores.pricing * 0.15 +
       scores.delivery * 0.15 +
-      scores.compliance * 0.1
-    );
+      scores.compliance * 0.1;
 
     return {
       overall: Math.round(overall),
@@ -549,11 +572,16 @@ export class SupplierAIAnalytics {
 
     const score = anomalies.anomalies.reduce((total: number, anomaly: unknown) => {
       switch (anomaly.severity) {
-        case 'critical': return total + criticalWeight;
-        case 'high': return total + highWeight;
-        case 'medium': return total + mediumWeight;
-        case 'low': return total + lowWeight;
-        default: return total;
+        case 'critical':
+          return total + criticalWeight;
+        case 'high':
+          return total + highWeight;
+        case 'medium':
+          return total + mediumWeight;
+        case 'low':
+          return total + lowWeight;
+        default:
+          return total;
       }
     }, 0);
 
@@ -567,22 +595,26 @@ export class SupplierAIAnalytics {
     return 'low';
   }
 
-  private mapAnomalyToRiskType(anomalyType: string): 'financial' | 'operational' | 'compliance' | 'quality' | 'delivery' | 'reputation' {
+  private mapAnomalyToRiskType(
+    anomalyType: string
+  ): 'financial' | 'operational' | 'compliance' | 'quality' | 'delivery' | 'reputation' {
     const mapping: Record<string, unknown> = {
-      'data_quality': 'operational',
-      'statistical': 'quality',
-      'business_rule': 'compliance',
-      'security': 'compliance',
+      data_quality: 'operational',
+      statistical: 'quality',
+      business_rule: 'compliance',
+      security: 'compliance',
     };
     return mapping[anomalyType] || 'operational';
   }
 
-  private mapPredictionType(predictionType: string): 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels' {
+  private mapPredictionType(
+    predictionType: string
+  ): 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels' {
     const mapping: Record<string, unknown> = {
-      'on_time_delivery': 'supplier_performance',
-      'quality_score': 'supplier_performance',
-      'cost_trend': 'price_trends',
-      'order_volume': 'inventory_demand',
+      on_time_delivery: 'supplier_performance',
+      quality_score: 'supplier_performance',
+      cost_trend: 'price_trends',
+      order_volume: 'inventory_demand',
     };
     return mapping[predictionType] || 'supplier_performance';
   }
@@ -663,7 +695,8 @@ export class SupplierAIAnalytics {
   // Database storage methods
   private async storeSupplierScore(score: SupplierScore): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO supplier_performance (
           supplier_id, overall_score, reliability_score, quality_score,
           communication_score, pricing_score, delivery_score, compliance_score,
@@ -674,12 +707,22 @@ export class SupplierAIAnalytics {
           communication_score = $5, pricing_score = $6, delivery_score = $7,
           compliance_score = $8, grade = $9, confidence = $10,
           data_points = $11, last_updated = $12
-      `, [
-        score.supplierId, score.overallScore, score.scores.reliability,
-        score.scores.quality, score.scores.communication, score.scores.pricing,
-        score.scores.delivery, score.scores.compliance, score.grade,
-        score.confidence, score.dataPoints, score.lastUpdated
-      ]);
+      `,
+        [
+          score.supplierId,
+          score.overallScore,
+          score.scores.reliability,
+          score.scores.quality,
+          score.scores.communication,
+          score.scores.pricing,
+          score.scores.delivery,
+          score.scores.compliance,
+          score.grade,
+          score.confidence,
+          score.dataPoints,
+          score.lastUpdated,
+        ]
+      );
     } catch (error) {
       console.error('Failed to store supplier score:', error);
     }
@@ -687,15 +730,18 @@ export class SupplierAIAnalytics {
 
   private async storeRiskAssessment(assessment: SupplierRiskAssessment): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_insights (
           analysis_type, input_data, insights, created_at
         ) VALUES ($1, $2, $3, NOW())
-      `, [
-        'supplier_risk_assessment',
-        JSON.stringify({ supplier_id: assessment.supplierId }),
-        JSON.stringify(assessment)
-      ]);
+      `,
+        [
+          'supplier_risk_assessment',
+          JSON.stringify({ supplier_id: assessment.supplierId }),
+          JSON.stringify(assessment),
+        ]
+      );
     } catch (error) {
       console.error('Failed to store risk assessment:', error);
     }
@@ -703,17 +749,20 @@ export class SupplierAIAnalytics {
 
   private async storePrediction(prediction: SupplierPerformancePrediction): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO ai_predictions (
           prediction_type, target_id, predictions, confidence, expires_at, created_at
         ) VALUES ($1, $2, $3, $4, $5, NOW())
-      `, [
-        prediction.predictionType,
-        prediction.supplierId,
-        JSON.stringify(prediction),
-        prediction.confidence,
-        new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-      ]);
+      `,
+        [
+          prediction.predictionType,
+          prediction.supplierId,
+          JSON.stringify(prediction),
+          prediction.confidence,
+          new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        ]
+      );
     } catch (error) {
       console.error('Failed to store prediction:', error);
     }
@@ -722,10 +771,13 @@ export class SupplierAIAnalytics {
   // Cache methods
   private async getCachedScore(supplierId: number): Promise<SupplierScore | null> {
     try {
-      const result = await query(`
+      const result = await query(
+        `
         SELECT * FROM analytics_metric_cache
         WHERE metric_key = $1 AND expires_at > NOW()
-      `, [`${this.cachePrefix}:score:${supplierId}`]);
+      `,
+        [`${this.cachePrefix}:score:${supplierId}`]
+      );
 
       if (result.rows.length > 0) {
         return JSON.parse(result.rows[0].metric_value);
@@ -738,23 +790,31 @@ export class SupplierAIAnalytics {
 
   private async cacheScore(supplierId: number, score: SupplierScore): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO analytics_metric_cache (metric_key, metric_value, expires_at)
         VALUES ($1, $2, NOW() + INTERVAL '${this.cacheTTL} seconds')
         ON CONFLICT (metric_key) DO UPDATE SET
           metric_value = $2, expires_at = NOW() + INTERVAL '${this.cacheTTL} seconds'
-      `, [`${this.cachePrefix}:score:${supplierId}`, JSON.stringify(score)]);
+      `,
+        [`${this.cachePrefix}:score:${supplierId}`, JSON.stringify(score)]
+      );
     } catch (error) {
       console.error('Cache write error:', error);
     }
   }
 
-  private async getCachedRiskAssessment(supplierId: number): Promise<SupplierRiskAssessment | null> {
+  private async getCachedRiskAssessment(
+    supplierId: number
+  ): Promise<SupplierRiskAssessment | null> {
     try {
-      const result = await query(`
+      const result = await query(
+        `
         SELECT * FROM analytics_metric_cache
         WHERE metric_key = $1 AND expires_at > NOW()
-      `, [`${this.cachePrefix}:risk:${supplierId}`]);
+      `,
+        [`${this.cachePrefix}:risk:${supplierId}`]
+      );
 
       if (result.rows.length > 0) {
         return JSON.parse(result.rows[0].metric_value);
@@ -765,25 +825,37 @@ export class SupplierAIAnalytics {
     return null;
   }
 
-  private async cacheRiskAssessment(supplierId: number, assessment: SupplierRiskAssessment): Promise<void> {
+  private async cacheRiskAssessment(
+    supplierId: number,
+    assessment: SupplierRiskAssessment
+  ): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO analytics_metric_cache (metric_key, metric_value, expires_at)
         VALUES ($1, $2, NOW() + INTERVAL '${this.cacheTTL} seconds')
         ON CONFLICT (metric_key) DO UPDATE SET
           metric_value = $2, expires_at = NOW() + INTERVAL '${this.cacheTTL} seconds'
-      `, [`${this.cachePrefix}:risk:${supplierId}`, JSON.stringify(assessment)]);
+      `,
+        [`${this.cachePrefix}:risk:${supplierId}`, JSON.stringify(assessment)]
+      );
     } catch (error) {
       console.error('Cache write error:', error);
     }
   }
 
-  private async getCachedPrediction(supplierId: number, predictionType: string): Promise<SupplierPerformancePrediction | null> {
+  private async getCachedPrediction(
+    supplierId: number,
+    predictionType: string
+  ): Promise<SupplierPerformancePrediction | null> {
     try {
-      const result = await query(`
+      const result = await query(
+        `
         SELECT * FROM analytics_metric_cache
         WHERE metric_key = $1 AND expires_at > NOW()
-      `, [`${this.cachePrefix}:prediction:${supplierId}:${predictionType}`]);
+      `,
+        [`${this.cachePrefix}:prediction:${supplierId}:${predictionType}`]
+      );
 
       if (result.rows.length > 0) {
         return JSON.parse(result.rows[0].metric_value);
@@ -794,14 +866,24 @@ export class SupplierAIAnalytics {
     return null;
   }
 
-  private async cachePrediction(supplierId: number, predictionType: string, prediction: SupplierPerformancePrediction): Promise<void> {
+  private async cachePrediction(
+    supplierId: number,
+    predictionType: string,
+    prediction: SupplierPerformancePrediction
+  ): Promise<void> {
     try {
-      await query(`
+      await query(
+        `
         INSERT INTO analytics_metric_cache (metric_key, metric_value, expires_at)
         VALUES ($1, $2, NOW() + INTERVAL '${this.cacheTTL} seconds')
         ON CONFLICT (metric_key) DO UPDATE SET
           metric_value = $2, expires_at = NOW() + INTERVAL '${this.cacheTTL} seconds'
-      `, [`${this.cachePrefix}:prediction:${supplierId}:${predictionType}`, JSON.stringify(prediction)]);
+      `,
+        [
+          `${this.cachePrefix}:prediction:${supplierId}:${predictionType}`,
+          JSON.stringify(prediction),
+        ]
+      );
     } catch (error) {
       console.error('Cache write error:', error);
     }

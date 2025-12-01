@@ -9,7 +9,13 @@ import { z } from 'zod';
 // ENUMS AND CONSTANTS
 // ============================================================================
 
-export const PreferenceCategorySchema = z.enum(['communication', 'behavior', 'tools', 'notifications', 'privacy']);
+export const PreferenceCategorySchema = z.enum([
+  'communication',
+  'behavior',
+  'tools',
+  'notifications',
+  'privacy',
+]);
 export type PreferenceCategory = z.infer<typeof PreferenceCategorySchema>;
 
 export const PreferenceScopeSchema = z.enum(['user', 'org', 'global']);
@@ -90,7 +96,12 @@ export type UserFeedback = z.infer<typeof UserFeedbackSchema>;
 export const InteractionPatternSchema = z.object({
   patternId: z.string().uuid(),
   userId: z.string().uuid(),
-  patternType: z.enum(['query_frequency', 'response_preference', 'feature_usage', 'error_patterns']),
+  patternType: z.enum([
+    'query_frequency',
+    'response_preference',
+    'feature_usage',
+    'error_patterns',
+  ]),
   pattern: z.record(z.unknown()),
   confidence: z.number().min(0).max(1),
   lastObserved: z.date(),
@@ -101,7 +112,13 @@ export type InteractionPattern = z.infer<typeof InteractionPatternSchema>;
 export const LearningSignalSchema = z.object({
   signalId: z.string().uuid(),
   userId: z.string().uuid(),
-  signalType: z.enum(['feedback', 'correction', 'preference_change', 'usage_pattern', 'interaction']),
+  signalType: z.enum([
+    'feedback',
+    'correction',
+    'preference_change',
+    'usage_pattern',
+    'interaction',
+  ]),
   signalData: z.record(z.unknown()),
   strength: z.number().min(0).max(1),
   timestamp: z.date(),
@@ -175,7 +192,10 @@ export const LearningSignalInputSchema = z.object({
 // DEFAULT VALUES
 // ============================================================================
 
-export const DEFAULT_USER_PREFERENCES: Omit<UserPreferences, 'id' | 'userId' | 'orgId' | 'createdAt' | 'updatedAt'> = {
+export const DEFAULT_USER_PREFERENCES: Omit<
+  UserPreferences,
+  'id' | 'userId' | 'orgId' | 'createdAt' | 'updatedAt'
+> = {
   preferences: {
     communication: {
       verbosity: 'medium',

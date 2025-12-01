@@ -9,7 +9,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
 
@@ -28,10 +28,9 @@ export async function GET(
         ? parseFloat(searchParams.get('min_confidence')!)
         : undefined;
 
-      const recommendations = await PricingOptimizationService.getRecommendations(
-        id,
-        { min_confidence: minConfidence }
-      );
+      const recommendations = await PricingOptimizationService.getRecommendations(id, {
+        min_confidence: minConfidence,
+      });
 
       return NextResponse.json({
         success: true,
@@ -51,10 +50,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: run });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -85,9 +81,6 @@ export async function POST(
       message: `Applied ${result.succeeded} recommendations successfully`,
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

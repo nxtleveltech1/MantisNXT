@@ -1,34 +1,30 @@
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
-import {
-  sortByTimestamp,
-  filterByDateRange,
-  serializeTimestamp,
-} from '@/lib/utils/date-utils'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { sortByTimestamp, filterByDateRange, serializeTimestamp } from '@/lib/utils/date-utils';
 
-type DatabaseModule = typeof import('@/lib/database')
+type DatabaseModule = typeof import('@/lib/database');
 
-let cachedPool: DatabaseModule['pool'] | null = null
-let dbLoadError: string | null = null
+let cachedPool: DatabaseModule['pool'] | null = null;
+let dbLoadError: string | null = null;
 
 async function resolvePool() {
   if (cachedPool) {
-    return cachedPool
+    return cachedPool;
   }
   if (dbLoadError) {
-    return null
+    return null;
   }
   try {
-    const dbModule: DatabaseModule = await import('@/lib/database')
-    cachedPool = dbModule.pool
-    return cachedPool
+    const dbModule: DatabaseModule = await import('@/lib/database');
+    cachedPool = dbModule.pool;
+    return cachedPool;
   } catch (error) {
-    dbLoadError = error instanceof Error ? error.message : 'Database connection unavailable'
-    console.error('⚠️ Recent activities database unavailable:', error)
-    return null
+    dbLoadError = error instanceof Error ? error.message : 'Database connection unavailable';
+    console.error('⚠️ Recent activities database unavailable:', error);
+    return null;
   }
 }
 
@@ -41,7 +37,7 @@ interface RecentActivity {
   entityId: string;
   entityName: string;
   timestamp: string;
-  priority: "low" | "medium" | "high";
+  priority: 'low' | 'medium' | 'high';
   status: string;
   metadata: Record<string, unknown>;
 }
@@ -89,7 +85,7 @@ const FALLBACK_ACTIVITIES: RecentActivity[] = [
       source: 'sample',
     },
   },
-]
+];
 
 interface ActivityResult {
   items: RecentActivity[];
@@ -99,13 +95,13 @@ interface ActivityResult {
 
 // Generate real activities from database changes and events
 async function generateRecentActivities(limit: number = 20): Promise<ActivityResult> {
-  const pool = await resolvePool()
+  const pool = await resolvePool();
   if (!pool) {
     return {
       items: FALLBACK_ACTIVITIES.slice(0, limit),
       isFallback: true,
       reason: dbLoadError ?? 'Database connection is not configured',
-    }
+    };
   }
   try {
     // Get recent supplier additions/updates using core schema
@@ -156,92 +152,92 @@ async function generateRecentActivities(limit: number = 20): Promise<ActivityRes
     `;
 
     const [supplierResult, inventoryResult, newInventoryResult] = await Promise.all([
-      pool.query(supplierActivitiesQuery).catch((err) => {
+      pool.query(supplierActivitiesQuery).catch(err => {
         console.error('Error querying supplier activities:', err);
         return { rows: [] };
       }),
-      pool.query(inventoryActivitiesQuery).catch((err) => {
+      pool.query(inventoryActivitiesQuery).catch(err => {
         console.error('Error querying inventory activities:', err);
         return { rows: [] };
       }),
-      pool.query(newInventoryQuery).catch((err) => {
+      pool.query(newInventoryQuery).catch(err => {
         console.error('Error querying new inventory:', err);
         return { rows: [] };
       }),
-    ])
+    ]);
 
-    const activities: RecentActivity[] = []
+    const activities: RecentActivity[] = [];
 
     // Add supplier activities
-    supplierResult.rows.forEach((row) => {
+    supplierResult.rows.forEach(row => {
       activities.push({
         id: `supplier_${row.id}_${Date.parse(row.timestamp)}`,
-        type: "supplier_added",
-        title: "New Supplier Added",
+        type: 'supplier_added',
+        title: 'New Supplier Added',
         description: row.description,
-        entityType: "supplier",
+        entityType: 'supplier',
         entityId: row.id,
         entityName: row.name,
         timestamp: serializeTimestamp(row.timestamp),
-        priority: "medium",
-        status: "completed",
+        priority: 'medium',
+        status: 'completed',
         metadata: {
-          category: "supplier_management",
-          source: "system",
+          category: 'supplier_management',
+          source: 'system',
         },
-      })
-    })
+      });
+    });
 
     // Add inventory update activities
-    inventoryResult.rows.forEach((row) => {
+    inventoryResult.rows.forEach(row => {
       activities.push({
         id: `inventory_update_${row.id}_${Date.parse(row.timestamp)}`,
-        type: "inventory_update",
-        title: "Inventory Updated",
+        type: 'inventory_update',
+        title: 'Inventory Updated',
         description: row.description,
-        entityType: "inventory",
+        entityType: 'inventory',
         entityId: row.id,
         entityName: row.name,
         timestamp: serializeTimestamp(row.timestamp),
-        priority: "low",
-        status: "completed",
+        priority: 'low',
+        status: 'completed',
         metadata: {
-          category: "inventory_management",
-          source: "system",
+          category: 'inventory_management',
+          source: 'system',
         },
       });
     });
 
     // Add new inventory item activities
-    newInventoryResult.rows.forEach((row) => {
+    newInventoryResult.rows.forEach(row => {
       activities.push({
         id: `item_added_${row.id}_${Date.parse(row.timestamp)}`,
-        type: "item_added",
-        title: "New Item Added",
+        type: 'item_added',
+        title: 'New Item Added',
         description: row.description,
-        entityType: "inventory",
+        entityType: 'inventory',
         entityId: row.id,
         entityName: row.name,
         timestamp: serializeTimestamp(row.timestamp),
-        priority: "medium",
-        status: "completed",
+        priority: 'medium',
+        status: 'completed',
         metadata: {
-          category: "inventory_management",
-          source: "system",
+          category: 'inventory_management',
+          source: 'system',
         },
       });
     });
 
     // Sort by timestamp (most recent first) and limit
-    const sortedActivities = sortByTimestamp(activities, 'desc')
-    return { items: sortedActivities.slice(0, limit), isFallback: false }
+    const sortedActivities = sortByTimestamp(activities, 'desc');
+    return { items: sortedActivities.slice(0, limit), isFallback: false };
   } catch (error) {
-    console.error('Error generating activities:', error)
+    console.error('Error generating activities:', error);
     return {
       items: FALLBACK_ACTIVITIES.slice(0, limit),
       isFallback: true,
       reason: error instanceof Error ? error.message : 'Failed to query recent activities',
-    }
+    };
   }
 }
 
@@ -251,12 +247,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
-      limit: parseInt(searchParams.get("limit") || "20", 10),
-      offset: parseInt(searchParams.get("offset") || "0", 10),
-      type: searchParams.get("type")?.split(",").filter(Boolean) || undefined,
-      userId: searchParams.get("userId") || undefined,
-      dateFrom: searchParams.get("dateFrom") || undefined,
-      dateTo: searchParams.get("dateTo") || undefined,
+      limit: parseInt(searchParams.get('limit') || '20', 10),
+      offset: parseInt(searchParams.get('offset') || '0', 10),
+      type: searchParams.get('type')?.split(',').filter(Boolean) || undefined,
+      userId: searchParams.get('userId') || undefined,
+      dateFrom: searchParams.get('dateFrom') || undefined,
+      dateTo: searchParams.get('dateTo') || undefined,
     };
 
     // Validate with better error handling
@@ -268,7 +264,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: "Invalid query parameters",
+            error: 'Invalid query parameters',
             details: validationError.issues,
           },
           { status: 400 }
@@ -289,16 +285,17 @@ export async function GET(request: NextRequest) {
       activityResult = {
         items: FALLBACK_ACTIVITIES.slice(0, validatedParams.limit),
         isFallback: true,
-        reason: activityError instanceof Error ? activityError.message : 'Failed to generate activities',
+        reason:
+          activityError instanceof Error ? activityError.message : 'Failed to generate activities',
       };
     }
 
     // Apply filters
-    let filteredActivities = activityResult.items
+    let filteredActivities = activityResult.items;
 
     // Filter by activity type
     if (validatedParams.type && validatedParams.type.length > 0) {
-      filteredActivities = filteredActivities.filter((activity) =>
+      filteredActivities = filteredActivities.filter(activity =>
         validatedParams.type!.includes(activity.type)
       );
     }
@@ -320,29 +317,17 @@ export async function GET(request: NextRequest) {
     const metrics = {
       totalActivities: filteredActivities.length,
       activitiesByType: {
-        supplier_added: filteredActivities.filter(
-          (a) => a.type === "supplier_added"
-        ).length,
-        inventory_update: filteredActivities.filter(
-          (a) => a.type === "inventory_update"
-        ).length,
-        item_added: filteredActivities.filter((a) => a.type === "item_added")
-          .length,
-        price_change: filteredActivities.filter(
-          (a) => a.type === "price_change"
-        ).length,
-        delivery_received: filteredActivities.filter(
-          (a) => a.type === "delivery_received"
-        ).length,
-        contract_signed: filteredActivities.filter(
-          (a) => a.type === "contract_signed"
-        ).length,
+        supplier_added: filteredActivities.filter(a => a.type === 'supplier_added').length,
+        inventory_update: filteredActivities.filter(a => a.type === 'inventory_update').length,
+        item_added: filteredActivities.filter(a => a.type === 'item_added').length,
+        price_change: filteredActivities.filter(a => a.type === 'price_change').length,
+        delivery_received: filteredActivities.filter(a => a.type === 'delivery_received').length,
+        contract_signed: filteredActivities.filter(a => a.type === 'contract_signed').length,
       },
       activitiesByPriority: {
-        high: filteredActivities.filter((a) => a.priority === "high").length,
-        medium: filteredActivities.filter((a) => a.priority === "medium")
-          .length,
-        low: filteredActivities.filter((a) => a.priority === "low").length,
+        high: filteredActivities.filter(a => a.priority === 'high').length,
+        medium: filteredActivities.filter(a => a.priority === 'medium').length,
+        low: filteredActivities.filter(a => a.priority === 'low').length,
       },
     };
 
@@ -355,9 +340,7 @@ export async function GET(request: NextRequest) {
         limit: validatedParams.limit,
         offset: validatedParams.offset,
         total: filteredActivities.length,
-        hasMore:
-          validatedParams.offset + validatedParams.limit <
-          filteredActivities.length,
+        hasMore: validatedParams.offset + validatedParams.limit < filteredActivities.length,
       },
       metrics,
       metadata: activityResult.isFallback
@@ -367,15 +350,15 @@ export async function GET(request: NextRequest) {
           }
         : undefined,
       timestamp: new Date().toISOString(),
-    })
+    });
   } catch (error) {
-    console.error("❌ Error fetching recent activities:", error);
+    console.error('❌ Error fetching recent activities:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid query parameters",
+          error: 'Invalid query parameters',
           details: error.issues,
         },
         { status: 400 }
@@ -385,8 +368,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -14,16 +14,10 @@ async function fixFiles() {
     let content = readFileSync(orgPagePath, 'utf-8');
 
     // Fix province assignment
-    content = content.replace(
-      /province: string;/g,
-      'province: SouthAfricanProvince;'
-    );
+    content = content.replace(/province: string;/g, 'province: SouthAfricanProvince;');
 
     // Fix vatRate optional check
-    content = content.replace(
-      /organization\.vatRate \* 100/g,
-      '(organization.vatRate ?? 0) * 100'
-    );
+    content = content.replace(/organization\.vatRate \* 100/g, '(organization.vatRate ?? 0) * 100');
 
     writeFileSync(orgPagePath, content);
     console.log('✓ Fixed admin/organization/page.tsx');
@@ -49,7 +43,13 @@ async function fixFiles() {
       const useEffectIndex = content.indexOf('useEffect');
       if (useEffectIndex > 0) {
         const insertPos = content.lastIndexOf('\n', useEffectIndex);
-        content = content.slice(0, insertPos) + '\n\n  ' + loadUsersMatch[0] + '\n\n  ' + filterUsersMatch[0] + content.slice(insertPos);
+        content =
+          content.slice(0, insertPos) +
+          '\n\n  ' +
+          loadUsersMatch[0] +
+          '\n\n  ' +
+          filterUsersMatch[0] +
+          content.slice(insertPos);
       }
     }
 
@@ -80,7 +80,7 @@ async function fixFiles() {
   const scriptFiles = [
     'scripts/neon-mcp-grant-permissions.ts',
     'scripts/test-metrics-service.ts',
-    'scripts/verify-metrics-production.ts'
+    'scripts/verify-metrics-production.ts',
   ];
 
   for (const scriptPath of scriptFiles) {
@@ -88,16 +88,10 @@ async function fixFiles() {
       let content = readFileSync(scriptPath, 'utf-8');
 
       // Fix terminateSession
-      content = content.replace(
-        /transport\.terminateSession\(\)/g,
-        '(transport as any).close?.()'
-      );
+      content = content.replace(/transport\.terminateSession\(\)/g, '(transport as any).close?.()');
 
       // Fix database.end()
-      content = content.replace(
-        /database\.end\(\)/g,
-        'await (database as any).end?.()'
-      );
+      content = content.replace(/database\.end\(\)/g, 'await (database as any).end?.()');
 
       writeFileSync(scriptPath, content);
       console.log(`✓ Fixed ${scriptPath}`);
@@ -112,22 +106,13 @@ async function fixFiles() {
     let content = readFileSync(authMiddlewarePath, 'utf-8');
 
     // Fix JWT verification cast
-    content = content.replace(
-      /as AuthUser\)/g,
-      'as unknown as AuthUser)'
-    );
+    content = content.replace(/as AuthUser\)/g, 'as unknown as AuthUser)');
 
     // Fix JWT secret
-    content = content.replace(
-      /process\.env\.JWT_SECRET/g,
-      'process.env.JWT_SECRET || ""'
-    );
+    content = content.replace(/process\.env\.JWT_SECRET/g, 'process.env.JWT_SECRET || ""');
 
     // Fix JWT sign calls
-    content = content.replace(
-      /jwt\.sign\(/g,
-      '(jwt.sign as any)('
-    );
+    content = content.replace(/jwt\.sign\(/g, '(jwt.sign as any)(');
 
     writeFileSync(authMiddlewarePath, content);
     console.log('✓ Fixed auth/middleware.ts');
@@ -158,10 +143,7 @@ async function fixFiles() {
     let content = readFileSync(multiTenantPath, 'utf-8');
 
     // Fix JWT sign calls
-    content = content.replace(
-      /jwt\.sign\(/g,
-      '(jwt.sign as any)('
-    );
+    content = content.replace(/jwt\.sign\(/g, '(jwt.sign as any)(');
 
     writeFileSync(multiTenantPath, content);
     console.log('✓ Fixed auth/multi-tenant-auth.ts');

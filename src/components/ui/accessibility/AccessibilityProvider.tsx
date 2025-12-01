@@ -1,15 +1,21 @@
 // @ts-nocheck
-"use client"
+'use client';
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye,
   Volume2,
@@ -20,40 +26,40 @@ import {
   Navigation,
   RotateCcw,
   Plus,
-  Minus
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+  Minus,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Accessibility Settings Interface
 interface AccessibilitySettings {
   // Visual
-  highContrast: boolean
-  reducedMotion: boolean
-  fontSize: number
-  fontFamily: 'default' | 'dyslexic' | 'mono'
-  colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'monochrome'
+  highContrast: boolean;
+  reducedMotion: boolean;
+  fontSize: number;
+  fontFamily: 'default' | 'dyslexic' | 'mono';
+  colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'monochrome';
 
   // Audio
-  soundEnabled: boolean
-  voiceAnnouncements: boolean
-  speechRate: number
-  speechPitch: number
+  soundEnabled: boolean;
+  voiceAnnouncements: boolean;
+  speechRate: number;
+  speechPitch: number;
 
   // Navigation
-  keyboardNavigation: boolean
-  focusIndicators: boolean
-  skipLinks: boolean
+  keyboardNavigation: boolean;
+  focusIndicators: boolean;
+  skipLinks: boolean;
 
   // Interaction
-  clickDelay: number
-  hoverDelay: number
-  autoplay: boolean
+  clickDelay: number;
+  hoverDelay: number;
+  autoplay: boolean;
 
   // Reading
-  readingGuide: boolean
-  dyslexiaFont: boolean
-  lineSpacing: number
-  wordSpacing: number
+  readingGuide: boolean;
+  dyslexiaFont: boolean;
+  lineSpacing: number;
+  wordSpacing: number;
 }
 
 // Default settings
@@ -76,43 +82,41 @@ const defaultSettings: AccessibilitySettings = {
   readingGuide: false,
   dyslexiaFont: false,
   lineSpacing: 1.5,
-  wordSpacing: 1.0
-}
+  wordSpacing: 1.0,
+};
 
 // Accessibility Context
 interface AccessibilityContextType {
-  settings: AccessibilitySettings
-  updateSetting: <K extends keyof AccessibilitySettings>(key: K, value: AccessibilitySettings[K]) => void
-  resetSettings: () => void
-  announceMessage: (message: string) => void
-  isSettingsOpen: boolean
-  setIsSettingsOpen: (open: boolean) => void
-  focusedElement: string | null
-  setFocusedElement: (id: string | null) => void
+  settings: AccessibilitySettings;
+  updateSetting: <K extends keyof AccessibilitySettings>(
+    key: K,
+    value: AccessibilitySettings[K]
+  ) => void;
+  resetSettings: () => void;
+  announceMessage: (message: string) => void;
+  isSettingsOpen: boolean;
+  setIsSettingsOpen: (open: boolean) => void;
+  focusedElement: string | null;
+  setFocusedElement: (id: string | null) => void;
 }
 
-const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined)
+const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
 
 // Hook for using accessibility context
 export const useAccessibility = () => {
-  const context = useContext(AccessibilityContext)
+  const context = useContext(AccessibilityContext);
   if (!context) {
-    throw new Error('useAccessibility must be used within an AccessibilityProvider')
+    throw new Error('useAccessibility must be used within an AccessibilityProvider');
   }
-  return context
-}
+  return context;
+};
 
 // Screen Reader Announcer
 const ScreenReaderAnnouncer: React.FC<{ message: string }> = ({ message }) => (
-  <div
-    role="status"
-    aria-live="polite"
-    aria-atomic="true"
-    className="sr-only"
-  >
+  <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
     {message}
   </div>
-)
+);
 
 // Skip Links Component
 const SkipLinks: React.FC = () => {
@@ -120,18 +124,18 @@ const SkipLinks: React.FC = () => {
     { href: '#main-content', label: 'Skip to main content' },
     { href: '#navigation', label: 'Skip to navigation' },
     { href: '#search', label: 'Skip to search' },
-    { href: '#footer', label: 'Skip to footer' }
-  ]
+    { href: '#footer', label: 'Skip to footer' },
+  ];
 
   return (
     <div className="sr-only focus-within:not-sr-only">
-      <div className="fixed top-0 left-0 z-50 bg-white border-2 border-blue-600 p-2 m-2 rounded-lg shadow-lg">
+      <div className="fixed top-0 left-0 z-50 m-2 rounded-lg border-2 border-blue-600 bg-white p-2 shadow-lg">
         <div className="flex flex-col gap-2">
           {skipLinks.map(link => (
             <a
               key={link.href}
               href={link.href}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:bg-blue-700 text-sm font-medium"
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:bg-blue-700"
             >
               {link.label}
             </a>
@@ -139,76 +143,76 @@ const SkipLinks: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Focus Trap Component
 export const FocusTrap: React.FC<{
-  children: React.ReactNode
-  active: boolean
-  restoreFocus?: boolean
+  children: React.ReactNode;
+  active: boolean;
+  restoreFocus?: boolean;
 }> = ({ children, active, restoreFocus = true }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const previousActiveElement = useRef<HTMLElement | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!active) return
+    if (!active) return;
 
-    previousActiveElement.current = document.activeElement as HTMLElement
+    previousActiveElement.current = document.activeElement as HTMLElement;
 
-    const container = containerRef.current
-    if (!container) return
+    const container = containerRef.current;
+    if (!container) return;
 
     const focusableElements = container.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    const firstElement = focusableElements[0] as HTMLElement
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+    );
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return
+      if (e.key !== 'Tab') return;
 
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
-          lastElement?.focus()
-          e.preventDefault()
+          lastElement?.focus();
+          e.preventDefault();
         }
       } else {
         if (document.activeElement === lastElement) {
-          firstElement?.focus()
-          e.preventDefault()
+          firstElement?.focus();
+          e.preventDefault();
         }
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleTabKey)
-    firstElement?.focus()
+    document.addEventListener('keydown', handleTabKey);
+    firstElement?.focus();
 
     return () => {
-      document.removeEventListener('keydown', handleTabKey)
+      document.removeEventListener('keydown', handleTabKey);
       if (restoreFocus && previousActiveElement.current) {
-        previousActiveElement.current.focus()
+        previousActiveElement.current.focus();
       }
-    }
-  }, [active, restoreFocus])
+    };
+  }, [active, restoreFocus]);
 
   return (
     <div ref={containerRef} className="focus-trap">
       {children}
     </div>
-  )
-}
+  );
+};
 
 // Accessible Button Component
 export const AccessibleButton: React.FC<{
-  children: React.ReactNode
-  onClick?: () => void
-  disabled?: boolean
-  variant?: 'primary' | 'secondary' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
-  ariaLabel?: string
-  ariaDescribedBy?: string
-  className?: string
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  ariaLabel?: string;
+  ariaDescribedBy?: string;
+  className?: string;
 }> = ({
   children,
   onClick,
@@ -217,29 +221,29 @@ export const AccessibleButton: React.FC<{
   size = 'md',
   ariaLabel,
   ariaDescribedBy,
-  className
+  className,
 }) => {
-  const { settings, announceMessage } = useAccessibility()
+  const { settings, announceMessage } = useAccessibility();
 
   const handleClick = () => {
-    if (disabled) return
+    if (disabled) return;
 
     if (settings.soundEnabled) {
       // Play click sound (would integrate with audio system)
     }
 
     if (settings.voiceAnnouncements && ariaLabel) {
-      announceMessage(`Button ${ariaLabel} activated`)
+      announceMessage(`Button ${ariaLabel} activated`);
     }
 
-    setTimeout(() => onClick?.(), settings.clickDelay)
-  }
+    setTimeout(() => onClick?.(), settings.clickDelay);
+  };
 
   const sizeClasses = {
     sm: 'min-h-[32px] min-w-[32px] px-3 py-1 text-sm',
     md: 'min-h-[44px] min-w-[44px] px-4 py-2 text-base',
-    lg: 'min-h-[56px] min-w-[56px] px-6 py-3 text-lg'
-  }
+    lg: 'min-h-[56px] min-w-[56px] px-6 py-3 text-lg',
+  };
 
   return (
     <Button
@@ -257,38 +261,41 @@ export const AccessibleButton: React.FC<{
     >
       {children}
     </Button>
-  )
-}
+  );
+};
 
 // Accessibility Settings Panel
 const AccessibilitySettingsPanel: React.FC = () => {
-  const { settings, updateSetting, resetSettings, isSettingsOpen, setIsSettingsOpen } = useAccessibility()
-  const [activeTab, setActiveTab] = useState<'visual' | 'audio' | 'navigation' | 'interaction'>('visual')
+  const { settings, updateSetting, resetSettings, isSettingsOpen, setIsSettingsOpen } =
+    useAccessibility();
+  const [activeTab, setActiveTab] = useState<'visual' | 'audio' | 'navigation' | 'interaction'>(
+    'visual'
+  );
 
   const tabs = [
     { id: 'visual', label: 'Visual', icon: Eye },
     { id: 'audio', label: 'Audio', icon: Volume2 },
     { id: 'navigation', label: 'Navigation', icon: Navigation },
-    { id: 'interaction', label: 'Interaction', icon: MousePointer }
-  ]
+    { id: 'interaction', label: 'Interaction', icon: MousePointer },
+  ];
 
   const colorBlindOptions = [
     { value: 'none', label: 'None' },
     { value: 'protanopia', label: 'Protanopia (Red-blind)' },
     { value: 'deuteranopia', label: 'Deuteranopia (Green-blind)' },
     { value: 'tritanopia', label: 'Tritanopia (Blue-blind)' },
-    { value: 'monochrome', label: 'Monochrome' }
-  ]
+    { value: 'monochrome', label: 'Monochrome' },
+  ];
 
   const fontOptions = [
     { value: 'default', label: 'Default Font' },
     { value: 'dyslexic', label: 'Dyslexic-friendly' },
-    { value: 'mono', label: 'Monospace' }
-  ]
+    { value: 'mono', label: 'Monospace' },
+  ];
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
             <Shield className="h-6 w-6 text-blue-600" />
@@ -306,24 +313,24 @@ const AccessibilitySettingsPanel: React.FC = () => {
               <nav role="navigation" aria-label="Accessibility settings navigation">
                 <div className="space-y-2">
                   {tabs.map(tab => {
-                    const Icon = tab.icon
+                    const Icon = tab.icon;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as unknown)}
                         className={cn(
-                          "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all",
-                          "min-h-[44px] focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                          'flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-all',
+                          'min-h-[44px] focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
                           activeTab === tab.id
-                            ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                            : "hover:bg-gray-100 border-2 border-transparent"
+                            ? 'border-2 border-blue-300 bg-blue-100 text-blue-700'
+                            : 'border-2 border-transparent hover:bg-gray-100'
                         )}
                         aria-current={activeTab === tab.id ? 'page' : undefined}
                       >
                         <Icon className="h-5 w-5" />
                         <span className="font-medium">{tab.label}</span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
 
@@ -336,7 +343,7 @@ const AccessibilitySettingsPanel: React.FC = () => {
                     onClick={resetSettings}
                     className="w-full justify-start"
                   >
-                    <RotateCcw className="h-4 w-4 mr-2" />
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Reset to Defaults
                   </Button>
                 </div>
@@ -344,7 +351,7 @@ const AccessibilitySettingsPanel: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
@@ -358,40 +365,43 @@ const AccessibilitySettingsPanel: React.FC = () => {
                   {activeTab === 'visual' && (
                     <div className="space-y-8">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                           <Eye className="h-5 w-5" />
                           Visual Accessibility
                         </h3>
 
                         <div className="space-y-6">
                           {/* High Contrast */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="high-contrast" className="font-medium block">
+                              <label htmlFor="high-contrast" className="block font-medium">
                                 High Contrast Mode
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Increases contrast between text and background for better readability
+                              <p className="mt-1 text-sm text-gray-600">
+                                Increases contrast between text and background for better
+                                readability
                               </p>
                             </div>
                             <Switch
                               id="high-contrast"
                               checked={settings.highContrast}
-                              onCheckedChange={(checked) => updateSetting('highContrast', checked)}
+                              onCheckedChange={checked => updateSetting('highContrast', checked)}
                               aria-describedby="high-contrast-description"
                             />
                           </div>
 
                           {/* Font Size */}
-                          <div className="space-y-3 p-4 border rounded-lg">
-                            <label className="font-medium block">
+                          <div className="space-y-3 rounded-lg border p-4">
+                            <label className="block font-medium">
                               Font Size: {settings.fontSize}%
                             </label>
                             <div className="flex items-center gap-4">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => updateSetting('fontSize', Math.max(50, settings.fontSize - 10))}
+                                onClick={() =>
+                                  updateSetting('fontSize', Math.max(50, settings.fontSize - 10))
+                                }
                                 aria-label="Decrease font size"
                               >
                                 <Minus className="h-4 w-4" />
@@ -408,7 +418,9 @@ const AccessibilitySettingsPanel: React.FC = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => updateSetting('fontSize', Math.min(200, settings.fontSize + 10))}
+                                onClick={() =>
+                                  updateSetting('fontSize', Math.min(200, settings.fontSize + 10))
+                                }
                                 aria-label="Increase font size"
                               >
                                 <Plus className="h-4 w-4" />
@@ -420,13 +432,13 @@ const AccessibilitySettingsPanel: React.FC = () => {
                           </div>
 
                           {/* Font Family */}
-                          <div className="space-y-3 p-4 border rounded-lg">
-                            <label htmlFor="font-family" className="font-medium block">
+                          <div className="space-y-3 rounded-lg border p-4">
+                            <label htmlFor="font-family" className="block font-medium">
                               Font Family
                             </label>
                             <Select
                               value={settings.fontFamily}
-                              onValueChange={(value) => updateSetting('fontFamily', value as unknown)}
+                              onValueChange={value => updateSetting('fontFamily', value as unknown)}
                             >
                               <SelectTrigger id="font-family">
                                 <SelectValue />
@@ -442,13 +454,15 @@ const AccessibilitySettingsPanel: React.FC = () => {
                           </div>
 
                           {/* Color Blind Support */}
-                          <div className="space-y-3 p-4 border rounded-lg">
-                            <label htmlFor="color-blind-mode" className="font-medium block">
+                          <div className="space-y-3 rounded-lg border p-4">
+                            <label htmlFor="color-blind-mode" className="block font-medium">
                               Color Vision Support
                             </label>
                             <Select
                               value={settings.colorBlindMode}
-                              onValueChange={(value) => updateSetting('colorBlindMode', value as unknown)}
+                              onValueChange={value =>
+                                updateSetting('colorBlindMode', value as unknown)
+                              }
                             >
                               <SelectTrigger id="color-blind-mode">
                                 <SelectValue />
@@ -464,19 +478,19 @@ const AccessibilitySettingsPanel: React.FC = () => {
                           </div>
 
                           {/* Reduced Motion */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="reduced-motion" className="font-medium block">
+                              <label htmlFor="reduced-motion" className="block font-medium">
                                 Reduce Motion
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Minimizes animations and transitions that may cause discomfort
                               </p>
                             </div>
                             <Switch
                               id="reduced-motion"
                               checked={settings.reducedMotion}
-                              onCheckedChange={(checked) => updateSetting('reducedMotion', checked)}
+                              onCheckedChange={checked => updateSetting('reducedMotion', checked)}
                             />
                           </div>
                         </div>
@@ -488,51 +502,53 @@ const AccessibilitySettingsPanel: React.FC = () => {
                   {activeTab === 'audio' && (
                     <div className="space-y-8">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                           <Volume2 className="h-5 w-5" />
                           Audio Accessibility
                         </h3>
 
                         <div className="space-y-6">
                           {/* Sound Effects */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="sound-enabled" className="font-medium block">
+                              <label htmlFor="sound-enabled" className="block font-medium">
                                 Sound Effects
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Plays audio feedback for interactions and notifications
                               </p>
                             </div>
                             <Switch
                               id="sound-enabled"
                               checked={settings.soundEnabled}
-                              onCheckedChange={(checked) => updateSetting('soundEnabled', checked)}
+                              onCheckedChange={checked => updateSetting('soundEnabled', checked)}
                             />
                           </div>
 
                           {/* Voice Announcements */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="voice-announcements" className="font-medium block">
+                              <label htmlFor="voice-announcements" className="block font-medium">
                                 Voice Announcements
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Provides spoken feedback for screen reader users
                               </p>
                             </div>
                             <Switch
                               id="voice-announcements"
                               checked={settings.voiceAnnouncements}
-                              onCheckedChange={(checked) => updateSetting('voiceAnnouncements', checked)}
+                              onCheckedChange={checked =>
+                                updateSetting('voiceAnnouncements', checked)
+                              }
                             />
                           </div>
 
                           {settings.voiceAnnouncements && (
                             <>
                               {/* Speech Rate */}
-                              <div className="space-y-3 p-4 border rounded-lg">
-                                <label className="font-medium block">
+                              <div className="space-y-3 rounded-lg border p-4">
+                                <label className="block font-medium">
                                   Speech Rate: {settings.speechRate.toFixed(1)}x
                                 </label>
                                 <Slider
@@ -551,8 +567,8 @@ const AccessibilitySettingsPanel: React.FC = () => {
                               </div>
 
                               {/* Speech Pitch */}
-                              <div className="space-y-3 p-4 border rounded-lg">
-                                <label className="font-medium block">
+                              <div className="space-y-3 rounded-lg border p-4">
+                                <label className="block font-medium">
                                   Speech Pitch: {settings.speechPitch.toFixed(1)}
                                 </label>
                                 <Slider
@@ -580,60 +596,62 @@ const AccessibilitySettingsPanel: React.FC = () => {
                   {activeTab === 'navigation' && (
                     <div className="space-y-8">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                           <Keyboard className="h-5 w-5" />
                           Navigation Accessibility
                         </h3>
 
                         <div className="space-y-6">
                           {/* Keyboard Navigation */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="keyboard-navigation" className="font-medium block">
+                              <label htmlFor="keyboard-navigation" className="block font-medium">
                                 Enhanced Keyboard Navigation
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Enables advanced keyboard shortcuts and navigation
                               </p>
                             </div>
                             <Switch
                               id="keyboard-navigation"
                               checked={settings.keyboardNavigation}
-                              onCheckedChange={(checked) => updateSetting('keyboardNavigation', checked)}
+                              onCheckedChange={checked =>
+                                updateSetting('keyboardNavigation', checked)
+                              }
                             />
                           </div>
 
                           {/* Focus Indicators */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="focus-indicators" className="font-medium block">
+                              <label htmlFor="focus-indicators" className="block font-medium">
                                 Enhanced Focus Indicators
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Shows clear visual indicators for focused elements
                               </p>
                             </div>
                             <Switch
                               id="focus-indicators"
                               checked={settings.focusIndicators}
-                              onCheckedChange={(checked) => updateSetting('focusIndicators', checked)}
+                              onCheckedChange={checked => updateSetting('focusIndicators', checked)}
                             />
                           </div>
 
                           {/* Skip Links */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="skip-links" className="font-medium block">
+                              <label htmlFor="skip-links" className="block font-medium">
                                 Skip Navigation Links
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Provides quick navigation shortcuts to main content areas
                               </p>
                             </div>
                             <Switch
                               id="skip-links"
                               checked={settings.skipLinks}
-                              onCheckedChange={(checked) => updateSetting('skipLinks', checked)}
+                              onCheckedChange={checked => updateSetting('skipLinks', checked)}
                             />
                           </div>
                         </div>
@@ -645,18 +663,18 @@ const AccessibilitySettingsPanel: React.FC = () => {
                   {activeTab === 'interaction' && (
                     <div className="space-y-8">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                           <MousePointer className="h-5 w-5" />
                           Interaction Accessibility
                         </h3>
 
                         <div className="space-y-6">
                           {/* Click Delay */}
-                          <div className="space-y-3 p-4 border rounded-lg">
-                            <label className="font-medium block">
+                          <div className="space-y-3 rounded-lg border p-4">
+                            <label className="block font-medium">
                               Click Delay: {settings.clickDelay}ms
                             </label>
-                            <p className="text-sm text-gray-600 mb-3">
+                            <p className="mb-3 text-sm text-gray-600">
                               Adds delay before processing clicks to prevent accidental activation
                             </p>
                             <Slider
@@ -675,11 +693,11 @@ const AccessibilitySettingsPanel: React.FC = () => {
                           </div>
 
                           {/* Hover Delay */}
-                          <div className="space-y-3 p-4 border rounded-lg">
-                            <label className="font-medium block">
+                          <div className="space-y-3 rounded-lg border p-4">
+                            <label className="block font-medium">
                               Hover Delay: {settings.hoverDelay}ms
                             </label>
-                            <p className="text-sm text-gray-600 mb-3">
+                            <p className="mb-3 text-sm text-gray-600">
                               Controls how long to wait before showing hover effects
                             </p>
                             <Slider
@@ -698,19 +716,19 @@ const AccessibilitySettingsPanel: React.FC = () => {
                           </div>
 
                           {/* Autoplay */}
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="flex-1">
-                              <label htmlFor="autoplay" className="font-medium block">
+                              <label htmlFor="autoplay" className="block font-medium">
                                 Prevent Autoplay
                               </label>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="mt-1 text-sm text-gray-600">
                                 Prevents videos and animations from playing automatically
                               </p>
                             </div>
                             <Switch
                               id="autoplay"
                               checked={!settings.autoplay}
-                              onCheckedChange={(checked) => updateSetting('autoplay', !checked)}
+                              onCheckedChange={checked => updateSetting('autoplay', !checked)}
                             />
                           </div>
                         </div>
@@ -724,97 +742,100 @@ const AccessibilitySettingsPanel: React.FC = () => {
         </FocusTrap>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
 // Accessibility Provider Component
 export const AccessibilityProvider: React.FC<{
-  children: React.ReactNode
-  enableScreenReader?: boolean
+  children: React.ReactNode;
+  enableScreenReader?: boolean;
 }> = ({ children, enableScreenReader = true }) => {
-  const [settings, setSettings] = useState<AccessibilitySettings>(defaultSettings)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [focusedElement, setFocusedElement] = useState<string | null>(null)
-  const [announcements, setAnnouncements] = useState<string>('')
+  const [settings, setSettings] = useState<AccessibilitySettings>(defaultSettings);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [focusedElement, setFocusedElement] = useState<string | null>(null);
+  const [announcements, setAnnouncements] = useState<string>('');
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('accessibility-settings')
+    const saved = localStorage.getItem('accessibility-settings');
     if (saved) {
       try {
-        setSettings(JSON.parse(saved))
+        setSettings(JSON.parse(saved));
       } catch {
-        console.warn('Failed to load accessibility settings')
+        console.warn('Failed to load accessibility settings');
       }
     }
-  }, [])
+  }, []);
 
   // Save settings to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('accessibility-settings', JSON.stringify(settings))
-  }, [settings])
+    localStorage.setItem('accessibility-settings', JSON.stringify(settings));
+  }, [settings]);
 
   // Apply CSS custom properties based on settings
   useEffect(() => {
-    const root = document.documentElement
+    const root = document.documentElement;
 
     // Font size
-    root.style.setProperty('--font-size-scale', `${settings.fontSize / 100}`)
+    root.style.setProperty('--font-size-scale', `${settings.fontSize / 100}`);
 
     // Line spacing
-    root.style.setProperty('--line-height', settings.lineSpacing.toString())
+    root.style.setProperty('--line-height', settings.lineSpacing.toString());
 
     // Word spacing
-    root.style.setProperty('--word-spacing', `${settings.wordSpacing}em`)
+    root.style.setProperty('--word-spacing', `${settings.wordSpacing}em`);
 
     // Reduced motion
     if (settings.reducedMotion) {
-      root.style.setProperty('--animation-duration', '0.01ms')
-      root.style.setProperty('--transition-duration', '0.01ms')
+      root.style.setProperty('--animation-duration', '0.01ms');
+      root.style.setProperty('--transition-duration', '0.01ms');
     } else {
-      root.style.removeProperty('--animation-duration')
-      root.style.removeProperty('--transition-duration')
+      root.style.removeProperty('--animation-duration');
+      root.style.removeProperty('--transition-duration');
     }
 
     // High contrast
     if (settings.highContrast) {
-      root.classList.add('high-contrast')
+      root.classList.add('high-contrast');
     } else {
-      root.classList.remove('high-contrast')
+      root.classList.remove('high-contrast');
     }
 
     // Color blind support
-    root.setAttribute('data-color-blind-mode', settings.colorBlindMode)
+    root.setAttribute('data-color-blind-mode', settings.colorBlindMode);
 
     // Font family
     if (settings.fontFamily === 'dyslexic') {
-      root.style.setProperty('--font-family', '"OpenDyslexic", sans-serif')
+      root.style.setProperty('--font-family', '"OpenDyslexic", sans-serif');
     } else if (settings.fontFamily === 'mono') {
-      root.style.setProperty('--font-family', 'monospace')
+      root.style.setProperty('--font-family', 'monospace');
     } else {
-      root.style.removeProperty('--font-family')
+      root.style.removeProperty('--font-family');
     }
-  }, [settings])
+  }, [settings]);
 
-  const updateSetting = useCallback(<K extends keyof AccessibilitySettings>(
-    key: K,
-    value: AccessibilitySettings[K]
-  ) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-  }, [])
+  const updateSetting = useCallback(
+    <K extends keyof AccessibilitySettings>(key: K, value: AccessibilitySettings[K]) => {
+      setSettings(prev => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   const resetSettings = useCallback(() => {
-    setSettings(defaultSettings)
-    setAnnouncements('Accessibility settings have been reset to defaults')
-  }, [])
+    setSettings(defaultSettings);
+    setAnnouncements('Accessibility settings have been reset to defaults');
+  }, []);
 
-  const announceMessage = useCallback((message: string) => {
-    if (settings.voiceAnnouncements && enableScreenReader) {
-      setAnnouncements(message)
-      // Clear after a delay to allow screen readers to announce
-      setTimeout(() => setAnnouncements(''), 1000)
-    }
-  }, [settings.voiceAnnouncements, enableScreenReader])
+  const announceMessage = useCallback(
+    (message: string) => {
+      if (settings.voiceAnnouncements && enableScreenReader) {
+        setAnnouncements(message);
+        // Clear after a delay to allow screen readers to announce
+        setTimeout(() => setAnnouncements(''), 1000);
+      }
+    },
+    [settings.voiceAnnouncements, enableScreenReader]
+  );
 
   const value: AccessibilityContextType = {
     settings,
@@ -824,8 +845,8 @@ export const AccessibilityProvider: React.FC<{
     isSettingsOpen,
     setIsSettingsOpen,
     focusedElement,
-    setFocusedElement
-  }
+    setFocusedElement,
+  };
 
   return (
     <AccessibilityContext.Provider value={value}>
@@ -833,9 +854,7 @@ export const AccessibilityProvider: React.FC<{
       {settings.skipLinks && <SkipLinks />}
 
       {/* Screen Reader Announcements */}
-      {enableScreenReader && announcements && (
-        <ScreenReaderAnnouncer message={announcements} />
-      )}
+      {enableScreenReader && announcements && <ScreenReaderAnnouncer message={announcements} />}
 
       {/* Accessibility Settings Panel */}
       <AccessibilitySettingsPanel />
@@ -843,22 +862,22 @@ export const AccessibilityProvider: React.FC<{
       {/* Main Content */}
       <div
         className={cn(
-          "accessibility-enhanced",
-          settings.highContrast && "high-contrast",
-          settings.focusIndicators && "enhanced-focus",
-          settings.reducedMotion && "reduced-motion"
+          'accessibility-enhanced',
+          settings.highContrast && 'high-contrast',
+          settings.focusIndicators && 'enhanced-focus',
+          settings.reducedMotion && 'reduced-motion'
         )}
         style={{
           fontSize: `${settings.fontSize}%`,
           lineHeight: settings.lineSpacing,
-          wordSpacing: `${settings.wordSpacing}em`
+          wordSpacing: `${settings.wordSpacing}em`,
         }}
       >
         {children}
       </div>
 
       {/* Accessibility Settings Trigger */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed right-4 bottom-4 z-40">
         <Button
           onClick={() => setIsSettingsOpen(true)}
           className="min-h-[56px] min-w-[56px] rounded-full shadow-lg"
@@ -868,37 +887,37 @@ export const AccessibilityProvider: React.FC<{
         </Button>
       </div>
     </AccessibilityContext.Provider>
-  )
-}
+  );
+};
 
 // Accessibility Status Indicator
 export const AccessibilityStatusIndicator: React.FC = () => {
-  const { settings } = useAccessibility()
+  const { settings } = useAccessibility();
 
   const activeFeatures = Object.entries(settings).filter(([key, value]) => {
-    if (typeof value === 'boolean') return value
+    if (typeof value === 'boolean') return value;
     if (typeof value === 'number') {
-      const defaults = defaultSettings as unknown
-      return value !== defaults[key]
+      const defaults = defaultSettings as unknown;
+      return value !== defaults[key];
     }
     if (typeof value === 'string') {
-      const defaults = defaultSettings as unknown
-      return value !== defaults[key]
+      const defaults = defaultSettings as unknown;
+      return value !== defaults[key];
     }
-    return false
-  }).length
+    return false;
+  }).length;
 
-  if (activeFeatures === 0) return null
+  if (activeFeatures === 0) return null;
 
   return (
     <Badge
       variant="secondary"
-      className="fixed top-4 right-4 z-50 bg-green-100 text-green-800 border-green-300"
+      className="fixed top-4 right-4 z-50 border-green-300 bg-green-100 text-green-800"
     >
-      <Shield className="h-3 w-3 mr-1" />
+      <Shield className="mr-1 h-3 w-3" />
       {activeFeatures} accessibility feature{activeFeatures !== 1 ? 's' : ''} active
     </Badge>
-  )
-}
+  );
+};
 
-export default AccessibilityProvider
+export default AccessibilityProvider;

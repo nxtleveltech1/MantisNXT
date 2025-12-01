@@ -43,7 +43,7 @@ export const DEFAULT_CURRENCY_CONFIG: CurrencyConfig = {
   position: 'before', // R 1,000.00
   showVATBreakdown: true,
   enableMultiCurrency: false,
-  supportedCurrencies: ['ZAR', 'USD', 'EUR', 'GBP']
+  supportedCurrencies: ['ZAR', 'USD', 'EUR', 'GBP'],
 };
 
 // Supported currency definitions
@@ -55,7 +55,7 @@ export const CURRENCY_DEFINITIONS = {
     locale: 'en-ZA',
     decimalPlaces: 2,
     country: 'South Africa',
-    region: 'Africa'
+    region: 'Africa',
   },
   USD: {
     code: 'USD',
@@ -64,7 +64,7 @@ export const CURRENCY_DEFINITIONS = {
     locale: 'en-US',
     decimalPlaces: 2,
     country: 'United States',
-    region: 'North America'
+    region: 'North America',
   },
   EUR: {
     code: 'EUR',
@@ -73,7 +73,7 @@ export const CURRENCY_DEFINITIONS = {
     locale: 'en-EU',
     decimalPlaces: 2,
     country: 'European Union',
-    region: 'Europe'
+    region: 'Europe',
   },
   GBP: {
     code: 'GBP',
@@ -82,16 +82,16 @@ export const CURRENCY_DEFINITIONS = {
     locale: 'en-GB',
     decimalPlaces: 2,
     country: 'United Kingdom',
-    region: 'Europe'
-  }
+    region: 'Europe',
+  },
 } as const;
 
 // VAT rates by country/region
 export const VAT_RATES = {
   ZAR: { rate: 0.15, name: 'VAT', fullName: 'Value Added Tax' },
   USD: { rate: 0.0, name: 'Tax', fullName: 'Sales Tax' }, // Varies by state
-  EUR: { rate: 0.20, name: 'VAT', fullName: 'Value Added Tax' }, // Average EU rate
-  GBP: { rate: 0.20, name: 'VAT', fullName: 'Value Added Tax' }
+  EUR: { rate: 0.2, name: 'VAT', fullName: 'Value Added Tax' }, // Average EU rate
+  GBP: { rate: 0.2, name: 'VAT', fullName: 'Value Added Tax' },
 } as const;
 
 // Currency configuration class
@@ -112,13 +112,13 @@ export class CurrencyManager {
       { from: 'GBP', to: 'ZAR', rate: 23.1, source: 'fallback' },
       { from: 'ZAR', to: 'USD', rate: 0.054, source: 'fallback' },
       { from: 'ZAR', to: 'EUR', rate: 0.049, source: 'fallback' },
-      { from: 'ZAR', to: 'GBP', rate: 0.043, source: 'fallback' }
+      { from: 'ZAR', to: 'GBP', rate: 0.043, source: 'fallback' },
     ];
 
     defaultRates.forEach(rate => {
       this.exchangeRates.set(`${rate.from}_${rate.to}`, {
         ...rate,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       });
     });
   }
@@ -143,7 +143,7 @@ export class CurrencyManager {
     const {
       includeVAT = false,
       showVATBreakdown = this.config.showVATBreakdown,
-      forceShowSymbol = true
+      forceShowSymbol = true,
     } = options;
 
     let displayAmount = amount;
@@ -174,11 +174,7 @@ export class CurrencyManager {
   }
 
   // Convert between currencies
-  convertCurrency(
-    amount: number,
-    fromCurrency: string,
-    toCurrency: string
-  ): number {
+  convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
     if (fromCurrency === toCurrency) return amount;
 
     const rateKey = `${fromCurrency}_${toCurrency}`;
@@ -196,7 +192,7 @@ export class CurrencyManager {
     const rateKey = `${rate.from}_${rate.to}`;
     this.exchangeRates.set(rateKey, {
       ...rate,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
   }
 
@@ -214,22 +210,27 @@ export class CurrencyManager {
   getSupportedCurrencies() {
     return this.config.supportedCurrencies.map(code => ({
       code,
-      ...CURRENCY_DEFINITIONS[code as keyof typeof CURRENCY_DEFINITIONS]
+      ...CURRENCY_DEFINITIONS[code as keyof typeof CURRENCY_DEFINITIONS],
     }));
   }
 
   // Get VAT information
   getVATInfo(currency?: string) {
     const targetCurrency = currency || this.config.primary;
-    return VAT_RATES[targetCurrency as keyof typeof VAT_RATES] || {
-      rate: 0,
-      name: 'Tax',
-      fullName: 'Tax'
-    };
+    return (
+      VAT_RATES[targetCurrency as keyof typeof VAT_RATES] || {
+        rate: 0,
+        name: 'Tax',
+        fullName: 'Tax',
+      }
+    );
   }
 
   // Calculate VAT
-  calculateVAT(amount: number, currency?: string): {
+  calculateVAT(
+    amount: number,
+    currency?: string
+  ): {
     exclusive: number;
     vat: number;
     inclusive: number;
@@ -244,7 +245,7 @@ export class CurrencyManager {
       exclusive,
       vat,
       inclusive,
-      rate: vatInfo.rate
+      rate: vatInfo.rate,
     };
   }
 
@@ -268,8 +269,8 @@ export class CurrencyManager {
       inclusive: this.formatCurrency(calculation.inclusive, targetCurrency, { includeVAT: false }),
       formatted: this.formatCurrency(calculation.inclusive, targetCurrency, {
         includeVAT: false,
-        showVATBreakdown: includeVAT
-      })
+        showVATBreakdown: includeVAT,
+      }),
     };
   }
 
@@ -280,7 +281,7 @@ export class CurrencyManager {
       exchangeRates: Array.from(this.exchangeRates.values()),
       autoUpdateRates: true,
       rateUpdateInterval: 24,
-      fallbackRates: Object.fromEntries(this.exchangeRates)
+      fallbackRates: Object.fromEntries(this.exchangeRates),
     };
   }
 
@@ -300,14 +301,17 @@ export class CurrencyManager {
 export const currencyManager = new CurrencyManager();
 
 // Convenience functions for common operations
-export const formatZAR = (amount: number, options?: { includeVAT?: boolean; showVATBreakdown?: boolean }) =>
-  currencyManager.formatCurrency(amount, 'ZAR', options);
+export const formatZAR = (
+  amount: number,
+  options?: { includeVAT?: boolean; showVATBreakdown?: boolean }
+) => currencyManager.formatCurrency(amount, 'ZAR', options);
 
-export const formatAppCurrency = (amount: number, options?: { includeVAT?: boolean; showVATBreakdown?: boolean }) =>
-  currencyManager.formatCurrency(amount, undefined, options);
+export const formatAppCurrency = (
+  amount: number,
+  options?: { includeVAT?: boolean; showVATBreakdown?: boolean }
+) => currencyManager.formatCurrency(amount, undefined, options);
 
-export const calculateSAVAT = (amount: number) =>
-  currencyManager.calculateVAT(amount, 'ZAR');
+export const calculateSAVAT = (amount: number) => currencyManager.calculateVAT(amount, 'ZAR');
 
 export const formatBusinessZAR = (amount: number, includeVAT?: boolean) =>
   currencyManager.formatBusinessAmount(amount, 'ZAR', includeVAT);
@@ -322,6 +326,6 @@ export const useCurrencyConfig = () => {
     getSupportedCurrencies: currencyManager.getSupportedCurrencies.bind(currencyManager),
     getVATInfo: currencyManager.getVATInfo.bind(currencyManager),
     calculateVAT: currencyManager.calculateVAT.bind(currencyManager),
-    formatBusinessAmount: currencyManager.formatBusinessAmount.bind(currencyManager)
+    formatBusinessAmount: currencyManager.formatBusinessAmount.bind(currencyManager),
   };
 };

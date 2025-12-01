@@ -1,14 +1,20 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   CreditCard,
   Download,
@@ -20,42 +26,42 @@ import {
   CheckCircle,
   Clock,
   Receipt,
-  Send
-} from "lucide-react"
+  Send,
+} from 'lucide-react';
 
 interface BillingPlan {
-  id: string
-  name: string
-  tier: 'starter' | 'professional' | 'enterprise'
-  price: number
-  interval: 'monthly' | 'yearly'
-  features: string[]
-  maxUsers: number
-  storage: number
-  apiCalls: number
-  support: string
+  id: string;
+  name: string;
+  tier: 'starter' | 'professional' | 'enterprise';
+  price: number;
+  interval: 'monthly' | 'yearly';
+  features: string[];
+  maxUsers: number;
+  storage: number;
+  apiCalls: number;
+  support: string;
 }
 
 interface Invoice {
-  id: string
-  number: string
-  date: string
-  dueDate: string
-  amount: number
-  status: 'paid' | 'pending' | 'overdue' | 'draft'
-  description: string
-  downloadUrl?: string
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue' | 'draft';
+  description: string;
+  downloadUrl?: string;
 }
 
 interface Subscription {
-  id: string
-  organizationId: string
-  planId: string
-  status: 'active' | 'cancelled' | 'past_due' | 'trialing'
-  currentPeriodStart: string
-  currentPeriodEnd: string
-  trialEnd?: string
-  cancelAtPeriodEnd: boolean
+  id: string;
+  organizationId: string;
+  planId: string;
+  status: 'active' | 'cancelled' | 'past_due' | 'trialing';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  trialEnd?: string;
+  cancelAtPeriodEnd: boolean;
 }
 
 export default function BillingPage() {
@@ -70,7 +76,7 @@ export default function BillingPage() {
       maxUsers: 25,
       storage: 10,
       apiCalls: 10000,
-      support: 'Email'
+      support: 'Email',
     },
     {
       id: 'professional',
@@ -82,7 +88,7 @@ export default function BillingPage() {
       maxUsers: 100,
       storage: 50,
       apiCalls: 50000,
-      support: 'Email & Phone'
+      support: 'Email & Phone',
     },
     {
       id: 'enterprise',
@@ -90,13 +96,19 @@ export default function BillingPage() {
       tier: 'enterprise',
       price: 2499,
       interval: 'monthly',
-      features: ['All Features', '24/7 Support', 'Custom Integrations', 'White Label', 'Dedicated Support'],
+      features: [
+        'All Features',
+        '24/7 Support',
+        'Custom Integrations',
+        'White Label',
+        'Dedicated Support',
+      ],
       maxUsers: 500,
       storage: 100,
       apiCalls: 250000,
-      support: '24/7 Dedicated'
-    }
-  ])
+      support: '24/7 Dedicated',
+    },
+  ]);
 
   const [invoices] = useState<Invoice[]>([
     {
@@ -107,7 +119,7 @@ export default function BillingPage() {
       amount: 2499,
       status: 'paid',
       description: 'Enterprise Plan - December 2023',
-      downloadUrl: '/invoices/inv-2023-001.pdf'
+      downloadUrl: '/invoices/inv-2023-001.pdf',
     },
     {
       id: '2',
@@ -117,7 +129,7 @@ export default function BillingPage() {
       amount: 2499,
       status: 'paid',
       description: 'Enterprise Plan - November 2023',
-      downloadUrl: '/invoices/inv-2023-002.pdf'
+      downloadUrl: '/invoices/inv-2023-002.pdf',
     },
     {
       id: '3',
@@ -127,7 +139,7 @@ export default function BillingPage() {
       amount: 2499,
       status: 'paid',
       description: 'Enterprise Plan - October 2023',
-      downloadUrl: '/invoices/inv-2023-003.pdf'
+      downloadUrl: '/invoices/inv-2023-003.pdf',
     },
     {
       id: '4',
@@ -136,9 +148,9 @@ export default function BillingPage() {
       dueDate: '2024-01-31',
       amount: 2499,
       status: 'pending',
-      description: 'Enterprise Plan - January 2024'
-    }
-  ])
+      description: 'Enterprise Plan - January 2024',
+    },
+  ]);
 
   const [subscription] = useState<Subscription>({
     id: 'sub_123',
@@ -147,70 +159,70 @@ export default function BillingPage() {
     status: 'active',
     currentPeriodStart: '2023-12-01',
     currentPeriodEnd: '2024-01-01',
-    cancelAtPeriodEnd: false
-  })
+    cancelAtPeriodEnd: false,
+  });
 
-  const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<string>('')
+  const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
 
-  const currentPlan = plans.find(plan => plan.id === subscription.planId)
+  const currentPlan = plans.find(plan => plan.id === subscription.planId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
       case 'active':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'pending':
       case 'trialing':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       case 'overdue':
       case 'past_due':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       case 'cancelled':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getPlanIcon = (tier: string) => {
     switch (tier) {
       case 'enterprise':
-        return <Crown className="h-5 w-5" />
+        return <Crown className="h-5 w-5" />;
       case 'professional':
-        return <Shield className="h-5 w-5" />
+        return <Shield className="h-5 w-5" />;
       default:
-        return <Users className="h-5 w-5" />
+        return <Users className="h-5 w-5" />;
     }
-  }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'ZAR'
-    }).format(amount)
-  }
+      currency: 'ZAR',
+    }).format(amount);
+  };
 
   const calculateNextBilling = () => {
-    const currentEnd = new Date(subscription.currentPeriodEnd)
-    return currentEnd.toLocaleDateString()
-  }
+    const currentEnd = new Date(subscription.currentPeriodEnd);
+    return currentEnd.toLocaleDateString();
+  };
 
   const downloadInvoice = (invoiceId: string) => {
     // Simulate download
-    console.log(`Downloading invoice ${invoiceId}`)
-  }
+    console.log(`Downloading invoice ${invoiceId}`);
+  };
 
   const sendInvoiceEmail = (invoiceId: string) => {
     // Simulate email sending
-    console.log(`Sending invoice ${invoiceId} via email`)
-  }
+    console.log(`Sending invoice ${invoiceId} via email`);
+  };
 
   const changePlan = (newPlanId: string) => {
-    setSelectedPlan(newPlanId)
+    setSelectedPlan(newPlanId);
     // Handle plan change logic here
-    setIsChangePlanDialogOpen(false)
-  }
+    setIsChangePlanDialogOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -218,19 +230,17 @@ export default function BillingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Billing Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage subscriptions, billing, and invoices
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Manage subscriptions, billing, and invoices</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Export Invoices
           </Button>
           <Dialog open={isChangePlanDialogOpen} onOpenChange={setIsChangePlanDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Change Plan
               </Button>
             </DialogTrigger>
@@ -238,8 +248,8 @@ export default function BillingPage() {
               <DialogHeader>
                 <DialogTitle>Change Subscription Plan</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {plans.map((plan) => (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {plans.map(plan => (
                   <Card
                     key={plan.id}
                     className={`cursor-pointer transition-colors ${
@@ -250,9 +260,7 @@ export default function BillingPage() {
                     onClick={() => setSelectedPlan(plan.id)}
                   >
                     <CardHeader className="text-center">
-                      <div className="flex justify-center mb-2">
-                        {getPlanIcon(plan.tier)}
-                      </div>
+                      <div className="mb-2 flex justify-center">{getPlanIcon(plan.tier)}</div>
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
                       <div className="text-2xl font-bold">
                         {formatCurrency(plan.price)}
@@ -267,7 +275,7 @@ export default function BillingPage() {
                         <li>• {plan.support} support</li>
                       </ul>
                       {plan.id === currentPlan?.id && (
-                        <Badge className="w-full mt-3 justify-center">Current Plan</Badge>
+                        <Badge className="mt-3 w-full justify-center">Current Plan</Badge>
                       )}
                     </CardContent>
                   </Card>
@@ -299,7 +307,7 @@ export default function BillingPage() {
 
         {/* Overview */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Current Subscription */}
             <Card className="lg:col-span-2">
               <CardHeader>
@@ -310,7 +318,7 @@ export default function BillingPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {currentPlan && (
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
                     <div className="flex items-center gap-3">
                       {getPlanIcon(currentPlan.tier)}
                       <div>
@@ -326,7 +334,7 @@ export default function BillingPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <p className="text-sm text-gray-500">Current Period</p>
                     <p className="font-medium">
@@ -342,8 +350,8 @@ export default function BillingPage() {
 
                 {currentPlan && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-2">Plan Features</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <p className="mb-2 text-sm text-gray-500">Plan Features</p>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                       {currentPlan.features.map((feature, index) => (
                         <div key={index} className="flex items-center gap-2 text-sm">
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -360,9 +368,7 @@ export default function BillingPage() {
                   <Button variant="outline" onClick={() => setIsChangePlanDialogOpen(true)}>
                     Change Plan
                   </Button>
-                  <Button variant="outline">
-                    Cancel Subscription
-                  </Button>
+                  <Button variant="outline">Cancel Subscription</Button>
                 </div>
               </CardContent>
             </Card>
@@ -392,11 +398,13 @@ export default function BillingPage() {
 
                 <div className="space-y-2">
                   <h4 className="font-medium">Recent Invoices</h4>
-                  {invoices.slice(0, 3).map((invoice) => (
-                    <div key={invoice.id} className="flex justify-between items-center text-sm">
+                  {invoices.slice(0, 3).map(invoice => (
+                    <div key={invoice.id} className="flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium">{invoice.number}</p>
-                        <p className="text-gray-500">{new Date(invoice.date).toLocaleDateString()}</p>
+                        <p className="text-gray-500">
+                          {new Date(invoice.date).toLocaleDateString()}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{formatCurrency(invoice.amount)}</p>
@@ -418,7 +426,7 @@ export default function BillingPage() {
 
         {/* Subscription Details */}
         <TabsContent value="subscription">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Subscription Details</CardTitle>
@@ -426,7 +434,7 @@ export default function BillingPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Subscription ID</Label>
-                  <code className="block bg-gray-100 p-2 rounded text-sm">{subscription.id}</code>
+                  <code className="block rounded bg-gray-100 p-2 text-sm">{subscription.id}</code>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -438,7 +446,7 @@ export default function BillingPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Cancel at Period End</Label>
-                    <Badge variant={subscription.cancelAtPeriodEnd ? "destructive" : "default"}>
+                    <Badge variant={subscription.cancelAtPeriodEnd ? 'destructive' : 'default'}>
                       {subscription.cancelAtPeriodEnd ? 'Yes' : 'No'}
                     </Badge>
                   </div>
@@ -455,7 +463,9 @@ export default function BillingPage() {
                 {subscription.trialEnd && (
                   <div className="space-y-2">
                     <Label>Trial Ends</Label>
-                    <p className="text-sm">{new Date(subscription.trialEnd).toLocaleDateString()}</p>
+                    <p className="text-sm">
+                      {new Date(subscription.trialEnd).toLocaleDateString()}
+                    </p>
                   </div>
                 )}
 
@@ -463,7 +473,7 @@ export default function BillingPage() {
 
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full">
-                    <Clock className="h-4 w-4 mr-2" />
+                    <Clock className="mr-2 h-4 w-4" />
                     Pause Subscription
                   </Button>
                   <Button variant="destructive" className="w-full">
@@ -485,9 +495,9 @@ export default function BillingPage() {
                         <span>Users</span>
                         <span>125 / {currentPlan.maxUsers}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className="h-2 rounded-full bg-blue-600"
                           style={{ width: `${(125 / currentPlan.maxUsers) * 100}%` }}
                         ></div>
                       </div>
@@ -498,9 +508,9 @@ export default function BillingPage() {
                         <span>Storage</span>
                         <span>45.2 GB / {currentPlan.storage} GB</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className="bg-green-600 h-2 rounded-full"
+                          className="h-2 rounded-full bg-green-600"
                           style={{ width: `${(45.2 / currentPlan.storage) * 100}%` }}
                         ></div>
                       </div>
@@ -511,9 +521,9 @@ export default function BillingPage() {
                         <span>API Calls (this month)</span>
                         <span>45,230 / {currentPlan.apiCalls.toLocaleString()}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className="bg-purple-600 h-2 rounded-full"
+                          className="h-2 rounded-full bg-purple-600"
                           style={{ width: `${(45230 / currentPlan.apiCalls) * 100}%` }}
                         ></div>
                       </div>
@@ -544,7 +554,7 @@ export default function BillingPage() {
                 <span>Invoice History</span>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="mr-2 h-4 w-4" />
                     Export All
                   </Button>
                 </div>
@@ -552,18 +562,21 @@ export default function BillingPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {invoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {invoices.map(invoice => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
                     <div className="flex items-center gap-4">
-                      <div className="p-2 bg-gray-100 rounded">
+                      <div className="rounded bg-gray-100 p-2">
                         <Receipt className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="font-medium">{invoice.number}</p>
                         <p className="text-sm text-gray-500">{invoice.description}</p>
                         <p className="text-xs text-gray-400">
-                          Issued: {new Date(invoice.date).toLocaleDateString()} |
-                          Due: {new Date(invoice.dueDate).toLocaleDateString()}
+                          Issued: {new Date(invoice.date).toLocaleDateString()} | Due:{' '}
+                          {new Date(invoice.dueDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -605,16 +618,16 @@ export default function BillingPage() {
 
         {/* Payment Methods */}
         <TabsContent value="payment-methods">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Payment Methods</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 border rounded-lg">
+                <div className="rounded-lg border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded">
+                      <div className="rounded bg-blue-100 p-2">
                         <CreditCard className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
@@ -627,7 +640,7 @@ export default function BillingPage() {
                 </div>
 
                 <Button variant="outline" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Payment Method
                 </Button>
               </CardContent>
@@ -669,5 +682,5 @@ export default function BillingPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

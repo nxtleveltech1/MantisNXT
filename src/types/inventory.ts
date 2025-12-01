@@ -97,7 +97,13 @@ export interface InventoryLot {
 
 export interface InventoryAlert {
   id: string;
-  type: 'low_stock' | 'out_of_stock' | 'overstock' | 'expiry_warning' | 'quality_issue' | 'location_discrepancy';
+  type:
+    | 'low_stock'
+    | 'out_of_stock'
+    | 'overstock'
+    | 'expiry_warning'
+    | 'quality_issue'
+    | 'location_discrepancy';
   severity: 'info' | 'warning' | 'critical';
   title: string;
   message: string;

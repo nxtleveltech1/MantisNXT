@@ -1,36 +1,36 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { useForm } from 'react-hook-form'
-import { Eye, EyeOff, Lock, Shield, Monitor, CheckCircle2, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { useForm } from 'react-hook-form';
+import { Eye, EyeOff, Lock, Shield, Monitor, CheckCircle2, XCircle } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider'
-import type { User as UserType } from '@/types/auth'
+import { authProvider } from '@/lib/auth/mock-provider';
+import type { User as UserType } from '@/types/auth';
 
 interface PasswordFormData {
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export default function AccountSecurityPage() {
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<PasswordFormData>({
     defaultValues: {
@@ -38,42 +38,42 @@ export default function AccountSecurityPage() {
       newPassword: '',
       confirmPassword: '',
     },
-  })
+  });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoading(true)
-        const currentUser = await authProvider.getCurrentUser()
+        setIsLoading(true);
+        const currentUser = await authProvider.getCurrentUser();
         if (!currentUser) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        setUser(currentUser)
+        setUser(currentUser);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user')
+        setError(err instanceof Error ? err.message : 'Failed to load user');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    loadUser()
-  }, [router])
+    };
+    loadUser();
+  }, [router]);
 
   const onSubmitPassword = async (data: PasswordFormData) => {
     if (data.newPassword !== data.confirmPassword) {
-      setError('New passwords do not match')
-      return
+      setError('New passwords do not match');
+      return;
     }
 
     if (data.newPassword.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return
+      setError('Password must be at least 8 characters long');
+      return;
     }
 
     try {
-      setIsChangingPassword(true)
-      setError(null)
-      setSuccess(null)
+      setIsChangingPassword(true);
+      setError(null);
+      setSuccess(null);
 
       const response = await fetch('/api/v1/users/me/password', {
         method: 'PUT',
@@ -84,60 +84,45 @@ export default function AccountSecurityPage() {
           currentPassword: data.currentPassword,
           newPassword: data.newPassword,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to change password')
+        throw new Error(result.message || 'Failed to change password');
       }
 
-      setSuccess('Password changed successfully')
-      form.reset()
+      setSuccess('Password changed successfully');
+      form.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password')
+      setError(err instanceof Error ? err.message : 'Failed to change password');
     } finally {
-      setIsChangingPassword(false)
+      setIsChangingPassword(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Security' },
-        ]}
-      >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Security' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: 'Account', href: '/account' },
-          { label: 'Security' },
-        ]}
-      >
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Security' }]}>
         <Alert variant="destructive">
           <AlertDescription>Failed to load user data</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: 'Account', href: '/account' },
-        { label: 'Security' },
-      ]}
-    >
+    <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Security' }]}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Security Settings</h1>
@@ -165,9 +150,7 @@ export default function AccountSecurityPage() {
               <Lock className="h-5 w-5" />
               Change Password
             </CardTitle>
-            <CardDescription>
-              Update your password to keep your account secure
-            </CardDescription>
+            <CardDescription>Update your password to keep your account secure</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmitPassword)} className="space-y-4">
@@ -186,7 +169,7 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
                     {showCurrentPassword ? (
@@ -222,14 +205,10 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
                 {form.formState.errors.newPassword && (
@@ -254,7 +233,7 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
@@ -272,7 +251,7 @@ export default function AccountSecurityPage() {
               </div>
 
               <Button type="submit" disabled={isChangingPassword}>
-                <Lock className="h-4 w-4 mr-2" />
+                <Lock className="mr-2 h-4 w-4" />
                 {isChangingPassword ? 'Changing Password...' : 'Change Password'}
               </Button>
             </form>
@@ -285,9 +264,7 @@ export default function AccountSecurityPage() {
               <Shield className="h-5 w-5" />
               Two-Factor Authentication
             </CardTitle>
-            <CardDescription>
-              Add an extra layer of security to your account
-            </CardDescription>
+            <CardDescription>Add an extra layer of security to your account</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -295,7 +272,7 @@ export default function AccountSecurityPage() {
                 <p className="text-sm font-medium">
                   {user.two_factor_enabled ? '2FA is enabled' : '2FA is disabled'}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {user.two_factor_enabled
                     ? 'Your account is protected with two-factor authentication'
                     : 'Enable two-factor authentication for enhanced security'}
@@ -305,7 +282,7 @@ export default function AccountSecurityPage() {
                 {user.two_factor_enabled ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <XCircle className="h-5 w-5 text-muted-foreground" />
+                  <XCircle className="text-muted-foreground h-5 w-5" />
                 )}
                 <Button variant="outline">
                   {user.two_factor_enabled ? 'Manage 2FA' : 'Enable 2FA'}
@@ -327,19 +304,19 @@ export default function AccountSecurityPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="flex items-center gap-3">
-                  <Monitor className="h-5 w-5 text-muted-foreground" />
+                  <Monitor className="text-muted-foreground h-5 w-5" />
                   <div>
                     <p className="text-sm font-medium">Current Session</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       This device • Last active: Just now
                     </p>
                   </div>
                 </div>
                 <Badge variant="default">Active</Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Session management will be available after API implementation
               </p>
             </div>
@@ -347,6 +324,5 @@ export default function AccountSecurityPage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
-

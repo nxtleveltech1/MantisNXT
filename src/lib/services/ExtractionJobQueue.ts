@@ -256,7 +256,6 @@ export class ExtractionJobQueue extends EventEmitter {
         Date.now() - startTime,
         rowsProcessed
       );
-
     } catch (error: any) {
       const duration = Date.now() - startTime;
 
@@ -272,16 +271,10 @@ export class ExtractionJobQueue extends EventEmitter {
         this.emit('job:failed', job.job_id, error);
 
         // Record metrics
-        await extractionMetrics.recordJobCompletion(
-          job.job_id,
-          'failed',
-          duration,
-          rowsProcessed,
-          {
-            code: error.code || 'EXTRACTION_ERROR',
-            message: error.message,
-          }
-        );
+        await extractionMetrics.recordJobCompletion(job.job_id, 'failed', duration, rowsProcessed, {
+          code: error.code || 'EXTRACTION_ERROR',
+          message: error.message,
+        });
       }
     } finally {
       // Cleanup
@@ -415,12 +408,7 @@ export class ExtractionJobQueue extends EventEmitter {
       `UPDATE spp.extraction_jobs
        SET status = $1, result = $2, error = $3, updated_at = NOW()
        WHERE job_id = $4`,
-      [
-        status,
-        result ? JSON.stringify(result) : null,
-        error ? JSON.stringify(error) : null,
-        job_id,
-      ]
+      [status, result ? JSON.stringify(result) : null, error ? JSON.stringify(error) : null, job_id]
     );
   }
 
@@ -497,12 +485,7 @@ export class ExtractionJobQueue extends EventEmitter {
     await this.updateJobStatus(job_id, 'cancelled', null, null);
 
     // Record metrics
-    await extractionMetrics.recordJobCompletion(
-      job_id,
-      'cancelled',
-      0,
-      0
-    );
+    await extractionMetrics.recordJobCompletion(job_id, 'cancelled', 0, 0);
   }
 
   /**

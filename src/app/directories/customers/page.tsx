@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import React, { useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -13,29 +13,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import {
-  Search,
-  UserCheck,
-  Mail,
-  Phone,
-  Plus,
-  Building2,
-} from 'lucide-react'
+} from '@/components/ui/table';
+import { Search, UserCheck, Mail, Phone, Plus, Building2 } from 'lucide-react';
 
 export default function CustomersDirectoryPage() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Placeholder data - to be replaced with actual customer data
-  const customers: unknown[] = []
+  const customers: unknown[] = [];
 
   const filteredCustomers = customers.filter(customer => {
-    const query = searchQuery.toLowerCase()
+    const query = searchQuery.toLowerCase();
     return (
-      customer.name?.toLowerCase().includes(query) ||
-      customer.email?.toLowerCase().includes(query)
-    )
-  })
+      customer.name?.toLowerCase().includes(query) || customer.email?.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <AppLayout
@@ -47,15 +39,15 @@ export default function CustomersDirectoryPage() {
     >
       <div className="space-y-6">
         {/* Header Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Customers</p>
+                  <p className="text-muted-foreground text-sm">Total Customers</p>
                   <p className="text-2xl font-bold">{customers.length}</p>
                 </div>
-                <UserCheck className="h-8 w-8 text-primary" />
+                <UserCheck className="text-primary h-8 w-8" />
               </div>
             </CardContent>
           </Card>
@@ -63,7 +55,7 @@ export default function CustomersDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Customers</p>
+                  <p className="text-muted-foreground text-sm">Active Customers</p>
                   <p className="text-2xl font-bold">0</p>
                 </div>
                 <UserCheck className="h-8 w-8 text-green-500" />
@@ -74,7 +66,7 @@ export default function CustomersDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Contacts</p>
+                  <p className="text-muted-foreground text-sm">Total Contacts</p>
                   <p className="text-2xl font-bold">0</p>
                 </div>
                 <Building2 className="h-8 w-8 text-purple-500" />
@@ -85,7 +77,7 @@ export default function CustomersDirectoryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">New This Month</p>
+                  <p className="text-muted-foreground text-sm">New This Month</p>
                   <p className="text-2xl font-bold">0</p>
                 </div>
                 <Plus className="h-8 w-8 text-orange-500" />
@@ -99,16 +91,16 @@ export default function CustomersDirectoryPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search customers, contacts, or emails..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Customer
               </Button>
             </div>
@@ -122,14 +114,14 @@ export default function CustomersDirectoryPage() {
           </CardHeader>
           <CardContent>
             {filteredCustomers.length === 0 ? (
-              <div className="text-center py-12">
-                <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Customers Yet</h3>
+              <div className="py-12 text-center">
+                <UserCheck className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-semibold">No Customers Yet</h3>
                 <p className="text-muted-foreground mb-4">
                   Customer directory management will be available soon.
                 </p>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add First Customer
                 </Button>
               </div>
@@ -147,7 +139,7 @@ export default function CustomersDirectoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => (
+                  {filteredCustomers.map(customer => (
                     <TableRow key={customer.id}>
                       <TableCell>
                         <div className="font-medium">{customer.name}</div>
@@ -156,13 +148,13 @@ export default function CustomersDirectoryPage() {
                       <TableCell>{customer.contactName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <Mail className="text-muted-foreground h-4 w-4" />
                           {customer.email}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <Phone className="text-muted-foreground h-4 w-4" />
                           {customer.phone}
                         </div>
                       </TableCell>
@@ -183,7 +175,5 @@ export default function CustomersDirectoryPage() {
         </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
-
-

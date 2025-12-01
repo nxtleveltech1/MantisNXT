@@ -11,18 +11,16 @@
  * - Calculate inventory values
  */
 
-import { query as dbQuery, withTransaction } from "../../../lib/database/unified-connection";
-import { isFeatureEnabled, FeatureFlag } from "@/lib/feature-flags";
+import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
+import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
 import type {
   StockOnHand,
   SohBySupplier,
   SohRolledUp,
   SohReportRequest,
-  NxtSoh} from "../../types/nxt-spp";
-import {
-  SohReportRequestSchema,
-  StockOnHandSchema,
-} from "../../types/nxt-spp";
+  NxtSoh,
+} from '../../types/nxt-spp';
+import { SohReportRequestSchema, StockOnHandSchema } from '../../types/nxt-spp';
 
 export class StockService {
   /**
@@ -35,7 +33,7 @@ export class StockService {
   }): Promise<number> {
     // If using view, count from view
     if (isFeatureEnabled(FeatureFlag.USE_NXT_SOH_VIEW)) {
-      const conditions: string[] = ["1=1"];
+      const conditions: string[] = ['1=1'];
       const params: unknown[] = [];
       let idx = 1;
       if (filters?.supplier_ids?.length) {
@@ -47,17 +45,13 @@ export class StockService {
         params.push(filters.location_ids);
       }
       if (filters?.search) {
-        conditions.push(
-          `(product_name ILIKE $${idx} OR supplier_sku ILIKE $${idx})`
-        );
+        conditions.push(`(product_name ILIKE $${idx} OR supplier_sku ILIKE $${idx})`);
         params.push(`%${filters.search}%`);
         idx++;
       }
-      const q = `SELECT COUNT(*) AS cnt FROM serve.v_nxt_soh WHERE ${conditions.join(
-        " AND "
-      )}`;
+      const q = `SELECT COUNT(*) AS cnt FROM serve.v_nxt_soh WHERE ${conditions.join(' AND ')}`;
       const r = await dbQuery<{ cnt: string }>(q, params);
-      return parseInt(r.rows[0]?.cnt || "0", 10);
+      return parseInt(r.rows[0]?.cnt || '0', 10);
     }
 
     // Legacy path: count with selection constraint
@@ -81,9 +75,7 @@ export class StockService {
       params.push(filters.location_ids);
     }
     if (filters?.search) {
-      conditions.push(
-        `(sp.name_from_supplier ILIKE $${idx} OR sp.supplier_sku ILIKE $${idx})`
-      );
+      conditions.push(`(sp.name_from_supplier ILIKE $${idx} OR sp.supplier_sku ILIKE $${idx})`);
       params.push(`%${filters.search}%`);
       idx++;
     }
@@ -100,10 +92,10 @@ export class StockService {
       JOIN core.stock_location l ON l.location_id = soh.location_id
       JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
     `;
     const r = await dbQuery<{ cnt: string }>(q, params);
-    return parseInt(r.rows[0]?.cnt || "0", 10);
+    return parseInt(r.rows[0]?.cnt || '0', 10);
   }
   /**
    * Record a stock snapshot
@@ -114,12 +106,12 @@ export class StockService {
     qty: number;
     unit_cost?: number;
     as_of_ts?: Date;
-    source?: "manual" | "import" | "system";
+    source?: 'manual' | 'import' | 'system';
   }): Promise<StockOnHand> {
     const validated = StockOnHandSchema.parse({
       ...data,
       as_of_ts: data.as_of_ts || new Date(),
-      source: data.source || "manual",
+      source: data.source || 'manual',
     });
 
     const query = `
@@ -158,7 +150,7 @@ export class StockService {
     let imported = 0;
     const errors: string[] = [];
 
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       // Batch insert for performance
       const batchSize = 100;
       for (let i = 0; i < stocks.length; i += batchSize) {
@@ -168,7 +160,7 @@ export class StockService {
         const placeholders: string[] = [];
         let paramIndex = 1;
 
-        batch.forEach((stock) => {
+        batch.forEach(stock => {
           const asOfTs = stock.as_of_ts || new Date();
 
           placeholders.push(
@@ -190,7 +182,7 @@ export class StockService {
             INSERT INTO core.stock_on_hand (
               location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
             )
-            VALUES ${placeholders.join(", ")}
+            VALUES ${placeholders.join(', ')}
           `;
 
           const result = await client.query(query, values);
@@ -198,7 +190,7 @@ export class StockService {
         } catch (error) {
           errors.push(
             `Batch ${i / batchSize + 1} failed: ${
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : 'Unknown error'
             }`
           );
         }
@@ -214,7 +206,7 @@ export class StockService {
   async getSohBySupplier(request: SohReportRequest): Promise<SohBySupplier[]> {
     const validated = SohReportRequestSchema.parse(request);
 
-    const conditions: string[] = ["1=1"];
+    const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let paramIndex = 1;
 
@@ -234,7 +226,7 @@ export class StockService {
     }
 
     if (!validated.include_zero_stock) {
-      conditions.push("soh.qty > 0");
+      conditions.push('soh.qty > 0');
     }
 
     if (validated.selected_only) {
@@ -249,9 +241,7 @@ export class StockService {
       );
     }
 
-    const asOfCondition = validated.as_of_date
-      ? `soh.as_of_ts <= $${paramIndex++}`
-      : "1=1";
+    const asOfCondition = validated.as_of_date ? `soh.as_of_ts <= $${paramIndex++}` : '1=1';
 
     if (validated.as_of_date) {
       params.push(validated.as_of_date);
@@ -305,7 +295,7 @@ export class StockService {
       JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY s.name, sp.name_from_supplier, l.name
     `;
 
@@ -319,7 +309,7 @@ export class StockService {
   async getSohRolledUp(request: SohReportRequest): Promise<SohRolledUp[]> {
     const validated = SohReportRequestSchema.parse(request);
 
-    const conditions: string[] = ["sp.product_id IS NOT NULL"];
+    const conditions: string[] = ['sp.product_id IS NOT NULL'];
     const params: unknown[] = [];
     let paramIndex = 1;
 
@@ -340,9 +330,7 @@ export class StockService {
       );
     }
 
-    const asOfCondition = validated.as_of_date
-      ? `soh.as_of_ts <= $${paramIndex++}`
-      : "1=1";
+    const asOfCondition = validated.as_of_date ? `soh.as_of_ts <= $${paramIndex++}` : '1=1';
 
     if (validated.as_of_date) {
       params.push(validated.as_of_date);
@@ -386,7 +374,7 @@ export class StockService {
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
         LEFT JOIN core.category c ON c.category_id = p.category_id
         LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-        WHERE ${conditions.join(" AND ")}
+        WHERE ${conditions.join(' AND ')}
         GROUP BY p.product_id, p.name, c.name, sp.supplier_id, s.name
       )
       SELECT
@@ -414,7 +402,7 @@ export class StockService {
     const result = await dbQuery(query, params);
 
     // Transform the jsonb suppliers array
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       ...row,
       total_qty: parseFloat(row.total_qty),
       supplier_count: parseInt(row.supplier_count),
@@ -427,10 +415,7 @@ export class StockService {
   /**
    * Get latest stock for a specific product at a location
    */
-  async getLatestStock(
-    locationId: string,
-    supplierProductId: string
-  ): Promise<StockOnHand | null> {
+  async getLatestStock(locationId: string, supplierProductId: string): Promise<StockOnHand | null> {
     const query = `
       SELECT * FROM core.stock_on_hand
       WHERE location_id = $1 AND supplier_product_id = $2
@@ -438,10 +423,7 @@ export class StockService {
       LIMIT 1
     `;
 
-    const result = await dbQuery<StockOnHand>(query, [
-      locationId,
-      supplierProductId,
-    ]);
+    const result = await dbQuery<StockOnHand>(query, [locationId, supplierProductId]);
     return result.rows[0] || null;
   }
 
@@ -453,7 +435,7 @@ export class StockService {
     locationId?: string,
     limit = 100
   ): Promise<StockOnHand[]> {
-    const conditions = ["supplier_product_id = $1"];
+    const conditions = ['supplier_product_id = $1'];
     const params: unknown[] = [supplierProductId];
     let paramIndex = 2;
 
@@ -464,7 +446,7 @@ export class StockService {
 
     const query = `
       SELECT * FROM core.stock_on_hand
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY as_of_ts DESC
       LIMIT $${paramIndex}
     `;
@@ -491,7 +473,7 @@ export class StockService {
       qty: number;
     }>;
   }> {
-    const conditions: string[] = ["1=1"];
+    const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let paramIndex = 1;
 
@@ -544,14 +526,14 @@ export class StockService {
       JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
       GROUP BY s.supplier_id, s.name
       ORDER BY value DESC
     `;
 
     const result = await dbQuery(query, params);
 
-    const bySupplier = result.rows.map((row) => ({
+    const bySupplier = result.rows.map(row => ({
       supplier_id: row.supplier_id,
       supplier_name: row.supplier_name,
       value: parseFloat(row.value || 0),
@@ -609,7 +591,7 @@ export class StockService {
     limit?: number;
     offset?: number;
   }): Promise<NxtSoh[]> {
-    const conditions: string[] = ["1=1"];
+    const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let paramIndex = 1;
 
@@ -624,9 +606,7 @@ export class StockService {
     }
 
     if (filters?.search) {
-      conditions.push(
-        `(product_name ILIKE $${paramIndex} OR supplier_sku ILIKE $${paramIndex})`
-      );
+      conditions.push(`(product_name ILIKE $${paramIndex} OR supplier_sku ILIKE $${paramIndex})`);
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
@@ -637,7 +617,7 @@ export class StockService {
     const query = `
       SELECT *
       FROM serve.v_nxt_soh
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY supplier_name, product_name
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
@@ -741,7 +721,7 @@ export class StockService {
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       CROSS JOIN active_selection sel
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(' AND ')}
       ORDER BY s.name, sp.name_from_supplier, l.name
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;

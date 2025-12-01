@@ -10,7 +10,7 @@ import {
   useQuery,
   useMutation,
   useInfiniteQuery,
-  type QueryKey
+  type QueryKey,
 } from '@tanstack/react-query';
 
 // Performance-optimized configuration
@@ -54,7 +54,7 @@ async function fetchWithTimeout<T = unknown>(
 ): Promise<T> {
   // Generate cache key for deduplication
   const cacheKey = `${url}-${JSON.stringify(options)}`;
-  
+
   // Return cached promise if request is in flight
   if (requestCache.has(cacheKey)) {
     return requestCache.get(cacheKey)! as Promise<T>;
@@ -100,7 +100,7 @@ async function fetchWithTimeout<T = unknown>(
 
   // Cache the promise
   requestCache.set(cacheKey, requestPromise);
-  
+
   return requestPromise;
 }
 
@@ -110,10 +110,12 @@ export const useRealTimeSuppliers = (filters = {}) => {
 
   // Stable query key generation to prevent unnecessary refetches
   const queryKey = useMemo(() => {
-    const sortedFilters = Object.keys(filters).sort().reduce((sorted, key) => {
-      sorted[key] = filters[key];
-      return sorted;
-    }, {});
+    const sortedFilters = Object.keys(filters)
+      .sort()
+      .reduce((sorted, key) => {
+        sorted[key] = filters[key];
+        return sorted;
+      }, {});
     return ['suppliers', sortedFilters];
   }, [filters]);
 
@@ -146,22 +148,18 @@ export const useRealTimeSuppliers = (filters = {}) => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Suppliers fetch error:', error.message);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log('✅ Suppliers loaded:', data?.data?.length || 0, 'items');
-      
+
       // Pre-populate individual supplier queries in cache for performance
       data?.data?.forEach(supplier => {
-        queryClient.setQueryData(
-          ['supplier', supplier.id],
-          supplier,
-          { updatedAt: Date.now() }
-        );
+        queryClient.setQueryData(['supplier', supplier.id], supplier, { updatedAt: Date.now() });
       });
-    }
+    },
   });
 };
 
@@ -171,10 +169,12 @@ export const useRealTimeInventory = (filters = {}) => {
 
   // Stable query key generation
   const queryKey = useMemo(() => {
-    const sortedFilters = Object.keys(filters).sort().reduce((sorted, key) => {
-      sorted[key] = filters[key];
-      return sorted;
-    }, {});
+    const sortedFilters = Object.keys(filters)
+      .sort()
+      .reduce((sorted, key) => {
+        sorted[key] = filters[key];
+        return sorted;
+      }, {});
     return ['inventory', sortedFilters];
   }, [filters]);
 
@@ -206,29 +206,25 @@ export const useRealTimeInventory = (filters = {}) => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Inventory fetch error:', error.message);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log('✅ Inventory loaded:', data?.data?.length || 0, 'items');
-      
+
       // Cache individual inventory items for performance
       data?.data?.forEach(item => {
-        queryClient.setQueryData(
-          ['inventory-item', item.id],
-          item,
-          { updatedAt: Date.now() }
-        );
+        queryClient.setQueryData(['inventory-item', item.id], item, { updatedAt: Date.now() });
       });
-    }
+    },
   });
 };
 
 // Optimized dashboard metrics hook with better coordination
 export const useRealTimeDashboard = () => {
   const queryClient = useQueryClient();
-  
+
   // Use ref to prevent race conditions in refetch
   const refetchingRef = useRef(false);
 
@@ -247,13 +243,13 @@ export const useRealTimeDashboard = () => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Dashboard metrics error:', error.message);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log('✅ Dashboard metrics loaded');
-    }
+    },
   });
 
   const activityQuery = useQuery({
@@ -271,20 +267,20 @@ export const useRealTimeDashboard = () => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Activities fetch error:', error.message);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log('✅ Activities loaded:', data?.data?.length || 0, 'items');
-    }
+    },
   });
 
   // Enhanced real-time connection state with better memory management
   const [realTimeData, setRealTimeData] = useState(() => ({
     connected: true,
     lastUpdate: new Date().toISOString(),
-    refetch: undefined as (() => Promise<void>) | undefined
+    refetch: undefined as (() => Promise<void>) | undefined,
   }));
 
   // Memoized refetch function to prevent unnecessary re-renders
@@ -300,10 +296,7 @@ export const useRealTimeDashboard = () => {
     refetchingRef.current = true;
     try {
       // Use Promise.allSettled to handle partial failures gracefully
-      const results = await Promise.allSettled([
-        refetchMetrics(),
-        refetchActivities()
-      ]);
+      const results = await Promise.allSettled([refetchMetrics(), refetchActivities()]);
 
       const failures = results.filter(result => result.status === 'rejected');
       if (failures.length > 0) {
@@ -312,7 +305,7 @@ export const useRealTimeDashboard = () => {
 
       setRealTimeData(prev => ({
         ...prev,
-        lastUpdate: new Date().toISOString()
+        lastUpdate: new Date().toISOString(),
       }));
     } catch (error) {
       console.error('❌ Dashboard refetch failed:', error);
@@ -332,7 +325,7 @@ export const useRealTimeDashboard = () => {
     loading: metricsQuery.isLoading || activityQuery.isLoading,
     error: metricsQuery.error || activityQuery.error,
     realTimeData,
-    refetch
+    refetch,
   };
 };
 
@@ -349,10 +342,10 @@ export const useAlerts = (options = {}) => {
     queryFn: async () => {
       console.log('🔍 Fetching alerts...');
       const params = new URLSearchParams();
-      
+
       if (priority !== 'all') params.append('priority', priority);
       if (unreadOnly) params.append('unread_only', 'true');
-      
+
       const url = `/api/alerts${params.toString() ? `?${params.toString()}` : ''}`;
       return fetchWithTimeout(url);
     },
@@ -365,13 +358,13 @@ export const useAlerts = (options = {}) => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Alerts fetch error:', error.message);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log('✅ Alerts loaded:', data?.data?.length || 0, 'items');
-    }
+    },
   });
 };
 
@@ -382,7 +375,7 @@ export const useHookPerformanceMonitor = () => {
     cacheHits: 0,
     cacheMisses: 0,
     errorRate: 0,
-    averageResponseTime: 0
+    averageResponseTime: 0,
   });
 
   const queryClient = useQueryClient();
@@ -391,7 +384,7 @@ export const useHookPerformanceMonitor = () => {
     const updateMetrics = () => {
       const cache = queryClient.getQueryCache();
       const queries = cache.getAll();
-      
+
       const activeQueries = queries.filter(q => q.state.isFetching).length;
       const successfulQueries = queries.filter(q => q.state.status === 'success').length;
       const errorQueries = queries.filter(q => q.state.status === 'error').length;
@@ -402,7 +395,7 @@ export const useHookPerformanceMonitor = () => {
         cacheHits: successfulQueries,
         cacheMisses: errorQueries,
         errorRate: totalQueries > 0 ? (errorQueries / totalQueries) * 100 : 0,
-        averageResponseTime: 0 // Would need more detailed tracking
+        averageResponseTime: 0, // Would need more detailed tracking
       });
     };
 
@@ -426,9 +419,7 @@ export const usePriceLists = (supplierId?: string, options = {}) => {
   return useQuery({
     queryKey,
     queryFn: async () => {
-      const url = supplierId
-        ? `/api/suppliers/${supplierId}/pricelists`
-        : '/api/pricelists';
+      const url = supplierId ? `/api/suppliers/${supplierId}/pricelists` : '/api/pricelists';
 
       const params = new URLSearchParams();
       if (includeInactive) params.append('include_inactive', 'true');
@@ -447,10 +438,10 @@ export const usePriceLists = (supplierId?: string, options = {}) => {
       if (error.message.includes('HTTP 4')) return false;
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error('❌ Price lists fetch error:', error.message);
-    }
+    },
   });
 };
 
@@ -462,10 +453,10 @@ export const useGlobalCleanup = () => {
     const cleanup = () => {
       // Clear old cache entries
       queryClient.getQueryCache().clear();
-      
+
       // Clear request deduplication cache
       requestCache.clear();
-      
+
       console.log('🧹 Performed global cache cleanup');
     };
 
@@ -498,7 +489,7 @@ export const useSupplierMutations = () => {
         body: JSON.stringify(supplierData),
       });
     },
-    onMutate: async (supplierData) => {
+    onMutate: async supplierData => {
       // Optimistic creation
       const tempId = `temp-${Date.now()}`;
       const optimisticSupplier = { ...supplierData, id: tempId, status: 'creating' };
@@ -512,7 +503,7 @@ export const useSupplierMutations = () => {
       // Optimistically add new supplier
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: [optimisticSupplier, ...(old?.data || [])]
+        data: [optimisticSupplier, ...(old?.data || [])],
       }));
 
       return { previousSuppliers, tempId };
@@ -525,7 +516,7 @@ export const useSupplierMutations = () => {
         ...old,
         data: old?.data?.map((supplier: unknown) =>
           supplier.id === context.tempId ? data.data : supplier
-        ) || [data.data]
+        ) || [data.data],
       }));
 
       // Update individual supplier cache
@@ -538,11 +529,11 @@ export const useSupplierMutations = () => {
       console.error('❌ Supplier creation failed:', error.message);
       // Rollback optimistic update
       queryClient.setQueryData(['suppliers'], context?.previousSuppliers);
-    }
+    },
   });
 
   const updateSupplier = useMutation({
-    mutationFn: async ({ id, data: supplierData }: { id: string, data: unknown }) => {
+    mutationFn: async ({ id, data: supplierData }: { id: string; data: unknown }) => {
       console.log('📤 Updating supplier:', id);
       return fetchWithTimeout(`/api/suppliers/${id}`, {
         method: 'PUT',
@@ -561,16 +552,17 @@ export const useSupplierMutations = () => {
       // Optimistically update list
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: unknown) =>
-          supplier.id === id ? { ...supplier, ...newData, status: 'updating' } : supplier
-        ) || []
+        data:
+          old?.data?.map((supplier: unknown) =>
+            supplier.id === id ? { ...supplier, ...newData, status: 'updating' } : supplier
+          ) || [],
       }));
 
       // Optimistically update individual supplier
       queryClient.setQueryData(['supplier', id], (old: unknown) => ({
         ...old,
         ...newData,
-        status: 'updating'
+        status: 'updating',
       }));
 
       return { previousSuppliers, previousSupplier };
@@ -581,9 +573,8 @@ export const useSupplierMutations = () => {
       // Update with real server data
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: unknown) =>
-          supplier.id === id ? data.data : supplier
-        ) || []
+        data:
+          old?.data?.map((supplier: unknown) => (supplier.id === id ? data.data : supplier)) || [],
       }));
 
       queryClient.setQueryData(['supplier', id], data.data);
@@ -608,7 +599,7 @@ export const useSupplierMutations = () => {
         method: 'DELETE',
       });
     },
-    onMutate: async (id) => {
+    onMutate: async id => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries(['suppliers']);
 
@@ -618,7 +609,7 @@ export const useSupplierMutations = () => {
       // Optimistically remove supplier
       queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.filter((supplier: unknown) => supplier.id !== id) || []
+        data: old?.data?.filter((supplier: unknown) => supplier.id !== id) || [],
       }));
 
       return { previousSuppliers };
@@ -628,18 +619,18 @@ export const useSupplierMutations = () => {
       // Remove from individual cache
       queryClient.removeQueries({ queryKey: ['supplier', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
-      
+
       // Dispatch event to notify other components (e.g., directory page)
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('supplier:deleted', { detail: { id } }))
-        window.dispatchEvent(new CustomEvent('supplier:updated'))
+        window.dispatchEvent(new CustomEvent('supplier:deleted', { detail: { id } }));
+        window.dispatchEvent(new CustomEvent('supplier:updated'));
       }
     },
     onError: (error, id, context) => {
       console.error('❌ Supplier deletion failed:', error.message);
       // Rollback optimistic deletion
       queryClient.setQueryData(['suppliers'], context?.previousSuppliers);
-    }
+    },
   });
 
   return { createSupplier, updateSupplier, deleteSupplier };
@@ -670,9 +661,9 @@ export const useInfiniteSuppliers = (filters: SupplierFilters = {}) => {
               ? value.join(',')
               : value === undefined || value === null
                 ? ''
-                : String(value)
+                : String(value),
           ])
-        )
+        ),
       });
 
       const url = `/api/suppliers?${params.toString()}`;
@@ -680,7 +671,7 @@ export const useInfiniteSuppliers = (filters: SupplierFilters = {}) => {
 
       return fetchWithTimeout<SupplierListResponse>(url);
     },
-    getNextPageParam: (lastPage) =>
+    getNextPageParam: lastPage =>
       lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: API_CONFIG.cacheTime,
@@ -691,13 +682,13 @@ export const useInfiniteSuppliers = (filters: SupplierFilters = {}) => {
       }
       return failureCount < API_CONFIG.retries;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
-    onError: (error) => {
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000),
+    onError: error => {
       console.error(
         '❌ Infinite suppliers fetch error:',
         error instanceof Error ? error.message : String(error)
       );
-    }
+    },
   });
 };
 
@@ -712,5 +703,5 @@ export default {
   useInfiniteSuppliers,
   useHookPerformanceMonitor,
   useGlobalCleanup,
-  API_CONFIG // Export config for reference
+  API_CONFIG, // Export config for reference
 };

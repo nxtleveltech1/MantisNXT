@@ -7,7 +7,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PriceAnalyticsService } from '@/lib/services/PriceAnalyticsService';
 
@@ -25,10 +25,7 @@ export async function GET(request: NextRequest) {
 
     if (type === 'product') {
       if (!productId) {
-        return NextResponse.json(
-          { success: false, error: 'product_id required' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, error: 'product_id required' }, { status: 400 });
       }
 
       const startDate = searchParams.get('start_date')
@@ -38,23 +35,13 @@ export async function GET(request: NextRequest) {
         ? new Date(searchParams.get('end_date')!)
         : undefined;
 
-      const history = await PriceAnalyticsService.getPriceHistory(
-        productId,
-        startDate,
-        endDate
-      );
+      const history = await PriceAnalyticsService.getPriceHistory(productId, startDate, endDate);
 
       return NextResponse.json({ success: true, data: history, count: history.length });
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Invalid history type' },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, error: 'Invalid history type' }, { status: 400 });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

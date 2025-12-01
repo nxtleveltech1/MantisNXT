@@ -1,6 +1,6 @@
 /**
  * Brave Search API Service
- * 
+ *
  * Brave Search provides web search capabilities through their API.
  * Documentation: https://api.search.brave.com
  */
@@ -89,7 +89,7 @@ export class BraveSearchService {
       const response = await fetch(`${this.baseUrl}/res/v1/web/search?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Accept-Encoding': 'gzip',
           'X-Subscription-Token': this.apiKey,
         },
@@ -120,7 +120,9 @@ export class BraveSearchService {
 /**
  * Create a Brave Search service instance from environment variables or config
  */
-export function createBraveSearchService(config?: { apiKey?: string; baseUrl?: string }): BraveSearchService {
+export function createBraveSearchService(config?: {
+  apiKey?: string;
+  baseUrl?: string;
+}): BraveSearchService {
   return new BraveSearchService(config);
 }
-

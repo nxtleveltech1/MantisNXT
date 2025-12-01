@@ -63,11 +63,7 @@ export async function POST(request: NextRequest) {
 
     validateWidgetType(validated.type);
 
-    const widget = await DashboardService.addWidget(
-      user.org_id,
-      validated.dashboardId,
-      validated
-    );
+    const widget = await DashboardService.addWidget(user.org_id, validated.dashboardId, validated);
 
     return createdResponse(widget);
   } catch (error) {

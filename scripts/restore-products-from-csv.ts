@@ -13,7 +13,7 @@ interface CSVRow {
   'Supplier Name': string;
   'Supplier Code': string;
   'Produt Category': string;
-  'BRAND': string;
+  BRAND: string;
   'SKU / MODEL': string;
   'PRODUCT DESCRIPTION': string;
   'SUPPLIER SOH': string;
@@ -23,7 +23,7 @@ interface CSVRow {
 async function restoreProducts() {
   console.log('📦 Reading CSV file...');
   const csvContent = readFileSync('database/FULLFINAL_processed_v5 (3).csv', 'utf-8');
-  
+
   const records = parse(csvContent, {
     columns: true,
     skip_empty_lines: true,
@@ -65,25 +65,27 @@ async function restoreProducts() {
   const batchSize = 100;
   for (let i = 0; i < records.length; i += batchSize) {
     const batch = records.slice(i, i + batchSize);
-    
-    await withTransaction(async (client) => {
+
+    await withTransaction(async client => {
       for (const row of batch) {
         try {
           const supplierCode = (row['Supplier Code'] || '').trim();
           const supplierName = (row['Supplier Name'] || '').trim();
-          
+
           if (!supplierCode && !supplierName) {
             skipped++;
             continue;
           }
 
           // Find supplier
-          let supplierId = supplierMap.get(supplierCode.toUpperCase()) || 
-                          supplierMap.get(supplierName.toUpperCase());
-          
+          let supplierId =
+            supplierMap.get(supplierCode.toUpperCase()) ||
+            supplierMap.get(supplierName.toUpperCase());
+
           // Create supplier if doesn't exist
           if (!supplierId) {
-            const newSupplierCode = supplierCode || supplierName.substring(0, 10).toUpperCase().replace(/\s+/g, '');
+            const newSupplierCode =
+              supplierCode || supplierName.substring(0, 10).toUpperCase().replace(/\s+/g, '');
             const newSupplier = await client.query<{ supplier_id: string }>(
               `INSERT INTO core.supplier (supplier_id, name, code, active, default_currency, org_id, payment_terms, contact_info, created_at, updated_at)
                VALUES ($1, $2, $3, true, 'ZAR', $4, 'Net 30', '{}'::jsonb, NOW(), NOW())
@@ -120,17 +122,12 @@ async function restoreProducts() {
               is_active = true,
               updated_at = NOW()
             RETURNING supplier_product_id`,
-            [
-              randomUUID(),
-              supplierId,
-              sku,
-              name,
-              JSON.stringify({ brand, category_raw: category }),
-            ]
+            [randomUUID(), supplierId, sku, name, JSON.stringify({ brand, category_raw: category })]
           );
 
           const supplierProductId = productResult.rows[0].supplier_product_id;
-          const wasNew = productResult.rows[0].supplier_product_id === productResult.rows[0].supplier_product_id;
+          const wasNew =
+            productResult.rows[0].supplier_product_id === productResult.rows[0].supplier_product_id;
 
           // Upsert stock_on_hand
           if (stockQty > 0 || costPrice) {
@@ -186,11 +183,10 @@ async function restoreProducts() {
 if (require.main === module) {
   restoreProducts()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Failed to restore products:', error);
       process.exit(1);
     });
 }
 
 export { restoreProducts };
-

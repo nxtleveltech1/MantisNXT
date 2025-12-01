@@ -8,7 +8,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
 import { PricingStrategy } from '@/lib/db/pricing-schema';
@@ -20,11 +20,13 @@ const StartOptimizationSchema = z.object({
   config: z.object({
     algorithms: z.array(z.string()),
     target_margin_percent: z.number().optional(),
-    constraints: z.object({
-      min_margin_percent: z.number().optional(),
-      max_price_change_percent: z.number().optional(),
-      preserve_price_endings: z.boolean().optional(),
-    }).optional(),
+    constraints: z
+      .object({
+        min_margin_percent: z.number().optional(),
+        max_price_change_percent: z.number().optional(),
+        preserve_price_endings: z.boolean().optional(),
+      })
+      .optional(),
   }),
   scope: z.object({
     category_ids: z.array(z.string()).optional(),
@@ -58,10 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -78,9 +77,6 @@ export async function GET(request: NextRequest) {
       count: runs.length,
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

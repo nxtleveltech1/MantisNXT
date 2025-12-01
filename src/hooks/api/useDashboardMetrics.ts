@@ -105,9 +105,7 @@ export function useDashboardMetrics(): UseQueryResult<DashboardMetrics> {
  * Hook variant with custom stale time
  * Useful for testing different cache policies
  */
-export function useDashboardMetricsCustom(
-  staleTimeMs: number
-): UseQueryResult<DashboardMetrics> {
+export function useDashboardMetricsCustom(staleTimeMs: number): UseQueryResult<DashboardMetrics> {
   return useQuery({
     queryKey: QueryKeys.dashboardMetrics(),
     queryFn: fetchDashboardMetrics,

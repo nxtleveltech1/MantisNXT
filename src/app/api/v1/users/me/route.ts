@@ -1,16 +1,16 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { neonAuthService } from '@/lib/auth/neon-auth-service'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { neonAuthService } from '@/lib/auth/neon-auth-service';
 
 export async function GET(request: NextRequest) {
   try {
     // Get session token from cookie or Authorization header
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -22,11 +22,11 @@ export async function GET(request: NextRequest) {
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Return user information
@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
         },
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Get current user API error:', error)
+    console.error('Get current user API error:', error);
 
     return NextResponse.json(
       {
@@ -79,19 +79,19 @@ export async function GET(request: NextRequest) {
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value
+    let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
-      const authHeader = request.headers.get('authorization')
+      const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7)
+        sessionToken = authHeader.substring(7);
       }
     }
 
@@ -103,11 +103,11 @@ export async function PUT(request: NextRequest) {
           message: 'Authentication required',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken)
+    const user = await neonAuthService.verifySession(sessionToken);
 
     if (!user) {
       return NextResponse.json(
@@ -117,24 +117,24 @@ export async function PUT(request: NextRequest) {
           message: 'Invalid or expired session',
         },
         { status: 401 }
-      )
+      );
     }
 
     // Parse request body
-    const body = await request.json()
-    const { firstName, lastName, displayName, phone, mobile, department, jobTitle } = body
+    const body = await request.json();
+    const { firstName, lastName, displayName, phone, mobile, department, jobTitle } = body;
 
     // Update user profile
     // In production, this would update the database
     // For now, we'll use the mock provider
-    const { authProvider } = await import('@/lib/auth/mock-provider')
+    const { authProvider } = await import('@/lib/auth/mock-provider');
     await authProvider.updateProfile({
       id: user.id,
       name: displayName || `${firstName} ${lastName}`.trim(),
       phone,
       mobile,
       department,
-    } as any)
+    } as any);
 
     return NextResponse.json(
       {
@@ -149,9 +149,9 @@ export async function PUT(request: NextRequest) {
         },
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Update user profile API error:', error)
+    console.error('Update user profile API error:', error);
 
     return NextResponse.json(
       {
@@ -160,10 +160,9 @@ export async function PUT(request: NextRequest) {
         message: 'An unexpected error occurred',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';

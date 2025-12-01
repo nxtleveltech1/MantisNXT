@@ -7,7 +7,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
 
-const connectionString = process.env.NEON_DATABASE_URL ||
+const connectionString =
+  process.env.NEON_DATABASE_URL ||
   'postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require';
 
 async function executeMigration() {
@@ -52,7 +53,10 @@ async function executeMigration() {
         AND table_name = 'pricing_automation_config';
     `;
 
-    console.log('✅ pricing_automation_config table:', configTable[0].count === '1' ? 'created' : 'not found');
+    console.log(
+      '✅ pricing_automation_config table:',
+      configTable[0].count === '1' ? 'created' : 'not found'
+    );
 
     // Verify pricing_recommendation_queue view
     const queueView = await sql`
@@ -62,7 +66,10 @@ async function executeMigration() {
         AND table_name = 'pricing_recommendation_queue';
     `;
 
-    console.log('✅ pricing_recommendation_queue view:', queueView[0].count === '1' ? 'created' : 'not found');
+    console.log(
+      '✅ pricing_recommendation_queue view:',
+      queueView[0].count === '1' ? 'created' : 'not found'
+    );
 
     // Verify AI service type
     const aiServiceType = await sql`
@@ -72,12 +79,14 @@ async function executeMigration() {
         AND enumlabel = 'pricing_recommendation';
     `;
 
-    console.log('✅ ai_service_type enum:', aiServiceType.length > 0 ? 'pricing_recommendation added' : 'not added');
+    console.log(
+      '✅ ai_service_type enum:',
+      aiServiceType.length > 0 ? 'pricing_recommendation added' : 'not added'
+    );
 
     console.log('');
     console.log('🎉 Migration 0015 verified and complete!');
     process.exit(0);
-
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);

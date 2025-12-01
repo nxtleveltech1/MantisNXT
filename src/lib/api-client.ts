@@ -4,7 +4,6 @@
  * Provides resilient API communication with automatic retries and fallback mechanisms
  */
 
-
 export interface ApiClientConfig {
   baseURL?: string;
   timeout?: number;
@@ -164,7 +163,8 @@ class ApiClient {
     }
 
     // Exponential backoff with jitter
-    const exponentialDelay = this.config.retryDelay * Math.pow(this.retryConfig.backoffFactor, attempt - 1);
+    const exponentialDelay =
+      this.config.retryDelay * Math.pow(this.retryConfig.backoffFactor, attempt - 1);
     const jitter = Math.random() * 0.1 * exponentialDelay; // 10% jitter
     return Math.min(exponentialDelay + jitter, this.config.maxRetryDelay);
   }
@@ -205,12 +205,16 @@ class ApiClient {
       } catch (error) {
         lastError = error;
 
-        console.warn(`❌ API request failed (attempt ${attempt}/${this.retryConfig.attempts + 1}):`, {
-          requestId,
-          error: error.message,
-          status: error?.response?.status,
-          willRetry: attempt <= this.retryConfig.attempts && this.retryConfig.retryCondition?.(error)
-        });
+        console.warn(
+          `❌ API request failed (attempt ${attempt}/${this.retryConfig.attempts + 1}):`,
+          {
+            requestId,
+            error: error.message,
+            status: error?.response?.status,
+            willRetry:
+              attempt <= this.retryConfig.attempts && this.retryConfig.retryCondition?.(error),
+          }
+        );
 
         // Don't retry if we've exhausted attempts
         if (attempt > this.retryConfig.attempts) break;
@@ -245,7 +249,8 @@ class ApiClient {
       skipRetry?: boolean;
     } = {}
   ): Promise<ApiResponse<T>> {
-    const requestId = options.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId =
+      options.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timeout = options.timeout || this.config.timeout;
 
     // Remove custom options from fetch options
@@ -286,7 +291,9 @@ class ApiClient {
 
         // Handle different response formats
         if (!response.ok) {
-          const error = new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+          const error = new Error(
+            data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`
+          );
           (error as unknown).response = response;
           (error as unknown).data = data;
           throw error;
@@ -312,7 +319,6 @@ class ApiClient {
           timestamp: new Date().toISOString(),
           requestId,
         };
-
       } catch (error) {
         clearTimeout(timeoutId);
 
@@ -336,11 +342,18 @@ class ApiClient {
   }
 
   // Convenience methods
-  async get<T = unknown>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async get<T = unknown>(
+    endpoint: string,
+    options?: RequestInit & { requestId?: string }
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async post<T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit & { requestId?: string }
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -348,7 +361,11 @@ class ApiClient {
     });
   }
 
-  async put<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async put<T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit & { requestId?: string }
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -356,7 +373,11 @@ class ApiClient {
     });
   }
 
-  async patch<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async patch<T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit & { requestId?: string }
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -364,7 +385,10 @@ class ApiClient {
     });
   }
 
-  async delete<T = unknown>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(
+    endpoint: string,
+    options?: RequestInit & { requestId?: string }
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 

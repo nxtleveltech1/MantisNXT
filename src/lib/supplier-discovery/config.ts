@@ -38,8 +38,8 @@ export const DATA_SOURCES: DataSource[] = [
       registrationNumber: '.registration-number',
       legalName: '.company-name',
       address: '.registered-address',
-      status: '.company-status'
-    }
+      status: '.company-status',
+    },
   },
   {
     name: 'LinkedIn Company Search',
@@ -50,8 +50,8 @@ export const DATA_SOURCES: DataSource[] = [
       companyName: 'h1[data-test-id="org-name"]',
       industry: '.org-top-card-summary-info-list__item',
       employees: '.org-about-company-module__company-size-definition',
-      website: '.org-about-company-module__company-details a'
-    }
+      website: '.org-about-company-module__company-details a',
+    },
   },
   {
     name: 'Google Business',
@@ -62,8 +62,8 @@ export const DATA_SOURCES: DataSource[] = [
       address: '[data-value="Address"]',
       phone: '[data-value="Phone"]',
       website: '[data-value="Website"]',
-      hours: '[data-value="Hours"]'
-    }
+      hours: '[data-value="Hours"]',
+    },
   },
   {
     name: 'Yellow Pages SA',
@@ -74,8 +74,8 @@ export const DATA_SOURCES: DataSource[] = [
       name: '.listing-name',
       address: '.listing-address',
       phone: '.listing-phone',
-      website: '.listing-website'
-    }
+      website: '.listing-website',
+    },
   },
   {
     name: 'BEE Directory',
@@ -85,9 +85,9 @@ export const DATA_SOURCES: DataSource[] = [
     selectors: {
       beeLevel: '.bee-level',
       beeRating: '.bee-rating',
-      certificationDate: '.cert-date'
-    }
-  }
+      certificationDate: '.cert-date',
+    },
+  },
 ];
 
 export const FIELD_MAPPINGS = {
@@ -100,7 +100,7 @@ export const FIELD_MAPPINGS = {
   website: ['web_site', 'homepage', 'url'],
   address: ['postal_address', 'physical_address', 'business_address'],
   industry: ['sector', 'business_type', 'category'],
-  employees: ['staff_count', 'employee_count', 'workforce_size']
+  employees: ['staff_count', 'employee_count', 'workforce_size'],
 };
 
 export const EXTRACTION_PATTERNS = {
@@ -110,29 +110,31 @@ export const EXTRACTION_PATTERNS = {
   vatNumber: /4[0-9]{9}/g,
   registrationNumber: /[0-9]{4}\/[0-9]{6}\/[0-9]{2}/g,
   website: /(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?/g,
-  postalCode: /[0-9]{4}/g
+  postalCode: /[0-9]{4}/g,
 };
 
 export const CONFIDENCE_WEIGHTS = {
   // Weights for calculating confidence scores
-  officialSource: 0.4,      // Government registries, official databases
-  businessDirectory: 0.3,   // Yellow Pages, business directories
-  socialMedia: 0.2,         // LinkedIn, Facebook business pages
-  websiteContent: 0.1       // Company websites, general web content
+  officialSource: 0.4, // Government registries, official databases
+  businessDirectory: 0.3, // Yellow Pages, business directories
+  socialMedia: 0.2, // LinkedIn, Facebook business pages
+  websiteContent: 0.1, // Company websites, general web content
 };
 
 export const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
 ];
 
 export const RETRY_CONFIG = {
   retries: 3,
   retryDelay: 1000, // ms
   retryCondition: (error: unknown) => {
-    return error.code === 'ECONNRESET' ||
-           error.code === 'ETIMEDOUT' ||
-           (error.response && error.response.status >= 500);
-  }
+    return (
+      error.code === 'ECONNRESET' ||
+      error.code === 'ETIMEDOUT' ||
+      (error.response && error.response.status >= 500)
+    );
+  },
 };

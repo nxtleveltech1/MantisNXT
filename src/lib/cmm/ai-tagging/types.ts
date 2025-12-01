@@ -317,7 +317,14 @@ export interface ProviderPerformance {
 // ==================== Error Types ====================
 
 export interface TaggingError {
-  code: 'NETWORK_ERROR' | 'API_ERROR' | 'DATABASE_ERROR' | 'VALIDATION_ERROR' | 'RATE_LIMIT' | 'TIMEOUT' | 'UNKNOWN';
+  code:
+    | 'NETWORK_ERROR'
+    | 'API_ERROR'
+    | 'DATABASE_ERROR'
+    | 'VALIDATION_ERROR'
+    | 'RATE_LIMIT'
+    | 'TIMEOUT'
+    | 'UNKNOWN';
   message: string;
   product_id?: string;
   details?: unknown;
@@ -347,4 +354,3 @@ export const DEFAULT_JOB_CONFIG: JobManagerConfig = {
   retry_delay_ms: 5000,
   timeout_ms: 45000,
 };
-

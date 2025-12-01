@@ -1,25 +1,25 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -36,7 +36,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@/components/ui/form';
 import {
   Plus,
   GripVertical,
@@ -52,36 +52,45 @@ import {
   ShoppingCart,
   Star,
   Share2,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { format } from 'date-fns'
-import type {
-  LoyaltyRule,
-  RuleTriggerType,
-} from '@/types/loyalty'
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import type { LoyaltyRule, RuleTriggerType } from '@/types/loyalty';
 
 const ruleSchema = z.object({
   program_id: z.string().min(1, 'Program is required'),
   name: z.string().min(1, 'Name is required').max(200),
   description: z.string().optional(),
-  trigger_type: z.enum(['order_placed', 'referral', 'review', 'birthday', 'anniversary', 'signup', 'social_share']),
+  trigger_type: z.enum([
+    'order_placed',
+    'referral',
+    'review',
+    'birthday',
+    'anniversary',
+    'signup',
+    'social_share',
+  ]),
   points_multiplier: z.number().min(1).max(10),
   bonus_points: z.number().min(0),
   is_active: z.boolean().default(true),
   priority: z.number().min(0),
   valid_from: z.string().optional(),
   valid_until: z.string().optional().nullable(),
-  conditions: z.object({
-    min_order_amount: z.number().min(0).optional().nullable(),
-    max_order_amount: z.number().min(0).optional().nullable(),
-    product_categories: z.array(z.string()).optional(),
-    customer_tier: z.array(z.enum(['bronze', 'silver', 'gold', 'platinum', 'diamond'])).optional(),
-    order_count_min: z.number().min(0).optional().nullable(),
-    order_count_max: z.number().min(0).optional().nullable(),
-  }).optional(),
-})
+  conditions: z
+    .object({
+      min_order_amount: z.number().min(0).optional().nullable(),
+      max_order_amount: z.number().min(0).optional().nullable(),
+      product_categories: z.array(z.string()).optional(),
+      customer_tier: z
+        .array(z.enum(['bronze', 'silver', 'gold', 'platinum', 'diamond']))
+        .optional(),
+      order_count_min: z.number().min(0).optional().nullable(),
+      order_count_max: z.number().min(0).optional().nullable(),
+    })
+    .optional(),
+});
 
-type RuleFormData = z.infer<typeof ruleSchema>
+type RuleFormData = z.infer<typeof ruleSchema>;
 
 const TRIGGER_ICONS: Record<RuleTriggerType, unknown> = {
   order_placed: ShoppingCart,
@@ -91,7 +100,7 @@ const TRIGGER_ICONS: Record<RuleTriggerType, unknown> = {
   anniversary: Trophy,
   signup: Zap,
   social_share: Share2,
-}
+};
 
 const TRIGGER_LABELS: Record<RuleTriggerType, string> = {
   order_placed: 'Order Placed',
@@ -101,39 +110,39 @@ const TRIGGER_LABELS: Record<RuleTriggerType, string> = {
   anniversary: 'Anniversary',
   signup: 'Sign Up',
   social_share: 'Social Share',
-}
+};
 
 export default function RuleEngineBuilder() {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false)
-  const [selectedRule, setSelectedRule] = useState<LoyaltyRule | null>(null)
-  const [testOrderAmount, setTestOrderAmount] = useState(100)
-  const [testResult, setTestResult] = useState<unknown>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<LoyaltyRule | null>(null);
+  const [testOrderAmount, setTestOrderAmount] = useState(100);
+  const [testResult, setTestResult] = useState<unknown>(null);
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Fetch programs
   const { data: programs } = useQuery({
     queryKey: ['loyalty-programs'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/admin/loyalty/programs')
-      if (!res.ok) throw new Error('Failed to fetch programs')
-      return res.json()
+      const res = await fetch('/api/v1/admin/loyalty/programs');
+      if (!res.ok) throw new Error('Failed to fetch programs');
+      return res.json();
     },
-  })
+  });
 
   // Fetch rules
   const { data: rules, isLoading } = useQuery({
     queryKey: ['loyalty-rules'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/admin/loyalty/rules')
-      if (!res.ok) throw new Error('Failed to fetch rules')
-      const data = await res.json()
-      return data.sort((a: LoyaltyRule, b: LoyaltyRule) => a.priority - b.priority)
+      const res = await fetch('/api/v1/admin/loyalty/rules');
+      if (!res.ok) throw new Error('Failed to fetch rules');
+      const data = await res.json();
+      return data.sort((a: LoyaltyRule, b: LoyaltyRule) => a.priority - b.priority);
     },
-  })
+  });
 
   // Form
   const form = useForm<RuleFormData>({
@@ -158,7 +167,7 @@ export default function RuleEngineBuilder() {
         order_count_max: null,
       },
     },
-  })
+  });
 
   // Create mutation
   const createMutation = useMutation({
@@ -171,28 +180,28 @@ export default function RuleEngineBuilder() {
           valid_from: data.valid_from ? new Date(data.valid_from) : undefined,
           valid_until: data.valid_until ? new Date(data.valid_until) : undefined,
         }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to create rule')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create rule');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Rule created successfully')
-      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] })
-      setIsCreateDialogOpen(false)
-      form.reset()
+      toast.success('Rule created successfully');
+      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] });
+      setIsCreateDialogOpen(false);
+      form.reset();
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: RuleFormData & { id: string }) => {
-      const { id, ...payload } = data
+      const { id, ...payload } = data;
       const res = await fetch(`/api/v1/admin/loyalty/rules/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -201,45 +210,45 @@ export default function RuleEngineBuilder() {
           valid_from: payload.valid_from ? new Date(payload.valid_from) : undefined,
           valid_until: payload.valid_until ? new Date(payload.valid_until) : undefined,
         }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to update rule')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update rule');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      toast.success('Rule updated successfully')
-      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] })
-      setIsEditDialogOpen(false)
-      setSelectedRule(null)
+      toast.success('Rule updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] });
+      setIsEditDialogOpen(false);
+      setSelectedRule(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/v1/admin/loyalty/rules/${id}`, {
         method: 'DELETE',
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to delete rule')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete rule');
       }
     },
     onSuccess: () => {
-      toast.success('Rule deleted successfully')
-      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] })
-      setIsDeleteDialogOpen(false)
-      setSelectedRule(null)
+      toast.success('Rule deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedRule(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Toggle active mutation
   const toggleActiveMutation = useMutation({
@@ -248,20 +257,20 @@ export default function RuleEngineBuilder() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to toggle rule')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to toggle rule');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] })
+      queryClient.invalidateQueries({ queryKey: ['loyalty-rules'] });
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Test rule mutation
   const testMutation = useMutation({
@@ -270,23 +279,23 @@ export default function RuleEngineBuilder() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_amount: orderAmount }),
-      })
+      });
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to test rule')
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to test rule');
       }
-      return res.json()
+      return res.json();
     },
-    onSuccess: (data) => {
-      setTestResult(data)
+    onSuccess: data => {
+      setTestResult(data);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   const handleEdit = (rule: LoyaltyRule) => {
-    setSelectedRule(rule)
+    setSelectedRule(rule);
     form.reset({
       program_id: rule.program_id,
       name: rule.name,
@@ -299,28 +308,28 @@ export default function RuleEngineBuilder() {
       valid_from: rule.valid_from ? format(new Date(rule.valid_from), 'yyyy-MM-dd') : undefined,
       valid_until: rule.valid_until ? format(new Date(rule.valid_until), 'yyyy-MM-dd') : null,
       conditions: rule.conditions || {},
-    })
-    setIsEditDialogOpen(true)
-  }
+    });
+    setIsEditDialogOpen(true);
+  };
 
   const handleDelete = (rule: LoyaltyRule) => {
-    setSelectedRule(rule)
-    setIsDeleteDialogOpen(true)
-  }
+    setSelectedRule(rule);
+    setIsDeleteDialogOpen(true);
+  };
 
   const handleTest = (rule: LoyaltyRule) => {
-    setSelectedRule(rule)
-    setTestResult(null)
-    setIsTestDialogOpen(true)
-  }
+    setSelectedRule(rule);
+    setTestResult(null);
+    setIsTestDialogOpen(true);
+  };
 
   const onSubmit = (data: RuleFormData) => {
     if (selectedRule) {
-      updateMutation.mutate({ ...data, id: selectedRule.id })
+      updateMutation.mutate({ ...data, id: selectedRule.id });
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate(data);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -331,7 +340,7 @@ export default function RuleEngineBuilder() {
           <p className="text-muted-foreground">Configure loyalty earning rules and conditions</p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Create Rule
         </Button>
       </div>
@@ -339,94 +348,88 @@ export default function RuleEngineBuilder() {
       {/* Rules List */}
       <div className="space-y-4">
         {isLoading ? (
-          [...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))
+          [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
         ) : !rules || rules.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-12 text-center">
               No rules configured. Create your first rule to get started.
             </CardContent>
           </Card>
         ) : (
           rules.map((rule: LoyaltyRule, index) => {
-            const Icon = TRIGGER_ICONS[rule.trigger_type]
-            const conditions = rule.conditions || {}
+            const Icon = TRIGGER_ICONS[rule.trigger_type];
+            const conditions = rule.conditions || {};
             const hasConditions =
               conditions.min_order_amount ||
               conditions.max_order_amount ||
               (conditions.customer_tier && conditions.customer_tier.length > 0) ||
-              conditions.order_count_min
+              conditions.order_count_min;
 
             return (
               <Card key={rule.id} className={!rule.is_active ? 'opacity-60' : ''}>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     {/* Drag Handle */}
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <GripVertical className="w-5 h-5" />
+                    <div className="text-muted-foreground flex items-center gap-2">
+                      <GripVertical className="h-5 w-5" />
                       <Badge variant="outline">{index + 1}</Badge>
                     </div>
 
                     {/* Icon */}
-                    <div className={`p-3 rounded-lg ${rule.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
-                      <Icon className={`w-6 h-6 ${rule.is_active ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div
+                      className={`rounded-lg p-3 ${rule.is_active ? 'bg-primary/10' : 'bg-muted'}`}
+                    >
+                      <Icon
+                        className={`h-6 w-6 ${rule.is_active ? 'text-primary' : 'text-muted-foreground'}`}
+                      />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-lg">{rule.name}</h3>
-                          <p className="text-sm text-muted-foreground">
+                          <h3 className="text-lg font-semibold">{rule.name}</h3>
+                          <p className="text-muted-foreground text-sm">
                             {TRIGGER_LABELS[rule.trigger_type]}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={rule.is_active}
-                            onCheckedChange={(checked) =>
+                            onCheckedChange={checked =>
                               toggleActiveMutation.mutate({ id: rule.id, is_active: checked })
                             }
                           />
                           <Button variant="ghost" size="sm" onClick={() => handleTest(rule)}>
-                            <Play className="w-4 h-4" />
+                            <Play className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(rule)}>
-                            <Edit className="w-4 h-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(rule)}
-                          >
-                            <Trash2 className="w-4 h-4" />
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(rule)}>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
 
                       {rule.description && (
-                        <p className="text-sm text-muted-foreground">{rule.description}</p>
+                        <p className="text-muted-foreground text-sm">{rule.description}</p>
                       )}
 
                       {/* Points Info */}
                       <div className="flex gap-4">
                         {rule.points_multiplier > 1 && (
-                          <Badge variant="secondary">
-                            {rule.points_multiplier}x multiplier
-                          </Badge>
+                          <Badge variant="secondary">{rule.points_multiplier}x multiplier</Badge>
                         )}
                         {rule.bonus_points > 0 && (
-                          <Badge variant="secondary">
-                            +{rule.bonus_points} bonus points
-                          </Badge>
+                          <Badge variant="secondary">+{rule.bonus_points} bonus points</Badge>
                         )}
                       </div>
 
                       {/* Conditions */}
                       {hasConditions && (
                         <div className="flex flex-wrap gap-2 pt-2">
-                          <span className="text-xs text-muted-foreground">Conditions:</span>
+                          <span className="text-muted-foreground text-xs">Conditions:</span>
                           {conditions.min_order_amount && (
                             <Badge variant="outline" className="text-xs">
                               Min: ${conditions.min_order_amount}
@@ -452,8 +455,8 @@ export default function RuleEngineBuilder() {
 
                       {/* Validity */}
                       {(rule.valid_from || rule.valid_until) && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-                          <Calendar className="w-4 h-4" />
+                        <div className="text-muted-foreground flex items-center gap-2 pt-2 text-xs">
+                          <Calendar className="h-4 w-4" />
                           {rule.valid_from && (
                             <span>From {format(new Date(rule.valid_from), 'MMM dd, yyyy')}</span>
                           )}
@@ -466,7 +469,7 @@ export default function RuleEngineBuilder() {
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })
         )}
       </div>
@@ -474,16 +477,16 @@ export default function RuleEngineBuilder() {
       {/* Create/Edit Dialog */}
       <Dialog
         open={isCreateDialogOpen || isEditDialogOpen}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) {
-            setIsCreateDialogOpen(false)
-            setIsEditDialogOpen(false)
-            setSelectedRule(null)
-            form.reset()
+            setIsCreateDialogOpen(false);
+            setIsEditDialogOpen(false);
+            setSelectedRule(null);
+            form.reset();
           }
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedRule ? 'Edit Rule' : 'Create Rule'}</DialogTitle>
             <DialogDescription>
@@ -539,7 +542,11 @@ export default function RuleEngineBuilder() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Describe when this rule applies..." rows={2} {...field} />
+                      <Textarea
+                        placeholder="Describe when this rule applies..."
+                        rows={2}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -585,7 +592,7 @@ export default function RuleEngineBuilder() {
                           min="1"
                           max="10"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          onChange={e => field.onChange(parseFloat(e.target.value))}
                         />
                       </FormControl>
                       <FormDescription>e.g., 2.0 = double points</FormDescription>
@@ -605,7 +612,7 @@ export default function RuleEngineBuilder() {
                           type="number"
                           min="0"
                           {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          onChange={e => field.onChange(parseInt(e.target.value))}
                         />
                       </FormControl>
                       <FormDescription>Fixed bonus added</FormDescription>
@@ -625,7 +632,7 @@ export default function RuleEngineBuilder() {
                           type="number"
                           min="0"
                           {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          onChange={e => field.onChange(parseInt(e.target.value))}
                         />
                       </FormControl>
                       <FormDescription>Lower = higher priority</FormDescription>
@@ -635,9 +642,9 @@ export default function RuleEngineBuilder() {
                 />
               </div>
 
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
+              <div className="space-y-4 rounded-lg border p-4">
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <Filter className="h-4 w-4" />
                   Conditions (Optional)
                 </h3>
 
@@ -656,7 +663,9 @@ export default function RuleEngineBuilder() {
                             placeholder="0"
                             {...field}
                             value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={e =>
+                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -678,7 +687,9 @@ export default function RuleEngineBuilder() {
                             placeholder="Unlimited"
                             {...field}
                             value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={e =>
+                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -699,7 +710,9 @@ export default function RuleEngineBuilder() {
                             placeholder="0"
                             {...field}
                             value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                            onChange={e =>
+                              field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -720,7 +733,9 @@ export default function RuleEngineBuilder() {
                             placeholder="Unlimited"
                             {...field}
                             value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                            onChange={e =>
+                              field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -778,15 +793,18 @@ export default function RuleEngineBuilder() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setIsCreateDialogOpen(false)
-                    setIsEditDialogOpen(false)
-                    setSelectedRule(null)
-                    form.reset()
+                    setIsCreateDialogOpen(false);
+                    setIsEditDialogOpen(false);
+                    setSelectedRule(null);
+                    form.reset();
                   }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Rule'}
                 </Button>
               </DialogFooter>
@@ -801,7 +819,8 @@ export default function RuleEngineBuilder() {
           <DialogHeader>
             <DialogTitle>Delete Rule</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{selectedRule?.name}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{selectedRule?.name}&rdquo;? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -836,7 +855,7 @@ export default function RuleEngineBuilder() {
                 type="number"
                 step="0.01"
                 value={testOrderAmount}
-                onChange={(e) => setTestOrderAmount(parseFloat(e.target.value))}
+                onChange={e => setTestOrderAmount(parseFloat(e.target.value))}
               />
             </div>
 
@@ -858,7 +877,7 @@ export default function RuleEngineBuilder() {
                     <span>Bonus Points:</span>
                     <span className="font-medium">+{testResult.bonus_points}</span>
                   </div>
-                  <div className="flex justify-between font-semibold pt-2 border-t">
+                  <div className="flex justify-between border-t pt-2 font-semibold">
                     <span>Total Points:</span>
                     <span>{testResult.total_points}</span>
                   </div>
@@ -872,16 +891,17 @@ export default function RuleEngineBuilder() {
             </Button>
             <Button
               onClick={() =>
-                selectedRule && testMutation.mutate({ id: selectedRule.id, orderAmount: testOrderAmount })
+                selectedRule &&
+                testMutation.mutate({ id: selectedRule.id, orderAmount: testOrderAmount })
               }
               disabled={testMutation.isPending}
             >
-              <Play className="w-4 h-4 mr-2" />
+              <Play className="mr-2 h-4 w-4" />
               {testMutation.isPending ? 'Testing...' : 'Run Test'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

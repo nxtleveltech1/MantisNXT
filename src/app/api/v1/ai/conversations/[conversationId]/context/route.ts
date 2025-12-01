@@ -5,11 +5,7 @@
  */
 
 import type { NextRequest } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { updateContextSchema } from '@/lib/ai/validation-schemas';
 import { conversationService } from '@/lib/ai/services/conversation-service';
 

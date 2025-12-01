@@ -18,10 +18,7 @@ import { alertService } from '@/lib/ai/services/alert-service';
  * GET /api/v1/ai/alerts/[id]
  * Get alert by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await authenticateRequest(request);
     const { id: alertId } = await params;
@@ -38,10 +35,7 @@ export async function GET(
  * PATCH /api/v1/ai/alerts/[id]
  * Update alert (acknowledge or resolve)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await authenticateRequest(request);
     const { id: alertId } = await params;
@@ -49,11 +43,7 @@ export async function PATCH(
 
     // Support both acknowledge and resolve operations
     if (body.action === 'acknowledge') {
-      const alert = await alertService.acknowledgeAlert(
-        alertId,
-        user.id,
-        user.org_id
-      );
+      const alert = await alertService.acknowledgeAlert(alertId, user.id, user.org_id);
       return successResponse(alert);
     } else if (body.action === 'resolve') {
       const alert = await alertService.resolveAlert(alertId, user.org_id);

@@ -3,7 +3,7 @@
  * Context-aware insight generation with natural language processing
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
@@ -16,9 +16,9 @@ const predictiveAnalytics = new PredictiveAnalyticsService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    const validationError = validateInsightsRequest(body)
+    const validationError = validateInsightsRequest(body);
     if (validationError) {
       return NextResponse.json(
         {
@@ -27,15 +27,15 @@ export async function POST(request: NextRequest) {
           details: validationError,
         },
         { status: 400 }
-      )
+      );
     }
 
     const runInsights = async () => {
-      console.log('?? Generating AI insights for:', body.context.type)
+      console.log('?? Generating AI insights for:', body.context.type);
 
-      const insights = await generateContextualInsights(body)
+      const insights = await generateContextualInsights(body);
 
-      console.log(`✅ Generated ${insights.insights.length} insights`)
+      console.log(`✅ Generated ${insights.insights.length} insights`);
 
       return {
         success: true,
@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
           focusAreas: body.focusAreas,
           timestamp: new Date().toISOString(),
         },
-      }
-    }
+      };
+    };
 
-    const execResult = await executeWithOptionalAsync(request, runInsights)
+    const execResult = await executeWithOptionalAsync(request, runInsights);
     if (execResult.queued) {
       return NextResponse.json(
         {
@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('? AI insights generation failed:', error)
+    console.error('? AI insights generation failed:', error);
 
     return NextResponse.json(
       {
@@ -73,12 +73,13 @@ export async function POST(request: NextRequest) {
         code: 'INSIGHTS_GENERATION_ERROR',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function GET(request: NextRequest) {
+}
+export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const category = searchParams.get('category')
+    const searchParams = request.nextUrl.searchParams;
+    const category = searchParams.get('category');
 
     if (!category) {
       return NextResponse.json(
@@ -87,14 +88,14 @@ export async function POST(request: NextRequest) {
           error: 'Category is required for market intelligence',
         },
         { status: 400 }
-      )
+      );
     }
 
-    console.log('?? Generating market intelligence for:', category)
+    console.log('?? Generating market intelligence for:', category);
 
-    const cacheKey = makeKey(request.url)
+    const cacheKey = makeKey(request.url);
     const payload = await getOrSet(cacheKey, async () => {
-      const marketIntel = await predictiveAnalytics.generateMarketIntelligence(category)
+      const marketIntel = await predictiveAnalytics.generateMarketIntelligence(category);
       return {
         success: true,
         data: {
@@ -104,12 +105,12 @@ export async function POST(request: NextRequest) {
           recommendations: marketIntel.recommendations,
           timestamp: new Date().toISOString(),
         },
-      }
-    })
+      };
+    });
 
-    return NextResponse.json(payload)
+    return NextResponse.json(payload);
   } catch (error) {
-    console.error('? Market intelligence generation failed:', error)
+    console.error('? Market intelligence generation failed:', error);
 
     return NextResponse.json(
       {
@@ -118,9 +119,10 @@ export async function POST(request: NextRequest) {
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-}async function generateContextualInsights(request: unknown): Promise<{
+}
+async function generateContextualInsights(request: unknown): Promise<{
   insights: unknown[];
   summary: unknown;
 }> {
@@ -136,7 +138,11 @@ export async function POST(request: NextRequest) {
     switch (context.type) {
       case 'supplier':
         if (context.id) {
-          const supplierInsights = await generateSupplierInsights(context.id, focusAreas, timeFrame);
+          const supplierInsights = await generateSupplierInsights(
+            context.id,
+            focusAreas,
+            timeFrame
+          );
           insights.push(...supplierInsights);
         }
         break;
@@ -155,7 +161,11 @@ export async function POST(request: NextRequest) {
 
       case 'contract':
         if (context.id) {
-          const contractInsights = await generateContractInsights(context.id, focusAreas, timeFrame);
+          const contractInsights = await generateContractInsights(
+            context.id,
+            focusAreas,
+            timeFrame
+          );
           insights.push(...contractInsights);
         }
         break;
@@ -184,11 +194,10 @@ export async function POST(request: NextRequest) {
       totalInsights: insights.length,
       opportunityCount: totalOpportunities,
       riskCount: totalRisks,
-      potentialSavings: Math.round(potentialSavings)
+      potentialSavings: Math.round(potentialSavings),
     };
 
     return { insights, summary };
-
   } catch (error) {
     console.error('Error generating contextual insights:', error);
     throw error;
@@ -196,7 +205,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Generate supplier-specific insights
-async function generateSupplierInsights(supplierId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
+async function generateSupplierInsights(
+  supplierId: string,
+  focusAreas: string[],
+  timeFrame: unknown
+): Promise<unknown[]> {
   const insights = [];
 
   try {
@@ -218,20 +231,22 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
             estimatedValue: {
               amount: 25000,
               currency: 'USD',
-              timeframe: 'annually'
-            }
+              timeframe: 'annually',
+            },
           },
           confidence: 0.85,
           evidence: [
             `Performance score: ${Math.round(analysis.performanceScore * 100)}%`,
             'Consistent delivery track record',
-            'High quality ratings'
+            'High quality ratings',
           ],
-          relatedEntities: [{
-            type: 'supplier',
-            id: supplierId,
-            name: 'Current Supplier'
-          }]
+          relatedEntities: [
+            {
+              type: 'supplier',
+              id: supplierId,
+              name: 'Current Supplier',
+            },
+          ],
         });
       } else if (analysis.performanceScore < 0.4) {
         insights.push({
@@ -241,15 +256,17 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
           description: `Low performance score (${Math.round(analysis.performanceScore * 100)}%) indicates potential issues.`,
           impact: {
             score: 7,
-            type: 'risk_reduction'
+            type: 'risk_reduction',
           },
           confidence: 0.9,
           evidence: analysis.recommendations,
-          relatedEntities: [{
-            type: 'supplier',
-            id: supplierId,
-            name: 'At-Risk Supplier'
-          }]
+          relatedEntities: [
+            {
+              type: 'supplier',
+              id: supplierId,
+              name: 'At-Risk Supplier',
+            },
+          ],
         });
       }
     }
@@ -264,15 +281,17 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
           description: `Supplier risk level is ${Math.round(riskMonitoring.currentRisk * 100)}% with ${riskMonitoring.riskTrend} trend.`,
           impact: {
             score: 9,
-            type: 'risk_reduction'
+            type: 'risk_reduction',
           },
           confidence: 0.88,
           evidence: riskMonitoring.alerts.map((alert: { message: string }) => alert.message),
-          relatedEntities: [{
-            type: 'supplier',
-            id: supplierId,
-            name: 'High-Risk Supplier'
-          }]
+          relatedEntities: [
+            {
+              type: 'supplier',
+              id: supplierId,
+              name: 'High-Risk Supplier',
+            },
+          ],
         });
       }
     }
@@ -291,22 +310,23 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
           estimatedValue: {
             amount: 15000,
             currency: 'USD',
-            timeframe: 'annually'
-          }
+            timeframe: 'annually',
+          },
         },
         confidence: 0.7,
         evidence: [
           'Current payment terms exceed industry average',
-          'Strong relationship enables negotiation'
+          'Strong relationship enables negotiation',
         ],
-        relatedEntities: [{
-          type: 'supplier',
-          id: supplierId,
-          name: 'Negotiation Target'
-        }]
+        relatedEntities: [
+          {
+            type: 'supplier',
+            id: supplierId,
+            name: 'Negotiation Target',
+          },
+        ],
       });
     }
-
   } catch (error) {
     console.error('Error generating supplier insights:', error);
   }
@@ -315,7 +335,11 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
 }
 
 // Generate category-specific insights
-async function generateCategoryInsights(categoryId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
+async function generateCategoryInsights(
+  categoryId: string,
+  focusAreas: string[],
+  timeFrame: unknown
+): Promise<unknown[]> {
   const insights = [];
 
   // Simulate category-level insights
@@ -327,19 +351,21 @@ async function generateCategoryInsights(categoryId: string, focusAreas: string[]
       description: 'Market prices showing upward trend over next 6 months.',
       impact: {
         score: 5,
-        type: 'cost_savings'
+        type: 'cost_savings',
       },
       confidence: 0.75,
       evidence: [
         'Supply chain disruptions in key regions',
         'Increased raw material costs',
-        'Growing demand in emerging markets'
+        'Growing demand in emerging markets',
       ],
-      relatedEntities: [{
-        type: 'category',
-        id: categoryId,
-        name: 'Product Category'
-      }]
+      relatedEntities: [
+        {
+          type: 'category',
+          id: categoryId,
+          name: 'Product Category',
+        },
+      ],
     });
   }
 
@@ -347,7 +373,10 @@ async function generateCategoryInsights(categoryId: string, focusAreas: string[]
 }
 
 // Generate portfolio-level insights
-async function generatePortfolioInsights(focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
+async function generatePortfolioInsights(
+  focusAreas: string[],
+  timeFrame: unknown
+): Promise<unknown[]> {
   const insights = [];
 
   // Portfolio diversification insight
@@ -356,23 +385,24 @@ async function generatePortfolioInsights(focusAreas: string[], timeFrame: unknow
       id: 'portfolio_diversification',
       type: 'opportunity',
       title: 'Supplier Portfolio Diversification',
-      description: 'High concentration risk detected with top 3 suppliers representing 80% of spend.',
+      description:
+        'High concentration risk detected with top 3 suppliers representing 80% of spend.',
       impact: {
         score: 8,
         type: 'risk_reduction',
         estimatedValue: {
           amount: 50000,
           currency: 'USD',
-          timeframe: 'risk_mitigation'
-        }
+          timeframe: 'risk_mitigation',
+        },
       },
       confidence: 0.82,
       evidence: [
         'Pareto analysis shows concentration risk',
         'Single points of failure in supply chain',
-        'Limited negotiation leverage'
+        'Limited negotiation leverage',
       ],
-      relatedEntities: []
+      relatedEntities: [],
     });
   }
 
@@ -385,15 +415,15 @@ async function generatePortfolioInsights(focusAreas: string[], timeFrame: unknow
       description: 'Opportunity to reduce carbon footprint by 25% through sustainable sourcing.',
       impact: {
         score: 7,
-        type: 'sustainability'
+        type: 'sustainability',
       },
       confidence: 0.78,
       evidence: [
         'ESG compliance requirements increasing',
         'Customer demand for sustainable products',
-        'Carbon tax implications'
+        'Carbon tax implications',
       ],
-      relatedEntities: []
+      relatedEntities: [],
     });
   }
 
@@ -401,7 +431,11 @@ async function generatePortfolioInsights(focusAreas: string[], timeFrame: unknow
 }
 
 // Generate contract-specific insights
-async function generateContractInsights(contractId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
+async function generateContractInsights(
+  contractId: string,
+  focusAreas: string[],
+  timeFrame: unknown
+): Promise<unknown[]> {
   const insights = [];
 
   // Contract renewal insight
@@ -416,20 +450,22 @@ async function generateContractInsights(contractId: string, focusAreas: string[]
       estimatedValue: {
         amount: 30000,
         currency: 'USD',
-        timeframe: 'contract_term'
-      }
+        timeframe: 'contract_term',
+      },
     },
     confidence: 0.8,
     evidence: [
       'Contract expires in 90 days',
       'Supplier performance exceeded SLAs',
-      'Market rates have decreased'
+      'Market rates have decreased',
     ],
-    relatedEntities: [{
-      type: 'contract',
-      id: contractId,
-      name: 'Expiring Contract'
-    }]
+    relatedEntities: [
+      {
+        type: 'contract',
+        id: contractId,
+        name: 'Expiring Contract',
+      },
+    ],
   });
 
   return insights;
@@ -446,7 +482,7 @@ function generateActionItems(insight: unknown): unknown[] {
           action: 'Schedule negotiation meeting with supplier',
           priority: 'high',
           effort: 'medium',
-          timeframe: '2 weeks'
+          timeframe: '2 weeks',
         });
       }
       break;
@@ -456,7 +492,7 @@ function generateActionItems(insight: unknown): unknown[] {
         action: 'Conduct risk assessment review',
         priority: 'high',
         effort: 'low',
-        timeframe: '1 week'
+        timeframe: '1 week',
       });
       break;
 
@@ -465,7 +501,7 @@ function generateActionItems(insight: unknown): unknown[] {
         action: 'Monitor market conditions closely',
         priority: 'medium',
         effort: 'low',
-        timeframe: 'ongoing'
+        timeframe: 'ongoing',
       });
       break;
   }

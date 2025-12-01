@@ -31,7 +31,10 @@ function env(name: string, required = true): string | undefined {
 const serverUrl = process.env.NEON_MCP_URL; // not used in this script (stdio mode)
 const token = process.env.NEON_MCP_TOKEN; // not used in this script (stdio mode)
 const neonApiKey = process.env.NEON_API_KEY; // for stdio server spawn
-const neonConnStr = process.env.NEON_CONNECTION_STRING || process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL;
+const neonConnStr =
+  process.env.NEON_CONNECTION_STRING ||
+  process.env.NEON_SPP_DATABASE_URL ||
+  process.env.DATABASE_URL;
 const neonProjectId = process.env.NEON_PROJECT_ID;
 const neonBranchId = process.env.NEON_BRANCH_ID;
 const neonEndpointId = process.env.NEON_ENDPOINT_ID;
@@ -45,7 +48,7 @@ const PHASE_A_MIGRATIONS = [
   'database/migrations/005_fix_analytics_sequences.sql',
   'database/migrations/006_add_supplier_contact_person.sql',
   'database/migrations/neon/005_update_public_suppliers_view_add_contact_person.sql',
-  'database/migrations/0212_supplier_rules_engine.sql'
+  'database/migrations/0212_supplier_rules_engine.sql',
 ];
 
 const VERIFICATION_QUERIES = [
@@ -55,7 +58,7 @@ const VERIFICATION_QUERIES = [
   // Verify supplier contact_person column
   `SELECT 1 AS contact_person_ok FROM information_schema.columns WHERE table_schema='core' AND table_name='supplier' AND column_name='contact_person';`,
   // Verify public view exposes contact_person
-  `SELECT 1 AS view_has_contact_person FROM information_schema.columns WHERE table_schema='public' AND table_name='suppliers' AND column_name='contact_person';`
+  `SELECT 1 AS view_has_contact_person FROM information_schema.columns WHERE table_schema='public' AND table_name='suppliers' AND column_name='contact_person';`,
 ];
 
 async function main() {
@@ -63,7 +66,7 @@ async function main() {
     name: 'mantis-mcp-client',
     version: '1.0.0',
     // MCP client requires capabilities object on recent SDK builds
-    capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any
+    capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any,
   });
   let transport: any;
   if (neonApiKey) {
@@ -72,7 +75,7 @@ async function main() {
       command: 'npx',
       args: ['-y', '@neondatabase/mcp-server-neon', 'start', neonApiKey],
       env: process.env as any,
-      capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any
+      capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any,
     });
     await client.connect(transport);
   } else {
@@ -140,8 +143,12 @@ async function main() {
         const res = await client.callTool(sqlTool.name, args);
         const msg = res.structuredContent
           ? JSON.stringify(res.structuredContent)
-          : (res.content as any[])?.map((c: any) => (typeof c === 'string' ? c : JSON.stringify(c))).join('\n');
-        console.log(`[OK] ${label} via ${sqlTool.name} with keys [${Object.keys(args).join(', ')}] -> ${msg ?? 'done'}`);
+          : (res.content as any[])
+              ?.map((c: any) => (typeof c === 'string' ? c : JSON.stringify(c)))
+              .join('\n');
+        console.log(
+          `[OK] ${label} via ${sqlTool.name} with keys [${Object.keys(args).join(', ')}] -> ${msg ?? 'done'}`
+        );
         return;
       } catch (e) {
         lastErr = e;

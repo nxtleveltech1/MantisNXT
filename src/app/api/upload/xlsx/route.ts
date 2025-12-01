@@ -3,7 +3,7 @@
  * Real-time file upload with progress tracking and live database integration
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { ValidationRule } from '@/lib/integrations/xlsx-processor';
 import { xlsxProcessor } from '@/lib/integrations/xlsx-processor';
@@ -45,15 +45,12 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const targetTable = formData.get('targetTable') as string;
     const sheetName = formData.get('sheetName') as string;
-    const skipRows = parseInt(formData.get('skipRows') as string || '0');
+    const skipRows = parseInt((formData.get('skipRows') as string) || '0');
     const validateData = formData.get('validateData') === 'true';
     const updateExisting = formData.get('updateExisting') === 'true';
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
     }
 
     if (!targetTable) {
@@ -66,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Validate file type
     const allowedTypes = [
       'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -103,7 +100,7 @@ export async function POST(request: NextRequest) {
         skipRows,
         batchSize: 100,
         validateData,
-        updateExisting
+        updateExisting,
       },
       validationRules
     );
@@ -113,16 +110,12 @@ export async function POST(request: NextRequest) {
       data: {
         processId,
         progress,
-        message: 'File upload started successfully'
-      }
+        message: 'File upload started successfully',
+      },
     });
-
   } catch (error) {
     console.error('❌ XLSX upload error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to process file' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to process file' }, { status: 500 });
   }
 }
 
@@ -163,17 +156,13 @@ export async function GET(request: NextRequest) {
     const progress = xlsxProcessor.getProcessingStatus(processId);
 
     if (!progress) {
-      return NextResponse.json(
-        { success: false, error: 'Process not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Process not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      data: progress
+      data: progress,
     });
-
   } catch (error) {
     console.error('❌ Progress check error:', error);
     return NextResponse.json(
@@ -221,9 +210,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: cancelled,
-      message: cancelled ? 'Process cancelled successfully' : 'Process not found or already completed'
+      message: cancelled
+        ? 'Process cancelled successfully'
+        : 'Process not found or already completed',
     });
-
   } catch (error) {
     console.error('❌ Cancel process error:', error);
     return NextResponse.json(
@@ -239,7 +229,7 @@ export async function DELETE(request: NextRequest) {
 function getValidationRules(tableName: string): ValidationRule[] {
   const commonRules = [
     { column: 'organization_id', required: false }, // Added automatically
-    { column: 'created_by', required: false } // Added automatically
+    { column: 'created_by', required: false }, // Added automatically
   ];
 
   switch (tableName) {
@@ -252,7 +242,11 @@ function getValidationRules(tableName: string): ValidationRule[] {
         { column: 'selling_price', required: true, type: 'number' },
         { column: 'quantity_on_hand', required: false, type: 'number' },
         { column: 'reorder_level', required: false, type: 'number' },
-        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'discontinued'] }
+        {
+          column: 'status',
+          required: false,
+          allowedValues: ['active', 'inactive', 'discontinued'],
+        },
       ];
 
     case 'customers':
@@ -261,7 +255,7 @@ function getValidationRules(tableName: string): ValidationRule[] {
         { column: 'name', required: true, type: 'string', minLength: 1, maxLength: 255 },
         { column: 'email', required: false, type: 'email' },
         { column: 'phone', required: false, type: 'phone' },
-        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'suspended'] }
+        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'suspended'] },
       ];
 
     case 'suppliers':
@@ -270,7 +264,7 @@ function getValidationRules(tableName: string): ValidationRule[] {
         { column: 'name', required: true, type: 'string', minLength: 1, maxLength: 255 },
         { column: 'contact_email', required: false, type: 'email' },
         { column: 'contact_phone', required: false, type: 'phone' },
-        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'suspended'] }
+        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'suspended'] },
       ];
 
     case 'products':
@@ -278,7 +272,11 @@ function getValidationRules(tableName: string): ValidationRule[] {
         ...commonRules,
         { column: 'name', required: true, type: 'string', minLength: 1, maxLength: 255 },
         { column: 'price', required: true, type: 'number' },
-        { column: 'status', required: false, allowedValues: ['active', 'inactive', 'discontinued'] }
+        {
+          column: 'status',
+          required: false,
+          allowedValues: ['active', 'inactive', 'discontinued'],
+        },
       ];
 
     default:

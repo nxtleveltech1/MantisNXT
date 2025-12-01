@@ -3,7 +3,7 @@
  * All amounts in South African Rand (ZAR)
  */
 
-import { SAProvince } from "../currency/zar-formatter";
+import { SAProvince } from '../currency/zar-formatter';
 
 export const ZAR_DASHBOARD_STATS = {
   totalSuppliers: 22,
@@ -16,46 +16,46 @@ export const ZAR_DASHBOARD_STATS = {
 
 export const ZAR_DASHBOARD_SUPPLIERS = [
   {
-    name: "Yamaha Music South Africa",
+    name: 'Yamaha Music South Africa',
     rating: 0,
-    status: "active",
-    category: "",
+    status: 'active',
+    category: '',
     totalSpend: 0,
     beeLevel: 0,
     province: SAProvince.GAUTENG,
   },
   {
-    name: "Sennheiser South Africa",
+    name: 'Sennheiser South Africa',
     rating: 0,
-    status: "active",
-    category: "",
+    status: 'active',
+    category: '',
     totalSpend: 0,
     beeLevel: 0,
     province: SAProvince.GAUTENG,
   },
   {
-    name: "Stage Audio Works",
+    name: 'Stage Audio Works',
     rating: 0,
-    status: "active",
-    category: "",
+    status: 'active',
+    category: '',
     totalSpend: 0,
     beeLevel: 0,
     province: SAProvince.GAUTENG,
   },
   {
-    name: "Audiosure",
+    name: 'Audiosure',
     rating: 0,
-    status: "active",
-    category: "",
+    status: 'active',
+    category: '',
     totalSpend: 0,
     beeLevel: 0,
     province: SAProvince.GAUTENG,
   },
   {
-    name: "ApexPro Distribution",
+    name: 'ApexPro Distribution',
     rating: 0,
-    status: "active",
-    category: "",
+    status: 'active',
+    category: '',
     totalSpend: 0,
     beeLevel: 0,
     province: SAProvince.GAUTENG,
@@ -64,44 +64,44 @@ export const ZAR_DASHBOARD_SUPPLIERS = [
 
 export const ZAR_DASHBOARD_ACTIVITIES = [
   {
-    title: "BEE Certificate Renewed",
-    description: "Cape Town Manufacturing Co - Level 2 BEE certificate renewed",
-    time: "2h ago",
-    priority: "medium",
+    title: 'BEE Certificate Renewed',
+    description: 'Cape Town Manufacturing Co - Level 2 BEE certificate renewed',
+    time: '2h ago',
+    priority: 'medium',
     amount: 8500000,
-    type: "compliance",
+    type: 'compliance',
   },
   {
-    title: "Payment Overdue",
-    description: "Durban Logistics Solutions - R 317,250 payment overdue",
-    time: "4h ago",
-    priority: "high",
+    title: 'Payment Overdue',
+    description: 'Durban Logistics Solutions - R 317,250 payment overdue',
+    time: '4h ago',
+    priority: 'high',
     amount: 317250,
-    type: "payment",
+    type: 'payment',
   },
   {
-    title: "New BEE Supplier Onboarded",
-    description: "Limpopo Agricultural Services - Level 1 BEE approved",
-    time: "6h ago",
-    priority: "low",
+    title: 'New BEE Supplier Onboarded',
+    description: 'Limpopo Agricultural Services - Level 1 BEE approved',
+    time: '6h ago',
+    priority: 'low',
     amount: 0,
-    type: "onboarding",
+    type: 'onboarding',
   },
   {
-    title: "Large Purchase Order",
-    description: "Johannesburg Industrial Supplies - R 1.2M PO approved",
-    time: "8h ago",
-    priority: "medium",
+    title: 'Large Purchase Order',
+    description: 'Johannesburg Industrial Supplies - R 1.2M PO approved',
+    time: '8h ago',
+    priority: 'medium',
     amount: 1200000,
-    type: "purchase_order",
+    type: 'purchase_order',
   },
   {
-    title: "VAT Return Submitted",
-    description: "Q4 2023 VAT return - R 3.8M VAT claimed",
-    time: "1d ago",
-    priority: "low",
+    title: 'VAT Return Submitted',
+    description: 'Q4 2023 VAT return - R 3.8M VAT claimed',
+    time: '1d ago',
+    priority: 'low',
     amount: 3800000,
-    type: "vat",
+    type: 'vat',
   },
 ];
 
@@ -184,7 +184,7 @@ export const ZAR_QUARTERLY_TRENDS = {
 };
 
 export const ZAR_CURRENCY_EXCHANGE = {
-  baseCurrency: "ZAR",
+  baseCurrency: 'ZAR',
   exchangeRates: {
     USD: 0.0533, // 1 ZAR = 0.0533 USD
     EUR: 0.0486, // 1 ZAR = 0.0486 EUR
@@ -195,6 +195,6 @@ export const ZAR_CURRENCY_EXCHANGE = {
     EUR: 3125000, // R 3.125M imports from EUR
     GBP: 1875000, // R 1.875M imports from GBP
   },
-  exchangeRisk: "medium",
+  exchangeRisk: 'medium',
   hedgingCoverage: 0.75, // 75% hedged
 };

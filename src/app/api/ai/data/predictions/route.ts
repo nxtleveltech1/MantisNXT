@@ -13,7 +13,7 @@
  * }
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
@@ -27,22 +27,22 @@ const PredictionRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedInput = PredictionRequestSchema.parse(body)
+    const body = await request.json();
+    const validatedInput = PredictionRequestSchema.parse(body);
 
     const execResult = await executeWithOptionalAsync(request, async () => {
-      const startTime = Date.now()
+      const startTime = Date.now();
       const prediction = await aiDatabase.generatePredictions({
         type: validatedInput.type,
         target_id: validatedInput.target_id?.toString(),
         forecast_days: validatedInput.forecast_days,
-      })
+      });
 
-      const values = prediction.predictions.map(p => p.value)
-      const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length
-      const maxValue = Math.max(...values)
-      const minValue = Math.min(...values)
-      const trend = values[values.length - 1] > values[0] ? 'increasing' : 'decreasing'
+      const values = prediction.predictions.map(p => p.value);
+      const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+      const maxValue = Math.max(...values);
+      const minValue = Math.min(...values);
+      const trend = values[values.length - 1] > values[0] ? 'increasing' : 'decreasing';
 
       return {
         success: true,
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
           generated_at: new Date().toISOString(),
         },
         timestamp: new Date().toISOString(),
-      }
-    })
+      };
+    });
 
     if (execResult.queued) {
       return NextResponse.json(
@@ -77,12 +77,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('Prediction error:', error)
+    console.error('Prediction error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           details: error.issues,
         },
         { status: 400 }
-      )
+      );
     }
 
     return NextResponse.json(
@@ -102,9 +102,10 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function GET(request: NextRequest) {
+}
+export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/predictions',
     method: 'POST',
@@ -127,14 +128,14 @@ export async function POST(request: NextRequest) {
           type: 'inventory_demand',
           target_id: 123,
           forecast_days: 30,
-        }
+        },
       },
       {
         description: 'Forecast overall stock levels',
         request: {
           type: 'stock_levels',
           forecast_days: 60,
-        }
+        },
       },
     ],
   });

@@ -189,14 +189,14 @@ export interface SupplierMetrics {
 
 // Export Types
 export interface ExportRequest {
-  filters: SupplierFilters
-  format: 'csv' | 'excel' | 'pdf' | 'json'
-  template?: 'basic' | 'detailed' | 'performance' | 'compliance'
-  includePerformance?: boolean
-  includeContacts?: boolean
-  includeAddresses?: boolean
-  title?: string
-  description?: string
+  filters: SupplierFilters;
+  format: 'csv' | 'excel' | 'pdf' | 'json';
+  template?: 'basic' | 'detailed' | 'performance' | 'compliance';
+  includePerformance?: boolean;
+  includeContacts?: boolean;
+  includeAddresses?: boolean;
+  title?: string;
+  description?: string;
 }
 
 export interface ExportResult {
@@ -209,24 +209,24 @@ export interface ExportResult {
 
 // API Response Types
 export interface APIResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-  error?: string
-  timestamp: string
-  details?: unknown
-  meta?: Record<string, unknown>
+  success: boolean;
+  data: T;
+  message?: string;
+  error?: string;
+  timestamp: string;
+  details?: unknown;
+  meta?: Record<string, unknown>;
 }
 
 export interface PaginatedAPIResponse<T> extends APIResponse<T> {
   pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-    hasNext: boolean
-    hasPrev: boolean
-  }
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 // Validation Types
@@ -242,41 +242,41 @@ export interface ValidationResult {
 }
 
 // AI Integration Types
-export type SupplierDiscoverySource = 'web' | 'duns' | 'companies_house' | 'sars' | 'custom'
+export type SupplierDiscoverySource = 'web' | 'duns' | 'companies_house' | 'sars' | 'custom';
 
 export interface AISupplierDiscovery {
-  query: string
-  industry?: string
-  location?: string
-  size?: 'small' | 'medium' | 'large'
-  certifications?: string[]
-  includeInternational?: boolean
-  maxResults?: number
-  minConfidence?: number
-  sources?: SupplierDiscoverySource[]
+  query: string;
+  industry?: string;
+  location?: string;
+  size?: 'small' | 'medium' | 'large';
+  certifications?: string[];
+  includeInternational?: boolean;
+  maxResults?: number;
+  minConfidence?: number;
+  sources?: SupplierDiscoverySource[];
 }
 
 export interface AISupplierMatch {
-  supplier: Supplier
-  confidence: number
-  reasoning: string[]
-  dataSource: SupplierDiscoverySource | 'ai_internal'
-  discoveredAt?: string
+  supplier: Supplier;
+  confidence: number;
+  reasoning: string[];
+  dataSource: SupplierDiscoverySource | 'ai_internal';
+  discoveredAt?: string;
 }
 
 export interface AIEnrichmentData {
-  supplierId: string
+  supplierId: string;
   additionalInfo: {
-    financialHealth?: string
-    riskAssessment?: string
-    marketPosition?: string
-    competitors?: string[]
-    sustainability?: string
-  }
-  lastUpdated: string
-  confidence?: number
-  fields?: string[]
-  insights?: string[]
+    financialHealth?: string;
+    riskAssessment?: string;
+    marketPosition?: string;
+    competitors?: string[];
+    sustainability?: string;
+  };
+  lastUpdated: string;
+  confidence?: number;
+  fields?: string[];
+  insights?: string[];
 }
 
 // Event Types for Real-time Updates

@@ -73,7 +73,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   async createWidget(
     orgId: string,
     data: CreateWidgetData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsWidget>> {
     return this.executeOperation(
       'widget.create',
@@ -81,13 +81,11 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         // Verify dashboard belongs to org
         const dashboardResult = await db.query(
           `SELECT id FROM analytics_dashboard WHERE id = $1 AND org_id = $2`,
-          [data.dashboardId, orgId],
+          [data.dashboardId, orgId]
         );
 
         if (dashboardResult.rows.length === 0) {
-          throw new Error(
-            `Dashboard ${data.dashboardId} not found or access denied`,
-          );
+          throw new Error(`Dashboard ${data.dashboardId} not found or access denied`);
         }
 
         const result = await db.query(
@@ -112,13 +110,13 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
             data.positionY || 0,
             data.width || 1,
             data.height || 1,
-          ],
+          ]
         );
 
         return this.mapWidgetRow(result.rows[0]);
       },
       options,
-      { orgId, dashboardId: data.dashboardId, widgetType: data.widgetType },
+      { orgId, dashboardId: data.dashboardId, widgetType: data.widgetType }
     );
   }
 
@@ -128,7 +126,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   async updateWidget(
     widgetId: string,
     updates: UpdateWidgetData,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsWidget>> {
     return this.executeOperation(
       'widget.update',
@@ -171,7 +169,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $${paramIndex}
           RETURNING *
           `,
-          values,
+          values
         );
 
         if (result.rows.length === 0) {
@@ -181,7 +179,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         return this.mapWidgetRow(result.rows[0]);
       },
       options,
-      { widgetId },
+      { widgetId }
     );
   }
 
@@ -190,7 +188,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   async deleteWidget(
     widgetId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'widget.delete',
@@ -201,7 +199,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $1
           RETURNING id
           `,
-          [widgetId],
+          [widgetId]
         );
 
         if (result.rows.length === 0) {
@@ -209,7 +207,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { widgetId },
+      { widgetId }
     );
   }
 
@@ -218,7 +216,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   async getWidget(
     widgetId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsWidget>> {
     return this.executeOperation(
       'widget.get',
@@ -228,7 +226,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           SELECT * FROM analytics_widget
           WHERE id = $1
           `,
-          [widgetId],
+          [widgetId]
         );
 
         if (result.rows.length === 0) {
@@ -238,7 +236,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         return this.mapWidgetRow(result.rows[0]);
       },
       options,
-      { widgetId },
+      { widgetId }
     );
   }
 
@@ -247,7 +245,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   async getWidgetsByDashboard(
     dashboardId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<AnalyticsWidget[]>> {
     return this.executeOperation(
       'widget.getByDashboard',
@@ -258,13 +256,13 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           WHERE dashboard_id = $1
           ORDER BY position_y, position_x
           `,
-          [dashboardId],
+          [dashboardId]
         );
 
-        return result.rows.map((row) => this.mapWidgetRow(row));
+        return result.rows.map(row => this.mapWidgetRow(row));
       },
       options,
-      { dashboardId },
+      { dashboardId }
     );
   }
 
@@ -273,16 +271,15 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   async fetchWidgetData(
     widgetId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<unknown>> {
     return this.executeOperation(
       'widget.fetchData',
       async () => {
         // Get widget configuration
-        const widgetResult = await db.query(
-          `SELECT * FROM analytics_widget WHERE id = $1`,
-          [widgetId],
-        );
+        const widgetResult = await db.query(`SELECT * FROM analytics_widget WHERE id = $1`, [
+          widgetId,
+        ]);
 
         if (widgetResult.rows.length === 0) {
           throw new Error(`Widget ${widgetId} not found`);
@@ -296,7 +293,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         return data;
       },
       options,
-      { widgetId },
+      { widgetId }
     );
   }
 
@@ -305,7 +302,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   async refreshWidget(
     widgetId: string,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<unknown>> {
     return this.fetchWidgetData(widgetId, options);
   }
@@ -317,7 +314,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
     widgetId: string,
     x: number,
     y: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'widget.updatePosition',
@@ -329,7 +326,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $3
           RETURNING id
           `,
-          [x, y, widgetId],
+          [x, y, widgetId]
         );
 
         if (result.rows.length === 0) {
@@ -337,7 +334,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { widgetId, x, y },
+      { widgetId, x, y }
     );
   }
 
@@ -348,7 +345,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
     widgetId: string,
     width: number,
     height: number,
-    options?: AIServiceRequestOptions,
+    options?: AIServiceRequestOptions
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
       'widget.updateSize',
@@ -364,7 +361,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
           WHERE id = $3
           RETURNING id
           `,
-          [width, height, widgetId],
+          [width, height, widgetId]
         );
 
         if (result.rows.length === 0) {
@@ -372,16 +369,14 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
         }
       },
       options,
-      { widgetId, width, height },
+      { widgetId, width, height }
     );
   }
 
   /**
    * Execute widget query based on metric type
    */
-  private async executeWidgetQuery(
-    widget: AnalyticsWidget,
-  ): Promise<unknown> {
+  private async executeWidgetQuery(widget: AnalyticsWidget): Promise<unknown> {
     const { metricType, query, config } = widget;
 
     switch (metricType) {
@@ -405,10 +400,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   /**
    * Fetch sales metrics
    */
-  private async fetchSalesData(
-    orgId: string,
-    query: Record<string, unknown>,
-  ): Promise<unknown> {
+  private async fetchSalesData(orgId: string, query: Record<string, unknown>): Promise<unknown> {
     // Simplified sales query - would be more complex in production
     const result = await db.query(
       `
@@ -420,7 +412,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       WHERE org_id = $1
         AND created_at >= NOW() - INTERVAL '30 days'
       `,
-      [orgId],
+      [orgId]
     );
 
     return result.rows[0] || {};
@@ -431,7 +423,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchInventoryData(
     orgId: string,
-    query: Record<string, unknown>,
+    query: Record<string, unknown>
   ): Promise<unknown> {
     const result = await db.query(
       `
@@ -442,7 +434,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       FROM products
       WHERE org_id = $1
       `,
-      [orgId],
+      [orgId]
     );
 
     return result.rows[0] || {};
@@ -453,7 +445,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchSupplierPerformanceData(
     orgId: string,
-    query: Record<string, unknown>,
+    query: Record<string, unknown>
   ): Promise<unknown> {
     const result = await db.query(
       `
@@ -463,7 +455,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       FROM public.suppliers
       WHERE org_id = $1
       `,
-      [orgId],
+      [orgId]
     );
 
     return result.rows[0] || {};
@@ -474,7 +466,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchCustomerBehaviorData(
     orgId: string,
-    query: Record<string, unknown>,
+    query: Record<string, unknown>
   ): Promise<unknown> {
     const result = await db.query(
       `
@@ -486,7 +478,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       FROM customers
       WHERE org_id = $1
       `,
-      [orgId],
+      [orgId]
     );
 
     return result.rows[0] || {};
@@ -497,7 +489,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchFinancialData(
     orgId: string,
-    query: Record<string, unknown>,
+    query: Record<string, unknown>
   ): Promise<unknown> {
     // Placeholder - would integrate with actual financial tables
     return {
@@ -512,7 +504,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchOperationalData(
     orgId: string,
-    query: Record<string, unknown>,
+    query: Record<string, unknown>
   ): Promise<unknown> {
     // Placeholder - would integrate with actual operational tables
     return {

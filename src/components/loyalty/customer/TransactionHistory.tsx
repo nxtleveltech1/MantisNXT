@@ -17,12 +17,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Calendar,
-  Download,
-  Search,
-  TrendingUp,
-} from 'lucide-react';
+import { Calendar, Download, Search, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,11 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ActivityFeedItem } from './shared/ActivityFeedItem';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -70,13 +61,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
   }>({});
 
   const { data, isLoading } = useQuery({
-    queryKey: [
-      'loyalty-transactions',
-      customerId,
-      transactionType,
-      dateRange,
-      page,
-    ],
+    queryKey: ['loyalty-transactions', customerId, transactionType, dateRange, page],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('page', page.toString());
@@ -105,7 +90,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
   const totalPages = Math.ceil(total / 20);
 
   // Filter transactions by search query
-  const filteredTransactions = transactions.filter((transaction) => {
+  const filteredTransactions = transactions.filter(transaction => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -136,12 +121,10 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Transaction History</h2>
-          <p className="text-muted-foreground">
-            View all your points activity
-          </p>
+          <p className="text-muted-foreground">View all your points activity</p>
         </div>
 
         <Button onClick={handleExport} variant="outline" className="gap-2">
@@ -152,17 +135,17 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Search */}
             <div className="space-y-2">
               <Label>Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search transactions..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -206,9 +189,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                       <Input
                         type="date"
                         value={dateRange.from || ''}
-                        onChange={(e) =>
-                          setDateRange({ ...dateRange, from: e.target.value })
-                        }
+                        onChange={e => setDateRange({ ...dateRange, from: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -216,9 +197,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                       <Input
                         type="date"
                         value={dateRange.to || ''}
-                        onChange={(e) =>
-                          setDateRange({ ...dateRange, to: e.target.value })
-                        }
+                        onChange={e => setDateRange({ ...dateRange, to: e.target.value })}
                       />
                     </div>
                     <Button
@@ -240,18 +219,18 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
       {/* Transactions List */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <div className="space-y-4 text-center">
+            <div className="border-primary mx-auto h-12 w-12 animate-spin rounded-full border-b-2" />
             <p className="text-muted-foreground">Loading transactions...</p>
           </div>
         </div>
       ) : filteredTransactions.length === 0 ? (
         <Card>
-          <CardContent className="pt-12 pb-12 text-center space-y-4">
-            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
+          <CardContent className="space-y-4 pt-12 pb-12 text-center">
+            <TrendingUp className="text-muted-foreground mx-auto h-12 w-12" />
             <div>
               <p className="font-medium">No transactions found</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Your transaction history will appear here
               </p>
             </div>
@@ -265,7 +244,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                 <div key={transaction.id}>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-full text-left hover:bg-muted/50 rounded-lg transition-colors">
+                      <button className="hover:bg-muted/50 w-full rounded-lg text-left transition-colors">
                         <ActivityFeedItem
                           type={mapTransactionType(transaction.transaction_type)}
                           points={transaction.points}
@@ -277,12 +256,8 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                     <PopoverContent className="w-80" align="start">
                       <div className="space-y-3">
                         <div>
-                          <h4 className="font-semibold mb-1">
-                            Transaction Details
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.description}
-                          </p>
+                          <h4 className="mb-1 font-semibold">Transaction Details</h4>
+                          <p className="text-muted-foreground text-sm">{transaction.description}</p>
                         </div>
 
                         <Separator />
@@ -299,9 +274,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                             <span
                               className={cn(
                                 'font-semibold',
-                                transaction.points > 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
+                                transaction.points > 0 ? 'text-green-600' : 'text-red-600'
                               )}
                             >
                               {transaction.points > 0 ? '+' : ''}
@@ -309,65 +282,46 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              Balance After
-                            </span>
+                            <span className="text-muted-foreground">Balance After</span>
                             <span className="font-medium">
                               {transaction.running_balance.toLocaleString()}
                             </span>
                           </div>
                           {transaction.reference_id && (
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Reference
-                              </span>
-                              <span className="font-mono text-xs">
-                                {transaction.reference_id}
-                              </span>
+                              <span className="text-muted-foreground">Reference</span>
+                              <span className="font-mono text-xs">{transaction.reference_id}</span>
                             </div>
                           )}
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Date</span>
                             <span>
-                              {format(
-                                new Date(transaction.created_at),
-                                'MMM d, yyyy h:mm a'
-                              )}
+                              {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
                             </span>
                           </div>
                         </div>
 
-                        {transaction.metadata &&
-                          Object.keys(transaction.metadata).length > 0 && (
-                            <>
-                              <Separator />
-                              <div className="space-y-2 text-sm">
-                                <p className="text-muted-foreground font-medium">
-                                  Additional Info
-                                </p>
-                                {Object.entries(transaction.metadata).map(
-                                  ([key, value]) => (
-                                    <div
-                                      key={key}
-                                      className="flex justify-between"
-                                    >
-                                      <span className="text-muted-foreground capitalize">
-                                        {key.replace(/_/g, ' ')}
-                                      </span>
-                                      <span>{String(value)}</span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </>
-                          )}
+                        {transaction.metadata && Object.keys(transaction.metadata).length > 0 && (
+                          <>
+                            <Separator />
+                            <div className="space-y-2 text-sm">
+                              <p className="text-muted-foreground font-medium">Additional Info</p>
+                              {Object.entries(transaction.metadata).map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                  <span className="text-muted-foreground capitalize">
+                                    {key.replace(/_/g, ' ')}
+                                  </span>
+                                  <span>{String(value)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </PopoverContent>
                   </Popover>
 
-                  {index < filteredTransactions.length - 1 && (
-                    <Separator className="my-1" />
-                  )}
+                  {index < filteredTransactions.length - 1 && <Separator className="my-1" />}
                 </div>
               ))}
             </div>
@@ -378,15 +332,14 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * 20 + 1} to{' '}
-            {Math.min(page * 20, total)} of {total} transactions
+          <p className="text-muted-foreground text-sm">
+            Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, total)} of {total} transactions
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
             >
               Previous
@@ -394,7 +347,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
               Next

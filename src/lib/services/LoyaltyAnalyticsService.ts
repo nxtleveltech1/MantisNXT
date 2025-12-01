@@ -12,12 +12,8 @@
  */
 
 import { query } from '@/lib/database';
-import type {
-  LoyaltyLeaderboardEntry,
-  LoyaltyTier} from '@/types/loyalty';
-import {
-  LoyaltyError,
-} from '@/types/loyalty';
+import type { LoyaltyLeaderboardEntry, LoyaltyTier } from '@/types/loyalty';
+import { LoyaltyError } from '@/types/loyalty';
 
 // ============================================================================
 // TYPES FOR SERVICE METHODS
@@ -208,22 +204,16 @@ export class LoyaltyAnalyticsService {
       return result.rows;
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching leaderboard:', error);
-      throw new LoyaltyError(
-        'Failed to fetch leaderboard',
-        'FETCH_LEADERBOARD_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch leaderboard', 'FETCH_LEADERBOARD_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get customer rank information
    */
-  static async getCustomerRank(
-    customerId: string,
-    orgId: string
-  ): Promise<RankInfo> {
+  static async getCustomerRank(customerId: string, orgId: string): Promise<RankInfo> {
     try {
       const sql = `
         SELECT
@@ -241,11 +231,7 @@ export class LoyaltyAnalyticsService {
       const result = await query<unknown>(sql, [customerId, orgId]);
 
       if (result.rows.length === 0) {
-        throw new LoyaltyError(
-          'Customer not found in leaderboard',
-          'CUSTOMER_NOT_FOUND',
-          404
-        );
+        throw new LoyaltyError('Customer not found in leaderboard', 'CUSTOMER_NOT_FOUND', 404);
       }
 
       const customer = result.rows[0];
@@ -257,9 +243,7 @@ export class LoyaltyAnalyticsService {
       );
       const totalCount = parseInt(totalCountResult.rows[0]?.count || '0', 10);
       const percentile =
-        totalCount > 0
-          ? ((totalCount - customer.overall_rank + 1) / totalCount) * 100
-          : 0;
+        totalCount > 0 ? ((totalCount - customer.overall_rank + 1) / totalCount) * 100 : 0;
 
       return {
         customerId: customer.customer_id,
@@ -274,12 +258,7 @@ export class LoyaltyAnalyticsService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyAnalyticsService] Error fetching customer rank:', error);
-      throw new LoyaltyError(
-        'Failed to fetch customer rank',
-        'FETCH_RANK_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch customer rank', 'FETCH_RANK_ERROR', 500, { error });
     }
   }
 
@@ -337,8 +316,7 @@ export class LoyaltyAnalyticsService {
       // Calculate redemption rate
       const totalIssued = Number(stats.total_points_issued || 0);
       const totalRedeemed = Number(stats.total_points_redeemed || 0);
-      const redemptionRate =
-        totalIssued > 0 ? (totalRedeemed / totalIssued) * 100 : 0;
+      const redemptionRate = totalIssued > 0 ? (totalRedeemed / totalIssued) * 100 : 0;
 
       // Get top rewards
       const topRewardsResult = await query<unknown>(
@@ -352,7 +330,7 @@ export class LoyaltyAnalyticsService {
         [programId]
       );
 
-      const topRewards = topRewardsResult.rows.map((r) => ({
+      const topRewards = topRewardsResult.rows.map(r => ({
         rewardId: r.reward_id,
         rewardName: r.reward_name,
         redemptionCount: Number(r.redemption_count || 0),
@@ -409,12 +387,9 @@ export class LoyaltyAnalyticsService {
     } catch (error) {
       if (error instanceof LoyaltyError) throw error;
       console.error('[LoyaltyAnalyticsService] Error fetching program metrics:', error);
-      throw new LoyaltyError(
-        'Failed to fetch program metrics',
-        'FETCH_METRICS_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch program metrics', 'FETCH_METRICS_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -455,7 +430,7 @@ export class LoyaltyAnalyticsService {
 
       const result = await query<unknown>(sql, [programId, orgId, truncFunction]);
 
-      return result.rows.map((row) => ({
+      return result.rows.map(row => ({
         date: row.date,
         earned: Number(row.earned || 0),
         redeemed: Number(row.redeemed || 0),
@@ -464,21 +439,16 @@ export class LoyaltyAnalyticsService {
       }));
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching points flow:', error);
-      throw new LoyaltyError(
-        'Failed to fetch points flow',
-        'FETCH_POINTS_FLOW_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch points flow', 'FETCH_POINTS_FLOW_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get reward performance data using the analytics view
    */
-  static async getRewardPerformance(
-    orgId: string
-  ): Promise<RewardPerformanceData[]> {
+  static async getRewardPerformance(orgId: string): Promise<RewardPerformanceData[]> {
     try {
       const sql = `
         SELECT
@@ -501,7 +471,7 @@ export class LoyaltyAnalyticsService {
 
       const result = await query<unknown>(sql, [orgId]);
 
-      return result.rows.map((row) => ({
+      return result.rows.map(row => ({
         rewardId: row.reward_id,
         rewardName: row.reward_name,
         rewardType: row.reward_type,
@@ -515,12 +485,9 @@ export class LoyaltyAnalyticsService {
       }));
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching reward performance:', error);
-      throw new LoyaltyError(
-        'Failed to fetch reward performance',
-        'FETCH_PERFORMANCE_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch reward performance', 'FETCH_PERFORMANCE_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -572,22 +539,16 @@ export class LoyaltyAnalyticsService {
       });
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching redemption trends:', error);
-      throw new LoyaltyError(
-        'Failed to fetch redemption trends',
-        'FETCH_TRENDS_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch redemption trends', 'FETCH_TRENDS_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Get tier distribution
    */
-  static async getTierDistribution(
-    orgId: string,
-    programId?: string
-  ): Promise<TierDistribution> {
+  static async getTierDistribution(orgId: string, programId?: string): Promise<TierDistribution> {
     try {
       const conditions = ['org_id = $1'];
       const params: unknown[] = [orgId];
@@ -617,7 +578,7 @@ export class LoyaltyAnalyticsService {
         total: 0,
       };
 
-      result.rows.forEach((row) => {
+      result.rows.forEach(row => {
         const tier = row.tier as LoyaltyTier;
         const count = parseInt(row.count, 10);
         distribution[tier] = count;
@@ -627,12 +588,9 @@ export class LoyaltyAnalyticsService {
       return distribution;
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching tier distribution:', error);
-      throw new LoyaltyError(
-        'Failed to fetch tier distribution',
-        'FETCH_TIER_DIST_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch tier distribution', 'FETCH_TIER_DIST_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -676,9 +634,7 @@ export class LoyaltyAnalyticsService {
         activeCustomers,
         totalCustomers,
         engagementRate:
-          totalCustomers > 0
-            ? Math.round((activeCustomers / totalCustomers) * 100 * 100) / 100
-            : 0,
+          totalCustomers > 0 ? Math.round((activeCustomers / totalCustomers) * 100 * 100) / 100 : 0,
         avgTransactionsPerCustomer: Math.round(Number(metrics.avg_transactions_per_customer || 0)),
         avgPointsPerTransaction: Math.round(Number(metrics.avg_points_per_transaction || 0)),
         customersWithRedemptions,
@@ -689,12 +645,9 @@ export class LoyaltyAnalyticsService {
       };
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error fetching engagement metrics:', error);
-      throw new LoyaltyError(
-        'Failed to fetch engagement metrics',
-        'FETCH_ENGAGEMENT_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to fetch engagement metrics', 'FETCH_ENGAGEMENT_ERROR', 500, {
+        error,
+      });
     }
   }
 
@@ -716,7 +669,7 @@ export class LoyaltyAnalyticsService {
             [orgId]
           );
           data.programs = await Promise.all(
-            programs.rows.map((p) => this.getProgramMetrics(p.id, orgId))
+            programs.rows.map(p => this.getProgramMetrics(p.id, orgId))
           );
           break;
 
@@ -765,22 +718,16 @@ export class LoyaltyAnalyticsService {
       };
     } catch (error) {
       console.error('[LoyaltyAnalyticsService] Error generating report:', error);
-      throw new LoyaltyError(
-        'Failed to generate loyalty report',
-        'GENERATE_REPORT_ERROR',
-        500,
-        { error }
-      );
+      throw new LoyaltyError('Failed to generate loyalty report', 'GENERATE_REPORT_ERROR', 500, {
+        error,
+      });
     }
   }
 
   /**
    * Schedule expiry report for upcoming point expirations
    */
-  static async scheduleExpiryReport(
-    programId: string,
-    orgId: string
-  ): Promise<ExpiryReport> {
+  static async scheduleExpiryReport(programId: string, orgId: string): Promise<ExpiryReport> {
     try {
       const sql = `
         SELECT
@@ -808,7 +755,7 @@ export class LoyaltyAnalyticsService {
 
       const result = await query<unknown>(sql, [programId, orgId]);
 
-      const upcomingExpiries = result.rows.map((row) => ({
+      const upcomingExpiries = result.rows.map(row => ({
         customerId: row.customer_id,
         customerName: row.customer_name,
         pointsExpiring: Number(row.points_expiring || 0),

@@ -21,7 +21,7 @@ testLines.forEach(testLine => {
     const hasBullet = testLine.includes('•') || testLine.includes('o');
     const hasTab = testLine.startsWith('\t');
     const restHasNumber = rest.match(/^\d+\./);
-    
+
     console.log(`\nLine: "${testLine}"`);
     console.log(`  Match: ${match ? 'YES' : 'NO'}`);
     console.log(`  Num: ${num} (1-10: ${num >= 1 && num <= 10})`);
@@ -29,7 +29,9 @@ testLines.forEach(testLine => {
     console.log(`  Has bullet: ${hasBullet}`);
     console.log(`  Has tab: ${hasTab}`);
     console.log(`  Rest has number: ${restHasNumber ? 'YES' : 'NO'}`);
-    console.log(`  Would match: ${num >= 1 && num <= 10 && !hasBullet && !hasTab && !restHasNumber}`);
+    console.log(
+      `  Would match: ${num >= 1 && num <= 10 && !hasBullet && !hasTab && !restHasNumber}`
+    );
   }
 });
 
@@ -39,4 +41,3 @@ l1Lines.forEach(lineNum => {
   const line = lines[lineNum - 1];
   console.log(`Line ${lineNum}: "${line.trim()}"`);
 });
-

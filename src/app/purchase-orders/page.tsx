@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useMemo } from "react"
-import AppLayout from '@/components/layout/AppLayout'
+import { useState, useEffect, useMemo } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import {
   Search,
   Filter,
@@ -38,21 +38,21 @@ import {
   ClipboardCheck,
   Calculator,
   List,
-  Grid3X3
-} from "lucide-react"
+  Grid3X3,
+} from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from "@/components/ui/table"
+  TableRow,
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,8 +61,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
-  DropdownMenuRadioItem
-} from "@/components/ui/dropdown-menu"
+  DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -70,252 +70,254 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Textarea } from "@/components/ui/textarea"
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 
-import { formatCurrency, formatDate, formatDateTime, getStatusColor, cn } from "@/lib/utils"
-import type {
-  PurchaseOrder,
-  POFilters,
-  PODashboardMetrics
-} from "@/types/purchase-order"
+import { formatCurrency, formatDate, formatDateTime, getStatusColor, cn } from '@/lib/utils';
+import type { PurchaseOrder, POFilters, PODashboardMetrics } from '@/types/purchase-order';
 
 // Mock data - in real app this would come from API
 const mockPurchaseOrders: PurchaseOrder[] = [
   {
-    id: "PO-001",
-    poNumber: "PO-2024-001",
-    supplierId: "SUP-001",
-    supplierName: "TechCorp Solutions",
-    supplierCode: "TECH001",
-    status: "approved",
-    priority: "high",
-    createdDate: new Date("2024-01-15"),
-    requestedDeliveryDate: new Date("2024-02-15"),
-    confirmedDeliveryDate: new Date("2024-02-20"),
-    approvedDate: new Date("2024-01-18"),
+    id: 'PO-001',
+    poNumber: 'PO-2024-001',
+    supplierId: 'SUP-001',
+    supplierName: 'TechCorp Solutions',
+    supplierCode: 'TECH001',
+    status: 'approved',
+    priority: 'high',
+    createdDate: new Date('2024-01-15'),
+    requestedDeliveryDate: new Date('2024-02-15'),
+    confirmedDeliveryDate: new Date('2024-02-20'),
+    approvedDate: new Date('2024-01-18'),
     items: [
       {
-        id: "item-1",
+        id: 'item-1',
         lineNumber: 1,
-        productCode: "LAPTOP-001",
-        description: "Dell Latitude 7420 Laptop",
-        specifications: "Intel i7, 16GB RAM, 512GB SSD",
-        category: "Hardware",
-        subcategory: "Laptops",
+        productCode: 'LAPTOP-001',
+        description: 'Dell Latitude 7420 Laptop',
+        specifications: 'Intel i7, 16GB RAM, 512GB SSD',
+        category: 'Hardware',
+        subcategory: 'Laptops',
         quantity: 10,
         receivedQuantity: 8,
         remainingQuantity: 2,
-        unit: "EA",
+        unit: 'EA',
         unitPrice: 1200,
         totalPrice: 12000,
         discountPercentage: 5,
         taxPercentage: 8,
-        requestedDate: new Date("2024-02-15"),
-        confirmedDate: new Date("2024-02-20"),
-        status: "partially_received",
-        qualityRequirements: ["Manufacturer Warranty", "QA Testing"],
+        requestedDate: new Date('2024-02-15'),
+        confirmedDate: new Date('2024-02-20'),
+        status: 'partially_received',
+        qualityRequirements: ['Manufacturer Warranty', 'QA Testing'],
         inspectionRequired: true,
-        reorderPointTriggered: false
-      }
+        reorderPointTriggered: false,
+      },
     ],
     subtotal: 12000,
     taxAmount: 960,
     discountAmount: 600,
     shippingCost: 150,
     totalAmount: 12510,
-    currency: "USD",
+    currency: 'USD',
     exchangeRate: 1,
-    budgetCode: "IT-2024-Q1",
+    budgetCode: 'IT-2024-Q1',
     budgetAllocated: 50000,
     budgetRemaining: 37490,
-    department: "IT",
-    costCenter: "CC-001",
+    department: 'IT',
+    costCenter: 'CC-001',
     approvalWorkflow: [
       {
-        id: "step-1",
+        id: 'step-1',
         stepNumber: 1,
-        approverRole: "Department Manager",
-        approverName: "Jane Smith",
-        approverEmail: "jane.smith@company.com",
-        status: "approved",
+        approverRole: 'Department Manager',
+        approverName: 'Jane Smith',
+        approverEmail: 'jane.smith@company.com',
+        status: 'approved',
         approvalThreshold: 10000,
         required: true,
-        approvedDate: new Date("2024-01-17"),
-        comments: "Approved for urgent business needs"
+        approvedDate: new Date('2024-01-17'),
+        comments: 'Approved for urgent business needs',
       },
       {
-        id: "step-2",
+        id: 'step-2',
         stepNumber: 2,
-        approverRole: "Finance Director",
-        approverName: "Bob Johnson",
-        approverEmail: "bob.johnson@company.com",
-        status: "approved",
+        approverRole: 'Finance Director',
+        approverName: 'Bob Johnson',
+        approverEmail: 'bob.johnson@company.com',
+        status: 'approved',
         approvalThreshold: 50000,
         required: true,
-        approvedDate: new Date("2024-01-18"),
-        comments: "Budget verified and approved"
-      }
+        approvedDate: new Date('2024-01-18'),
+        comments: 'Budget verified and approved',
+      },
     ],
     currentApprovalStep: 2,
-    requestedBy: "john.doe",
-    requestedByName: "John Doe",
-    approvedBy: "bob.johnson",
-    approvedByName: "Bob Johnson",
-    paymentTerms: "Net 30",
-    deliveryTerms: "FOB Destination",
-    warrantyTerms: "1 Year Standard Warranty",
+    requestedBy: 'john.doe',
+    requestedByName: 'John Doe',
+    approvedBy: 'bob.johnson',
+    approvedByName: 'Bob Johnson',
+    paymentTerms: 'Net 30',
+    deliveryTerms: 'FOB Destination',
+    warrantyTerms: '1 Year Standard Warranty',
     deliveryAddress: {
-      id: "addr-1",
-      name: "Main Office",
-      street: "123 Business St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
+      id: 'addr-1',
+      name: 'Main Office',
+      street: '123 Business St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
       isDefault: true,
-      contactName: "Receiving Department",
-      contactPhone: "+1-555-0123",
-      contactEmail: "receiving@company.com"
+      contactName: 'Receiving Department',
+      contactPhone: '+1-555-0123',
+      contactEmail: 'receiving@company.com',
     },
     billingAddress: {
-      id: "addr-2",
-      name: "Corporate Headquarters",
-      street: "123 Business St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
+      id: 'addr-2',
+      name: 'Corporate Headquarters',
+      street: '123 Business St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
       isDefault: true,
-      contactName: "Accounts Payable",
-      contactPhone: "+1-555-0124",
-      contactEmail: "ap@company.com"
+      contactName: 'Accounts Payable',
+      contactPhone: '+1-555-0124',
+      contactEmail: 'ap@company.com',
     },
-    notes: "Urgent requirement for new hires. Please expedite delivery.",
-    internalNotes: "Coordinate with HR for setup schedule",
+    notes: 'Urgent requirement for new hires. Please expedite delivery.',
+    internalNotes: 'Coordinate with HR for setup schedule',
     attachments: [
       {
-        id: "att-1",
-        fileName: "laptop-specs.pdf",
-        originalName: "Dell_Latitude_7420_Specifications.pdf",
-        fileType: "application/pdf",
+        id: 'att-1',
+        fileName: 'laptop-specs.pdf',
+        originalName: 'Dell_Latitude_7420_Specifications.pdf',
+        fileType: 'application/pdf',
         fileSize: 2048000,
-        uploadDate: new Date("2024-01-15"),
-        uploadedBy: "john.doe",
-        category: "specification",
-        url: "/documents/laptop-specs.pdf",
-        description: "Detailed technical specifications"
-      }
+        uploadDate: new Date('2024-01-15'),
+        uploadedBy: 'john.doe',
+        category: 'specification',
+        url: '/documents/laptop-specs.pdf',
+        description: 'Detailed technical specifications',
+      },
     ],
-    trackingNumber: "TRK-789456123",
-    carrier: "FedEx",
+    trackingNumber: 'TRK-789456123',
+    carrier: 'FedEx',
     receipts: [
       {
-        id: "rcpt-1",
-        receiptNumber: "RCP-2024-001",
-        receivedDate: new Date("2024-02-18"),
-        receivedBy: "warehouse.team",
+        id: 'rcpt-1',
+        receiptNumber: 'RCP-2024-001',
+        receivedDate: new Date('2024-02-18'),
+        receivedBy: 'warehouse.team',
         items: [
           {
-            id: "rcpt-item-1",
-            poItemId: "item-1",
+            id: 'rcpt-item-1',
+            poItemId: 'item-1',
             receivedQuantity: 8,
             acceptedQuantity: 8,
             rejectedQuantity: 0,
             damagedQuantity: 0,
-            location: "WH-A-01-B3",
-            batchNumber: "BT-2024-0218",
-            qualityGrade: "A",
-            notes: "All items received in good condition"
-          }
+            location: 'WH-A-01-B3',
+            batchNumber: 'BT-2024-0218',
+            qualityGrade: 'A',
+            notes: 'All items received in good condition',
+          },
         ],
-        status: "completed",
+        status: 'completed',
         qualityInspection: {
-          id: "qi-1",
-          inspectorName: "Quality Control Team",
-          inspectionDate: new Date("2024-02-19"),
-          status: "passed",
+          id: 'qi-1',
+          inspectorName: 'Quality Control Team',
+          inspectionDate: new Date('2024-02-19'),
+          status: 'passed',
           criteria: [
             {
-              id: "crit-1",
-              criterion: "Physical Condition",
+              id: 'crit-1',
+              criterion: 'Physical Condition',
               required: true,
-              result: "pass",
-              notes: "No visible damage"
+              result: 'pass',
+              notes: 'No visible damage',
             },
             {
-              id: "crit-2",
-              criterion: "Functionality Test",
+              id: 'crit-2',
+              criterion: 'Functionality Test',
               required: true,
-              result: "pass",
-              notes: "All systems operational"
-            }
+              result: 'pass',
+              notes: 'All systems operational',
+            },
           ],
           overallScore: 95,
-          certificateNumber: "QC-2024-001"
+          certificateNumber: 'QC-2024-001',
         },
-        attachments: []
-      }
+        attachments: [],
+      },
     ],
     invoices: [
       {
-        id: "inv-1",
-        invoiceNumber: "INV-TC-2024-001",
-        supplierInvoiceNumber: "TC-789456",
-        invoiceDate: new Date("2024-02-20"),
+        id: 'inv-1',
+        invoiceNumber: 'INV-TC-2024-001',
+        supplierInvoiceNumber: 'TC-789456',
+        invoiceDate: new Date('2024-02-20'),
         amount: 12510,
-        currency: "USD",
-        status: "matched",
+        currency: 'USD',
+        status: 'matched',
         matchingResults: [
           {
-            field: "Amount",
+            field: 'Amount',
             poValue: 12510,
             invoiceValue: 12510,
             matched: true,
             variance: 0,
-            toleranceExceeded: false
+            toleranceExceeded: false,
           },
           {
-            field: "Quantity",
+            field: 'Quantity',
             poValue: 10,
             invoiceValue: 10,
             receiptValue: 8,
             matched: false,
             variance: 2,
             toleranceExceeded: false,
-            notes: "Partial delivery - remaining items on backorder"
-          }
-        ]
-      }
+            notes: 'Partial delivery - remaining items on backorder',
+          },
+        ],
+      },
     ],
-    threeWayMatchStatus: "exceptions",
+    threeWayMatchStatus: 'exceptions',
     changeOrders: [],
     riskScore: 15,
     complianceChecks: [
       {
-        id: "comp-1",
-        checkType: "budget",
-        status: "compliant",
-        description: "Budget allocation verified",
-        details: "Order amount within approved budget limits"
+        id: 'comp-1',
+        checkType: 'budget',
+        status: 'compliant',
+        description: 'Budget allocation verified',
+        details: 'Order amount within approved budget limits',
       },
       {
-        id: "comp-2",
-        checkType: "contract",
-        status: "compliant",
-        description: "Contract terms verified",
-        details: "Supplier has active master service agreement"
-      }
+        id: 'comp-2',
+        checkType: 'contract',
+        status: 'compliant',
+        description: 'Contract terms verified',
+        details: 'Supplier has active master service agreement',
+      },
     ],
     performanceMetrics: {
       onTimeDeliveryScore: 85,
@@ -325,134 +327,134 @@ const mockPurchaseOrders: PurchaseOrder[] = [
       supplierResponseTimeHours: 4,
       changeOrderCount: 0,
       budgetVariancePercentage: 0,
-      complianceScore: 100
+      complianceScore: 100,
     },
-    createdAt: new Date("2024-01-15T09:00:00Z"),
-    updatedAt: new Date("2024-02-20T15:30:00Z"),
+    createdAt: new Date('2024-01-15T09:00:00Z'),
+    updatedAt: new Date('2024-02-20T15:30:00Z'),
     version: 3,
     auditTrail: [
       {
-        id: "audit-1",
-        timestamp: new Date("2024-01-15T09:00:00Z"),
-        userId: "john.doe",
-        userName: "John Doe",
-        action: "created",
-        details: "Purchase order created",
-        ipAddress: "192.168.1.100"
+        id: 'audit-1',
+        timestamp: new Date('2024-01-15T09:00:00Z'),
+        userId: 'john.doe',
+        userName: 'John Doe',
+        action: 'created',
+        details: 'Purchase order created',
+        ipAddress: '192.168.1.100',
       },
       {
-        id: "audit-2",
-        timestamp: new Date("2024-01-18T14:30:00Z"),
-        userId: "bob.johnson",
-        userName: "Bob Johnson",
-        action: "approved",
-        details: "Purchase order approved by Finance Director",
-        ipAddress: "192.168.1.101"
-      }
-    ]
+        id: 'audit-2',
+        timestamp: new Date('2024-01-18T14:30:00Z'),
+        userId: 'bob.johnson',
+        userName: 'Bob Johnson',
+        action: 'approved',
+        details: 'Purchase order approved by Finance Director',
+        ipAddress: '192.168.1.101',
+      },
+    ],
   },
   // Add more mock data...
   {
-    id: "PO-002",
-    poNumber: "PO-2024-002",
-    supplierId: "SUP-002",
-    supplierName: "Global Supplies Inc",
-    supplierCode: "GLOB002",
-    status: "pending_approval",
-    priority: "medium",
-    createdDate: new Date("2024-01-20"),
-    requestedDeliveryDate: new Date("2024-03-01"),
+    id: 'PO-002',
+    poNumber: 'PO-2024-002',
+    supplierId: 'SUP-002',
+    supplierName: 'Global Supplies Inc',
+    supplierCode: 'GLOB002',
+    status: 'pending_approval',
+    priority: 'medium',
+    createdDate: new Date('2024-01-20'),
+    requestedDeliveryDate: new Date('2024-03-01'),
     items: [
       {
-        id: "item-2",
+        id: 'item-2',
         lineNumber: 1,
-        productCode: "OFFICE-001",
-        description: "Office Supplies Bundle",
-        category: "Office Supplies",
+        productCode: 'OFFICE-001',
+        description: 'Office Supplies Bundle',
+        category: 'Office Supplies',
         quantity: 50,
         receivedQuantity: 0,
         remainingQuantity: 50,
-        unit: "SET",
+        unit: 'SET',
         unitPrice: 45,
         totalPrice: 2250,
         discountPercentage: 10,
         taxPercentage: 8,
-        requestedDate: new Date("2024-03-01"),
-        status: "pending",
+        requestedDate: new Date('2024-03-01'),
+        status: 'pending',
         inspectionRequired: false,
-        reorderPointTriggered: true
-      }
+        reorderPointTriggered: true,
+      },
     ],
     subtotal: 2250,
     taxAmount: 180,
     discountAmount: 225,
     shippingCost: 75,
     totalAmount: 2280,
-    currency: "USD",
+    currency: 'USD',
     exchangeRate: 1,
-    budgetCode: "OPS-2024-Q1",
+    budgetCode: 'OPS-2024-Q1',
     budgetAllocated: 25000,
     budgetRemaining: 22720,
-    department: "Operations",
-    costCenter: "CC-002",
+    department: 'Operations',
+    costCenter: 'CC-002',
     approvalWorkflow: [
       {
-        id: "step-1",
+        id: 'step-1',
         stepNumber: 1,
-        approverRole: "Department Manager",
-        approverName: "Sarah Wilson",
-        approverEmail: "sarah.wilson@company.com",
-        status: "pending",
+        approverRole: 'Department Manager',
+        approverName: 'Sarah Wilson',
+        approverEmail: 'sarah.wilson@company.com',
+        status: 'pending',
         approvalThreshold: 5000,
-        required: true
-      }
+        required: true,
+      },
     ],
     currentApprovalStep: 1,
-    requestedBy: "mike.chen",
-    requestedByName: "Mike Chen",
-    paymentTerms: "Net 15",
-    deliveryTerms: "FOB Origin",
-    warrantyTerms: "30 Days",
+    requestedBy: 'mike.chen',
+    requestedByName: 'Mike Chen',
+    paymentTerms: 'Net 15',
+    deliveryTerms: 'FOB Origin',
+    warrantyTerms: '30 Days',
     deliveryAddress: {
-      id: "addr-1",
-      name: "Main Office",
-      street: "123 Business St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
+      id: 'addr-1',
+      name: 'Main Office',
+      street: '123 Business St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
       isDefault: true,
-      contactName: "Receiving Department",
-      contactPhone: "+1-555-0123",
-      contactEmail: "receiving@company.com"
+      contactName: 'Receiving Department',
+      contactPhone: '+1-555-0123',
+      contactEmail: 'receiving@company.com',
     },
     billingAddress: {
-      id: "addr-2",
-      name: "Corporate Headquarters",
-      street: "123 Business St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
+      id: 'addr-2',
+      name: 'Corporate Headquarters',
+      street: '123 Business St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
       isDefault: true,
-      contactName: "Accounts Payable",
-      contactPhone: "+1-555-0124",
-      contactEmail: "ap@company.com"
+      contactName: 'Accounts Payable',
+      contactPhone: '+1-555-0124',
+      contactEmail: 'ap@company.com',
     },
-    notes: "Regular office supplies reorder",
+    notes: 'Regular office supplies reorder',
     attachments: [],
     receipts: [],
     invoices: [],
-    threeWayMatchStatus: "pending",
+    threeWayMatchStatus: 'pending',
     changeOrders: [],
     riskScore: 5,
     complianceChecks: [
       {
-        id: "comp-3",
-        checkType: "budget",
-        status: "compliant",
-        description: "Budget allocation verified"
-      }
+        id: 'comp-3',
+        checkType: 'budget',
+        status: 'compliant',
+        description: 'Budget allocation verified',
+      },
     ],
     performanceMetrics: {
       onTimeDeliveryScore: 0,
@@ -462,24 +464,24 @@ const mockPurchaseOrders: PurchaseOrder[] = [
       supplierResponseTimeHours: 0,
       changeOrderCount: 0,
       budgetVariancePercentage: 0,
-      complianceScore: 100
+      complianceScore: 100,
     },
-    createdAt: new Date("2024-01-20T10:00:00Z"),
-    updatedAt: new Date("2024-01-20T10:00:00Z"),
+    createdAt: new Date('2024-01-20T10:00:00Z'),
+    updatedAt: new Date('2024-01-20T10:00:00Z'),
     version: 1,
     auditTrail: [
       {
-        id: "audit-3",
-        timestamp: new Date("2024-01-20T10:00:00Z"),
-        userId: "mike.chen",
-        userName: "Mike Chen",
-        action: "created",
-        details: "Purchase order created",
-        ipAddress: "192.168.1.102"
-      }
-    ]
-  }
-]
+        id: 'audit-3',
+        timestamp: new Date('2024-01-20T10:00:00Z'),
+        userId: 'mike.chen',
+        userName: 'Mike Chen',
+        action: 'created',
+        details: 'Purchase order created',
+        ipAddress: '192.168.1.102',
+      },
+    ],
+  },
+];
 
 const mockMetrics: PODashboardMetrics = {
   totalOrders: 156,
@@ -493,909 +495,915 @@ const mockMetrics: PODashboardMetrics = {
   qualityScore: 94.5,
   costSavings: 125000,
   contractCompliance: 96.8,
-  supplierPerformance: 91.3
-}
+  supplierPerformance: 91.3,
+};
 
 export default function PurchaseOrdersPage() {
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders)
-  const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders)
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filters, setFilters] = useState<POFilters>({})
-  const [sortField, setSortField] = useState<keyof PurchaseOrder>("createdDate")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(25)
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table")
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showBulkActions, setShowBulkActions] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null)
-  const [showOrderDetail, setShowOrderDetail] = useState(false)
-  const [activeTab, setActiveTab] = useState("all")
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders);
+  const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>(mockPurchaseOrders);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<POFilters>({});
+  const [sortField, setSortField] = useState<keyof PurchaseOrder>('createdDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Filter and sort orders
   useEffect(() => {
     let filtered = purchaseOrders.filter(order => {
-      const matchesSearch = searchQuery === "" ||
+      const matchesSearch =
+        searchQuery === '' ||
         order.poNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplierCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.department.toLowerCase().includes(searchQuery.toLowerCase())
+        order.department.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus = !filters.status?.length ||
-        filters.status.includes(order.status)
+      const matchesStatus = !filters.status?.length || filters.status.includes(order.status);
 
-      const matchesPriority = !filters.priority?.length ||
-        filters.priority.includes(order.priority)
+      const matchesPriority =
+        !filters.priority?.length || filters.priority.includes(order.priority);
 
-      const matchesDepartment = !filters.department?.length ||
-        filters.department.includes(order.department)
+      const matchesDepartment =
+        !filters.department?.length || filters.department.includes(order.department);
 
-      const matchesSupplier = !filters.supplier?.length ||
-        filters.supplier.includes(order.supplierId)
+      const matchesSupplier =
+        !filters.supplier?.length || filters.supplier.includes(order.supplierId);
 
-      const matchesAmount = !filters.amountRange ||
+      const matchesAmount =
+        !filters.amountRange ||
         (order.totalAmount >= filters.amountRange.min &&
-         order.totalAmount <= filters.amountRange.max)
+          order.totalAmount <= filters.amountRange.max);
 
-      return matchesSearch && matchesStatus && matchesPriority &&
-             matchesDepartment && matchesSupplier && matchesAmount
-    })
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesDepartment &&
+        matchesSupplier &&
+        matchesAmount
+      );
+    });
 
     // Apply tab-based filtering
-    if (activeTab !== "all") {
+    if (activeTab !== 'all') {
       switch (activeTab) {
-        case "pending":
+        case 'pending':
+          filtered = filtered.filter(order => ['draft', 'pending_approval'].includes(order.status));
+          break;
+        case 'approved':
+          filtered = filtered.filter(order => order.status === 'approved');
+          break;
+        case 'in_progress':
           filtered = filtered.filter(order =>
-            ["draft", "pending_approval"].includes(order.status)
-          )
-          break
-        case "approved":
-          filtered = filtered.filter(order => order.status === "approved")
-          break
-        case "in_progress":
-          filtered = filtered.filter(order =>
-            ["sent", "acknowledged", "in_progress", "shipped"].includes(order.status)
-          )
-          break
-        case "received":
-          filtered = filtered.filter(order =>
-            ["received", "completed"].includes(order.status)
-          )
-          break
-        case "exceptions":
-          filtered = filtered.filter(order =>
-            order.threeWayMatchStatus === "exceptions" ||
-            order.complianceChecks.some(check => check.status === "non_compliant") ||
-            order.riskScore > 50
-          )
-          break
-        case "overdue":
+            ['sent', 'acknowledged', 'in_progress', 'shipped'].includes(order.status)
+          );
+          break;
+        case 'received':
+          filtered = filtered.filter(order => ['received', 'completed'].includes(order.status));
+          break;
+        case 'exceptions':
+          filtered = filtered.filter(
+            order =>
+              order.threeWayMatchStatus === 'exceptions' ||
+              order.complianceChecks.some(check => check.status === 'non_compliant') ||
+              order.riskScore > 50
+          );
+          break;
+        case 'overdue':
           filtered = filtered.filter(order => {
-            const today = new Date()
-            return order.requestedDeliveryDate < today &&
-                   !["received", "completed", "cancelled"].includes(order.status)
-          })
-          break
+            const today = new Date();
+            return (
+              order.requestedDeliveryDate < today &&
+              !['received', 'completed', 'cancelled'].includes(order.status)
+            );
+          });
+          break;
       }
     }
 
     // Sort
     filtered.sort((a, b) => {
-      const aValue = a[sortField]
-      const bValue = b[sortField]
+      const aValue = a[sortField];
+      const bValue = b[sortField];
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "asc"
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
           ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue)
+          : bValue.localeCompare(aValue);
       }
 
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       }
 
       if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
+        return sortDirection === 'asc'
           ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime()
+          : bValue.getTime() - aValue.getTime();
       }
 
-      return 0
-    })
+      return 0;
+    });
 
-    setFilteredOrders(filtered)
-    setCurrentPage(1)
-  }, [purchaseOrders, searchQuery, filters, sortField, sortDirection, activeTab])
+    setFilteredOrders(filtered);
+    setCurrentPage(1);
+  }, [purchaseOrders, searchQuery, filters, sortField, sortDirection, activeTab]);
 
   const paginatedOrders = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredOrders.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredOrders, currentPage, itemsPerPage])
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredOrders, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const handleSort = (field: keyof PurchaseOrder) => {
     if (field === sortField) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field)
-      setSortDirection("asc")
+      setSortField(field);
+      setSortDirection('asc');
     }
-  }
+  };
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders(prev =>
-      prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
-        : [...prev, orderId]
-    )
-  }
+      prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
+    );
+  };
 
   const handleSelectAll = () => {
     setSelectedOrders(
-      selectedOrders.length === paginatedOrders.length
-        ? []
-        : paginatedOrders.map(order => order.id)
-    )
-  }
+      selectedOrders.length === paginatedOrders.length ? [] : paginatedOrders.map(order => order.id)
+    );
+  };
 
-  const getStatusBadge = (status: PurchaseOrder["status"]) => {
-    const colors = getStatusColor(status)
-    return (
-      <Badge className={colors}>
-        {status.replace("_", " ").toUpperCase()}
-      </Badge>
-    )
-  }
+  const getStatusBadge = (status: PurchaseOrder['status']) => {
+    const colors = getStatusColor(status);
+    return <Badge className={colors}>{status.replace('_', ' ').toUpperCase()}</Badge>;
+  };
 
-  const getPriorityBadge = (priority: PurchaseOrder["priority"]) => {
+  const getPriorityBadge = (priority: PurchaseOrder['priority']) => {
     const colorMap: Record<string, string> = {
-      low: "bg-gray-100 text-gray-800 border-gray-200",
-      medium: "bg-blue-100 text-blue-800 border-blue-200",
-      high: "bg-orange-100 text-orange-800 border-orange-200",
-      urgent: "bg-red-100 text-red-800 border-red-200"
-    }
+      low: 'bg-gray-100 text-gray-800 border-gray-200',
+      medium: 'bg-blue-100 text-blue-800 border-blue-200',
+      high: 'bg-orange-100 text-orange-800 border-orange-200',
+      urgent: 'bg-red-100 text-red-800 border-red-200',
+    };
 
-    return (
-      <Badge className={colorMap[priority]}>
-        {priority.toUpperCase()}
-      </Badge>
-    )
-  }
+    return <Badge className={colorMap[priority]}>{priority.toUpperCase()}</Badge>;
+  };
 
   const getRiskBadge = (riskScore: number) => {
-    let level = "Low"
-    let color = "bg-green-100 text-green-800 border-green-200"
+    let level = 'Low';
+    let color = 'bg-green-100 text-green-800 border-green-200';
 
     if (riskScore > 70) {
-      level = "High"
-      color = "bg-red-100 text-red-800 border-red-200"
+      level = 'High';
+      color = 'bg-red-100 text-red-800 border-red-200';
     } else if (riskScore > 40) {
-      level = "Medium"
-      color = "bg-yellow-100 text-yellow-800 border-yellow-200"
+      level = 'Medium';
+      color = 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
 
-    return <Badge className={color}>{level} Risk</Badge>
-  }
+    return <Badge className={color}>{level} Risk</Badge>;
+  };
 
   const getOrderProgress = (order: PurchaseOrder): number => {
     const statusProgress: Record<string, number> = {
-      'draft': 10,
-      'pending_approval': 20,
-      'approved': 40,
-      'sent': 50,
-      'acknowledged': 60,
-      'in_progress': 70,
-      'shipped': 80,
-      'received': 90,
-      'completed': 100,
-      'cancelled': 0
-    }
-    return statusProgress[order.status] || 0
-  }
+      draft: 10,
+      pending_approval: 20,
+      approved: 40,
+      sent: 50,
+      acknowledged: 60,
+      in_progress: 70,
+      shipped: 80,
+      received: 90,
+      completed: 100,
+      cancelled: 0,
+    };
+    return statusProgress[order.status] || 0;
+  };
 
-  const getThreeWayMatchIcon = (status: PurchaseOrder["threeWayMatchStatus"]) => {
+  const getThreeWayMatchIcon = (status: PurchaseOrder['threeWayMatchStatus']) => {
     switch (status) {
-      case "matched":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "exceptions":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case "manual_review":
-        return <Eye className="h-4 w-4 text-blue-600" />
+      case 'matched':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'exceptions':
+        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case 'manual_review':
+        return <Eye className="h-4 w-4 text-blue-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
-  }
+  };
 
   const TabCountBadge = ({ count }: { count: number }) => (
     <Badge variant="secondary" className="ml-2 text-xs">
       {count}
     </Badge>
-  )
+  );
 
   return (
-    <AppLayout title="Purchase Orders" breadcrumbs={[{ label: "Purchase Order Management" }]}>
+    <AppLayout title="Purchase Orders" breadcrumbs={[{ label: 'Purchase Order Management' }]}>
       <TooltipProvider>
         <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Purchase Orders Management</h2>
-            <p className="text-muted-foreground">
-              Complete PO lifecycle management with approval workflows, receiving, and analytics
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm">
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Star className="mr-2 h-4 w-4" />
-                  Templates
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <FileText className="mr-2 h-4 w-4" />
-                  IT Equipment
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Package className="mr-2 h-4 w-4" />
-                  Office Supplies
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Services
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Template
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create PO
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create Purchase Order</DialogTitle>
-                  <DialogDescription>
-                    Create a new purchase order with multi-step approval workflow
-                  </DialogDescription>
-                </DialogHeader>
-                <PurchaseOrderCreationForm onClose={() => setShowCreateDialog(false)} />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        {/* Metrics Dashboard */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mockMetrics.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(mockMetrics.totalValue)} total value
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Purchase Orders Management</h2>
+              <p className="text-muted-foreground">
+                Complete PO lifecycle management with approval workflows, receiving, and analytics
               </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mockMetrics.pendingApprovals}</div>
-              <p className="text-xs text-muted-foreground">
-                Requires attention
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Budget Utilization</CardTitle>
-              <Calculator className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mockMetrics.budgetUtilization}%</div>
-              <div className="mt-1">
-                <Progress value={mockMetrics.budgetUtilization} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">On-Time Delivery</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mockMetrics.onTimeDeliveryRate}%</div>
-              <p className="text-xs text-muted-foreground">
-                Last 30 days
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Advanced Metrics */}
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Quality Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{mockMetrics.qualityScore}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Cost Savings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{formatCurrency(mockMetrics.costSavings)}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Avg Cycle Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{mockMetrics.averageCycleTime}h</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Contract Compliance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{mockMetrics.contractCompliance}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Supplier Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{mockMetrics.supplierPerformance}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Overdue Deliveries</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-red-600">{mockMetrics.overdueDeliveries}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters and Search */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Purchase Order Overview</CardTitle>
-                <CardDescription>
-                  Manage purchase orders with comprehensive workflow controls
-                </CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search orders..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 w-80"
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filters
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-80">
-                    <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <PurchaseOrderFilters
-                      filters={filters}
-                      onFiltersChange={setFilters}
-                    />
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Grid3X3 className="mr-2 h-4 w-4" />
-                      View
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuRadioGroup value={viewMode} onValueChange={(value) => setViewMode(value as "table" | "grid")}>
-                      <DropdownMenuRadioItem value="table">
-                        <List className="mr-2 h-4 w-4" />
-                        Table View
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="grid">
-                        <Grid3X3 className="mr-2 h-4 w-4" />
-                        Grid View
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Columns
-                </Button>
-              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {/* Tabs for different order views */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-              <TabsList className="grid w-full grid-cols-7">
-                <TabsTrigger value="all">
-                  All
-                  <TabCountBadge count={filteredOrders.length} />
-                </TabsTrigger>
-                <TabsTrigger value="pending">
-                  Pending
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order =>
-                      ["draft", "pending_approval"].includes(order.status)
-                    ).length
-                  } />
-                </TabsTrigger>
-                <TabsTrigger value="approved">
-                  Approved
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order => order.status === "approved").length
-                  } />
-                </TabsTrigger>
-                <TabsTrigger value="in_progress">
-                  In Progress
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order =>
-                      ["sent", "acknowledged", "in_progress", "shipped"].includes(order.status)
-                    ).length
-                  } />
-                </TabsTrigger>
-                <TabsTrigger value="received">
-                  Received
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order =>
-                      ["received", "completed"].includes(order.status)
-                    ).length
-                  } />
-                </TabsTrigger>
-                <TabsTrigger value="exceptions">
-                  Exceptions
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order =>
-                      order.threeWayMatchStatus === "exceptions" ||
-                      order.complianceChecks.some(check => check.status === "non_compliant")
-                    ).length
-                  } />
-                </TabsTrigger>
-                <TabsTrigger value="overdue">
-                  Overdue
-                  <TabCountBadge count={
-                    purchaseOrders.filter(order => {
-                      const today = new Date()
-                      return order.requestedDeliveryDate < today &&
-                             !["received", "completed", "cancelled"].includes(order.status)
-                    }).length
-                  } />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <Button variant="outline" size="sm">
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Star className="mr-2 h-4 w-4" />
+                    Templates
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    <FileText className="mr-2 h-4 w-4" />
+                    IT Equipment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Package className="mr-2 h-4 w-4" />
+                    Office Supplies
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Building2 className="mr-2 h-4 w-4" />
+                    Services
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Template
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create PO
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create Purchase Order</DialogTitle>
+                    <DialogDescription>
+                      Create a new purchase order with multi-step approval workflow
+                    </DialogDescription>
+                  </DialogHeader>
+                  <PurchaseOrderCreationForm onClose={() => setShowCreateDialog(false)} />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
 
-            {/* Bulk Actions */}
-            {selectedOrders.length > 0 && (
-              <div className="mb-4 p-3 bg-muted rounded-lg flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {selectedOrders.length} order(s) selected
-                </span>
+          {/* Metrics Dashboard */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <FileText className="text-muted-foreground h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{mockMetrics.totalOrders}</div>
+                <p className="text-muted-foreground text-xs">
+                  {formatCurrency(mockMetrics.totalValue)} total value
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+                <Clock className="text-muted-foreground h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{mockMetrics.pendingApprovals}</div>
+                <p className="text-muted-foreground text-xs">Requires attention</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Budget Utilization</CardTitle>
+                <Calculator className="text-muted-foreground h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{mockMetrics.budgetUtilization}%</div>
+                <div className="mt-1">
+                  <Progress value={mockMetrics.budgetUtilization} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">On-Time Delivery</CardTitle>
+                <TrendingUp className="text-muted-foreground h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{mockMetrics.onTimeDeliveryRate}%</div>
+                <p className="text-muted-foreground text-xs">Last 30 days</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Advanced Metrics */}
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Quality Score</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">{mockMetrics.qualityScore}%</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Cost Savings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">{formatCurrency(mockMetrics.costSavings)}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Avg Cycle Time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">{mockMetrics.averageCycleTime}h</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Contract Compliance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">{mockMetrics.contractCompliance}%</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Supplier Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">{mockMetrics.supplierPerformance}%</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Overdue Deliveries</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold text-red-600">
+                  {mockMetrics.overdueDeliveries}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters and Search */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Purchase Order Overview</CardTitle>
+                  <CardDescription>
+                    Manage purchase orders with comprehensive workflow controls
+                  </CardDescription>
+                </div>
                 <div className="flex items-center space-x-2">
-                  <Button size="sm">
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Bulk Approve
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Send className="mr-2 h-4 w-4" />
-                    Send to Suppliers
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Selected
-                  </Button>
+                  <div className="relative">
+                    <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
+                    <Input
+                      placeholder="Search orders..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-80 pl-8"
+                    />
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button variant="outline" size="sm">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filters
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80">
+                      <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <PurchaseOrderFilters filters={filters} onFiltersChange={setFilters} />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Grid3X3 className="mr-2 h-4 w-4" />
+                        View
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Bulk Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Duplicate Orders
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Calculator className="mr-2 h-4 w-4" />
-                        Budget Analysis
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        Performance Report
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">
-                        <Ban className="mr-2 h-4 w-4" />
-                        Cancel Selected
-                      </DropdownMenuItem>
+                      <DropdownMenuRadioGroup
+                        value={viewMode}
+                        onValueChange={value => setViewMode(value as 'table' | 'grid')}
+                      >
+                        <DropdownMenuRadioItem value="table">
+                          <List className="mr-2 h-4 w-4" />
+                          Table View
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="grid">
+                          <Grid3X3 className="mr-2 h-4 w-4" />
+                          Grid View
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <Button variant="outline" size="sm">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Columns
+                  </Button>
                 </div>
               </div>
-            )}
+            </CardHeader>
+            <CardContent>
+              {/* Tabs for different order views */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+                <TabsList className="grid w-full grid-cols-7">
+                  <TabsTrigger value="all">
+                    All
+                    <TabCountBadge count={filteredOrders.length} />
+                  </TabsTrigger>
+                  <TabsTrigger value="pending">
+                    Pending
+                    <TabCountBadge
+                      count={
+                        purchaseOrders.filter(order =>
+                          ['draft', 'pending_approval'].includes(order.status)
+                        ).length
+                      }
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="approved">
+                    Approved
+                    <TabCountBadge
+                      count={purchaseOrders.filter(order => order.status === 'approved').length}
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="in_progress">
+                    In Progress
+                    <TabCountBadge
+                      count={
+                        purchaseOrders.filter(order =>
+                          ['sent', 'acknowledged', 'in_progress', 'shipped'].includes(order.status)
+                        ).length
+                      }
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="received">
+                    Received
+                    <TabCountBadge
+                      count={
+                        purchaseOrders.filter(order =>
+                          ['received', 'completed'].includes(order.status)
+                        ).length
+                      }
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="exceptions">
+                    Exceptions
+                    <TabCountBadge
+                      count={
+                        purchaseOrders.filter(
+                          order =>
+                            order.threeWayMatchStatus === 'exceptions' ||
+                            order.complianceChecks.some(check => check.status === 'non_compliant')
+                        ).length
+                      }
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="overdue">
+                    Overdue
+                    <TabCountBadge
+                      count={
+                        purchaseOrders.filter(order => {
+                          const today = new Date();
+                          return (
+                            order.requestedDeliveryDate < today &&
+                            !['received', 'completed', 'cancelled'].includes(order.status)
+                          );
+                        }).length
+                      }
+                    />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-            {/* Purchase Orders Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedOrders.length === paginatedOrders.length}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer"
-                      onClick={() => handleSort("poNumber")}
-                    >
-                      <div className="flex items-center">
-                        PO Number
-                        {sortField === "poNumber" && (
-                          sortDirection === "asc" ?
-                          <ArrowUp className="ml-2 h-4 w-4" /> :
-                          <ArrowDown className="ml-2 h-4 w-4" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer"
-                      onClick={() => handleSort("supplierName")}
-                    >
-                      <div className="flex items-center">
-                        Supplier
-                        {sortField === "supplierName" && (
-                          sortDirection === "asc" ?
-                          <ArrowUp className="ml-2 h-4 w-4" /> :
-                          <ArrowDown className="ml-2 h-4 w-4" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead
-                      className="cursor-pointer text-right"
-                      onClick={() => handleSort("totalAmount")}
-                    >
-                      <div className="flex items-center justify-end">
-                        Amount
-                        {sortField === "totalAmount" && (
-                          sortDirection === "asc" ?
-                          <ArrowUp className="ml-2 h-4 w-4" /> :
-                          <ArrowDown className="ml-2 h-4 w-4" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead
-                      className="cursor-pointer"
-                      onClick={() => handleSort("requestedDeliveryDate")}
-                    >
-                      <div className="flex items-center">
-                        Delivery Date
-                        {sortField === "requestedDeliveryDate" && (
-                          sortDirection === "asc" ?
-                          <ArrowUp className="ml-2 h-4 w-4" /> :
-                          <ArrowDown className="ml-2 h-4 w-4" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Risk</TableHead>
-                    <TableHead>3-Way Match</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>
+              {/* Bulk Actions */}
+              {selectedOrders.length > 0 && (
+                <div className="bg-muted mb-4 flex items-center justify-between rounded-lg p-3">
+                  <span className="text-sm font-medium">
+                    {selectedOrders.length} order(s) selected
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Button size="sm">
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Bulk Approve
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <Send className="mr-2 h-4 w-4" />
+                      Send to Suppliers
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export Selected
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Bulk Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate Orders
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Calculator className="mr-2 h-4 w-4" />
+                          Budget Analysis
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Performance Report
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600">
+                          <Ban className="mr-2 h-4 w-4" />
+                          Cancel Selected
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              )}
+
+              {/* Purchase Orders Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
                         <Checkbox
-                          checked={selectedOrders.includes(order.id)}
-                          onCheckedChange={() => handleSelectOrder(order.id)}
+                          checked={selectedOrders.length === paginatedOrders.length}
+                          onCheckedChange={handleSelectAll}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{order.poNumber}</span>
-                          <span className="text-xs text-muted-foreground">
-                            by {order.requestedByName}
-                          </span>
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort('poNumber')}>
+                        <div className="flex items-center">
+                          PO Number
+                          {sortField === 'poNumber' &&
+                            (sortDirection === 'asc' ? (
+                              <ArrowUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="ml-2 h-4 w-4" />
+                            ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{order.supplierName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {order.supplierCode} • {order.items.length} item(s)
-                          </span>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort('supplierName')}
+                      >
+                        <div className="flex items-center">
+                          Supplier
+                          {sortField === 'supplierName' &&
+                            (sortDirection === 'asc' ? (
+                              <ArrowUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="ml-2 h-4 w-4" />
+                            ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col space-y-1">
-                          {getStatusBadge(order.status)}
-                          {order.status === "pending_approval" && (
-                            <Badge variant="outline" className="text-xs">
-                              Step {order.currentApprovalStep}
-                            </Badge>
-                          )}
+                      </TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead
+                        className="cursor-pointer text-right"
+                        onClick={() => handleSort('totalAmount')}
+                      >
+                        <div className="flex items-center justify-end">
+                          Amount
+                          {sortField === 'totalAmount' &&
+                            (sortDirection === 'asc' ? (
+                              <ArrowUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="ml-2 h-4 w-4" />
+                            ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {getPriorityBadge(order.priority)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-col items-end">
-                          <span className="font-medium">
-                            {formatCurrency(order.totalAmount, order.currency)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Budget: {order.budgetCode}
-                          </span>
+                      </TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort('requestedDeliveryDate')}
+                      >
+                        <div className="flex items-center">
+                          Delivery Date
+                          {sortField === 'requestedDeliveryDate' &&
+                            (sortDirection === 'asc' ? (
+                              <ArrowUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="ml-2 h-4 w-4" />
+                            ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{order.department}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className={cn(
-                          "text-sm",
-                          new Date(order.requestedDeliveryDate) < new Date() &&
-                          !["received", "completed", "cancelled"].includes(order.status) &&
-                          "text-red-600 font-medium"
-                        )}>
-                          {formatDate(order.requestedDeliveryDate)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Progress value={getOrderProgress(order)} className="w-20" />
-                          <span className="text-xs text-muted-foreground">
-                            {getOrderProgress(order)}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getRiskBadge(order.riskScore)}
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            {getThreeWayMatchIcon(order.threeWayMatchStatus)}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{order.threeWayMatchStatus.replace("_", " ")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedOrder(order)
-                                setShowOrderDetail(true)
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Order
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {order.status === "pending_approval" && (
-                              <DropdownMenuItem>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Approve
-                              </DropdownMenuItem>
-                            )}
-                            {order.status === "approved" && (
-                              <DropdownMenuItem>
-                                <Send className="mr-2 h-4 w-4" />
-                                Send to Supplier
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem>
-                              <Receipt className="mr-2 h-4 w-4" />
-                              Receiving
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Target className="mr-2 h-4 w-4" />
-                              3-Way Match
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Download className="mr-2 h-4 w-4" />
-                              Export PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="mr-2 h-4 w-4" />
-                              Email
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <MessageSquare className="mr-2 h-4 w-4" />
-                              Add Note
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <History className="mr-2 h-4 w-4" />
-                              Audit Trail
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Cancel Order
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Risk</TableHead>
+                      <TableHead>3-Way Match</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-between px-2 py-4">
-              <div className="flex items-center space-x-2">
-                <p className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of {filteredOrders.length} orders
-                </p>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedOrders.map(order => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrders.includes(order.id)}
+                            onCheckedChange={() => handleSelectOrder(order.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{order.poNumber}</span>
+                            <span className="text-muted-foreground text-xs">
+                              by {order.requestedByName}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{order.supplierName}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {order.supplierCode} • {order.items.length} item(s)
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col space-y-1">
+                            {getStatusBadge(order.status)}
+                            {order.status === 'pending_approval' && (
+                              <Badge variant="outline" className="text-xs">
+                                Step {order.currentApprovalStep}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getPriorityBadge(order.priority)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">
+                              {formatCurrency(order.totalAmount, order.currency)}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              Budget: {order.budgetCode}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{order.department}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div
+                            className={cn(
+                              'text-sm',
+                              new Date(order.requestedDeliveryDate) < new Date() &&
+                                !['received', 'completed', 'cancelled'].includes(order.status) &&
+                                'font-medium text-red-600'
+                            )}
+                          >
+                            {formatDate(order.requestedDeliveryDate)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Progress value={getOrderProgress(order)} className="w-20" />
+                            <span className="text-muted-foreground text-xs">
+                              {getOrderProgress(order)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRiskBadge(order.riskScore)}</TableCell>
+                        <TableCell>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {getThreeWayMatchIcon(order.threeWayMatchStatus)}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{order.threeWayMatchStatus.replace('_', ' ')}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setShowOrderDetail(true);
+                                }}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Order
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {order.status === 'pending_approval' && (
+                                <DropdownMenuItem>
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Approve
+                                </DropdownMenuItem>
+                              )}
+                              {order.status === 'approved' && (
+                                <DropdownMenuItem>
+                                  <Send className="mr-2 h-4 w-4" />
+                                  Send to Supplier
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem>
+                                <Receipt className="mr-2 h-4 w-4" />
+                                Receiving
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Target className="mr-2 h-4 w-4" />
+                                3-Way Match
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Mail className="mr-2 h-4 w-4" />
+                                Email
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                Add Note
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <History className="mr-2 h-4 w-4" />
+                                Audit Trail
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Cancel Order
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="flex items-center space-x-6 lg:space-x-8">
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between px-2 py-4">
                 <div className="flex items-center space-x-2">
-                  <p className="text-sm font-medium">Rows per page</p>
-                  <Select
-                    value={`${itemsPerPage}`}
-                    onValueChange={(value) => setItemsPerPage(Number(value))}
-                  >
-                    <SelectTrigger className="h-8 w-[70px]">
-                      <SelectValue placeholder={itemsPerPage} />
-                    </SelectTrigger>
-                    <SelectContent side="top">
-                      {[10, 20, 30, 40, 50].map((pageSize) => (
-                        <SelectItem key={pageSize} value={`${pageSize}`}>
-                          {pageSize}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <p className="text-muted-foreground text-sm">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+                    {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of{' '}
+                    {filteredOrders.length} orders
+                  </p>
                 </div>
-                <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    className="hidden h-8 w-8 p-0 lg:flex"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <span className="sr-only">Go to first page</span>
-                    <ArrowUp className="h-4 w-4 rotate-180" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <span className="sr-only">Go to previous page</span>
-                    <ArrowUp className="h-4 w-4 rotate-90" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <span className="sr-only">Go to next page</span>
-                    <ArrowUp className="h-4 w-4 -rotate-90" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="hidden h-8 w-8 p-0 lg:flex"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <span className="sr-only">Go to last page</span>
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
+                <div className="flex items-center space-x-6 lg:space-x-8">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium">Rows per page</p>
+                    <Select
+                      value={`${itemsPerPage}`}
+                      onValueChange={value => setItemsPerPage(Number(value))}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[10, 20, 30, 40, 50].map(pageSize => (
+                          <SelectItem key={pageSize} value={`${pageSize}`}>
+                            {pageSize}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      className="hidden h-8 w-8 p-0 lg:flex"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <span className="sr-only">Go to first page</span>
+                      <ArrowUp className="h-4 w-4 rotate-180" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <span className="sr-only">Go to previous page</span>
+                      <ArrowUp className="h-4 w-4 rotate-90" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <span className="sr-only">Go to next page</span>
+                      <ArrowUp className="h-4 w-4 -rotate-90" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="hidden h-8 w-8 p-0 lg:flex"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <span className="sr-only">Go to last page</span>
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Purchase Order Detail Dialog */}
-        <Dialog open={showOrderDetail} onOpenChange={setShowOrderDetail}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Purchase Order Details</DialogTitle>
-              <DialogDescription>
-                Complete purchase order information and workflow status
-              </DialogDescription>
-            </DialogHeader>
-            {selectedOrder && (
-              <PurchaseOrderDetailView
-                order={selectedOrder}
-                onClose={() => setShowOrderDetail(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          {/* Purchase Order Detail Dialog */}
+          <Dialog open={showOrderDetail} onOpenChange={setShowOrderDetail}>
+            <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Purchase Order Details</DialogTitle>
+                <DialogDescription>
+                  Complete purchase order information and workflow status
+                </DialogDescription>
+              </DialogHeader>
+              {selectedOrder && (
+                <PurchaseOrderDetailView
+                  order={selectedOrder}
+                  onClose={() => setShowOrderDetail(false)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </TooltipProvider>
     </AppLayout>
-  )
+  );
 }
 
 // Purchase Order Creation Form Component
@@ -1500,10 +1508,10 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
         </TabsContent>
 
         <TabsContent value="items" className="space-y-4">
-          <div className="text-center py-8">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground" />
+          <div className="py-8 text-center">
+            <Package className="text-muted-foreground mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-medium">Add Line Items</h3>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Add products or services to this purchase order
             </p>
             <Button className="mt-4">
@@ -1516,7 +1524,7 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
         <TabsContent value="delivery" className="space-y-4">
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium mb-4">Delivery Address</h3>
+              <h3 className="mb-4 text-lg font-medium">Delivery Address</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="deliveryName">Address Name</Label>
@@ -1550,7 +1558,7 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-4">Billing Address</h3>
+              <h3 className="mb-4 text-lg font-medium">Billing Address</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="sameAsDelivery" />
@@ -1590,33 +1598,33 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
         </TabsContent>
 
         <TabsContent value="approval" className="space-y-4">
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <UserCheck className="mx-auto h-12 w-12 text-blue-500" />
             <h3 className="mt-4 text-lg font-medium">Approval Workflow</h3>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Configure the approval process for this purchase order
             </p>
             <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between p-3 border rounded">
+              <div className="flex items-center justify-between rounded border p-3">
                 <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
                     <span className="text-sm font-medium">1</span>
                   </div>
                   <div>
                     <p className="font-medium">Department Manager</p>
-                    <p className="text-sm text-muted-foreground">Up to $10,000</p>
+                    <p className="text-muted-foreground text-sm">Up to $10,000</p>
                   </div>
                 </div>
                 <Badge variant="outline">Required</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 border rounded">
+              <div className="flex items-center justify-between rounded border p-3">
                 <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
                     <span className="text-sm font-medium">2</span>
                   </div>
                   <div>
                     <p className="font-medium">Finance Director</p>
-                    <p className="text-sm text-muted-foreground">Above $10,000</p>
+                    <p className="text-muted-foreground text-sm">Above $10,000</p>
                   </div>
                 </div>
                 <Badge variant="outline">Auto-triggered</Badge>
@@ -1626,10 +1634,10 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
         </TabsContent>
 
         <TabsContent value="review" className="space-y-4">
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <ClipboardCheck className="mx-auto h-12 w-12 text-green-500" />
             <h3 className="mt-4 text-lg font-medium">Review & Submit</h3>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Review all details before submitting for approval
             </p>
           </div>
@@ -1640,48 +1648,53 @@ function PurchaseOrderCreationForm({ onClose }: { onClose: () => void }) {
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="outline">
-          Save as Draft
-        </Button>
-        <Button>
-          Submit for Approval
-        </Button>
+        <Button variant="outline">Save as Draft</Button>
+        <Button>Submit for Approval</Button>
       </DialogFooter>
     </div>
-  )
+  );
 }
 
 // Purchase Order Filters Component
 function PurchaseOrderFilters({
   filters,
-  onFiltersChange
+  onFiltersChange,
 }: {
-  filters: POFilters
-  onFiltersChange: (filters: POFilters) => void
+  filters: POFilters;
+  onFiltersChange: (filters: POFilters) => void;
 }) {
   return (
     <div className="space-y-4 p-4">
       <div>
         <Label className="text-sm font-medium">Status</Label>
         <div className="mt-2 space-y-2">
-          {["draft", "pending_approval", "approved", "sent", "in_progress", "received", "completed", "cancelled"].map((status) => (
+          {[
+            'draft',
+            'pending_approval',
+            'approved',
+            'sent',
+            'in_progress',
+            'received',
+            'completed',
+            'cancelled',
+          ].map(status => (
             <div key={status} className="flex items-center space-x-2">
               <Checkbox
                 id={status}
                 checked={filters.status?.includes(status)}
-                onCheckedChange={(checked) => {
-                  const currentStatuses = filters.status || []
+                onCheckedChange={checked => {
+                  const currentStatuses = filters.status || [];
                   const newStatuses = checked
                     ? [...currentStatuses, status]
-                    : currentStatuses.filter(s => s !== status)
+                    : currentStatuses.filter(s => s !== status);
                   onFiltersChange({
                     ...filters,
-                    status: newStatuses.length > 0 ? newStatuses : undefined
-                  })
+                    status: newStatuses.length > 0 ? newStatuses : undefined,
+                  });
                 }}
               />
               <Label htmlFor={status} className="text-sm capitalize">
-                {status.replace("_", " ")}
+                {status.replace('_', ' ')}
               </Label>
             </div>
           ))}
@@ -1693,20 +1706,20 @@ function PurchaseOrderFilters({
       <div>
         <Label className="text-sm font-medium">Priority</Label>
         <div className="mt-2 space-y-2">
-          {["low", "medium", "high", "urgent"].map((priority) => (
+          {['low', 'medium', 'high', 'urgent'].map(priority => (
             <div key={priority} className="flex items-center space-x-2">
               <Checkbox
                 id={`priority-${priority}`}
                 checked={filters.priority?.includes(priority)}
-                onCheckedChange={(checked) => {
-                  const currentPriorities = filters.priority || []
+                onCheckedChange={checked => {
+                  const currentPriorities = filters.priority || [];
                   const newPriorities = checked
                     ? [...currentPriorities, priority]
-                    : currentPriorities.filter(p => p !== priority)
+                    : currentPriorities.filter(p => p !== priority);
                   onFiltersChange({
                     ...filters,
-                    priority: newPriorities.length > 0 ? newPriorities : undefined
-                  })
+                    priority: newPriorities.length > 0 ? newPriorities : undefined,
+                  });
                 }}
               />
               <Label htmlFor={`priority-${priority}`} className="text-sm capitalize">
@@ -1725,59 +1738,53 @@ function PurchaseOrderFilters({
           <Input
             placeholder="Min amount"
             type="number"
-            value={filters.amountRange?.min || ""}
-            onChange={(e) => {
-              const min = parseFloat(e.target.value) || 0
+            value={filters.amountRange?.min || ''}
+            onChange={e => {
+              const min = parseFloat(e.target.value) || 0;
               onFiltersChange({
                 ...filters,
                 amountRange: {
                   min,
-                  max: filters.amountRange?.max || 999999
-                }
-              })
+                  max: filters.amountRange?.max || 999999,
+                },
+              });
             }}
           />
           <Input
             placeholder="Max amount"
             type="number"
-            value={filters.amountRange?.max || ""}
-            onChange={(e) => {
-              const max = parseFloat(e.target.value) || 999999
+            value={filters.amountRange?.max || ''}
+            onChange={e => {
+              const max = parseFloat(e.target.value) || 999999;
               onFiltersChange({
                 ...filters,
                 amountRange: {
                   min: filters.amountRange?.min || 0,
-                  max
-                }
-              })
+                  max,
+                },
+              });
             }}
           />
         </div>
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onFiltersChange({})}
-        >
+        <Button variant="outline" size="sm" onClick={() => onFiltersChange({})}>
           Clear Filters
         </Button>
-        <Button size="sm">
-          Apply Filters
-        </Button>
+        <Button size="sm">Apply Filters</Button>
       </div>
     </div>
-  )
+  );
 }
 
 // Purchase Order Detail View Component
 function PurchaseOrderDetailView({
   order,
-  onClose
+  onClose,
 }: {
-  order: PurchaseOrder
-  onClose: () => void
+  order: PurchaseOrder;
+  onClose: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -1808,7 +1815,7 @@ function PurchaseOrderDetailView({
                     <Label className="text-muted-foreground">Status</Label>
                     <div className="mt-1">
                       <Badge className={getStatusColor(order.status)}>
-                        {order.status.replace("_", " ").toUpperCase()}
+                        {order.status.replace('_', ' ').toUpperCase()}
                       </Badge>
                     </div>
                   </div>
@@ -1869,42 +1876,43 @@ function PurchaseOrderDetailView({
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.subtotal, order.currency)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Subtotal</p>
+                  <p className="text-muted-foreground text-sm">Subtotal</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.taxAmount, order.currency)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Tax</p>
+                  <p className="text-muted-foreground text-sm">Tax</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.shippingCost, order.currency)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Shipping</p>
+                  <p className="text-muted-foreground text-sm">Shipping</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.totalAmount, order.currency)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-muted-foreground text-sm">Total</p>
                 </div>
               </div>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
                 <div className="flex items-center space-x-2">
                   <Calculator className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-800">
-                    Budget Utilization
-                  </span>
+                  <span className="font-medium text-blue-800">Budget Utilization</span>
                 </div>
-                <p className="text-sm text-blue-700 mt-1">
-                  Budget: {order.budgetCode} •
-                  Remaining: {formatCurrency(order.budgetRemaining, order.currency)}
+                <p className="mt-1 text-sm text-blue-700">
+                  Budget: {order.budgetCode} • Remaining:{' '}
+                  {formatCurrency(order.budgetRemaining, order.currency)}
                 </p>
                 <div className="mt-2">
                   <Progress
-                    value={((order.budgetAllocated - order.budgetRemaining) / order.budgetAllocated) * 100}
+                    value={
+                      ((order.budgetAllocated - order.budgetRemaining) / order.budgetAllocated) *
+                      100
+                    }
                     className="h-2"
                   />
                 </div>
@@ -1921,18 +1929,16 @@ function PurchaseOrderDetailView({
             <CardContent>
               <div className="space-y-4">
                 {order.items.map((item, index) => (
-                  <div key={item.id} className="border rounded-lg p-4">
+                  <div key={item.id} className="rounded-lg border p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline">#{item.lineNumber}</Badge>
                           <span className="font-medium">{item.productCode}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {item.description}
-                        </p>
+                        <p className="text-muted-foreground mt-1 text-sm">{item.description}</p>
                         {item.specifications && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-muted-foreground mt-1 text-xs">
                             Specs: {item.specifications}
                           </p>
                         )}
@@ -1941,8 +1947,9 @@ function PurchaseOrderDetailView({
                         <p className="font-medium">
                           {formatCurrency(item.totalPrice, order.currency)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.quantity} {item.unit} × {formatCurrency(item.unitPrice, order.currency)}
+                        <p className="text-muted-foreground text-sm">
+                          {item.quantity} {item.unit} ×{' '}
+                          {formatCurrency(item.unitPrice, order.currency)}
                         </p>
                       </div>
                     </div>
@@ -1952,13 +1959,15 @@ function PurchaseOrderDetailView({
                         <Label className="text-muted-foreground">Status</Label>
                         <div className="mt-1">
                           <Badge className={getStatusColor(item.status)}>
-                            {item.status.replace("_", " ").toUpperCase()}
+                            {item.status.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </div>
                       </div>
                       <div>
                         <Label className="text-muted-foreground">Received</Label>
-                        <p>{item.receivedQuantity} / {item.quantity} {item.unit}</p>
+                        <p>
+                          {item.receivedQuantity} / {item.quantity} {item.unit}
+                        </p>
                       </div>
                       <div>
                         <Label className="text-muted-foreground">Delivery Date</Label>
@@ -1968,8 +1977,10 @@ function PurchaseOrderDetailView({
 
                     {item.qualityRequirements && item.qualityRequirements.length > 0 && (
                       <div className="mt-3">
-                        <Label className="text-muted-foreground text-xs">Quality Requirements</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <Label className="text-muted-foreground text-xs">
+                          Quality Requirements
+                        </Label>
+                        <div className="mt-1 flex flex-wrap gap-1">
                           {item.qualityRequirements.map((req, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs">
                               {req}
@@ -1989,42 +2000,45 @@ function PurchaseOrderDetailView({
           <Card>
             <CardHeader>
               <CardTitle>Approval Workflow</CardTitle>
-              <CardDescription>
-                Track the approval process and current status
-              </CardDescription>
+              <CardDescription>Track the approval process and current status</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {order.approvalWorkflow.map((step, index) => (
                   <div key={step.id} className="flex items-center space-x-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      step.status === "approved" ? "bg-green-100 text-green-700" :
-                      step.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                      step.status === "rejected" ? "bg-red-100 text-red-700" :
-                      "bg-gray-100 text-gray-700"
-                    )}>
+                    <div
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                        step.status === 'approved'
+                          ? 'bg-green-100 text-green-700'
+                          : step.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : step.status === 'rejected'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-700'
+                      )}
+                    >
                       {step.stepNumber}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{step.approverRole}</p>
-                          <p className="text-sm text-muted-foreground">{step.approverName}</p>
+                          <p className="text-muted-foreground text-sm">{step.approverName}</p>
                         </div>
                         <div className="text-right">
                           <Badge className={getStatusColor(step.status)}>
                             {step.status.toUpperCase()}
                           </Badge>
                           {step.approvedDate && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-muted-foreground mt-1 text-xs">
                               {formatDateTime(step.approvedDate)}
                             </p>
                           )}
                         </div>
                       </div>
                       {step.comments && (
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-sm">
                           &ldquo;{step.comments}&rdquo;
                         </p>
                       )}
@@ -2040,19 +2054,17 @@ function PurchaseOrderDetailView({
           <Card>
             <CardHeader>
               <CardTitle>Receiving History</CardTitle>
-              <CardDescription>
-                Track received quantities and quality inspections
-              </CardDescription>
+              <CardDescription>Track received quantities and quality inspections</CardDescription>
             </CardHeader>
             <CardContent>
               {order.receipts.length > 0 ? (
                 <div className="space-y-4">
-                  {order.receipts.map((receipt) => (
-                    <div key={receipt.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
+                  {order.receipts.map(receipt => (
+                    <div key={receipt.id} className="rounded-lg border p-4">
+                      <div className="mb-3 flex items-center justify-between">
                         <div>
                           <p className="font-medium">{receipt.receiptNumber}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Received on {formatDate(receipt.receivedDate)} by {receipt.receivedBy}
                           </p>
                         </div>
@@ -2062,22 +2074,22 @@ function PurchaseOrderDetailView({
                       </div>
 
                       {receipt.qualityInspection && (
-                        <div className="bg-green-50 border border-green-200 rounded p-3 mb-3">
+                        <div className="mb-3 rounded border border-green-200 bg-green-50 p-3">
                           <div className="flex items-center space-x-2">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <span className="font-medium text-green-800">
                               Quality Inspection Passed
                             </span>
                           </div>
-                          <p className="text-sm text-green-700 mt-1">
-                            Score: {receipt.qualityInspection.overallScore}% •
-                            Inspector: {receipt.qualityInspection.inspectorName}
+                          <p className="mt-1 text-sm text-green-700">
+                            Score: {receipt.qualityInspection.overallScore}% • Inspector:{' '}
+                            {receipt.qualityInspection.inspectorName}
                           </p>
                         </div>
                       )}
 
                       <div className="space-y-2">
-                        {receipt.items.map((item) => (
+                        {receipt.items.map(item => (
                           <div key={item.id} className="flex items-center justify-between text-sm">
                             <span>Line {item.poItemId}</span>
                             <div className="text-right">
@@ -2093,10 +2105,10 @@ function PurchaseOrderDetailView({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground" />
+                <div className="py-8 text-center">
+                  <Package className="text-muted-foreground mx-auto h-12 w-12" />
                   <h3 className="mt-4 text-lg font-medium">No Receipts Yet</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-muted-foreground mt-2 text-sm">
                     Items will appear here once they are received
                   </p>
                   <Button className="mt-4">
@@ -2113,9 +2125,7 @@ function PurchaseOrderDetailView({
           <Card>
             <CardHeader>
               <CardTitle>Three-Way Matching</CardTitle>
-              <CardDescription>
-                Compare purchase order, receipt, and invoice data
-              </CardDescription>
+              <CardDescription>Compare purchase order, receipt, and invoice data</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -2124,7 +2134,7 @@ function PurchaseOrderDetailView({
                   <div className="flex items-center space-x-2">
                     {getThreeWayMatchIcon(order.threeWayMatchStatus)}
                     <Badge className={getStatusColor(order.threeWayMatchStatus)}>
-                      {order.threeWayMatchStatus.replace("_", " ").toUpperCase()}
+                      {order.threeWayMatchStatus.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                 </div>
@@ -2159,7 +2169,9 @@ function PurchaseOrderDetailView({
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span>Received</span>
-                            <span>{order.items.reduce((sum, item) => sum + item.receivedQuantity, 0)}</span>
+                            <span>
+                              {order.items.reduce((sum, item) => sum + item.receivedQuantity, 0)}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span>Status</span>
@@ -2167,7 +2179,7 @@ function PurchaseOrderDetailView({
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No receipts</p>
+                        <p className="text-muted-foreground text-sm">No receipts</p>
                       )}
                     </CardContent>
                   </Card>
@@ -2191,18 +2203,16 @@ function PurchaseOrderDetailView({
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No invoices</p>
+                        <p className="text-muted-foreground text-sm">No invoices</p>
                       )}
                     </CardContent>
                   </Card>
                 </div>
 
-                {order.threeWayMatchStatus === "exceptions" && order.invoices.length > 0 && (
+                {order.threeWayMatchStatus === 'exceptions' && order.invoices.length > 0 && (
                   <Card className="border-yellow-200 bg-yellow-50">
                     <CardHeader>
-                      <CardTitle className="text-sm text-yellow-800">
-                        Matching Exceptions
-                      </CardTitle>
+                      <CardTitle className="text-sm text-yellow-800">Matching Exceptions</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -2212,8 +2222,8 @@ function PurchaseOrderDetailView({
                             <div key={index} className="flex items-center space-x-2 text-sm">
                               <AlertTriangle className="h-4 w-4 text-yellow-600" />
                               <span>
-                                {result.field}: Expected {result.poValue},
-                                Invoice shows {result.invoiceValue}
+                                {result.field}: Expected {result.poValue}, Invoice shows{' '}
+                                {result.invoiceValue}
                                 {result.receiptValue && `, Receipt shows ${result.receiptValue}`}
                               </span>
                             </div>
@@ -2244,15 +2254,18 @@ function PurchaseOrderDetailView({
 
                 {order.attachments.length > 0 ? (
                   <div className="space-y-2">
-                    {order.attachments.map((attachment) => (
-                      <div key={attachment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {order.attachments.map(attachment => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
                         <div className="flex items-center space-x-3">
                           <FileText className="h-5 w-5 text-blue-500" />
                           <div>
                             <p className="font-medium">{attachment.originalName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {Math.round(attachment.fileSize / 1024)} KB •
-                              Uploaded {formatDate(attachment.uploadDate)}
+                            <p className="text-muted-foreground text-sm">
+                              {Math.round(attachment.fileSize / 1024)} KB • Uploaded{' '}
+                              {formatDate(attachment.uploadDate)}
                             </p>
                           </div>
                         </div>
@@ -2268,10 +2281,10 @@ function PurchaseOrderDetailView({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <div className="py-8 text-center">
+                    <FileText className="text-muted-foreground mx-auto h-12 w-12" />
                     <h3 className="mt-4 text-lg font-medium">No Documents</h3>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-muted-foreground mt-2 text-sm">
                       No documents have been attached to this order
                     </p>
                   </div>
@@ -2291,17 +2304,17 @@ function PurchaseOrderDetailView({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.auditTrail.map((entry) => (
+                {order.auditTrail.map(entry => (
                   <div key={entry.id} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div className="mt-2 h-2 w-2 rounded-full bg-blue-500"></div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="font-medium">{entry.action}</p>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {formatDateTime(entry.timestamp)}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {entry.details} by {entry.userName}
                       </p>
                     </div>
@@ -2323,5 +2336,5 @@ function PurchaseOrderDetailView({
         </Button>
       </DialogFooter>
     </div>
-  )
+  );
 }

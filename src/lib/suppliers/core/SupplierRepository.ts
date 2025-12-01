@@ -46,163 +46,183 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   constructor() {}
 
   async findById(id: string): Promise<Supplier | null> {
-    const supplierResult = await query(
-      `
-      SELECT 
-        s.supplier_id::text as id,
-        s.name,
-        s.code,
-        s.org_id,
-        CASE WHEN s.active THEN 'active'::text ELSE 'inactive'::text END as status,
-        s.default_currency as currency,
-        s.payment_terms,
-        s.payment_terms_days,
-        s.contact_info,
-        s.tax_number as tax_id,
-        s.contact_person,
-        s.contact_email,
-        s.contact_phone,
-        s.website,
-        s.created_at,
-        s.updated_at
-      FROM core.supplier s
-      WHERE CAST(s.supplier_id AS TEXT) = $1
-      LIMIT 1
-    `,
-      [id]
-    );
-    if (supplierResult.rows.length === 0) return null;
+    try {
+      const supplierResult = await query(
+        `
+        SELECT 
+          s.supplier_id::text as id,
+          s.name,
+          s.code,
+          CASE WHEN s.active THEN 'active'::text ELSE 'inactive'::text END as status,
+          s.default_currency as currency,
+          s.payment_terms,
+          s.contact_info,
+          s.tax_number as tax_id,
+          s.created_at,
+          s.updated_at
+        FROM core.supplier s
+        WHERE CAST(s.supplier_id AS TEXT) = $1
+        LIMIT 1
+      `,
+        [id]
+      );
+      if (supplierResult.rows.length === 0) return null;
 
-    const row: Record<string, unknown> = supplierResult.rows[0];
+      const row: Record<string, unknown> = supplierResult.rows[0];
 
-    // Debug: Log what we're getting from the database
-    console.log('🔍 [findById] Raw database row:', {
-      id: row.id,
-      name: row.name,
-      code: row.code,
-      contact_info: row.contact_info,
-      has_contact_info: !!row.contact_info,
-    });
+      // Try to get org_id - extract from contact_info or leave as null
+      // org_id may not exist as a column, so we'll extract from JSONB if available
+      row.org_id = null;
 
-    // Extract data from contact_info JSONB if it exists
-    const contactInfo = parseContactInfo(row.contact_info);
-    console.log('🔍 [findById] Extracted contact_info:', contactInfo);
+      // Debug: Log what we're getting from the database
+      console.log('🔍 [findById] Raw database row:', {
+        id: row.id,
+        name: row.name,
+        code: row.code,
+        contact_info: row.contact_info,
+        has_contact_info: !!row.contact_info,
+      });
 
-    // Map columns that exist - handle different column name variations
-    // Prioritize JSONB data over column data if both exist
-    row.tier = row.tier || contactInfo.tier || row.performance_tier || 'approved';
-    row.category = row.category || contactInfo.category || row.primary_category || '';
-    row.subcategory = row.subcategory || contactInfo.subcategory || '';
-    row.tags = row.tags || contactInfo.tags || [];
-    row.brands = row.brands || contactInfo.brands || [];
-    row.legal_name = row.legal_name || contactInfo.legalName || row.name || '';
-    row.trading_name = row.trading_name || contactInfo.tradingName || '';
-    row.website = row.website || contactInfo.website || '';
-    row.industry = row.industry || contactInfo.industry || '';
-    row.tax_id = row.tax_id || row.tax_number || contactInfo.taxId || '';
-    row.registration_number = row.registration_number || contactInfo.registrationNumber || '';
-    row.founded_year = row.founded_year ?? contactInfo.foundedYear ?? null;
-    row.employee_count = row.employee_count ?? contactInfo.employeeCount ?? null;
-    row.annual_revenue = row.annual_revenue ?? contactInfo.annualRevenue ?? null;
-    row.currency =
-      row.currency || row.default_currency || contactInfo.currency || row.currency_code || 'ZAR';
-    row.notes = row.notes || contactInfo.notes || null;
+      // Extract data from contact_info JSONB if it exists
+      const contactInfo = parseContactInfo(row.contact_info);
+      console.log('🔍 [findById] Extracted contact_info:', contactInfo);
 
-    // Get contacts
-    const contactsQuery = `
-      SELECT id, type, name, title, email, phone, mobile, department, is_primary, is_active
-      FROM supplier_contacts
-      WHERE CAST(supplier_id AS TEXT) = $1
-    `;
-    const contactsResult = await query(contactsQuery, [id]);
-    console.log('🔍 [findById] Contacts found:', contactsResult.rows.length);
+      // Map columns that exist - handle different column name variations
+      // Prioritize JSONB data over column data if both exist
+      row.tier = contactInfo.tier || row.performance_tier || 'approved';
+      row.category = contactInfo.category || row.primary_category || null;
+      row.subcategory = contactInfo.subcategory || null;
+      row.tags = Array.isArray(contactInfo.tags) ? contactInfo.tags : [];
+      // Try to get org_id from contact_info if available
+      if (contactInfo.orgId) {
+        row.org_id = String(contactInfo.orgId);
+      }
+      row.brands = row.brands || contactInfo.brands || [];
+      row.legal_name = row.legal_name || contactInfo.legalName || row.name || '';
+      row.trading_name = row.trading_name || contactInfo.tradingName || '';
+      row.website = row.website || contactInfo.website || '';
+      row.industry = row.industry || contactInfo.industry || '';
+      row.tax_id = row.tax_id || row.tax_number || contactInfo.taxId || '';
+      row.registration_number = row.registration_number || contactInfo.registrationNumber || '';
+      row.founded_year = row.founded_year ?? contactInfo.foundedYear ?? null;
+      row.employee_count = row.employee_count ?? contactInfo.employeeCount ?? null;
+      row.annual_revenue = row.annual_revenue ?? contactInfo.annualRevenue ?? null;
+      row.currency =
+        row.currency || row.default_currency || contactInfo.currency || row.currency_code || 'ZAR';
+      row.notes = row.notes || contactInfo.notes || null;
 
-    // Get addresses
-    const addressesQuery = `
-      SELECT id, type, name, address_line1, address_line2, city, state, postal_code, country, is_primary, is_active
-      FROM supplier_addresses
-      WHERE CAST(supplier_id AS TEXT) = $1
-    `;
-    const addressesResult = await query(addressesQuery, [id]);
-    console.log('🔍 [findById] Addresses found:', addressesResult.rows.length);
+      // Get contacts - wrap in try-catch in case table doesn't exist
+      let contactsResult = { rows: [] };
+      try {
+        const contactsQuery = `
+          SELECT id, type, name, title, email, phone, mobile, department, is_primary, is_active
+          FROM supplier_contacts
+          WHERE CAST(supplier_id AS TEXT) = $1
+        `;
+        contactsResult = await query(contactsQuery, [id]);
+        console.log('🔍 [findById] Contacts found:', contactsResult.rows.length);
+      } catch (err) {
+        console.warn('Could not fetch contacts:', err);
+      }
 
-    // Map contacts and addresses
-    row.contacts = contactsResult.rows.map((c: unknown) => ({
-      id: c.id,
-      type: c.type || 'primary',
-      name: c.name || contactInfo.contactPerson || contactInfo.name || '',
-      title: c.title || contactInfo.title || '',
-      email: c.email || contactInfo.email || '',
-      phone: c.phone || contactInfo.phone || '',
-      mobile: c.mobile || contactInfo.mobile || '',
-      department: c.department || contactInfo.department || '',
-      isPrimary: c.is_primary ?? true,
-      isActive: c.is_active !== false,
-    }));
+      // Get addresses - wrap in try-catch in case table doesn't exist
+      let addressesResult = { rows: [] };
+      try {
+        const addressesQuery = `
+          SELECT id, type, name, address_line1, address_line2, city, state, postal_code, country, is_primary, is_active
+          FROM supplier_addresses
+          WHERE CAST(supplier_id AS TEXT) = $1
+        `;
+        addressesResult = await query(addressesQuery, [id]);
+        console.log('🔍 [findById] Addresses found:', addressesResult.rows.length);
+      } catch (err) {
+        console.warn('Could not fetch addresses:', err);
+      }
 
-    // If no contacts exist but we have contact info in JSONB, create a contact from it
-    if (row.contacts.length === 0 && (contactInfo.email || contactInfo.phone)) {
-      row.contacts = [
-        {
-          id: '',
-          type: 'primary',
-          name: contactInfo.contactPerson || contactInfo.name || '',
-          title: contactInfo.title || '',
-          email: contactInfo.email || '',
-          phone: contactInfo.phone || '',
-          mobile: contactInfo.mobile || '',
-          department: contactInfo.department || '',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
+      // Map contacts and addresses
+      row.contacts = contactsResult.rows.map((c: unknown) => ({
+        id: c.id,
+        type: c.type || 'primary',
+        name: c.name || contactInfo.contactPerson || contactInfo.name || '',
+        title: c.title || contactInfo.title || '',
+        email: c.email || contactInfo.email || '',
+        phone: c.phone || contactInfo.phone || '',
+        mobile: c.mobile || contactInfo.mobile || '',
+        department: c.department || contactInfo.department || '',
+        isPrimary: c.is_primary ?? true,
+        isActive: c.is_active !== false,
+      }));
+
+      // If no contacts exist but we have contact info in JSONB, create a contact from it
+      if (row.contacts.length === 0 && (contactInfo.email || contactInfo.phone)) {
+        row.contacts = [
+          {
+            id: '',
+            type: 'primary',
+            name: contactInfo.contactPerson || contactInfo.name || '',
+            title: contactInfo.title || '',
+            email: contactInfo.email || '',
+            phone: contactInfo.phone || '',
+            mobile: contactInfo.mobile || '',
+            department: contactInfo.department || '',
+            isPrimary: true,
+            isActive: true,
+          },
+        ];
+      }
+
+      console.log('🔍 [findById] Mapped contacts:', JSON.stringify(row.contacts, null, 2));
+
+      row.addresses = addressesResult.rows.map((a: unknown) => ({
+        id: a.id,
+        type: a.type || 'headquarters',
+        name: a.name || '',
+        addressLine1:
+          a.address_line1 || contactInfo.address?.addressLine1 || contactInfo.address?.street || '',
+        addressLine2: a.address_line2 || contactInfo.address?.addressLine2 || '',
+        city:
+          a.city || contactInfo.address?.city || contactInfo.location?.split(',')[0]?.trim() || '',
+        state:
+          a.state ||
+          contactInfo.address?.state ||
+          contactInfo.location?.split(',')[1]?.trim() ||
+          '',
+        postalCode: a.postal_code || contactInfo.address?.postalCode || '',
+        country:
+          a.country ||
+          contactInfo.address?.country ||
+          contactInfo.location?.split(',')[2]?.trim() ||
+          'South Africa',
+        isPrimary: a.is_primary ?? true,
+        isActive: a.is_active !== false,
+      }));
+
+      // If no addresses exist but we have address info in JSONB, create an address from it
+      if (row.addresses.length === 0 && contactInfo.address) {
+        row.addresses = [
+          {
+            id: '',
+            type: 'headquarters',
+            name: '',
+            addressLine1: contactInfo.address.addressLine1 || contactInfo.address.street || '',
+            addressLine2: contactInfo.address.addressLine2 || '',
+            city: contactInfo.address.city || '',
+            state: contactInfo.address.state || '',
+            postalCode: contactInfo.address.postalCode || '',
+            country: contactInfo.address.country || 'South Africa',
+            isPrimary: true,
+            isActive: true,
+          },
+        ];
+      }
+
+      console.log('🔍 [findById] Mapped addresses:', JSON.stringify(row.addresses, null, 2));
+
+      return this.mapRowToSupplier(row);
+    } catch (error) {
+      console.error('Error in findById:', error);
+      throw error;
     }
-
-    console.log('🔍 [findById] Mapped contacts:', JSON.stringify(row.contacts, null, 2));
-
-    row.addresses = addressesResult.rows.map((a: unknown) => ({
-      id: a.id,
-      type: a.type || 'headquarters',
-      name: a.name || '',
-      addressLine1:
-        a.address_line1 || contactInfo.address?.addressLine1 || contactInfo.address?.street || '',
-      addressLine2: a.address_line2 || contactInfo.address?.addressLine2 || '',
-      city:
-        a.city || contactInfo.address?.city || contactInfo.location?.split(',')[0]?.trim() || '',
-      state:
-        a.state || contactInfo.address?.state || contactInfo.location?.split(',')[1]?.trim() || '',
-      postalCode: a.postal_code || contactInfo.address?.postalCode || '',
-      country:
-        a.country ||
-        contactInfo.address?.country ||
-        contactInfo.location?.split(',')[2]?.trim() ||
-        'South Africa',
-      isPrimary: a.is_primary ?? true,
-      isActive: a.is_active !== false,
-    }));
-
-    // If no addresses exist but we have address info in JSONB, create an address from it
-    if (row.addresses.length === 0 && contactInfo.address) {
-      row.addresses = [
-        {
-          id: '',
-          type: 'headquarters',
-          name: '',
-          addressLine1: contactInfo.address.addressLine1 || contactInfo.address.street || '',
-          addressLine2: contactInfo.address.addressLine2 || '',
-          city: contactInfo.address.city || '',
-          state: contactInfo.address.state || '',
-          postalCode: contactInfo.address.postalCode || '',
-          country: contactInfo.address.country || 'South Africa',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
-    }
-
-    console.log('🔍 [findById] Mapped addresses:', JSON.stringify(row.addresses, null, 2));
-
-    return this.mapRowToSupplier(row);
   }
 
   async findMany(filters: SupplierFilters): Promise<SupplierSearchResult> {
@@ -955,15 +975,27 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   private mapRowToSupplier(row: unknown): Supplier {
     return {
       id: row.id,
-      name: row.name,
-      code: row.code,
-      status: row.status,
+      name: row.name || '',
+      code: row.code || undefined,
+      status: row.status || 'inactive',
       tier: row.tier || 'approved',
       orgId: row.org_id ? String(row.org_id) : undefined,
-      category: row.category,
-      subcategory: row.subcategory,
+      category: row.category || undefined,
+      subcategory: row.subcategory || undefined,
       categories: row.categories ?? (row.category ? [row.category] : []),
-      tags: row.tags || [],
+      tags: Array.isArray(row.tags)
+        ? row.tags
+        : typeof row.tags === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(row.tags || '[]');
+              } catch {
+                return [];
+              }
+            })()
+          : row.tags && typeof row.tags === 'object' && 'json' in row.tags
+            ? JSON.parse(row.tags.json || '[]')
+            : [],
       brands: row.brands || [],
 
       businessInfo: {

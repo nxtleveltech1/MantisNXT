@@ -234,10 +234,7 @@ export class DemandForecastService {
   /**
    * Update actual quantity and calculate accuracy score
    */
-  async updateActualQuantity(
-    forecastId: string,
-    actualQuantity: number
-  ): Promise<DemandForecast> {
+  async updateActualQuantity(forecastId: string, actualQuantity: number): Promise<DemandForecast> {
     return withTransaction(async (client: PoolClient) => {
       // Get the forecast
       const forecastResult = await client.query<DemandForecast>(
@@ -275,10 +272,7 @@ export class DemandForecastService {
   /**
    * Get accuracy metrics for an organization by horizon
    */
-  async getAccuracyMetrics(
-    orgId: string,
-    horizon?: ForecastHorizon
-  ): Promise<AccuracyMetrics[]> {
+  async getAccuracyMetrics(orgId: string, horizon?: ForecastHorizon): Promise<AccuracyMetrics[]> {
     // Build query to group by horizon
     const horizonFilter = horizon ? `AND forecast_horizon = $2` : '';
     const params = horizon ? [orgId, horizon] : [orgId];
@@ -315,7 +309,7 @@ export class DemandForecastService {
       params
     );
 
-    return result.rows.map((row) => ({
+    return result.rows.map(row => ({
       horizon: row.forecast_horizon,
       total_forecasts: parseInt(row.total_forecasts, 10),
       forecasts_with_actuals: parseInt(row.forecasts_with_actuals, 10),
@@ -336,10 +330,9 @@ export class DemandForecastService {
    * Get forecast by ID
    */
   async getForecastById(forecastId: string): Promise<DemandForecast | null> {
-    const result = await query<DemandForecast>(
-      `SELECT * FROM demand_forecast WHERE id = $1`,
-      [forecastId]
-    );
+    const result = await query<DemandForecast>(`SELECT * FROM demand_forecast WHERE id = $1`, [
+      forecastId,
+    ]);
 
     return result.rows[0] || null;
   }
@@ -347,10 +340,7 @@ export class DemandForecastService {
   /**
    * Delete forecasts older than specified date
    */
-  async cleanupOldForecasts(
-    orgId: string,
-    olderThanDate: Date
-  ): Promise<number> {
+  async cleanupOldForecasts(orgId: string, olderThanDate: Date): Promise<number> {
     const result = await query(
       `DELETE FROM demand_forecast
       WHERE org_id = $1 AND forecast_date < $2`,
@@ -404,9 +394,7 @@ export class DemandForecastService {
 
     // Outside bounds - lower accuracy
     // Calculate distance from nearest bound
-    const distanceFromBounds = actual < lowerBound
-      ? lowerBound - actual
-      : actual - upperBound;
+    const distanceFromBounds = actual < lowerBound ? lowerBound - actual : actual - upperBound;
 
     const boundRange = upperBound - lowerBound;
     const normalizedOutsideDistance = boundRange > 0 ? distanceFromBounds / boundRange : 1;

@@ -1,25 +1,16 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { getTask } from '@/lib/queue/taskQueue'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { getTask } from '@/lib/queue/taskQueue';
 
-export async function GET(
-  _request: NextRequest,
-  context: { params: Promise<{ taskId: string }> }
-) {
-  const { taskId } = await context.params
+export async function GET(_request: NextRequest, context: { params: Promise<{ taskId: string }> }) {
+  const { taskId } = await context.params;
   if (!taskId) {
-    return NextResponse.json(
-      { success: false, error: 'Task ID is required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ success: false, error: 'Task ID is required' }, { status: 400 });
   }
 
-  const record = getTask(taskId)
+  const record = getTask(taskId);
   if (!record) {
-    return NextResponse.json(
-      { success: false, error: 'Task not found' },
-      { status: 404 }
-    )
+    return NextResponse.json({ success: false, error: 'Task not found' }, { status: 404 });
   }
 
   return NextResponse.json({
@@ -30,5 +21,5 @@ export async function GET(
     error: record.error,
     startedAt: record.startedAt,
     finishedAt: record.finishedAt,
-  })
+  });
 }

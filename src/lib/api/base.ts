@@ -68,7 +68,7 @@ export class BaseApiService extends EventEmitter {
       this.emit('created', {
         table: this.tableName,
         record: createdRecord,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Notify PostgreSQL listeners
@@ -78,16 +78,15 @@ export class BaseApiService extends EventEmitter {
         success: true,
         data: createdRecord,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error creating ${this.tableName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -119,9 +118,8 @@ export class BaseApiService extends EventEmitter {
         }
       });
 
-      const whereClause = whereConditions.length > 0
-        ? `WHERE ${whereConditions.join(' AND ')}`
-        : '';
+      const whereClause =
+        whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
       // Build ORDER BY clause
       const orderBy = pagination.sortBy
@@ -150,19 +148,18 @@ export class BaseApiService extends EventEmitter {
           data: dataResult.rows,
           total,
           page: pagination.page,
-          totalPages
+          totalPages,
         },
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error fetching ${this.tableName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -182,7 +179,7 @@ export class BaseApiService extends EventEmitter {
           success: false,
           error: `Record not found in ${this.tableName}`,
           timestamp: new Date().toISOString(),
-          requestId
+          requestId,
         };
       }
 
@@ -190,16 +187,15 @@ export class BaseApiService extends EventEmitter {
         success: true,
         data: result.rows[0],
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error fetching ${this.tableName} by ID:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -219,7 +215,7 @@ export class BaseApiService extends EventEmitter {
           success: false,
           error: 'No valid fields to update',
           timestamp: new Date().toISOString(),
-          requestId
+          requestId,
         };
       }
 
@@ -245,7 +241,7 @@ export class BaseApiService extends EventEmitter {
           success: false,
           error: `Record not found in ${this.tableName}`,
           timestamp: new Date().toISOString(),
-          requestId
+          requestId,
         };
       }
 
@@ -255,7 +251,7 @@ export class BaseApiService extends EventEmitter {
       this.emit('updated', {
         table: this.tableName,
         record: updatedRecord,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Notify PostgreSQL listeners
@@ -265,16 +261,15 @@ export class BaseApiService extends EventEmitter {
         success: true,
         data: updatedRecord,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error updating ${this.tableName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -294,7 +289,7 @@ export class BaseApiService extends EventEmitter {
           success: false,
           error: `Record not found in ${this.tableName}`,
           timestamp: new Date().toISOString(),
-          requestId
+          requestId,
         };
       }
 
@@ -302,7 +297,7 @@ export class BaseApiService extends EventEmitter {
       this.emit('deleted', {
         table: this.tableName,
         id: result.rows[0].id,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Notify PostgreSQL listeners
@@ -312,16 +307,15 @@ export class BaseApiService extends EventEmitter {
         success: true,
         data: { id: result.rows[0].id },
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error deleting ${this.tableName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -339,16 +333,15 @@ export class BaseApiService extends EventEmitter {
         success: true,
         data: result.rows,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
-
     } catch (error) {
       console.error(`❌ Error executing custom query on ${this.tableName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
     }
   }
@@ -390,7 +383,7 @@ export class BaseApiService extends EventEmitter {
         operation,
         table: this.tableName,
         record,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await db.query(`NOTIFY table_changes, '${payload}'`);

@@ -18,7 +18,10 @@ import { CORE_TABLES } from '@/lib/db/schema-contract';
 export class DynamicPricingOptimizer extends BaseOptimizer {
   protected algorithmName = 'dynamic_pricing';
 
-  async optimize(product: ProductData, run: OptimizationRun): Promise<OptimizationRecommendation | null> {
+  async optimize(
+    product: ProductData,
+    run: OptimizationRun
+  ): Promise<OptimizationRecommendation | null> {
     if (!this.validateProduct(product)) {
       return null;
     }
@@ -43,7 +46,8 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
     // Apply inventory-based adjustment
     if (factors.inventory_factor !== 1.0) {
       recommendedPrice *= factors.inventory_factor;
-      reasoning += `- Inventory ${factors.inventory_level}: ${factors.inventory_factor > 1 ? 'Low' : 'High'} stock suggests ` +
+      reasoning +=
+        `- Inventory ${factors.inventory_level}: ${factors.inventory_factor > 1 ? 'Low' : 'High'} stock suggests ` +
         `${((factors.inventory_factor - 1) * 100).toFixed(1)}% price adjustment\n`;
     }
 
@@ -74,7 +78,7 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
       return null;
     }
 
-    reasoning += `\nRecommended price: $${recommendedPrice.toFixed(2)} (${((recommendedPrice - currentPrice) / currentPrice * 100).toFixed(1)}% ${recommendedPrice > currentPrice ? 'increase' : 'decrease'})`;
+    reasoning += `\nRecommended price: $${recommendedPrice.toFixed(2)} (${(((recommendedPrice - currentPrice) / currentPrice) * 100).toFixed(1)}% ${recommendedPrice > currentPrice ? 'increase' : 'decrease'})`;
 
     // Estimate impact
     const priceChangePercent = ((recommendedPrice - currentPrice) / currentPrice) * 100;
@@ -83,10 +87,11 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
     const assumedCurrentUnits = 100;
     const projectedUnits = assumedCurrentUnits * (1 + demandChangeEstimate / 100);
 
-    const revenueImpact = (recommendedPrice * projectedUnits) - (currentPrice * assumedCurrentUnits);
-    const profitImpact = cost > 0
-      ? ((recommendedPrice - cost) * projectedUnits) - ((currentPrice - cost) * assumedCurrentUnits)
-      : 0;
+    const revenueImpact = recommendedPrice * projectedUnits - currentPrice * assumedCurrentUnits;
+    const profitImpact =
+      cost > 0
+        ? (recommendedPrice - cost) * projectedUnits - (currentPrice - cost) * assumedCurrentUnits
+        : 0;
 
     const confidence = this.calculateConfidence(product, {
       hasCost: cost > 0,
@@ -95,18 +100,11 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
       hasSalesData: false,
     });
 
-    return this.createRecommendation(
-      product,
-      run,
-      recommendedPrice,
-      reasoning,
-      confidence,
-      {
-        projectedDemandChange: demandChangeEstimate,
-        projectedRevenueImpact: revenueImpact,
-        projectedProfitImpact: profitImpact,
-      }
-    );
+    return this.createRecommendation(product, run, recommendedPrice, reasoning, confidence, {
+      projectedDemandChange: demandChangeEstimate,
+      projectedRevenueImpact: revenueImpact,
+      projectedProfitImpact: profitImpact,
+    });
   }
 
   private async getInventoryLevel(productId: string): Promise<number | null> {
@@ -125,7 +123,11 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
     return result.rows[0].total_quantity;
   }
 
-  private calculateDynamicFactors(inventory: number, currentPrice: number, cost: number): {
+  private calculateDynamicFactors(
+    inventory: number,
+    currentPrice: number,
+    cost: number
+  ): {
     inventory_factor: number;
     inventory_level: string;
     time_factor: number;
@@ -140,13 +142,13 @@ export class DynamicPricingOptimizer extends BaseOptimizer {
       inventoryFactor = 1.15; // Out of stock - increase price to manage demand
       inventoryLevel = 'out_of_stock';
     } else if (inventory < 10) {
-      inventoryFactor = 1.10; // Low stock - increase price
+      inventoryFactor = 1.1; // Low stock - increase price
       inventoryLevel = 'low';
     } else if (inventory > 100) {
       inventoryFactor = 0.95; // Overstocked - decrease price to move inventory
       inventoryLevel = 'high';
     } else if (inventory > 200) {
-      inventoryFactor = 0.90; // Very overstocked - larger discount
+      inventoryFactor = 0.9; // Very overstocked - larger discount
       inventoryLevel = 'very_high';
     }
 

@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
@@ -216,7 +216,11 @@ export async function POST(request: NextRequest) {
       data = jsonData;
       headers = hasHeaders
         ? (jsonData[0] || []).map(cell =>
-            typeof cell === 'string' ? cell : cell !== undefined && cell !== null ? String(cell) : ''
+            typeof cell === 'string'
+              ? cell
+              : cell !== undefined && cell !== null
+                ? String(cell)
+                : ''
           )
         : [];
     }

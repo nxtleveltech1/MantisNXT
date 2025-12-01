@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { DataRetentionService } from '@/lib/services/pricing-intel/DataRetentionService'
-import { getOrgId } from '../_helpers'
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { DataRetentionService } from '@/lib/services/pricing-intel/DataRetentionService';
+import { getOrgId } from '../_helpers';
 
 const policySchema = z.object({
   retention_days_snapshots: z.number().min(30).max(3650),
   retention_days_alerts: z.number().min(30).max(3650),
   retention_days_jobs: z.number().min(30).max(3650),
   archival_strategy: z.enum(['delete', 'archive', 'compress']),
-})
+});
 
 export async function GET(request: NextRequest) {
   try {
-    const orgId = await getOrgId(request)
-    const service = new DataRetentionService()
-    const policy = await service.getPolicy(orgId)
+    const orgId = await getOrgId(request);
+    const service = new DataRetentionService();
+    const policy = await service.getPolicy(orgId);
 
     return NextResponse.json({
       data: policy || {
@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
         archival_strategy: 'delete',
       },
       error: null,
-    })
+    });
   } catch (error) {
-    console.error('Error fetching retention policy:', error)
+    console.error('Error fetching retention policy:', error);
     return NextResponse.json(
       {
         data: null,
@@ -36,23 +36,23 @@ export async function GET(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const orgId = await getOrgId(request, body)
+    const body = await request.json();
+    const orgId = await getOrgId(request, body);
 
-    const validated = policySchema.parse(body)
-    const service = new DataRetentionService()
+    const validated = policySchema.parse(body);
+    const service = new DataRetentionService();
 
-    const policy = await service.updatePolicy(orgId, validated)
+    const policy = await service.updatePolicy(orgId, validated);
 
-    return NextResponse.json({ data: policy, error: null })
+    return NextResponse.json({ data: policy, error: null });
   } catch (error) {
-    console.error('Error updating retention policy:', error)
+    console.error('Error updating retention policy:', error);
     return NextResponse.json(
       {
         data: null,
@@ -62,20 +62,20 @@ export async function POST(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const orgId = await getOrgId(request)
-    const service = new DataRetentionService()
+    const orgId = await getOrgId(request);
+    const service = new DataRetentionService();
 
-    const result = await service.executeRetentionPolicy(orgId)
+    const result = await service.executeRetentionPolicy(orgId);
 
-    return NextResponse.json({ data: result, error: null })
+    return NextResponse.json({ data: result, error: null });
   } catch (error) {
-    console.error('Error executing retention policy:', error)
+    console.error('Error executing retention policy:', error);
     return NextResponse.json(
       {
         data: null,
@@ -85,12 +85,6 @@ export async function PUT(request: NextRequest) {
         },
       },
       { status: 500 }
-    )
+    );
   }
 }
-
-
-
-
-
-

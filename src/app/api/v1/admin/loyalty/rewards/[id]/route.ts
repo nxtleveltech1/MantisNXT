@@ -9,14 +9,10 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // Validation schema for updating reward
 const updateRewardSchema = z.object({
@@ -27,12 +23,7 @@ const updateRewardSchema = z.object({
     .optional(),
   points_required: z.number().int().positive().optional(),
   monetary_value: z.number().positive().nullable().optional(),
-  max_redemptions_per_customer: z
-    .number()
-    .int()
-    .positive()
-    .nullable()
-    .optional(),
+  max_redemptions_per_customer: z.number().int().positive().nullable().optional(),
   stock_quantity: z.number().int().nonnegative().nullable().optional(),
   is_active: z.boolean().optional(),
   is_featured: z.boolean().optional(),
@@ -55,7 +46,6 @@ export async function GET(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // const result = await RewardCatalogService.getById(
@@ -111,7 +101,6 @@ export async function PATCH(
     // Authorization - Admin only
     await requireAdmin(user);
 
-
     // Parse and validate body
     const body = await request.json();
     const validated = updateRewardSchema.parse(body);
@@ -162,7 +151,6 @@ export async function DELETE(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // await RewardCatalogService.delete(id, user.organizationId);

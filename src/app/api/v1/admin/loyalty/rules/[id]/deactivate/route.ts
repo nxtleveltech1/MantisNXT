@@ -7,13 +7,9 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  authenticateRequest,
-  requireAdmin,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, requireAdmin, handleError } from '@/lib/auth/middleware';
 
 // POST - Deactivate rule
 export async function POST(
@@ -28,7 +24,6 @@ export async function POST(
 
     // Authorization - Admin only
     await requireAdmin(user);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // const result = await LoyaltyRuleService.deactivate(

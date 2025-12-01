@@ -17,7 +17,7 @@ import {
   getRelativeTime,
   serializeTimestamp,
   sortByTimestamp,
-  filterByDateRange
+  filterByDateRange,
 } from '@/lib/utils/date-utils';
 import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
@@ -38,22 +38,67 @@ interface TestResult {
 
 const TEST_CASES: TestCase[] = [
   // Valid dates
-  { name: 'ISO String', input: '2024-01-15T10:30:00.000Z', expectedResult: 'valid', description: 'Standard ISO date string' },
-  { name: 'Date Object', input: new Date('2024-01-15'), expectedResult: 'valid', description: 'Native Date object' },
-  { name: 'Timestamp Number', input: 1705312200000, expectedResult: 'valid', description: 'Unix timestamp' },
-  { name: 'Simple Date String', input: '2024-01-15', expectedResult: 'valid', description: 'YYYY-MM-DD format' },
+  {
+    name: 'ISO String',
+    input: '2024-01-15T10:30:00.000Z',
+    expectedResult: 'valid',
+    description: 'Standard ISO date string',
+  },
+  {
+    name: 'Date Object',
+    input: new Date('2024-01-15'),
+    expectedResult: 'valid',
+    description: 'Native Date object',
+  },
+  {
+    name: 'Timestamp Number',
+    input: 1705312200000,
+    expectedResult: 'valid',
+    description: 'Unix timestamp',
+  },
+  {
+    name: 'Simple Date String',
+    input: '2024-01-15',
+    expectedResult: 'valid',
+    description: 'YYYY-MM-DD format',
+  },
 
   // Invalid dates that should fallback gracefully
   { name: 'Null Input', input: null, expectedResult: 'fallback', description: 'Null value' },
-  { name: 'Undefined Input', input: undefined, expectedResult: 'fallback', description: 'Undefined value' },
+  {
+    name: 'Undefined Input',
+    input: undefined,
+    expectedResult: 'fallback',
+    description: 'Undefined value',
+  },
   { name: 'Empty String', input: '', expectedResult: 'fallback', description: 'Empty string' },
-  { name: 'Invalid String', input: 'not-a-date', expectedResult: 'fallback', description: 'Non-date string' },
+  {
+    name: 'Invalid String',
+    input: 'not-a-date',
+    expectedResult: 'fallback',
+    description: 'Non-date string',
+  },
   { name: 'Invalid Number', input: NaN, expectedResult: 'fallback', description: 'NaN value' },
-  { name: 'Invalid Date Object', input: new Date('invalid'), expectedResult: 'fallback', description: 'Invalid Date object' },
+  {
+    name: 'Invalid Date Object',
+    input: new Date('invalid'),
+    expectedResult: 'fallback',
+    description: 'Invalid Date object',
+  },
 
   // Edge cases
-  { name: 'Future Date', input: '2030-12-31T23:59:59.999Z', expectedResult: 'valid', description: 'Far future date' },
-  { name: 'Past Date', input: '1970-01-01T00:00:00.000Z', expectedResult: 'valid', description: 'Unix epoch' },
+  {
+    name: 'Future Date',
+    input: '2030-12-31T23:59:59.999Z',
+    expectedResult: 'valid',
+    description: 'Far future date',
+  },
+  {
+    name: 'Past Date',
+    input: '1970-01-01T00:00:00.000Z',
+    expectedResult: 'valid',
+    description: 'Unix epoch',
+  },
   { name: 'Zero Timestamp', input: 0, expectedResult: 'valid', description: 'Zero timestamp' },
 ];
 
@@ -94,7 +139,8 @@ export default function TimestampValidationTest() {
       // Determine if test passed based on expected result
       let passed = false;
       if (testCase.expectedResult === 'valid') {
-        passed = isValidParse && isValidTime && isValidFormat && isValidRelative && isValidSerialize;
+        passed =
+          isValidParse && isValidTime && isValidFormat && isValidRelative && isValidSerialize;
       } else if (testCase.expectedResult === 'fallback') {
         passed = !isValidParse && !isValidRelative; // Should fallback gracefully
       }
@@ -112,11 +158,10 @@ export default function TimestampValidationTest() {
           isValidTime,
           isValidFormat,
           isValidRelative,
-          isValidSerialize
+          isValidSerialize,
         },
-        duration: endTime - startTime
+        duration: endTime - startTime,
       };
-
     } catch (error) {
       const endTime = performance.now();
       return {
@@ -124,7 +169,7 @@ export default function TimestampValidationTest() {
         passed: false,
         result: null,
         error: error instanceof Error ? error.message : 'Unknown error',
-        duration: endTime - startTime
+        duration: endTime - startTime,
       };
     }
   };
@@ -167,25 +212,25 @@ export default function TimestampValidationTest() {
           timestamp: activity.timestamp,
           canParse: safeParseDate(activity.timestamp) !== null,
           formatted: formatTimestamp(activity.timestamp),
-          relative: getRelativeTime(activity.timestamp)
+          relative: getRelativeTime(activity.timestamp),
         }));
 
         setApiTestResult({
           success: true,
           totalActivities: result.data.length,
           validTimestamps: timestampTests.filter((t: any) => t.canParse).length,
-          details: timestampTests
+          details: timestampTests,
         });
       } else {
         setApiTestResult({
           success: false,
-          error: result.error || 'Failed to fetch activities'
+          error: result.error || 'Failed to fetch activities',
         });
       }
     } catch (error) {
       setApiTestResult({
         success: false,
-        error: error instanceof Error ? error.message : 'API test failed'
+        error: error instanceof Error ? error.message : 'API test failed',
       });
     }
   };
@@ -199,7 +244,7 @@ export default function TimestampValidationTest() {
       { id: '2', timestamp: '2024-01-15T12:00:00Z', name: 'Second' },
       { id: '3', timestamp: null, name: 'Null timestamp' },
       { id: '4', timestamp: '2024-01-15T08:00:00Z', name: 'Third' },
-      { id: '5', timestamp: 'invalid-date', name: 'Invalid timestamp' }
+      { id: '5', timestamp: 'invalid-date', name: 'Invalid timestamp' },
     ];
 
     try {
@@ -208,11 +253,7 @@ export default function TimestampValidationTest() {
       const sortedValid = sorted.filter(item => safeParseDate(item.timestamp) !== null);
 
       // Test filtering
-      const filtered = filterByDateRange(
-        testData,
-        '2024-01-15T09:00:00Z',
-        '2024-01-15T11:00:00Z'
-      );
+      const filtered = filterByDateRange(testData, '2024-01-15T09:00:00Z', '2024-01-15T11:00:00Z');
 
       return {
         success: true,
@@ -220,12 +261,12 @@ export default function TimestampValidationTest() {
         sortedCount: sorted.length,
         validAfterSort: sortedValid.length,
         filteredCount: filtered.length,
-        sortOrder: sorted.map(item => item.name)
+        sortOrder: sorted.map(item => item.name),
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Array operations failed'
+        error: error instanceof Error ? error.message : 'Array operations failed',
       };
     }
   };
@@ -247,7 +288,7 @@ export default function TimestampValidationTest() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Clock className="w-5 h-5" />
+            <Clock className="h-5 w-5" />
             <span>Timestamp Validation Test Suite</span>
           </CardTitle>
           <CardDescription>
@@ -257,32 +298,21 @@ export default function TimestampValidationTest() {
 
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-4">
-            <Button
-              onClick={runAllTests}
-              disabled={isRunning}
-              variant="default"
-            >
+            <Button onClick={runAllTests} disabled={isRunning} variant="default">
               {isRunning ? 'Running Tests...' : 'Run All Tests'}
             </Button>
 
-            <Button
-              onClick={testApiEndpoint}
-              variant="outline"
-            >
+            <Button onClick={testApiEndpoint} variant="outline">
               Test API Endpoint
             </Button>
 
-            <Button
-              onClick={() => setTestResults([])}
-              variant="outline"
-              disabled={isRunning}
-            >
+            <Button onClick={() => setTestResults([])} variant="outline" disabled={isRunning}>
               Clear Results
             </Button>
           </div>
 
           {testResults.length > 0 && (
-            <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-4 gap-4 rounded-lg bg-gray-50 p-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">{testSummary.total}</div>
                 <div className="text-sm text-gray-600">Total Tests</div>
@@ -296,7 +326,9 @@ export default function TimestampValidationTest() {
                 <div className="text-sm text-gray-600">Failed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{testSummary.avgDuration.toFixed(2)}ms</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {testSummary.avgDuration.toFixed(2)}ms
+                </div>
                 <div className="text-sm text-gray-600">Avg Duration</div>
               </div>
             </div>
@@ -315,19 +347,17 @@ export default function TimestampValidationTest() {
               {testResults.map((result, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between rounded-lg border p-3"
                 >
                   <div className="flex items-center space-x-3">
                     {result.passed ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="h-5 w-5 text-green-500" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
+                      <XCircle className="h-5 w-5 text-red-500" />
                     )}
                     <div>
                       <div className="font-medium">{result.name}</div>
-                      {result.error && (
-                        <div className="text-sm text-red-600">{result.error}</div>
-                      )}
+                      {result.error && <div className="text-sm text-red-600">{result.error}</div>}
                     </div>
                   </div>
 
@@ -335,9 +365,7 @@ export default function TimestampValidationTest() {
                     <Badge variant={result.passed ? 'default' : 'destructive'}>
                       {result.passed ? 'PASS' : 'FAIL'}
                     </Badge>
-                    <span className="text-xs text-gray-500">
-                      {result.duration.toFixed(2)}ms
-                    </span>
+                    <span className="text-xs text-gray-500">{result.duration.toFixed(2)}ms</span>
                   </div>
                 </div>
               ))}
@@ -358,21 +386,22 @@ export default function TimestampValidationTest() {
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
-                    API test successful! {apiTestResult.validTimestamps}/{apiTestResult.totalActivities} timestamps are valid.
+                    API test successful! {apiTestResult.validTimestamps}/
+                    {apiTestResult.totalActivities} timestamps are valid.
                   </AlertDescription>
                 </Alert>
 
                 {apiTestResult.details && (
                   <div className="space-y-2">
                     {apiTestResult.details.map((detail: any, index: number) => (
-                      <div key={index} className="p-2 border rounded text-sm">
+                      <div key={index} className="rounded border p-2 text-sm">
                         <div className="flex items-center justify-between">
                           <span className="font-mono">{detail.id}</span>
                           <Badge variant={detail.canParse ? 'default' : 'destructive'}>
                             {detail.canParse ? 'Valid' : 'Invalid'}
                           </Badge>
                         </div>
-                        <div className="text-gray-600 mt-1">
+                        <div className="mt-1 text-gray-600">
                           <div>Formatted: {detail.formatted}</div>
                           <div>Relative: {detail.relative}</div>
                         </div>
@@ -384,9 +413,7 @@ export default function TimestampValidationTest() {
             ) : (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  API test failed: {apiTestResult.error}
-                </AlertDescription>
+                <AlertDescription>API test failed: {apiTestResult.error}</AlertDescription>
               </Alert>
             )}
           </CardContent>

@@ -1,34 +1,34 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Settings, Save, RotateCcw, Info } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Save, RotateCcw, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export interface BatchSettings {
-  batchSize?: number
-  batchDelay: number
-  maxRetries: number
-  confidenceThreshold: number
-  autoAccept: boolean
+  batchSize?: number;
+  batchDelay: number;
+  maxRetries: number;
+  confidenceThreshold: number;
+  autoAccept: boolean;
 }
 
 interface BatchCategorizationSettingsProps {
-  settings: BatchSettings
-  onSettingsChange: (settings: BatchSettings) => void
+  settings: BatchSettings;
+  onSettingsChange: (settings: BatchSettings) => void;
   providerLimits?: Array<{
-    provider: string
-    maxBatchSize: number
-    recommendedBatchSize: number
-    contextWindow: number
-  }>
-  className?: string
+    provider: string;
+    maxBatchSize: number;
+    recommendedBatchSize: number;
+    contextWindow: number;
+  }>;
+  className?: string;
 }
 
 const DEFAULT_SETTINGS: BatchSettings = {
@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS: BatchSettings = {
   maxRetries: 2,
   confidenceThreshold: 0.7,
   autoAccept: false,
-}
+};
 
 export function BatchCategorizationSettings({
   settings,
@@ -44,37 +44,38 @@ export function BatchCategorizationSettings({
   providerLimits = [],
   className,
 }: BatchCategorizationSettingsProps) {
-  const [localSettings, setLocalSettings] = useState<BatchSettings>({ ...DEFAULT_SETTINGS, ...settings })
-  const [hasChanges, setHasChanges] = useState(false)
+  const [localSettings, setLocalSettings] = useState<BatchSettings>({
+    ...DEFAULT_SETTINGS,
+    ...settings,
+  });
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    setLocalSettings({ ...DEFAULT_SETTINGS, ...settings })
-    setHasChanges(false)
-  }, [settings])
+    setLocalSettings({ ...DEFAULT_SETTINGS, ...settings });
+    setHasChanges(false);
+  }, [settings]);
 
   const handleChange = (key: keyof BatchSettings, value: unknown) => {
-    setLocalSettings(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
-  }
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
 
   const handleSave = () => {
-    onSettingsChange(localSettings)
-    setHasChanges(false)
-  }
+    onSettingsChange(localSettings);
+    setHasChanges(false);
+  };
 
   const handleReset = () => {
-    setLocalSettings({ ...DEFAULT_SETTINGS, ...settings })
-    setHasChanges(false)
-  }
+    setLocalSettings({ ...DEFAULT_SETTINGS, ...settings });
+    setHasChanges(false);
+  };
 
   // Calculate recommended batch size from provider limits
-  const recommendedBatchSize = providerLimits.length > 0
-    ? Math.min(...providerLimits.map(p => p.recommendedBatchSize))
-    : 50
+  const recommendedBatchSize =
+    providerLimits.length > 0 ? Math.min(...providerLimits.map(p => p.recommendedBatchSize)) : 50;
 
-  const maxBatchSize = providerLimits.length > 0
-    ? Math.min(...providerLimits.map(p => p.maxBatchSize))
-    : 100
+  const maxBatchSize =
+    providerLimits.length > 0 ? Math.min(...providerLimits.map(p => p.maxBatchSize)) : 100;
 
   return (
     <Card className={className}>
@@ -97,12 +98,12 @@ export function BatchCategorizationSettings({
                 id="batch-size"
                 type="number"
                 value={localSettings.batchSize || recommendedBatchSize}
-                onChange={(e) => handleChange('batchSize', parseInt(e.target.value) || undefined)}
+                onChange={e => handleChange('batchSize', parseInt(e.target.value) || undefined)}
                 min={1}
                 max={maxBatchSize}
                 className="w-20"
               />
-              <span className="text-sm text-muted-foreground">products</span>
+              <span className="text-muted-foreground text-sm">products</span>
             </div>
           </div>
           <Slider
@@ -113,7 +114,7 @@ export function BatchCategorizationSettings({
             step={1}
             className="w-full"
           />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>1</span>
             <span className="flex items-center gap-1">
               <Info className="h-3 w-3" />
@@ -125,8 +126,9 @@ export function BatchCategorizationSettings({
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription className="text-xs">
-                Provider limits: {providerLimits.map(p => (
-                  <span key={p.provider} className="inline-block mr-2">
+                Provider limits:{' '}
+                {providerLimits.map(p => (
+                  <span key={p.provider} className="mr-2 inline-block">
                     <Badge variant="outline" className="text-xs">
                       {p.provider}: max {p.maxBatchSize}
                     </Badge>
@@ -146,13 +148,13 @@ export function BatchCategorizationSettings({
                 id="batch-delay"
                 type="number"
                 value={localSettings.batchDelay}
-                onChange={(e) => handleChange('batchDelay', parseInt(e.target.value) || 2000)}
+                onChange={e => handleChange('batchDelay', parseInt(e.target.value) || 2000)}
                 min={0}
                 max={10000}
                 step={100}
                 className="w-24"
               />
-              <span className="text-sm text-muted-foreground">ms</span>
+              <span className="text-muted-foreground text-sm">ms</span>
             </div>
           </div>
           <Slider
@@ -163,7 +165,7 @@ export function BatchCategorizationSettings({
             step={100}
             className="w-full"
           />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>0ms</span>
             <span>Delay between batches</span>
             <span>5s</span>
@@ -178,13 +180,13 @@ export function BatchCategorizationSettings({
               id="max-retries"
               type="number"
               value={localSettings.maxRetries}
-              onChange={(e) => handleChange('maxRetries', parseInt(e.target.value) || 0)}
+              onChange={e => handleChange('maxRetries', parseInt(e.target.value) || 0)}
               min={0}
               max={5}
               className="w-20"
             />
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Number of retry attempts for failed batches
           </p>
         </div>
@@ -198,13 +200,15 @@ export function BatchCategorizationSettings({
                 id="confidence-threshold"
                 type="number"
                 value={localSettings.confidenceThreshold}
-                onChange={(e) => handleChange('confidenceThreshold', parseFloat(e.target.value) || 0.7)}
+                onChange={e =>
+                  handleChange('confidenceThreshold', parseFloat(e.target.value) || 0.7)
+                }
                 min={0}
                 max={1}
                 step={0.05}
                 className="w-20"
               />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {(localSettings.confidenceThreshold * 100).toFixed(0)}%
               </span>
             </div>
@@ -217,7 +221,7 @@ export function BatchCategorizationSettings({
             step={0.05}
             className="w-full"
           />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>0%</span>
             <span>Minimum confidence for auto-acceptance</span>
             <span>100%</span>
@@ -228,37 +232,31 @@ export function BatchCategorizationSettings({
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="auto-accept">Auto-Accept Suggestions</Label>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Automatically accept suggestions above confidence threshold
             </p>
           </div>
           <Switch
             id="auto-accept"
             checked={localSettings.autoAccept}
-            onCheckedChange={(checked) => handleChange('autoAccept', checked)}
+            onCheckedChange={checked => handleChange('autoAccept', checked)}
           />
         </div>
 
         {/* Actions */}
         {hasChanges && (
-          <div className="flex items-center gap-2 pt-4 border-t">
+          <div className="flex items-center gap-2 border-t pt-4">
             <Button onClick={handleSave} size="sm" className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="mr-2 h-4 w-4" />
               Save Settings
             </Button>
             <Button onClick={handleReset} variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="mr-2 h-4 w-4" />
               Reset
             </Button>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-
-
-
-
-
-

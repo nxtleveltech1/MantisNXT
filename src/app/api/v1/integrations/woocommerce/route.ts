@@ -7,7 +7,7 @@
  * Date: 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
 import { query } from '@/lib/database';
@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
     const orgId = request.headers.get('x-org-id') || '';
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(orgId)) {
-      return NextResponse.json({ success: false, error: 'org_id header required (UUID)' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'org_id header required (UUID)' },
+        { status: 400 }
+      );
     }
     const sql = `
       SELECT
@@ -82,7 +85,10 @@ export async function POST(request: NextRequest) {
     const orgId = request.headers.get('x-org-id') || '';
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(orgId)) {
-      return NextResponse.json({ success: false, error: 'org_id header required (UUID)' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'org_id header required (UUID)' },
+        { status: 400 }
+      );
     }
 
     const sql = `
@@ -155,7 +161,10 @@ export async function PUT(request: NextRequest) {
     const orgId = request.headers.get('x-org-id') || '';
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(orgId)) {
-      return NextResponse.json({ success: false, error: 'org_id header required (UUID)' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'org_id header required (UUID)' },
+        { status: 400 }
+      );
     }
 
     if (!body.id) {

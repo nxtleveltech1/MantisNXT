@@ -15,7 +15,7 @@ import { Shield, Activity, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'AI Anomaly Detection | Admin',
-  description: 'Monitor and investigate AI-detected anomalies across your system'
+  description: 'Monitor and investigate AI-detected anomalies across your system',
 };
 
 export default function AnomaliesPage() {
@@ -44,7 +44,8 @@ export default function AnomaliesPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">AI Anomaly Detection</h2>
             <p className="text-muted-foreground mt-2">
-              Real-time anomaly detection and intelligent pattern recognition across your entire system
+              Real-time anomaly detection and intelligent pattern recognition across your entire
+              system
             </p>
           </div>
         </div>
@@ -54,11 +55,11 @@ export default function AnomaliesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Detection Engine</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+              <Shield className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">Active</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 ML-powered anomaly detection running 24/7
               </p>
             </CardContent>
@@ -67,11 +68,11 @@ export default function AnomaliesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Detection Rate</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">98.5%</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Accuracy in identifying genuine anomalies
               </p>
             </CardContent>
@@ -80,11 +81,11 @@ export default function AnomaliesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Response Time</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">&lt; 2min</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Average time to detect and alert on anomalies
               </p>
             </CardContent>

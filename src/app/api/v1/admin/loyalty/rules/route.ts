@@ -8,7 +8,7 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -74,9 +74,7 @@ export async function GET(request: NextRequest) {
       total: 0,
     };
 
-    return NextResponse.json(
-      formatPaginatedResponse(mockData.rules, mockData.total, page, limit)
-    );
+    return NextResponse.json(formatPaginatedResponse(mockData.rules, mockData.total, page, limit));
   } catch (error) {
     return handleError(error);
   }

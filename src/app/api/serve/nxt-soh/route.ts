@@ -16,14 +16,11 @@
  * - offset: number - Page offset (default: 0)
  */
 
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { stockService } from "@/lib/services/StockService";
-import { inventorySelectionService } from "@/lib/services/InventorySelectionService";
-import {
-  createErrorResponse,
-  validateQueryParams,
-} from "@/lib/utils/neon-error-handler";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { stockService } from '@/lib/services/StockService';
+import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
+import { createErrorResponse, validateQueryParams } from '@/lib/utils/neon-error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,16 +28,16 @@ export async function GET(request: NextRequest) {
 
     // Validate and parse query parameters
     const validation = validateQueryParams(searchParams, {
-      limit: "number",
-      offset: "number",
-      search: "string",
+      limit: 'number',
+      offset: 'number',
+      search: 'string',
     });
 
     if (!validation.valid) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid query parameters",
+          error: 'Invalid query parameters',
           details: validation.errors,
         },
         { status: 400 }
@@ -48,22 +45,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse array parameters manually
-    const supplier_ids =
-      searchParams.get("supplier_ids")?.split(",").filter(Boolean) || undefined;
-    const location_ids =
-      searchParams.get("location_ids")?.split(",").filter(Boolean) || undefined;
+    const supplier_ids = searchParams.get('supplier_ids')?.split(',').filter(Boolean) || undefined;
+    const location_ids = searchParams.get('location_ids')?.split(',').filter(Boolean) || undefined;
 
     // Step 1: Verify an active selection exists
-    const activeSelection =
-      await inventorySelectionService.getActiveSelection();
+    const activeSelection = await inventorySelectionService.getActiveSelection();
 
     if (!activeSelection) {
       return NextResponse.json(
         {
           success: true,
           data: [],
-          message:
-            "No active selection. Please activate an inventory selection first.",
+          message: 'No active selection. Please activate an inventory selection first.',
           active_selection: null,
           pagination: {
             total: 0,
@@ -74,7 +67,7 @@ export async function GET(request: NextRequest) {
         },
         {
           headers: {
-            "Cache-Control": "private, max-age=60",
+            'Cache-Control': 'private, max-age=60',
           },
         }
       );
@@ -118,13 +111,13 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           // Cache for 1 minute - balance between freshness and performance
-          "Cache-Control": "private, max-age=60",
+          'Cache-Control': 'private, max-age=60',
           ETag: etag,
         },
       }
     );
   } catch (error) {
-    console.error("[API] NXT SOH error:", error);
+    console.error('[API] NXT SOH error:', error);
     return createErrorResponse(error, 500);
   }
 }

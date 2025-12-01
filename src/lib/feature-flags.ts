@@ -166,7 +166,7 @@ export function getAllFlags(): Array<{
   metadata: FlagMetadata;
   source: 'env' | 'default';
 }> {
-  return Object.values(FeatureFlag).map((flag) => {
+  return Object.values(FeatureFlag).map(flag => {
     const envValue = getEnvFlagValue(flag);
     const enabled = isFeatureEnabled(flag);
     const metadata = FLAG_REGISTRY[flag];

@@ -22,7 +22,7 @@ describe('Pattern Matching', () => {
     });
 
     it('should have array of patterns for each event type', () => {
-      Object.values(INVALIDATION_PATTERNS).forEach((patterns) => {
+      Object.values(INVALIDATION_PATTERNS).forEach(patterns => {
         expect(Array.isArray(patterns)).toBe(true);
         expect(patterns.length).toBeGreaterThan(0);
       });

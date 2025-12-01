@@ -8,7 +8,7 @@
  * Date: 2025-11-04 (Updated with rate limiting)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { OdooService } from '@/lib/services/OdooService';
 
@@ -39,8 +39,10 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      console.log(`[Odoo Test] Testing connection to: ${normalizedUrl}, database: ${database_name}`);
-      
+      console.log(
+        `[Odoo Test] Testing connection to: ${normalizedUrl}, database: ${database_name}`
+      );
+
       // Test connection (uses cached auth if available)
       const connectionResult = await odooService.testConnection();
 
@@ -49,12 +51,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: connectionResult.error || 'Connection test failed. Please verify your credentials.',
+            error:
+              connectionResult.error || 'Connection test failed. Please verify your credentials.',
           },
           { status: 401 }
         );
       }
-      
+
       console.log('[Odoo Test] Connection successful');
 
       // Get version info (rate-limited)
@@ -67,12 +70,14 @@ export async function POST(request: NextRequest) {
       } catch (versionError: any) {
         console.warn('Could not fetch Odoo version:', versionError);
         // If version check fails with HTML error, provide helpful message
-        if (versionError?.message?.includes('Unknown XML-RPC tag') || 
-            versionError?.message?.includes('TITLE')) {
+        if (
+          versionError?.message?.includes('Unknown XML-RPC tag') ||
+          versionError?.message?.includes('TITLE')
+        ) {
           return NextResponse.json(
             {
               success: false,
-              error: 
+              error:
                 `Odoo server returned HTML instead of XML-RPC response.\n\n` +
                 `Common causes:\n` +
                 `1. Incorrect server URL (check: ${normalizedUrl})\n` +
@@ -121,7 +126,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Service temporarily unavailable due to repeated failures. Please try again later.',
+            error:
+              'Service temporarily unavailable due to repeated failures. Please try again later.',
           },
           { status: 503 }
         );
@@ -131,7 +137,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Authentication failed. Please check your database name, username, and API key/password.',
+            error:
+              'Authentication failed. Please check your database name, username, and API key/password.',
           },
           { status: 401 }
         );

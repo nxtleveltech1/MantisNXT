@@ -34,7 +34,7 @@ export type {
   ConfidenceScores,
   ExtractionResult,
   DataSource,
-  CacheEntry
+  CacheEntry,
 } from './types';
 
 // Configuration

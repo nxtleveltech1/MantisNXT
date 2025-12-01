@@ -95,11 +95,15 @@ async function main() {
     { name: 'mantis-neon-mcp', version: '1.0.0' },
     { capabilities: { tools: {} } }
   );
-  const spawnCommand =
-    process.platform === 'win32' ? 'pwsh.exe' : 'npx';
+  const spawnCommand = process.platform === 'win32' ? 'pwsh.exe' : 'npx';
   const spawnArgs =
     process.platform === 'win32'
-      ? ['-NoLogo', '-NoProfile', '-Command', `npx -y @neondatabase/mcp-server-neon start ${neonApiKey}`]
+      ? [
+          '-NoLogo',
+          '-NoProfile',
+          '-Command',
+          `npx -y @neondatabase/mcp-server-neon start ${neonApiKey}`,
+        ]
       : ['-y', '@neondatabase/mcp-server-neon', 'start', neonApiKey];
   const transport = new StdioClientTransport({
     command: spawnCommand,
@@ -119,16 +123,18 @@ async function main() {
       toolList.find(t => t.name === 'execute_sql');
 
     if (!sqlTool && !transactionTool) {
-      throw new Error(`Unable to locate SQL-capable tool. Available tools: ${toolList
-        .map(t => t.name)
-        .join(', ')}`);
+      throw new Error(
+        `Unable to locate SQL-capable tool. Available tools: ${toolList
+          .map(t => t.name)
+          .join(', ')}`
+      );
     }
 
     const projectId =
       process.env.NEON_PROJECT_ID || determineDefaultProject(toolList) || 'proud-mud-50346856';
     if (!projectId) {
       throw new Error(
-        'Unable to determine Neon project. Set NEON_PROJECT_ID or update determineDefaultProject().',
+        'Unable to determine Neon project. Set NEON_PROJECT_ID or update determineDefaultProject().'
       );
     }
 

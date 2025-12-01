@@ -6,19 +6,11 @@
  */
 
 import type { QueryClient } from '@tanstack/react-query';
-import type {
-  CacheInvalidationEvent,
-  CacheInvalidationEventType} from './events';
-import {
-  createInvalidationEvent,
-} from './events';
+import type { CacheInvalidationEvent, CacheInvalidationEventType } from './events';
+import { createInvalidationEvent } from './events';
 import type { EventSubscription } from './event-bus';
 import { cacheEventBus } from './event-bus';
-import {
-  getSpecificPatterns,
-  matchesCacheKey,
-  queryKeyToString,
-} from './patterns';
+import { getSpecificPatterns, matchesCacheKey, queryKeyToString } from './patterns';
 
 /**
  * Cache invalidation configuration
@@ -66,7 +58,7 @@ export class CacheInvalidationManager {
     }
 
     // Subscribe to all cache invalidation events
-    const subscription = cacheEventBus.onAny(async (event) => {
+    const subscription = cacheEventBus.onAny(async event => {
       await this.handleInvalidationEvent(event);
     });
 
@@ -88,11 +80,7 @@ export class CacheInvalidationManager {
       const patterns = getSpecificPatterns(event.type, event.payload);
 
       if (this.config.logInvalidations) {
-        console.log(
-          `[CacheInvalidation] Event: ${event.type}`,
-          'Patterns:',
-          patterns
-        );
+        console.log(`[CacheInvalidation] Event: ${event.type}`, 'Patterns:', patterns);
       }
 
       // Invalidate queries based on patterns
@@ -133,9 +121,7 @@ export class CacheInvalidationManager {
   /**
    * Invalidate queries matching patterns
    */
-  private async invalidateByPatterns(
-    patterns: string[]
-  ): Promise<InvalidationResult> {
+  private async invalidateByPatterns(patterns: string[]): Promise<InvalidationResult> {
     const errors: Error[] = [];
     let queriesInvalidated = 0;
     const patternsMatched: string[] = [];
@@ -163,14 +149,9 @@ export class CacheInvalidationManager {
               }
             }
           } catch (error) {
-            const err =
-              error instanceof Error ? error : new Error(String(error));
+            const err = error instanceof Error ? error : new Error(String(error));
             errors.push(err);
-            console.error(
-              '[CacheInvalidation] Error invalidating query:',
-              query.queryKey,
-              err
-            );
+            console.error('[CacheInvalidation] Error invalidating query:', query.queryKey, err);
           }
         }
       }
@@ -229,9 +210,8 @@ export class CacheInvalidationManager {
     );
 
     const eventTypeCounts: Record<string, number> = {};
-    this.invalidationLog.forEach((entry) => {
-      eventTypeCounts[entry.event.type] =
-        (eventTypeCounts[entry.event.type] || 0) + 1;
+    this.invalidationLog.forEach(entry => {
+      eventTypeCounts[entry.event.type] = (eventTypeCounts[entry.event.type] || 0) + 1;
     });
 
     return {
@@ -239,9 +219,7 @@ export class CacheInvalidationManager {
       totalQueriesInvalidated,
       eventTypeCounts,
       avgQueriesPerInvalidation:
-        totalInvalidations > 0
-          ? totalQueriesInvalidated / totalInvalidations
-          : 0,
+        totalInvalidations > 0 ? totalQueriesInvalidated / totalInvalidations : 0,
     };
   }
 
@@ -249,7 +227,7 @@ export class CacheInvalidationManager {
    * Cleanup subscriptions
    */
   destroy(): void {
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions = [];
     this.invalidationLog = [];
   }

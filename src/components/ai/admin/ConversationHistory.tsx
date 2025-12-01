@@ -24,7 +24,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,7 +117,9 @@ const formatRelativeTime = (dateString: string): string => {
 export default function ConversationHistory() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedConversation, setSelectedConversation] = useState<ConversationSummary | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationSummary | null>(
+    null
+  );
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
@@ -172,12 +173,16 @@ export default function ConversationHistory() {
   });
 
   // Fetch full conversation details
-  const { data: conversationDetails, isLoading: isLoadingDetails } = useQuery<ConversationMessage[]>({
+  const { data: conversationDetails, isLoading: isLoadingDetails } = useQuery<
+    ConversationMessage[]
+  >({
     queryKey: ['ai-conversation-details', selectedConversation?.conversation_id],
     queryFn: async () => {
       if (!selectedConversation?.conversation_id) return [];
 
-      const response = await fetch(`/api/v1/ai/conversations/${selectedConversation.conversation_id}`);
+      const response = await fetch(
+        `/api/v1/ai/conversations/${selectedConversation.conversation_id}`
+      );
       if (!response.ok) throw new Error('Failed to fetch conversation details');
 
       const result = await response.json();
@@ -224,50 +229,53 @@ export default function ConversationHistory() {
   });
 
   // Export conversation
-  const handleExport = useCallback((conversation: ConversationSummary) => {
-    const exportData = {
-      conversation_id: conversation.conversation_id,
-      user_id: conversation.user_id,
-      created_at: conversation.created_at,
-      last_updated: conversation.last_updated,
-      message_count: conversation.message_count,
-      messages: conversationDetails || [],
-    };
+  const handleExport = useCallback(
+    (conversation: ConversationSummary) => {
+      const exportData = {
+        conversation_id: conversation.conversation_id,
+        user_id: conversation.user_id,
+        created_at: conversation.created_at,
+        last_updated: conversation.last_updated,
+        message_count: conversation.message_count,
+        messages: conversationDetails || [],
+      };
 
-    let content: string;
-    let filename: string;
-    let mimeType: string;
+      let content: string;
+      let filename: string;
+      let mimeType: string;
 
-    if (exportFormat === 'json') {
-      content = JSON.stringify(exportData, null, 2);
-      filename = `conversation_${conversation.conversation_id}_${format(new Date(), 'yyyy-MM-dd')}.json`;
-      mimeType = 'application/json';
-    } else {
-      // CSV export
-      const csvRows = ['Timestamp,Role,Message'];
+      if (exportFormat === 'json') {
+        content = JSON.stringify(exportData, null, 2);
+        filename = `conversation_${conversation.conversation_id}_${format(new Date(), 'yyyy-MM-dd')}.json`;
+        mimeType = 'application/json';
+      } else {
+        // CSV export
+        const csvRows = ['Timestamp,Role,Message'];
 
-      (conversationDetails || []).forEach(msg => {
-        const escapedContent = msg.content.replace(/"/g, '""');
-        csvRows.push(`"${msg.created_at}","${msg.role}","${escapedContent}"`);
-      });
+        (conversationDetails || []).forEach(msg => {
+          const escapedContent = msg.content.replace(/"/g, '""');
+          csvRows.push(`"${msg.created_at}","${msg.role}","${escapedContent}"`);
+        });
 
-      content = csvRows.join('\n');
-      filename = `conversation_${conversation.conversation_id}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
-      mimeType = 'text/csv';
-    }
+        content = csvRows.join('\n');
+        filename = `conversation_${conversation.conversation_id}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        mimeType = 'text/csv';
+      }
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    toast.success(`Conversation exported as ${exportFormat.toUpperCase()}`);
-  }, [conversationDetails, exportFormat]);
+      toast.success(`Conversation exported as ${exportFormat.toUpperCase()}`);
+    },
+    [conversationDetails, exportFormat]
+  );
 
   // Copy message content
   const handleCopyMessage = useCallback((content: string) => {
@@ -295,11 +303,12 @@ export default function ConversationHistory() {
     if (!searchQuery) return data.conversations;
 
     const query = searchQuery.toLowerCase();
-    return data.conversations.filter(conv =>
-      conv.first_message.toLowerCase().includes(query) ||
-      conv.last_message.toLowerCase().includes(query) ||
-      conv.conversation_id.toLowerCase().includes(query) ||
-      conv.user_email?.toLowerCase().includes(query)
+    return data.conversations.filter(
+      conv =>
+        conv.first_message.toLowerCase().includes(query) ||
+        conv.last_message.toLowerCase().includes(query) ||
+        conv.conversation_id.toLowerCase().includes(query) ||
+        conv.user_email?.toLowerCase().includes(query)
     );
   }, [data?.conversations, searchQuery]);
 
@@ -319,7 +328,7 @@ export default function ConversationHistory() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -329,9 +338,7 @@ export default function ConversationHistory() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Conversation History</h2>
-          <p className="text-muted-foreground">
-            View and manage AI conversation logs and history
-          </p>
+          <p className="text-muted-foreground">View and manage AI conversation logs and history</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1">
@@ -346,53 +353,53 @@ export default function ConversationHistory() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Conversations</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <p className="text-muted-foreground text-xs">All time</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Today</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {filteredConversations.filter(c => isToday(new Date(c.last_updated))).length}
             </div>
-            <p className="text-xs text-muted-foreground">Updated today</p>
+            <p className="text-muted-foreground text-xs">Updated today</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <User className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{uniqueUsers.length}</div>
-            <p className="text-xs text-muted-foreground">Active users</p>
+            <p className="text-muted-foreground text-xs">Active users</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Messages</CardTitle>
-            <Bot className="h-4 w-4 text-muted-foreground" />
+            <Bot className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.conversations.length
                 ? Math.round(
                     data.conversations.reduce((acc, c) => acc + c.message_count, 0) /
-                    data.conversations.length
+                      data.conversations.length
                   )
                 : 0}
             </div>
-            <p className="text-xs text-muted-foreground">Per conversation</p>
+            <p className="text-muted-foreground text-xs">Per conversation</p>
           </CardContent>
         </Card>
       </div>
@@ -406,11 +413,11 @@ export default function ConversationHistory() {
           <div className="flex gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search conversations by content, ID, or user..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -434,7 +441,7 @@ export default function ConversationHistory() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Users</SelectItem>
-                {uniqueUsers.map((user) => (
+                {uniqueUsers.map(user => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.email}
                   </SelectItem>
@@ -452,51 +459,58 @@ export default function ConversationHistory() {
           <CardHeader>
             <CardTitle>Conversations</CardTitle>
             <CardDescription>
-              {filteredConversations.length} conversation{filteredConversations.length !== 1 ? 's' : ''}
+              {filteredConversations.length} conversation
+              {filteredConversations.length !== 1 ? 's' : ''}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
               <div className="space-y-1 p-4">
                 {filteredConversations.length === 0 ? (
-                  <div className="flex items-center justify-center p-8 text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center justify-center p-8">
                     <p>No conversations found</p>
                   </div>
                 ) : (
-                  filteredConversations.map((conversation) => (
+                  filteredConversations.map(conversation => (
                     <div
                       key={conversation.conversation_id}
                       className={cn(
-                        "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
-                        "hover:bg-accent",
-                        selectedConversation?.conversation_id === conversation.conversation_id && "bg-accent"
+                        'flex cursor-pointer items-center justify-between rounded-lg p-3 transition-colors',
+                        'hover:bg-accent',
+                        selectedConversation?.conversation_id === conversation.conversation_id &&
+                          'bg-accent'
                       )}
                       onClick={() => setSelectedConversation(conversation)}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="text-sm font-medium truncate">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <p className="truncate text-sm font-medium">
                             {conversation.user_email || conversation.user_id}
                           </p>
                           <Badge variant="outline" className="text-xs">
                             {conversation.message_count} msgs
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {highlightSearchTerm(conversation.last_message, searchQuery).map((part, i) => (
-                            <span key={i} className={part.highlight ? "bg-yellow-200 dark:bg-yellow-800" : ""}>
-                              {part.text}
-                            </span>
-                          ))}
+                        <p className="text-muted-foreground truncate text-xs">
+                          {highlightSearchTerm(conversation.last_message, searchQuery).map(
+                            (part, i) => (
+                              <span
+                                key={i}
+                                className={part.highlight ? 'bg-yellow-200 dark:bg-yellow-800' : ''}
+                              >
+                                {part.text}
+                              </span>
+                            )
+                          )}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-xs">
                           {formatRelativeTime(conversation.last_updated)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="text-muted-foreground h-4 w-4" />
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
@@ -505,7 +519,7 @@ export default function ConversationHistory() {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 setSelectedConversation(conversation);
                               }}
@@ -514,7 +528,7 @@ export default function ConversationHistory() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 handleExport(conversation);
                               }}
@@ -524,7 +538,7 @@ export default function ConversationHistory() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 setConversationToDelete(conversation.conversation_id);
                                 setShowDeleteDialog(true);
@@ -551,14 +565,15 @@ export default function ConversationHistory() {
               <div>
                 <CardTitle>Conversation Thread</CardTitle>
                 {selectedConversation && (
-                  <CardDescription>
-                    ID: {selectedConversation.conversation_id}
-                  </CardDescription>
+                  <CardDescription>ID: {selectedConversation.conversation_id}</CardDescription>
                 )}
               </div>
               {selectedConversation && (
                 <div className="flex items-center gap-2">
-                  <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as 'json' | 'csv')}>
+                  <Select
+                    value={exportFormat}
+                    onValueChange={v => setExportFormat(v as 'json' | 'csv')}
+                  >
                     <SelectTrigger className="w-[100px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -581,37 +596,37 @@ export default function ConversationHistory() {
           </CardHeader>
           <CardContent className="p-0">
             {!selectedConversation ? (
-              <div className="flex items-center justify-center p-12 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-center p-12">
                 <p>Select a conversation to view details</p>
               </div>
             ) : isLoadingDetails ? (
               <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : (
               <ScrollArea className="h-[550px]">
-                <div className="p-4 space-y-4">
+                <div className="space-y-4 p-4">
                   {/* Conversation Metadata */}
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="bg-muted/50 space-y-2 rounded-lg p-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <Label className="text-xs text-muted-foreground">User</Label>
+                        <Label className="text-muted-foreground text-xs">User</Label>
                         <p className="text-sm font-medium">
                           {selectedConversation.user_email || selectedConversation.user_id}
                         </p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Messages</Label>
+                        <Label className="text-muted-foreground text-xs">Messages</Label>
                         <p className="text-sm font-medium">{selectedConversation.message_count}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Started</Label>
+                        <Label className="text-muted-foreground text-xs">Started</Label>
                         <p className="text-sm font-medium">
                           {formatDate(selectedConversation.created_at)}
                         </p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Last Activity</Label>
+                        <Label className="text-muted-foreground text-xs">Last Activity</Label>
                         <p className="text-sm font-medium">
                           {formatDate(selectedConversation.last_updated)}
                         </p>
@@ -626,43 +641,44 @@ export default function ConversationHistory() {
                     {conversationDetails?.map((message, index) => {
                       const isExpanded = expandedMessages.has(message.id);
                       const isLongMessage = message.content.length > 300;
-                      const displayContent = isLongMessage && !isExpanded
-                        ? message.content.slice(0, 300) + '...'
-                        : message.content;
+                      const displayContent =
+                        isLongMessage && !isExpanded
+                          ? message.content.slice(0, 300) + '...'
+                          : message.content;
 
                       return (
                         <div
                           key={message.id}
                           className={cn(
-                            "flex gap-3 p-4 rounded-lg",
+                            'flex gap-3 rounded-lg p-4',
                             message.role === 'user'
-                              ? "bg-blue-50 dark:bg-blue-950/20"
+                              ? 'bg-blue-50 dark:bg-blue-950/20'
                               : message.role === 'assistant'
-                              ? "bg-green-50 dark:bg-green-950/20"
-                              : "bg-gray-50 dark:bg-gray-950/20"
+                                ? 'bg-green-50 dark:bg-green-950/20'
+                                : 'bg-gray-50 dark:bg-gray-950/20'
                           )}
                         >
                           <div className="flex-shrink-0">
                             {message.role === 'user' ? (
-                              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
                                 <User className="h-4 w-4 text-white" />
                               </div>
                             ) : message.role === 'assistant' ? (
-                              <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600">
                                 <Bot className="h-4 w-4 text-white" />
                               </div>
                             ) : (
-                              <div className="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-600">
                                 <MessageSquare className="h-4 w-4 text-white" />
                               </div>
                             )}
                           </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex items-start justify-between">
                               <div>
                                 <p className="text-sm font-medium capitalize">{message.role}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-muted-foreground text-xs">
                                   {formatDate(message.created_at)}
                                 </p>
                               </div>
@@ -676,10 +692,15 @@ export default function ConversationHistory() {
                               </Button>
                             </div>
 
-                            <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <p className="whitespace-pre-wrap break-words">
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                              <p className="break-words whitespace-pre-wrap">
                                 {highlightSearchTerm(displayContent, searchQuery).map((part, i) => (
-                                  <span key={i} className={part.highlight ? "bg-yellow-200 dark:bg-yellow-800" : ""}>
+                                  <span
+                                    key={i}
+                                    className={
+                                      part.highlight ? 'bg-yellow-200 dark:bg-yellow-800' : ''
+                                    }
+                                  >
                                     {part.text}
                                   </span>
                                 ))}
@@ -689,7 +710,7 @@ export default function ConversationHistory() {
                                 <Button
                                   variant="link"
                                   size="sm"
-                                  className="p-0 h-auto font-normal text-xs"
+                                  className="h-auto p-0 text-xs font-normal"
                                   onClick={() => toggleMessageExpansion(message.id)}
                                 >
                                   {isExpanded ? 'Show less' : 'Show more'}
@@ -700,10 +721,10 @@ export default function ConversationHistory() {
                             {message.context && Object.keys(message.context).length > 0 && (
                               <div className="mt-3">
                                 <details className="group">
-                                  <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                                  <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs">
                                     View context ({Object.keys(message.context).length} items)
                                   </summary>
-                                  <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32">
+                                  <pre className="bg-muted mt-2 max-h-32 overflow-auto rounded p-2 text-xs">
                                     {JSON.stringify(message.context, null, 2)}
                                   </pre>
                                 </details>
@@ -730,7 +751,7 @@ export default function ConversationHistory() {
               Are you sure you want to delete this conversation? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -749,9 +770,7 @@ export default function ConversationHistory() {
               }}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </div>

@@ -5,7 +5,12 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { authenticateRequest, handleAIError, successResponse, createdResponse } from '@/lib/ai/api-utils';
+import {
+  authenticateRequest,
+  handleAIError,
+  successResponse,
+  createdResponse,
+} from '@/lib/ai/api-utils';
 import { createProviderRegistry, listProviderRegistry, type RegistryProviderType } from './_store';
 
 export async function GET(request: NextRequest) {
@@ -43,5 +48,3 @@ export async function POST(request: NextRequest) {
     return handleAIError(error);
   }
 }
-
-

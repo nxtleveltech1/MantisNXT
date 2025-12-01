@@ -67,10 +67,7 @@ const DEFAULT_OPTIONS: QueryValidationOptions = {
  * @returns True if query is valid
  * @throws QueryValidationError if query is invalid and strict mode is enabled
  */
-export function validateQuery(
-  sql: string,
-  options: QueryValidationOptions = {}
-): boolean {
+export function validateQuery(sql: string, options: QueryValidationOptions = {}): boolean {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
   // Skip validation for certain query types
@@ -147,7 +144,7 @@ function shouldSkipValidation(sql: string): boolean {
     /^SET\s+/i,
   ];
 
-  return skipPatterns.some((pattern) => pattern.test(sql));
+  return skipPatterns.some(pattern => pattern.test(sql));
 }
 
 /**
@@ -230,13 +227,9 @@ export class QueryValidationMiddleware {
     this.options = { ...DEFAULT_OPTIONS, ...options };
   }
 
-  static getInstance(
-    options: QueryValidationOptions = {}
-  ): QueryValidationMiddleware {
+  static getInstance(options: QueryValidationOptions = {}): QueryValidationMiddleware {
     if (!QueryValidationMiddleware.instance) {
-      QueryValidationMiddleware.instance = new QueryValidationMiddleware(
-        options
-      );
+      QueryValidationMiddleware.instance = new QueryValidationMiddleware(options);
     }
     return QueryValidationMiddleware.instance;
   }

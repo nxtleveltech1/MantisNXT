@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React from 'react'
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Package,
@@ -10,7 +10,7 @@ import {
   Warehouse,
   Clock,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import type { InventoryMetrics } from '@/types/inventory';
 
@@ -22,8 +22,8 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
           <Card key={i}>
             <CardContent className="p-6">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-16"></div>
+                <div className="mb-2 h-4 w-24 rounded bg-gray-200"></div>
+                <div className="h-8 w-16 rounded bg-gray-200"></div>
               </div>
             </CardContent>
           </Card>
@@ -49,9 +49,7 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
     return (
       <div className={`flex items-center space-x-1 ${color}`}>
         <Icon className="h-3 w-3" />
-        <span className="text-xs font-medium">
-          {Math.abs(value)}%
-        </span>
+        <span className="text-xs font-medium">{Math.abs(value)}%</span>
       </div>
     );
   };
@@ -62,13 +60,11 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-          <Package className="h-4 w-4 text-muted-foreground" />
+          <Package className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.totalItems.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            Across all warehouses
-          </p>
+          <p className="text-muted-foreground text-xs">Across all warehouses</p>
         </CardContent>
       </Card>
 
@@ -76,13 +72,11 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <DollarSign className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</div>
-          <p className="text-xs text-muted-foreground">
-            Current inventory value
-          </p>
+          <p className="text-muted-foreground text-xs">Current inventory value</p>
         </CardContent>
       </Card>
 
@@ -93,12 +87,8 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">
-            {metrics.lowStockItems}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Items below reorder point
-          </p>
+          <div className="text-2xl font-bold text-yellow-600">{metrics.lowStockItems}</div>
+          <p className="text-muted-foreground text-xs">Items below reorder point</p>
         </CardContent>
       </Card>
 
@@ -109,12 +99,8 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
           <XCircle className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">
-            {metrics.outOfStockItems}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Items with zero stock
-          </p>
+          <div className="text-2xl font-bold text-red-600">{metrics.outOfStockItems}</div>
+          <p className="text-muted-foreground text-xs">Items with zero stock</p>
         </CardContent>
       </Card>
 
@@ -122,13 +108,11 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Warehouses</CardTitle>
-          <Warehouse className="h-4 w-4 text-muted-foreground" />
+          <Warehouse className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.totalWarehouses}</div>
-          <p className="text-xs text-muted-foreground">
-            Active locations
-          </p>
+          <p className="text-muted-foreground text-xs">Active locations</p>
         </CardContent>
       </Card>
 
@@ -140,9 +124,7 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.turnoverRate.toFixed(1)}x</div>
-          <p className="text-xs text-muted-foreground">
-            Annual turnover ratio
-          </p>
+          <p className="text-muted-foreground text-xs">Annual turnover ratio</p>
         </CardContent>
       </Card>
 
@@ -150,13 +132,11 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Avg Days in Stock</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.averageDaysInStock}</div>
-          <p className="text-xs text-muted-foreground">
-            Days inventory on hand
-          </p>
+          <p className="text-muted-foreground text-xs">Days inventory on hand</p>
         </CardContent>
       </Card>
 
@@ -167,12 +147,8 @@ export function InventoryMetricsCards({ metrics }: { metrics: InventoryMetrics |
           <RefreshCw className="h-4 w-4 text-orange-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-orange-600">
-            {metrics.pendingAdjustments}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Awaiting approval
-          </p>
+          <div className="text-2xl font-bold text-orange-600">{metrics.pendingAdjustments}</div>
+          <p className="text-muted-foreground text-xs">Awaiting approval</p>
         </CardContent>
       </Card>
     </div>

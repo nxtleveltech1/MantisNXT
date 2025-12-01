@@ -2,7 +2,7 @@
  * POST /api/serve/soh/import - Bulk import stock snapshots
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { stockService } from '@/lib/services/StockService';
 import { z } from 'zod';
@@ -13,7 +13,10 @@ const StockImportSchema = z.array(
     supplier_product_id: z.string().uuid(),
     qty: z.number().min(0),
     unit_cost: z.number().positive().optional(),
-    as_of_ts: z.string().transform(str => new Date(str)).optional()
+    as_of_ts: z
+      .string()
+      .transform(str => new Date(str))
+      .optional(),
   })
 );
 
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
       success: result.errors.length === 0,
       imported: result.imported,
       failed: stocks.length - result.imported,
-      errors: result.errors
+      errors: result.errors,
     });
   } catch (error) {
     console.error('Stock import error:', error);
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues
+          details: error.issues,
         },
         { status: 400 }
       );
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Import failed'
+        error: error instanceof Error ? error.message : 'Import failed',
       },
       { status: 500 }
     );

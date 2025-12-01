@@ -12,4 +12,3 @@ export function useChat(_options?: unknown) {
     stop: () => {},
   };
 }
-

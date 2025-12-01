@@ -1,7 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-const connectionString =
-  process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL || '';
+const connectionString = process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL || '';
 if (!connectionString) {
   throw new Error('Missing database connection string');
 }
@@ -11,7 +10,10 @@ const sql = neon(connectionString) as unknown;
 // Lightweight wrapper exposing a pg-like query(text, params) API
 type QueryResult<T = unknown> = { rows: T[]; rowCount: number };
 
-async function runQuery<T = unknown>(queryText: string, params?: unknown[]): Promise<QueryResult<T>> {
+async function runQuery<T = unknown>(
+  queryText: string,
+  params?: unknown[]
+): Promise<QueryResult<T>> {
   const hasParams = Array.isArray(params) && params.length > 0;
 
   if (hasParams) {

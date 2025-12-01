@@ -1,9 +1,5 @@
 import { query } from '../../database';
-import type {
-  AuditEvent,
-  DecisionExplanation,
-  WorkflowExplanation,
-} from './types';
+import type { AuditEvent, DecisionExplanation, WorkflowExplanation } from './types';
 
 /**
  * Explainer - Generates human-readable explanations of AI decisions and actions
@@ -12,23 +8,30 @@ export class Explainer {
   private readonly templates = {
     toolExecution: {
       basic: 'Executed {toolName} with parameters: {params}',
-      detailed: 'The AI executed the {toolName} tool with the following parameters: {params}. This resulted in: {result}',
-      expert: 'Tool execution: {toolName}\nParameters: {params}\nResult: {result}\nContext: {context}',
+      detailed:
+        'The AI executed the {toolName} tool with the following parameters: {params}. This resulted in: {result}',
+      expert:
+        'Tool execution: {toolName}\nParameters: {params}\nResult: {result}\nContext: {context}',
     },
     decision: {
       basic: 'Made decision: {decision}',
-      detailed: 'The AI decided to {decision} because: {reasoning}. Alternative options considered: {alternatives}',
-      expert: 'Decision Analysis:\nPrimary Decision: {decision}\nReasoning: {reasoning}\nAlternatives Evaluated: {alternatives}\nConfidence: {confidence}%',
+      detailed:
+        'The AI decided to {decision} because: {reasoning}. Alternative options considered: {alternatives}',
+      expert:
+        'Decision Analysis:\nPrimary Decision: {decision}\nReasoning: {reasoning}\nAlternatives Evaluated: {alternatives}\nConfidence: {confidence}%',
     },
     accessCheck: {
       basic: 'Access {result} for {resource}',
-      detailed: 'Access {result} for resource "{resource}". This ensures proper security controls are maintained.',
-      expert: 'Access Control Decision:\nResource: {resource}\nResult: {result}\nSecurity Context: {context}',
+      detailed:
+        'Access {result} for resource "{resource}". This ensures proper security controls are maintained.',
+      expert:
+        'Access Control Decision:\nResource: {resource}\nResult: {result}\nSecurity Context: {context}',
     },
     error: {
       basic: 'Encountered error: {error}',
       detailed: 'An error occurred: {error}. This has been logged for debugging purposes.',
-      expert: 'Error Analysis:\nError: {error}\nStack Trace: {stack}\nContext: {context}\nSeverity: {severity}',
+      expert:
+        'Error Analysis:\nError: {error}\nStack Trace: {stack}\nContext: {context}\nSeverity: {severity}',
     },
   };
 
@@ -52,7 +55,10 @@ export class Explainer {
       decision: `Execute ${toolName}`,
       reasoning: `The AI determined that executing the ${toolName} tool was necessary to accomplish the current task.`,
       alternatives: [],
-      evidence: [`Tool parameters: ${this.formatParams(params)}`, `Execution result: ${this.formatResult(result)}`],
+      evidence: [
+        `Tool parameters: ${this.formatParams(params)}`,
+        `Execution result: ${this.formatResult(result)}`,
+      ],
       formatted,
     };
   }
@@ -139,7 +145,10 @@ export class Explainer {
   /**
    * Generate summary of audit events
    */
-  generateSummary(events: AuditEvent[], expertiseLevel: 'basic' | 'detailed' | 'expert' = 'detailed'): string {
+  generateSummary(
+    events: AuditEvent[],
+    expertiseLevel: 'basic' | 'detailed' | 'expert' = 'detailed'
+  ): string {
     if (events.length === 0) {
       return 'No events to summarize.';
     }
@@ -394,9 +403,7 @@ Evidence: ${explanation.evidence.join('; ')}`;
    */
   private formatParams(params: Record<string, any>): string {
     try {
-      return Object.keys(params).length > 0
-        ? JSON.stringify(params, null, 2)
-        : 'No parameters';
+      return Object.keys(params).length > 0 ? JSON.stringify(params, null, 2) : 'No parameters';
     } catch {
       return 'Complex parameters (cannot display)';
     }
@@ -453,7 +460,7 @@ Evidence: ${explanation.evidence.join('; ')}`;
    */
   private formatAsText(events: AuditEvent[]): string {
     let text = 'AI AUDIT TRAIL\n';
-    text += '=' .repeat(50) + '\n';
+    text += '='.repeat(50) + '\n';
     text += `Generated: ${new Date().toISOString()}\n`;
     text += `Total Events: ${events.length}\n\n`;
 

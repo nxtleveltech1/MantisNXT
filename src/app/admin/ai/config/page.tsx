@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import AIServiceConfiguration from "@/components/ai/admin/AIServiceConfiguration"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import AIServiceConfiguration from '@/components/ai/admin/AIServiceConfiguration';
 
 /**
  * AI Service Configuration Admin Page
@@ -13,10 +13,7 @@ import AIServiceConfiguration from "@/components/ai/admin/AIServiceConfiguration
 export default function AIConfigPage() {
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Configuration" },
-      ]}
+      breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Configuration' }]}
     >
       <div className="w-full space-y-6">
         <div>
@@ -29,5 +26,5 @@ export default function AIConfigPage() {
         <AIServiceConfiguration />
       </div>
     </AppLayout>
-  )
+  );
 }

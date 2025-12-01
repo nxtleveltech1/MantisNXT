@@ -16,7 +16,7 @@ async function runDiagnostics() {
       'core.supplier_product',
       'core.stock_on_hand',
       'core.product',
-      'core.price_history'
+      'core.price_history',
     ];
 
     console.log('📊 Table Row Counts:');
@@ -38,7 +38,9 @@ async function runDiagnostics() {
     `);
 
     for (const supplier of suppliers.rows) {
-      console.log(`  ${supplier.active ? '✅' : '❌'} ${supplier.name} (${supplier.code || 'no code'}) - ID: ${supplier.supplier_id}`);
+      console.log(
+        `  ${supplier.active ? '✅' : '❌'} ${supplier.name} (${supplier.code || 'no code'}) - ID: ${supplier.supplier_id}`
+      );
     }
 
     console.log('\n🔗 Supplier Products:');
@@ -54,7 +56,9 @@ async function runDiagnostics() {
       console.log('  ❌ NO SUPPLIER PRODUCTS FOUND - This explains why inventory is empty!');
     } else {
       for (const product of supplierProducts.rows) {
-        console.log(`  ✅ ${product.supplier_name}: ${product.supplier_sku} - ${product.name_from_supplier}`);
+        console.log(
+          `  ✅ ${product.supplier_name}: ${product.supplier_sku} - ${product.name_from_supplier}`
+        );
       }
     }
 
@@ -77,7 +81,6 @@ async function runDiagnostics() {
     }
 
     console.log('\n✅ Diagnostics complete!');
-
   } catch (error) {
     console.error('❌ Diagnostic error:', error);
     process.exit(1);

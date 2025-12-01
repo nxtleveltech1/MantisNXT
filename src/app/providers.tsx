@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import type { ReactNode } from 'react'
-import { AuthProvider } from '@/lib/auth/auth-context'
-import { QueryProvider } from '@/lib/query-provider'
-import AsyncBoundary from '@/components/ui/AsyncBoundary'
-import { ThemeProvider } from '@/components/theme-provider'
+import type { ReactNode } from 'react';
+import { AuthProvider } from '@/lib/auth/auth-context';
+import { QueryProvider } from '@/lib/query-provider';
+import AsyncBoundary from '@/components/ui/AsyncBoundary';
+import { ThemeProvider } from '@/components/theme-provider';
 
 interface ProvidersProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
@@ -19,5 +19,5 @@ export function Providers({ children }: ProvidersProps) {
         </AuthProvider>
       </QueryProvider>
     </ThemeProvider>
-  )
+  );
 }

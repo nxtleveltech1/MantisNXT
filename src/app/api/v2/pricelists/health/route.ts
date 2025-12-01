@@ -4,9 +4,13 @@ import { extractionQueue } from '@/lib/services/ExtractionJobQueue';
 
 export async function GET() {
   const checks = {
-    queue: { healthy: true, queue_size: extractionQueue.getQueueSize(), active_jobs: extractionQueue.getActiveCount() },
+    queue: {
+      healthy: true,
+      queue_size: extractionQueue.getQueueSize(),
+      active_jobs: extractionQueue.getActiveCount(),
+    },
     database: { healthy: false, error: '' },
-    storage: { healthy: true }
+    storage: { healthy: true },
   };
 
   try {
@@ -23,7 +27,7 @@ export async function GET() {
     {
       status: allHealthy ? 'healthy' : 'degraded',
       checks,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     },
     { status: allHealthy ? 200 : 503 }
   );

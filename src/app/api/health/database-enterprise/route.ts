@@ -3,7 +3,7 @@
  * Comprehensive health checks with real-time metrics and diagnostics
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { enterpriseDb } from '@/lib/database';
 import getDatabaseMetadata from '@/lib/database-info';
@@ -41,10 +41,12 @@ export async function GET(request: NextRequest) {
       basicQueryTest,
       transactionTest,
       concurrencyTest,
-      schemaValidation
+      schemaValidation,
     ]);
 
-    console.log(`✅ Health check completed in ${totalTime}ms with ${overallHealth.score}% success rate`);
+    console.log(
+      `✅ Health check completed in ${totalTime}ms with ${overallHealth.score}% success rate`
+    );
 
     return NextResponse.json({
       success: true,
@@ -62,42 +64,44 @@ export async function GET(request: NextRequest) {
           waitingConnections: connectionStatus.waitingConnections,
           failedConnections: connectionStatus.failedConnections,
           avgResponseTimeMs: Math.round(connectionStatus.avgResponseTime),
-          uptimeMs: connectionStatus.uptime
-        }
+          uptimeMs: connectionStatus.uptime,
+        },
       },
 
       tests: {
         basicQuery: basicQueryTest,
         transactions: transactionTest,
         concurrency: concurrencyTest,
-        schema: schemaValidation
+        schema: schemaValidation,
       },
 
       server: serverInfo,
       performance: performanceMetrics,
-      recommendations: generateHealthRecommendations(overallHealth, connectionStatus)
+      recommendations: generateHealthRecommendations(overallHealth, connectionStatus),
     });
-
   } catch (error) {
     const errorTime = Date.now() - startTime;
     console.error(`❌ Health check failed after ${errorTime}ms:`, error);
 
-    return NextResponse.json({
-      success: false,
-      timestamp: new Date().toISOString(),
-      checkDurationMs: errorTime,
-      error: {
-        message: error instanceof Error ? error.message : 'Unknown database error',
-        type: error instanceof Error ? error.constructor.name : 'UnknownError',
-        connectionManager: enterpriseDb.getStatus()
+    return NextResponse.json(
+      {
+        success: false,
+        timestamp: new Date().toISOString(),
+        checkDurationMs: errorTime,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown database error',
+          type: error instanceof Error ? error.constructor.name : 'UnknownError',
+          connectionManager: enterpriseDb.getStatus(),
+        },
+        recommendations: [
+          `Check database server availability at ${metadata.host}:${metadata.port}`,
+          'Verify network connectivity and firewall rules',
+          'Review database server logs for errors',
+          'Consider scaling database resources',
+        ],
       },
-      recommendations: [
-        `Check database server availability at ${metadata.host}:${metadata.port}`,
-        'Verify network connectivity and firewall rules',
-        'Review database server logs for errors',
-        'Consider scaling database resources'
-      ]
-    }, { status: 500 });
+      { status: 500 }
+    );
   }
 }
 
@@ -120,16 +124,15 @@ async function performBasicQueryTest(): Promise<TestResult> {
       details: {
         currentTime: result.rows[0].current_time,
         version: result.rows[0].pg_version,
-        database: result.rows[0].db_name
-      }
+        database: result.rows[0].db_name,
+      },
     };
-
   } catch (error) {
     return {
       name: 'Basic Query Test',
       status: 'error',
       durationMs: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -138,7 +141,7 @@ async function performTransactionTest(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
-    const result = await enterpriseDb.transaction(async (client) => {
+    const result = await enterpriseDb.transaction(async client => {
       await client.query('CREATE TEMPORARY TABLE health_test_tx (id INTEGER)');
       await client.query('INSERT INTO health_test_tx VALUES (1)');
       const selectResult = await client.query('SELECT COUNT(*) as count FROM health_test_tx');
@@ -152,16 +155,15 @@ async function performTransactionTest(): Promise<TestResult> {
       durationMs: Date.now() - startTime,
       details: {
         operationsCompleted: 4,
-        recordsProcessed: parseInt(result)
-      }
+        recordsProcessed: parseInt(result),
+      },
     };
-
   } catch (error) {
     return {
       name: 'Transaction Test',
       status: 'error',
       durationMs: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -170,9 +172,9 @@ async function performConcurrencyTest(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
-    const concurrentQueries = Array(5).fill(0).map((_, i) =>
-      enterpriseDb.query('SELECT $1 as query_id, NOW() as execution_time', [i])
-    );
+    const concurrentQueries = Array(5)
+      .fill(0)
+      .map((_, i) => enterpriseDb.query('SELECT $1 as query_id, NOW() as execution_time', [i]));
 
     const results = await Promise.all(concurrentQueries);
     const successful = results.filter(r => r.rows && r.rows.length > 0).length;
@@ -184,16 +186,15 @@ async function performConcurrencyTest(): Promise<TestResult> {
       details: {
         totalQueries: 5,
         successfulQueries: successful,
-        successRate: (successful / 5) * 100
-      }
+        successRate: (successful / 5) * 100,
+      },
     };
-
   } catch (error) {
     return {
       name: 'Concurrency Test',
       status: 'error',
       durationMs: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -230,18 +231,17 @@ async function getServerInformation(): Promise<unknown> {
         maintenanceWorkMem: serverQuery.rows[0].maintenance_work_mem,
         checkpointCompletionTarget: parseFloat(serverQuery.rows[0].checkpoint_completion_target),
         walBuffers: serverQuery.rows[0].wal_buffers,
-        defaultStatisticsTarget: parseInt(serverQuery.rows[0].default_statistics_target)
+        defaultStatisticsTarget: parseInt(serverQuery.rows[0].default_statistics_target),
       },
       connectionStats: {
         total: parseInt(statsQuery.rows[0].total_connections),
         active: parseInt(statsQuery.rows[0].active_connections),
-        idle: parseInt(statsQuery.rows[0].idle_connections)
-      }
+        idle: parseInt(statsQuery.rows[0].idle_connections),
+      },
     };
-
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Failed to get server information'
+      error: error instanceof Error ? error.message : 'Failed to get server information',
     };
   }
 }
@@ -259,8 +259,11 @@ async function validateDatabaseSchema(): Promise<TestResult> {
     `);
 
     const essentialTables = [
-      'organizations', 'suppliers', 'inventory_items',
-      'stock_movements', 'upload_sessions'
+      'organizations',
+      'suppliers',
+      'inventory_items',
+      'stock_movements',
+      'upload_sessions',
     ];
 
     const existingTables = tablesQuery.rows.map(row => row.table_name);
@@ -268,12 +271,23 @@ async function validateDatabaseSchema(): Promise<TestResult> {
 
     // Check table health
     const tableHealth = await Promise.all(
-      existingTables.slice(0, 10).map(async (tableName) => {
+      existingTables.slice(0, 10).map(async tableName => {
         try {
-          const countResult = await enterpriseDb.query(`SELECT COUNT(*) as count FROM "${tableName}"`);
-          return { table: tableName, records: parseInt(countResult.rows[0].count), status: 'healthy' };
+          const countResult = await enterpriseDb.query(
+            `SELECT COUNT(*) as count FROM "${tableName}"`
+          );
+          return {
+            table: tableName,
+            records: parseInt(countResult.rows[0].count),
+            status: 'healthy',
+          };
         } catch (error) {
-          return { table: tableName, records: 0, status: 'error', error: error instanceof Error ? error.message : 'Unknown' };
+          return {
+            table: tableName,
+            records: 0,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Unknown',
+          };
         }
       })
     );
@@ -290,16 +304,15 @@ async function validateDatabaseSchema(): Promise<TestResult> {
         essentialTables: essentialTables.length,
         missingTables: missingTables,
         tableHealth: tableHealth,
-        healthScore: totalChecked > 0 ? Math.round((healthyTables / totalChecked) * 100) : 0
-      }
+        healthScore: totalChecked > 0 ? Math.round((healthyTables / totalChecked) * 100) : 0,
+      },
     };
-
   } catch (error) {
     return {
       name: 'Schema Validation',
       status: 'error',
       durationMs: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -338,12 +351,11 @@ async function gatherPerformanceMetrics(): Promise<unknown> {
     return {
       statistics: performanceQuery.rows.length,
       indexes: indexQuery.rows.length,
-      indexDetails: indexQuery.rows.slice(0, 10)
+      indexDetails: indexQuery.rows.slice(0, 10),
     };
-
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Failed to gather performance metrics'
+      error: error instanceof Error ? error.message : 'Failed to gather performance metrics',
     };
   }
 }
@@ -377,7 +389,7 @@ function calculateOverallHealth(tests: TestResult[]): OverallHealth {
   return {
     status,
     score,
-    summary: `${successfulTests}/${totalTests} tests passed successfully`
+    summary: `${successfulTests}/${totalTests} tests passed successfully`,
   };
 }
 
@@ -385,23 +397,33 @@ function generateHealthRecommendations(health: OverallHealth, connectionStatus: 
   const recommendations: string[] = [];
 
   if (health.score < 100) {
-    recommendations.push(`Health score is ${health.score}%. Review failed tests for improvement opportunities.`);
+    recommendations.push(
+      `Health score is ${health.score}%. Review failed tests for improvement opportunities.`
+    );
   }
 
   if (connectionStatus.failedConnections > 0) {
-    recommendations.push(`${connectionStatus.failedConnections} connection failures detected. Monitor connection stability.`);
+    recommendations.push(
+      `${connectionStatus.failedConnections} connection failures detected. Monitor connection stability.`
+    );
   }
 
   if (connectionStatus.avgResponseTime > 1000) {
-    recommendations.push(`Average response time is ${Math.round(connectionStatus.avgResponseTime)}ms. Consider query optimization.`);
+    recommendations.push(
+      `Average response time is ${Math.round(connectionStatus.avgResponseTime)}ms. Consider query optimization.`
+    );
   }
 
   if (connectionStatus.waitingConnections > 0) {
-    recommendations.push(`${connectionStatus.waitingConnections} connections waiting. Consider increasing pool size.`);
+    recommendations.push(
+      `${connectionStatus.waitingConnections} connections waiting. Consider increasing pool size.`
+    );
   }
 
   if (connectionStatus.state !== 'healthy') {
-    recommendations.push(`Connection manager state is ${connectionStatus.state}. Review connection configuration.`);
+    recommendations.push(
+      `Connection manager state is ${connectionStatus.state}. Review connection configuration.`
+    );
   }
 
   if (recommendations.length === 0) {

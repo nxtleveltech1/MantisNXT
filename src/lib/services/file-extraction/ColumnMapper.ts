@@ -489,7 +489,7 @@ export function mapColumns(headers: string[]): ColumnMappingWithConfidence {
   }
 
   // Find unmapped headers
-  const unmappedHeaders = headers.filter((h) => !usedHeaders.has(h));
+  const unmappedHeaders = headers.filter(h => !usedHeaders.has(h));
 
   return {
     mapping,
@@ -506,12 +506,7 @@ export function validateMapping(mappingResult: ColumnMappingWithConfidence): {
   missing: string[];
   lowConfidence: Array<{ field: string; confidence: number }>;
 } {
-  const required: Array<keyof ColumnMapping> = [
-    'supplier_sku',
-    'name',
-    'price',
-    'uom',
-  ];
+  const required: Array<keyof ColumnMapping> = ['supplier_sku', 'name', 'price', 'uom'];
 
   const missing: string[] = [];
   const lowConfidence: Array<{ field: string; confidence: number }> = [];

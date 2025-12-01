@@ -1,17 +1,23 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Mail,
   Server,
@@ -24,28 +30,28 @@ import {
   AlertTriangle,
   Copy,
   FileText,
-  Bell
-} from "lucide-react"
+  Bell,
+} from 'lucide-react';
 
 interface SMTPSettings {
-  host: string
-  port: number
-  encryption: 'none' | 'tls' | 'ssl'
-  username: string
-  password: string
-  fromEmail: string
-  fromName: string
-  replyToEmail: string
-  testEmail: string
+  host: string;
+  port: number;
+  encryption: 'none' | 'tls' | 'ssl';
+  username: string;
+  password: string;
+  fromEmail: string;
+  fromName: string;
+  replyToEmail: string;
+  testEmail: string;
 }
 
 interface EmailTemplate {
-  id: string
-  name: string
-  subject: string
-  content: string
-  variables: string[]
-  enabled: boolean
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  variables: string[];
+  enabled: boolean;
 }
 
 export default function EmailSettingsPage() {
@@ -58,83 +64,90 @@ export default function EmailSettingsPage() {
     fromEmail: 'noreply@mantisnxt.com',
     fromName: 'MantisNXT System',
     replyToEmail: 'support@mantisnxt.com',
-    testEmail: ''
-  })
+    testEmail: '',
+  });
 
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([
     {
       id: 'welcome',
       name: 'Welcome Email',
       subject: 'Welcome to {{company_name}}',
-      content: 'Dear {{user_name}},\n\nWelcome to {{company_name}}! Your account has been created successfully.\n\nBest regards,\nThe {{company_name}} Team',
+      content:
+        'Dear {{user_name}},\n\nWelcome to {{company_name}}! Your account has been created successfully.\n\nBest regards,\nThe {{company_name}} Team',
       variables: ['company_name', 'user_name'],
-      enabled: true
+      enabled: true,
     },
     {
       id: 'po_approval',
       name: 'Purchase Order Approval',
       subject: 'Purchase Order #{{po_number}} Requires Approval',
-      content: 'A new purchase order requires your approval:\n\nPO Number: {{po_number}}\nSupplier: {{supplier_name}}\nAmount: {{amount}}\n\nPlease review and approve at: {{approval_link}}',
+      content:
+        'A new purchase order requires your approval:\n\nPO Number: {{po_number}}\nSupplier: {{supplier_name}}\nAmount: {{amount}}\n\nPlease review and approve at: {{approval_link}}',
       variables: ['po_number', 'supplier_name', 'amount', 'approval_link'],
-      enabled: true
+      enabled: true,
     },
     {
       id: 'invoice_reminder',
       name: 'Invoice Payment Reminder',
       subject: 'Payment Reminder - Invoice #{{invoice_number}}',
-      content: 'This is a reminder that Invoice #{{invoice_number}} is due for payment.\n\nDue Date: {{due_date}}\nAmount: {{amount}}\n\nPlease process payment at your earliest convenience.',
+      content:
+        'This is a reminder that Invoice #{{invoice_number}} is due for payment.\n\nDue Date: {{due_date}}\nAmount: {{amount}}\n\nPlease process payment at your earliest convenience.',
       variables: ['invoice_number', 'due_date', 'amount'],
-      enabled: true
-    }
-  ])
+      enabled: true,
+    },
+  ]);
 
-  const [hasChanges, setHasChanges] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
   const handleSMTPChange = (field: keyof SMTPSettings, value: string | number) => {
-    setSMTPSettings(prev => ({ ...prev, [field]: value }))
-    setHasChanges(true)
-  }
+    setSMTPSettings(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
 
-  const handleTemplateChange = (templateId: string, field: keyof EmailTemplate, value: string | boolean) => {
-    setEmailTemplates(prev => prev.map(template =>
-      template.id === templateId
-        ? { ...template, [field]: value }
-        : template
-    ))
-    setHasChanges(true)
-  }
+  const handleTemplateChange = (
+    templateId: string,
+    field: keyof EmailTemplate,
+    value: string | boolean
+  ) => {
+    setEmailTemplates(prev =>
+      prev.map(template =>
+        template.id === templateId ? { ...template, [field]: value } : template
+      )
+    );
+    setHasChanges(true);
+  };
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setHasChanges(false)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setHasChanges(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to save settings:', error)
+      console.error('Failed to save settings:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleTestEmail = async () => {
-    if (!smtpSettings.testEmail) return
+    if (!smtpSettings.testEmail) return;
 
-    setTestStatus('testing')
+    setTestStatus('testing');
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setTestStatus('success')
-      setTimeout(() => setTestStatus('idle'), 3000)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setTestStatus('success');
+      setTimeout(() => setTestStatus('idle'), 3000);
     } catch (error) {
-      setTestStatus('error')
-      setTimeout(() => setTestStatus('idle'), 3000)
+      setTestStatus('error');
+      setTimeout(() => setTestStatus('idle'), 3000);
     }
-  }
+  };
 
   const handleReset = () => {
     setSMTPSettings({
@@ -146,14 +159,14 @@ export default function EmailSettingsPage() {
       fromEmail: 'noreply@mantisnxt.com',
       fromName: 'MantisNXT System',
       replyToEmail: 'support@mantisnxt.com',
-      testEmail: ''
-    })
-    setHasChanges(false)
-  }
+      testEmail: '',
+    });
+    setHasChanges(false);
+  };
 
   const copyTemplate = (content: string) => {
-    navigator.clipboard.writeText(content)
-  }
+    navigator.clipboard.writeText(content);
+  };
 
   return (
     <div className="space-y-6">
@@ -161,30 +174,21 @@ export default function EmailSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Email Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Configure SMTP settings and email templates
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Configure SMTP settings and email templates</p>
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
-              <AlertTriangle className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-600">
+              <AlertTriangle className="mr-1 h-3 w-3" />
               Unsaved Changes
             </Badge>
           )}
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={!hasChanges || isLoading}
-          >
-            <Undo2 className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleReset} disabled={!hasChanges || isLoading}>
+            <Undo2 className="mr-2 h-4 w-4" />
             Reset
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isLoading}
-          >
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={!hasChanges || isLoading}>
+            <Save className="mr-2 h-4 w-4" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
@@ -192,7 +196,7 @@ export default function EmailSettingsPage() {
 
       {/* Success Alert */}
       {showSuccess && (
-        <Alert className="bg-green-50 border-green-200">
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             Email settings saved successfully!
@@ -218,7 +222,7 @@ export default function EmailSettingsPage() {
 
         {/* SMTP Configuration */}
         <TabsContent value="smtp">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* SMTP Settings */}
             <Card className="lg:col-span-2">
               <CardHeader>
@@ -228,13 +232,13 @@ export default function EmailSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="smtpHost">SMTP Host</Label>
                     <Input
                       id="smtpHost"
                       value={smtpSettings.host}
-                      onChange={(e) => handleSMTPChange('host', e.target.value)}
+                      onChange={e => handleSMTPChange('host', e.target.value)}
                       placeholder="smtp.gmail.com"
                     />
                   </div>
@@ -244,7 +248,7 @@ export default function EmailSettingsPage() {
                       id="smtpPort"
                       type="number"
                       value={smtpSettings.port}
-                      onChange={(e) => handleSMTPChange('port', parseInt(e.target.value))}
+                      onChange={e => handleSMTPChange('port', parseInt(e.target.value))}
                       placeholder="587"
                     />
                   </div>
@@ -254,7 +258,7 @@ export default function EmailSettingsPage() {
                   <Label>Encryption</Label>
                   <Select
                     value={smtpSettings.encryption}
-                    onValueChange={(value) => handleSMTPChange('encryption', value)}
+                    onValueChange={value => handleSMTPChange('encryption', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -269,13 +273,13 @@ export default function EmailSettingsPage() {
 
                 <Separator />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
                       id="username"
                       value={smtpSettings.username}
-                      onChange={(e) => handleSMTPChange('username', e.target.value)}
+                      onChange={e => handleSMTPChange('username', e.target.value)}
                       placeholder="your-email@domain.com"
                     />
                   </div>
@@ -285,7 +289,7 @@ export default function EmailSettingsPage() {
                       id="password"
                       type="password"
                       value={smtpSettings.password}
-                      onChange={(e) => handleSMTPChange('password', e.target.value)}
+                      onChange={e => handleSMTPChange('password', e.target.value)}
                       placeholder="••••••••"
                     />
                   </div>
@@ -295,19 +299,19 @@ export default function EmailSettingsPage() {
 
                 {/* Email Configuration */}
                 <div className="space-y-4">
-                  <h3 className="font-medium flex items-center gap-2">
+                  <h3 className="flex items-center gap-2 font-medium">
                     <Mail className="h-4 w-4" />
                     Email Configuration
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="fromEmail">From Email</Label>
                       <Input
                         id="fromEmail"
                         type="email"
                         value={smtpSettings.fromEmail}
-                        onChange={(e) => handleSMTPChange('fromEmail', e.target.value)}
+                        onChange={e => handleSMTPChange('fromEmail', e.target.value)}
                         placeholder="noreply@company.com"
                       />
                     </div>
@@ -316,7 +320,7 @@ export default function EmailSettingsPage() {
                       <Input
                         id="fromName"
                         value={smtpSettings.fromName}
-                        onChange={(e) => handleSMTPChange('fromName', e.target.value)}
+                        onChange={e => handleSMTPChange('fromName', e.target.value)}
                         placeholder="Company Name"
                       />
                     </div>
@@ -328,7 +332,7 @@ export default function EmailSettingsPage() {
                       id="replyToEmail"
                       type="email"
                       value={smtpSettings.replyToEmail}
-                      onChange={(e) => handleSMTPChange('replyToEmail', e.target.value)}
+                      onChange={e => handleSMTPChange('replyToEmail', e.target.value)}
                       placeholder="support@company.com"
                     />
                   </div>
@@ -351,7 +355,7 @@ export default function EmailSettingsPage() {
                     id="testEmail"
                     type="email"
                     value={smtpSettings.testEmail}
-                    onChange={(e) => handleSMTPChange('testEmail', e.target.value)}
+                    onChange={e => handleSMTPChange('testEmail', e.target.value)}
                     placeholder="test@example.com"
                   />
                 </div>
@@ -361,12 +365,12 @@ export default function EmailSettingsPage() {
                   disabled={!smtpSettings.testEmail || testStatus === 'testing'}
                   className="w-full"
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="mr-2 h-4 w-4" />
                   {testStatus === 'testing' ? 'Sending...' : 'Send Test Email'}
                 </Button>
 
                 {testStatus === 'success' && (
-                  <Alert className="bg-green-50 border-green-200">
+                  <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
                       Test email sent successfully!
@@ -375,7 +379,7 @@ export default function EmailSettingsPage() {
                 )}
 
                 {testStatus === 'error' && (
-                  <Alert className="bg-red-50 border-red-200">
+                  <Alert className="border-red-200 bg-red-50">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
                     <AlertDescription className="text-red-800">
                       Failed to send test email. Check your SMTP settings.
@@ -392,17 +396,23 @@ export default function EmailSettingsPage() {
                     <div className="h-2 w-2 rounded-full bg-green-500"></div>
                     <span className="text-sm text-green-600">Connected</span>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Last tested: Just now
-                  </p>
+                  <p className="text-xs text-gray-500">Last tested: Just now</p>
                 </div>
 
                 {/* SMTP Info */}
-                <div className="p-3 bg-gray-50 rounded-lg text-xs space-y-1">
-                  <p><strong>Host:</strong> {smtpSettings.host}</p>
-                  <p><strong>Port:</strong> {smtpSettings.port}</p>
-                  <p><strong>Encryption:</strong> {smtpSettings.encryption.toUpperCase()}</p>
-                  <p><strong>From:</strong> {smtpSettings.fromName} &lt;{smtpSettings.fromEmail}&gt;</p>
+                <div className="space-y-1 rounded-lg bg-gray-50 p-3 text-xs">
+                  <p>
+                    <strong>Host:</strong> {smtpSettings.host}
+                  </p>
+                  <p>
+                    <strong>Port:</strong> {smtpSettings.port}
+                  </p>
+                  <p>
+                    <strong>Encryption:</strong> {smtpSettings.encryption.toUpperCase()}
+                  </p>
+                  <p>
+                    <strong>From:</strong> {smtpSettings.fromName} &lt;{smtpSettings.fromEmail}&gt;
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -411,7 +421,7 @@ export default function EmailSettingsPage() {
 
         {/* Email Templates */}
         <TabsContent value="templates">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Templates List */}
             <Card>
               <CardHeader>
@@ -419,11 +429,11 @@ export default function EmailSettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {emailTemplates.map((template) => (
+                  {emailTemplates.map(template => (
                     <button
                       type="button"
                       key={template.id}
-                      className={`w-full text-left p-3 border rounded-lg transition-colors ${
+                      className={`w-full rounded-lg border p-3 text-left transition-colors ${
                         selectedTemplate?.id === template.id
                           ? 'border-blue-200 bg-blue-50'
                           : 'hover:bg-gray-50'
@@ -436,15 +446,15 @@ export default function EmailSettingsPage() {
                           <p className="text-sm text-gray-500">{template.subject}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={template.enabled ? "default" : "secondary"}>
-                            {template.enabled ? "Enabled" : "Disabled"}
+                          <Badge variant={template.enabled ? 'default' : 'secondary'}>
+                            {template.enabled ? 'Enabled' : 'Disabled'}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedTemplate(template)
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedTemplate(template);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -472,7 +482,7 @@ export default function EmailSettingsPage() {
                         <Checkbox
                           id="enabled"
                           checked={selectedTemplate.enabled}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             handleTemplateChange(selectedTemplate.id, 'enabled', Boolean(checked))
                           }
                         />
@@ -485,7 +495,7 @@ export default function EmailSettingsPage() {
                         size="sm"
                         onClick={() => copyTemplate(selectedTemplate.content)}
                       >
-                        <Copy className="h-4 w-4 mr-2" />
+                        <Copy className="mr-2 h-4 w-4" />
                         Copy
                       </Button>
                     </div>
@@ -495,7 +505,7 @@ export default function EmailSettingsPage() {
                       <Input
                         id="subject"
                         value={selectedTemplate.subject}
-                        onChange={(e) =>
+                        onChange={e =>
                           handleTemplateChange(selectedTemplate.id, 'subject', e.target.value)
                         }
                         placeholder="Email subject"
@@ -507,7 +517,7 @@ export default function EmailSettingsPage() {
                       <Textarea
                         id="content"
                         value={selectedTemplate.content}
-                        onChange={(e) =>
+                        onChange={e =>
                           handleTemplateChange(selectedTemplate.id, 'content', e.target.value)
                         }
                         placeholder="Email content"
@@ -519,7 +529,7 @@ export default function EmailSettingsPage() {
                     <div className="space-y-2">
                       <Label>Available Variables</Label>
                       <div className="flex flex-wrap gap-2">
-                        {selectedTemplate.variables.map((variable) => (
+                        {selectedTemplate.variables.map(variable => (
                           <Badge key={variable} variant="outline" className="text-xs">
                             {`{{${variable}}}`}
                           </Badge>
@@ -533,8 +543,8 @@ export default function EmailSettingsPage() {
                     {/* Preview */}
                     <div className="space-y-2">
                       <Label>Preview</Label>
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm font-medium mb-2">
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="mb-2 text-sm font-medium">
                           Subject: {selectedTemplate.subject}
                         </p>
                         <div className="text-sm whitespace-pre-wrap">
@@ -544,8 +554,8 @@ export default function EmailSettingsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <div className="py-8 text-center text-gray-500">
+                    <FileText className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                     <p>Select a template to edit</p>
                   </div>
                 )}
@@ -632,7 +642,7 @@ export default function EmailSettingsPage() {
 
                 <div className="space-y-4">
                   <h3 className="font-medium">Delivery Preferences</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Default Send Time</Label>
                       <Select defaultValue="immediate">
@@ -669,5 +679,5 @@ export default function EmailSettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

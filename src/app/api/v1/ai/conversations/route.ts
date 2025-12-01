@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           limit: results.length,
           total: results.length,
           hasMore: false,
-        },
+        }
       );
     }
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
         limit,
         total: conversations.length,
         hasMore: offset + limit < conversations.length,
-      },
+      }
     );
   } catch (error) {
     return handleAIError(error);
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       validated.conversationId,
       validated.role,
       validated.content,
-      validated.context,
+      validated.context
     );
 
     if (!message) {

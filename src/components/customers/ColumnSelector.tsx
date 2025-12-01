@@ -57,23 +57,19 @@ export function ColumnSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <div className="px-2 py-1.5 text-sm font-semibold text-gray-700">
-          Toggle Columns
-        </div>
-        <div className="h-px bg-gray-200 my-1" />
+        <div className="px-2 py-1.5 text-sm font-semibold text-gray-700">Toggle Columns</div>
+        <div className="my-1 h-px bg-gray-200" />
         {columns.map(column => (
           <DropdownMenuItem
             key={column.id}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               toggleColumn(column.id);
             }}
-            className="flex items-center justify-between cursor-pointer"
+            className="flex cursor-pointer items-center justify-between"
           >
             <span>{column.label}</span>
-            {isColumnVisible(column.id) && (
-              <Check className="h-4 w-4 text-blue-600" />
-            )}
+            {isColumnVisible(column.id) && <Check className="h-4 w-4 text-blue-600" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

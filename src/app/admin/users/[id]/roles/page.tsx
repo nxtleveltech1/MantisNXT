@@ -1,105 +1,95 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import type { User} from '@/types/auth';
-import { USER_ROLES } from '@/types/auth'
-import { authProvider } from '@/lib/auth/mock-provider'
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import type { User } from '@/types/auth';
+import { USER_ROLES } from '@/types/auth';
+import { authProvider } from '@/lib/auth/mock-provider';
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Calendar } from '@/components/ui/calendar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  Shield,
-  Save,
-  Calendar as CalendarIcon,
-  Info,
-  ChevronRight,
-} from 'lucide-react'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Shield, Save, Calendar as CalendarIcon, Info, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface RoleAssignment {
-  role: string
-  effectiveFrom: Date
-  effectiveTo?: Date
+  role: string;
+  effectiveFrom: Date;
+  effectiveTo?: Date;
 }
 
 export default function UserRolesPage() {
-  const params = useParams()
-  const router = useRouter()
-  const userId = params?.id as string
+  const params = useParams();
+  const router = useRouter();
+  const userId = params?.id as string;
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const [selectedRole, setSelectedRole] = useState<string>('')
-  const [effectiveFrom, setEffectiveFrom] = useState<Date>(new Date())
-  const [effectiveTo, setEffectiveTo] = useState<Date | undefined>()
-  const [hasEndDate, setHasEndDate] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [effectiveFrom, setEffectiveFrom] = useState<Date>(new Date());
+  const [effectiveTo, setEffectiveTo] = useState<Date | undefined>();
+  const [hasEndDate, setHasEndDate] = useState(false);
 
   const loadUser = useCallback(async () => {
     try {
-      setIsLoading(true)
-      const currentUser = await authProvider.getCurrentUser()
+      setIsLoading(true);
+      const currentUser = await authProvider.getCurrentUser();
       if (!currentUser) {
-        router.push('/auth/login')
-        return
+        router.push('/auth/login');
+        return;
       }
 
-      const users = await authProvider.getUsersByOrganization(currentUser.org_id)
-      const foundUser = users.find((u) => u.id === userId)
+      const users = await authProvider.getUsersByOrganization(currentUser.org_id);
+      const foundUser = users.find(u => u.id === userId);
 
       if (!foundUser) {
-        setError('User not found')
-        return
+        setError('User not found');
+        return;
       }
 
-      setUser(foundUser)
-      setSelectedRole(foundUser.role)
+      setUser(foundUser);
+      setSelectedRole(foundUser.role);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load user')
+      setError(err instanceof Error ? err.message : 'Failed to load user');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router, userId])
+  }, [router, userId]);
 
   useEffect(() => {
-    loadUser()
-  }, [loadUser])
+    loadUser();
+  }, [loadUser]);
 
   const handleSave = async () => {
-    if (!user || !selectedRole) return
+    if (!user || !selectedRole) return;
 
     try {
-      setIsSaving(true)
-      setError(null)
-      setSuccess(null)
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
 
-      await authProvider.updateUser(userId, { role: selectedRole as unknown })
-      setSuccess('Role assignment updated successfully')
-      await loadUser()
+      await authProvider.updateUser(userId, { role: selectedRole as unknown });
+      setSuccess('Role assignment updated successfully');
+      await loadUser();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update role')
+      setError(err instanceof Error ? err.message : 'Failed to update role');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -111,11 +101,11 @@ export default function UserRolesPage() {
           { label: 'Roles' },
         ]}
       >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   if (!user) {
@@ -131,20 +121,20 @@ export default function UserRolesPage() {
           <AlertDescription>User not found</AlertDescription>
         </Alert>
       </AppLayout>
-    )
+    );
   }
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   const getPermissionPreview = (roleValue: string) => {
-    const role = USER_ROLES.find((r) => r.value === roleValue)
-    if (!role) return []
+    const role = USER_ROLES.find(r => r.value === roleValue);
+    if (!role) return [];
 
     // Mock permission mapping based on role
     const permissionMap: Record<string, string[]> = {
@@ -171,21 +161,12 @@ export default function UserRolesPage() {
         'Inventory viewing',
         'Department reports',
       ],
-      user: [
-        'View suppliers',
-        'Create orders',
-        'View inventory',
-        'Basic reports',
-      ],
-      viewer: [
-        'Read-only access',
-        'View suppliers',
-        'View reports',
-      ],
-    }
+      user: ['View suppliers', 'Create orders', 'View inventory', 'Basic reports'],
+      viewer: ['Read-only access', 'View suppliers', 'View reports'],
+    };
 
-    return permissionMap[roleValue] || []
-  }
+    return permissionMap[roleValue] || [];
+  };
 
   return (
     <AppLayout
@@ -206,7 +187,9 @@ export default function UserRolesPage() {
             </Avatar>
             <div>
               <h1 className="text-3xl font-bold">Role Management</h1>
-              <p className="text-muted-foreground">{user.name} - {user.email}</p>
+              <p className="text-muted-foreground">
+                {user.name} - {user.email}
+              </p>
             </div>
           </div>
 
@@ -218,7 +201,7 @@ export default function UserRolesPage() {
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
                 Save Changes
               </>
             )}
@@ -238,7 +221,7 @@ export default function UserRolesPage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Current Role */}
           <Card className="lg:col-span-1">
             <CardHeader>
@@ -246,14 +229,14 @@ export default function UserRolesPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-muted/50 rounded-lg border p-4">
+                  <div className="mb-2 flex items-center justify-between">
                     <Badge variant="default">
-                      {USER_ROLES.find((r) => r.value === user.role)?.label}
+                      {USER_ROLES.find(r => r.value === user.role)?.label}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {USER_ROLES.find((r) => r.value === user.role)?.description}
+                  <p className="text-muted-foreground text-sm">
+                    {USER_ROLES.find(r => r.value === user.role)?.description}
                   </p>
                 </div>
 
@@ -261,11 +244,9 @@ export default function UserRolesPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
-                    <Info className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Info className="text-muted-foreground mr-2 h-4 w-4" />
                     <span className="text-muted-foreground">Assigned:</span>
-                    <span className="ml-auto font-medium">
-                      {format(user.created_at, 'PP')}
-                    </span>
+                    <span className="ml-auto font-medium">{format(user.created_at, 'PP')}</span>
                   </div>
                 </div>
               </div>
@@ -284,37 +265,35 @@ export default function UserRolesPage() {
               {/* Role Selection */}
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Select Role</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {USER_ROLES.map((role) => (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {USER_ROLES.map(role => (
                     <button
                       key={role.value}
                       onClick={() => setSelectedRole(role.value)}
                       className={cn(
-                        'flex items-start space-x-3 p-4 border rounded-lg text-left transition-all',
+                        'flex items-start space-x-3 rounded-lg border p-4 text-left transition-all',
                         selectedRole === role.value
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary ring-offset-2'
+                          ? 'border-primary bg-primary/5 ring-primary ring-2 ring-offset-2'
                           : 'hover:border-primary/50'
                       )}
                     >
                       <div className="mt-0.5">
                         <div
                           className={cn(
-                            'h-4 w-4 rounded-full border-2 flex items-center justify-center',
+                            'flex h-4 w-4 items-center justify-center rounded-full border-2',
                             selectedRole === role.value
                               ? 'border-primary'
                               : 'border-muted-foreground'
                           )}
                         >
                           {selectedRole === role.value && (
-                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            <div className="bg-primary h-2 w-2 rounded-full" />
                           )}
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold mb-1">{role.label}</div>
-                        <p className="text-sm text-muted-foreground">
-                          {role.description}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 font-semibold">{role.label}</div>
+                        <p className="text-muted-foreground text-sm">{role.description}</p>
                       </div>
                     </button>
                   ))}
@@ -327,7 +306,7 @@ export default function UserRolesPage() {
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Effective Date Range</Label>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Effective From */}
                   <div className="space-y-2">
                     <Label htmlFor="effective-from">Effective From</Label>
@@ -342,18 +321,14 @@ export default function UserRolesPage() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {effectiveFrom ? (
-                            format(effectiveFrom, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {effectiveFrom ? format(effectiveFrom, 'PPP') : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={effectiveFrom}
-                          onSelect={(date) => date && setEffectiveFrom(date)}
+                          onSelect={date => date && setEffectiveFrom(date)}
                           initialFocus
                         />
                       </PopoverContent>
@@ -368,14 +343,14 @@ export default function UserRolesPage() {
                         <Checkbox
                           id="has-end-date"
                           checked={hasEndDate}
-                          onCheckedChange={(checked) => {
-                            setHasEndDate(!!checked)
-                            if (!checked) setEffectiveTo(undefined)
+                          onCheckedChange={checked => {
+                            setHasEndDate(!!checked);
+                            if (!checked) setEffectiveTo(undefined);
                           }}
                         />
                         <Label
                           htmlFor="has-end-date"
-                          className="text-sm font-normal cursor-pointer"
+                          className="cursor-pointer text-sm font-normal"
                         >
                           Set end date
                         </Label>
@@ -393,11 +368,7 @@ export default function UserRolesPage() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {effectiveTo ? (
-                            format(effectiveTo, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {effectiveTo ? format(effectiveTo, 'PPP') : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -405,7 +376,7 @@ export default function UserRolesPage() {
                           mode="single"
                           selected={effectiveTo}
                           onSelect={setEffectiveTo}
-                          disabled={(date) => date < effectiveFrom}
+                          disabled={date => date < effectiveFrom}
                           initialFocus
                         />
                       </PopoverContent>
@@ -436,17 +407,14 @@ export default function UserRolesPage() {
               </CardTitle>
               <CardDescription>
                 Permissions included with the{' '}
-                {USER_ROLES.find((r) => r.value === selectedRole)?.label} role
+                {USER_ROLES.find(r => r.value === selectedRole)?.label} role
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {getPermissionPreview(selectedRole).map((permission, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center space-x-2 p-3 border rounded-lg"
-                  >
-                    <ChevronRight className="h-4 w-4 text-primary" />
+                  <div key={index} className="flex items-center space-x-2 rounded-lg border p-3">
+                    <ChevronRight className="text-primary h-4 w-4" />
                     <span className="text-sm">{permission}</span>
                   </div>
                 ))}
@@ -456,5 +424,5 @@ export default function UserRolesPage() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }

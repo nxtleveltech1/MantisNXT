@@ -104,9 +104,7 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
         params.append('status', statusFilter);
       }
 
-      const response = await fetch(
-        `/api/v1/customers/${customerId}/loyalty/redemptions?${params}`
-      );
+      const response = await fetch(`/api/v1/customers/${customerId}/loyalty/redemptions?${params}`);
       if (!response.ok) throw new Error('Failed to fetch redemptions');
       return response.json();
     },
@@ -137,7 +135,7 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Redemption Status</h2>
           <p className="text-muted-foreground">Track your reward redemptions</p>
@@ -160,18 +158,18 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
       {/* Redemptions List */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <div className="space-y-4 text-center">
+            <div className="border-primary mx-auto h-12 w-12 animate-spin rounded-full border-b-2" />
             <p className="text-muted-foreground">Loading redemptions...</p>
           </div>
         </div>
       ) : redemptions.length === 0 ? (
         <Card>
-          <CardContent className="pt-12 pb-12 text-center space-y-4">
-            <Gift className="h-12 w-12 text-muted-foreground mx-auto" />
+          <CardContent className="space-y-4 pt-12 pb-12 text-center">
+            <Gift className="text-muted-foreground mx-auto h-12 w-12" />
             <div>
               <p className="font-medium">No redemptions found</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Your redeemed rewards will appear here
               </p>
             </div>
@@ -191,30 +189,18 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                 transition={{ delay: index * 0.05 }}
               >
                 <Card>
-                  <CardContent className="pt-6 space-y-6">
+                  <CardContent className="space-y-6 pt-6">
                     {/* Header */}
                     <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1 flex-1">
-                        <h3 className="font-semibold text-lg">
-                          {redemption.reward_name}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                          <span>
-                            {redemption.points_spent.toLocaleString()} points
-                          </span>
+                      <div className="flex-1 space-y-1">
+                        <h3 className="text-lg font-semibold">{redemption.reward_name}</h3>
+                        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+                          <span>{redemption.points_spent.toLocaleString()} points</span>
                           <span>•</span>
-                          <span>
-                            {format(
-                              new Date(redemption.redeemed_at),
-                              'MMM d, yyyy'
-                            )}
-                          </span>
+                          <span>{format(new Date(redemption.redeemed_at), 'MMM d, yyyy')}</span>
                         </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={cn('gap-1.5', statusConfig.color)}
-                      >
+                      <Badge variant="outline" className={cn('gap-1.5', statusConfig.color)}>
                         <StatusIcon className="h-3 w-3" />
                         {statusConfig.label}
                       </Badge>
@@ -225,10 +211,7 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                       <div className="relative">
                         <div className="flex items-center justify-between">
                           {REDEMPTION_STEPS.map((step, stepIndex) => {
-                            const stepStatus = getStepStatus(
-                              redemption,
-                              step.key
-                            );
+                            const stepStatus = getStepStatus(redemption, step.key);
 
                             return (
                               <div key={step.key} className="flex-1">
@@ -237,10 +220,8 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                                   <div
                                     className={cn(
                                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                                      stepStatus === 'complete' &&
-                                        'bg-green-100 border-green-500',
-                                      stepStatus === 'current' &&
-                                        'bg-blue-100 border-blue-500',
+                                      stepStatus === 'complete' && 'border-green-500 bg-green-100',
+                                      stepStatus === 'current' && 'border-blue-500 bg-blue-100',
                                       stepStatus === 'upcoming' &&
                                         'bg-muted border-muted-foreground/30'
                                     )}
@@ -250,7 +231,7 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                                     ) : stepStatus === 'current' ? (
                                       <Clock className="h-5 w-5 text-blue-600" />
                                     ) : (
-                                      <div className="h-3 w-3 rounded-full bg-muted-foreground/30" />
+                                      <div className="bg-muted-foreground/30 h-3 w-3 rounded-full" />
                                     )}
                                   </div>
 
@@ -271,11 +252,9 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                                 <p
                                   className={cn(
                                     'mt-2 text-xs font-medium',
-                                    stepStatus === 'complete' &&
-                                      'text-green-600',
+                                    stepStatus === 'complete' && 'text-green-600',
                                     stepStatus === 'current' && 'text-blue-600',
-                                    stepStatus === 'upcoming' &&
-                                      'text-muted-foreground'
+                                    stepStatus === 'upcoming' && 'text-muted-foreground'
                                   )}
                                 >
                                   {step.label}
@@ -290,11 +269,9 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                     <Separator />
 
                     {/* Redemption Code */}
-                    <div className="flex items-center justify-between gap-4 p-4 bg-muted rounded-lg">
+                    <div className="bg-muted flex items-center justify-between gap-4 rounded-lg p-4">
                       <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Redemption Code
-                        </p>
+                        <p className="text-muted-foreground text-sm">Redemption Code</p>
                         <p className="font-mono text-lg font-semibold">
                           {redemption.redemption_code}
                         </p>
@@ -302,9 +279,7 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          handleCopyCode(redemption.redemption_code)
-                        }
+                        onClick={() => handleCopyCode(redemption.redemption_code)}
                         className="gap-2"
                       >
                         <Copy className="h-4 w-4" />
@@ -316,8 +291,8 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
                     {redemption.expected_fulfillment_date &&
                       redemption.status !== 'fulfilled' &&
                       redemption.status !== 'cancelled' && (
-                        <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <Clock className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                        <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                           <div className="space-y-1">
                             <p className="text-sm font-medium text-blue-900">
                               Expected Fulfillment
@@ -334,17 +309,12 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
 
                     {/* Fulfilled */}
                     {redemption.fulfilled_at && (
-                      <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                      <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-3">
+                        <Check className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
                         <div className="space-y-1">
-                          <p className="text-sm font-medium text-green-900">
-                            Fulfilled
-                          </p>
+                          <p className="text-sm font-medium text-green-900">Fulfilled</p>
                           <p className="text-sm text-green-700">
-                            {format(
-                              new Date(redemption.fulfilled_at),
-                              'MMMM d, yyyy h:mm a'
-                            )}
+                            {format(new Date(redemption.fulfilled_at), 'MMMM d, yyyy h:mm a')}
                           </p>
                         </div>
                       </div>
@@ -352,23 +322,16 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
 
                     {/* Cancelled */}
                     {redemption.status === 'cancelled' && (
-                      <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
-                        <div className="space-y-1 flex-1">
-                          <p className="text-sm font-medium text-red-900">
-                            Cancelled
-                          </p>
+                      <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-medium text-red-900">Cancelled</p>
                           {redemption.cancellation_reason && (
-                            <p className="text-sm text-red-700">
-                              {redemption.cancellation_reason}
-                            </p>
+                            <p className="text-sm text-red-700">{redemption.cancellation_reason}</p>
                           )}
                           {redemption.cancelled_at && (
                             <p className="text-xs text-red-600">
-                              {format(
-                                new Date(redemption.cancelled_at),
-                                'MMMM d, yyyy h:mm a'
-                              )}
+                              {format(new Date(redemption.cancelled_at), 'MMMM d, yyyy h:mm a')}
                             </p>
                           )}
                         </div>
@@ -377,29 +340,23 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
 
                     {/* Notes */}
                     {redemption.notes && (
-                      <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                        <p className="font-medium mb-1">Notes:</p>
+                      <div className="text-muted-foreground bg-muted rounded-lg p-3 text-sm">
+                        <p className="mb-1 font-medium">Notes:</p>
                         <p>{redemption.notes}</p>
                       </div>
                     )}
 
                     {/* Actions */}
-                    {redemption.status !== 'fulfilled' &&
-                      redemption.status !== 'cancelled' && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2"
-                            asChild
-                          >
-                            <a href="mailto:support@example.com">
-                              <Mail className="h-4 w-4" />
-                              Contact Support
-                            </a>
-                          </Button>
-                        </div>
-                      )}
+                    {redemption.status !== 'fulfilled' && redemption.status !== 'cancelled' && (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="gap-2" asChild>
+                          <a href="mailto:support@example.com">
+                            <Mail className="h-4 w-4" />
+                            Contact Support
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -412,12 +369,11 @@ export function RedemptionStatus({ customerId }: RedemptionStatusProps) {
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
-            <Mail className="h-5 w-5 text-primary mt-0.5" />
-            <div className="space-y-2 flex-1">
+            <Mail className="text-primary mt-0.5 h-5 w-5" />
+            <div className="flex-1 space-y-2">
               <p className="font-medium">Need Help?</p>
-              <p className="text-sm text-muted-foreground">
-                If you have questions about your redemption, our support team is
-                here to help.
+              <p className="text-muted-foreground text-sm">
+                If you have questions about your redemption, our support team is here to help.
               </p>
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a href="mailto:support@example.com">

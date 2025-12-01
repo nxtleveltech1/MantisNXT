@@ -20,15 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertCircle,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  Loader2,
-  Eye,
-  Filter,
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Loader2, Eye, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 // Mock data structure
@@ -67,7 +59,7 @@ export default function AlertsPage() {
     }
   };
 
-  const filteredAlerts = alerts.filter((alert) => {
+  const filteredAlerts = alerts.filter(alert => {
     if (statusFilter !== 'all' && alert.status !== statusFilter) return false;
     if (severityFilter !== 'all' && alert.severity !== severityFilter) return false;
     return true;
@@ -124,7 +116,7 @@ export default function AlertsPage() {
   const formatAlertType = (type: string) => {
     return type
       .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -170,7 +162,7 @@ export default function AlertsPage() {
           <CardContent>
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Status</label>
+                <label className="mb-2 block text-sm font-medium">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
                     <SelectValue />
@@ -184,7 +176,7 @@ export default function AlertsPage() {
                 </Select>
               </div>
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Severity</label>
+                <label className="mb-2 block text-sm font-medium">Severity</label>
                 <Select value={severityFilter} onValueChange={setSeverityFilter}>
                   <SelectTrigger>
                     <SelectValue />
@@ -217,7 +209,7 @@ export default function AlertsPage() {
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : filteredAlerts.length > 0 ? (
               <Table>
@@ -232,7 +224,7 @@ export default function AlertsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAlerts.map((alert) => (
+                  {filteredAlerts.map(alert => (
                     <TableRow key={alert.alert_id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -244,9 +236,7 @@ export default function AlertsPage() {
                         {formatAlertType(alert.alert_type)}
                       </TableCell>
                       <TableCell>
-                        {alert.competitor_name || (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        {alert.competitor_name || <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell>{getStatusBadge(alert.status)}</TableCell>
                       <TableCell>{formatDate(alert.detected_at)}</TableCell>
@@ -261,9 +251,9 @@ export default function AlertsPage() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">No alerts found</p>
-                <p className="text-sm text-muted-foreground">
+                <CheckCircle className="text-muted-foreground mb-4 h-12 w-12" />
+                <p className="mb-2 text-lg font-medium">No alerts found</p>
+                <p className="text-muted-foreground text-sm">
                   {statusFilter !== 'all' || severityFilter !== 'all'
                     ? 'Try adjusting your filters'
                     : 'Alerts will appear here when competitive intelligence events are detected'}
@@ -276,4 +266,3 @@ export default function AlertsPage() {
     </AppLayout>
   );
 }
-

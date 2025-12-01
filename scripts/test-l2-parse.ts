@@ -1,4 +1,4 @@
-const testLine = "1.2 Amps \\& Guitar Electronics";
+const testLine = '1.2 Amps \\& Guitar Electronics';
 const line = testLine.trim();
 
 console.log('Testing line:', line);
@@ -19,6 +19,8 @@ if (l1Match) {
 
 const l2Match = line.match(/^(\d+)\.(\d+)\s+(.+)$/);
 if (l2Match) {
-  console.log('L2 would match:', !line.includes('•') && !line.includes('o') && !line.match(/^\d+\.\d+\.\d+/));
+  console.log(
+    'L2 would match:',
+    !line.includes('•') && !line.includes('o') && !line.match(/^\d+\.\d+\.\d+/)
+  );
 }
-

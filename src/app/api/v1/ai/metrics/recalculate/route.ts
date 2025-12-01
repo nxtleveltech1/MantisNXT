@@ -26,14 +26,19 @@ export async function POST(request: NextRequest) {
     validateMetricType(validated.metricType);
 
     // Recalculate the metric type(s)
-    const metricTypes = validated.metricType === 'all'
-      ? ['sales', 'inventory', 'supplier_performance', 'customer_behavior', 'financial', 'operational'] as MetricType[]
-      : [validated.metricType as MetricType];
+    const metricTypes =
+      validated.metricType === 'all'
+        ? ([
+            'sales',
+            'inventory',
+            'supplier_performance',
+            'customer_behavior',
+            'financial',
+            'operational',
+          ] as MetricType[])
+        : [validated.metricType as MetricType];
 
-    const recalculatedData = await AIMetricsService.recalculateMetrics(
-      user.org_id,
-      metricTypes
-    );
+    const recalculatedData = await AIMetricsService.recalculateMetrics(user.org_id, metricTypes);
 
     const now = new Date();
     const cacheExpires = new Date(now.getTime() + 5 * 60 * 1000);
@@ -42,7 +47,10 @@ export async function POST(request: NextRequest) {
       success: true,
       metricType: validated.metricType,
       recalculated: true,
-      data: validated.metricType === 'all' ? recalculatedData : recalculatedData[validated.metricType as MetricType],
+      data:
+        validated.metricType === 'all'
+          ? recalculatedData
+          : recalculatedData[validated.metricType as MetricType],
       calculatedAt: now.toISOString(),
       cacheExpires: cacheExpires.toISOString(),
     };

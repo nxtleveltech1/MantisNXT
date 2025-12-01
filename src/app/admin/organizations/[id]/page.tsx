@@ -1,19 +1,25 @@
-"use client"
+'use client';
 
-import React, { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Progress } from "@/components/ui/progress"
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import {
   Building2,
   Users,
@@ -34,29 +40,29 @@ import {
   Trash2,
   Plus,
   Eye,
-  Clock
-} from "lucide-react"
+  Clock,
+} from 'lucide-react';
 
 interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-  status: 'active' | 'inactive'
-  lastLogin: string
-  avatar?: string
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: 'active' | 'inactive';
+  lastLogin: string;
+  avatar?: string;
 }
 
 interface Feature {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  tier: string[]
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  tier: string[];
 }
 
 export default function OrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const [paramData, setParamData] = useState<{ id: string } | null>(null)
+  const [paramData, setParamData] = useState<{ id: string } | null>(null);
   const [organization, setOrganization] = useState({
     id: '',
     name: 'Acme Corporation',
@@ -74,12 +80,13 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
     contactPhone: '+27 11 123 4567',
     address: '123 Business Park, Johannesburg, South Africa',
     primaryContact: 'John Smith',
-    description: 'Leading manufacturing company specializing in automotive parts and industrial equipment.',
+    description:
+      'Leading manufacturing company specializing in automotive parts and industrial equipment.',
     website: 'https://acme.com',
     industry: 'Manufacturing',
     taxNumber: 'TAX123456789',
-    registrationNumber: 'REG987654321'
-  })
+    registrationNumber: 'REG987654321',
+  });
 
   const [users, setUsers] = useState<User[]>([
     {
@@ -88,7 +95,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       email: 'john@acme.com',
       role: 'Organization Admin',
       status: 'active',
-      lastLogin: '2 hours ago'
+      lastLogin: '2 hours ago',
     },
     {
       id: '2',
@@ -96,7 +103,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       email: 'sarah@acme.com',
       role: 'Procurement Manager',
       status: 'active',
-      lastLogin: '1 day ago'
+      lastLogin: '1 day ago',
     },
     {
       id: '3',
@@ -104,7 +111,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       email: 'mike@acme.com',
       role: 'Supplier Manager',
       status: 'active',
-      lastLogin: '3 days ago'
+      lastLogin: '3 days ago',
     },
     {
       id: '4',
@@ -112,9 +119,9 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       email: 'lisa@acme.com',
       role: 'Finance Manager',
       status: 'inactive',
-      lastLogin: '2 weeks ago'
-    }
-  ])
+      lastLogin: '2 weeks ago',
+    },
+  ]);
 
   const [features, setFeatures] = useState<Feature[]>([
     {
@@ -122,114 +129,114 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       name: 'API Access',
       description: 'Full REST API access for integrations',
       enabled: true,
-      tier: ['professional', 'enterprise']
+      tier: ['professional', 'enterprise'],
     },
     {
       id: 'advanced_analytics',
       name: 'Advanced Analytics',
       description: 'Detailed reporting and analytics dashboard',
       enabled: true,
-      tier: ['enterprise']
+      tier: ['enterprise'],
     },
     {
       id: 'priority_support',
       name: 'Priority Support',
       description: '24/7 phone and email support',
       enabled: true,
-      tier: ['enterprise']
+      tier: ['enterprise'],
     },
     {
       id: 'custom_integrations',
       name: 'Custom Integrations',
       description: 'Dedicated integration support',
       enabled: true,
-      tier: ['enterprise']
+      tier: ['enterprise'],
     },
     {
       id: 'white_label',
       name: 'White Label',
       description: 'Custom branding and domain',
       enabled: false,
-      tier: ['enterprise']
+      tier: ['enterprise'],
     },
     {
       id: 'advanced_workflows',
       name: 'Advanced Workflows',
       description: 'Custom approval workflows',
       enabled: true,
-      tier: ['professional', 'enterprise']
-    }
-  ])
+      tier: ['professional', 'enterprise'],
+    },
+  ]);
 
-  const [hasChanges, setHasChanges] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Resolve params Promise
   React.useEffect(() => {
     params.then(resolvedParams => {
-      setParamData(resolvedParams)
-      setOrganization(prev => ({ ...prev, id: resolvedParams.id }))
-    })
-  }, [params])
+      setParamData(resolvedParams);
+      setOrganization(prev => ({ ...prev, id: resolvedParams.id }));
+    });
+  }, [params]);
 
   const handleOrgChange = (field: string, value: string) => {
-    setOrganization(prev => ({ ...prev, [field]: value }))
-    setHasChanges(true)
-  }
+    setOrganization(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
 
   const handleFeatureToggle = (featureId: string) => {
-    setFeatures(prev => prev.map(feature =>
-      feature.id === featureId ? { ...feature, enabled: !feature.enabled } : feature
-    ))
-    setHasChanges(true)
-  }
+    setFeatures(prev =>
+      prev.map(feature =>
+        feature.id === featureId ? { ...feature, enabled: !feature.enabled } : feature
+      )
+    );
+    setHasChanges(true);
+  };
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setHasChanges(false)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setHasChanges(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to save:', error)
+      console.error('Failed to save:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleReset = () => {
     // Reset logic here
-    setHasChanges(false)
-  }
+    setHasChanges(false);
+  };
 
   const suspendUser = (userId: string) => {
-    setUsers(prev => prev.map(user =>
-      user.id === userId ? { ...user, status: 'inactive' } : user
-    ))
-  }
+    setUsers(prev =>
+      prev.map(user => (user.id === userId ? { ...user, status: 'inactive' } : user))
+    );
+  };
 
   const activateUser = (userId: string) => {
-    setUsers(prev => prev.map(user =>
-      user.id === userId ? { ...user, status: 'active' } : user
-    ))
-  }
+    setUsers(prev => prev.map(user => (user.id === userId ? { ...user, status: 'active' } : user)));
+  };
 
   const deleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId))
-  }
+    setUsers(prev => prev.filter(user => user.id !== userId));
+  };
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case 'enterprise':
-        return <Crown className="h-4 w-4" />
+        return <Crown className="h-4 w-4" />;
       case 'professional':
-        return <Shield className="h-4 w-4" />
+        return <Shield className="h-4 w-4" />;
       default:
-        return <Users className="h-4 w-4" />
+        return <Users className="h-4 w-4" />;
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -244,7 +251,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
           </Avatar>
           <div>
             <h1 className="text-2xl font-semibold">{organization.name}</h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-1 flex items-center gap-2">
               <Badge className="bg-purple-100 text-purple-800" variant="secondary">
                 {getTierIcon(organization.tier)}
                 <span className="ml-1 capitalize">{organization.tier}</span>
@@ -257,24 +264,17 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
-              <AlertTriangle className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-600">
+              <AlertTriangle className="mr-1 h-3 w-3" />
               Unsaved Changes
             </Badge>
           )}
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={!hasChanges || isLoading}
-          >
-            <Undo2 className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleReset} disabled={!hasChanges || isLoading}>
+            <Undo2 className="mr-2 h-4 w-4" />
             Reset
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isLoading}
-          >
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={!hasChanges || isLoading}>
+            <Save className="mr-2 h-4 w-4" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
@@ -282,7 +282,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
       {/* Success Alert */}
       {showSuccess && (
-        <Alert className="bg-green-50 border-green-200">
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             Organization settings saved successfully!
@@ -301,37 +301,39 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
         {/* Overview */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Organization Info */}
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Organization Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <p className="flex items-center gap-1 text-sm text-gray-500">
                       <Globe className="h-3 w-3" />
                       Domain
                     </p>
                     <p className="font-medium">{organization.domain}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <p className="flex items-center gap-1 text-sm text-gray-500">
                       <Calendar className="h-3 w-3" />
                       Created
                     </p>
-                    <p className="font-medium">{new Date(organization.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium">
+                      {new Date(organization.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <p className="flex items-center gap-1 text-sm text-gray-500">
                       <Mail className="h-3 w-3" />
                       Contact Email
                     </p>
                     <p className="font-medium">{organization.contactEmail}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <p className="flex items-center gap-1 text-sm text-gray-500">
                       <Phone className="h-3 w-3" />
                       Phone
                     </p>
@@ -340,7 +342,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <p className="flex items-center gap-1 text-sm text-gray-500">
                     <MapPin className="h-3 w-3" />
                     Address
                   </p>
@@ -352,7 +354,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <p className="font-medium">{organization.description}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
                   <div className="space-y-1">
                     <p className="text-sm text-gray-500">Industry</p>
                     <p className="font-medium">{organization.industry}</p>
@@ -382,7 +384,9 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Users</span>
-                    <span>{organization.userCount} / {organization.maxUsers}</span>
+                    <span>
+                      {organization.userCount} / {organization.maxUsers}
+                    </span>
                   </div>
                   <Progress value={(organization.userCount / organization.maxUsers) * 100} />
                 </div>
@@ -390,7 +394,9 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Storage</span>
-                    <span>{organization.storageUsed} GB / {organization.storageLimit} GB</span>
+                    <span>
+                      {organization.storageUsed} GB / {organization.storageLimit} GB
+                    </span>
                   </div>
                   <Progress value={(organization.storageUsed / organization.storageLimit) * 100} />
                 </div>
@@ -400,11 +406,15 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">Monthly Spend</span>
-                    <span className="font-semibold">R{organization.monthlySpend.toLocaleString()}</span>
+                    <span className="font-semibold">
+                      R{organization.monthlySpend.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">Active Users</span>
-                    <span className="font-semibold">{users.filter(u => u.status === 'active').length}</span>
+                    <span className="font-semibold">
+                      {users.filter(u => u.status === 'active').length}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">Features Enabled</span>
@@ -416,15 +426,15 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start">
-                    <CreditCard className="h-4 w-4 mr-2" />
+                    <CreditCard className="mr-2 h-4 w-4" />
                     View Billing
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Activity className="h-4 w-4 mr-2" />
+                    <Activity className="mr-2 h-4 w-4" />
                     Activity Logs
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Key className="h-4 w-4 mr-2" />
+                    <Key className="mr-2 h-4 w-4" />
                     API Keys
                   </Button>
                 </div>
@@ -435,7 +445,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
         {/* Settings */}
         <TabsContent value="settings">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
@@ -446,7 +456,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="orgName"
                     value={organization.name}
-                    onChange={(e) => handleOrgChange('name', e.target.value)}
+                    onChange={e => handleOrgChange('name', e.target.value)}
                   />
                 </div>
 
@@ -455,7 +465,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="domain"
                     value={organization.domain}
-                    onChange={(e) => handleOrgChange('domain', e.target.value)}
+                    onChange={e => handleOrgChange('domain', e.target.value)}
                   />
                 </div>
 
@@ -464,7 +474,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Textarea
                     id="description"
                     value={organization.description}
-                    onChange={(e) => handleOrgChange('description', e.target.value)}
+                    onChange={e => handleOrgChange('description', e.target.value)}
                     rows={3}
                   />
                 </div>
@@ -474,13 +484,16 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="website"
                     value={organization.website}
-                    onChange={(e) => handleOrgChange('website', e.target.value)}
+                    onChange={e => handleOrgChange('website', e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="industry">Industry</Label>
-                  <Select value={organization.industry} onValueChange={(value) => handleOrgChange('industry', value)}>
+                  <Select
+                    value={organization.industry}
+                    onValueChange={value => handleOrgChange('industry', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -508,7 +521,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                     id="contactEmail"
                     type="email"
                     value={organization.contactEmail}
-                    onChange={(e) => handleOrgChange('contactEmail', e.target.value)}
+                    onChange={e => handleOrgChange('contactEmail', e.target.value)}
                   />
                 </div>
 
@@ -517,7 +530,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="contactPhone"
                     value={organization.contactPhone}
-                    onChange={(e) => handleOrgChange('contactPhone', e.target.value)}
+                    onChange={e => handleOrgChange('contactPhone', e.target.value)}
                   />
                 </div>
 
@@ -526,7 +539,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Textarea
                     id="address"
                     value={organization.address}
-                    onChange={(e) => handleOrgChange('address', e.target.value)}
+                    onChange={e => handleOrgChange('address', e.target.value)}
                     rows={3}
                   />
                 </div>
@@ -536,7 +549,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="primaryContact"
                     value={organization.primaryContact}
-                    onChange={(e) => handleOrgChange('primaryContact', e.target.value)}
+                    onChange={e => handleOrgChange('primaryContact', e.target.value)}
                   />
                 </div>
 
@@ -547,7 +560,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="taxNumber"
                     value={organization.taxNumber}
-                    onChange={(e) => handleOrgChange('taxNumber', e.target.value)}
+                    onChange={e => handleOrgChange('taxNumber', e.target.value)}
                   />
                 </div>
 
@@ -556,7 +569,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                   <Input
                     id="registrationNumber"
                     value={organization.registrationNumber}
-                    onChange={(e) => handleOrgChange('registrationNumber', e.target.value)}
+                    onChange={e => handleOrgChange('registrationNumber', e.target.value)}
                   />
                 </div>
               </CardContent>
@@ -571,20 +584,26 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
               <CardTitle className="flex items-center justify-between">
                 <span>Organization Users</span>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add User
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {users.map(user => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                          {user.name
+                            .split(' ')
+                            .map(n => n[0])
+                            .join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -598,8 +617,8 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                         <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
                           {user.status}
                         </Badge>
-                        <p className="text-xs text-gray-500 mt-1">
-                          <Clock className="h-3 w-3 inline mr-1" />
+                        <p className="mt-1 text-xs text-gray-500">
+                          <Clock className="mr-1 inline h-3 w-3" />
                           {user.lastLogin}
                         </p>
                       </div>
@@ -636,13 +655,16 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {features.map((feature) => (
-                  <div key={feature.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {features.map(feature => (
+                  <div
+                    key={feature.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="mb-2 flex items-center gap-3">
                         <h4 className="font-medium">{feature.name}</h4>
                         <div className="flex gap-1">
-                          {feature.tier.map((tier) => (
+                          {feature.tier.map(tier => (
                             <Badge key={tier} variant="outline" className="text-xs">
                               {tier}
                             </Badge>
@@ -665,30 +687,34 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
         {/* Usage */}
         <TabsContent value="usage">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Resource Usage</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="mb-2 flex justify-between text-sm">
                     <span>Users</span>
-                    <span>{organization.userCount} / {organization.maxUsers}</span>
+                    <span>
+                      {organization.userCount} / {organization.maxUsers}
+                    </span>
                   </div>
                   <Progress value={(organization.userCount / organization.maxUsers) * 100} />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="mb-2 flex justify-between text-sm">
                     <span>Storage</span>
-                    <span>{organization.storageUsed} GB / {organization.storageLimit} GB</span>
+                    <span>
+                      {organization.storageUsed} GB / {organization.storageLimit} GB
+                    </span>
                   </div>
                   <Progress value={(organization.storageUsed / organization.storageLimit) * 100} />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="mb-2 flex justify-between text-sm">
                     <span>API Calls (this month)</span>
                     <span>45,230 / 100,000</span>
                   </div>
@@ -696,7 +722,7 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="mb-2 flex justify-between text-sm">
                     <span>Data Transfer</span>
                     <span>15.2 GB / 50 GB</span>
                   </div>
@@ -711,19 +737,19 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="rounded-lg bg-blue-50 p-3 text-center">
                     <p className="text-2xl font-bold text-blue-600">1,247</p>
                     <p className="text-sm text-blue-800">Orders (30 days)</p>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="rounded-lg bg-green-50 p-3 text-center">
                     <p className="text-2xl font-bold text-green-600">89</p>
                     <p className="text-sm text-green-800">Suppliers</p>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="rounded-lg bg-purple-50 p-3 text-center">
                     <p className="text-2xl font-bold text-purple-600">567</p>
                     <p className="text-sm text-purple-800">Invoices</p>
                   </div>
-                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                  <div className="rounded-lg bg-yellow-50 p-3 text-center">
                     <p className="text-2xl font-bold text-yellow-600">23</p>
                     <p className="text-sm text-yellow-800">Contracts</p>
                   </div>
@@ -758,5 +784,5 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

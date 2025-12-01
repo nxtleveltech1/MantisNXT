@@ -75,7 +75,7 @@ export class XLSXProcessor extends EventEmitter {
       errorRows: 0,
       progress: 0,
       errors: [],
-      startTime: new Date().toISOString()
+      startTime: new Date().toISOString(),
     };
 
     this.activeProcesses.set(processId, progress);
@@ -95,7 +95,7 @@ export class XLSXProcessor extends EventEmitter {
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
         defval: null,
-        blankrows: false
+        blankrows: false,
       }) as unknown[][];
 
       if (jsonData.length === 0) {
@@ -116,19 +116,13 @@ export class XLSXProcessor extends EventEmitter {
 
       for (let i = 0; i < dataRows.length; i += batchSize) {
         const batch = dataRows.slice(i, Math.min(i + batchSize, dataRows.length));
-        await this.processBatch(
-          batch,
-          headers,
-          options,
-          validationRules,
-          processId,
-          i
-        );
+        await this.processBatch(batch, headers, options, validationRules, processId, i);
 
         // Update progress
         const currentProgress = this.activeProcesses.get(processId)!;
         currentProgress.processedRows = Math.min(i + batchSize, dataRows.length);
-        currentProgress.progress = (currentProgress.processedRows / currentProgress.totalRows) * 100;
+        currentProgress.progress =
+          (currentProgress.processedRows / currentProgress.totalRows) * 100;
 
         // Calculate estimated time remaining
         if (currentProgress.processedRows > 0) {
@@ -153,14 +147,15 @@ export class XLSXProcessor extends EventEmitter {
       this.emit('progress', progress);
       this.emit('completed', progress);
 
-      console.log(`✅ XLSX processing completed: ${progress.successfulRows}/${progress.totalRows} rows successful`);
-
+      console.log(
+        `✅ XLSX processing completed: ${progress.successfulRows}/${progress.totalRows} rows successful`
+      );
     } catch (error) {
       console.error('❌ XLSX processing error:', error);
       progress.status = 'error';
       progress.errors.push({
         row: 0,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       progress.endTime = new Date().toISOString();
       this.activeProcesses.set(processId, progress);
@@ -212,7 +207,7 @@ export class XLSXProcessor extends EventEmitter {
                 row: rowIndex,
                 column: error.column,
                 error: error.error,
-                data: record
+                data: record,
               });
             });
             progress.errorRows++;
@@ -231,13 +226,12 @@ export class XLSXProcessor extends EventEmitter {
 
         // Emit real-time notification for successful insert
         await this.notifyRecordProcessed(options.targetTable, record, 'INSERT');
-
       } catch (error) {
         console.error(`❌ Error processing row ${rowIndex}:`, error);
         progress.errors.push({
           row: rowIndex,
           error: error instanceof Error ? error.message : 'Unknown error',
-          data: batch[i]
+          data: batch[i],
         });
         progress.errorRows++;
       }
@@ -260,7 +254,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Field '${rule.column}' is required`
+          error: `Field '${rule.column}' is required`,
         });
         continue;
       }
@@ -275,7 +269,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Invalid ${rule.type} format for field '${rule.column}'`
+          error: `Invalid ${rule.type} format for field '${rule.column}'`,
         });
         continue;
       }
@@ -285,7 +279,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Field '${rule.column}' must be at least ${rule.minLength} characters`
+          error: `Field '${rule.column}' must be at least ${rule.minLength} characters`,
         });
       }
 
@@ -293,7 +287,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Field '${rule.column}' must be at most ${rule.maxLength} characters`
+          error: `Field '${rule.column}' must be at most ${rule.maxLength} characters`,
         });
       }
 
@@ -302,7 +296,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Field '${rule.column}' does not match required pattern`
+          error: `Field '${rule.column}' does not match required pattern`,
         });
       }
 
@@ -311,7 +305,7 @@ export class XLSXProcessor extends EventEmitter {
         errors.push({
           row: 0,
           column: rule.column,
-          error: `Field '${rule.column}' must be one of: ${rule.allowedValues.join(', ')}`
+          error: `Field '${rule.column}' must be one of: ${rule.allowedValues.join(', ')}`,
         });
       }
 
@@ -322,7 +316,10 @@ export class XLSXProcessor extends EventEmitter {
           errors.push({
             row: 0,
             column: rule.column,
-            error: typeof validationResult === 'string' ? validationResult : `Custom validation failed for field '${rule.column}'`
+            error:
+              typeof validationResult === 'string'
+                ? validationResult
+                : `Custom validation failed for field '${rule.column}'`,
           });
         }
       }
@@ -388,13 +385,17 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Notify about processed record
    */
-  private async notifyRecordProcessed(tableName: string, record: unknown, operation: string): Promise<void> {
+  private async notifyRecordProcessed(
+    tableName: string,
+    record: unknown,
+    operation: string
+  ): Promise<void> {
     const payload = JSON.stringify({
       operation,
       table: tableName,
       record,
       timestamp: new Date().toISOString(),
-      source: 'xlsx_import'
+      source: 'xlsx_import',
     });
 
     await db.query(`NOTIFY table_changes, '${payload}'`);
@@ -424,7 +425,7 @@ export class XLSXProcessor extends EventEmitter {
       progress.endTime = new Date().toISOString();
       progress.errors.push({
         row: 0,
-        error: 'Processing cancelled by user'
+        error: 'Processing cancelled by user',
       });
       this.activeProcesses.set(processId, progress);
       this.emit('cancelled', progress);
@@ -437,7 +438,7 @@ export class XLSXProcessor extends EventEmitter {
    * Clean up completed processes
    */
   cleanupCompletedProcesses(olderThanHours: number = 24): void {
-    const cutoff = Date.now() - (olderThanHours * 60 * 60 * 1000);
+    const cutoff = Date.now() - olderThanHours * 60 * 60 * 1000;
 
     for (const [processId, progress] of this.activeProcesses) {
       if (progress.status === 'completed' || progress.status === 'error') {

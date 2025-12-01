@@ -77,7 +77,11 @@ export class MLQueryOptimizer {
   }
 
   // Analyze query performance and suggest optimizations
-  async analyzeQuery(query: string, executionTime: number, organizationId: string): Promise<OptimizationSuggestion[]> {
+  async analyzeQuery(
+    query: string,
+    executionTime: number,
+    organizationId: string
+  ): Promise<OptimizationSuggestion[]> {
     const queryHash = this.hashQuery(query);
     const suggestions: OptimizationSuggestion[] = [];
 
@@ -91,7 +95,7 @@ export class MLQueryOptimizer {
       memoryUsage: 0,
       indexesUsed: [],
       timestamp: new Date(),
-      organizationId
+      organizationId,
     };
 
     // Store in history
@@ -101,7 +105,8 @@ export class MLQueryOptimizer {
     this.performanceHistory.get(queryHash)!.push(metric);
 
     // Analyze for optimization opportunities
-    if (executionTime > 1000) { // > 1 second
+    if (executionTime > 1000) {
+      // > 1 second
       suggestions.push(...this.analyzeSlowQuery(query, executionTime));
     }
 
@@ -128,7 +133,7 @@ export class MLQueryOptimizer {
         expectedImprovement: 70,
         implementationEffort: 'low',
         estimatedCost: 0,
-        potentialRisk: 'low'
+        potentialRisk: 'low',
       });
     }
 
@@ -142,7 +147,7 @@ export class MLQueryOptimizer {
         expectedImprovement: 60,
         implementationEffort: 'low',
         estimatedCost: 0,
-        potentialRisk: 'low'
+        potentialRisk: 'low',
       });
     }
 
@@ -156,7 +161,7 @@ export class MLQueryOptimizer {
         expectedImprovement: 30,
         implementationEffort: 'low',
         estimatedCost: 0,
-        potentialRisk: 'low'
+        potentialRisk: 'low',
       });
     }
 
@@ -168,7 +173,11 @@ export class MLQueryOptimizer {
     const lowerQuery = query.toLowerCase();
 
     // N+1 query pattern detection
-    if (lowerQuery.includes('select') && lowerQuery.includes('where') && lowerQuery.includes('in (')) {
+    if (
+      lowerQuery.includes('select') &&
+      lowerQuery.includes('where') &&
+      lowerQuery.includes('in (')
+    ) {
       suggestions.push({
         type: 'query_rewrite',
         priority: 'high',
@@ -177,7 +186,7 @@ export class MLQueryOptimizer {
         expectedImprovement: 50,
         implementationEffort: 'medium',
         estimatedCost: 0,
-        potentialRisk: 'medium'
+        potentialRisk: 'medium',
       });
     }
 
@@ -192,7 +201,7 @@ export class MLQueryOptimizer {
         expectedImprovement: 40,
         implementationEffort: 'medium',
         estimatedCost: 0,
-        potentialRisk: 'low'
+        potentialRisk: 'low',
       });
     }
 
@@ -206,10 +215,12 @@ export class MLQueryOptimizer {
     if (history.length > 5) {
       // Analyze trend
       const recentExecutions = history.slice(-5);
-      const avgExecution = recentExecutions.reduce((sum, m) => sum + m.executionTime, 0) / recentExecutions.length;
+      const avgExecution =
+        recentExecutions.reduce((sum, m) => sum + m.executionTime, 0) / recentExecutions.length;
       const trend = this.calculateTrend(recentExecutions.map(h => h.executionTime));
 
-      if (trend > 0.1) { // Performance degrading
+      if (trend > 0.1) {
+        // Performance degrading
         suggestions.push({
           type: 'caching',
           priority: 'medium',
@@ -218,7 +229,7 @@ export class MLQueryOptimizer {
           expectedImprovement: 80,
           implementationEffort: 'low',
           estimatedCost: 0,
-          potentialRisk: 'low'
+          potentialRisk: 'low',
         });
       }
 
@@ -232,7 +243,7 @@ export class MLQueryOptimizer {
           expectedImprovement: 90,
           implementationEffort: 'low',
           estimatedCost: 0,
-          potentialRisk: 'low'
+          potentialRisk: 'low',
         });
       }
     }
@@ -246,7 +257,7 @@ export class MLQueryOptimizer {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, idx) => sum + (idx * val), 0);
+    const sumXY = values.reduce((sum, val, idx) => sum + idx * val, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
 
     return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
@@ -257,7 +268,7 @@ export class MLQueryOptimizer {
     let hash = 0;
     for (let i = 0; i < query.length; i++) {
       const char = query.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString();
@@ -296,7 +307,7 @@ export class MLQueryOptimizer {
             expectedImprovement: 85,
             implementationEffort: 'low',
             estimatedCost: 0,
-            potentialRisk: 'low'
+            potentialRisk: 'low',
           });
         }
 
@@ -310,17 +321,19 @@ export class MLQueryOptimizer {
             expectedImprovement: 60,
             implementationEffort: 'medium',
             estimatedCost: 0,
-            potentialRisk: 'medium'
+            potentialRisk: 'medium',
           });
         }
       }
 
       // Log optimization actions
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO optimization_log (organization_id, optimizations_applied, optimizations_pending, timestamp)
         VALUES ($1, $2, $3, NOW())
-      `, [organizationId, JSON.stringify(applied), JSON.stringify(pending)]);
-
+      `,
+        [organizationId, JSON.stringify(applied), JSON.stringify(pending)]
+      );
     } catch (error) {
       console.error('Auto-optimization error:', error);
     }
@@ -355,7 +368,7 @@ export class IntelligentCache {
       data,
       timestamp: new Date(),
       hits: 0,
-      ttl
+      ttl,
     });
   }
 
@@ -406,7 +419,7 @@ export class IntelligentCache {
       evictionRate: 0, // Would need additional tracking
       averageRetrievalTime: 1, // Assuming 1ms for cache retrieval
       totalHits,
-      totalMisses: totalRequests - totalHits
+      totalMisses: totalRequests - totalHits,
     };
   }
 
@@ -423,7 +436,7 @@ export class ConnectionPoolOptimizer {
     idleConnections: 0,
     waitingRequests: 0,
     connectionErrors: 0,
-    avgQueryTime: 0
+    avgQueryTime: 0,
   };
 
   constructor(database: Pool) {
@@ -455,7 +468,6 @@ export class ConnectionPoolOptimizer {
 
       const result = await this.db.query(perfQuery);
       this.metrics.avgQueryTime = result.rows[0]?.avg_time || 0;
-
     } catch (error) {
       this.metrics.connectionErrors++;
       console.error('Error collecting pool metrics:', error);
@@ -493,7 +505,7 @@ export class ConnectionPoolOptimizer {
       recommendations.push({
         type: 'pool_size',
         suggestion: 'Increase maximum pool size to handle more concurrent requests',
-        impact: 'high'
+        impact: 'high',
       });
     }
 
@@ -501,7 +513,7 @@ export class ConnectionPoolOptimizer {
       recommendations.push({
         type: 'timeout',
         suggestion: 'Increase query timeout to prevent premature cancellations',
-        impact: 'medium'
+        impact: 'medium',
       });
     }
 
@@ -509,7 +521,7 @@ export class ConnectionPoolOptimizer {
       recommendations.push({
         type: 'pool_size',
         suggestion: 'Reduce minimum pool size to free up database resources',
-        impact: 'low'
+        impact: 'low',
       });
     }
 
@@ -523,7 +535,10 @@ export class APIResponseOptimizer {
   private compressionEnabled = true;
 
   // Optimize API response based on request patterns
-  optimizeResponse(data: unknown, request: unknown): {
+  optimizeResponse(
+    data: unknown,
+    request: unknown
+  ): {
     data: unknown;
     compression: boolean;
     cacheSettings: {
@@ -560,8 +575,8 @@ export class APIResponseOptimizer {
       compression: useCompression,
       cacheSettings: {
         ttl,
-        key: cacheKey
-      }
+        key: cacheKey,
+      },
     };
   }
 
@@ -620,6 +635,6 @@ export function createPerformanceOptimizers(database: Pool) {
     queryOptimizer: new MLQueryOptimizer(database),
     cache: new IntelligentCache(),
     poolOptimizer: new ConnectionPoolOptimizer(database),
-    responseOptimizer: new APIResponseOptimizer()
+    responseOptimizer: new APIResponseOptimizer(),
   };
 }

@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import React, { useState, useCallback, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import React, { useState, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -15,14 +15,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   CheckCircle2,
   Info,
@@ -31,19 +31,18 @@ import {
   Package,
   AlertTriangle,
   CheckCircle,
-} from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
-
-import SupplierProductDataTable from './SupplierProductDataTable'
-import type { InventorySelection } from '@/types/nxt-spp'
+import SupplierProductDataTable from './SupplierProductDataTable';
+import type { InventorySelection } from '@/types/nxt-spp';
 
 interface ISIWizardProps {
-  defaultSupplierId?: string
-  defaultSelectionId?: string
-  onComplete?: (selection: InventorySelection) => void
-  onCancel?: () => void
-  onNavigateToReports?: () => void
+  defaultSupplierId?: string;
+  defaultSelectionId?: string;
+  onComplete?: (selection: InventorySelection) => void;
+  onCancel?: () => void;
+  onNavigateToReports?: () => void;
 }
 
 export function ISIWizard({
@@ -54,66 +53,66 @@ export function ISIWizard({
   onNavigateToReports,
 }: ISIWizardProps) {
   // State
-  const [selectionId, setSelectionId] = useState<string | null>(defaultSelectionId || null)
-  const [selectionName, setSelectionName] = useState('')
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showCreateDialog, setShowCreateDialog] = useState(!defaultSelectionId)
-  const [showActivateDialog, setShowActivateDialog] = useState(false)
-  const [showConflictDialog, setShowConflictDialog] = useState(false)
+  const [selectionId, setSelectionId] = useState<string | null>(defaultSelectionId || null);
+  const [selectionName, setSelectionName] = useState('');
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(!defaultSelectionId);
+  const [showActivateDialog, setShowActivateDialog] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [conflictInfo, setConflictInfo] = useState<{
-    active_selection_id: string
-    active_selection_name: string
-  } | null>(null)
-  const [selections, setSelections] = useState<InventorySelection[]>([])
-  const [activeSelection, setActiveSelection] = useState<InventorySelection | null>(null)
+    active_selection_id: string;
+    active_selection_name: string;
+  } | null>(null);
+  const [selections, setSelections] = useState<InventorySelection[]>([]);
+  const [activeSelection, setActiveSelection] = useState<InventorySelection | null>(null);
   const [selectionSummary, setSelectionSummary] = useState({
     count: 0,
     totalValue: 0,
     supplierCount: 0,
     categoryCount: 0,
-  })
+  });
 
   // Load existing selections and active selection
   useEffect(() => {
-    fetchSelections()
-    fetchActiveSelection()
-  }, [])
+    fetchSelections();
+    fetchActiveSelection();
+  }, []);
 
   const fetchSelections = async () => {
     try {
-      const response = await fetch('/api/core/selections?status=draft,active')
+      const response = await fetch('/api/core/selections?status=draft,active');
       if (response.ok) {
-        const data = await response.json()
-        setSelections(data.data || [])
+        const data = await response.json();
+        setSelections(data.data || []);
       }
     } catch (err) {
-      console.error('Failed to fetch selections:', err)
+      console.error('Failed to fetch selections:', err);
     }
-  }
+  };
 
   const fetchActiveSelection = async () => {
     try {
-      const response = await fetch('/api/core/selections/active')
+      const response = await fetch('/api/core/selections/active');
       if (response.ok) {
-        const data = await response.json()
-        setActiveSelection(data.data)
+        const data = await response.json();
+        setActiveSelection(data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch active selection:', err)
+      console.error('Failed to fetch active selection:', err);
     }
-  }
+  };
 
   // Create new selection
   const handleCreateSelection = async () => {
     if (!selectionName.trim()) {
-      setError('Please enter a selection name')
-      return
+      setError('Please enter a selection name');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/core/selections', {
@@ -125,30 +124,30 @@ export function ISIWizard({
           created_by: '00000000-0000-0000-0000-000000000000', // System user placeholder
           status: 'draft',
         }),
-      })
+      });
 
-      if (!response.ok) throw new Error('Failed to create selection')
+      if (!response.ok) throw new Error('Failed to create selection');
 
-      const result = await response.json()
-      setSelectionId(result.selection.selection_id)
-      setShowCreateDialog(false)
-      fetchSelections()
+      const result = await response.json();
+      setSelectionId(result.selection.selection_id);
+      setShowCreateDialog(false);
+      fetchSelections();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create selection')
+      setError(err instanceof Error ? err.message : 'Failed to create selection');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Add products to selection
   const handleAddToSelection = async () => {
     if (!selectionId || selectedProductIds.length === 0) {
-      setError('No products selected')
-      return
+      setError('No products selected');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/core/selections/workflow', {
@@ -160,99 +159,98 @@ export function ISIWizard({
           action: 'select',
           selected_by: '00000000-0000-0000-0000-000000000000', // System user placeholder
         }),
-      })
+      });
 
-      if (!response.ok) throw new Error('Failed to add products')
+      if (!response.ok) throw new Error('Failed to add products');
 
-      const result = await response.json()
+      const result = await response.json();
 
       // Clear selection and show success
-      setSelectedProductIds([])
-      updateSelectionSummary()
+      setSelectedProductIds([]);
+      updateSelectionSummary();
 
       // Show success notification
-      alert(`Successfully added ${result.items_affected} products to selection`)
+      alert(`Successfully added ${result.items_affected} products to selection`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add products')
+      setError(err instanceof Error ? err.message : 'Failed to add products');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Activate selection with single-active enforcement
   const handleActivateSelection = async (deactivateOthers = false) => {
-    if (!selectionId) return
+    if (!selectionId) return;
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(`/api/core/selections/${selectionId}/activate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deactivate_others: deactivateOthers }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (response.status === 409) {
         // Conflict: Another selection is active
-        setConflictInfo(result.conflict)
-        setShowActivateDialog(false)
-        setShowConflictDialog(true)
-        setLoading(false)
-        return
+        setConflictInfo(result.conflict);
+        setShowActivateDialog(false);
+        setShowConflictDialog(true);
+        setLoading(false);
+        return;
       }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to activate selection')
+        throw new Error(result.error || 'Failed to activate selection');
       }
 
       // Success! Invalidate caches and refresh
-      setShowActivateDialog(false)
-      setShowConflictDialog(false)
+      setShowActivateDialog(false);
+      setShowConflictDialog(false);
 
       // Trigger cache invalidation on frontend
-      await fetchActiveSelection()
-      await fetchSelections()
+      await fetchActiveSelection();
+      await fetchSelections();
 
       // Show success message
-      alert('Selection activated successfully! All stock reports now reflect this selection.')
+      alert('Selection activated successfully! All stock reports now reflect this selection.');
 
       // Call completion handler
       if (onComplete) {
-        onComplete(result.data)
+        onComplete(result.data);
       }
 
       // Navigate to stock reports
       if (onNavigateToReports) {
-        onNavigateToReports()
+        onNavigateToReports();
       }
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to activate selection')
+      setError(err instanceof Error ? err.message : 'Failed to activate selection');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Update selection summary
   const updateSelectionSummary = useCallback(async () => {
-    if (!selectionId) return
+    if (!selectionId) return;
 
     try {
       // Fetch selection items
-      const itemsResponse = await fetch(`/api/core/selections/${selectionId}/items`)
+      const itemsResponse = await fetch(`/api/core/selections/${selectionId}/items`);
       if (!itemsResponse.ok) {
-        console.error('Failed to fetch selection items')
-        return
+        console.error('Failed to fetch selection items');
+        return;
       }
 
-      const itemsData = await itemsResponse.json()
-      const items = itemsData.data || []
+      const itemsData = await itemsResponse.json();
+      const items = itemsData.data || [];
 
       // Fetch catalog to get enriched product data with prices
-      const catalogResponse = await fetch('/api/core/selections/catalog')
+      const catalogResponse = await fetch('/api/core/selections/catalog');
       if (!catalogResponse.ok) {
         // Fallback to basic item count if catalog fails
         setSelectionSummary({
@@ -260,52 +258,61 @@ export function ISIWizard({
           totalValue: 0,
           supplierCount: 0,
           categoryCount: 0,
-        })
-        return
+        });
+        return;
       }
 
-      const catalogData = await catalogResponse.json()
-      const catalog = catalogData.catalog || []
+      const catalogData = await catalogResponse.json();
+      const catalog = catalogData.catalog || [];
 
       // Match items with catalog to get enriched data
       const enrichedItems = items.map((item: unknown) => {
-        const catalogProduct = catalog.find((p: unknown) => p.supplier_product_id === item.supplier_product_id)
+        const catalogProduct = catalog.find(
+          (p: unknown) => p.supplier_product_id === item.supplier_product_id
+        );
         return {
           ...item,
           current_price: catalogProduct?.current_price || 0,
           supplier_id: catalogProduct?.supplier_id || item.supplier_id,
           category_id: catalogProduct?.category_id || item.category_id,
-        }
-      })
+        };
+      });
 
       // Calculate metrics
-      const totalValue = enrichedItems.reduce((sum: number, item: unknown) => sum + (item.current_price || 0), 0)
-      const supplierIds = new Set(enrichedItems.map((item: unknown) => item.supplier_id).filter(Boolean))
-      const categoryIds = new Set(enrichedItems.map((item: unknown) => item.category_id).filter(Boolean))
+      const totalValue = enrichedItems.reduce(
+        (sum: number, item: unknown) => sum + (item.current_price || 0),
+        0
+      );
+      const supplierIds = new Set(
+        enrichedItems.map((item: unknown) => item.supplier_id).filter(Boolean)
+      );
+      const categoryIds = new Set(
+        enrichedItems.map((item: unknown) => item.category_id).filter(Boolean)
+      );
 
       setSelectionSummary({
         count: enrichedItems.length,
         totalValue,
         supplierCount: supplierIds.size,
         categoryCount: categoryIds.size,
-      })
+      });
     } catch (err) {
-      console.error('Failed to update summary:', err)
+      console.error('Failed to update summary:', err);
       // Set zero metrics on error
       setSelectionSummary({
         count: 0,
         totalValue: 0,
         supplierCount: 0,
         categoryCount: 0,
-      })
+      });
     }
-  }, [selectionId])
+  }, [selectionId]);
 
   useEffect(() => {
     if (selectionId) {
-      updateSelectionSummary()
+      updateSelectionSummary();
     }
-  }, [selectionId, updateSelectionSummary])
+  }, [selectionId, updateSelectionSummary]);
 
   return (
     <div className="space-y-6">
@@ -321,15 +328,17 @@ export function ISIWizard({
               <div className="flex items-center gap-2">
                 {activeSelection?.selection_id === selectionId && (
                   <Badge variant="default" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-3 w-3 mr-1" />
+                    <CheckCircle className="mr-1 h-3 w-3" />
                     Active
                   </Badge>
                 )}
                 <Button
                   onClick={() => setShowActivateDialog(true)}
-                  disabled={selectionSummary.count === 0 || activeSelection?.selection_id === selectionId}
+                  disabled={
+                    selectionSummary.count === 0 || activeSelection?.selection_id === selectionId
+                  }
                 >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   Activate Selection
                 </Button>
               </div>
@@ -344,11 +353,11 @@ export function ISIWizard({
                 <Label>Current Selection</Label>
                 <Select
                   value={selectionId || ''}
-                  onValueChange={(value) => {
+                  onValueChange={value => {
                     if (value === 'new') {
-                      setShowCreateDialog(true)
+                      setShowCreateDialog(true);
                     } else {
-                      setSelectionId(value)
+                      setSelectionId(value);
                     }
                   }}
                 >
@@ -374,28 +383,26 @@ export function ISIWizard({
             {selectionId && (
               <div className="grid grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {selectionSummary.count}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Products</div>
+                  <div className="text-2xl font-bold text-blue-600">{selectionSummary.count}</div>
+                  <div className="text-muted-foreground text-xs">Products</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {formatCurrency(selectionSummary.totalValue)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Total Value</div>
+                  <div className="text-muted-foreground text-xs">Total Value</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
                     {selectionSummary.supplierCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">Suppliers</div>
+                  <div className="text-muted-foreground text-xs">Suppliers</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
                     {selectionSummary.categoryCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">Categories</div>
+                  <div className="text-muted-foreground text-xs">Categories</div>
                 </div>
               </div>
             )}
@@ -405,12 +412,12 @@ export function ISIWizard({
 
       {/* Active Selection Banner */}
       {activeSelection && activeSelection.selection_id !== selectionId && (
-        <Alert className="bg-yellow-50 border-yellow-200">
+        <Alert className="border-yellow-200 bg-yellow-50">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertDescription>
             <strong className="text-yellow-900">Current Active Selection:</strong>{' '}
             <span className="text-yellow-700">{activeSelection.selection_name}</span>
-            <span className="text-yellow-600 ml-2">
+            <span className="ml-2 text-yellow-600">
               (This is currently shown in all stock reports)
             </span>
           </AlertDescription>
@@ -422,8 +429,8 @@ export function ISIWizard({
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Create or select an inventory selection to begin choosing products to stock.
-            Only products in the active selection will appear in stock reports.
+            Create or select an inventory selection to begin choosing products to stock. Only
+            products in the active selection will appear in stock reports.
           </AlertDescription>
         </Alert>
       )}
@@ -444,26 +451,23 @@ export function ISIWizard({
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="sticky top-0 z-10 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+              className="sticky top-0 z-10 rounded-lg border border-blue-200 bg-blue-50 p-4"
             >
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-blue-900">
-                  {selectedProductIds.length} product{selectedProductIds.length !== 1 ? 's' : ''} selected
+                  {selectedProductIds.length} product{selectedProductIds.length !== 1 ? 's' : ''}{' '}
+                  selected
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    onClick={handleAddToSelection}
-                    disabled={loading}
-                    size="sm"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                  <Button onClick={handleAddToSelection} disabled={loading} size="sm">
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                    )}
                     Add to Selection
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedProductIds([])}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setSelectedProductIds([])}>
                     Clear
                   </Button>
                 </div>
@@ -498,8 +502,8 @@ export function ISIWizard({
                 id="selection-name"
                 placeholder="e.g., Q1 2025 Inventory"
                 value={selectionName}
-                onChange={(e) => setSelectionName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleCreateSelection()}
+                onChange={e => setSelectionName(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && handleCreateSelection()}
               />
             </div>
           </div>
@@ -509,7 +513,7 @@ export function ISIWizard({
               Cancel
             </Button>
             <Button onClick={handleCreateSelection} disabled={loading || !selectionName.trim()}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Selection
             </Button>
           </DialogFooter>
@@ -522,11 +526,12 @@ export function ISIWizard({
           <DialogHeader>
             <DialogTitle>Activate Inventory Selection?</DialogTitle>
             <DialogDescription>
-              This will make {selectionSummary.count} products available for stock tracking in NXT SOH reports.
+              This will make {selectionSummary.count} products available for stock tracking in NXT
+              SOH reports.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 space-y-4">
+          <div className="space-y-4 py-4">
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
@@ -539,8 +544,9 @@ export function ISIWizard({
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Warning:</strong> Another selection &ldquo;{activeSelection.selection_name}&rdquo; is currently active.
-                  Activating this selection will automatically archive the current one.
+                  <strong>Warning:</strong> Another selection &ldquo;
+                  {activeSelection.selection_name}&rdquo; is currently active. Activating this
+                  selection will automatically archive the current one.
                 </AlertDescription>
               </Alert>
             )}
@@ -551,7 +557,7 @@ export function ISIWizard({
               Cancel
             </Button>
             <Button onClick={() => handleActivateSelection(true)} disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Activate Selection
             </Button>
           </DialogFooter>
@@ -563,22 +569,21 @@ export function ISIWizard({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Selection Conflict</DialogTitle>
-            <DialogDescription>
-              Another selection is currently active
-            </DialogDescription>
+            <DialogDescription>Another selection is currently active</DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 space-y-4">
+          <div className="space-y-4 py-4">
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Conflict:</strong> &ldquo;{conflictInfo?.active_selection_name}&rdquo; is currently the active selection.
-                Only one selection can be active at a time.
+                <strong>Conflict:</strong> &ldquo;{conflictInfo?.active_selection_name}&rdquo; is
+                currently the active selection. Only one selection can be active at a time.
               </AlertDescription>
             </Alert>
 
-            <p className="text-sm text-muted-foreground">
-              Would you like to deactivate &ldquo;{conflictInfo?.active_selection_name}&rdquo; and activate this selection instead?
+            <p className="text-muted-foreground text-sm">
+              Would you like to deactivate &ldquo;{conflictInfo?.active_selection_name}&rdquo; and
+              activate this selection instead?
             </p>
 
             <Alert>
@@ -593,13 +598,17 @@ export function ISIWizard({
             <Button variant="outline" onClick={() => setShowConflictDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={() => handleActivateSelection(true)} disabled={loading} variant="destructive">
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button
+              onClick={() => handleActivateSelection(true)}
+              disabled={loading}
+              variant="destructive"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Deactivate Current & Activate This
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

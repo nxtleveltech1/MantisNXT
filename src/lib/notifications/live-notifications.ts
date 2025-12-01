@@ -115,7 +115,6 @@ export class LiveNotificationSystem extends EventEmitter {
       await this.setupScheduledNotifications();
 
       console.log('🔔 Live notification system initialized');
-
     } catch (error) {
       console.error('❌ Failed to initialize notification system:', error);
     }
@@ -146,7 +145,7 @@ export class LiveNotificationSystem extends EventEmitter {
         priority: row.priority,
         rateLimiting: row.rate_limiting ? JSON.parse(row.rate_limiting) : undefined,
         createdAt: row.created_at,
-        updatedAt: row.updated_at
+        updatedAt: row.updated_at,
       };
 
       this.notificationRules.set(rule.id, rule);
@@ -160,7 +159,7 @@ export class LiveNotificationSystem extends EventEmitter {
    */
   private async setupDatabaseTriggers(): Promise<void> {
     // Listen for table changes
-    await db.listen('table_changes', (payload) => {
+    await db.listen('table_changes', payload => {
       try {
         const change = JSON.parse(payload);
         this.handleDatabaseChange(change);
@@ -179,10 +178,11 @@ export class LiveNotificationSystem extends EventEmitter {
     const { operation, table, record } = change;
 
     // Find matching rules
-    const matchingRules = Array.from(this.notificationRules.values()).filter(rule =>
-      rule.trigger.type === 'database_change' &&
-      rule.trigger.table === table &&
-      (!rule.trigger.operation || rule.trigger.operation === operation)
+    const matchingRules = Array.from(this.notificationRules.values()).filter(
+      rule =>
+        rule.trigger.type === 'database_change' &&
+        rule.trigger.table === table &&
+        (!rule.trigger.operation || rule.trigger.operation === operation)
     );
 
     for (const rule of matchingRules) {
@@ -204,7 +204,10 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Evaluate notification conditions
    */
-  private async evaluateConditions(conditions: NotificationCondition[], data: unknown): Promise<boolean> {
+  private async evaluateConditions(
+    conditions: NotificationCondition[],
+    data: unknown
+  ): Promise<boolean> {
     if (conditions.length === 0) return true;
 
     for (const condition of conditions) {
@@ -220,7 +223,11 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Evaluate single condition
    */
-  private evaluateCondition(fieldValue: unknown, operator: string, expectedValue: unknown): boolean {
+  private evaluateCondition(
+    fieldValue: unknown,
+    operator: string,
+    expectedValue: unknown
+  ): boolean {
     switch (operator) {
       case 'equals':
         return fieldValue === expectedValue;
@@ -242,12 +249,14 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Check rate limiting
    */
-  private async checkRateLimit(rule: NotificationRule, organizationId: string, userId: string): Promise<boolean> {
+  private async checkRateLimit(
+    rule: NotificationRule,
+    organizationId: string,
+    userId: string
+  ): Promise<boolean> {
     if (!rule.rateLimiting) return true;
 
-    const key = rule.rateLimiting.perUser
-      ? `${rule.id}:${userId}`
-      : `${rule.id}:${organizationId}`;
+    const key = rule.rateLimiting.perUser ? `${rule.id}:${userId}` : `${rule.id}:${organizationId}`;
 
     const now = Date.now();
     const counter = this.rateLimitCounters.get(key);
@@ -256,7 +265,7 @@ export class LiveNotificationSystem extends EventEmitter {
       // Reset or create counter
       this.rateLimitCounters.set(key, {
         count: 1,
-        resetTime: now + rule.rateLimiting.windowMs
+        resetTime: now + rule.rateLimiting.windowMs,
       });
       return true;
     }
@@ -301,8 +310,12 @@ export class LiveNotificationSystem extends EventEmitter {
 
   /**
    * Send in-app notification
-  */
-  private async sendNotification(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
+   */
+  private async sendNotification(
+    rule: NotificationRule,
+    action: NotificationAction,
+    context: unknown
+  ): Promise<void> {
     // Process template
     const title = this.processTemplate(action.template, context);
     const message = this.processTemplate(action.data?.message || '', context);
@@ -324,9 +337,9 @@ export class LiveNotificationSystem extends EventEmitter {
         channels: action.channels.map(channel => ({
           type: channel as unknown,
           target: recipient,
-          status: 'pending'
+          status: 'pending',
         })),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Save to database
@@ -343,35 +356,47 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Send email notification
    */
-  private async sendEmail(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
+  private async sendEmail(
+    rule: NotificationRule,
+    action: NotificationAction,
+    context: unknown
+  ): Promise<void> {
     // Email sending logic would go here
     console.log(`📧 Sending email notification for rule ${rule.id}`, {
       template: action.template,
       recipientCount: action.recipients.length,
-      context
+      context,
     });
   }
 
   /**
    * Call webhook
    */
-  private async callWebhook(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
+  private async callWebhook(
+    rule: NotificationRule,
+    action: NotificationAction,
+    context: unknown
+  ): Promise<void> {
     // Webhook calling logic would go here
     console.log(`🔗 Calling webhook for rule ${rule.id}`, {
       channels: action.channels,
       data: action.data,
-      context
+      context,
     });
   }
 
   /**
    * Create task
    */
-  private async createTask(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
+  private async createTask(
+    rule: NotificationRule,
+    action: NotificationAction,
+    context: unknown
+  ): Promise<void> {
     // Task creation logic would go here
     console.log(`📋 Creating task for rule ${rule.id}`, {
       template: action.template,
-      context
+      context,
     });
   }
 
@@ -397,7 +422,7 @@ export class LiveNotificationSystem extends EventEmitter {
       notification.read,
       notification.priority,
       JSON.stringify(notification.channels),
-      notification.createdAt
+      notification.createdAt,
     ]);
   }
 
@@ -409,9 +434,9 @@ export class LiveNotificationSystem extends EventEmitter {
       type: 'data',
       data: {
         type: 'notification',
-        notification
+        notification,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -438,7 +463,10 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Resolve recipients from recipient configurations
    */
-  private async resolveRecipients(recipients: NotificationRecipient[], organizationId: string): Promise<string[]> {
+  private async resolveRecipients(
+    recipients: NotificationRecipient[],
+    organizationId: string
+  ): Promise<string[]> {
     const userIds: string[] = [];
 
     for (const recipient of recipients) {
@@ -539,7 +567,7 @@ export class LiveNotificationSystem extends EventEmitter {
 
     const [countResult, dataResult] = await Promise.all([
       db.query(countQuery, [userId, organizationId]),
-      db.query(dataQuery, [userId, organizationId, limit, offset])
+      db.query(dataQuery, [userId, organizationId, limit, offset]),
     ]);
 
     const notifications = dataResult.rows.map(row => ({
@@ -556,12 +584,12 @@ export class LiveNotificationSystem extends EventEmitter {
       scheduledAt: row.scheduled_at,
       expiresAt: row.expires_at,
       createdAt: row.created_at,
-      readAt: row.read_at
+      readAt: row.read_at,
     }));
 
     return {
       notifications,
-      total: parseInt(countResult.rows[0].total)
+      total: parseInt(countResult.rows[0].total),
     };
   }
 
@@ -578,7 +606,6 @@ export class LiveNotificationSystem extends EventEmitter {
 
       const result = await db.query(query, [notificationId, userId]);
       return result.rowCount ? result.rowCount > 0 : false;
-
     } catch (error) {
       console.error('❌ Error marking notification as read:', error);
       return false;
@@ -588,11 +615,13 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Create manual notification
    */
-  async createManualNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
+  async createManualNotification(
+    notification: Omit<Notification, 'id' | 'createdAt'>
+  ): Promise<string> {
     const fullNotification: Notification = {
       ...notification,
       id: this.generateNotificationId(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     await this.saveNotification(fullNotification);

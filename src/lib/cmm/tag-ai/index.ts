@@ -28,9 +28,7 @@ export async function suggestTagsBatch(
     webResearchEngineId?: string;
   }
 ): Promise<Map<string, TagSuggestion[]>> {
-  console.log(
-    `[suggestTagsBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`
-  );
+  console.log(`[suggestTagsBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`);
 
   let cfg;
   try {
@@ -101,9 +99,7 @@ export async function enrichProductsBatch(
     webResearchEngineId?: string;
   }
 ): Promise<Map<string, ProductEnrichment>> {
-  console.log(
-    `[enrichProductsBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`
-  );
+  console.log(`[enrichProductsBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`);
 
   let cfg;
   try {
@@ -119,16 +115,18 @@ export async function enrichProductsBatch(
   }
 
   const providers: ProviderConfig[] = cfg.providers || [];
-  
+
   // Check if we have any LLM providers (not just web search providers)
   if (providers.length === 0) {
-    console.error('[enrichProductsBatch] No LLM providers available. Please configure at least one LLM provider (OpenAI, Anthropic, or Google) in AI Services.');
+    console.error(
+      '[enrichProductsBatch] No LLM providers available. Please configure at least one LLM provider (OpenAI, Anthropic, or Google) in AI Services.'
+    );
     throw new Error(
       'No LLM providers configured. Please add at least one LLM provider (OpenAI Codex CLI, Anthropic, or Google Gemini) in AI Services configuration. ' +
-      'Note: Web search providers (Tavily, Serper, etc.) cannot be used as LLM providers.'
+        'Note: Web search providers (Tavily, Serper, etc.) cannot be used as LLM providers.'
     );
   }
-  
+
   const effectiveTimeout = opts?.timeoutMs ?? cfg.defaults.timeoutMs ?? 60000;
   const effectiveBatchDelay = opts?.batchDelayMs ?? cfg.defaults.batchDelayMs ?? 2000;
   const effectiveBatchSize = opts?.batchSize ?? 3; // Smaller for enrichment
@@ -160,4 +158,3 @@ export async function enrichProductsBatch(
   );
   return result;
 }
-

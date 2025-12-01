@@ -18,7 +18,10 @@ import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 export class MarketBasedOptimizer extends BaseOptimizer {
   protected algorithmName = 'market_based';
 
-  async optimize(product: ProductData, run: OptimizationRun): Promise<OptimizationRecommendation | null> {
+  async optimize(
+    product: ProductData,
+    run: OptimizationRun
+  ): Promise<OptimizationRecommendation | null> {
     if (!this.validateProduct(product)) {
       return null;
     }
@@ -33,7 +36,8 @@ export class MarketBasedOptimizer extends BaseOptimizer {
       return null; // Can't do market-based pricing without competitor data
     }
 
-    const avgCompetitorPrice = competitorPrices.reduce((sum, cp) => sum + cp.price, 0) / competitorPrices.length;
+    const avgCompetitorPrice =
+      competitorPrices.reduce((sum, cp) => sum + cp.price, 0) / competitorPrices.length;
     const minCompetitorPrice = Math.min(...competitorPrices.map(cp => cp.price));
     const maxCompetitorPrice = Math.max(...competitorPrices.map(cp => cp.price));
 
@@ -45,21 +49,24 @@ export class MarketBasedOptimizer extends BaseOptimizer {
       case 'match_competition':
         // Price at market average
         recommendedPrice = avgCompetitorPrice;
-        reasoning = `Market-based pricing: Matching average competitor price of $${avgCompetitorPrice.toFixed(2)}. ` +
+        reasoning =
+          `Market-based pricing: Matching average competitor price of $${avgCompetitorPrice.toFixed(2)}. ` +
           `Competitor prices range from $${minCompetitorPrice.toFixed(2)} to $${maxCompetitorPrice.toFixed(2)}.`;
         break;
 
       case 'premium_positioning':
         // Price 10% above average
-        recommendedPrice = avgCompetitorPrice * 1.10;
-        reasoning = `Premium positioning: Pricing 10% above average competitor price ($${avgCompetitorPrice.toFixed(2)}). ` +
+        recommendedPrice = avgCompetitorPrice * 1.1;
+        reasoning =
+          `Premium positioning: Pricing 10% above average competitor price ($${avgCompetitorPrice.toFixed(2)}). ` +
           `This positions us as a premium offering in the market.`;
         break;
 
       case 'value_positioning':
         // Price 5% below average but above minimum
         recommendedPrice = Math.max(avgCompetitorPrice * 0.95, minCompetitorPrice * 1.02);
-        reasoning = `Value positioning: Pricing 5% below average competitor price ($${avgCompetitorPrice.toFixed(2)}) ` +
+        reasoning =
+          `Value positioning: Pricing 5% below average competitor price ($${avgCompetitorPrice.toFixed(2)}) ` +
           `to offer better value while maintaining quality perception.`;
         break;
 
@@ -94,21 +101,14 @@ export class MarketBasedOptimizer extends BaseOptimizer {
       hasSalesData: false,
     });
 
-    return this.createRecommendation(
-      product,
-      run,
-      recommendedPrice,
-      reasoning,
-      confidence,
-      {
-        competitorPrices: competitorPrices.map(cp => ({
-          competitor: cp.competitor_name,
-          price: cp.price,
-          last_checked: new Date(cp.last_checked),
-        })),
-        projectedDemandChange: demandChangeEstimate,
-      }
-    );
+    return this.createRecommendation(product, run, recommendedPrice, reasoning, confidence, {
+      competitorPrices: competitorPrices.map(cp => ({
+        competitor: cp.competitor_name,
+        price: cp.price,
+        last_checked: new Date(cp.last_checked),
+      })),
+      projectedDemandChange: demandChangeEstimate,
+    });
   }
 
   private async getCompetitorPrices(productId: string): Promise<unknown[]> {

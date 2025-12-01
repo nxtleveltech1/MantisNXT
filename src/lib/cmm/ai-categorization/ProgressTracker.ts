@@ -4,7 +4,7 @@
  */
 
 import { query as dbQuery } from '@/lib/database/unified-connection';
-import type { BatchProgress, ProgressMetrics} from './types';
+import type { BatchProgress, ProgressMetrics } from './types';
 
 export class ProgressTracker {
   /**

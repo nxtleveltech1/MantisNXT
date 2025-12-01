@@ -4,13 +4,9 @@
  * PATCH /api/v1/ai/predictions/[id] - Update with actual outcome
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { updatePredictionSchema } from '@/lib/ai/validation-schemas';
 import { predictionService } from '@/lib/ai/services/prediction-service';
 
@@ -18,10 +14,7 @@ import { predictionService } from '@/lib/ai/services/prediction-service';
  * GET /api/v1/ai/predictions/[id]
  * Get prediction details by ID
  */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);
@@ -48,10 +41,7 @@ export async function GET(
  * PATCH /api/v1/ai/predictions/[id]
  * Update prediction with actual outcome for accuracy tracking
  */
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);

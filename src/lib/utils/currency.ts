@@ -143,10 +143,7 @@ export function calculateVAT(amount: number, vatRate: number = SA_VAT_RATE): num
  */
 export function parseZAR(zarString: string): number {
   // Remove currency symbol and spaces, replace commas
-  const cleanString = zarString
-    .replace(/R\s?/g, '')
-    .replace(/,/g, '')
-    .trim();
+  const cleanString = zarString.replace(/R\s?/g, '').replace(/,/g, '').trim();
 
   const amount = parseFloat(cleanString);
   return isNaN(amount) ? 0 : amount;
@@ -189,7 +186,9 @@ export function convertToZAR(
   fromCurrency: 'USD' | 'EUR' | 'GBP',
   conversionRate?: number
 ): number {
-  const rate = conversionRate || CURRENCY_CONVERSIONS[`${fromCurrency}_TO_ZAR` as keyof typeof CURRENCY_CONVERSIONS];
+  const rate =
+    conversionRate ||
+    CURRENCY_CONVERSIONS[`${fromCurrency}_TO_ZAR` as keyof typeof CURRENCY_CONVERSIONS];
   return amount * rate;
 }
 
@@ -207,11 +206,7 @@ export function formatSANumber(
     useGrouping?: boolean;
   } = {}
 ): string {
-  const {
-    minimumFractionDigits = 0,
-    maximumFractionDigits = 2,
-    useGrouping = true,
-  } = options;
+  const { minimumFractionDigits = 0, maximumFractionDigits = 2, useGrouping = true } = options;
 
   return new Intl.NumberFormat('en-ZA', {
     minimumFractionDigits,

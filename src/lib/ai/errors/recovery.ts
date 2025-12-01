@@ -216,22 +216,21 @@ export class RecoveryManager {
   /**
    * Execute with timeout
    */
-  async withTimeout<T>(
-    fn: () => Promise<T>,
-    timeoutMs: number
-  ): Promise<T> {
+  async withTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
     return Promise.race([
       fn(),
       new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new AIError(
-            AIErrorCode.TOOL_TIMEOUT,
-            `Operation timed out after ${timeoutMs}ms`,
-            'transient',
-            { metadata: { timeout: timeoutMs } },
-            true,
-            'Operation took too long, please try again'
-          ));
+          reject(
+            new AIError(
+              AIErrorCode.TOOL_TIMEOUT,
+              `Operation timed out after ${timeoutMs}ms`,
+              'transient',
+              { metadata: { timeout: timeoutMs } },
+              true,
+              'Operation took too long, please try again'
+            )
+          );
         }, timeoutMs);
       }),
     ]);
@@ -240,10 +239,7 @@ export class RecoveryManager {
   /**
    * Execute with fallback
    */
-  async withFallback<T>(
-    fn: () => Promise<T>,
-    fallback: T | (() => T)
-  ): Promise<T> {
+  async withFallback<T>(fn: () => Promise<T>, fallback: T | (() => T)): Promise<T> {
     try {
       return await fn();
     } catch (error) {

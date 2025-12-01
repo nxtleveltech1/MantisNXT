@@ -37,7 +37,13 @@ export const scaleIn = {
 };
 
 // Animated container components
-export function FadeInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
+export function FadeInContainer({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+  [key: string]: unknown;
+}) {
   return (
     <motion.div {...fadeIn} {...props}>
       {children}
@@ -45,7 +51,13 @@ export function FadeInContainer({ children, ...props }: { children: React.ReactN
   );
 }
 
-export function SlideInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
+export function SlideInContainer({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+  [key: string]: unknown;
+}) {
   return (
     <motion.div {...slideIn} {...props}>
       {children}
@@ -53,7 +65,13 @@ export function SlideInContainer({ children, ...props }: { children: React.React
   );
 }
 
-export function SlideUpContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
+export function SlideUpContainer({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+  [key: string]: unknown;
+}) {
   return (
     <motion.div {...slideUp} {...props}>
       {children}
@@ -61,7 +79,13 @@ export function SlideUpContainer({ children, ...props }: { children: React.React
   );
 }
 
-export function ScaleInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
+export function ScaleInContainer({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+  [key: string]: unknown;
+}) {
   return (
     <motion.div {...scaleIn} {...props}>
       {children}
@@ -160,7 +184,7 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
   return (
     <motion.div
-      className={`${sizeClasses[size]} border-2 border-current border-t-transparent rounded-full`}
+      className={`${sizeClasses[size]} rounded-full border-2 border-current border-t-transparent`}
       animate={{ rotate: 360 }}
       transition={{
         duration: 1,
@@ -174,9 +198,9 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 // Progress bar with animation
 export function AnimatedProgressBar({ value, className }: { value: number; className?: string }) {
   return (
-    <div className={`h-2 bg-muted rounded-full overflow-hidden ${className}`}>
+    <div className={`bg-muted h-2 overflow-hidden rounded-full ${className}`}>
       <motion.div
-        className="h-full bg-primary"
+        className="bg-primary h-full"
         initial={{ width: 0 }}
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -186,7 +210,13 @@ export function AnimatedProgressBar({ value, className }: { value: number; class
 }
 
 // Stagger children animation
-export function StaggerContainer({ children, staggerDelay = 0.1 }: { children: React.ReactNode; staggerDelay?: number }) {
+export function StaggerContainer({
+  children,
+  staggerDelay = 0.1,
+}: {
+  children: React.ReactNode;
+  staggerDelay?: number;
+}) {
   return (
     <motion.div
       initial="hidden"
@@ -199,7 +229,7 @@ export function StaggerContainer({ children, staggerDelay = 0.1 }: { children: R
         },
       }}
     >
-      {React.Children.map(children, (child) => (
+      {React.Children.map(children, child => (
         <motion.div
           variants={{
             hidden: { opacity: 0, y: 20 },

@@ -7,13 +7,9 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  authenticateRequest,
-  authorizeCustomerAccess,
-  handleError,
-} from '@/lib/auth/middleware';
+import { authenticateRequest, authorizeCustomerAccess, handleError } from '@/lib/auth/middleware';
 
 // GET - Get comprehensive customer loyalty summary
 export async function GET(
@@ -28,7 +24,6 @@ export async function GET(
 
     // Authorization - Customer access check
     await authorizeCustomerAccess(user, id);
-
 
     // TODO: Replace with actual service call when Team B completes services
     // This should call the database function: get_customer_rewards_summary

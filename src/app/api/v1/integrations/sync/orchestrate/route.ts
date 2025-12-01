@@ -15,10 +15,15 @@
  * Rate Limit: 10 requests/minute per organization
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
-import { SyncOrchestrator, type System, type EntityType, type SyncConfig } from '@/lib/services/SyncOrchestrator';
+import {
+  SyncOrchestrator,
+  type System,
+  type EntityType,
+  type SyncConfig,
+} from '@/lib/services/SyncOrchestrator';
 import { ConflictResolver } from '@/lib/services/ConflictResolver';
 import { getRateLimiter } from '@/lib/utils/rate-limiter';
 
@@ -69,10 +74,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Verify authentication
     const auth = await verifyAuth(request);
     if (!auth) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { orgId } = auth;
@@ -82,10 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { success: false, error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
     }
 
     const { action } = body;
@@ -231,12 +230,7 @@ async function handleStartSync(
     }
 
     // Create orchestrator
-    const orchestrator = new SyncOrchestrator(
-      orgId,
-      systems,
-      entityTypes,
-      syncConfig
-    );
+    const orchestrator = new SyncOrchestrator(orgId, systems, entityTypes, syncConfig);
 
     // Store reference
     const syncId = (orchestrator as unknown).syncId;
@@ -290,10 +284,7 @@ async function handleGetStatus(
     const syncId = body.syncId || request.nextUrl.searchParams.get('syncId');
 
     if (!syncId) {
-      return NextResponse.json(
-        { success: false, error: 'syncId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'syncId required' }, { status: 400 });
     }
 
     // Try to find orchestrator in memory first
@@ -307,10 +298,7 @@ async function handleGetStatus(
       );
 
       if (!syncRecord.rows.length) {
-        return NextResponse.json(
-          { success: false, error: 'Sync not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ success: false, error: 'Sync not found' }, { status: 404 });
       }
 
       // Return database status
@@ -408,10 +396,7 @@ async function handlePauseSync(
     const syncId = body.syncId;
 
     if (!syncId) {
-      return NextResponse.json(
-        { success: false, error: 'syncId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'syncId required' }, { status: 400 });
     }
 
     const orchestrator = activeOrchestrators.get(syncId);
@@ -454,10 +439,7 @@ async function handleResumeSync(
     const syncId = body.syncId;
 
     if (!syncId) {
-      return NextResponse.json(
-        { success: false, error: 'syncId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'syncId required' }, { status: 400 });
     }
 
     const orchestrator = activeOrchestrators.get(syncId);
@@ -500,10 +482,7 @@ async function handleCancelSync(
     const syncId = body.syncId;
 
     if (!syncId) {
-      return NextResponse.json(
-        { success: false, error: 'syncId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'syncId required' }, { status: 400 });
     }
 
     const orchestrator = activeOrchestrators.get(syncId);
@@ -547,10 +526,7 @@ async function handleGetConflicts(
     const syncId = body.syncId;
 
     if (!syncId) {
-      return NextResponse.json(
-        { success: false, error: 'syncId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'syncId required' }, { status: 400 });
     }
 
     const conflictResolver = new ConflictResolver();
@@ -601,11 +577,7 @@ async function handleResolveConflict(
     }
 
     const conflictResolver = new ConflictResolver();
-    await conflictResolver.resolveConflictManually(
-      conflictId,
-      resolution as unknown,
-      customData
-    );
+    await conflictResolver.resolveConflictManually(conflictId, resolution as unknown, customData);
 
     return NextResponse.json({
       success: true,

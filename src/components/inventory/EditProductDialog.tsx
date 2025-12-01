@@ -1,16 +1,16 @@
-"use client"
+'use client';
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import React, { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -18,20 +18,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useInventoryStore } from '@/lib/stores/inventory-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
-import type { Product, ProductFormData } from '@/lib/types/inventory'
+} from '@/components/ui/select';
+import { useInventoryStore } from '@/lib/stores/inventory-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import type { Product, ProductFormData } from '@/lib/types/inventory';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -45,8 +45,8 @@ const productSchema = z.object({
     .string()
     .optional()
     .transform(value => {
-      const trimmed = (value ?? '').trim()
-      return trimmed.length > 0 ? trimmed : undefined
+      const trimmed = (value ?? '').trim();
+      return trimmed.length > 0 ? trimmed : undefined;
     }),
   sku: z.string().optional(),
   unit_of_measure: z.string().min(1, 'Unit of measure is required'),
@@ -60,34 +60,41 @@ const productSchema = z.object({
   storage_requirements: z.string().optional(),
   country_of_origin: z.string().optional(),
   brand: z.string().optional(),
-  model_number: z.string().optional()
-})
+  model_number: z.string().optional(),
+});
 
 type LocationOption = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 interface EditProductDialogProps {
-  product: Product
-  inventoryItemId: string
-  open: boolean
-  holdLocation?: string
-  locations: (LocationOption | string)[]
-  onOpenChange: (open: boolean) => void
+  product: Product;
+  inventoryItemId: string;
+  open: boolean;
+  holdLocation?: string;
+  locations: (LocationOption | string)[];
+  onOpenChange: (open: boolean) => void;
 }
 
 type CategoryOption = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
-export default function EditProductDialog({ product, inventoryItemId, open, holdLocation, locations, onOpenChange }: EditProductDialogProps) {
-  const { updateProduct, loading } = useInventoryStore()
-  const { addNotification } = useNotificationStore()
-  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
-  const [categoryLoading, setCategoryLoading] = useState(false)
-  const [categoryError, setCategoryError] = useState<string | null>(null)
+export default function EditProductDialog({
+  product,
+  inventoryItemId,
+  open,
+  holdLocation,
+  locations,
+  onOpenChange,
+}: EditProductDialogProps) {
+  const { updateProduct, loading } = useInventoryStore();
+  const { addNotification } = useNotificationStore();
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const form = useForm<Partial<ProductFormData>>({
     resolver: zodResolver(productSchema.partial()),
@@ -108,74 +115,75 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
       storage_requirements: product.storage_requirements || '',
       country_of_origin: product.country_of_origin || '',
       brand: product.brand || '',
-      model_number: product.model_number || ''
-    }
-  })
+      model_number: product.model_number || '',
+    },
+  });
 
   useEffect(() => {
-    let isCancelled = false
+    let isCancelled = false;
 
     const loadCategories = async () => {
       try {
-        setCategoryLoading(true)
-        setCategoryError(null)
+        setCategoryLoading(true);
+        setCategoryError(null);
 
-        const response = await fetch('/api/catalog/categories')
+        const response = await fetch('/api/catalog/categories');
         if (!response.ok) {
-          throw new Error(`Failed to fetch categories (${response.status})`)
+          throw new Error(`Failed to fetch categories (${response.status})`);
         }
 
-        const payload = await response.json()
-        const rawList = Array.isArray(payload?.data) ? payload.data : []
+        const payload = await response.json();
+        const rawList = Array.isArray(payload?.data) ? payload.data : [];
 
         const mapped = rawList
           .map((item: { id?: unknown; category_id?: unknown; name?: unknown }) => {
-            const name = typeof item?.name === 'string' ? item.name.trim() : ''
-            if (!name) return null
-            const idCandidate = item?.id ?? item?.category_id ?? name
-            return { id: String(idCandidate), name }
+            const name = typeof item?.name === 'string' ? item.name.trim() : '';
+            if (!name) return null;
+            const idCandidate = item?.id ?? item?.category_id ?? name;
+            return { id: String(idCandidate), name };
           })
-          .filter((item): item is CategoryOption => Boolean(item?.name))
+          .filter((item): item is CategoryOption => Boolean(item?.name));
 
-        const productCategory = (product.category || '').trim()
+        const productCategory = (product.category || '').trim();
         const hasProductCategory = productCategory
           ? mapped.some(option => option.name.toLowerCase() === productCategory.toLowerCase())
-          : false
+          : false;
 
-        const merged = hasProductCategory || !productCategory
-          ? mapped
-          : [{ id: `existing:${productCategory}`, name: productCategory }, ...mapped]
+        const merged =
+          hasProductCategory || !productCategory
+            ? mapped
+            : [{ id: `existing:${productCategory}`, name: productCategory }, ...mapped];
 
         if (!isCancelled) {
-          setCategoryOptions(merged)
+          setCategoryOptions(merged);
         }
       } catch (error) {
         if (!isCancelled) {
-          const message = error instanceof Error ? error.message : 'Failed to fetch categories'
-          setCategoryError(message)
-          const productCategory = (product.category || '').trim()
+          const message = error instanceof Error ? error.message : 'Failed to fetch categories';
+          setCategoryError(message);
+          const productCategory = (product.category || '').trim();
           if (productCategory) {
             setCategoryOptions(prev => {
               if (prev.some(option => option.name === productCategory)) {
-                return prev
+                return prev;
               }
-              return [{ id: `existing:${productCategory}`, name: productCategory }, ...prev]
-            })
+              return [{ id: `existing:${productCategory}`, name: productCategory }, ...prev];
+            });
           }
         }
       } finally {
         if (!isCancelled) {
-          setCategoryLoading(false)
+          setCategoryLoading(false);
         }
       }
-    }
+    };
 
-    void loadCategories()
+    void loadCategories();
 
     return () => {
-      isCancelled = true
-    }
-  }, [product.id, product.category])
+      isCancelled = true;
+    };
+  }, [product.id, product.category]);
 
   useEffect(() => {
     if (product) {
@@ -196,82 +204,99 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
         storage_requirements: product.storage_requirements || '',
         country_of_origin: product.country_of_origin || '',
         brand: product.brand || '',
-        model_number: product.model_number || ''
-      })
+        model_number: product.model_number || '',
+      });
     }
-  }, [product, form])
+  }, [product, form]);
 
   const locationOptions = useMemo(() => {
     const normalize = (item: LocationOption | string | undefined | null): LocationOption | null => {
-      if (!item) return null
+      if (!item) return null;
       if (typeof item === 'string') {
-        const value = item.trim()
-        return value ? { id: value, name: value } : null
+        const value = item.trim();
+        return value ? { id: value, name: value } : null;
       }
-      const id = typeof item.id === 'string' ? item.id.trim() : ''
-      const name = typeof item.name === 'string' ? item.name.trim() : ''
-      if (!id && !name) return null
-      const resolvedId = id || name
-      return resolvedId ? { id: resolvedId, name: name || resolvedId } : null
-    }
+      const id = typeof item.id === 'string' ? item.id.trim() : '';
+      const name = typeof item.name === 'string' ? item.name.trim() : '';
+      if (!id && !name) return null;
+      const resolvedId = id || name;
+      return resolvedId ? { id: resolvedId, name: name || resolvedId } : null;
+    };
 
-    const unique = new Map<string, LocationOption>()
+    const unique = new Map<string, LocationOption>();
 
     for (const location of locations) {
-      const normalized = normalize(location)
+      const normalized = normalize(location);
       if (normalized && !unique.has(normalized.id)) {
-        unique.set(normalized.id, normalized)
+        unique.set(normalized.id, normalized);
       }
     }
 
-    const currentId = (holdLocation || product.location_id || product.location || '').toString().trim()
+    const currentId = (holdLocation || product.location_id || product.location || '')
+      .toString()
+      .trim();
     if (currentId && !unique.has(currentId)) {
-      const currentName = typeof product.location === 'string' && product.location.trim()
-        ? product.location.trim()
-        : currentId
-      unique.set(currentId, { id: currentId, name: currentName })
+      const currentName =
+        typeof product.location === 'string' && product.location.trim()
+          ? product.location.trim()
+          : currentId;
+      unique.set(currentId, { id: currentId, name: currentName });
     }
 
     return Array.from(unique.values()).sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-    )
-  }, [locations, holdLocation, product.location, product.location_id])
+    );
+  }, [locations, holdLocation, product.location, product.location_id]);
 
   const onSubmit = async (data: Partial<ProductFormData>) => {
     if (!inventoryItemId) {
       addNotification({
         type: 'error',
         title: 'Unable to update product',
-        message: 'Missing inventory reference for this product'
-      })
-      return
+        message: 'Missing inventory reference for this product',
+      });
+      return;
     }
 
     try {
-      await updateProduct(inventoryItemId, data)
+      await updateProduct(inventoryItemId, data);
       addNotification({
         type: 'success',
         title: 'Product updated',
-        message: `${data.name || product.name} has been successfully updated`
-      })
-      onOpenChange(false)
+        message: `${data.name || product.name} has been successfully updated`,
+      });
+      onOpenChange(false);
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Failed to update product',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
     }
-  }
+  };
 
   const commonUnits = [
-    'Each', 'Piece', 'Set', 'Kit', 'Meter', 'Kilogram', 'Liter', 'Square Meter',
-    'Cubic Meter', 'Hour', 'Day', 'Box', 'Case', 'Pallet', 'Roll', 'Sheet'
-  ]
+    'Each',
+    'Piece',
+    'Set',
+    'Kit',
+    'Meter',
+    'Kilogram',
+    'Liter',
+    'Square Meter',
+    'Cubic Meter',
+    'Hour',
+    'Day',
+    'Box',
+    'Case',
+    'Pallet',
+    'Roll',
+    'Sheet',
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
           <DialogDescription>
@@ -281,7 +306,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Basic Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Basic Information</h3>
@@ -327,7 +352,11 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                       <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={categoryLoading ? 'Loading categories...' : 'Select category'} />
+                            <SelectValue
+                              placeholder={
+                                categoryLoading ? 'Loading categories...' : 'Select category'
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -349,9 +378,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                             ))}
                         </SelectContent>
                       </Select>
-                      {categoryError && (
-                        <p className="text-sm text-destructive">{categoryError}</p>
-                      )}
+                      {categoryError && <p className="text-destructive text-sm">{categoryError}</p>}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -366,7 +393,13 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                       <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={locationOptions.length ? 'Select location' : 'No locations available'} />
+                            <SelectValue
+                              placeholder={
+                                locationOptions.length
+                                  ? 'Select location'
+                                  : 'No locations available'
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -451,7 +484,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {/* Pricing & Quantity */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Pricing & Quantity</h3>
@@ -463,12 +496,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                     <FormItem>
                       <FormLabel>Unit Cost (ZAR) *</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                        />
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -549,10 +577,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                     <FormItem>
                       <FormLabel>Dimensions (cm)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="L x W x H (e.g., 10x20x5)"
-                          {...field}
-                        />
+                        <Input placeholder="L x W x H (e.g., 10x20x5)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -566,11 +591,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                     <FormItem>
                       <FormLabel>Shelf Life (days)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter shelf life in days"
-                          {...field}
-                        />
+                        <Input type="number" placeholder="Enter shelf life in days" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -603,11 +624,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                     <FormItem>
                       <FormLabel>Lead Time (days)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter lead time in days"
-                          {...field}
-                        />
+                        <Input type="number" placeholder="Enter lead time in days" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -635,11 +652,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
@@ -650,5 +663,5 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

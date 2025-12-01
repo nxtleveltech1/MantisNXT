@@ -1,30 +1,30 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AppLayout from '@/components/layout/AppLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Loader2, Save, X } from 'lucide-react'
-import { useCompetitors, useCreateScrapingJob } from '@/hooks/api/useCompetitiveIntel'
-import { useOrgId } from '@/hooks/api/useCompetitiveIntel'
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Loader2, Save, X } from 'lucide-react';
+import { useCompetitors, useCreateScrapingJob } from '@/hooks/api/useCompetitiveIntel';
+import { useOrgId } from '@/hooks/api/useCompetitiveIntel';
 
 export default function NewScrapingJobPage() {
-  const router = useRouter()
-  const { data: orgId } = useOrgId()
-  const { data: competitors = [], isLoading: competitorsLoading } = useCompetitors(orgId)
-  const createJobMutation = useCreateScrapingJob()
+  const router = useRouter();
+  const { data: orgId } = useOrgId();
+  const { data: competitors = [], isLoading: competitorsLoading } = useCompetitors(orgId);
+  const createJobMutation = useCreateScrapingJob();
 
   const [formData, setFormData] = useState({
     job_name: '',
@@ -37,28 +37,28 @@ export default function NewScrapingJobPage() {
     rate_limit_per_min: '10',
     enabled: true,
     metadata: '',
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!orgId) {
-      alert('Organization ID not available')
-      return
+      alert('Organization ID not available');
+      return;
     }
 
     try {
-      const scheduleConfig: Record<string, unknown> = {}
+      const scheduleConfig: Record<string, unknown> = {};
       if (formData.schedule_type === 'cron') {
-        scheduleConfig.cron_expression = formData.cron_expression
+        scheduleConfig.cron_expression = formData.cron_expression;
       } else if (formData.schedule_type === 'interval') {
-        scheduleConfig.interval_hours = parseInt(formData.interval_hours, 10)
+        scheduleConfig.interval_hours = parseInt(formData.interval_hours, 10);
       }
 
-      const metadata: Record<string, unknown> = {}
+      const metadata: Record<string, unknown> = {};
       if (formData.metadata.trim()) {
         try {
-          Object.assign(metadata, JSON.parse(formData.metadata))
+          Object.assign(metadata, JSON.parse(formData.metadata));
         } catch {
           // Invalid JSON, ignore
         }
@@ -75,14 +75,14 @@ export default function NewScrapingJobPage() {
         max_concurrency: parseInt(formData.max_concurrency, 10),
         rate_limit_per_min: parseInt(formData.rate_limit_per_min, 10),
         metadata,
-      })
+      });
 
-      router.push('/pricing-optimization/competitive-intelligence/jobs')
+      router.push('/pricing-optimization/competitive-intelligence/jobs');
     } catch (error) {
-      console.error('Failed to create job:', error)
-      alert(error instanceof Error ? error.message : 'Failed to create scraping job')
+      console.error('Failed to create job:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create scraping job');
     }
-  }
+  };
 
   return (
     <AppLayout
@@ -100,7 +100,7 @@ export default function NewScrapingJobPage() {
         { label: 'New Job' },
       ]}
     >
-      <div className="space-y-6 max-w-4xl">
+      <div className="max-w-4xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Create Scraping Job</h1>
           <p className="text-muted-foreground mt-1">
@@ -122,7 +122,7 @@ export default function NewScrapingJobPage() {
                   <Input
                     id="job_name"
                     value={formData.job_name}
-                    onChange={(e) => setFormData({ ...formData, job_name: e.target.value })}
+                    onChange={e => setFormData({ ...formData, job_name: e.target.value })}
                     placeholder="e.g., Daily Competitor Price Check"
                     required
                   />
@@ -132,7 +132,7 @@ export default function NewScrapingJobPage() {
                   <Label htmlFor="competitor_id">Competitor (Optional)</Label>
                   <Select
                     value={formData.competitor_id}
-                    onValueChange={(value) => setFormData({ ...formData, competitor_id: value })}
+                    onValueChange={value => setFormData({ ...formData, competitor_id: value })}
                     disabled={competitorsLoading}
                   >
                     <SelectTrigger id="competitor_id">
@@ -140,7 +140,7 @@ export default function NewScrapingJobPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">All Competitors</SelectItem>
-                      {competitors.map((comp) => (
+                      {competitors.map(comp => (
                         <SelectItem key={comp.competitor_id} value={comp.competitor_id}>
                           {comp.company_name}
                         </SelectItem>
@@ -185,7 +185,7 @@ export default function NewScrapingJobPage() {
                       type="number"
                       min="1"
                       value={formData.interval_hours}
-                      onChange={(e) => setFormData({ ...formData, interval_hours: e.target.value })}
+                      onChange={e => setFormData({ ...formData, interval_hours: e.target.value })}
                       required
                     />
                   </div>
@@ -197,13 +197,11 @@ export default function NewScrapingJobPage() {
                     <Input
                       id="cron_expression"
                       value={formData.cron_expression}
-                      onChange={(e) =>
-                        setFormData({ ...formData, cron_expression: e.target.value })
-                      }
+                      onChange={e => setFormData({ ...formData, cron_expression: e.target.value })}
                       placeholder="0 0 * * * (daily at midnight)"
                       required
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-muted-foreground mt-1 text-xs">
                       Format: minute hour day month weekday
                     </p>
                   </div>
@@ -227,10 +225,10 @@ export default function NewScrapingJobPage() {
                       min="1"
                       max="10"
                       value={formData.priority}
-                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      onChange={e => setFormData({ ...formData, priority: e.target.value })}
                       required
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Higher = more important</p>
+                    <p className="text-muted-foreground mt-1 text-xs">Higher = more important</p>
                   </div>
 
                   <div>
@@ -241,14 +239,10 @@ export default function NewScrapingJobPage() {
                       min="1"
                       max="10"
                       value={formData.max_concurrency}
-                      onChange={(e) =>
-                        setFormData({ ...formData, max_concurrency: e.target.value })
-                      }
+                      onChange={e => setFormData({ ...formData, max_concurrency: e.target.value })}
                       required
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Parallel scraping jobs
-                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">Parallel scraping jobs</p>
                   </div>
                 </div>
 
@@ -259,12 +253,10 @@ export default function NewScrapingJobPage() {
                     type="number"
                     min="1"
                     value={formData.rate_limit_per_min}
-                    onChange={(e) =>
-                      setFormData({ ...formData, rate_limit_per_min: e.target.value })
-                    }
+                    onChange={e => setFormData({ ...formData, rate_limit_per_min: e.target.value })}
                     required
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Maximum requests per minute to prevent blocking
                   </p>
                 </div>
@@ -281,14 +273,14 @@ export default function NewScrapingJobPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="enabled">Enabled</Label>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Job will be active immediately after creation
                     </p>
                   </div>
                   <Switch
                     id="enabled"
                     checked={formData.enabled}
-                    onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
+                    onCheckedChange={checked => setFormData({ ...formData, enabled: checked })}
                   />
                 </div>
 
@@ -297,11 +289,11 @@ export default function NewScrapingJobPage() {
                   <Textarea
                     id="metadata"
                     value={formData.metadata}
-                    onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}
+                    onChange={e => setFormData({ ...formData, metadata: e.target.value })}
                     placeholder='{"custom_field": "value"}'
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Optional JSON metadata for custom configuration
                   </p>
                 </div>
@@ -337,11 +329,5 @@ export default function NewScrapingJobPage() {
         </form>
       </div>
     </AppLayout>
-  )
+  );
 }
-
-
-
-
-
-

@@ -6,7 +6,7 @@
  * DELETE: Soft delete upload (mark as rejected)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
 import { createErrorResponse, validateRequestBody } from '@/lib/utils/neon-error-handler';
@@ -14,10 +14,7 @@ import { createErrorResponse, validateRequestBody } from '@/lib/utils/neon-error
 /**
  * GET /api/spp/uploads/[id] - Get upload details with all rows
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
@@ -27,7 +24,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'Upload not found'
+          error: 'Upload not found',
         },
         { status: 404 }
       );
@@ -35,7 +32,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: details
+      data: details,
     });
   } catch (error) {
     console.error('[API] Get upload details error:', error);
@@ -46,10 +43,7 @@ export async function GET(
 /**
  * PATCH /api/spp/uploads/[id] - Update upload status or reprocess
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -61,7 +55,7 @@ export async function PATCH(
       return NextResponse.json({
         success: true,
         data: result,
-        message: 'Upload reprocessed successfully'
+        message: 'Upload reprocessed successfully',
       });
     }
 
@@ -72,7 +66,7 @@ export async function PATCH(
         {
           success: false,
           error: 'Validation failed',
-          details: validation.errors
+          details: validation.errors,
         },
         { status: 400 }
       );
@@ -86,7 +80,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: updated,
-      message: 'Upload updated successfully'
+      message: 'Upload updated successfully',
     });
   } catch (error) {
     console.error('[API] Update upload error:', error);
@@ -107,13 +101,13 @@ export async function DELETE(
     // Soft delete by marking as rejected
     await pricelistService['updateUploadStatus'](id, 'rejected', {
       deleted_at: new Date().toISOString(),
-      deleted_by: 'system' // TODO: Get from auth session
+      deleted_by: 'system', // TODO: Get from auth session
     });
 
     return NextResponse.json({
       success: true,
       data: { deleted: true },
-      message: 'Upload deleted successfully'
+      message: 'Upload deleted successfully',
     });
   } catch (error) {
     console.error('[API] Delete upload error:', error);

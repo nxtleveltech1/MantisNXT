@@ -65,7 +65,7 @@ export default function ProductMatchesPage() {
     }
   };
 
-  const filteredMatches = matches.filter((match) => {
+  const filteredMatches = matches.filter(match => {
     if (!search) return true;
     const searchLower = search.toLowerCase();
     return (
@@ -151,12 +151,12 @@ export default function ProductMatchesPage() {
                 </CardDescription>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search matches..."
                   className="w-64 pl-9"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={e => setSearch(e.target.value)}
                 />
               </div>
             </div>
@@ -164,7 +164,7 @@ export default function ProductMatchesPage() {
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : filteredMatches.length > 0 ? (
               <Table>
@@ -181,16 +181,14 @@ export default function ProductMatchesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMatches.map((match) => (
+                  {filteredMatches.map(match => (
                     <TableRow key={match.match_id}>
-                      <TableCell className="font-medium">
-                        {match.competitor_name}
-                      </TableCell>
+                      <TableCell className="font-medium">{match.competitor_name}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{match.competitor_title || 'N/A'}</div>
                           {match.competitor_sku && (
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               SKU: {match.competitor_sku}
                             </div>
                           )}
@@ -199,7 +197,7 @@ export default function ProductMatchesPage() {
                               href={match.competitor_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                              className="text-primary flex items-center gap-1 text-xs hover:underline"
                             >
                               View <LinkIcon className="h-3 w-3" />
                             </a>
@@ -211,7 +209,7 @@ export default function ProductMatchesPage() {
                           <div className="space-y-1">
                             <div className="font-medium">SKU: {match.internal_sku}</div>
                             {match.internal_product_id && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 ID: {match.internal_product_id.slice(0, 8)}...
                               </div>
                             )}
@@ -231,7 +229,7 @@ export default function ProductMatchesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-16 bg-muted rounded-full h-2">
+                          <div className="bg-muted h-2 w-16 rounded-full">
                             <div
                               className="bg-primary h-2 rounded-full"
                               style={{ width: `${match.match_confidence}%` }}
@@ -253,10 +251,12 @@ export default function ProductMatchesPage() {
               </Table>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">No product matches found</p>
-                <p className="text-sm text-muted-foreground">
-                  {search ? 'Try adjusting your search criteria' : 'Product matches will appear here after scraping jobs collect data'}
+                <AlertCircle className="text-muted-foreground mb-4 h-12 w-12" />
+                <p className="mb-2 text-lg font-medium">No product matches found</p>
+                <p className="text-muted-foreground text-sm">
+                  {search
+                    ? 'Try adjusting your search criteria'
+                    : 'Product matches will appear here after scraping jobs collect data'}
                 </p>
               </div>
             )}
@@ -266,4 +266,3 @@ export default function ProductMatchesPage() {
     </AppLayout>
   );
 }
-

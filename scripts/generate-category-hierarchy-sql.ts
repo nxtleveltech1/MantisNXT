@@ -47,15 +47,20 @@ function parseHierarchy(content: string): CategoryNode[] {
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const line = rawLine.trim();
-    
+
     // Skip empty lines, separators, and instructions
-    if (!line || line.startsWith('___') || line.startsWith('How to use') || line.startsWith('L1 →')) {
+    if (
+      !line ||
+      line.startsWith('___') ||
+      line.startsWith('How to use') ||
+      line.startsWith('L1 →')
+    ) {
       continue;
     }
 
     let level = 0;
     let name = '';
-    
+
     // L1: "1\. Musical Instruments" or "10\. Spares" - single number (1-10), escaped dot
     // Key: Must be single number (not "1.1" or "1.1.1"), no tab, no bullet at start
     const l1Match = line.match(/^(\d+)\\?\.\s+(.+)$/);
@@ -65,10 +70,13 @@ function parseHierarchy(content: string): CategoryNode[] {
       // L1: number is 1-10, line doesn't start with tab/bullet, and rest doesn't start with number (to exclude "1.1 Guitars")
       // We check for tab/bullet on rawLine to catch indentation
       const startsWithTabOrBullet = rawLine.match(/^[\t\s]*[•o▪●○]/);
-      if (num >= 1 && num <= 10 && 
-          !startsWithTabOrBullet && 
-          !rawLine.startsWith('\t') && 
-          !rest.match(/^\d+\./)) {
+      if (
+        num >= 1 &&
+        num <= 10 &&
+        !startsWithTabOrBullet &&
+        !rawLine.startsWith('\t') &&
+        !rest.match(/^\d+\./)
+      ) {
         level = 1;
         name = cleanCategoryName(rest);
       }
@@ -78,7 +86,12 @@ function parseHierarchy(content: string): CategoryNode[] {
       const l2Match = line.match(/^(\d+)\.(\d+)\s+(.+)$/);
       // Check for bullet at start, not anywhere in line
       const startsWithBullet = rawLine.match(/^[\t\s]*[•o▪●○]/);
-      if (l2Match && !startsWithBullet && !rawLine.startsWith('\t') && !line.match(/^\d+\.\d+\.\d+/)) {
+      if (
+        l2Match &&
+        !startsWithBullet &&
+        !rawLine.startsWith('\t') &&
+        !line.match(/^\d+\.\d+\.\d+/)
+      ) {
         level = 2;
         name = cleanCategoryName(l2Match[3]);
       }
@@ -112,7 +125,7 @@ function parseHierarchy(content: string): CategoryNode[] {
     if (!name || level === 0) continue;
 
     const slug = normalizeCategoryLabel(name);
-    
+
     // Build parent path from hierarchy stack
     const parentParts: string[] = [];
     for (let l = 1; l < level; l++) {
@@ -144,7 +157,7 @@ function parseHierarchy(content: string): CategoryNode[] {
 
 function generateSQL(categories: CategoryNode[]): string {
   const sql: string[] = [];
-  
+
   sql.push('-- Migration: Seed Comprehensive Category Hierarchy');
   sql.push('-- Description: Seeds 5-level category hierarchy from Categories_Hierachy.md');
   sql.push('-- Generated: ' + new Date().toISOString());
@@ -169,17 +182,17 @@ function generateSQL(categories: CategoryNode[]): string {
   // Group by level and insert level by level
   for (let level = 1; level <= 5; level++) {
     const levelCategories = categories.filter(c => c.level === level);
-    
+
     if (levelCategories.length === 0) continue;
 
     sql.push(`-- Level ${level} Categories (${levelCategories.length} categories)`);
-    
+
     for (const cat of levelCategories) {
-      const parentIdExpr = cat.parentPath
-        ? `get_category_id_by_path('${cat.parentPath}')`
-        : 'NULL';
-      
-      sql.push(`INSERT INTO core.category (name, parent_id, level, path, is_active, created_at, updated_at)`);
+      const parentIdExpr = cat.parentPath ? `get_category_id_by_path('${cat.parentPath}')` : 'NULL';
+
+      sql.push(
+        `INSERT INTO core.category (name, parent_id, level, path, is_active, created_at, updated_at)`
+      );
       sql.push(`VALUES (`);
       sql.push(`  '${cat.name.replace(/'/g, "''")}',`);
       sql.push(`  ${parentIdExpr}::uuid,`);
@@ -207,8 +220,17 @@ function generateSQL(categories: CategoryNode[]): string {
 }
 
 // Main execution
-const hierarchyFile = join(process.cwd(), 'Platform Modules', 'Categories', 'Categories_Hierachy.md');
-const outputFile = join(process.cwd(), 'migrations', '0034_seed_comprehensive_category_hierarchy.sql');
+const hierarchyFile = join(
+  process.cwd(),
+  'Platform Modules',
+  'Categories',
+  'Categories_Hierachy.md'
+);
+const outputFile = join(
+  process.cwd(),
+  'migrations',
+  '0034_seed_comprehensive_category_hierarchy.sql'
+);
 
 console.log('Reading hierarchy file...');
 const content = readFileSync(hierarchyFile, 'utf-8');

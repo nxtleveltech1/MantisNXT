@@ -20,26 +20,26 @@ async function testSimpleSupplierCreation() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   const testData = {
-    name: "Test Simple Supplier",
-    email: "test@simple.com",
-    phone: "+27 11 111 1111",
-    address: "123 Test Street",
-    contact_person: "Test Person",
-    payment_terms: "30 days",
+    name: 'Test Simple Supplier',
+    email: 'test@simple.com',
+    phone: '+27 11 111 1111',
+    address: '123 Test Street',
+    contact_person: 'Test Person',
+    payment_terms: '30 days',
   };
 
   try {
     const contactInfo = {
-      email: testData.email || "",
-      phone: testData.phone || "",
+      email: testData.email || '',
+      phone: testData.phone || '',
       address: testData.address,
-      contact_person: testData.contact_person || "",
+      contact_person: testData.contact_person || '',
     };
 
     const code = testData.name
       .substring(0, 10)
       .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
+      .replace(/[^A-Z0-9]/g, '');
 
     const insertQuery = `
       INSERT INTO core.supplier (
@@ -60,7 +60,7 @@ async function testSimpleSupplierCreation() {
       testData.name,
       code,
       JSON.stringify(contactInfo),
-      testData.payment_terms || "30 days",
+      testData.payment_terms || '30 days',
     ]);
 
     console.log('✅ Simple supplier created successfully');
@@ -89,33 +89,33 @@ async function testEnhancedSupplierCreation() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   const testData = {
-    name: "Test Enhanced Supplier Corp",
-    code: "TESTENHANCED",
-    website: "https://testenhanced.com",
-    currency: "ZAR",
+    name: 'Test Enhanced Supplier Corp',
+    code: 'TESTENHANCED',
+    website: 'https://testenhanced.com',
+    currency: 'ZAR',
     primaryContact: {
-      name: "Jane Doe",
-      email: "jane@testenhanced.com",
-      phone: "+27 11 222 2222",
-      title: "Sales Manager",
+      name: 'Jane Doe',
+      email: 'jane@testenhanced.com',
+      phone: '+27 11 222 2222',
+      title: 'Sales Manager',
     },
     address: {
-      street: "456 Business Avenue",
-      city: "Cape Town",
-      state: "Western Cape",
-      postalCode: "8001",
-      country: "South Africa",
+      street: '456 Business Avenue',
+      city: 'Cape Town',
+      state: 'Western Cape',
+      postalCode: '8001',
+      country: 'South Africa',
     },
-    paymentTerms: "Net 30",
+    paymentTerms: 'Net 30',
   };
 
   try {
     const contactInfo = {
-      email: testData.primaryContact?.email || "",
-      phone: testData.primaryContact?.phone || "",
-      website: testData.website || "",
-      contact_person: testData.primaryContact?.name || "",
-      job_title: testData.primaryContact?.title || "",
+      email: testData.primaryContact?.email || '',
+      phone: testData.primaryContact?.phone || '',
+      website: testData.website || '',
+      contact_person: testData.primaryContact?.name || '',
+      job_title: testData.primaryContact?.title || '',
       address: testData.address
         ? {
             street: testData.address.street,
@@ -146,8 +146,8 @@ async function testEnhancedSupplierCreation() {
       testData.name,
       testData.code,
       JSON.stringify(contactInfo),
-      testData.currency || "USD",
-      testData.paymentTerms || "30 days",
+      testData.currency || 'USD',
+      testData.paymentTerms || '30 days',
     ]);
 
     console.log('✅ Enhanced supplier created successfully');

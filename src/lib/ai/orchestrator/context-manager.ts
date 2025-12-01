@@ -142,9 +142,7 @@ export class ContextManager {
     // Add recent conversation context (last 5 turns)
     const recentHistory = this.getConversationHistory(session.id, 5);
     if (recentHistory.length > 0) {
-      const historyContext = recentHistory
-        .map(turn => `${turn.role}: ${turn.content}`)
-        .join('\n');
+      const historyContext = recentHistory.map(turn => `${turn.role}: ${turn.content}`).join('\n');
       contextParts.push(`Recent Conversation:\n${historyContext}`);
     }
 
@@ -167,7 +165,8 @@ export class ContextManager {
   /**
    * Prune old sessions based on maximum age
    */
-  public pruneOldSessions(maxAgeMs: number = 24 * 60 * 60 * 1000): number { // 24 hours default
+  public pruneOldSessions(maxAgeMs: number = 24 * 60 * 60 * 1000): number {
+    // 24 hours default
     const cutoffTime = Date.now() - maxAgeMs;
     let prunedCount = 0;
 
@@ -187,27 +186,29 @@ export class ContextManager {
    */
   public getStats() {
     const sessions = Array.from(this.sessions.values());
-    const totalConversations = Array.from(this.conversationHistory.values())
-      .reduce((sum, history) => sum + history.length, 0);
+    const totalConversations = Array.from(this.conversationHistory.values()).reduce(
+      (sum, history) => sum + history.length,
+      0
+    );
 
-    const avgConversationLength = sessions.length > 0
-      ? totalConversations / sessions.length
-      : 0;
+    const avgConversationLength = sessions.length > 0 ? totalConversations / sessions.length : 0;
 
     return {
       totalSessions: sessions.length,
       totalConversationTurns: totalConversations,
       averageConversationLength: Math.round(avgConversationLength * 100) / 100,
-      oldestSession: sessions.length > 0
-        ? sessions.reduce((oldest, session) =>
-            session.createdAt < oldest.createdAt ? session : oldest
-          ).createdAt
-        : null,
-      newestSession: sessions.length > 0
-        ? sessions.reduce((newest, session) =>
-            session.createdAt > newest.createdAt ? session : newest
-          ).createdAt
-        : null,
+      oldestSession:
+        sessions.length > 0
+          ? sessions.reduce((oldest, session) =>
+              session.createdAt < oldest.createdAt ? session : oldest
+            ).createdAt
+          : null,
+      newestSession:
+        sessions.length > 0
+          ? sessions.reduce((newest, session) =>
+              session.createdAt > newest.createdAt ? session : newest
+            ).createdAt
+          : null,
     };
   }
 
@@ -268,12 +269,15 @@ export class ContextManager {
    */
   private startCleanupInterval(): void {
     // Run cleanup every hour
-    this.cleanupInterval = setInterval(() => {
-      const pruned = this.pruneOldSessions();
-      if (pruned > 0) {
-        console.log(`Pruned ${pruned} old sessions`);
-      }
-    }, 60 * 60 * 1000); // 1 hour
+    this.cleanupInterval = setInterval(
+      () => {
+        const pruned = this.pruneOldSessions();
+        if (pruned > 0) {
+          console.log(`Pruned ${pruned} old sessions`);
+        }
+      },
+      60 * 60 * 1000
+    ); // 1 hour
   }
 
   /**

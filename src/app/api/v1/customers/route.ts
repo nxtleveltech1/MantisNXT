@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { CustomerService } from '@/lib/services/CustomerService';
 
@@ -15,14 +15,14 @@ export async function GET(request: NextRequest) {
       data,
       total: count,
       limit,
-      offset
+      offset,
     });
   } catch (error: unknown) {
     console.error('Error in GET /api/v1/customers:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch customers'
+        error: error.message || 'Failed to fetch customers',
       },
       { status: 500 }
     );
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Customer name is required'
+          error: 'Customer name is required',
         },
         { status: 400 }
       );
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Customer email is required'
+          error: 'Customer email is required',
         },
         { status: 400 }
       );
@@ -67,19 +67,22 @@ export async function POST(request: NextRequest) {
       address: body.address || null,
       tags: body.tags || null,
       metadata: body.metadata || null,
-      notes: body.notes || null
+      notes: body.notes || null,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: customer
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: customer,
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error('Error in POST /api/v1/customers:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to create customer'
+        error: error.message || 'Failed to create customer',
       },
       { status: 500 }
     );

@@ -84,12 +84,7 @@ const SIZE_CONFIG = {
   },
 };
 
-export function TierBadge({
-  tier,
-  size = 'md',
-  showIcon = true,
-  className,
-}: TierBadgeProps) {
+export function TierBadge({ tier, size = 'md', showIcon = true, className }: TierBadgeProps) {
   const config = TIER_CONFIG[tier];
   const sizeConfig = SIZE_CONFIG[size];
   const Icon = config.icon;
@@ -98,7 +93,7 @@ export function TierBadge({
     <Badge
       variant="outline"
       className={cn(
-        'font-semibold border-2 gap-1.5',
+        'gap-1.5 border-2 font-semibold',
         config.color,
         config.bgColor,
         config.borderColor,

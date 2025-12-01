@@ -15,17 +15,19 @@
  * }
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { z } from 'zod';
 
 const QueryRequestSchema = z.object({
   query: z.string().min(5).max(500).describe('Natural language query'),
-  options: z.object({
-    explain: z.boolean().optional().default(true).describe('Include query explanation'),
-    limit: z.number().min(1).max(1000).optional().describe('Maximum rows to return'),
-  }).optional(),
+  options: z
+    .object({
+      explain: z.boolean().optional().default(true).describe('Include query explanation'),
+      limit: z.number().min(1).max(1000).optional().describe('Maximum rows to return'),
+    })
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -57,34 +59,42 @@ export async function POST(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Natural language query error:', error);
 
     // Validation error
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request',
-        details: error.issues,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request',
+          details: error.issues,
+        },
+        { status: 400 }
+      );
     }
 
     // Query safety error
     if (error instanceof Error && error.message.includes('safety')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Query rejected for safety reasons',
-        message: error.message,
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Query rejected for safety reasons',
+          message: error.message,
+        },
+        { status: 403 }
+      );
     }
 
     // General error
-    return NextResponse.json({
-      success: false,
-      error: 'Query execution failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Query execution failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   } finally {
     const duration = Date.now() - startTime;
     console.log(`AI Query executed in ${duration}ms`);
@@ -101,7 +111,7 @@ export async function GET(request: NextRequest) {
       options: {
         explain: 'Include query explanation (default: true)',
         limit: 'Maximum rows to return (default: no limit)',
-      }
+      },
     },
     examples: [
       'Show me the top 5 suppliers by total inventory value',

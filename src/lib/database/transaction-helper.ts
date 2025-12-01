@@ -39,8 +39,8 @@
  * }
  */
 
-import type { PoolClient } from 'pg'
-import { withTransaction as enterpriseWithTransaction } from '@/lib/database/unified-connection'
+import type { PoolClient } from 'pg';
+import { withTransaction as enterpriseWithTransaction } from '@/lib/database/unified-connection';
 
 export class TransactionHelper {
   /**
@@ -69,11 +69,9 @@ export class TransactionHelper {
    *   return orderResult.rows[0]
    * })
    */
-  static async withTransaction<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  static async withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
     // Delegate to enterprise connection manager's withTransaction
-    return enterpriseWithTransaction(callback)
+    return enterpriseWithTransaction(callback);
   }
 
   /**
@@ -91,12 +89,10 @@ export class TransactionHelper {
    *   return result.rows
    * })
    */
-  static async withClient<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  static async withClient<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
     // For withClient (no transaction), we'll use withTransaction but without BEGIN/COMMIT
     // This maintains the same connection pooling behavior
-    return enterpriseWithTransaction(callback)
+    return enterpriseWithTransaction(callback);
   }
 
   /**
@@ -138,17 +134,17 @@ export class TransactionHelper {
   ): Promise<T> {
     // Validate savepoint name (prevent SQL injection)
     if (!/^[a-zA-Z0-9_]+$/.test(savepointName)) {
-      throw new Error('Invalid savepoint name. Use only alphanumeric characters and underscores.')
+      throw new Error('Invalid savepoint name. Use only alphanumeric characters and underscores.');
     }
 
     try {
-      await client.query(`SAVEPOINT ${savepointName}`)
-      const result = await callback(client)
-      await client.query(`RELEASE SAVEPOINT ${savepointName}`)
-      return result
+      await client.query(`SAVEPOINT ${savepointName}`);
+      const result = await callback(client);
+      await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+      return result;
     } catch (error) {
-      await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`)
-      throw error
+      await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+      throw error;
     }
   }
 
@@ -175,7 +171,7 @@ export class TransactionHelper {
     client: PoolClient,
     operations: Array<(client: PoolClient) => Promise<T>>
   ): Promise<T[]> {
-    return Promise.all(operations.map(op => op(client)))
+    return Promise.all(operations.map(op => op(client)));
   }
 
   /**
@@ -193,7 +189,7 @@ export class TransactionHelper {
    * const result = await pool.query('SELECT * FROM lookup_table')
    */
   static getPool() {
-    return pool
+    return pool;
   }
 }
 
@@ -202,14 +198,14 @@ export class TransactionHelper {
  *
  * @deprecated Use TransactionHelper.withTransaction instead
  */
-export const withTransaction = TransactionHelper.withTransaction
+export const withTransaction = TransactionHelper.withTransaction;
 
 /**
  * Export individual functions for tree-shaking
  */
-export const { withClient, withSavepoint, parallel } = TransactionHelper
+export const { withClient, withSavepoint, parallel } = TransactionHelper;
 
 /**
  * Default export for convenience
  */
-export default TransactionHelper
+export default TransactionHelper;

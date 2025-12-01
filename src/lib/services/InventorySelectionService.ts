@@ -17,11 +17,9 @@ import type {
   InventorySelection,
   InventorySelectedItem,
   SelectedCatalog,
-  SelectionWorkflowRequest} from '../../types/nxt-spp';
-import {
-  SelectionWorkflowRequestSchema,
-  InventorySelectionSchema
+  SelectionWorkflowRequest,
 } from '../../types/nxt-spp';
+import { SelectionWorkflowRequestSchema, InventorySelectionSchema } from '../../types/nxt-spp';
 
 export class InventorySelectionService {
   /**
@@ -49,7 +47,7 @@ export class InventorySelectionService {
       validated.description || null,
       validated.created_by,
       validated.valid_from || null,
-      validated.valid_to || null
+      validated.valid_to || null,
     ];
 
     const result = await dbQuery<InventorySelection>(query, values);
@@ -110,7 +108,7 @@ export class InventorySelectionService {
 
     return {
       selections: result.rows,
-      total
+      total,
     };
   }
 
@@ -128,7 +126,7 @@ export class InventorySelectionService {
     let itemsAffected = 0;
 
     try {
-      await withTransaction(async (client) => {
+      await withTransaction(async client => {
         let selectionId = validated.selection_id;
 
         // Create new selection if not provided
@@ -142,7 +140,7 @@ export class InventorySelectionService {
           `;
           const createResult = await client.query(createQuery, [
             validated.selection_name,
-            validated.selected_by
+            validated.selected_by,
           ]);
           selectionId = createResult.rows[0].selection_id;
         }
@@ -178,9 +176,9 @@ export class InventorySelectionService {
                 const activeSelection = activeCheck.rows[0];
                 throw new Error(
                   `Cannot activate selection: another selection '${activeSelection.selection_name}' ` +
-                  `(${activeSelection.selection_id}) is already active. ` +
-                  `Please archive the current active selection first or use the activateSelection() method ` +
-                  `with deactivateOthers=true.`
+                    `(${activeSelection.selection_id}) is already active. ` +
+                    `Please archive the current active selection first or use the activateSelection() method ` +
+                    `with deactivateOthers=true.`
                 );
               }
             }
@@ -217,7 +215,7 @@ export class InventorySelectionService {
               supplierProductId,
               status,
               validated.notes || null,
-              validated.selected_by
+              validated.selected_by,
             ]);
 
             if (result.rowCount && result.rowCount > 0) {
@@ -235,14 +233,14 @@ export class InventorySelectionService {
         success: errors.length === 0,
         selection_id: validated.selection_id || '',
         items_affected: itemsAffected,
-        errors
+        errors,
       };
     } catch (error) {
       return {
         success: false,
         selection_id: validated.selection_id || '',
         items_affected: itemsAffected,
-        errors: [error instanceof Error ? error.message : 'Unknown error']
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
   }
@@ -259,7 +257,7 @@ export class InventorySelectionService {
     const errors: string[] = [];
     let added = 0;
 
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       for (const productId of supplierProductIds) {
         try {
           const query = `
@@ -297,7 +295,7 @@ export class InventorySelectionService {
     const errors: string[] = [];
     let removed = 0;
 
-    await withTransaction(async (client) => {
+    await withTransaction(async client => {
       try {
         const query = `
           DELETE FROM core.inventory_selected_item
@@ -370,10 +368,7 @@ export class InventorySelectionService {
     in_stock_only?: boolean;
     search?: string;
   }): Promise<SelectedCatalog[]> {
-    const conditions: string[] = [
-      'sel.status = $1',
-      'isi.status = $2'
-    ];
+    const conditions: string[] = ['sel.status = $1', 'isi.status = $2'];
     const params: unknown[] = ['active', 'selected'];
     let paramIndex = 3;
 
@@ -497,7 +492,7 @@ export class InventorySelectionService {
     selectionId: string,
     deactivateOthers: boolean = false
   ): Promise<InventorySelection> {
-    return await withTransaction(async (client) => {
+    return await withTransaction(async client => {
       // Check if selection exists and is in valid state for activation
       const selectionQuery = 'SELECT * FROM core.inventory_selection WHERE selection_id = $1';
       const selectionResult = await client.query<InventorySelection>(selectionQuery, [selectionId]);
@@ -538,8 +533,8 @@ export class InventorySelectionService {
           const activeSelection = activeCheck.rows[0];
           throw new Error(
             `Cannot activate selection: another selection '${activeSelection.selection_name}' ` +
-            `(${activeSelection.selection_id}) is already active. ` +
-            `Set deactivateOthers=true to automatically archive it.`
+              `(${activeSelection.selection_id}) is already active. ` +
+              `Set deactivateOthers=true to automatically archive it.`
           );
         }
 
@@ -592,7 +587,7 @@ export class InventorySelectionService {
       return {
         selection: null,
         item_count: 0,
-        inventory_value: 0
+        inventory_value: 0,
       };
     }
 
@@ -602,7 +597,9 @@ export class InventorySelectionService {
       FROM core.inventory_selected_item
       WHERE selection_id = $1 AND status = 'selected'
     `;
-    const itemCountResult = await dbQuery<{ count: string }>(itemCountQuery, [selection.selection_id]);
+    const itemCountResult = await dbQuery<{ count: string }>(itemCountQuery, [
+      selection.selection_id,
+    ]);
     const itemCount = parseInt(itemCountResult.rows[0].count);
 
     // Get inventory value (calculate from price history and stock on hand)
@@ -619,14 +616,17 @@ export class InventorySelectionService {
       inventoryValue = parseFloat(valueResult.rows[0]?.total || '0');
     } catch (error) {
       // If stock_on_hand table doesn't exist or query fails, return 0
-      console.warn('[InventorySelectionService] Cannot calculate inventory value:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn(
+        '[InventorySelectionService] Cannot calculate inventory value:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       inventoryValue = 0;
     }
 
     return {
       selection,
       item_count: itemCount,
-      inventory_value: inventoryValue
+      inventory_value: inventoryValue,
     };
   }
 }

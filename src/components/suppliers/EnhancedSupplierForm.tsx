@@ -1,23 +1,23 @@
 // @ts-nocheck
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useForm, useFieldArray } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -26,9 +26,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -36,14 +36,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import WebSupplierDiscovery from "./WebSupplierDiscovery"
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import WebSupplierDiscovery from './WebSupplierDiscovery';
 import {
   Building2,
   User,
@@ -59,26 +54,26 @@ import {
   Settings,
   Loader2,
   ArrowLeft,
-  HelpCircle
-} from "lucide-react"
+  HelpCircle,
+} from 'lucide-react';
 
 // Enhanced validation schemas with better accessibility
 const contactSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(["primary", "billing", "technical", "sales", "support"]).optional(),
+  type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']).optional(),
   name: z.string().optional(),
   title: z.string().optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   mobile: z.string().optional(),
   department: z.string().optional(),
   isPrimary: z.boolean().default(false),
   isActive: z.boolean().default(true),
-})
+});
 
 const addressSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(["headquarters", "billing", "shipping", "warehouse", "manufacturing"]).optional(),
+  type: z.enum(['headquarters', 'billing', 'shipping', 'warehouse', 'manufacturing']).optional(),
   name: z.string().optional(),
   addressLine1: z.string().optional(),
   addressLine2: z.string().optional(),
@@ -88,45 +83,51 @@ const addressSchema = z.object({
   country: z.string().optional(),
   isPrimary: z.boolean().default(false),
   isActive: z.boolean().default(true),
-})
+});
 
 const supplierSchema = z.object({
   id: z.string().optional(),
   name: z.string().optional(),
   code: z.string().optional(),
-  status: z.enum(["active", "inactive", "pending", "suspended"]).optional(),
-  tier: z.enum(["strategic", "preferred", "approved", "conditional"]).optional(),
+  status: z.enum(['active', 'inactive', 'pending', 'suspended']).optional(),
+  tier: z.enum(['strategic', 'preferred', 'approved', 'conditional']).optional(),
   categories: z.array(z.string()).default([]), // Changed from category to categories (array)
   tags: z.array(z.string()).default([]),
   brands: z.array(z.string()).default([]),
 
   // Business Information
-  businessInfo: z.object({
-    legalName: z.string().optional(),
-    tradingName: z.string().optional(),
-    taxId: z.string().optional().or(z.literal("")),
-    registrationNumber: z.string().optional().or(z.literal("")),
-    website: z.string().url("Invalid website URL").optional().or(z.literal("")),
-    foundedYear: z.number().min(1800).max(new Date().getFullYear()).nullish(),
-    employeeCount: z.number().min(1).nullish(),
-    annualRevenue: z.number().min(0).nullish(),
-    currency: z.string().optional(),
-  }).optional(),
+  businessInfo: z
+    .object({
+      legalName: z.string().optional(),
+      tradingName: z.string().optional(),
+      taxId: z.string().optional().or(z.literal('')),
+      registrationNumber: z.string().optional().or(z.literal('')),
+      website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+      foundedYear: z.number().min(1800).max(new Date().getFullYear()).nullish(),
+      employeeCount: z.number().min(1).nullish(),
+      annualRevenue: z.number().min(0).nullish(),
+      currency: z.string().optional(),
+    })
+    .optional(),
 
   // Capabilities
-  capabilities: z.object({
-    products: z.array(z.string()).default([]),
-    services: z.array(z.string()).default([]),
-    leadTime: z.number().optional(),
-    paymentTerms: z.string().optional(),
-  }).optional(),
+  capabilities: z
+    .object({
+      products: z.array(z.string()).default([]),
+      services: z.array(z.string()).default([]),
+      leadTime: z.number().optional(),
+      paymentTerms: z.string().optional(),
+    })
+    .optional(),
 
   // Financial
-  financial: z.object({
-    creditRating: z.string().optional(),
-    paymentTerms: z.string().optional(),
-    currency: z.string().optional(),
-  }).optional(),
+  financial: z
+    .object({
+      creditRating: z.string().optional(),
+      paymentTerms: z.string().optional(),
+      currency: z.string().optional(),
+    })
+    .optional(),
 
   // Contacts and Addresses
   contacts: z.array(contactSchema).optional(),
@@ -134,20 +135,23 @@ const supplierSchema = z.object({
 
   // Notes
   notes: z.string().optional(),
-})
+});
 
-type SupplierFormData = z.infer<typeof supplierSchema>
+type SupplierFormData = z.infer<typeof supplierSchema>;
 
 // AI Supplier Discovery Hook - Now uses real web search
 const useAISupplierDiscovery = () => {
-  const [isSearching, setIsSearching] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const searchSupplier = async (supplierName: string, supplierCode?: string): Promise<Partial<SupplierFormData> | null> => {
-    if (!supplierName.trim()) return null
+  const searchSupplier = async (
+    supplierName: string,
+    supplierCode?: string
+  ): Promise<Partial<SupplierFormData> | null> => {
+    if (!supplierName.trim()) return null;
 
-    setIsSearching(true)
-    setError(null)
+    setIsSearching(true);
+    setError(null);
 
     try {
       // Call the web search API to get real supplier information
@@ -160,43 +164,47 @@ const useAISupplierDiscovery = () => {
           supplierName,
           supplierCode,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+        throw new Error(`API error: ${response.status}`);
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to search supplier')
+        throw new Error(result.error || 'Failed to search supplier');
       }
 
       // Return the populated data from web search
-      return result.data as Partial<SupplierFormData>
+      return result.data as Partial<SupplierFormData>;
     } catch (err) {
-      console.error('Web search error:', err)
-      setError(err instanceof Error ? err.message : "Failed to discover supplier information. Please try again.")
-      return null
+      console.error('Web search error:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to discover supplier information. Please try again.'
+      );
+      return null;
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
-  }
+  };
 
-  return { searchSupplier, isSearching, error }
-}
+  return { searchSupplier, isSearching, error };
+};
 
 // Web Discovery Integration Component
 interface WebDiscoveryIntegrationProps {
-  onDataFound: (data: unknown) => void
-  initialQuery?: string
-  onClose?: () => void
+  onDataFound: (data: unknown) => void;
+  initialQuery?: string;
+  onClose?: () => void;
 }
 
 const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
   onDataFound,
-  initialQuery = "",
-  onClose
+  initialQuery = '',
+  onClose,
 }) => {
   // Handle web discovery data transformation
   const handleWebDataFound = (webData: unknown) => {
@@ -212,8 +220,12 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
         tradingName: webData.tradingName || webData.companyName,
         website: webData.website || webData.url || '',
         foundedYear: webData.founded ? parseInt(webData.founded) : undefined,
-        employeeCount: webData.employees ? parseInt(webData.employees.replace(/[^0-9]/g, '')) : undefined,
-        annualRevenue: webData.revenue ? parseFloat(webData.revenue.replace(/[^0-9.]/g, '')) : undefined,
+        employeeCount: webData.employees
+          ? parseInt(webData.employees.replace(/[^0-9]/g, ''))
+          : undefined,
+        annualRevenue: webData.revenue
+          ? parseFloat(webData.revenue.replace(/[^0-9.]/g, ''))
+          : undefined,
         currency: webData.currency || 'ZAR',
         taxId: webData.taxId || '',
         registrationNumber: webData.registrationNumber || '',
@@ -224,31 +236,34 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
         paymentTerms: webData.paymentTerms,
         leadTime: webData.leadTime,
       },
-      addresses: webData.addresses?.map((addr: unknown, index: number) => ({
-        type: addr.type || (index === 0 ? "headquarters" : "shipping"),
-        name: addr.name || (index === 0 ? "Head Office" : `Address ${index + 1}`),
-        addressLine1: addr.street || addr.addressLine1 || '',
-        addressLine2: addr.addressLine2 || '',
-        city: addr.city || '',
-        state: addr.state || '',
-        country: addr.country || 'South Africa',
-        postalCode: addr.postalCode || '',
-        isPrimary: index === 0,
-        isActive: true,
-      })) || [],
-    }
+      addresses:
+        webData.addresses?.map((addr: unknown, index: number) => ({
+          type: addr.type || (index === 0 ? 'headquarters' : 'shipping'),
+          name: addr.name || (index === 0 ? 'Head Office' : `Address ${index + 1}`),
+          addressLine1: addr.street || addr.addressLine1 || '',
+          addressLine2: addr.addressLine2 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          country: addr.country || 'South Africa',
+          postalCode: addr.postalCode || '',
+          isPrimary: index === 0,
+          isActive: true,
+        })) || [],
+    };
 
     // Add contact from web data if available
     if (webData.contactEmail || webData.contactPhone) {
-      transformedData.contacts = [{
-        type: "primary",
-        name: webData.contactPerson || webData.contactName || "",
-        email: webData.contactEmail || "",
-        phone: webData.contactPhone || "",
-        mobile: webData.contactMobile || "",
-        isPrimary: true,
-        isActive: true,
-      }]
+      transformedData.contacts = [
+        {
+          type: 'primary',
+          name: webData.contactPerson || webData.contactName || '',
+          email: webData.contactEmail || '',
+          phone: webData.contactPhone || '',
+          mobile: webData.contactMobile || '',
+          isPrimary: true,
+          isActive: true,
+        },
+      ];
     }
 
     // Add financial info if available
@@ -256,141 +271,146 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
       transformedData.financial = {
         currency: webData.currency || 'ZAR',
         paymentTerms: webData.paymentTerms,
-      }
+      };
     }
 
-    onDataFound(transformedData)
-    if (onClose) onClose()
-  }
+    onDataFound(transformedData);
+    if (onClose) onClose();
+  };
 
-  return (
-    <WebSupplierDiscovery
-      onDataFound={handleWebDataFound}
-      initialQuery={initialQuery}
-    />
-  )
-}
+  return <WebSupplierDiscovery onDataFound={handleWebDataFound} initialQuery={initialQuery} />;
+};
 
 // Help tooltips for accessibility
 const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = ({
   content,
-  children
+  children,
 }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <div className="flex items-center gap-1">
         {children}
-        <HelpCircle className="h-3 w-3 text-muted-foreground" />
+        <HelpCircle className="text-muted-foreground h-3 w-3" />
       </div>
     </TooltipTrigger>
     <TooltipContent>
       <p className="max-w-xs">{content}</p>
     </TooltipContent>
   </Tooltip>
-)
+);
 
 // Main Form Component
 interface EnhancedSupplierFormProps {
-  supplier?: unknown // Type this properly based on your supplier type
-  onSubmit?: (data: SupplierFormData) => Promise<void>
-  onCancel?: () => void
-  isLoading?: boolean
+  supplier?: unknown; // Type this properly based on your supplier type
+  onSubmit?: (data: SupplierFormData) => Promise<void>;
+  onCancel?: () => void;
+  isLoading?: boolean;
 }
 
 const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   supplier,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
 }) => {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("basic")
-  const [tagInput, setTagInput] = useState("")
-  const [categoryInput, setCategoryInput] = useState("")
-  const [brandInput, setBrandInput] = useState("")
-  const [productInput, setProductInput] = useState("")
-  const [serviceInput, setServiceInput] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [showWebDiscovery, setShowWebDiscovery] = useState(false)
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('basic');
+  const [tagInput, setTagInput] = useState('');
+  const [categoryInput, setCategoryInput] = useState('');
+  const [brandInput, setBrandInput] = useState('');
+  const [productInput, setProductInput] = useState('');
+  const [serviceInput, setServiceInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [showWebDiscovery, setShowWebDiscovery] = useState(false);
 
   const form = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
-    defaultValues: supplier ? {
-      ...supplier,
-      categories: supplier.categories || (supplier.category ? [supplier.category] : []),
-      businessInfo: {
-        ...supplier.businessInfo,
-        website: supplier.businessInfo?.website || "",
-        tradingName: supplier.businessInfo?.tradingName || "",
-        foundedYear: supplier.businessInfo?.foundedYear ?? undefined,
-        employeeCount: supplier.businessInfo?.employeeCount ?? undefined,
-        annualRevenue: supplier.businessInfo?.annualRevenue ?? undefined,
-      },
-      contacts: supplier.contacts.map((contact: unknown) => ({
-        ...contact,
-        mobile: contact.mobile || "",
-        department: contact.department || "",
-      })),
-      addresses: supplier.addresses.map((address: unknown) => ({
-        ...address,
-        name: address.name || "",
-        addressLine2: address.addressLine2 || "",
-      })),
-      notes: supplier.notes || "",
-    } : {
-      name: "",
-      code: "",
-      status: "pending",
-      tier: "approved",
-      categories: [],
-      tags: [],
-      brands: [],
-      businessInfo: {
-        legalName: "",
-        tradingName: "",
-        taxId: "",
-        registrationNumber: "",
-        website: "",
-        foundedYear: undefined,
-        employeeCount: undefined,
-        annualRevenue: undefined,
-        currency: "ZAR",
-      },
-      capabilities: {
-        products: [],
-        services: [],
-        leadTime: 30,
-        paymentTerms: "Net 30",
-      },
-      financial: {
-        creditRating: "",
-        paymentTerms: "Net 30",
-        currency: "ZAR",
-      },
-      contacts: [],
-      addresses: [],
-      notes: "",
-    }
-  })
+    defaultValues: supplier
+      ? {
+          ...supplier,
+          categories: supplier.categories || (supplier.category ? [supplier.category] : []),
+          businessInfo: {
+            ...supplier.businessInfo,
+            website: supplier.businessInfo?.website || '',
+            tradingName: supplier.businessInfo?.tradingName || '',
+            foundedYear: supplier.businessInfo?.foundedYear ?? undefined,
+            employeeCount: supplier.businessInfo?.employeeCount ?? undefined,
+            annualRevenue: supplier.businessInfo?.annualRevenue ?? undefined,
+          },
+          contacts: supplier.contacts.map((contact: unknown) => ({
+            ...contact,
+            mobile: contact.mobile || '',
+            department: contact.department || '',
+          })),
+          addresses: supplier.addresses.map((address: unknown) => ({
+            ...address,
+            name: address.name || '',
+            addressLine2: address.addressLine2 || '',
+          })),
+          notes: supplier.notes || '',
+        }
+      : {
+          name: '',
+          code: '',
+          status: 'pending',
+          tier: 'approved',
+          categories: [],
+          tags: [],
+          brands: [],
+          businessInfo: {
+            legalName: '',
+            tradingName: '',
+            taxId: '',
+            registrationNumber: '',
+            website: '',
+            foundedYear: undefined,
+            employeeCount: undefined,
+            annualRevenue: undefined,
+            currency: 'ZAR',
+          },
+          capabilities: {
+            products: [],
+            services: [],
+            leadTime: 30,
+            paymentTerms: 'Net 30',
+          },
+          financial: {
+            creditRating: '',
+            paymentTerms: 'Net 30',
+            currency: 'ZAR',
+          },
+          contacts: [],
+          addresses: [],
+          notes: '',
+        },
+  });
 
-  const { fields: contactFields, append: appendContact, remove: removeContact } = useFieldArray({
+  const {
+    fields: contactFields,
+    append: appendContact,
+    remove: removeContact,
+  } = useFieldArray({
     control: form.control,
-    name: "contacts"
-  })
+    name: 'contacts',
+  });
 
-  const { fields: addressFields, append: appendAddress, remove: removeAddress } = useFieldArray({
+  const {
+    fields: addressFields,
+    append: appendAddress,
+    remove: removeAddress,
+  } = useFieldArray({
     control: form.control,
-    name: "addresses"
-  })
+    name: 'addresses',
+  });
 
-  const watchedName = form.watch("name")
-  const watchedTags = form.watch("tags")
-  const watchedCategories = form.watch("categories")
-  const watchedBrands = form.watch("brands")
-  const watchedProducts = form.watch("capabilities.products")
-  const watchedServices = form.watch("capabilities.services")
+  const watchedName = form.watch('name');
+  const watchedTags = form.watch('tags');
+  const watchedCategories = form.watch('categories');
+  const watchedBrands = form.watch('brands');
+  const watchedProducts = form.watch('capabilities.products');
+  const watchedServices = form.watch('capabilities.services');
 
   // Handle AI data population
   const handleAIDataFound = (data: Partial<SupplierFormData>) => {
@@ -398,53 +418,53 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
       if (value !== undefined && value !== null) {
         if (key === 'businessInfo' && typeof value === 'object') {
           // Handle nested businessInfo object
-          form.setValue('businessInfo', value as unknown, { shouldValidate: true })
+          form.setValue('businessInfo', value as unknown, { shouldValidate: true });
         } else if (key === 'contacts' && Array.isArray(value)) {
-          form.setValue('contacts', value as unknown, { shouldValidate: true })
+          form.setValue('contacts', value as unknown, { shouldValidate: true });
         } else if (key === 'addresses' && Array.isArray(value)) {
-          form.setValue('addresses', value as unknown, { shouldValidate: true })
+          form.setValue('addresses', value as unknown, { shouldValidate: true });
         } else if (key === 'capabilities' && typeof value === 'object') {
-          form.setValue('capabilities', value as unknown, { shouldValidate: true })
+          form.setValue('capabilities', value as unknown, { shouldValidate: true });
         } else if (key === 'financial' && typeof value === 'object') {
-          form.setValue('financial', value as unknown, { shouldValidate: true })
+          form.setValue('financial', value as unknown, { shouldValidate: true });
         } else {
-          form.setValue(key as keyof SupplierFormData, value as unknown, { shouldValidate: true })
+          form.setValue(key as keyof SupplierFormData, value as unknown, { shouldValidate: true });
         }
       }
-    })
-    setShowWebDiscovery(false)
+    });
+    setShowWebDiscovery(false);
     // Trigger validation to show any errors
     setTimeout(() => {
-      form.trigger()
-    }, 100)
-  }
+      form.trigger();
+    }, 100);
+  };
 
   // Generate supplier code based on name
   useEffect(() => {
     if (watchedName && !supplier) {
       const code = watchedName
         .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "")
-        .substring(0, 6)
-      form.setValue("code", code)
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 6);
+      form.setValue('code', code);
     }
-  }, [form, supplier, watchedName])
+  }, [form, supplier, watchedName]);
 
   const handleSubmit = async (data: SupplierFormData) => {
-    console.log('🟢 Form submit handler called with data:', data)
+    console.log('🟢 Form submit handler called with data:', data);
     try {
-      setSubmitError(null)
-      setSubmitSuccess(false)
-      setIsSubmitting(true)
+      setSubmitError(null);
+      setSubmitSuccess(false);
+      setIsSubmitting(true);
 
       if (onSubmit) {
-        await onSubmit(data)
+        await onSubmit(data);
         // Set success and redirect after onSubmit succeeds
-        setSubmitSuccess(true)
+        setSubmitSuccess(true);
         setTimeout(() => {
-          router.push(`/suppliers?refresh=${Date.now()}`)
-          router.refresh()
-        }, 1500)
+          router.push(`/suppliers?refresh=${Date.now()}`);
+          router.refresh();
+        }, 1500);
       } else {
         // Default submission logic - actually call the API
         const response = await fetch('/api/suppliers', {
@@ -453,128 +473,143 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
-        })
+        });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
-        const result = await response.json()
-        
+        const result = await response.json();
+
         if (!result.success) {
-          throw new Error(result.error || 'Failed to create supplier')
+          throw new Error(result.error || 'Failed to create supplier');
         }
 
-        setSubmitSuccess(true)
+        setSubmitSuccess(true);
 
         // Invalidate cache and refresh supplier lists
         // Trigger a refresh by reloading the page or using router refresh
         // Navigate back after success with cache invalidation
         setTimeout(() => {
           // Add timestamp to force cache invalidation
-          router.push(`/suppliers?refresh=${Date.now()}`)
-          router.refresh() // Force refresh of server components
-        }, 1500)
+          router.push(`/suppliers?refresh=${Date.now()}`);
+          router.refresh(); // Force refresh of server components
+        }, 1500);
       }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to save supplier')
-      console.error("Form submission error:", error)
+      setSubmitError(error instanceof Error ? error.message : 'Failed to save supplier');
+      console.error('Form submission error:', error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Tag management
   const addTag = () => {
     if (tagInput.trim() && !watchedTags.includes(tagInput.trim())) {
-      form.setValue("tags", [...watchedTags, tagInput.trim()])
-      setTagInput("")
+      form.setValue('tags', [...watchedTags, tagInput.trim()]);
+      setTagInput('');
     }
-  }
+  };
 
   const removeTag = (tagToRemove: string) => {
-    form.setValue("tags", watchedTags.filter(tag => tag !== tagToRemove))
-  }
+    form.setValue(
+      'tags',
+      watchedTags.filter(tag => tag !== tagToRemove)
+    );
+  };
 
   // Category management (same as tags)
   const addCategory = () => {
     if (categoryInput.trim() && !watchedCategories.includes(categoryInput.trim())) {
-      form.setValue("categories", [...watchedCategories, categoryInput.trim()])
-      setCategoryInput("")
+      form.setValue('categories', [...watchedCategories, categoryInput.trim()]);
+      setCategoryInput('');
     }
-  }
+  };
 
   const removeCategory = (categoryToRemove: string) => {
-    form.setValue("categories", watchedCategories.filter(cat => cat !== categoryToRemove))
-  }
+    form.setValue(
+      'categories',
+      watchedCategories.filter(cat => cat !== categoryToRemove)
+    );
+  };
 
   // Brand management
   const addBrand = () => {
     if (brandInput.trim() && !watchedBrands.includes(brandInput.trim())) {
-      form.setValue("brands", [...watchedBrands, brandInput.trim()])
-      setBrandInput("")
+      form.setValue('brands', [...watchedBrands, brandInput.trim()]);
+      setBrandInput('');
     }
-  }
+  };
 
   const removeBrand = (brandToRemove: string) => {
-    form.setValue("brands", watchedBrands.filter(brand => brand !== brandToRemove))
-  }
+    form.setValue(
+      'brands',
+      watchedBrands.filter(brand => brand !== brandToRemove)
+    );
+  };
 
   // Product management
   const addProduct = () => {
     if (productInput.trim() && !watchedProducts.includes(productInput.trim())) {
-      form.setValue("capabilities.products", [...watchedProducts, productInput.trim()])
-      setProductInput("")
+      form.setValue('capabilities.products', [...watchedProducts, productInput.trim()]);
+      setProductInput('');
     }
-  }
+  };
 
   const removeProduct = (productToRemove: string) => {
-    form.setValue("capabilities.products", watchedProducts.filter(p => p !== productToRemove))
-  }
+    form.setValue(
+      'capabilities.products',
+      watchedProducts.filter(p => p !== productToRemove)
+    );
+  };
 
   // Service management
   const addService = () => {
     if (serviceInput.trim() && !watchedServices.includes(serviceInput.trim())) {
-      form.setValue("capabilities.services", [...watchedServices, serviceInput.trim()])
-      setServiceInput("")
+      form.setValue('capabilities.services', [...watchedServices, serviceInput.trim()]);
+      setServiceInput('');
     }
-  }
+  };
 
   const removeService = (serviceToRemove: string) => {
-    form.setValue("capabilities.services", watchedServices.filter(s => s !== serviceToRemove))
-  }
+    form.setValue(
+      'capabilities.services',
+      watchedServices.filter(s => s !== serviceToRemove)
+    );
+  };
 
   // Contact management
   const addContact = () => {
     appendContact({
-      type: "technical",
-      name: "",
-      title: "",
-      email: "",
-      phone: "",
-      mobile: "",
-      department: "",
+      type: 'technical',
+      name: '',
+      title: '',
+      email: '',
+      phone: '',
+      mobile: '',
+      department: '',
       isPrimary: false,
       isActive: true,
-    })
-  }
+    });
+  };
 
   // Address management
   const addAddress = () => {
     appendAddress({
-      type: "billing",
-      name: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: "South Africa",
+      type: 'billing',
+      name: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'South Africa',
       isPrimary: false,
       isActive: true,
-    })
-  }
+    });
+  };
 
   return (
     <TooltipProvider>
@@ -585,18 +620,20 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onCancel ? onCancel() : router.push('/suppliers')}
-              className="flex items-center gap-1.5 h-7 px-2 text-xs text-muted-foreground hover:text-foreground w-fit"
+              onClick={() => (onCancel ? onCancel() : router.push('/suppliers'))}
+              className="text-muted-foreground hover:text-foreground flex h-7 w-fit items-center gap-1.5 px-2 text-xs"
             >
               <ArrowLeft className="h-3 w-3" />
               Back to Suppliers
             </Button>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                {supplier ? "Edit Supplier" : "Add New Supplier"}
+                {supplier ? 'Edit Supplier' : 'Add New Supplier'}
               </h1>
               <p className="text-muted-foreground">
-                {supplier ? "Update supplier information and settings" : "Create a new supplier profile"}
+                {supplier
+                  ? 'Update supplier information and settings'
+                  : 'Create a new supplier profile'}
               </p>
             </div>
           </div>
@@ -605,48 +642,48 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             <Button
               variant="outline"
               onClick={() => setShowWebDiscovery(true)}
-              className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200"
+              className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100"
             >
-              <Globe className="h-4 w-4 mr-2" />
+              <Globe className="mr-2 h-4 w-4" />
               Web Discovery
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => onCancel ? onCancel() : router.push('/suppliers')}
+              onClick={() => (onCancel ? onCancel() : router.push('/suppliers'))}
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
 
             <Button
               type="submit"
-              onClick={(e) => {
-                e.preventDefault()
-                console.log('🟡 Button clicked, triggering form submit')
-                const formElement = e.currentTarget.closest('form')
+              onClick={e => {
+                e.preventDefault();
+                console.log('🟡 Button clicked, triggering form submit');
+                const formElement = e.currentTarget.closest('form');
                 if (formElement) {
-                  formElement.requestSubmit()
+                  formElement.requestSubmit();
                 } else {
                   // Fallback: manually trigger validation and submit
-                  form.handleSubmit(handleSubmit, (errors) => {
-                    console.error('🔴 Form validation errors:', errors)
-                    setSubmitError('Please check the form for validation errors')
-                  })()
+                  form.handleSubmit(handleSubmit, errors => {
+                    console.error('🔴 Form validation errors:', errors);
+                    setSubmitError('Please check the form for validation errors');
+                  })();
                 }
               }}
               disabled={isLoading || isSubmitting}
               className="min-w-[120px]"
             >
-              {(isLoading || isSubmitting) ? (
+              {isLoading || isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {supplier ? "Updating..." : "Creating..."}
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {supplier ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {supplier ? "Update" : "Create"} Supplier
+                  <Save className="mr-2 h-4 w-4" />
+                  {supplier ? 'Update' : 'Create'} Supplier
                 </>
               )}
             </Button>
@@ -656,7 +693,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         {/* Web Discovery Panel */}
         {showWebDiscovery && (
           <Dialog open={showWebDiscovery} onOpenChange={setShowWebDiscovery}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
@@ -666,10 +703,10 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                   Discover supplier information from the web to auto-populate form fields
                 </DialogDescription>
               </DialogHeader>
-              
+
               <WebDiscoveryIntegration
                 onDataFound={handleAIDataFound}
-                initialQuery={form.watch("name")}
+                initialQuery={form.watch('name')}
                 onClose={() => setShowWebDiscovery(false)}
               />
 
@@ -701,26 +738,39 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
 
         {/* Form */}
         <Form {...form}>
-          <form onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit(handleSubmit, (errors) => {
-              console.error('🔴 Form validation errors:', errors)
-              setSubmitError('Please check the form for validation errors')
-            })(e)
-          }} className="space-y-6">
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              form.handleSubmit(handleSubmit, errors => {
+                console.error('🔴 Form validation errors:', errors);
+                setSubmitError('Please check the form for validation errors');
+              })(e);
+            }}
+            className="space-y-6"
+          >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-              <div className="p-1.5 bg-muted rounded-lg">
-                <TabsList className="grid w-full grid-cols-5 h-auto p-0.5 bg-transparent">
-                  <TabsTrigger value="basic" className="h-9">Basic Info</TabsTrigger>
-                  <TabsTrigger value="business" className="h-9">Business</TabsTrigger>
-                  <TabsTrigger value="contacts" className="h-9">Contacts</TabsTrigger>
-                  <TabsTrigger value="addresses" className="h-9">Addresses</TabsTrigger>
-                  <TabsTrigger value="capabilities" className="h-9">Capabilities</TabsTrigger>
+              <div className="bg-muted rounded-lg p-1.5">
+                <TabsList className="grid h-auto w-full grid-cols-5 bg-transparent p-0.5">
+                  <TabsTrigger value="basic" className="h-9">
+                    Basic Info
+                  </TabsTrigger>
+                  <TabsTrigger value="business" className="h-9">
+                    Business
+                  </TabsTrigger>
+                  <TabsTrigger value="contacts" className="h-9">
+                    Contacts
+                  </TabsTrigger>
+                  <TabsTrigger value="addresses" className="h-9">
+                    Addresses
+                  </TabsTrigger>
+                  <TabsTrigger value="capabilities" className="h-9">
+                    Capabilities
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
               {/* Basic Information */}
-              <TabsContent value="basic" className="space-y-6 mt-3">
+              <TabsContent value="basic" className="mt-3 space-y-6">
                 <Card className="gap-2">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
@@ -729,7 +779,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="name"
@@ -790,7 +840,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Status
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="status-help">
                                   <SelectValue placeholder="Select status" />
@@ -821,7 +871,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Tier
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="tier-help">
                                   <SelectValue placeholder="Select tier" />
@@ -843,54 +893,61 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                       />
 
                       {/* Categories - Same as Tags */}
-                          <FormItem className="gap-4">
-                            <FormLabel>
-                        <FieldTooltip content="Product categories this supplier specializes in. Categories are automatically extracted from supplier data, but you can add or remove them manually.">
-                          Categories
-                              </FieldTooltip>
-                            </FormLabel>
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
-                              <Input
-                            placeholder="Add a category"
-                            value={categoryInput}
-                            onChange={(e) => setCategoryInput(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
-                            aria-label="Add new category"
-                          />
-                          <Button
-                            type="button"
-                            onClick={addCategory}
-                            variant="outline"
-                            aria-label="Add category"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {watchedCategories.map((category, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                              {category}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto p-0.5 hover:bg-transparent"
-                                onClick={() => removeCategory(category)}
-                                aria-label={`Remove category ${category}`}
+                      <FormItem className="gap-4">
+                        <FormLabel>
+                          <FieldTooltip content="Product categories this supplier specializes in. Categories are automatically extracted from supplier data, but you can add or remove them manually.">
+                            Categories
+                          </FieldTooltip>
+                        </FormLabel>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add a category"
+                              value={categoryInput}
+                              onChange={e => setCategoryInput(e.target.value)}
+                              onKeyPress={e =>
+                                e.key === 'Enter' && (e.preventDefault(), addCategory())
+                              }
+                              aria-label="Add new category"
+                            />
+                            <Button
+                              type="button"
+                              onClick={addCategory}
+                              variant="outline"
+                              aria-label="Add category"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {watchedCategories.map((category, index) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="flex items-center gap-1"
                               >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </Badge>
-                          ))}
+                                {category}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto p-0.5 hover:bg-transparent"
+                                  onClick={() => removeCategory(category)}
+                                  aria-label={`Remove category ${category}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                          </div>
+                          {watchedCategories.length === 0 && (
+                            <p className="text-muted-foreground text-sm">
+                              No categories added yet. Categories will be automatically extracted
+                              from supplier data, or you can add them manually.
+                            </p>
+                          )}
                         </div>
-                        {watchedCategories.length === 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            No categories added yet. Categories will be automatically extracted from supplier data, or you can add them manually.
-                          </p>
-                        )}
-                      </div>
-                          </FormItem>
+                      </FormItem>
                     </div>
 
                     {/* Tags */}
@@ -905,8 +962,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <Input
                             placeholder="Add a tag"
                             value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                            onChange={e => setTagInput(e.target.value)}
+                            onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
                             aria-label="Add new tag"
                           />
                           <Button
@@ -920,7 +977,11 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {watchedTags.map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
                               {tag}
                               <Button
                                 type="button"
@@ -950,8 +1011,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <Input
                             placeholder="Add a brand"
                             value={brandInput}
-                            onChange={(e) => setBrandInput(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addBrand())}
+                            onChange={e => setBrandInput(e.target.value)}
+                            onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addBrand())}
                             aria-label="Add new brand"
                           />
                           <Button
@@ -965,7 +1026,11 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {watchedBrands.map((brand, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
                               {brand}
                               <Button
                                 type="button"
@@ -996,9 +1061,9 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           </FormLabel>
                           <FormControl>
                             <textarea
-                              className="flex min-h-[80px] w-full rounded-sm border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-sm border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                               placeholder="Additional notes about this supplier..."
-                              value={field.value || ""}
+                              value={field.value || ''}
                               onChange={field.onChange}
                               aria-describedby="notes-help"
                             />
@@ -1015,7 +1080,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Business Information Tab */}
-              <TabsContent value="business" className="space-y-6 mt-3">
+              <TabsContent value="business" className="mt-3 space-y-6">
                 <Card className="gap-2">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
@@ -1024,7 +1089,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="businessInfo.legalName"
@@ -1063,7 +1128,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             <FormControl>
                               <Input
                                 placeholder="Enter trading name"
-                                value={field.value || ""}
+                                value={field.value || ''}
                                 onChange={field.onChange}
                                 aria-describedby="trading-name-help"
                               />
@@ -1132,9 +1197,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         render={({ field }) => (
                           <FormItem className="gap-4">
                             <FormLabel>
-                              <FieldTooltip content="Company website URL">
-                                Website
-                              </FieldTooltip>
+                              <FieldTooltip content="Company website URL">Website</FieldTooltip>
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1165,8 +1228,12 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                               <Input
                                 type="number"
                                 placeholder="e.g., 2010"
-                                value={field.value != null ? field.value.toString() : ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={field.value != null ? field.value.toString() : ''}
+                                onChange={e =>
+                                  field.onChange(
+                                    e.target.value ? parseInt(e.target.value) : undefined
+                                  )
+                                }
                                 aria-describedby="founded-year-help"
                               />
                             </FormControl>
@@ -1192,8 +1259,12 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                               <Input
                                 type="number"
                                 placeholder="Number of employees"
-                                value={field.value != null ? field.value.toString() : ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={field.value != null ? field.value.toString() : ''}
+                                onChange={e =>
+                                  field.onChange(
+                                    e.target.value ? parseInt(e.target.value) : undefined
+                                  )
+                                }
                                 aria-describedby="employee-count-help"
                               />
                             </FormControl>
@@ -1215,7 +1286,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Currency
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="currency-help">
                                   <SelectValue placeholder="Select currency" />
@@ -1242,7 +1313,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Contacts Tab */}
-              <TabsContent value="contacts" className="space-y-6 mt-3">
+              <TabsContent value="contacts" className="mt-3 space-y-6">
                 <Card className="gap-2">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
@@ -1257,19 +1328,22 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         size="sm"
                         aria-label="Add new contact"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Contact
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {contactFields.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No contacts added. Click &ldquo;Add Contact&rdquo; to add one, or submit without contacts.</p>
+                      <div className="text-muted-foreground py-8 text-center">
+                        <p>
+                          No contacts added. Click &ldquo;Add Contact&rdquo; to add one, or submit
+                          without contacts.
+                        </p>
                       </div>
                     )}
                     {contactFields.map((contact, index) => (
-                      <div key={contact.id} className="p-4 border rounded-lg space-y-4">
+                      <div key={contact.id} className="space-y-4 rounded-lg border p-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">Contact {index + 1}</h4>
                           <Button
@@ -1283,14 +1357,14 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <FormField
                             control={form.control}
                             name={`contacts.${index}.type`}
                             render={({ field }) => (
                               <FormItem className="gap-4">
                                 <FormLabel>Contact Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select type" />
@@ -1354,7 +1428,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 <FormControl>
                                   <Input
                                     placeholder="Enter department"
-                                    value={field.value || ""}
+                                    value={field.value || ''}
                                     onChange={field.onChange}
                                     aria-label={`Contact ${index + 1} department`}
                                   />
@@ -1410,7 +1484,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 <FormControl>
                                   <Input
                                     placeholder="Enter mobile number"
-                                    value={field.value || ""}
+                                    value={field.value || ''}
                                     onChange={field.onChange}
                                     aria-label={`Contact ${index + 1} mobile`}
                                   />
@@ -1426,7 +1500,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.isPrimary`}
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                                 <FormControl>
                                   <Checkbox
                                     checked={field.value}
@@ -1445,7 +1519,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.isActive`}
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                                 <FormControl>
                                   <Checkbox
                                     checked={field.value}
@@ -1467,7 +1541,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Addresses Tab */}
-              <TabsContent value="addresses" className="space-y-6 mt-3">
+              <TabsContent value="addresses" className="mt-3 space-y-6">
                 <Card className="gap-2">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
@@ -1482,19 +1556,22 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         size="sm"
                         aria-label="Add new address"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Address
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {addressFields.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No addresses added. Click &ldquo;Add Address&rdquo; to add one, or submit without addresses.</p>
+                      <div className="text-muted-foreground py-8 text-center">
+                        <p>
+                          No addresses added. Click &ldquo;Add Address&rdquo; to add one, or submit
+                          without addresses.
+                        </p>
                       </div>
                     )}
                     {addressFields.map((address, index) => (
-                      <div key={address.id} className="p-4 border rounded-lg space-y-4">
+                      <div key={address.id} className="space-y-4 rounded-lg border p-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">Address {index + 1}</h4>
                           <Button
@@ -1508,14 +1585,14 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <FormField
                             control={form.control}
                             name={`addresses.${index}.type`}
                             render={({ field }) => (
                               <FormItem className="gap-4">
                                 <FormLabel>Address Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select type" />
@@ -1543,7 +1620,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 <FormControl>
                                   <Input
                                     placeholder="e.g., Main Office"
-                                    value={field.value || ""}
+                                    value={field.value || ''}
                                     onChange={field.onChange}
                                     aria-label={`Address ${index + 1} location name`}
                                   />
@@ -1580,7 +1657,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 <FormControl>
                                   <Input
                                     placeholder="Apartment, suite, etc."
-                                    value={field.value || ""}
+                                    value={field.value || ''}
                                     onChange={field.onChange}
                                     aria-label={`Address ${index + 1} line 2`}
                                   />
@@ -1650,7 +1727,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             render={({ field }) => (
                               <FormItem className="gap-4">
                                 <FormLabel>Country</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select country" />
@@ -1678,7 +1755,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.isPrimary`}
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                                 <FormControl>
                                   <Checkbox
                                     checked={field.value}
@@ -1697,7 +1774,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.isActive`}
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                                 <FormControl>
                                   <Checkbox
                                     checked={field.value}
@@ -1719,7 +1796,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Capabilities Tab */}
-              <TabsContent value="capabilities" className="space-y-6 mt-3">
+              <TabsContent value="capabilities" className="mt-3 space-y-6">
                 <Card className="gap-2">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
@@ -1739,8 +1816,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         <Input
                           placeholder="Add a product or item"
                           value={productInput}
-                          onChange={(e) => setProductInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addProduct())}
+                          onChange={e => setProductInput(e.target.value)}
+                          onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addProduct())}
                           aria-label="Add new product"
                         />
                         <Button
@@ -1754,7 +1831,11 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {watchedProducts.map((product, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
                             {product}
                             <Button
                               type="button"
@@ -1782,8 +1863,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         <Input
                           placeholder="Add a service"
                           value={serviceInput}
-                          onChange={(e) => setServiceInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addService())}
+                          onChange={e => setServiceInput(e.target.value)}
+                          onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addService())}
                           aria-label="Add new service"
                         />
                         <Button
@@ -1797,7 +1878,11 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {watchedServices.map((service, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
                             {service}
                             <Button
                               type="button"
@@ -1814,7 +1899,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="capabilities.leadTime"
@@ -1829,8 +1914,10 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                               <Input
                                 type="number"
                                 placeholder="Enter lead time in days"
-                                value={field.value?.toString() || ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 30)}
+                                value={field.value?.toString() || ''}
+                                onChange={e =>
+                                  field.onChange(e.target.value ? parseInt(e.target.value) : 30)
+                                }
                                 aria-describedby="lead-time-help"
                               />
                             </FormControl>
@@ -1852,7 +1939,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Payment Terms
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="payment-terms-help">
                                   <SelectValue placeholder="Select payment terms" />
@@ -1886,7 +1973,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Credit Rating
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="credit-rating-help">
                                   <SelectValue placeholder="Select credit rating" />
@@ -1920,7 +2007,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                                 Financial Currency
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
                                 <SelectTrigger aria-describedby="financial-currency-help">
                                   <SelectValue placeholder="Select currency" />
@@ -1950,7 +2037,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         </Form>
       </div>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default EnhancedSupplierForm
+export default EnhancedSupplierForm;

@@ -8,7 +8,7 @@
  * - Session store
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { dbHealthCheck, getDbMetrics } from '@/lib/database/connection-pool';
 import { redisHealthCheck } from '@/lib/cache/redis-client';
@@ -49,13 +49,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Perform health checks in parallel
     const [dbCheck, redisCheck] = await Promise.all([
-      dbHealthCheck().catch((err) => ({
+      dbHealthCheck().catch(err => ({
         healthy: false,
         error: err.message,
         latency: undefined,
         poolInfo: undefined,
       })),
-      redisHealthCheck().catch((err) => ({
+      redisHealthCheck().catch(err => ({
         healthy: false,
         error: err.message,
         latency: undefined,

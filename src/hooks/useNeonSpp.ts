@@ -28,8 +28,10 @@ export const sppKeys = {
   upload: (id: string) => [...sppKeys.all, 'upload', id] as const,
   metrics: () => [...sppKeys.all, 'metrics'] as const,
   nxtSoh: (filters?: Record<string, unknown>) => [...sppKeys.all, 'nxt-soh', filters] as const,
-  productsBySupplier: (filters?: Record<string, unknown>) => [...sppKeys.all, 'products', filters] as const,
-  selectionProducts: (selectionId: string) => [...sppKeys.selection(selectionId), 'products'] as const,
+  productsBySupplier: (filters?: Record<string, unknown>) =>
+    [...sppKeys.all, 'products', filters] as const,
+  selectionProducts: (selectionId: string) =>
+    [...sppKeys.selection(selectionId), 'products'] as const,
 };
 
 // ============================================================================
@@ -84,14 +86,16 @@ export function useDashboardMetrics() {
       const response = await fetch('/api/spp/dashboard/metrics');
       if (!response.ok) throw new Error('Failed to fetch metrics');
       const data = await response.json();
-      return data.data || {
-        total_suppliers: 0,
-        total_products: 0,
-        selected_products: 0,
-        selected_inventory_value: 0,
-        new_products_count: 0,
-        recent_price_changes_count: 0,
-      };
+      return (
+        data.data || {
+          total_suppliers: 0,
+          total_products: 0,
+          selected_products: 0,
+          selected_inventory_value: 0,
+          new_products_count: 0,
+          recent_price_changes_count: 0,
+        }
+      );
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     refetchInterval: 60 * 1000, // 1 minute
@@ -172,11 +176,7 @@ export function useUploadPricelist() {
         const text = await response.text();
         throw new Error('Upload failed');
       }
-      const upload_id: string = (
-        data.upload_id ||
-        data?.data?.upload_id ||
-        data?.upload?.upload_id
-      );
+      const upload_id: string = data.upload_id || data?.data?.upload_id || data?.upload?.upload_id;
       const validation = data?.data?.validation || undefined;
       return { upload_id, validation };
     },
@@ -285,7 +285,8 @@ export function useProductsBySupplier(filters?: {
       if (filters?.supplier_id) params.append('supplier_id', filters.supplier_id);
       if (filters?.search) params.append('search', filters.search);
       if (filters?.is_new !== undefined) params.append('is_new', filters.is_new.toString());
-      if (filters?.is_selected !== undefined) params.append('is_selected', filters.is_selected.toString());
+      if (filters?.is_selected !== undefined)
+        params.append('is_selected', filters.is_selected.toString());
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 

@@ -1,16 +1,16 @@
-import { query } from '@/lib/database'
-import { PRICING_TABLES } from '@/lib/db/pricing-schema'
+import { query } from '@/lib/database';
+import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 
-const POLICY_TABLE = PRICING_TABLES.MARKET_INTEL_DATA_POLICY
+const POLICY_TABLE = PRICING_TABLES.MARKET_INTEL_DATA_POLICY;
 
 export interface DataRetentionPolicy {
-  org_id: string
-  retention_days_snapshots: number
-  retention_days_alerts: number
-  retention_days_jobs: number
-  archival_strategy: string
-  last_archive_run_at?: Date
-  updated_at: Date
+  org_id: string;
+  retention_days_snapshots: number;
+  retention_days_alerts: number;
+  retention_days_jobs: number;
+  archival_strategy: string;
+  last_archive_run_at?: Date;
+  updated_at: Date;
 }
 
 export class DataRetentionService {
@@ -18,12 +18,15 @@ export class DataRetentionService {
     const result = await query<DataRetentionPolicy>(
       `SELECT * FROM ${POLICY_TABLE} WHERE org_id = $1`,
       [orgId]
-    )
-    return result.rows[0] ?? null
+    );
+    return result.rows[0] ?? null;
   }
 
-  async updatePolicy(orgId: string, policy: Partial<DataRetentionPolicy>): Promise<DataRetentionPolicy> {
-    const existing = await this.getPolicy(orgId)
+  async updatePolicy(
+    orgId: string,
+    policy: Partial<DataRetentionPolicy>
+  ): Promise<DataRetentionPolicy> {
+    const existing = await this.getPolicy(orgId);
 
     if (!existing) {
       // Create new policy
@@ -47,8 +50,8 @@ export class DataRetentionService {
           policy.retention_days_jobs ?? 90,
           policy.archival_strategy ?? 'delete',
         ]
-      )
-      return result.rows[0]
+      );
+      return result.rows[0];
     }
 
     // Update existing policy
@@ -71,21 +74,21 @@ export class DataRetentionService {
         policy.retention_days_jobs ?? null,
         policy.archival_strategy ?? null,
       ]
-    )
-    return result.rows[0]
+    );
+    return result.rows[0];
   }
 
   async executeRetentionPolicy(orgId: string): Promise<{
-    snapshotsDeleted: number
-    alertsDeleted: number
-    jobsArchived: number
+    snapshotsDeleted: number;
+    alertsDeleted: number;
+    jobsArchived: number;
   }> {
-    const policy = await this.getPolicy(orgId)
+    const policy = await this.getPolicy(orgId);
     if (!policy) {
-      throw new Error('Data retention policy not configured')
+      throw new Error('Data retention policy not configured');
     }
 
-    const { PRICING_TABLES } = await import('@/lib/db/pricing-schema')
+    const { PRICING_TABLES } = await import('@/lib/db/pricing-schema');
 
     // Delete old snapshots
     const snapshotsResult = await query<{ count: number }>(
@@ -99,7 +102,7 @@ export class DataRetentionService {
         SELECT COUNT(*) as count FROM deleted
       `,
       [orgId, policy.retention_days_snapshots]
-    )
+    );
 
     // Delete old alerts
     const alertsResult = await query<{ count: number }>(
@@ -113,7 +116,7 @@ export class DataRetentionService {
         SELECT COUNT(*) as count FROM deleted
       `,
       [orgId, policy.retention_days_alerts]
-    )
+    );
 
     // Archive old jobs
     const jobsResult = await query<{ count: number }>(
@@ -129,7 +132,7 @@ export class DataRetentionService {
         SELECT COUNT(*) as count FROM archived
       `,
       [orgId, policy.retention_days_jobs]
-    )
+    );
 
     // Update last archive run timestamp
     await query(
@@ -139,18 +142,12 @@ export class DataRetentionService {
         WHERE org_id = $1
       `,
       [orgId]
-    )
+    );
 
     return {
       snapshotsDeleted: snapshotsResult.rows[0]?.count || 0,
       alertsDeleted: alertsResult.rows[0]?.count || 0,
       jobsArchived: jobsResult.rows[0]?.count || 0,
-    }
+    };
   }
 }
-
-
-
-
-
-

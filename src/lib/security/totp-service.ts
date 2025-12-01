@@ -9,11 +9,11 @@
  */
 
 // @ts-nocheck
-import speakeasy from 'speakeasy'
-import QRCode from 'qrcode'
-import crypto from 'crypto'
-import { db } from '@/lib/database'
-import { encryptPII, decryptPII } from './encryption'
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
+import crypto from 'crypto';
+import { db } from '@/lib/database';
+import { encryptPII, decryptPII } from './encryption';
 
 // ============================================================================
 // CONFIGURATION
@@ -28,36 +28,36 @@ const TOTP_CONFIG = {
   encoding: 'base32' as const,
   maxAttempts: 3, // Max verification attempts per period
   cooldownPeriod: 5 * 60 * 1000, // 5 minutes cooldown after max attempts
-  backupCodesCount: 10
-}
+  backupCodesCount: 10,
+};
 
 // ============================================================================
 // RATE LIMITING
 // ============================================================================
 
 interface RateLimitEntry {
-  attempts: number
-  lastAttempt: number
-  cooldownUntil?: number
+  attempts: number;
+  lastAttempt: number;
+  cooldownUntil?: number;
 }
 
 // In-memory rate limiting (should use Redis in production)
-const rateLimitStore = new Map<string, RateLimitEntry>()
+const rateLimitStore = new Map<string, RateLimitEntry>();
 
 /**
  * Check if user is rate limited for 2FA attempts
  */
 function checkRateLimit(userId: string): {
-  allowed: boolean
-  attemptsRemaining: number
-  cooldownUntil?: Date
+  allowed: boolean;
+  attemptsRemaining: number;
+  cooldownUntil?: Date;
 } {
-  const key = `2fa:${userId}`
-  const now = Date.now()
-  const entry = rateLimitStore.get(key)
+  const key = `2fa:${userId}`;
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
 
   if (!entry) {
-    return { allowed: true, attemptsRemaining: TOTP_CONFIG.maxAttempts }
+    return { allowed: true, attemptsRemaining: TOTP_CONFIG.maxAttempts };
   }
 
   // Check cooldown
@@ -65,45 +65,45 @@ function checkRateLimit(userId: string): {
     return {
       allowed: false,
       attemptsRemaining: 0,
-      cooldownUntil: new Date(entry.cooldownUntil)
-    }
+      cooldownUntil: new Date(entry.cooldownUntil),
+    };
   }
 
   // Reset if last attempt was more than cooldown period ago
   if (now - entry.lastAttempt > TOTP_CONFIG.cooldownPeriod) {
-    rateLimitStore.delete(key)
-    return { allowed: true, attemptsRemaining: TOTP_CONFIG.maxAttempts }
+    rateLimitStore.delete(key);
+    return { allowed: true, attemptsRemaining: TOTP_CONFIG.maxAttempts };
   }
 
   return {
     allowed: entry.attempts < TOTP_CONFIG.maxAttempts,
-    attemptsRemaining: Math.max(0, TOTP_CONFIG.maxAttempts - entry.attempts)
-  }
+    attemptsRemaining: Math.max(0, TOTP_CONFIG.maxAttempts - entry.attempts),
+  };
 }
 
 /**
  * Record 2FA verification attempt
  */
 function recordAttempt(userId: string, success: boolean): void {
-  const key = `2fa:${userId}`
-  const now = Date.now()
-  const entry = rateLimitStore.get(key) || { attempts: 0, lastAttempt: now }
+  const key = `2fa:${userId}`;
+  const now = Date.now();
+  const entry = rateLimitStore.get(key) || { attempts: 0, lastAttempt: now };
 
   if (success) {
     // Reset on success
-    rateLimitStore.delete(key)
-    return
+    rateLimitStore.delete(key);
+    return;
   }
 
-  entry.attempts += 1
-  entry.lastAttempt = now
+  entry.attempts += 1;
+  entry.lastAttempt = now;
 
   // Set cooldown if max attempts reached
   if (entry.attempts >= TOTP_CONFIG.maxAttempts) {
-    entry.cooldownUntil = now + TOTP_CONFIG.cooldownPeriod
+    entry.cooldownUntil = now + TOTP_CONFIG.cooldownPeriod;
   }
 
-  rateLimitStore.set(key, entry)
+  rateLimitStore.set(key, entry);
 }
 
 // ============================================================================
@@ -111,127 +111,136 @@ function recordAttempt(userId: string, success: boolean): void {
 // ============================================================================
 
 export interface TOTPSetupResult {
-  secret: string
-  qrCode: string
-  backupCodes: string[]
-  manualEntryKey: string
+  secret: string;
+  qrCode: string;
+  backupCodes: string[];
+  manualEntryKey: string;
 }
 
 /**
  * Generate TOTP secret and QR code for user
  */
-export async function setupTOTP(
-  userId: string,
-  userEmail: string
-): Promise<TOTPSetupResult> {
+export async function setupTOTP(userId: string, userEmail: string): Promise<TOTPSetupResult> {
   try {
     // Generate secret
     const secret = speakeasy.generateSecret({
       name: `${TOTP_CONFIG.issuer} (${userEmail})`,
       issuer: TOTP_CONFIG.issuer,
-      length: 32
-    })
+      length: 32,
+    });
 
     if (!secret.base32) {
-      throw new Error('Failed to generate TOTP secret')
+      throw new Error('Failed to generate TOTP secret');
     }
 
     // Generate QR code
-    const qrCode = await QRCode.toDataURL(secret.otpauth_url || '')
+    const qrCode = await QRCode.toDataURL(secret.otpauth_url || '');
 
     // Generate backup codes
-    const backupCodes = generateBackupCodes()
+    const backupCodes = generateBackupCodes();
 
     // Encrypt secret and backup codes before storing
-    const encryptedSecret = encryptPII(secret.base32)
-    const encryptedBackupCodes = backupCodes.map(code => encryptPII(code))
+    const encryptedSecret = encryptPII(secret.base32);
+    const encryptedBackupCodes = backupCodes.map(code => encryptPII(code));
 
     // Store in database (not yet enabled)
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET
         two_factor_secret = $2,
         two_factor_backup_codes = $3,
         two_factor_enabled = FALSE
       WHERE id = $1
-    `, [userId, encryptedSecret, encryptedBackupCodes])
+    `,
+      [userId, encryptedSecret, encryptedBackupCodes]
+    );
 
     return {
       secret: secret.base32,
       qrCode,
       backupCodes,
-      manualEntryKey: secret.base32
-    }
+      manualEntryKey: secret.base32,
+    };
   } catch (error) {
-    console.error('TOTP setup error:', error)
-    throw new Error('Failed to setup two-factor authentication')
+    console.error('TOTP setup error:', error);
+    throw new Error('Failed to setup two-factor authentication');
   }
 }
 
 /**
  * Verify TOTP code and enable 2FA
  */
-export async function enableTOTP(userId: string, code: string): Promise<{
-  success: boolean
-  error?: string
+export async function enableTOTP(
+  userId: string,
+  code: string
+): Promise<{
+  success: boolean;
+  error?: string;
 }> {
   try {
     // Check rate limit
-    const rateLimit = checkRateLimit(userId)
+    const rateLimit = checkRateLimit(userId);
     if (!rateLimit.allowed) {
       return {
         success: false,
-        error: `Too many attempts. Please try again after ${rateLimit.cooldownUntil?.toLocaleTimeString()}`
-      }
+        error: `Too many attempts. Please try again after ${rateLimit.cooldownUntil?.toLocaleTimeString()}`,
+      };
     }
 
     // Get encrypted secret
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT two_factor_secret
       FROM auth.users_extended
       WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
 
     if (result.rows.length === 0 || !result.rows[0].two_factor_secret) {
-      return { success: false, error: 'Two-factor authentication not setup' }
+      return { success: false, error: 'Two-factor authentication not setup' };
     }
 
     // Decrypt secret
-    const secret = decryptPII(result.rows[0].two_factor_secret)
+    const secret = decryptPII(result.rows[0].two_factor_secret);
 
     // Verify code
     const verified = speakeasy.totp.verify({
       secret,
       encoding: TOTP_CONFIG.encoding,
       token: code,
-      window: TOTP_CONFIG.window
-    })
+      window: TOTP_CONFIG.window,
+    });
 
-    recordAttempt(userId, verified)
+    recordAttempt(userId, verified);
 
     if (!verified) {
       return {
         success: false,
-        error: `Invalid verification code. ${rateLimit.attemptsRemaining - 1} attempts remaining.`
-      }
+        error: `Invalid verification code. ${rateLimit.attemptsRemaining - 1} attempts remaining.`,
+      };
     }
 
     // Enable 2FA
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET
         two_factor_enabled = TRUE,
         two_factor_enabled_at = NOW()
       WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
 
     // Log security event
-    await logSecurityEvent(userId, 'two_factor_enabled', 'medium')
+    await logSecurityEvent(userId, 'two_factor_enabled', 'medium');
 
-    return { success: true }
+    return { success: true };
   } catch (error) {
-    console.error('Enable TOTP error:', error)
-    return { success: false, error: 'Failed to enable two-factor authentication' }
+    console.error('Enable TOTP error:', error);
+    return { success: false, error: 'Failed to enable two-factor authentication' };
   }
 }
 
@@ -240,92 +249,92 @@ export async function enableTOTP(userId: string, code: string): Promise<{
 // ============================================================================
 
 export interface TOTPVerificationResult {
-  valid: boolean
-  error?: string
-  attemptsRemaining?: number
-  cooldownUntil?: Date
+  valid: boolean;
+  error?: string;
+  attemptsRemaining?: number;
+  cooldownUntil?: Date;
 }
 
 /**
  * Verify TOTP code for login
  */
-export async function verifyTOTP(
-  userId: string,
-  code: string
-): Promise<TOTPVerificationResult> {
+export async function verifyTOTP(userId: string, code: string): Promise<TOTPVerificationResult> {
   try {
     // Check rate limit
-    const rateLimit = checkRateLimit(userId)
+    const rateLimit = checkRateLimit(userId);
     if (!rateLimit.allowed) {
       return {
         valid: false,
         error: `Too many attempts. Please try again after ${rateLimit.cooldownUntil?.toLocaleTimeString()}`,
         attemptsRemaining: 0,
-        cooldownUntil: rateLimit.cooldownUntil
-      }
+        cooldownUntil: rateLimit.cooldownUntil,
+      };
     }
 
     // Get user's encrypted secret and backup codes
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         two_factor_secret,
         two_factor_backup_codes,
         two_factor_enabled
       FROM auth.users_extended
       WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
 
     if (result.rows.length === 0) {
-      return { valid: false, error: 'User not found' }
+      return { valid: false, error: 'User not found' };
     }
 
-    const row = result.rows[0]
+    const row = result.rows[0];
 
     if (!row.two_factor_enabled) {
-      return { valid: false, error: 'Two-factor authentication not enabled' }
+      return { valid: false, error: 'Two-factor authentication not enabled' };
     }
 
     if (!row.two_factor_secret) {
-      return { valid: false, error: 'Two-factor authentication not properly configured' }
+      return { valid: false, error: 'Two-factor authentication not properly configured' };
     }
 
     // Decrypt secret
-    const secret = decryptPII(row.two_factor_secret)
+    const secret = decryptPII(row.two_factor_secret);
 
     // Verify TOTP code
     const verified = speakeasy.totp.verify({
       secret,
       encoding: TOTP_CONFIG.encoding,
       token: code,
-      window: TOTP_CONFIG.window
-    })
+      window: TOTP_CONFIG.window,
+    });
 
     if (verified) {
-      recordAttempt(userId, true)
-      await logSecurityEvent(userId, 'two_factor_verified', 'low')
-      return { valid: true }
+      recordAttempt(userId, true);
+      await logSecurityEvent(userId, 'two_factor_verified', 'low');
+      return { valid: true };
     }
 
     // Check backup codes if TOTP failed
     if (row.two_factor_backup_codes && row.two_factor_backup_codes.length > 0) {
-      const backupValid = await verifyBackupCode(userId, code, row.two_factor_backup_codes)
+      const backupValid = await verifyBackupCode(userId, code, row.two_factor_backup_codes);
       if (backupValid) {
-        recordAttempt(userId, true)
-        return { valid: true }
+        recordAttempt(userId, true);
+        return { valid: true };
       }
     }
 
     // Record failed attempt
-    recordAttempt(userId, false)
+    recordAttempt(userId, false);
 
     return {
       valid: false,
       error: 'Invalid verification code',
-      attemptsRemaining: rateLimit.attemptsRemaining - 1
-    }
+      attemptsRemaining: rateLimit.attemptsRemaining - 1,
+    };
   } catch (error) {
-    console.error('Verify TOTP error:', error)
-    return { valid: false, error: 'Verification failed' }
+    console.error('Verify TOTP error:', error);
+    return { valid: false, error: 'Verification failed' };
   }
 }
 
@@ -339,31 +348,34 @@ async function verifyBackupCode(
 ): Promise<boolean> {
   try {
     // Decrypt all backup codes
-    const backupCodes = encryptedBackupCodes.map(encrypted => decryptPII(encrypted))
+    const backupCodes = encryptedBackupCodes.map(encrypted => decryptPII(encrypted));
 
     // Check if code matches
-    const index = backupCodes.indexOf(code)
+    const index = backupCodes.indexOf(code);
     if (index === -1) {
-      return false
+      return false;
     }
 
     // Remove used backup code
-    const remainingCodes = encryptedBackupCodes.filter((_, i) => i !== index)
+    const remainingCodes = encryptedBackupCodes.filter((_, i) => i !== index);
 
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET two_factor_backup_codes = $2
       WHERE id = $1
-    `, [userId, remainingCodes])
+    `,
+      [userId, remainingCodes]
+    );
 
     await logSecurityEvent(userId, 'backup_code_used', 'medium', {
-      remainingCodes: remainingCodes.length
-    })
+      remainingCodes: remainingCodes.length,
+    });
 
-    return true
+    return true;
   } catch (error) {
-    console.error('Verify backup code error:', error)
-    return false
+    console.error('Verify backup code error:', error);
+    return false;
   }
 }
 
@@ -375,16 +387,16 @@ async function verifyBackupCode(
  * Generate secure backup codes
  */
 function generateBackupCodes(): string[] {
-  const codes: string[] = []
+  const codes: string[] = [];
 
   for (let i = 0; i < TOTP_CONFIG.backupCodesCount; i++) {
     // Generate 8-character alphanumeric code
-    const code = crypto.randomBytes(4).toString('hex').toUpperCase()
+    const code = crypto.randomBytes(4).toString('hex').toUpperCase();
     // Format as XXXX-XXXX for readability
-    codes.push(`${code.slice(0, 4)}-${code.slice(4)}`)
+    codes.push(`${code.slice(0, 4)}-${code.slice(4)}`);
   }
 
-  return codes
+  return codes;
 }
 
 /**
@@ -392,21 +404,24 @@ function generateBackupCodes(): string[] {
  */
 export async function regenerateBackupCodes(userId: string): Promise<string[]> {
   try {
-    const backupCodes = generateBackupCodes()
-    const encryptedBackupCodes = backupCodes.map(code => encryptPII(code))
+    const backupCodes = generateBackupCodes();
+    const encryptedBackupCodes = backupCodes.map(code => encryptPII(code));
 
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET two_factor_backup_codes = $2
       WHERE id = $1
-    `, [userId, encryptedBackupCodes])
+    `,
+      [userId, encryptedBackupCodes]
+    );
 
-    await logSecurityEvent(userId, 'backup_codes_regenerated', 'medium')
+    await logSecurityEvent(userId, 'backup_codes_regenerated', 'medium');
 
-    return backupCodes
+    return backupCodes;
   } catch (error) {
-    console.error('Regenerate backup codes error:', error)
-    throw new Error('Failed to regenerate backup codes')
+    console.error('Regenerate backup codes error:', error);
+    throw new Error('Failed to regenerate backup codes');
   }
 }
 
@@ -417,23 +432,27 @@ export async function regenerateBackupCodes(userId: string): Promise<string[]> {
 /**
  * Disable TOTP for user (requires admin or user verification)
  */
-export async function disableTOTP(userId: string, verificationCode: string): Promise<{
-  success: boolean
-  error?: string
+export async function disableTOTP(
+  userId: string,
+  verificationCode: string
+): Promise<{
+  success: boolean;
+  error?: string;
 }> {
   try {
     // Verify current code before disabling
-    const verification = await verifyTOTP(userId, verificationCode)
+    const verification = await verifyTOTP(userId, verificationCode);
 
     if (!verification.valid) {
       return {
         success: false,
-        error: 'Invalid verification code. Please provide a valid code to disable 2FA.'
-      }
+        error: 'Invalid verification code. Please provide a valid code to disable 2FA.',
+      };
     }
 
     // Disable 2FA
-    await db.query(`
+    await db.query(
+      `
       UPDATE auth.users_extended
       SET
         two_factor_enabled = FALSE,
@@ -441,14 +460,16 @@ export async function disableTOTP(userId: string, verificationCode: string): Pro
         two_factor_backup_codes = NULL,
         two_factor_enabled_at = NULL
       WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
 
-    await logSecurityEvent(userId, 'two_factor_disabled', 'high')
+    await logSecurityEvent(userId, 'two_factor_disabled', 'high');
 
-    return { success: true }
+    return { success: true };
   } catch (error) {
-    console.error('Disable TOTP error:', error)
-    return { success: false, error: 'Failed to disable two-factor authentication' }
+    console.error('Disable TOTP error:', error);
+    return { success: false, error: 'Failed to disable two-factor authentication' };
   }
 }
 
@@ -463,22 +484,28 @@ async function logSecurityEvent(
   details?: unknown
 ): Promise<void> {
   try {
-    const userResult = await db.query(`
+    const userResult = await db.query(
+      `
       SELECT org_id FROM auth.users_extended WHERE id = $1
-    `, [userId])
+    `,
+      [userId]
+    );
 
-    if (userResult.rows.length === 0) return
+    if (userResult.rows.length === 0) return;
 
-    const orgId = userResult.rows[0].org_id
+    const orgId = userResult.rows[0].org_id;
 
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO auth.security_events (
         org_id, user_id, event_type, severity, details
       )
       VALUES ($1, $2, $3, $4, $5)
-    `, [orgId, userId, eventType, severity, JSON.stringify(details || {})])
+    `,
+      [orgId, userId, eventType, severity, JSON.stringify(details || {})]
+    );
   } catch (error) {
-    console.error('Log security event error:', error)
+    console.error('Log security event error:', error);
   }
 }
 
@@ -492,5 +519,5 @@ export const totpService = {
   verify: verifyTOTP,
   disable: disableTOTP,
   regenerateBackupCodes,
-  config: TOTP_CONFIG
-}
+  config: TOTP_CONFIG,
+};

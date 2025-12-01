@@ -17,10 +17,14 @@ const QuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   supplier_id: z.string().uuid().optional(),
-  status: z.enum(['uploaded', 'extracting', 'extracted', 'importing', 'completed', 'failed']).optional(),
+  status: z
+    .enum(['uploaded', 'extracting', 'extracted', 'importing', 'completed', 'failed'])
+    .optional(),
   from_date: z.coerce.date().optional(),
   to_date: z.coerce.date().optional(),
-  sort_by: z.enum(['uploaded_at', 'completed_at', 'file_size', 'total_products']).default('uploaded_at'),
+  sort_by: z
+    .enum(['uploaded_at', 'completed_at', 'file_size', 'total_products'])
+    .default('uploaded_at'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -142,18 +146,22 @@ export async function GET(request: NextRequest) {
         id: row.supplier_id,
         name: row.supplier_name || 'Unknown',
       },
-      extraction: row.extraction_job_id ? {
-        job_id: row.extraction_job_id,
-        status: row.extraction_status,
-        progress: row.extraction_progress,
-      } : null,
-      import: row.import_job_id ? {
-        job_id: row.import_job_id,
-        status: row.import_status,
-        products_imported: row.products_imported,
-        products_updated: row.products_updated,
-        products_failed: row.products_failed,
-      } : null,
+      extraction: row.extraction_job_id
+        ? {
+            job_id: row.extraction_job_id,
+            status: row.extraction_status,
+            progress: row.extraction_progress,
+          }
+        : null,
+      import: row.import_job_id
+        ? {
+            job_id: row.import_job_id,
+            status: row.import_status,
+            products_imported: row.products_imported,
+            products_updated: row.products_updated,
+            products_failed: row.products_failed,
+          }
+        : null,
       summary: {
         total_products: row.total_products,
         imported_products: row.imported_products,

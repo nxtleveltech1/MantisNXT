@@ -1,23 +1,29 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Settings,
   Send,
@@ -32,17 +38,17 @@ import {
   AlertTriangle,
   FileText,
   Package,
-  Calendar
-} from 'lucide-react'
+  Calendar,
+} from 'lucide-react';
 
-import { cn, formatCurrency } from '@/lib/utils'
-import type { PurchaseOrder } from './PurchaseOrdersManagement'
+import { cn, formatCurrency } from '@/lib/utils';
+import type { PurchaseOrder } from './PurchaseOrdersManagement';
 
 interface BulkOperationsProps {
-  open: boolean
-  onClose: () => void
-  selectedOrders: string[]
-  orders: PurchaseOrder[]
+  open: boolean;
+  onClose: () => void;
+  selectedOrders: string[];
+  orders: PurchaseOrder[];
 }
 
 type BulkAction =
@@ -58,17 +64,17 @@ type BulkAction =
   | 'duplicate'
   | 'delete'
   | 'add-notes'
-  | 'update-delivery-date'
+  | 'update-delivery-date';
 
 interface BulkActionConfig {
-  id: BulkAction
-  title: string
-  description: string
-  icon: React.ReactNode
-  category: 'workflow' | 'communication' | 'export' | 'maintenance'
-  requiresConfirmation: boolean
-  requiresInput?: boolean
-  dangerLevel?: 'low' | 'medium' | 'high'
+  id: BulkAction;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  category: 'workflow' | 'communication' | 'export' | 'maintenance';
+  requiresConfirmation: boolean;
+  requiresInput?: boolean;
+  dangerLevel?: 'low' | 'medium' | 'high';
 }
 
 const bulkActions: BulkActionConfig[] = [
@@ -78,7 +84,7 @@ const bulkActions: BulkActionConfig[] = [
     description: 'Send selected purchase orders to their respective suppliers',
     icon: <Send className="h-4 w-4" />,
     category: 'workflow',
-    requiresConfirmation: true
+    requiresConfirmation: true,
   },
   {
     id: 'approve',
@@ -86,7 +92,7 @@ const bulkActions: BulkActionConfig[] = [
     description: 'Approve all selected purchase orders',
     icon: <CheckCircle className="h-4 w-4" />,
     category: 'workflow',
-    requiresConfirmation: true
+    requiresConfirmation: true,
   },
   {
     id: 'reject',
@@ -96,7 +102,7 @@ const bulkActions: BulkActionConfig[] = [
     category: 'workflow',
     requiresConfirmation: true,
     requiresInput: true,
-    dangerLevel: 'medium'
+    dangerLevel: 'medium',
   },
   {
     id: 'cancel',
@@ -106,7 +112,7 @@ const bulkActions: BulkActionConfig[] = [
     category: 'workflow',
     requiresConfirmation: true,
     requiresInput: true,
-    dangerLevel: 'high'
+    dangerLevel: 'high',
   },
   {
     id: 'change-status',
@@ -115,7 +121,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <Edit className="h-4 w-4" />,
     category: 'workflow',
     requiresConfirmation: true,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'change-priority',
@@ -124,7 +130,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <AlertTriangle className="h-4 w-4" />,
     category: 'workflow',
     requiresConfirmation: true,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'email',
@@ -133,7 +139,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <Mail className="h-4 w-4" />,
     category: 'communication',
     requiresConfirmation: true,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'export',
@@ -142,7 +148,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <Download className="h-4 w-4" />,
     category: 'export',
     requiresConfirmation: false,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'print',
@@ -150,7 +156,7 @@ const bulkActions: BulkActionConfig[] = [
     description: 'Print selected purchase orders',
     icon: <Printer className="h-4 w-4" />,
     category: 'export',
-    requiresConfirmation: false
+    requiresConfirmation: false,
   },
   {
     id: 'duplicate',
@@ -158,7 +164,7 @@ const bulkActions: BulkActionConfig[] = [
     description: 'Create copies of selected orders',
     icon: <Copy className="h-4 w-4" />,
     category: 'maintenance',
-    requiresConfirmation: true
+    requiresConfirmation: true,
   },
   {
     id: 'add-notes',
@@ -167,7 +173,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <FileText className="h-4 w-4" />,
     category: 'maintenance',
     requiresConfirmation: false,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'update-delivery-date',
@@ -176,7 +182,7 @@ const bulkActions: BulkActionConfig[] = [
     icon: <Calendar className="h-4 w-4" />,
     category: 'maintenance',
     requiresConfirmation: true,
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'delete',
@@ -186,69 +192,69 @@ const bulkActions: BulkActionConfig[] = [
     category: 'maintenance',
     requiresConfirmation: true,
     requiresInput: true,
-    dangerLevel: 'high'
-  }
-]
+    dangerLevel: 'high',
+  },
+];
 
 const BulkOperations: React.FC<BulkOperationsProps> = ({
   open,
   onClose,
   selectedOrders,
-  orders
+  orders,
 }) => {
-  const [selectedAction, setSelectedAction] = useState<BulkAction | null>(null)
-  const [inputData, setInputData] = useState<Record<string, unknown>>({})
-  const [processing, setProcessing] = useState(false)
-  const [progress, setProgress] = useState(0)
+  const [selectedAction, setSelectedAction] = useState<BulkAction | null>(null);
+  const [inputData, setInputData] = useState<Record<string, unknown>>({});
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{
-    success: number
-    failed: number
-    errors: string[]
-  } | null>(null)
+    success: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
 
-  const selectedOrdersData = orders.filter(order => selectedOrders.includes(order.id))
-  const totalValue = selectedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0)
+  const selectedOrdersData = orders.filter(order => selectedOrders.includes(order.id));
+  const totalValue = selectedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
 
   const resetState = () => {
-    setSelectedAction(null)
-    setInputData({})
-    setProcessing(false)
-    setProgress(0)
-    setResults(null)
-  }
+    setSelectedAction(null);
+    setInputData({});
+    setProcessing(false);
+    setProgress(0);
+    setResults(null);
+  };
 
   const handleClose = () => {
-    resetState()
-    onClose()
-  }
+    resetState();
+    onClose();
+  };
 
   const getActionsByCategory = (category: string) => {
-    return bulkActions.filter(action => action.category === category)
-  }
+    return bulkActions.filter(action => action.category === category);
+  };
 
   const validateAction = (action: BulkActionConfig): string[] => {
-    const errors: string[] = []
+    const errors: string[] = [];
 
     // Check if action is valid for selected orders
     selectedOrdersData.forEach(order => {
       switch (action.id) {
         case 'send-to-supplier':
           if (order.status !== 'approved') {
-            errors.push(`${order.poNumber}: Order must be approved before sending`)
+            errors.push(`${order.poNumber}: Order must be approved before sending`);
           }
-          break
+          break;
         case 'approve':
           if (!['draft', 'pending'].includes(order.status)) {
-            errors.push(`${order.poNumber}: Order is not in approvable state`)
+            errors.push(`${order.poNumber}: Order is not in approvable state`);
           }
-          break
+          break;
         case 'cancel':
           if (['completed', 'cancelled'].includes(order.status)) {
-            errors.push(`${order.poNumber}: Cannot cancel completed or already cancelled order`)
+            errors.push(`${order.poNumber}: Cannot cancel completed or already cancelled order`);
           }
-          break
+          break;
       }
-    })
+    });
 
     // Check required inputs
     if (action.requiresInput) {
@@ -256,83 +262,83 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         case 'reject':
         case 'cancel':
           if (!inputData.reason) {
-            errors.push('Reason is required')
+            errors.push('Reason is required');
           }
-          break
+          break;
         case 'change-status':
           if (!inputData.newStatus) {
-            errors.push('New status is required')
+            errors.push('New status is required');
           }
-          break
+          break;
         case 'change-priority':
           if (!inputData.newPriority) {
-            errors.push('New priority is required')
+            errors.push('New priority is required');
           }
-          break
+          break;
         case 'add-notes':
           if (!inputData.notes) {
-            errors.push('Notes are required')
+            errors.push('Notes are required');
           }
-          break
+          break;
         case 'update-delivery-date':
           if (!inputData.newDeliveryDate) {
-            errors.push('New delivery date is required')
+            errors.push('New delivery date is required');
           }
-          break
+          break;
       }
     }
 
-    return errors
-  }
+    return errors;
+  };
 
   const executeAction = async (action: BulkActionConfig) => {
-    const errors = validateAction(action)
+    const errors = validateAction(action);
     if (errors.length > 0) {
-      setResults({ success: 0, failed: selectedOrders.length, errors })
-      return
+      setResults({ success: 0, failed: selectedOrders.length, errors });
+      return;
     }
 
-    setProcessing(true)
-    setProgress(0)
+    setProcessing(true);
+    setProgress(0);
 
     // Simulate processing
-    let successCount = 0
-    let failedCount = 0
-    const processingErrors: string[] = []
+    let successCount = 0;
+    let failedCount = 0;
+    const processingErrors: string[] = [];
 
     for (let i = 0; i < selectedOrdersData.length; i++) {
-      const order = selectedOrdersData[i]
+      const order = selectedOrdersData[i];
 
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
         // Mock processing logic
 
         // Simulate some failures
         if (Math.random() < 0.1) {
-          throw new Error(`Failed to process ${order.poNumber}`)
+          throw new Error(`Failed to process ${order.poNumber}`);
         }
 
-        successCount++
+        successCount++;
       } catch (error) {
-        failedCount++
-        processingErrors.push(error instanceof Error ? error.message : 'Unknown error')
+        failedCount++;
+        processingErrors.push(error instanceof Error ? error.message : 'Unknown error');
       }
 
-      setProgress(((i + 1) / selectedOrdersData.length) * 100)
+      setProgress(((i + 1) / selectedOrdersData.length) * 100);
     }
 
     setResults({
       success: successCount,
       failed: failedCount,
-      errors: processingErrors
-    })
-    setProcessing(false)
-  }
+      errors: processingErrors,
+    });
+    setProcessing(false);
+  };
 
   const renderActionInputs = (action: BulkActionConfig) => {
-    if (!action.requiresInput) return null
+    if (!action.requiresInput) return null;
 
     switch (action.id) {
       case 'reject':
@@ -345,11 +351,11 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                 id="reason"
                 placeholder="Enter reason for rejection/cancellation..."
                 value={inputData.reason || ''}
-                onChange={(e) => setInputData(prev => ({ ...prev, reason: e.target.value }))}
+                onChange={e => setInputData(prev => ({ ...prev, reason: e.target.value }))}
               />
             </div>
           </div>
-        )
+        );
 
       case 'change-status':
         return (
@@ -357,7 +363,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             <Label htmlFor="status">New Status</Label>
             <Select
               value={inputData.newStatus || ''}
-              onValueChange={(value) => setInputData(prev => ({ ...prev, newStatus: value }))}
+              onValueChange={value => setInputData(prev => ({ ...prev, newStatus: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select new status" />
@@ -375,7 +381,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               </SelectContent>
             </Select>
           </div>
-        )
+        );
 
       case 'change-priority':
         return (
@@ -383,7 +389,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             <Label htmlFor="priority">New Priority</Label>
             <Select
               value={inputData.newPriority || ''}
-              onValueChange={(value) => setInputData(prev => ({ ...prev, newPriority: value }))}
+              onValueChange={value => setInputData(prev => ({ ...prev, newPriority: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select new priority" />
@@ -396,7 +402,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               </SelectContent>
             </Select>
           </div>
-        )
+        );
 
       case 'add-notes':
         return (
@@ -406,10 +412,10 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               id="notes"
               placeholder="Enter notes to add to selected orders..."
               value={inputData.notes || ''}
-              onChange={(e) => setInputData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={e => setInputData(prev => ({ ...prev, notes: e.target.value }))}
             />
           </div>
-        )
+        );
 
       case 'email':
         return (
@@ -420,7 +426,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                 id="emailSubject"
                 placeholder="Purchase Order Update"
                 value={inputData.emailSubject || ''}
-                onChange={(e) => setInputData(prev => ({ ...prev, emailSubject: e.target.value }))}
+                onChange={e => setInputData(prev => ({ ...prev, emailSubject: e.target.value }))}
               />
             </div>
             <div>
@@ -429,11 +435,11 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                 id="emailMessage"
                 placeholder="Enter email message..."
                 value={inputData.emailMessage || ''}
-                onChange={(e) => setInputData(prev => ({ ...prev, emailMessage: e.target.value }))}
+                onChange={e => setInputData(prev => ({ ...prev, emailMessage: e.target.value }))}
               />
             </div>
           </div>
-        )
+        );
 
       case 'export':
         return (
@@ -441,7 +447,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             <Label htmlFor="exportFormat">Export Format</Label>
             <Select
               value={inputData.exportFormat || 'xlsx'}
-              onValueChange={(value) => setInputData(prev => ({ ...prev, exportFormat: value }))}
+              onValueChange={value => setInputData(prev => ({ ...prev, exportFormat: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -454,7 +460,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               </SelectContent>
             </Select>
           </div>
-        )
+        );
 
       case 'update-delivery-date':
         return (
@@ -464,19 +470,19 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               id="deliveryDate"
               type="date"
               value={inputData.newDeliveryDate || ''}
-              onChange={(e) => setInputData(prev => ({ ...prev, newDeliveryDate: e.target.value }))}
+              onChange={e => setInputData(prev => ({ ...prev, newDeliveryDate: e.target.value }))}
             />
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -493,20 +499,20 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             <CardTitle className="text-sm">Selected Orders Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="text-center">
                 <div className="text-2xl font-bold">{selectedOrders.length}</div>
-                <div className="text-sm text-muted-foreground">Orders Selected</div>
+                <div className="text-muted-foreground text-sm">Orders Selected</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
-                <div className="text-sm text-muted-foreground">Total Value</div>
+                <div className="text-muted-foreground text-sm">Total Value</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">
                   {new Set(selectedOrdersData.map(o => o.supplierId)).size}
                 </div>
-                <div className="text-sm text-muted-foreground">Suppliers</div>
+                <div className="text-muted-foreground text-sm">Suppliers</div>
               </div>
             </div>
           </CardContent>
@@ -517,34 +523,36 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             {/* Action Categories */}
             {['workflow', 'communication', 'export', 'maintenance'].map(category => (
               <div key={category}>
-                <h3 className="text-lg font-semibold mb-3 capitalize">{category} Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <h3 className="mb-3 text-lg font-semibold capitalize">{category} Actions</h3>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {getActionsByCategory(category).map(action => (
                     <Card
                       key={action.id}
                       className={cn(
-                        "cursor-pointer transition-colors hover:bg-muted/50",
-                        action.dangerLevel === 'high' && "border-red-200 hover:bg-red-50",
-                        action.dangerLevel === 'medium' && "border-yellow-200 hover:bg-yellow-50"
+                        'hover:bg-muted/50 cursor-pointer transition-colors',
+                        action.dangerLevel === 'high' && 'border-red-200 hover:bg-red-50',
+                        action.dangerLevel === 'medium' && 'border-yellow-200 hover:bg-yellow-50'
                       )}
                       onClick={() => setSelectedAction(action.id)}
                     >
                       <CardContent className="pt-4">
                         <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "p-2 rounded-lg",
-                            action.dangerLevel === 'high' && "bg-red-100 text-red-600",
-                            action.dangerLevel === 'medium' && "bg-yellow-100 text-yellow-600",
-                            !action.dangerLevel && "bg-blue-100 text-blue-600"
-                          )}>
+                          <div
+                            className={cn(
+                              'rounded-lg p-2',
+                              action.dangerLevel === 'high' && 'bg-red-100 text-red-600',
+                              action.dangerLevel === 'medium' && 'bg-yellow-100 text-yellow-600',
+                              !action.dangerLevel && 'bg-blue-100 text-blue-600'
+                            )}
+                          >
                             {action.icon}
                           </div>
                           <div className="flex-1">
                             <h4 className="font-medium">{action.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-muted-foreground mt-1 text-sm">
                               {action.description}
                             </p>
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="mt-2 flex items-center gap-2">
                               {action.requiresConfirmation && (
                                 <Badge variant="secondary" className="text-xs">
                                   Requires Confirmation
@@ -554,12 +562,15 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    "text-xs",
-                                    action.dangerLevel === 'high' && "border-red-200 text-red-600",
-                                    action.dangerLevel === 'medium' && "border-yellow-200 text-yellow-600"
+                                    'text-xs',
+                                    action.dangerLevel === 'high' && 'border-red-200 text-red-600',
+                                    action.dangerLevel === 'medium' &&
+                                      'border-yellow-200 text-yellow-600'
                                   )}
                                 >
-                                  {action.dangerLevel.charAt(0).toUpperCase() + action.dangerLevel.slice(1)} Risk
+                                  {action.dangerLevel.charAt(0).toUpperCase() +
+                                    action.dangerLevel.slice(1)}{' '}
+                                  Risk
                                 </Badge>
                               )}
                             </div>
@@ -578,7 +589,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         {selectedAction && !processing && !results && (
           <div className="space-y-6">
             {(() => {
-              const action = bulkActions.find(a => a.id === selectedAction)!
+              const action = bulkActions.find(a => a.id === selectedAction)!;
               return (
                 <>
                   <Card>
@@ -589,24 +600,22 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                       </CardTitle>
                       <CardDescription>{action.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      {renderActionInputs(action)}
-                    </CardContent>
+                    <CardContent>{renderActionInputs(action)}</CardContent>
                   </Card>
 
                   {action.dangerLevel && (
-                    <Alert className={cn(
-                      action.dangerLevel === 'high' && "border-red-200 bg-red-50",
-                      action.dangerLevel === 'medium' && "border-yellow-200 bg-yellow-50"
-                    )}>
+                    <Alert
+                      className={cn(
+                        action.dangerLevel === 'high' && 'border-red-200 bg-red-50',
+                        action.dangerLevel === 'medium' && 'border-yellow-200 bg-yellow-50'
+                      )}
+                    >
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
                         {action.dangerLevel === 'high' &&
-                          "This is a high-risk operation that cannot be undone. Please proceed with caution."
-                        }
+                          'This is a high-risk operation that cannot be undone. Please proceed with caution.'}
                         {action.dangerLevel === 'medium' &&
-                          "This operation may affect order workflows. Please review before proceeding."
-                        }
+                          'This operation may affect order workflows. Please review before proceeding.'}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -617,12 +626,15 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                       <CardTitle className="text-sm">Affected Orders</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <div className="max-h-48 space-y-2 overflow-y-auto">
                         {selectedOrdersData.map(order => (
-                          <div key={order.id} className="flex items-center justify-between p-2 border rounded">
+                          <div
+                            key={order.id}
+                            className="flex items-center justify-between rounded border p-2"
+                          >
                             <div>
                               <span className="font-medium">{order.poNumber}</span>
-                              <span className="text-sm text-muted-foreground ml-2">
+                              <span className="text-muted-foreground ml-2 text-sm">
                                 {order.supplierName}
                               </span>
                             </div>
@@ -640,7 +652,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                     </CardContent>
                   </Card>
                 </>
-              )
+              );
             })()}
           </div>
         )}
@@ -649,7 +661,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         {processing && (
           <div className="space-y-6 text-center">
             <div>
-              <Package className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+              <Package className="mx-auto mb-4 h-12 w-12 text-blue-500" />
               <h3 className="text-lg font-semibold">Processing Orders</h3>
               <p className="text-muted-foreground">
                 Please wait while we process your bulk operation...
@@ -657,9 +669,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             </div>
             <div className="space-y-2">
               <Progress value={progress} className="w-full" />
-              <p className="text-sm text-muted-foreground">
-                {Math.round(progress)}% complete
-              </p>
+              <p className="text-muted-foreground text-sm">{Math.round(progress)}% complete</p>
             </div>
           </div>
         )}
@@ -668,21 +678,21 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         {results && (
           <div className="space-y-6">
             <div className="text-center">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
               <h3 className="text-lg font-semibold">Operation Complete</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Card>
                 <CardContent className="pt-6 text-center">
                   <div className="text-2xl font-bold text-green-600">{results.success}</div>
-                  <div className="text-sm text-muted-foreground">Successful</div>
+                  <div className="text-muted-foreground text-sm">Successful</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6 text-center">
                   <div className="text-2xl font-bold text-red-600">{results.failed}</div>
-                  <div className="text-sm text-muted-foreground">Failed</div>
+                  <div className="text-muted-foreground text-sm">Failed</div>
                 </CardContent>
               </Card>
             </div>
@@ -693,7 +703,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
                   <CardTitle className="text-sm text-red-800">Errors</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                  <ul className="list-inside list-disc space-y-1 text-sm text-red-600">
                     {results.errors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -718,8 +728,8 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
               </Button>
               <Button
                 onClick={() => {
-                  const action = bulkActions.find(a => a.id === selectedAction)!
-                  executeAction(action)
+                  const action = bulkActions.find(a => a.id === selectedAction)!;
+                  executeAction(action);
                 }}
               >
                 Execute Action
@@ -727,15 +737,11 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             </>
           )}
 
-          {results && (
-            <Button onClick={handleClose}>
-              Close
-            </Button>
-          )}
+          {results && <Button onClick={handleClose}>Close</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default BulkOperations
+export default BulkOperations;

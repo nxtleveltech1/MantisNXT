@@ -19,7 +19,7 @@ import { parse } from 'csv-parse';
 import { query } from '@/lib/database/unified-connection';
 import { AppError, ErrorCode } from '@/lib/errors/AppError';
 import { extractionCache } from './ExtractionCache';
-import { applyPricelistRulesToExcel } from '@/lib/cmm/supplier-rules-engine'
+import { applyPricelistRulesToExcel } from '@/lib/cmm/supplier-rules-engine';
 import type {
   ExtractionJob,
   ExtractedProduct,
@@ -97,9 +97,25 @@ const COLUMN_ALIASES = {
     'cost',
   ],
   priceEx: ['priceex', 'exvat', 'exclusive', 'priceexc', 'excl', 'costexcluding', 'cost excluding'],
-  priceInc: ['priceinc', 'inclvat', 'inclusive', 'grossprice', 'incl', 'costincluding', 'cost including'],
+  priceInc: [
+    'priceinc',
+    'inclvat',
+    'inclusive',
+    'grossprice',
+    'incl',
+    'costincluding',
+    'cost including',
+  ],
   vatAmount: ['vatamount', 'taxvalue', 'vat', 'tax'],
-  rsp: ['rsp', 'recommendedretailprice', 'recommended retail price', 'recommendedsellingprice', 'recommended selling price', 'rrp', 'rrsp'],
+  rsp: [
+    'rsp',
+    'recommendedretailprice',
+    'recommended retail price',
+    'recommendedsellingprice',
+    'recommended selling price',
+    'rrp',
+    'rrsp',
+  ],
   stockQty: [
     'quantity',
     'qty',
@@ -193,17 +209,24 @@ export class ExtractionWorker extends EventEmitter {
         );
       }
 
-      let rawData: Array<Record<string, unknown>> = []
+      let rawData: Array<Record<string, unknown>> = [];
       this.emitStatus('Parsing file', 10);
-      if (fileUpload.file_type === 'xlsx' && job.config && job.config['use_rules_engine'] !== false) {
-        const ruled = await applyPricelistRulesToExcel(fileUpload.storage_path, fileUpload.supplier_id)
+      if (
+        fileUpload.file_type === 'xlsx' &&
+        job.config &&
+        job.config['use_rules_engine'] !== false
+      ) {
+        const ruled = await applyPricelistRulesToExcel(
+          fileUpload.storage_path,
+          fileUpload.supplier_id
+        );
         if (ruled && ruled.length > 0) {
-          rawData = ruled
+          rawData = ruled;
         } else {
-          rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config)
+          rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config);
         }
       } else {
-        rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config)
+        rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config);
       }
 
       this.emitStatus('Extracting products', 30);
@@ -862,7 +885,10 @@ export class ExtractionWorker extends EventEmitter {
 
     // If no price at all (neither extracted nor calculated), skip with warning
     if (!mappedData.price) {
-      this.emit('warning', `Row ${rowNumber}: Missing price for SKU ${mappedData.supplier_sku}, skipping product`);
+      this.emit(
+        'warning',
+        `Row ${rowNumber}: Missing price for SKU ${mappedData.supplier_sku}, skipping product`
+      );
       return null;
     }
 

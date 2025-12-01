@@ -5,13 +5,9 @@
  * DELETE /api/v1/ai/forecasts/[id] - Delete forecast (admin only)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import {
-  handleAIError,
-  authenticateRequest,
-  successResponse,
-} from '@/lib/ai/api-utils';
+import { handleAIError, authenticateRequest, successResponse } from '@/lib/ai/api-utils';
 import { demandForecastService } from '@/lib/ai/services/forecast-service';
 import { z } from 'zod';
 
@@ -24,10 +20,7 @@ const updateActualQuantitySchema = z.object({
  * GET /api/v1/ai/forecasts/[id]
  * Get a specific forecast by ID
  */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await authenticateRequest(request);
     const params = await context.params;
@@ -35,10 +28,7 @@ export async function GET(
     const forecast = await demandForecastService.getForecastById(params.id);
 
     if (!forecast) {
-      return NextResponse.json(
-        { success: false, error: 'Forecast not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Forecast not found' }, { status: 404 });
     }
 
     return successResponse(forecast);
@@ -51,10 +41,7 @@ export async function GET(
  * PATCH /api/v1/ai/forecasts/[id]
  * Update actual quantity and calculate accuracy score
  */
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await authenticateRequest(request);
     const params = await context.params;
@@ -81,10 +68,7 @@ export async function PATCH(
  * DELETE /api/v1/ai/forecasts/[id]
  * Delete a forecast (admin only, for cleanup)
  */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await authenticateRequest(request);
     const params = await context.params;
@@ -92,10 +76,7 @@ export async function DELETE(
     // Check if forecast exists
     const forecast = await demandForecastService.getForecastById(params.id);
     if (!forecast) {
-      return NextResponse.json(
-        { success: false, error: 'Forecast not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Forecast not found' }, { status: 404 });
     }
 
     // Note: This is a simple implementation

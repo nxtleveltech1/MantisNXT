@@ -29,29 +29,35 @@ export async function POST(
     const { service } = await context.params;
     const user = await authenticateRequest(request);
     const serviceType = extractServiceType({ service });
-    const body = await request.json().catch(() => ({} as any));
+    const body = await request.json().catch(() => ({}) as any);
     const validated = testConfigSchema.safeParse(body);
 
     // Test connectivity based on provider type
-    let connectivity = 'skipped'
+    let connectivity = 'skipped';
     try {
       if (validated.success && body?.config) {
-        const provider = body.config.activeProvider || body.config.provider || body.config.providerType || 'openai'
-        const section = body.config.providers?.[provider] || body.config
-        const apiKey = section.apiKey || body.config.apiKey
-        let baseUrl: string = section.baseUrl || body.config.baseUrl
-        
+        const provider =
+          body.config.activeProvider ||
+          body.config.provider ||
+          body.config.providerType ||
+          'openai';
+        const section = body.config.providers?.[provider] || body.config;
+        const apiKey = section.apiKey || body.config.apiKey;
+        let baseUrl: string = section.baseUrl || body.config.baseUrl;
+
         // Handle CLI mode with OAuth authentication
         if (body.config.useCLI && (body.config.useOAuth || body.config.useGCloudADC)) {
-          const cliCommand = body.config.cliCommand || (provider === 'google' ? 'gemini' : provider === 'openai' ? 'codex' : '')
-          
+          const cliCommand =
+            body.config.cliCommand ||
+            (provider === 'google' ? 'gemini' : provider === 'openai' ? 'codex' : '');
+
           if (!cliCommand) {
-            connectivity = 'failed:CLI command not specified'
+            connectivity = 'failed:CLI command not specified';
           } else {
             // Check if CLI is installed
-            const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand)
+            const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand);
             if (!cliCheck.installed) {
-              connectivity = 'failed:CLI not installed. Please install the CLI tool first.'
+              connectivity = 'failed:CLI not installed. Please install the CLI tool first.';
             } else {
               // Try to check auth status or execute a simple test command
               try {
@@ -65,15 +71,18 @@ export async function POST(
                       timeout: 5000,
                       workingDirectory: body.config.cliWorkingDirectory,
                       useShell: true,
-                    })
-                    
-                    if (authResult.success && 
-                        (authResult.stdout.toLowerCase().includes('logged in') || 
-                         authResult.stdout.toLowerCase().includes('authenticated') ||
-                         authResult.stdout.toLowerCase().includes('signed in'))) {
-                      connectivity = 'ok'
+                    });
+
+                    if (
+                      authResult.success &&
+                      (authResult.stdout.toLowerCase().includes('logged in') ||
+                        authResult.stdout.toLowerCase().includes('authenticated') ||
+                        authResult.stdout.toLowerCase().includes('signed in'))
+                    ) {
+                      connectivity = 'ok';
                     } else {
-                      connectivity = 'failed:Not authenticated. Please run "codex" in terminal and select "Sign in with ChatGPT" to log in first.'
+                      connectivity =
+                        'failed:Not authenticated. Please run "codex" in terminal and select "Sign in with ChatGPT" to log in first.';
                     }
                   } catch (authError: any) {
                     // Auth status command might not be available, try a simple test
@@ -85,18 +94,21 @@ export async function POST(
                         timeout: 5000,
                         workingDirectory: body.config.cliWorkingDirectory,
                         useShell: true,
-                      })
-                      
+                      });
+
                       if (testResult.success) {
-                        connectivity = 'ok:CLI is available. Authentication will be checked during actual usage.'
+                        connectivity =
+                          'ok:CLI is available. Authentication will be checked during actual usage.';
                       } else {
-                        connectivity = 'failed:CLI command failed. Please ensure you are logged in via CLI.'
+                        connectivity =
+                          'failed:CLI command failed. Please ensure you are logged in via CLI.';
                       }
                     } catch {
-                      connectivity = 'failed:CLI authentication check failed. Please run "codex" in terminal to authenticate first.'
+                      connectivity =
+                        'failed:CLI authentication check failed. Please run "codex" in terminal to authenticate first.';
                     }
                   }
-                } 
+                }
                 // For gemini: check auth status
                 else if (provider === 'google' && cliCommand === 'gemini') {
                   try {
@@ -107,15 +119,18 @@ export async function POST(
                       timeout: 5000,
                       workingDirectory: body.config.cliWorkingDirectory,
                       useShell: true,
-                    })
-                    
-                    if (authResult.success && 
-                        (authResult.stdout.toLowerCase().includes('authenticated') || 
-                         authResult.stdout.toLowerCase().includes('logged in') ||
-                         authResult.stdout.toLowerCase().includes('signed in'))) {
-                      connectivity = 'ok'
+                    });
+
+                    if (
+                      authResult.success &&
+                      (authResult.stdout.toLowerCase().includes('authenticated') ||
+                        authResult.stdout.toLowerCase().includes('logged in') ||
+                        authResult.stdout.toLowerCase().includes('signed in'))
+                    ) {
+                      connectivity = 'ok';
                     } else {
-                      connectivity = 'failed:Not authenticated. Please run "gemini" in terminal to log in with your Google account first.'
+                      connectivity =
+                        'failed:Not authenticated. Please run "gemini" in terminal to log in with your Google account first.';
                     }
                   } catch (authError: any) {
                     // Auth status command might not be available, try a simple test
@@ -127,15 +142,18 @@ export async function POST(
                         timeout: 5000,
                         workingDirectory: body.config.cliWorkingDirectory,
                         useShell: true,
-                      })
-                      
+                      });
+
                       if (testResult.success) {
-                        connectivity = 'ok:CLI is available. Authentication will be checked during actual usage.'
+                        connectivity =
+                          'ok:CLI is available. Authentication will be checked during actual usage.';
                       } else {
-                        connectivity = 'failed:CLI command failed. Please ensure you are logged in via CLI.'
+                        connectivity =
+                          'failed:CLI command failed. Please ensure you are logged in via CLI.';
                       }
                     } catch {
-                      connectivity = 'failed:CLI authentication check failed. Please run "gemini" in terminal to authenticate first.'
+                      connectivity =
+                        'failed:CLI authentication check failed. Please run "gemini" in terminal to authenticate first.';
                     }
                   }
                 } else {
@@ -147,48 +165,55 @@ export async function POST(
                     timeout: 5000,
                     workingDirectory: body.config.cliWorkingDirectory,
                     useShell: true,
-                  })
-                  
+                  });
+
                   if (testResult.success) {
-                    connectivity = 'ok:CLI is available'
+                    connectivity = 'ok:CLI is available';
                   } else {
-                    connectivity = `failed:CLI command failed. ${testResult.stderr || testResult.error || 'Unknown error'}`
+                    connectivity = `failed:CLI command failed. ${testResult.stderr || testResult.error || 'Unknown error'}`;
                   }
                 }
               } catch (error: any) {
-                connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`
+                connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`;
               }
             }
           }
-          
+
           // Return early for CLI mode
           const testResult = {
             success: connectivity === 'ok' || connectivity.startsWith('ok:'),
             serviceType,
             latency: 0,
             provider: provider,
-            message: connectivity === 'ok' || connectivity.startsWith('ok:') ? 'CLI Authentication OK' : 'CLI Test Failed',
+            message:
+              connectivity === 'ok' || connectivity.startsWith('ok:')
+                ? 'CLI Authentication OK'
+                : 'CLI Test Failed',
             details: {
               connectivity,
               cliMode: true,
-              authMethod: body.config.useOAuth ? 'OAuth' : body.config.useGCloudADC ? 'gcloud ADC' : 'API Key',
+              authMethod: body.config.useOAuth
+                ? 'OAuth'
+                : body.config.useGCloudADC
+                  ? 'gcloud ADC'
+                  : 'API Key',
               cliCommand: cliCommand,
             },
             timestamp: new Date().toISOString(),
           };
           return successResponse(testResult);
         }
-        
+
         // Handle CLI mode with OAuth authentication
         if (body.config.useCLI && (body.config.useOAuth || body.config.useGCloudADC)) {
-          const cliCommand = body.config.cliCommand || (provider === 'google' ? 'gemini' : 'codex')
-          
+          const cliCommand = body.config.cliCommand || (provider === 'google' ? 'gemini' : 'codex');
+
           // Test CLI authentication and availability
           try {
             // Check if CLI is installed
-            const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand)
+            const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand);
             if (!cliCheck.installed) {
-              connectivity = 'failed:CLI not installed. Please install the CLI tool first.'
+              connectivity = 'failed:CLI not installed. Please install the CLI tool first.';
             } else {
               // Try to check auth status or execute a simple test command
               // For codex: try to get auth status
@@ -202,8 +227,8 @@ export async function POST(
                     timeout: 5000,
                     workingDirectory: body.config.cliWorkingDirectory,
                     useShell: true,
-                  })
-                  
+                  });
+
                   if (result.success && result.exitCode === 0) {
                     // CLI is working, try to check auth status if possible
                     try {
@@ -214,22 +239,28 @@ export async function POST(
                         timeout: 5000,
                         workingDirectory: body.config.cliWorkingDirectory,
                         useShell: true,
-                      })
-                      
-                      if (authResult.success && (authResult.stdout.includes('logged in') || authResult.stdout.includes('authenticated'))) {
-                        connectivity = 'ok'
+                      });
+
+                      if (
+                        authResult.success &&
+                        (authResult.stdout.includes('logged in') ||
+                          authResult.stdout.includes('authenticated'))
+                      ) {
+                        connectivity = 'ok';
                       } else {
-                        connectivity = 'failed:Not authenticated. Please run the CLI login command in your terminal first.'
+                        connectivity =
+                          'failed:Not authenticated. Please run the CLI login command in your terminal first.';
                       }
                     } catch {
                       // Auth status check not available, but CLI works
-                      connectivity = 'ok:CLI is available. Authentication will be checked during actual usage.'
+                      connectivity =
+                        'ok:CLI is available. Authentication will be checked during actual usage.';
                     }
                   } else {
-                    connectivity = `failed:CLI command failed. ${result.stderr || result.error || 'Unknown error'}`
+                    connectivity = `failed:CLI command failed. ${result.stderr || result.error || 'Unknown error'}`;
                   }
                 } catch (error: any) {
-                  connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`
+                  connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`;
                 }
               } else if (provider === 'google' && cliCommand === 'gemini') {
                 // For gemini CLI: similar approach
@@ -241,8 +272,8 @@ export async function POST(
                     timeout: 5000,
                     workingDirectory: body.config.cliWorkingDirectory,
                     useShell: true,
-                  })
-                  
+                  });
+
                   if (result.success && result.exitCode === 0) {
                     // Try to check auth status
                     try {
@@ -253,31 +284,37 @@ export async function POST(
                         timeout: 5000,
                         workingDirectory: body.config.cliWorkingDirectory,
                         useShell: true,
-                      })
-                      
-                      if (authResult.success && (authResult.stdout.includes('authenticated') || authResult.stdout.includes('logged in'))) {
-                        connectivity = 'ok'
+                      });
+
+                      if (
+                        authResult.success &&
+                        (authResult.stdout.includes('authenticated') ||
+                          authResult.stdout.includes('logged in'))
+                      ) {
+                        connectivity = 'ok';
                       } else {
-                        connectivity = 'failed:Not authenticated. Please run "gemini" in terminal to log in first.'
+                        connectivity =
+                          'failed:Not authenticated. Please run "gemini" in terminal to log in first.';
                       }
                     } catch {
                       // Auth status check not available, but CLI works
-                      connectivity = 'ok:CLI is available. Authentication will be checked during actual usage.'
+                      connectivity =
+                        'ok:CLI is available. Authentication will be checked during actual usage.';
                     }
                   } else {
-                    connectivity = `failed:CLI command failed. ${result.stderr || result.error || 'Unknown error'}`
+                    connectivity = `failed:CLI command failed. ${result.stderr || result.error || 'Unknown error'}`;
                   }
                 } catch (error: any) {
-                  connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`
+                  connectivity = `failed:CLI execution error. ${error.message || 'Please ensure you are logged in via CLI.'}`;
                 }
               } else {
-                connectivity = 'ok:CLI mode enabled'
+                connectivity = 'ok:CLI mode enabled';
               }
             }
           } catch (error: any) {
-            connectivity = `failed:CLI check error. ${error.message || 'Please install and configure the CLI tool.'}`
+            connectivity = `failed:CLI check error. ${error.message || 'Please install and configure the CLI tool.'}`;
           }
-          
+
           // Return early for CLI mode
           if (connectivity !== 'skipped') {
             const testResult = {
@@ -285,121 +322,136 @@ export async function POST(
               serviceType,
               latency: 0,
               provider: provider,
-              message: connectivity === 'ok' || connectivity.startsWith('ok:') ? 'CLI Authentication OK' : 'CLI Test Failed',
+              message:
+                connectivity === 'ok' || connectivity.startsWith('ok:')
+                  ? 'CLI Authentication OK'
+                  : 'CLI Test Failed',
               details: {
                 connectivity,
                 cliMode: true,
-                authMethod: body.config.useOAuth ? 'OAuth' : body.config.useGCloudADC ? 'gcloud ADC' : 'API Key',
+                authMethod: body.config.useOAuth
+                  ? 'OAuth'
+                  : body.config.useGCloudADC
+                    ? 'gcloud ADC'
+                    : 'API Key',
               },
               timestamp: new Date().toISOString(),
             };
             return successResponse(testResult);
           }
         }
-        
+
         // Set default base URLs for each provider
         if (!baseUrl) {
           switch (provider) {
             case 'openai':
             case 'openai_compatible':
-              baseUrl = 'https://api.openai.com'
-              break
+              baseUrl = 'https://api.openai.com';
+              break;
             case 'anthropic':
-              baseUrl = 'https://api.anthropic.com'
-              break
+              baseUrl = 'https://api.anthropic.com';
+              break;
             case 'google':
-              baseUrl = 'https://generativelanguage.googleapis.com'
-              break
+              baseUrl = 'https://generativelanguage.googleapis.com';
+              break;
             case 'serper':
-              baseUrl = 'https://google.serper.dev'
-              break
+              baseUrl = 'https://google.serper.dev';
+              break;
             case 'tavily':
-              baseUrl = 'https://api.tavily.com'
-              break
+              baseUrl = 'https://api.tavily.com';
+              break;
             case 'google_search':
-              baseUrl = 'https://www.googleapis.com/customsearch/v1'
-              break
+              baseUrl = 'https://www.googleapis.com/customsearch/v1';
+              break;
             case 'brave':
-              baseUrl = 'https://api.search.brave.com'
-              break
+              baseUrl = 'https://api.search.brave.com';
+              break;
             case 'exa':
-              baseUrl = 'https://api.exa.ai'
-              break
+              baseUrl = 'https://api.exa.ai';
+              break;
             case 'firecrawl':
-              baseUrl = 'https://api.firecrawl.dev'
-              break
+              baseUrl = 'https://api.firecrawl.dev';
+              break;
           }
         }
 
         if (apiKey && baseUrl) {
-          const controller = new AbortController()
-          const t = setTimeout(() => controller.abort(), 8000)
-          
+          const controller = new AbortController();
+          const t = setTimeout(() => controller.abort(), 8000);
+
           // Build test URL and headers based on provider
-          let testUrl: string
-          let headers: Record<string, string> = {}
-          
+          let testUrl: string;
+          let headers: Record<string, string> = {};
+
           switch (provider) {
             case 'openai':
             case 'openai_compatible':
-              testUrl = /\/v\d+$/.test(baseUrl.replace(/\/+$/, '')) 
-                ? `${baseUrl.replace(/\/+$/, '')}/models` 
-                : `${baseUrl.replace(/\/+$/, '')}/v1/models`
-              headers = { Authorization: `Bearer ${apiKey}` }
-              break
+              testUrl = /\/v\d+$/.test(baseUrl.replace(/\/+$/, ''))
+                ? `${baseUrl.replace(/\/+$/, '')}/models`
+                : `${baseUrl.replace(/\/+$/, '')}/v1/models`;
+              headers = { Authorization: `Bearer ${apiKey}` };
+              break;
             case 'anthropic':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/messages`
-              headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/messages`;
+              headers = {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json',
+              };
               // Use OPTIONS or GET for health check
-              break
+              break;
             case 'google':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1beta/models`
-              headers = { 'x-goog-api-key': apiKey }
-              break
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1beta/models`;
+              headers = { 'x-goog-api-key': apiKey };
+              break;
             case 'serper':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/search`
-              headers = { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' }
-              break
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/search`;
+              headers = { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' };
+              break;
             case 'tavily':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/search`
-              headers = { 'Content-Type': 'application/json' }
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/search`;
+              headers = { 'Content-Type': 'application/json' };
               // Tavily uses api_key in body
-              break
+              break;
             case 'brave':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/res/v1/web/search?q=test`
-              headers = { 'X-Subscription-Token': apiKey, 'Accept': 'application/json' }
-              break
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/res/v1/web/search?q=test`;
+              headers = { 'X-Subscription-Token': apiKey, Accept: 'application/json' };
+              break;
             case 'exa':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/search`
-              headers = { 'x-api-key': apiKey, 'Content-Type': 'application/json' }
-              break
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/search`;
+              headers = { 'x-api-key': apiKey, 'Content-Type': 'application/json' };
+              break;
             case 'firecrawl':
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/v0/scrape`
-              headers = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-              break
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/v0/scrape`;
+              headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+              break;
             default:
-              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/models`
-              headers = { Authorization: `Bearer ${apiKey}` }
+              testUrl = `${baseUrl.replace(/\/+$/, '')}/v1/models`;
+              headers = { Authorization: `Bearer ${apiKey}` };
           }
 
           // Perform health check
-          const testBody = provider === 'tavily' ? JSON.stringify({ api_key: apiKey, query: 'test' }) 
-            : provider === 'exa' ? JSON.stringify({ query: 'test', num_results: 1 })
-            : provider === 'firecrawl' ? JSON.stringify({ url: 'https://example.com' })
-            : undefined
+          const testBody =
+            provider === 'tavily'
+              ? JSON.stringify({ api_key: apiKey, query: 'test' })
+              : provider === 'exa'
+                ? JSON.stringify({ query: 'test', num_results: 1 })
+                : provider === 'firecrawl'
+                  ? JSON.stringify({ url: 'https://example.com' })
+                  : undefined;
 
-          const res = await fetch(testUrl, { 
+          const res = await fetch(testUrl, {
             method: testBody ? 'POST' : 'GET',
-            headers, 
+            headers,
             ...(testBody && { body: testBody }),
-            signal: controller.signal 
-          })
-          connectivity = res.ok ? 'ok' : `failed:${res.status}`
-          clearTimeout(t)
+            signal: controller.signal,
+          });
+          connectivity = res.ok ? 'ok' : `failed:${res.status}`;
+          clearTimeout(t);
         }
       }
     } catch (e: any) {
-      connectivity = `failed:${e?.message || 'error'}`
+      connectivity = `failed:${e?.message || 'error'}`;
     }
 
     const testResult = {

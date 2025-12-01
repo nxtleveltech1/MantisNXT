@@ -71,7 +71,12 @@ class EmergencyRollback {
   /**
    * Log rollback step
    */
-  private logStep(step: string, status: 'success' | 'failed' | 'skipped', duration: number, error?: string): void {
+  private logStep(
+    step: string,
+    status: 'success' | 'failed' | 'skipped',
+    duration: number,
+    error?: string
+  ): void {
     this.rollbackLog.steps.push({ step, status, duration, error });
 
     const icon = status === 'success' ? '✅' : status === 'failed' ? '❌' : '⏭️';
@@ -108,7 +113,6 @@ class EmergencyRollback {
       console.log(`✅ Found latest backup: ${latestBackup}`);
 
       return latestBackup;
-
     } catch (error) {
       console.error('❌ Failed to find latest backup:', error);
       return null;
@@ -191,7 +195,6 @@ class EmergencyRollback {
 
       console.log(`✅ Pre-rollback snapshot created: ${snapshotId}`);
       return snapshotId;
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logStep(
@@ -253,7 +256,6 @@ class EmergencyRollback {
 
       console.log(`✅ Database restored in ${duration}ms`);
       return true;
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logStep(
@@ -318,7 +320,6 @@ class EmergencyRollback {
 
       console.log('✅ Database health verified');
       return true;
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logStep(
@@ -374,7 +375,6 @@ class EmergencyRollback {
 
       console.log(`✅ Application rolled back in ${duration}ms`);
       return true;
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logStep(
@@ -421,7 +421,6 @@ class EmergencyRollback {
 
       console.log('✅ Application health verified');
       return true;
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logStep(
@@ -486,7 +485,7 @@ class EmergencyRollback {
       }
 
       // Confirm rollback
-      if (!await this.confirmRollback()) {
+      if (!(await this.confirmRollback())) {
         console.log('❌ Rollback cancelled by user');
         return false;
       }
@@ -501,13 +500,13 @@ class EmergencyRollback {
       let success = true;
 
       if (!this.config.appOnly) {
-        success = await this.restoreDatabase(backupId) && success;
-        success = await this.verifyDatabaseHealth() && success;
+        success = (await this.restoreDatabase(backupId)) && success;
+        success = (await this.verifyDatabaseHealth()) && success;
       }
 
       if (!this.config.dbOnly) {
-        success = await this.rollbackApplication() && success;
-        success = await this.verifyApplicationHealth() && success;
+        success = (await this.rollbackApplication()) && success;
+        success = (await this.verifyApplicationHealth()) && success;
       }
 
       // Update rollback log
@@ -533,7 +532,6 @@ class EmergencyRollback {
       console.log('================================\n');
 
       return success;
-
     } catch (error) {
       console.error('\n❌ ROLLBACK FAILED:', error);
 
@@ -543,7 +541,6 @@ class EmergencyRollback {
       this.saveRollbackLog();
 
       return false;
-
     } finally {
       if (this.pool) {
         await this.pool.end();
@@ -589,11 +586,12 @@ if (require.main === module) {
 
   const rollback = new EmergencyRollback(config);
 
-  rollback.execute()
-    .then((success) => {
+  rollback
+    .execute()
+    .then(success => {
       process.exit(success ? 0 : 1);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Fatal error:', error);
       process.exit(1);
     });

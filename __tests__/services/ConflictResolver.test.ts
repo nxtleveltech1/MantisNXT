@@ -25,7 +25,8 @@ class ConflictResolver {
   }
 
   async registerConflict(conflict: any) {
-    const conflictId = conflict.id || `conflict-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const conflictId =
+      conflict.id || `conflict-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const registered = {
       ...conflict,
@@ -81,7 +82,7 @@ class ConflictResolver {
 
     // Wait with exponential backoff
     const backoffMs = this.getBackoffDelay(attempts);
-    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    await new Promise(resolve => setTimeout(resolve, backoffMs));
 
     this.retryAttempts.set(conflictId, attempts + 1);
 
@@ -139,7 +140,7 @@ class ConflictResolver {
   }
 
   getConflictsByType(type: string) {
-    return Array.from(this.conflicts.values()).filter((c) => c.type === type);
+    return Array.from(this.conflicts.values()).filter(c => c.type === type);
   }
 
   getResolution(conflictId: string) {
@@ -254,7 +255,7 @@ describe('ConflictResolver', () => {
         generateConflictData('ValidationError'),
       ];
 
-      const ids = await Promise.all(conflicts.map((c) => resolver.registerConflict(c)));
+      const ids = await Promise.all(conflicts.map(c => resolver.registerConflict(c)));
 
       expect(ids).toHaveLength(3);
       expect(resolver.getAllConflicts()).toHaveLength(3);
@@ -531,13 +532,15 @@ describe('ConflictResolver', () => {
 
   describe('error handling', () => {
     it('should throw when resolving non-existent conflict', async () => {
-      await expect(
-        resolver.resolveConflict('non-existent', 'skip', {})
-      ).rejects.toThrow('Conflict not found');
+      await expect(resolver.resolveConflict('non-existent', 'skip', {})).rejects.toThrow(
+        'Conflict not found'
+      );
     });
 
     it('should throw when retrying non-existent conflict', async () => {
-      await expect(resolver.autoRetryConflict('non-existent')).rejects.toThrow('Conflict not found');
+      await expect(resolver.autoRetryConflict('non-existent')).rejects.toThrow(
+        'Conflict not found'
+      );
     });
 
     it('should throw when checking strategy for non-existent conflict', async () => {
@@ -549,7 +552,10 @@ describe('ConflictResolver', () => {
 
   describe('cleanup', () => {
     it('should clear all conflicts', async () => {
-      const conflicts = [generateConflictData('DataMismatch'), generateConflictData('DuplicateKey')];
+      const conflicts = [
+        generateConflictData('DataMismatch'),
+        generateConflictData('DuplicateKey'),
+      ];
 
       for (const conflict of conflicts) {
         await resolver.registerConflict(conflict);

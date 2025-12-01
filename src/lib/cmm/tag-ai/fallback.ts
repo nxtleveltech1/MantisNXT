@@ -19,4 +19,3 @@ export function supportsJsonSchema(modelName?: string): boolean {
   if (/^o1\b|^o3\b|reasoning|deepseek-r1/.test(m)) return false;
   return false;
 }
-

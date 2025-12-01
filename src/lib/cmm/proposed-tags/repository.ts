@@ -159,9 +159,3 @@ export async function linkProposedTagToProduct(
 export function normalizeTagLabel(label: string): string {
   return normalizeName(label);
 }
-
-
-
-
-
-

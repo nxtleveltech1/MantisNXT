@@ -233,15 +233,15 @@ export class ApprovalWorkflow extends EventEmitter {
    * Set up listeners for queue events
    */
   private setupQueueListeners(): void {
-    this.actionQueue.on('actionApproved', (event) => {
+    this.actionQueue.on('actionApproved', event => {
       this.emit('approvalGranted', event);
     });
 
-    this.actionQueue.on('actionDenied', (event) => {
+    this.actionQueue.on('actionDenied', event => {
       this.emit('approvalDenied', event);
     });
 
-    this.actionQueue.on('actionExpired', (event) => {
+    this.actionQueue.on('actionExpired', event => {
       this.emit('approvalExpired', event);
     });
   }

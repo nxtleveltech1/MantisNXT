@@ -16,9 +16,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Target } from 'lucide-react';
-import { PriceTrendChart, type PriceTrendDataPoint } from '@/components/pricing/charts/PriceTrendChart';
-import { CompetitorComparisonChart, type CompetitorComparisonData } from '@/components/pricing/charts/CompetitorComparisonChart';
-import { ElasticityChart, type ElasticityChartData } from '@/components/pricing/charts/ElasticityChart';
+import {
+  PriceTrendChart,
+  type PriceTrendDataPoint,
+} from '@/components/pricing/charts/PriceTrendChart';
+import {
+  CompetitorComparisonChart,
+  type CompetitorComparisonData,
+} from '@/components/pricing/charts/CompetitorComparisonChart';
+import {
+  ElasticityChart,
+  type ElasticityChartData,
+} from '@/components/pricing/charts/ElasticityChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,7 +124,8 @@ export default function PricingAnalyticsPage() {
       <div className="space-y-6">
         <div>
           <p className="text-muted-foreground">
-            Deep insights into pricing performance, competitive positioning, and optimization opportunities
+            Deep insights into pricing performance, competitive positioning, and optimization
+            opportunities
           </p>
         </div>
 
@@ -132,15 +142,15 @@ export default function PricingAnalyticsPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Avg Price Change</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {loading ? '...' : `${dashboardMetrics?.avg_price_change_percent?.toFixed(1) || '0'}%`}
+                    {loading
+                      ? '...'
+                      : `${dashboardMetrics?.avg_price_change_percent?.toFixed(1) || '0'}%`}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Last 30 days
-                  </p>
+                  <p className="text-muted-foreground text-xs">Last 30 days</p>
                 </CardContent>
               </Card>
 
@@ -153,9 +163,7 @@ export default function PricingAnalyticsPage() {
                   <div className="text-2xl font-bold">
                     {loading ? '...' : dashboardMetrics?.products_above_market || '0'}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Products priced higher
-                  </p>
+                  <p className="text-muted-foreground text-xs">Products priced higher</p>
                 </CardContent>
               </Card>
 
@@ -168,24 +176,20 @@ export default function PricingAnalyticsPage() {
                   <div className="text-2xl font-bold">
                     {loading ? '...' : dashboardMetrics?.products_below_market || '0'}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Products priced lower
-                  </p>
+                  <p className="text-muted-foreground text-xs">Products priced lower</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Opportunities</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
+                  <Target className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {loading ? '...' : dashboardMetrics?.optimization_opportunities || '0'}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Potential improvements
-                  </p>
+                  <p className="text-muted-foreground text-xs">Potential improvements</p>
                 </CardContent>
               </Card>
             </div>
@@ -196,15 +200,12 @@ export default function PricingAnalyticsPage() {
                 <CardDescription>Historical pricing performance over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <PriceTrendChart 
-                  data={priceTrends} 
-                  loading={trendsLoading}
-                />
+                <PriceTrendChart data={priceTrends} loading={trendsLoading} />
                 {!trendsLoading && priceTrends.length === 0 && (
                   <div className="mt-4 text-center">
                     <button
                       onClick={fetchPriceTrends}
-                      className="text-sm text-primary hover:underline"
+                      className="text-primary text-sm hover:underline"
                     >
                       Load price trends
                     </button>
@@ -222,20 +223,24 @@ export default function PricingAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center justify-between border-b pb-3 last:border-0">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between border-b pb-3 last:border-0"
+                    >
                       <div>
                         <p className="font-medium">Product #{i}</p>
-                        <p className="text-sm text-muted-foreground">SKU-{i.toString().padStart(5, '0')}</p>
+                        <p className="text-muted-foreground text-sm">
+                          SKU-{i.toString().padStart(5, '0')}
+                        </p>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="font-medium">${(99.99 + i * 10).toFixed(2)}</p>
-                          <p className="text-sm text-muted-foreground">{(25 + i * 5)}% margin</p>
+                          <p className="text-muted-foreground text-sm">{25 + i * 5}% margin</p>
                         </div>
                         <Badge variant="default">
-                          <TrendingUp className="mr-1 h-3 w-3" />
-                          +{i * 2}%
+                          <TrendingUp className="mr-1 h-3 w-3" />+{i * 2}%
                         </Badge>
                       </div>
                     </div>
@@ -252,15 +257,12 @@ export default function PricingAnalyticsPage() {
                 <CardDescription>Your prices vs. market average</CardDescription>
               </CardHeader>
               <CardContent>
-                <CompetitorComparisonChart 
-                  data={competitorData} 
-                  loading={competitorsLoading}
-                />
+                <CompetitorComparisonChart data={competitorData} loading={competitorsLoading} />
                 {!competitorsLoading && competitorData.length === 0 && (
                   <div className="mt-4 text-center">
                     <button
                       onClick={fetchCompetitorData}
-                      className="text-sm text-primary hover:underline"
+                      className="text-primary text-sm hover:underline"
                     >
                       Load competitor data
                     </button>
@@ -287,13 +289,10 @@ export default function PricingAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 {elasticityData ? (
-                  <ElasticityChart 
-                    data={elasticityData} 
-                    loading={elasticityLoading}
-                  />
+                  <ElasticityChart data={elasticityData} loading={elasticityLoading} />
                 ) : (
                   <div className="space-y-4">
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    <div className="text-muted-foreground flex h-[300px] items-center justify-center">
                       {elasticityLoading ? (
                         'Loading elasticity data...'
                       ) : (
@@ -301,7 +300,7 @@ export default function PricingAnalyticsPage() {
                           <p className="mb-4">No elasticity data available</p>
                           <button
                             onClick={fetchElasticityData}
-                            className="text-sm text-primary hover:underline"
+                            className="text-primary text-sm hover:underline"
                           >
                             Load elasticity analysis
                           </button>
@@ -315,12 +314,12 @@ export default function PricingAnalyticsPage() {
                         { name: 'Unit Elastic', coef: -1.0, color: 'blue' },
                         { name: 'Inelastic', coef: -0.5, color: 'green' },
                       ].map((item, i) => (
-                        <div key={i} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
+                        <div key={i} className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
                             <p className="font-medium">{item.name} Products</p>
                             <Badge>{Math.abs(item.coef).toFixed(1)}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {item.coef > -1
                               ? 'Low price sensitivity - can increase prices'
                               : 'High price sensitivity - focus on volume'}
@@ -366,16 +365,18 @@ function ManualCompetitorPriceForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           org_id,
-          prices: [{
-            product_id: formData.product_id,
-            competitor_name: formData.competitor_name,
-            competitor_sku: formData.competitor_sku || undefined,
-            price: parseFloat(formData.price),
-            currency: formData.currency,
-            source_url: formData.source_url || undefined,
-            source_type: 'manual' as const,
-            in_stock: formData.in_stock,
-          }],
+          prices: [
+            {
+              product_id: formData.product_id,
+              competitor_name: formData.competitor_name,
+              competitor_sku: formData.competitor_sku || undefined,
+              price: parseFloat(formData.price),
+              currency: formData.currency,
+              source_url: formData.source_url || undefined,
+              source_type: 'manual' as const,
+              in_stock: formData.in_stock,
+            },
+          ],
         }),
       });
 
@@ -411,7 +412,7 @@ function ManualCompetitorPriceForm() {
           <Input
             id="product_id"
             value={formData.product_id}
-            onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+            onChange={e => setFormData({ ...formData, product_id: e.target.value })}
             placeholder="UUID"
             required
           />
@@ -421,7 +422,7 @@ function ManualCompetitorPriceForm() {
           <Input
             id="competitor_name"
             value={formData.competitor_name}
-            onChange={(e) => setFormData({ ...formData, competitor_name: e.target.value })}
+            onChange={e => setFormData({ ...formData, competitor_name: e.target.value })}
             placeholder="Competitor name"
             required
           />
@@ -433,7 +434,7 @@ function ManualCompetitorPriceForm() {
           <Input
             id="competitor_sku"
             value={formData.competitor_sku}
-            onChange={(e) => setFormData({ ...formData, competitor_sku: e.target.value })}
+            onChange={e => setFormData({ ...formData, competitor_sku: e.target.value })}
             placeholder="SKU"
           />
         </div>
@@ -444,7 +445,7 @@ function ManualCompetitorPriceForm() {
             type="number"
             step="0.01"
             value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            onChange={e => setFormData({ ...formData, price: e.target.value })}
             placeholder="0.00"
             required
           />
@@ -455,7 +456,7 @@ function ManualCompetitorPriceForm() {
           <Label htmlFor="currency">Currency</Label>
           <Select
             value={formData.currency}
-            onValueChange={(value) => setFormData({ ...formData, currency: value })}
+            onValueChange={value => setFormData({ ...formData, currency: value })}
           >
             <SelectTrigger>
               <SelectValue />
@@ -473,13 +474,15 @@ function ManualCompetitorPriceForm() {
             id="source_url"
             type="url"
             value={formData.source_url}
-            onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
+            onChange={e => setFormData({ ...formData, source_url: e.target.value })}
             placeholder="https://..."
           />
         </div>
       </div>
       {message && (
-        <div className={`p-3 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+        <div
+          className={`rounded-md p-3 ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}
+        >
           {message.text}
         </div>
       )}

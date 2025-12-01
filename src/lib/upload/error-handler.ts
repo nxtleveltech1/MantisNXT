@@ -30,7 +30,6 @@ export interface ErrorLog {
 }
 
 export class UploadErrorHandler {
-
   /**
    * Handle and log errors with context
    */
@@ -48,7 +47,7 @@ export class UploadErrorHandler {
       context,
       stackTrace: error instanceof Error ? error.stack : undefined,
       timestamp: new Date(),
-      resolved: false
+      resolved: false,
     };
 
     // Log to console (in production, this would go to a proper logging service)
@@ -86,7 +85,7 @@ export class UploadErrorHandler {
         error: clientMessage,
         errorId,
         timestamp: new Date().toISOString(),
-        operation: context.operation
+        operation: context.operation,
       },
       { status: statusCode }
     );
@@ -101,7 +100,9 @@ export class UploadErrorHandler {
     // File size validation
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      errors.push(`File size (${this.formatFileSize(file.size)}) exceeds maximum allowed size (50MB)`);
+      errors.push(
+        `File size (${this.formatFileSize(file.size)}) exceeds maximum allowed size (50MB)`
+      );
     }
 
     if (file.size === 0) {
@@ -113,11 +114,13 @@ export class UploadErrorHandler {
       'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/json'
+      'application/json',
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      errors.push(`File type "${file.type}" is not supported. Please upload CSV, Excel (.xlsx, .xls), or JSON files.`);
+      errors.push(
+        `File type "${file.type}" is not supported. Please upload CSV, Excel (.xlsx, .xls), or JSON files.`
+      );
     }
 
     // File name validation
@@ -132,7 +135,7 @@ export class UploadErrorHandler {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -155,11 +158,10 @@ export class UploadErrorHandler {
       }
 
       return { valid: true };
-
     } catch (error) {
       await this.handleError(error, {
         operation: 'validate_supplier',
-        supplierId
+        supplierId,
       });
 
       return { valid: false, error: 'Failed to validate supplier' };
@@ -248,7 +250,7 @@ export class UploadErrorHandler {
     return {
       error: errorMessage,
       suggestions,
-      recoverable
+      recoverable,
     };
   }
 
@@ -263,7 +265,7 @@ export class UploadErrorHandler {
     resolvedRate: number;
   }> {
     try {
-      return await withTransaction(async (client) => {
+      return await withTransaction(async client => {
         let interval = '1 day';
         if (timeRange === 'hour') interval = '1 hour';
         if (timeRange === 'week') interval = '7 days';
@@ -283,7 +285,7 @@ export class UploadErrorHandler {
             errorsByLevel: {},
             errorsByOperation: {},
             topErrors: [],
-            resolvedRate: 100
+            resolvedRate: 100,
           };
         }
 
@@ -295,10 +297,13 @@ export class UploadErrorHandler {
           GROUP BY level
         `);
 
-        const errorsByLevel = levelResult.rows.reduce((acc, row) => {
-          acc[row.level] = parseInt(row.count);
-          return acc;
-        }, {} as Record<string, number>);
+        const errorsByLevel = levelResult.rows.reduce(
+          (acc, row) => {
+            acc[row.level] = parseInt(row.count);
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
         // Get errors by operation
         const operationResult = await client.query(`
@@ -310,10 +315,13 @@ export class UploadErrorHandler {
           LIMIT 10
         `);
 
-        const errorsByOperation = operationResult.rows.reduce((acc, row) => {
-          acc[row.operation] = parseInt(row.count);
-          return acc;
-        }, {} as Record<string, number>);
+        const errorsByOperation = operationResult.rows.reduce(
+          (acc, row) => {
+            acc[row.operation] = parseInt(row.count);
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
         // Get top error messages
         const topErrorsResult = await client.query(`
@@ -327,7 +335,7 @@ export class UploadErrorHandler {
 
         const topErrors = topErrorsResult.rows.map(row => ({
           message: row.message,
-          count: parseInt(row.count)
+          count: parseInt(row.count),
         }));
 
         // Get resolved rate
@@ -348,10 +356,9 @@ export class UploadErrorHandler {
           errorsByLevel,
           errorsByOperation,
           topErrors,
-          resolvedRate
+          resolvedRate,
         };
       });
-
     } catch (error) {
       console.error('Failed to get error metrics:', error);
       return {
@@ -359,7 +366,7 @@ export class UploadErrorHandler {
         errorsByLevel: {},
         errorsByOperation: {},
         topErrors: [],
-        resolvedRate: 0
+        resolvedRate: 0,
       };
     }
   }
@@ -432,23 +439,26 @@ export class UploadErrorHandler {
 
   private static async saveErrorLog(errorLog: ErrorLog): Promise<void> {
     try {
-      await withTransaction(async (client) => {
-        await client.query(`
+      await withTransaction(async client => {
+        await client.query(
+          `
           INSERT INTO error_logs (
             id, level, operation, message, error_code, context,
             stack_trace, timestamp, resolved
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        `, [
-          errorLog.id,
-          errorLog.level,
-          errorLog.operation,
-          errorLog.message,
-          errorLog.errorCode,
-          JSON.stringify(errorLog.context),
-          errorLog.stackTrace,
-          errorLog.timestamp,
-          errorLog.resolved
-        ]);
+        `,
+          [
+            errorLog.id,
+            errorLog.level,
+            errorLog.operation,
+            errorLog.message,
+            errorLog.errorCode,
+            JSON.stringify(errorLog.context),
+            errorLog.stackTrace,
+            errorLog.timestamp,
+            errorLog.resolved,
+          ]
+        );
       });
     } catch (dbError) {
       // If we can't save to database, at least log to console
@@ -467,7 +477,7 @@ export class UploadErrorHandler {
       operation: errorLog.operation,
       message: errorLog.message,
       context: errorLog.context,
-      timestamp: errorLog.timestamp
+      timestamp: errorLog.timestamp,
     });
 
     // TODO: Implement actual alerting mechanism

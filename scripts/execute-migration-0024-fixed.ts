@@ -83,8 +83,7 @@ async function main() {
     errors: [],
   };
 
-  const databaseUrl = process.env.NEON_SPP_DATABASE_URL ||
-                      process.env.DATABASE_URL;
+  const databaseUrl = process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('\n❌ FATAL: DATABASE_URL or NEON_SPP_DATABASE_URL environment variable not set');
@@ -123,7 +122,9 @@ async function main() {
     migrationSQL = migrationSQL.replace(/^(RAISE NOTICE .*;)$/gm, '-- REMOVED: $1');
 
     console.log(`   ✓ Loaded: ${MIGRATION_FILE}`);
-    console.log(`   ✓ Removed RAISE NOTICE logging (${(migrationSQL.match(/-- REMOVED:/g) || []).length} instances)`);
+    console.log(
+      `   ✓ Removed RAISE NOTICE logging (${(migrationSQL.match(/-- REMOVED:/g) || []).length} instances)`
+    );
 
     // Step 3: Execute migration in transaction
     console.log('\n📋 Step 3/5: Executing migration (transaction-based)...');
@@ -142,7 +143,6 @@ async function main() {
       await client.query('COMMIT;');
       console.log('   ✓ Transaction committed successfully');
       result.success = true;
-
     } catch (execError: any) {
       console.error(`   ✗ Migration failed: ${execError.message}`);
       console.error(`      Code: ${execError.code}`);
@@ -169,7 +169,7 @@ async function main() {
     const tablesRes = await pool.query(VERIFICATION_QUERIES['Tables Created']);
     result.tablesCreated = tablesRes.rows.map((r: any) => r.tablename);
     console.log(`   ✓ Tables created: ${result.tablesCreated.length} tables`);
-    result.tablesCreated.forEach((t) => console.log(`      - ${t}`));
+    result.tablesCreated.forEach(t => console.log(`      - ${t}`));
 
     // Get RLS enabled tables
     const rlsRes = await pool.query(VERIFICATION_QUERIES['RLS Status']);
@@ -195,7 +195,7 @@ async function main() {
     const enumsRes = await pool.query(VERIFICATION_QUERIES['Enum Types']);
     result.enumsCreated = enumsRes.rows.map((r: any) => r.typname);
     console.log(`   ✓ Enum types created: ${result.enumsCreated.length} types`);
-    result.enumsCreated.forEach((t) => console.log(`      - ${t}`));
+    result.enumsCreated.forEach(t => console.log(`      - ${t}`));
 
     // Step 5: Detailed summary
     console.log('\n📋 Step 5/5: Generating detailed summary...');
@@ -215,7 +215,7 @@ async function main() {
     console.log('');
 
     console.log('ENUM TYPES CREATED (4):');
-    result.enumsCreated.forEach((enumType) => {
+    result.enumsCreated.forEach(enumType => {
       console.log(`  ✓ ${enumType}`);
     });
     console.log('');
@@ -223,7 +223,9 @@ async function main() {
     console.log('ROW-LEVEL SECURITY:');
     console.log(`  ✓ RLS enabled on ${result.rlsEnabled.length} tables`);
     console.log(`  ✓ ${result.policiesCount} security policies created`);
-    console.log(`  Policies per table: ${(result.policiesCount / result.rlsEnabled.length).toFixed(0)} (SELECT, INSERT, UPDATE, DELETE)`);
+    console.log(
+      `  Policies per table: ${(result.policiesCount / result.rlsEnabled.length).toFixed(0)} (SELECT, INSERT, UPDATE, DELETE)`
+    );
     console.log('  Organization isolation: ENFORCED (multi-tenant safe)');
     console.log('');
 
@@ -280,7 +282,6 @@ async function main() {
     console.log('');
 
     process.exit(0);
-
   } catch (error: any) {
     result.endTime = performance.now();
     result.duration = result.endTime - result.startTime;
@@ -313,13 +314,12 @@ async function main() {
     }
 
     process.exit(1);
-
   } finally {
     await pool.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('FATAL:', err.message);
   process.exit(1);
 });

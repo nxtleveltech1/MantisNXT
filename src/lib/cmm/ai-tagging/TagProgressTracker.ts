@@ -5,7 +5,7 @@
  */
 
 import { query as dbQuery } from '@/lib/database/unified-connection';
-import type { BatchProgress, ProgressMetrics} from './types';
+import type { BatchProgress, ProgressMetrics } from './types';
 
 export class TagProgressTracker {
   /**
@@ -318,4 +318,3 @@ export class TagProgressTracker {
 
 // Singleton instance
 export const tagProgressTracker = new TagProgressTracker();
-

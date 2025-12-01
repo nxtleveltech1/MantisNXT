@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import React from "react"
-import AppLayout from "@/components/layout/AppLayout"
-import ConversationHistory from "@/components/ai/admin/ConversationHistory"
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import ConversationHistory from '@/components/ai/admin/ConversationHistory';
 
 /**
  * AI Conversations History Admin Page
@@ -13,10 +13,7 @@ import ConversationHistory from "@/components/ai/admin/ConversationHistory"
 export default function AIConversationsPage() {
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "AI Services", href: "/admin/ai" },
-        { label: "Conversations" },
-      ]}
+      breadcrumbs={[{ label: 'AI Services', href: '/admin/ai' }, { label: 'Conversations' }]}
     >
       <div className="w-full space-y-6">
         <div>
@@ -29,5 +26,5 @@ export default function AIConversationsPage() {
         <ConversationHistory />
       </div>
     </AppLayout>
-  )
+  );
 }

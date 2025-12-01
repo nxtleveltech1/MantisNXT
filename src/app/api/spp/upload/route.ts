@@ -4,9 +4,9 @@
  * Handles file upload to SPP schema for validation and merging
  */
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-import type { NextRequest} from 'next/server';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
 import type { PricelistRow } from '@/types/nxt-spp';
@@ -17,16 +17,13 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const supplierId = formData.get('supplier_id') as string;
-    const currency = formData.get('currency') as string || 'ZAR';
+    const currency = (formData.get('currency') as string) || 'ZAR';
     const validFromStr = formData.get('valid_from') as string;
     const autoValidate = formData.get('auto_validate') === 'true';
     const autoMerge = formData.get('auto_merge') === 'true';
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
     }
 
     if (!supplierId) {
@@ -45,8 +42,8 @@ export async function POST(request: NextRequest) {
       valid_from: validFromStr ? new Date(validFromStr) : undefined,
       options: {
         auto_validate: autoValidate,
-        auto_merge: autoMerge
-      }
+        auto_merge: autoMerge,
+      },
     });
 
     // Validate upload was created successfully
@@ -62,10 +59,10 @@ export async function POST(request: NextRequest) {
     const parsePrice = (value: unknown): number => {
       if (!value && value !== 0) return 0;
       if (typeof value === 'number') return Math.max(0, value);
-      
+
       const str = String(value).trim();
       if (!str) return 0;
-      
+
       // Remove currency symbols (R, $, €, £, etc.), spaces, and formatting
       // Handle "R 1,300.00" format by removing R, spaces, and commas
       const cleaned = str
@@ -73,7 +70,7 @@ export async function POST(request: NextRequest) {
         .replace(/,/g, '') // Remove thousand separators
         .replace(/\s+/g, '') // Remove spaces
         .trim();
-      
+
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? 0 : Math.max(0, parsed);
     };
@@ -82,14 +79,14 @@ export async function POST(request: NextRequest) {
     // Handle semicolon-delimited CSV properly
     const buffer = Buffer.from(await file.arrayBuffer());
     const text = buffer.toString('utf-8');
-    
+
     // Detect if file is CSV (by extension or content)
-    const isCSV = file.name.toLowerCase().endsWith('.csv') || 
-                 (!file.name.toLowerCase().endsWith('.xlsx') && 
-                  !file.name.toLowerCase().endsWith('.xls'));
-    
+    const isCSV =
+      file.name.toLowerCase().endsWith('.csv') ||
+      (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls'));
+
     let data: unknown[] = [];
-    
+
     if (isCSV) {
       // Parse CSV manually to handle semicolon delimiters properly
       const lines = text.split(/\r?\n/).filter(line => line.trim());
@@ -99,33 +96,38 @@ export async function POST(request: NextRequest) {
         const semicolonCount = (firstLine.match(/;/g) || []).length;
         const commaCount = (firstLine.match(/,/g) || []).length;
         const delimiter = semicolonCount > commaCount ? ';' : ',';
-        
+
         const headers = firstLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
-        data = lines.slice(1).map(line => {
-          // Handle quoted values that might contain the delimiter
-          const values: string[] = [];
-          let currentValue = '';
-          let inQuotes = false;
-          
-          for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            if (char === '"') {
-              inQuotes = !inQuotes;
-            } else if (char === delimiter && !inQuotes) {
-              values.push(currentValue.trim().replace(/^"|"$/g, ''));
-              currentValue = '';
-            } else {
-              currentValue += char;
+        data = lines
+          .slice(1)
+          .map(line => {
+            // Handle quoted values that might contain the delimiter
+            const values: string[] = [];
+            let currentValue = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+              const char = line[i];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === delimiter && !inQuotes) {
+                values.push(currentValue.trim().replace(/^"|"$/g, ''));
+                currentValue = '';
+              } else {
+                currentValue += char;
+              }
             }
-          }
-          values.push(currentValue.trim().replace(/^"|"$/g, '')); // Last value
-          
-          const row: unknown = {};
-          headers.forEach((header, idx) => {
-            row[header] = values[idx] || '';
-          });
-          return row;
-        }).filter(row => Object.keys(row).length > 0 && Object.values(row).some(v => String(v).trim())); // Filter empty rows
+            values.push(currentValue.trim().replace(/^"|"$/g, '')); // Last value
+
+            const row: unknown = {};
+            headers.forEach((header, idx) => {
+              row[header] = values[idx] || '';
+            });
+            return row;
+          })
+          .filter(
+            row => Object.keys(row).length > 0 && Object.values(row).some(v => String(v).trim())
+          ); // Filter empty rows
       }
     } else {
       // Handle Excel files with XLSX
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
     const rows: PricelistRow[] = data.map((row: unknown, index) => {
       // Map columns based on actual CSV headers:
       // Supplier Name;Supplier Code;Produt Category;BRAND;Brand Sub Tag;SKU / MODEL;PRODUCT DESCRIPTION;SUPPLIER SOH;COST  EX VAT;QTY ON ORDER;NEXT SHIPMENT;Tags;Links
-      
+
       // Flexible column name matching (case-insensitive, handle spaces/variations)
       const getColumn = (possibleNames: string[]): string | undefined => {
         const rowKeys = Object.keys(row);
@@ -152,31 +154,28 @@ export async function POST(request: NextRequest) {
         return undefined;
       };
 
-      const supplierSku = getColumn([
-        'SKU / MODEL',
-        'SKU/MODEL',
-        'SKU',
-        'MODEL',
-        'Code',
-        'Item Code',
-        'Product Code'
-      ]) || '';
+      const supplierSku =
+        getColumn([
+          'SKU / MODEL',
+          'SKU/MODEL',
+          'SKU',
+          'MODEL',
+          'Code',
+          'Item Code',
+          'Product Code',
+        ]) || '';
 
-      const productName = getColumn([
-        'PRODUCT DESCRIPTION',
-        'Product Description',
-        'Description',
-        'Name',
-        'Product Name',
-        'Item Name'
-      ]) || '';
+      const productName =
+        getColumn([
+          'PRODUCT DESCRIPTION',
+          'Product Description',
+          'Description',
+          'Name',
+          'Product Name',
+          'Item Name',
+        ]) || '';
 
-      const brand = getColumn([
-        'BRAND',
-        'Brand',
-        'Manufacturer',
-        'Make'
-      ]);
+      const brand = getColumn(['BRAND', 'Brand', 'Manufacturer', 'Make']);
 
       const category = getColumn([
         'Produt Category',
@@ -184,7 +183,7 @@ export async function POST(request: NextRequest) {
         'Category',
         'Type',
         'Group',
-        'Class'
+        'Class',
       ]);
 
       const priceValue = getColumn([
@@ -196,7 +195,7 @@ export async function POST(request: NextRequest) {
         'Unit Price',
         'Unit Cost',
         'COST',
-        'PRICE'
+        'PRICE',
       ]);
 
       const stockQty = getColumn([
@@ -206,33 +205,20 @@ export async function POST(request: NextRequest) {
         'Stock',
         'Quantity',
         'Qty',
-        'Stock On Hand'
+        'Stock On Hand',
       ]);
 
-      const uom = getColumn([
-        'UOM',
-        'Unit',
-        'Unit of Measure',
-        'Pack Size'
-      ]) || 'EA';
+      const uom = getColumn(['UOM', 'Unit', 'Unit of Measure', 'Pack Size']) || 'EA';
 
-      const packSize = getColumn([
-        'Pack Size',
-        'Package',
-        'Packing'
-      ]);
+      const packSize = getColumn(['Pack Size', 'Package', 'Packing']);
 
-      const barcode = getColumn([
-        'Barcode',
-        'EAN',
-        'UPC',
-        'GTIN'
-      ]);
+      const barcode = getColumn(['Barcode', 'EAN', 'UPC', 'GTIN']);
 
       // Store additional info in attrs_json
       const attrs: unknown = {};
       if (stockQty) attrs.stock_qty = parseInt(String(stockQty)) || 0;
-      if (getColumn(['QTY ON ORDER'])) attrs.qty_on_order = parseInt(String(getColumn(['QTY ON ORDER']))) || 0;
+      if (getColumn(['QTY ON ORDER']))
+        attrs.qty_on_order = parseInt(String(getColumn(['QTY ON ORDER']))) || 0;
       if (getColumn(['NEXT SHIPMENT'])) attrs.next_shipment = getColumn(['NEXT SHIPMENT']);
       if (getColumn(['Tags'])) attrs.tags = getColumn(['Tags']);
       if (getColumn(['Links'])) attrs.links = getColumn(['Links']);
@@ -251,7 +237,7 @@ export async function POST(request: NextRequest) {
         category_raw: category || undefined,
         vat_code: undefined, // Not in this CSV
         barcode: barcode || undefined,
-        attrs_json: attrs
+        attrs_json: attrs,
       };
     });
 
@@ -273,8 +259,8 @@ export async function POST(request: NextRequest) {
             upload_id: upload.upload_id,
             rows_inserted: insertedCount,
             validation: validationResult,
-            merge: mergeResult
-          }
+            merge: mergeResult,
+          },
         });
       }
     }
@@ -285,21 +271,26 @@ export async function POST(request: NextRequest) {
         upload,
         upload_id: upload.upload_id,
         rows_inserted: insertedCount,
-        validation: validationResult
-      }
+        validation: validationResult,
+      },
     });
   } catch (error) {
     console.error('❌ [POST /api/spp/upload] Pricelist upload error:', error);
     console.error('❌ [POST /api/spp/upload] Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : typeof error
+      name: error instanceof Error ? error.name : typeof error,
     });
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Upload failed',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : String(error)) : undefined
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.stack
+              : String(error)
+            : undefined,
       },
       { status: 500 }
     );
@@ -315,7 +306,9 @@ export async function GET(request: NextRequest) {
     const supplierId = searchParams.get('supplier_id');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
-    const status = searchParams.get('status')?.split(',') as Array<'received' | 'validating' | 'validated' | 'failed' | 'merged'> | undefined;
+    const status = searchParams.get('status')?.split(',') as
+      | Array<'received' | 'validating' | 'validated' | 'failed' | 'merged'>
+      | undefined;
 
     // Build filters object - supplier_id is now optional
     const filters: {
@@ -325,7 +318,7 @@ export async function GET(request: NextRequest) {
       offset: number;
     } = {
       limit,
-      offset
+      offset,
     };
 
     if (supplierId) {
@@ -338,22 +331,24 @@ export async function GET(request: NextRequest) {
 
     const result = await pricelistService.listUploads(filters);
     const uploads = Array.isArray(result.uploads) ? result.uploads : [];
-    const total = Number.isFinite(result.total as unknown) ? (result.total as unknown as number) : 0;
+    const total = Number.isFinite(result.total as unknown)
+      ? (result.total as unknown as number)
+      : 0;
 
     return NextResponse.json({
       success: true,
       data: {
         uploads,
-        total
+        total,
       },
       pagination: {
         limit,
         offset,
         total,
         page: Math.floor(offset / limit) + 1,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('❌ [GET /api/spp/upload] Error:', error);
@@ -361,7 +356,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Failed to list uploads',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

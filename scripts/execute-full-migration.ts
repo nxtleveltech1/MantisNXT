@@ -6,7 +6,11 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const migrationFile = join(process.cwd(), 'migrations', '0034_seed_comprehensive_category_hierarchy.sql');
+const migrationFile = join(
+  process.cwd(),
+  'migrations',
+  '0034_seed_comprehensive_category_hierarchy.sql'
+);
 const content = readFileSync(migrationFile, 'utf-8');
 
 // Split into individual INSERT statements
@@ -16,18 +20,20 @@ let currentStatement = '';
 const lines = content.split('\n');
 for (let i = 0; i < lines.length; i++) {
   const line = lines[i];
-  
+
   // Skip comments, BEGIN/COMMIT, and function definitions
-  if (line.trim().startsWith('--') || 
-      line.trim() === 'BEGIN;' || 
-      line.trim() === 'COMMIT;' ||
-      line.includes('CREATE OR REPLACE FUNCTION') ||
-      line.includes('DO $$')) {
+  if (
+    line.trim().startsWith('--') ||
+    line.trim() === 'BEGIN;' ||
+    line.trim() === 'COMMIT;' ||
+    line.includes('CREATE OR REPLACE FUNCTION') ||
+    line.includes('DO $$')
+  ) {
     continue;
   }
-  
+
   currentStatement += line + '\n';
-  
+
   if (line.trim().endsWith(';')) {
     const stmt = currentStatement.trim();
     if (stmt.startsWith('INSERT INTO')) {
@@ -55,11 +61,14 @@ statements.forEach(stmt => {
 });
 
 console.log(`\nStatements by level:`);
-Object.keys(byLevel).sort().forEach(level => {
-  console.log(`  Level ${level}: ${byLevel[parseInt(level)].length} statements`);
-});
+Object.keys(byLevel)
+  .sort()
+  .forEach(level => {
+    console.log(`  Level ${level}: ${byLevel[parseInt(level)].length} statements`);
+  });
 
 // Output for manual execution
 console.log(`\n=== Ready to execute ===`);
-console.log(`Execute Level 2 (${byLevel[2]?.length || 0} statements) via Neon MCP run_sql_transaction`);
-
+console.log(
+  `Execute Level 2 (${byLevel[2]?.length || 0} statements) via Neon MCP run_sql_transaction`
+);

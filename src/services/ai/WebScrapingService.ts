@@ -984,7 +984,9 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       });
 
       if (heading.includes('category') || heading.includes('product')) {
-        $container.find('li').each((_, liEl: cheerio.Element) => processCategoryText($(liEl).text()));
+        $container
+          .find('li')
+          .each((_, liEl: cheerio.Element) => processCategoryText($(liEl).text()));
         $container.find('a').each((_, aEl: cheerio.Element) => processCategoryText($(aEl).text()));
       }
     };

@@ -21,7 +21,7 @@ describe('Supplier Discovery Performance Tests', () => {
       const startTime = Date.now();
 
       const request: SupplierDiscoveryRequest = {
-        supplierName: 'Performance Test Company'
+        supplierName: 'Performance Test Company',
       };
 
       const result = await supplierDiscoveryEngine.discoverSupplier(request);
@@ -34,7 +34,7 @@ describe('Supplier Discovery Performance Tests', () => {
 
     it('should respond to cached requests within 100ms', async () => {
       const request: SupplierDiscoveryRequest = {
-        supplierName: 'Cached Test Company'
+        supplierName: 'Cached Test Company',
       };
 
       // Prime the cache
@@ -54,13 +54,13 @@ describe('Supplier Discovery Performance Tests', () => {
     it('should handle 10 concurrent requests efficiently', async () => {
       const startTime = Date.now();
 
-      const requests = Array(10).fill(0).map((_, i) => ({
-        supplierName: `Concurrent Company ${i}`
-      }));
+      const requests = Array(10)
+        .fill(0)
+        .map((_, i) => ({
+          supplierName: `Concurrent Company ${i}`,
+        }));
 
-      const promises = requests.map(req =>
-        supplierDiscoveryEngine.discoverSupplier(req)
-      );
+      const promises = requests.map(req => supplierDiscoveryEngine.discoverSupplier(req));
 
       const results = await Promise.all(promises);
       const endTime = Date.now();
@@ -80,9 +80,11 @@ describe('Supplier Discovery Performance Tests', () => {
     it('should handle bulk discovery efficiently', async () => {
       const startTime = Date.now();
 
-      const requests: SupplierDiscoveryRequest[] = Array(5).fill(0).map((_, i) => ({
-        supplierName: `Bulk Company ${i}`
-      }));
+      const requests: SupplierDiscoveryRequest[] = Array(5)
+        .fill(0)
+        .map((_, i) => ({
+          supplierName: `Bulk Company ${i}`,
+        }));
 
       const results = await supplierDiscoveryEngine.discoverMultipleSuppliers(requests);
       const endTime = Date.now();
@@ -96,7 +98,7 @@ describe('Supplier Discovery Performance Tests', () => {
   describe('Cache Performance', () => {
     it('should demonstrate significant cache performance improvement', async () => {
       const request: SupplierDiscoveryRequest = {
-        supplierName: 'Cache Performance Test Company'
+        supplierName: 'Cache Performance Test Company',
       };
 
       // Clear cache to ensure fresh request
@@ -120,9 +122,7 @@ describe('Supplier Discovery Performance Tests', () => {
     it('should maintain cache hit rate above 80% under typical load', async () => {
       supplierCache.clear();
 
-      const companies = [
-        'Company A', 'Company B', 'Company C', 'Company D', 'Company E'
-      ];
+      const companies = ['Company A', 'Company B', 'Company C', 'Company D', 'Company E'];
 
       // Simulate typical usage pattern with some repeated requests
       const requests: SupplierDiscoveryRequest[] = [];
@@ -157,7 +157,7 @@ describe('Supplier Discovery Performance Tests', () => {
       // Perform many requests
       for (let i = 0; i < 50; i++) {
         await supplierDiscoveryEngine.discoverSupplier({
-          supplierName: `Memory Test Company ${i % 10}` // Cycle through 10 companies
+          supplierName: `Memory Test Company ${i % 10}`, // Cycle through 10 companies
         });
       }
 
@@ -179,13 +179,13 @@ describe('Supplier Discovery Performance Tests', () => {
       const startTime = Date.now();
 
       // Create more requests than the concurrent limit
-      const requests = Array(20).fill(0).map((_, i) => ({
-        supplierName: `Rate Limit Test ${i}`
-      }));
+      const requests = Array(20)
+        .fill(0)
+        .map((_, i) => ({
+          supplierName: `Rate Limit Test ${i}`,
+        }));
 
-      const promises = requests.map(req =>
-        supplierDiscoveryEngine.discoverSupplier(req)
-      );
+      const promises = requests.map(req => supplierDiscoveryEngine.discoverSupplier(req));
 
       const results = await Promise.all(promises);
       const endTime = Date.now();
@@ -208,13 +208,15 @@ describe('Supplier Discovery Performance Tests', () => {
       const { dataProcessor } = require('@/lib/supplier-discovery/processor');
 
       // Create large extraction result set
-      const extractionResults = Array(1000).fill(0).map((_, i) => ({
-        field: `field_${i % 10}`,
-        value: `value_${i}`,
-        confidence: Math.random(),
-        source: `source_${i % 5}`,
-        timestamp: new Date()
-      }));
+      const extractionResults = Array(1000)
+        .fill(0)
+        .map((_, i) => ({
+          field: `field_${i % 10}`,
+          value: `value_${i}`,
+          confidence: Math.random(),
+          source: `source_${i % 5}`,
+          timestamp: new Date(),
+        }));
 
       const startTime = Date.now();
       const result = await dataProcessor.processExtractionResults(extractionResults);
@@ -231,14 +233,14 @@ describe('Supplier Discovery Performance Tests', () => {
       // Fill cache with many entries
       for (let i = 0; i < 100; i++) {
         await supplierDiscoveryEngine.discoverSupplier({
-          supplierName: `Scale Test Company ${i}`
+          supplierName: `Scale Test Company ${i}`,
         });
       }
 
       // Test performance with large cache
       const startTime = Date.now();
       await supplierDiscoveryEngine.discoverSupplier({
-        supplierName: 'Scale Test Company 50' // Should be cached
+        supplierName: 'Scale Test Company 50', // Should be cached
       });
       const endTime = Date.now();
       const responseTime = endTime - startTime;
@@ -250,7 +252,7 @@ describe('Supplier Discovery Performance Tests', () => {
       // Fill cache to near capacity
       for (let i = 0; i < 900; i++) {
         await supplierDiscoveryEngine.discoverSupplier({
-          supplierName: `Cleanup Test Company ${i}`
+          supplierName: `Cleanup Test Company ${i}`,
         });
       }
 

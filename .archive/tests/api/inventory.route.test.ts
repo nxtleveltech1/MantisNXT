@@ -39,13 +39,10 @@ describe('/api/inventory', () => {
   });
 
   it('returns raw format when requested', async () => {
-    const res: any = await inventoryGET(
-      mockReq('https://x.local/api/inventory?format=raw')
-    );
+    const res: any = await inventoryGET(mockReq('https://x.local/api/inventory?format=raw'));
     const data = await res.json();
     expect(Array.isArray(data)).toBe(true);
     expect(data[0]).toMatchObject({ stock_qty: 5, available_qty: 3 });
     expect((data[0] as any).currentStock).toBeUndefined();
   });
 });
-

@@ -15,7 +15,7 @@
  * Date: 2025-11-05
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
@@ -129,17 +129,12 @@ export async function POST(request: NextRequest) {
 
     if (action === 'retry' && queue_id) {
       // Retry failed items in queue
-      const progress = await CustomerSyncService.retryFailed(
-        wooService,
-        queue_id,
-        org_id,
-        {
-          batchSize: options.batchSize || 50,
-          batchDelayMs: options.batchDelayMs || 2000,
-          maxRetries: options.maxRetries || 3,
-          initialBackoffMs: options.initialBackoffMs || 1000,
-        }
-      );
+      const progress = await CustomerSyncService.retryFailed(wooService, queue_id, org_id, {
+        batchSize: options.batchSize || 50,
+        batchDelayMs: options.batchDelayMs || 2000,
+        maxRetries: options.maxRetries || 3,
+        initialBackoffMs: options.initialBackoffMs || 1000,
+      });
 
       return NextResponse.json({
         success: true,
@@ -168,7 +163,10 @@ export async function POST(request: NextRequest) {
       );
 
       if (!rows.rows.length) {
-        return NextResponse.json({ success: false, error: 'No active WooCommerce connector for org' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'No active WooCommerce connector for org' },
+          { status: 404 }
+        );
       }
 
       const queues: any[] = [];
@@ -223,16 +221,25 @@ export async function POST(request: NextRequest) {
       const sel = await query<{ config: any }>(
         `SELECT config FROM sync_selective_config WHERE org_id = $1 AND entity_type::text = 'customers' LIMIT 1`,
         [org_id]
-      )
-      const cfg = sel.rows[0]?.config || {}
-      const selectedIds: number[] = Array.isArray(cfg?.inbound?.selectedIds) ? cfg.inbound.selectedIds.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n)) : []
-      const useIds = selectedIds.length ? selectedIds : Array.isArray(options.selectedIds) ? options.selectedIds : []
+      );
+      const cfg = sel.rows[0]?.config || {};
+      const selectedIds: number[] = Array.isArray(cfg?.inbound?.selectedIds)
+        ? cfg.inbound.selectedIds
+            .map((v: unknown) => Number(v))
+            .filter((n: number) => Number.isInteger(n))
+        : [];
+      const useIds = selectedIds.length
+        ? selectedIds
+        : Array.isArray(options.selectedIds)
+          ? options.selectedIds
+          : [];
       if (!useIds.length) {
-        return NextResponse.json({ success: false, error: 'No selected IDs' }, { status: 400 })
+        return NextResponse.json({ success: false, error: 'No selected IDs' }, { status: 400 });
       }
-      const wooService2 = new WooCommerceService(config)
-      const connected2 = await wooService2.testConnection()
-      if (!connected2) return NextResponse.json({ success: false, error: 'Failed to connect' }, { status: 502 })
+      const wooService2 = new WooCommerceService(config);
+      const connected2 = await wooService2.testConnection();
+      if (!connected2)
+        return NextResponse.json({ success: false, error: 'Failed to connect' }, { status: 502 });
       const qid = await CustomerSyncService.startSync(
         wooService2,
         org_id,
@@ -244,16 +251,16 @@ export async function POST(request: NextRequest) {
           initialBackoffMs: options.initialBackoffMs || 1000,
         },
         { selectedIds: useIds }
-      )
+      );
       setImmediate(async () => {
         await CustomerSyncService.processQueue(wooService2, qid, org_id, {
           batchSize: options.batchSize || 50,
           batchDelayMs: options.batchDelayMs || 2000,
           maxRetries: options.maxRetries || 3,
-        })
-      })
-      const status = await CustomerSyncService.getStatus(qid, org_id)
-      return NextResponse.json({ success: true, data: status })
+        });
+      });
+      const status = await CustomerSyncService.getStatus(qid, org_id);
+      return NextResponse.json({ success: true, data: status });
     }
 
     // Default: Start new sync

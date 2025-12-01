@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @kokonut-labs
@@ -10,32 +10,31 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { motion } from "motion/react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { motion } from 'motion/react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-interface SlideTextButtonProps
-  extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+interface SlideTextButtonProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   text?: string;
   hoverText?: string;
   href?: string;
   className?: string;
-  variant?: "default" | "ghost";
+  variant?: 'default' | 'ghost';
 }
 
 export default function SlideTextButton({
-  text = "Browse Components",
+  text = 'Browse Components',
   hoverText,
-  href = "/docs/components/liquid-glass-card",
+  href = '/docs/components/liquid-glass-card',
   className,
-  variant = "default",
+  variant = 'default',
   ...props
 }: SlideTextButtonProps) {
   const slideText = hoverText ?? text;
   const variantStyles =
-    variant === "ghost"
-      ? "border border-black/10 text-black hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
-      : "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90";
+    variant === 'ghost'
+      ? 'border border-black/10 text-black hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5'
+      : 'bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90';
 
   return (
     <motion.div
@@ -45,14 +44,14 @@ export default function SlideTextButton({
     >
       <Link
         className={cn(
-          "group relative inline-flex h-10 items-center justify-center overflow-hidden rounded-lg px-8 font-medium text-md tracking-tighter transition-all duration-300 md:min-w-56",
+          'group text-md relative inline-flex h-10 items-center justify-center overflow-hidden rounded-lg px-8 font-medium tracking-tighter transition-all duration-300 md:min-w-56',
           variantStyles,
           className
         )}
         href={href}
         {...props}
       >
-        <span className="group-hover:-translate-y-full relative inline-block transition-transform duration-300 ease-in-out">
+        <span className="relative inline-block transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
           <span className="flex items-center gap-2 opacity-100 transition-opacity duration-300 group-hover:opacity-0">
             <span className="font-medium">{text}</span>
           </span>

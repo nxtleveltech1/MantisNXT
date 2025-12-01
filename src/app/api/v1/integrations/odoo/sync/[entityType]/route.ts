@@ -8,7 +8,7 @@
  * Date: 2025-11-04 (Updated with rate limiting)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { OdooService } from '@/lib/services/OdooService';
@@ -18,9 +18,8 @@ export async function POST(
 
   context: { params: Promise<{ entityType: string }> }
 ) {
-    const { entityType } = await context.params;
+  const { entityType } = await context.params;
   try {
-
     // Validate entity type
     const validTypes = ['products', 'orders', 'customers', 'invoices'];
     if (!validTypes.includes(entityType)) {
@@ -52,7 +51,8 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'No active Odoo configuration found. Please configure and activate Odoo integration first.',
+          error:
+            'No active Odoo configuration found. Please configure and activate Odoo integration first.',
         },
         { status: 404 }
       );

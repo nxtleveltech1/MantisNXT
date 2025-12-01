@@ -2,7 +2,12 @@ import { updateAIConfig } from '@/lib/ai/config';
 import type { AIProviderId } from '@/types/ai';
 import { getConfig as getServiceConfig } from '@/app/api/v1/ai/config/_store';
 
-type ServiceType = 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant' | 'supplier_discovery';
+type ServiceType =
+  | 'demand_forecasting'
+  | 'anomaly_detection'
+  | 'supplier_scoring'
+  | 'assistant'
+  | 'supplier_discovery';
 
 function normalizeToAIProviderId(key?: string | null): AIProviderId {
   const value = (key || 'openai').toLowerCase();
@@ -11,12 +16,19 @@ function normalizeToAIProviderId(key?: string | null): AIProviderId {
   return 'openai-compatible';
 }
 
-function pickActiveInstance(config: unknown): { provider: string; model?: string; baseUrl?: string; apiKey?: string } {
+function pickActiveInstance(config: unknown): {
+  provider: string;
+  model?: string;
+  baseUrl?: string;
+  apiKey?: string;
+} {
   // New instances shape
   const instances = Array.isArray(config?.providerInstances) ? config.providerInstances : undefined;
   const activeId = config?.activeProviderInstanceId;
   if (instances && instances.length) {
-    const target = activeId ? instances.find((i: unknown) => i?.id === activeId) : instances.find((i: unknown) => i?.enabled);
+    const target = activeId
+      ? instances.find((i: unknown) => i?.id === activeId)
+      : instances.find((i: unknown) => i?.enabled);
     if (target) {
       return {
         provider: target.providerType || config.activeProvider || config.provider || 'openai',
@@ -62,5 +74,3 @@ export async function ensureServiceRuntime(orgId: string, serviceType: ServiceTy
   // Merge into runtime config (validated by AI_CONFIG_SCHEMA)
   updateAIConfig(partial);
 }
-
-

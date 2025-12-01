@@ -166,13 +166,16 @@ export class Calibrator {
   /**
    * Record user interaction for learning
    */
-  async recordInteraction(userId: string, interaction: {
-    type: 'query' | 'response' | 'feedback';
-    content: string;
-    response?: string;
-    satisfaction?: number;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
+  async recordInteraction(
+    userId: string,
+    interaction: {
+      type: 'query' | 'response' | 'feedback';
+      content: string;
+      response?: string;
+      satisfaction?: number;
+      metadata?: Record<string, unknown>;
+    }
+  ): Promise<void> {
     try {
       await query(
         `INSERT INTO ai_learning_signals (
@@ -267,7 +270,8 @@ export class Calibrator {
             key: 'responseStyle',
             oldValue: undefined,
             newValue: 'conversational',
-            reason: 'User frequently asks questions, suggesting preference for conversational style',
+            reason:
+              'User frequently asks questions, suggesting preference for conversational style',
             confidence: pattern.confidence * 0.8,
             timestamp: new Date(),
           });

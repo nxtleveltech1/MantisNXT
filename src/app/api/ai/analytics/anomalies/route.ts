@@ -3,7 +3,7 @@
  * Real-time anomaly detection for supplier and procurement metrics
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
 import { getOrSet, makeKey } from '@/lib/cache/responseCache';
@@ -14,9 +14,9 @@ const analyticsService = new PredictiveAnalyticsService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    const validationError = validateAnomalyRequest(body)
+    const validationError = validateAnomalyRequest(body);
     if (validationError) {
       return NextResponse.json(
         {
@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
           details: validationError,
         },
         { status: 400 }
-      )
+      );
     }
 
     const runDetection = async () => {
-      console.log('?? Running AI anomaly detection for:', body.entityType)
+      console.log('?? Running AI anomaly detection for:', body.entityType);
 
       const result = await analyticsService.detectAnomalies({
         entityType: body.entityType,
@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
         timeRange: body.timeRange,
         sensitivity: body.sensitivity,
         metrics: body.metrics,
-      })
+      });
 
-      console.log(`✅ Detected ${result.anomalies.length} anomalies (${result.summary.criticalCount} critical)`)
+      console.log(
+        `✅ Detected ${result.anomalies.length} anomalies (${result.summary.criticalCount} critical)`
+      );
 
       return {
         success: true,
@@ -55,10 +57,10 @@ export async function POST(request: NextRequest) {
           },
           timestamp: new Date().toISOString(),
         },
-      }
-    }
+      };
+    };
 
-    const execResult = await executeWithOptionalAsync(request, runDetection)
+    const execResult = await executeWithOptionalAsync(request, runDetection);
     if (execResult.queued) {
       return NextResponse.json(
         {
@@ -67,12 +69,12 @@ export async function POST(request: NextRequest) {
           taskId: execResult.taskId,
         },
         { status: 202 }
-      )
+      );
     }
 
-    return NextResponse.json(execResult.result)
+    return NextResponse.json(execResult.result);
   } catch (error) {
-    console.error('? Anomaly detection failed:', error)
+    console.error('? Anomaly detection failed:', error);
 
     return NextResponse.json(
       {
@@ -82,12 +84,13 @@ export async function POST(request: NextRequest) {
         code: 'ANOMALY_DETECTION_ERROR',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function GET(request: NextRequest) {
+}
+export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const supplierId = searchParams.get('supplierId')
+    const searchParams = request.nextUrl.searchParams;
+    const supplierId = searchParams.get('supplierId');
 
     if (!supplierId) {
       return NextResponse.json(
@@ -96,14 +99,14 @@ export async function POST(request: NextRequest) {
           error: 'Supplier ID is required for risk monitoring',
         },
         { status: 400 }
-      )
+      );
     }
 
-    console.log('?? Monitoring supplier risk:', supplierId)
+    console.log('?? Monitoring supplier risk:', supplierId);
 
-    const cacheKey = makeKey(request.url)
+    const cacheKey = makeKey(request.url);
     const payload = await getOrSet(cacheKey, async () => {
-      const riskMonitoring = await analyticsService.monitorSupplierRisk(supplierId)
+      const riskMonitoring = await analyticsService.monitorSupplierRisk(supplierId);
       return {
         success: true,
         data: {
@@ -113,12 +116,12 @@ export async function POST(request: NextRequest) {
           alerts: riskMonitoring.alerts,
           timestamp: new Date().toISOString(),
         },
-      }
-    })
+      };
+    });
 
-    return NextResponse.json(payload)
+    return NextResponse.json(payload);
   } catch (error) {
-    console.error('? Supplier risk monitoring failed:', error)
+    console.error('? Supplier risk monitoring failed:', error);
 
     return NextResponse.json(
       {
@@ -127,18 +130,22 @@ export async function POST(request: NextRequest) {
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
-}export async function PUT(request: NextRequest) {
+}
+export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, anomalyId } = body;
 
     if (!anomalyId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Anomaly ID is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Anomaly ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     console.log(`🔧 Anomaly action: ${action} for anomaly ${anomalyId}`);
@@ -156,10 +163,13 @@ export async function POST(request: NextRequest) {
         result = await dismissAnomaly(anomalyId, body.userId, body.reason);
         break;
       default:
-        return NextResponse.json({
-          success: false,
-          error: `Unknown action: ${action}`
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Unknown action: ${action}`,
+          },
+          { status: 400 }
+        );
     }
 
     return NextResponse.json({
@@ -168,18 +178,20 @@ export async function POST(request: NextRequest) {
         anomalyId,
         action,
         result,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Anomaly action failed:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Anomaly action failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Anomaly action failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -239,11 +251,15 @@ async function acknowledgeAnomaly(anomalyId: string, userId: string): Promise<un
   return {
     status: 'acknowledged',
     acknowledgedBy: userId,
-    acknowledgedAt: new Date().toISOString()
+    acknowledgedAt: new Date().toISOString(),
   };
 }
 
-async function resolveAnomaly(anomalyId: string, userId: string, resolution?: string): Promise<unknown> {
+async function resolveAnomaly(
+  anomalyId: string,
+  userId: string,
+  resolution?: string
+): Promise<unknown> {
   // In production, this would update the anomaly status and record the resolution
   console.log(`Anomaly ${anomalyId} resolved by user ${userId}: ${resolution}`);
 
@@ -251,11 +267,15 @@ async function resolveAnomaly(anomalyId: string, userId: string, resolution?: st
     status: 'resolved',
     resolvedBy: userId,
     resolvedAt: new Date().toISOString(),
-    resolution: resolution || 'No resolution details provided'
+    resolution: resolution || 'No resolution details provided',
   };
 }
 
-async function dismissAnomaly(anomalyId: string, userId: string, reason?: string): Promise<unknown> {
+async function dismissAnomaly(
+  anomalyId: string,
+  userId: string,
+  reason?: string
+): Promise<unknown> {
   // In production, this would mark the anomaly as dismissed
   console.log(`Anomaly ${anomalyId} dismissed by user ${userId}: ${reason}`);
 
@@ -263,6 +283,6 @@ async function dismissAnomaly(anomalyId: string, userId: string, reason?: string
     status: 'dismissed',
     dismissedBy: userId,
     dismissedAt: new Date().toISOString(),
-    reason: reason || 'No reason provided'
+    reason: reason || 'No reason provided',
   };
 }

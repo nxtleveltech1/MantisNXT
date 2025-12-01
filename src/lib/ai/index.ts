@@ -16,8 +16,8 @@ import type {
   AIEmbeddingOptions,
   AIEmbeddingResult,
   AIUsageEvent,
-  AIProviderHealth} from '@/types/ai';
-
+  AIProviderHealth,
+} from '@/types/ai';
 
 import {
   getAIConfig as loadAIConfig,
@@ -39,7 +39,7 @@ import {
 
 const pickProviderClient = (
   preferred: AIProviderId,
-  allowFallback: boolean,
+  allowFallback: boolean
 ): { client: AIClient; provider: AIProviderId } => {
   const config = loadAIConfig();
   const chain = allowFallback ? getProviderFallbackChain(preferred) : [preferred];
@@ -75,7 +75,7 @@ const pickProviderClient = (
 
 const mergeRuntimeOptions = <O extends AIProviderRuntimeOptions | undefined>(
   options: O,
-  providerId: AIProviderId,
+  providerId: AIProviderId
 ): O => {
   if (!options) {
     return { provider: providerId } as O;
@@ -101,7 +101,10 @@ export class AIService {
   private readonly allowFallback: boolean;
   private unsubscribeUsage?: () => void;
 
-  constructor(providerOrOptions?: AIProviderId | Partial<AIServiceOptions>, maybeOptions?: Partial<AIServiceOptions>) {
+  constructor(
+    providerOrOptions?: AIProviderId | Partial<AIServiceOptions>,
+    maybeOptions?: Partial<AIServiceOptions>
+  ) {
     let resolvedProvider: AIProviderId | undefined;
     let options: Partial<AIServiceOptions> | undefined;
 
@@ -141,11 +144,14 @@ export class AIService {
 
   async generateText(prompt: string, options?: AIProviderRuntimeOptions): Promise<AITextResult> {
     return this.executeWithFallback(options, (client, providerId, runtimeOptions) =>
-      client.generateText(prompt, runtimeOptions ?? { provider: providerId }),
+      client.generateText(prompt, runtimeOptions ?? { provider: providerId })
     );
   }
 
-  async streamText(prompt: string, options?: AIProviderRuntimeOptions): Promise<AsyncIterable<AIStreamChunk>> {
+  async streamText(
+    prompt: string,
+    options?: AIProviderRuntimeOptions
+  ): Promise<AsyncIterable<AIStreamChunk>> {
     return this.executeWithFallback(options, async (client, providerId, runtimeOptions) => {
       if (!client.streamText) {
         throw new Error('Provider ' + providerId + ' does not support streaming.');
@@ -156,13 +162,16 @@ export class AIService {
 
   async chat(messages: AIChatMessage[], options?: AIProviderRuntimeOptions): Promise<AIChatResult> {
     return this.executeWithFallback(options, (client, providerId, runtimeOptions) =>
-      client.chat(messages, runtimeOptions ?? { provider: providerId }),
+      client.chat(messages, runtimeOptions ?? { provider: providerId })
     );
   }
 
   async embed(input: AIEmbeddingInput, options?: AIEmbeddingOptions): Promise<AIEmbeddingResult> {
     return this.executeWithFallback(options, (client, providerId, runtimeOptions) =>
-      client.embed(input, (runtimeOptions as AIEmbeddingOptions | undefined) ?? { provider: providerId }),
+      client.embed(
+        input,
+        (runtimeOptions as AIEmbeddingOptions | undefined) ?? { provider: providerId }
+      )
     );
   }
 
@@ -179,11 +188,12 @@ export class AIService {
 
   private async executeWithFallback<O extends AIProviderRuntimeOptions | undefined, R>(
     options: O,
-    executor: (client: AIClient, providerId: AIProviderId, runtimeOptions: O) => Promise<R>,
+    executor: (client: AIClient, providerId: AIProviderId, runtimeOptions: O) => Promise<R>
   ): Promise<R> {
     const config = loadAIConfig();
     const preferred = (options?.provider ?? this.providerId) as AIProviderId;
-    const allowFallback = this.allowFallback && (!options?.provider || options.provider === this.providerId);
+    const allowFallback =
+      this.allowFallback && (!options?.provider || options.provider === this.providerId);
     const chain = allowFallback ? getProviderFallbackChain(preferred) : [preferred];
     let lastError: unknown;
 
@@ -221,7 +231,14 @@ export class AIService {
 }
 
 export const getAIConfig = loadAIConfig;
-export { refreshAIConfig, updateAIConfig, isAIEnabled, getProviderConfig, getAvailableProviders, getProviderFallbackChain };
+export {
+  refreshAIConfig,
+  updateAIConfig,
+  isAIEnabled,
+  getProviderConfig,
+  getAvailableProviders,
+  getProviderFallbackChain,
+};
 export { getProviderHealthStatus, getAllProviderHealthStatus, onAIUsage, removeAIUsageListeners };
 
 export const AI_CONSTANTS = {

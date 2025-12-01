@@ -1,8 +1,8 @@
 // @ts-nocheck
-"use client";
+'use client';
 
-import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import type {
   InventoryItem,
   InventorySearchFilters,
@@ -11,7 +11,7 @@ import type {
   StockMovement,
   InventoryAdjustment,
   CycleCount,
-} from "@/types/inventory";
+} from '@/types/inventory';
 
 interface InventoryState {
   // Data
@@ -40,10 +40,7 @@ interface InventoryState {
 
   setAdjustments: (adjustments: InventoryAdjustment[]) => void;
   addAdjustment: (adjustment: InventoryAdjustment) => void;
-  updateAdjustment: (
-    id: string,
-    adjustment: Partial<InventoryAdjustment>
-  ) => void;
+  updateAdjustment: (id: string, adjustment: Partial<InventoryAdjustment>) => void;
 
   setCycleCounts: (counts: CycleCount[]) => void;
   addCycleCount: (count: CycleCount) => void;
@@ -72,7 +69,7 @@ interface InventoryState {
 }
 
 const initialFilters: InventorySearchFilters = {
-  query: "",
+  query: '',
   category: [],
   status: [],
   warehouse: [],
@@ -83,8 +80,8 @@ const initialFilters: InventorySearchFilters = {
 };
 
 const initialSort: InventorySortOptions = {
-  field: "name",
-  direction: "asc",
+  field: 'name',
+  direction: 'asc',
 };
 
 export const useInventoryStore = create<InventoryState>()(
@@ -104,147 +101,136 @@ export const useInventoryStore = create<InventoryState>()(
       sortOptions: initialSort,
 
       // Data Actions
-      setItems: (items) => set({ items }, false, "setItems"),
+      setItems: items => set({ items }, false, 'setItems'),
 
-      addItem: (item) =>
-        set((state) => ({ items: [...state.items, item] }), false, "addItem"),
+      addItem: item => set(state => ({ items: [...state.items, item] }), false, 'addItem'),
 
       updateItem: (id, updatedItem) =>
         set(
-          (state) => ({
-            items: state.items.map((item) =>
-              item.id === id ? { ...item, ...updatedItem } : item
-            ),
+          state => ({
+            items: state.items.map(item => (item.id === id ? { ...item, ...updatedItem } : item)),
           }),
           false,
-          "updateItem"
+          'updateItem'
         ),
 
-      removeItem: (id) =>
+      removeItem: id =>
         set(
-          (state) => ({
-            items: state.items.filter((item) => item.id !== id),
-            selectedItems: state.selectedItems.filter(
-              (itemId) => itemId !== id
-            ),
+          state => ({
+            items: state.items.filter(item => item.id !== id),
+            selectedItems: state.selectedItems.filter(itemId => itemId !== id),
           }),
           false,
-          "removeItem"
+          'removeItem'
         ),
 
-      setMetrics: (metrics) => set({ metrics }, false, "setMetrics"),
+      setMetrics: metrics => set({ metrics }, false, 'setMetrics'),
 
-      setStockMovements: (movements) =>
-        set({ stockMovements: movements }, false, "setStockMovements"),
+      setStockMovements: movements =>
+        set({ stockMovements: movements }, false, 'setStockMovements'),
 
-      addStockMovement: (movement) =>
+      addStockMovement: movement =>
         set(
-          (state) => ({
+          state => ({
             stockMovements: [movement, ...state.stockMovements],
           }),
           false,
-          "addStockMovement"
+          'addStockMovement'
         ),
 
-      setAdjustments: (adjustments) =>
-        set({ adjustments }, false, "setAdjustments"),
+      setAdjustments: adjustments => set({ adjustments }, false, 'setAdjustments'),
 
-      addAdjustment: (adjustment) =>
+      addAdjustment: adjustment =>
         set(
-          (state) => ({
+          state => ({
             adjustments: [adjustment, ...state.adjustments],
           }),
           false,
-          "addAdjustment"
+          'addAdjustment'
         ),
 
       updateAdjustment: (id, updatedAdjustment) =>
         set(
-          (state) => ({
-            adjustments: state.adjustments.map((adj) =>
+          state => ({
+            adjustments: state.adjustments.map(adj =>
               adj.id === id ? { ...adj, ...updatedAdjustment } : adj
             ),
           }),
           false,
-          "updateAdjustment"
+          'updateAdjustment'
         ),
 
-      setCycleCounts: (counts) =>
-        set({ cycleCounts: counts }, false, "setCycleCounts"),
+      setCycleCounts: counts => set({ cycleCounts: counts }, false, 'setCycleCounts'),
 
-      addCycleCount: (count) =>
+      addCycleCount: count =>
         set(
-          (state) => ({
+          state => ({
             cycleCounts: [count, ...state.cycleCounts],
           }),
           false,
-          "addCycleCount"
+          'addCycleCount'
         ),
 
       updateCycleCount: (id, updatedCount) =>
         set(
-          (state) => ({
-            cycleCounts: state.cycleCounts.map((count) =>
+          state => ({
+            cycleCounts: state.cycleCounts.map(count =>
               count.id === id ? { ...count, ...updatedCount } : count
             ),
           }),
           false,
-          "updateCycleCount"
+          'updateCycleCount'
         ),
 
       // Selection Actions
-      selectItem: (id) =>
+      selectItem: id =>
         set(
-          (state) => ({
+          state => ({
             selectedItems: state.selectedItems.includes(id)
               ? state.selectedItems
               : [...state.selectedItems, id],
           }),
           false,
-          "selectItem"
+          'selectItem'
         ),
 
-      deselectItem: (id) =>
+      deselectItem: id =>
         set(
-          (state) => ({
-            selectedItems: state.selectedItems.filter(
-              (itemId) => itemId !== id
-            ),
+          state => ({
+            selectedItems: state.selectedItems.filter(itemId => itemId !== id),
           }),
           false,
-          "deselectItem"
+          'deselectItem'
         ),
 
       selectAllItems: () =>
         set(
-          (state) => ({
-            selectedItems: state.items.map((item) => item.id),
+          state => ({
+            selectedItems: state.items.map(item => item.id),
           }),
           false,
-          "selectAllItems"
+          'selectAllItems'
         ),
 
-      clearSelection: () => set({ selectedItems: [] }, false, "clearSelection"),
+      clearSelection: () => set({ selectedItems: [] }, false, 'clearSelection'),
 
       // Filter & Sort Actions
-      setFilters: (newFilters) =>
+      setFilters: newFilters =>
         set(
-          (state) => ({
+          state => ({
             filters: { ...state.filters, ...newFilters },
           }),
           false,
-          "setFilters"
+          'setFilters'
         ),
 
-      clearFilters: () =>
-        set({ filters: initialFilters }, false, "clearFilters"),
+      clearFilters: () => set({ filters: initialFilters }, false, 'clearFilters'),
 
-      setSortOptions: (sortOptions) =>
-        set({ sortOptions }, false, "setSortOptions"),
+      setSortOptions: sortOptions => set({ sortOptions }, false, 'setSortOptions'),
 
       // UI State Actions
-      setLoading: (loading) => set({ loading }, false, "setLoading"),
-      setError: (error) => set({ error }, false, "setError"),
+      setLoading: loading => set({ loading }, false, 'setLoading'),
+      setError: error => set({ error }, false, 'setError'),
 
       // Computed Getters
       getFilteredItems: () => {
@@ -255,7 +241,7 @@ export const useInventoryStore = create<InventoryState>()(
         if (filters.query) {
           const query = filters.query.toLowerCase();
           filtered = filtered.filter(
-            (item) =>
+            item =>
               item.name.toLowerCase().includes(query) ||
               item.sku.toLowerCase().includes(query) ||
               item.description.toLowerCase().includes(query)
@@ -263,31 +249,23 @@ export const useInventoryStore = create<InventoryState>()(
         }
 
         if (filters.category && filters.category.length > 0) {
-          filtered = filtered.filter((item) =>
-            filters.category!.includes(item.category)
-          );
+          filtered = filtered.filter(item => filters.category!.includes(item.category));
         }
 
         if (filters.status && filters.status.length > 0) {
-          filtered = filtered.filter((item) =>
-            filters.status!.includes(item.status)
-          );
+          filtered = filtered.filter(item => filters.status!.includes(item.status));
         }
 
         if (filters.lowStock) {
-          filtered = filtered.filter(
-            (item) => item.currentStock <= item.reorderPoint
-          );
+          filtered = filtered.filter(item => item.currentStock <= item.reorderPoint);
         }
 
         if (filters.outOfStock) {
-          filtered = filtered.filter((item) => item.currentStock === 0);
+          filtered = filtered.filter(item => item.currentStock === 0);
         }
 
         if (filters.tags && filters.tags.length > 0) {
-          filtered = filtered.filter((item) =>
-            filters.tags!.some((tag) => item.tags.includes(tag))
-          );
+          filtered = filtered.filter(item => filters.tags!.some(tag => item.tags.includes(tag)));
         }
 
         // Apply sorting
@@ -296,13 +274,13 @@ export const useInventoryStore = create<InventoryState>()(
           let aValue: unknown = a[field as keyof InventoryItem];
           let bValue: unknown = b[field as keyof InventoryItem];
 
-          if (typeof aValue === "string") {
+          if (typeof aValue === 'string') {
             aValue = aValue.toLowerCase();
             bValue = bValue.toLowerCase();
           }
 
-          if (aValue < bValue) return direction === "asc" ? -1 : 1;
-          if (aValue > bValue) return direction === "asc" ? 1 : -1;
+          if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+          if (aValue > bValue) return direction === 'asc' ? 1 : -1;
           return 0;
         });
 
@@ -312,23 +290,22 @@ export const useInventoryStore = create<InventoryState>()(
       getLowStockItems: () => {
         const { items } = get();
         return items.filter(
-          (item) =>
-            item.currentStock <= item.reorderPoint && item.currentStock > 0
+          item => item.currentStock <= item.reorderPoint && item.currentStock > 0
         );
       },
 
       getOutOfStockItems: () => {
         const { items } = get();
-        return items.filter((item) => item.currentStock === 0);
+        return items.filter(item => item.currentStock === 0);
       },
 
       getSelectedItems: () => {
         const { items, selectedItems } = get();
-        return items.filter((item) => selectedItems.includes(item.id));
+        return items.filter(item => selectedItems.includes(item.id));
       },
     }),
     {
-      name: "inventory-store",
+      name: 'inventory-store',
     }
   )
 );

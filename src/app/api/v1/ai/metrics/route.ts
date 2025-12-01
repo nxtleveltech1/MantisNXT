@@ -22,14 +22,9 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const timeRange = startDate && endDate
-      ? { startDate, endDate }
-      : undefined;
+    const timeRange = startDate && endDate ? { startDate, endDate } : undefined;
 
-    const metrics = await AIMetricsService.getMetricsSummary(
-      user.org_id,
-      timeRange
-    );
+    const metrics = await AIMetricsService.getMetricsSummary(user.org_id, timeRange);
 
     return successResponse(metrics);
   } catch (error) {
