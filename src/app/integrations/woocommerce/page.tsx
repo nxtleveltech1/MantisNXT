@@ -72,6 +72,7 @@ export default function WooPage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [dataLoading, setDataLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [bulkSyncing, setBulkSyncing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -292,23 +293,30 @@ export default function WooPage() {
     }
   };
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (skipPreview = false) => {
     if (!orgId) return;
     setDataLoading(true);
     try {
-      const r = await fetch(`/api/v1/integrations/woocommerce/preview/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
-        body: JSON.stringify({ entities: [entity] }),
-      });
-      if (!r.ok) throw new Error(`Refresh failed: ${r.status}`);
+      // Skip preview refresh if we have bulk sync data (faster)
+      if (!skipPreview) {
+        const r = await fetch(`/api/v1/integrations/woocommerce/preview/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+          body: JSON.stringify({ entities: [entity] }),
+        });
+        if (!r.ok) throw new Error(`Refresh failed: ${r.status}`);
+      }
+      
+      // Always reload table data
       const res = await fetch(
         `/api/v1/integrations/woocommerce/table?entity=${entity}&orgId=${orgId}&page=1&pageSize=50`
       );
+      if (!res.ok) throw new Error(`Table load failed: ${res.status}`);
       const json = await res.json();
       setRows(json.data || []);
       setSelected({});
     } catch (e: any) {
+      console.error('Refresh error:', e);
       toast({
         title: 'Refresh failed',
         description: e?.message || 'Error',
@@ -321,7 +329,33 @@ export default function WooPage() {
 
   useEffect(() => {
     if (orgId && config.status === 'active') {
-      refresh();
+      // Try to load table data first (fast), then refresh preview in background if needed
+      const loadTableData = async () => {
+        setDataLoading(true);
+        try {
+          const res = await fetch(
+            `/api/v1/integrations/woocommerce/table?entity=${entity}&orgId=${orgId}&page=1&pageSize=50`
+          );
+          if (res.ok) {
+            const json = await res.json();
+            if (json.data && json.data.length > 0) {
+              // We have data, show it immediately
+              setRows(json.data || []);
+              setSelected({});
+              setDataLoading(false);
+              // Optionally refresh preview in background (non-blocking)
+              refresh(true).catch(() => {}); // Ignore errors for background refresh
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('Initial table load failed:', e);
+        }
+        // No data found, do full refresh
+        setDataLoading(false);
+        refresh();
+      };
+      loadTableData();
     }
   }, [orgId, entity, config.status, refresh]);
 
@@ -427,6 +461,70 @@ export default function WooPage() {
       toast({ title: 'Schedule failed', description: e?.message || 'Error', variant: 'destructive' });
     }
   }, [orgId, toast]);
+
+  const handleBulkSync = useCallback(async () => {
+    if (!orgId || !config.store_url) {
+      toast({
+        title: 'Configuration Required',
+        description: 'Please configure and test your WooCommerce connection first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'This will download ALL products, orders, and customers from WooCommerce. This may take several minutes. Continue?'
+    );
+    if (!confirmed) return;
+
+    setBulkSyncing(true);
+    try {
+      const res = await fetch('/api/v1/integrations/woocommerce/bulk-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgId,
+        },
+        body: JSON.stringify({
+          entities: ['products', 'orders', 'customers'],
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Bulk sync failed: ${res.status}`);
+      }
+
+      const json = await res.json();
+      const results = json.data?.results || {};
+
+      const summary = Object.entries(results)
+        .map(([entity, data]: [string, any]) => {
+          const status = data.queueId ? `Queued (${data.queueId.substring(0, 8)}...)` : data.status;
+          return `${entity}: ${data.totalItems} items - ${status}`;
+        })
+        .join('\n');
+
+      toast({
+        title: 'Bulk Sync Completed',
+        description: `All data downloaded from WooCommerce.\n\n${summary}`,
+        duration: 10000,
+      });
+
+      // Reload table data directly (skip preview refresh since bulk sync already stored it)
+      if (config.status === 'active' && orgId) {
+        await refresh(true); // Pass true to skip preview refresh
+      }
+    } catch (e: any) {
+      toast({
+        title: 'Bulk Sync Failed',
+        description: e?.message || 'Error initiating bulk sync',
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkSyncing(false);
+    }
+  }, [orgId, config.store_url, config.status, refresh, toast]);
 
   if (loading) {
     return (
@@ -650,6 +748,27 @@ export default function WooPage() {
                         </>
                       )}
                     </Button>
+                    {config.status === 'active' && (
+                      <Button
+                        type="button"
+                        onClick={handleBulkSync}
+                        disabled={bulkSyncing || !orgId}
+                        variant="default"
+                        className="ml-auto"
+                      >
+                        {bulkSyncing ? (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                            Syncing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Initial Bulk Sync
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </form>
               </CardContent>

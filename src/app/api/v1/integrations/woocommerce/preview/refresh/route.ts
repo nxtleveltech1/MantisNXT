@@ -37,25 +37,36 @@ export async function POST(request: NextRequest) {
       );
 
     const results: Record<string, number> = {};
+    // For incremental preview: limit to recent items (10 pages = 1000 items max)
+    // Use /bulk-sync endpoint for initial full download
+    const maxPages = 10;
 
     for (const entity of entities) {
       let data: any[] = [];
       if (entity === 'customers') {
-        data = await woo.fetchAllPages(p => woo.getCustomers(p), {
-          per_page: 100,
-          order: 'desc',
-          orderby: 'registered_date',
-        });
+        data = await woo.fetchAllPages(
+          p => woo.getCustomers(p),
+          {
+            per_page: 100,
+            order: 'desc',
+            orderby: 'registered_date',
+          },
+          { maxPages }
+        );
       } else if (entity === 'products') {
-        data = await woo.fetchAllPages(p => woo.getProducts(p), { per_page: 100 });
+        data = await woo.fetchAllPages(p => woo.getProducts(p), { per_page: 100 }, { maxPages });
       } else if (entity === 'orders') {
-        data = await woo.fetchAllPages(p => woo.getOrders(p), {
-          per_page: 100,
-          order: 'desc',
-          orderby: 'date',
-        });
+        data = await woo.fetchAllPages(
+          p => woo.getOrders(p),
+          {
+            per_page: 100,
+            order: 'desc',
+            orderby: 'date',
+          },
+          { maxPages }
+        );
       } else if (entity === 'categories') {
-        data = await woo.fetchAllPages(p => woo.getCategories(p), { per_page: 100 });
+        data = await woo.fetchAllPages(p => woo.getCategories(p), { per_page: 100 }, { maxPages });
       } else {
         continue;
       }
