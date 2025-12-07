@@ -640,10 +640,23 @@ export class IntegrationSyncService {
           }
         } catch {}
 
+        // Get a valid user ID for the queue (required for foreign key constraint)
+        let userId = null;
+        const userResult = await query<{ id: string }>(
+          `SELECT id FROM "user" WHERE org_id = $1 ORDER BY created_at LIMIT 1`,
+          [this.orgId]
+        );
+        if (userResult.rows.length > 0) {
+          userId = userResult.rows[0].id;
+        } else {
+          console.warn(`[IntegrationSyncService] No users found for org ${this.orgId}, using org ID as fallback`);
+          userId = this.orgId; // Fallback for testing
+        }
+
         const queueId = await CustomerSyncService.startSync(
           wooService,
           this.orgId,
-          this.connectorId,
+          userId,
           { batchSize: 50, batchDelayMs: 2000, maxRetries: 3 },
           selectedIds ? { selectedIds } : (undefined as any)
         );

@@ -19,7 +19,8 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     unoptimized: process.env.NODE_ENV === 'development', // Disable image optimization in dev to prevent errors
   },
-  output: 'standalone',
+  // Only use standalone output in production builds
+  ...(process.env.NODE_ENV === 'production' && { output: 'standalone' }),
   env: {
     UPLOAD_MAX_SIZE: process.env.UPLOAD_MAX_SIZE || '10485760',
     UPLOAD_DIR: process.env.UPLOAD_DIR || '/app/uploads',

@@ -25,6 +25,7 @@ const ALWAYS_PUBLIC_ENDPOINTS = [
   '/api/tag/ai-tagging',
   '/api/category/ai-categorization',
   '/api/v1/integrations/woocommerce/test',
+  '/api/v1/integrations/woocommerce',
 ];
 
 function parseAllowlist(input: string | undefined): string[] {

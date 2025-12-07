@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
   Save,
   TestTube2,
+  Shield,
+  Lock,
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -33,6 +35,8 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSecureAuth, useAdminAuth, useOrgValidation } from '@/hooks/useSecureAuth';
+import { InputValidator, CSRFProtection } from '@/lib/utils/secure-storage';
 
 type Entity = 'products' | 'orders' | 'customers' | 'categories';
 
@@ -52,7 +56,8 @@ interface WooCommerceConfig {
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function WooPage() {
-  const [orgId, setOrgId] = useState<string | null>(null);
+  const { isAuthenticated, isAdmin, isLoading: authLoading, orgId } = useSecureAuth();
+  const [orgIdValidated, setOrgIdValidated] = useState<string | null>(null);
   const [config, setConfig] = useState<WooCommerceConfig>({
     name: 'WooCommerce Store',
     store_url: '',
@@ -71,64 +76,90 @@ export default function WooPage() {
   const [rows, setRows] = useState<Array<any>>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [dataLoading, setDataLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [bulkSyncing, setBulkSyncing] = useState(false);
   const { toast } = useToast();
 
+  // Validate organization context with fallback
   useEffect(() => {
-    fetchConfiguration();
+    if (authLoading) return;
+
     const loadOrgId = async () => {
+      // Try from auth hook first (check UUID format directly to avoid throwing)
+      if (isAuthenticated && orgId && UUID_REGEX.test(orgId)) {
+        setOrgIdValidated(orgId);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('orgId', orgId);
+        }
+        return;
+      }
+
+      // Fallback 1: localStorage
       const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null;
       if (stored && UUID_REGEX.test(stored)) {
-        setOrgId(stored);
+        setOrgIdValidated(stored);
+        return;
       }
 
+      // Fallback 2: API /api/auth/user
       try {
-        const response = await fetch('/api/auth/user', { signal: AbortSignal.timeout(2000) });
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.orgId && UUID_REGEX.test(data.orgId)) {
-            setOrgId(data.orgId);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('orgId', data.orgId);
-            }
-            return;
+        const response = await fetch('/api/auth/user');
+        const data = await response.json();
+        if (data?.orgId && UUID_REGEX.test(data.orgId)) {
+          setOrgIdValidated(data.orgId);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('orgId', data.orgId);
           }
+          return;
         }
       } catch (error) {
-        // Silently fail - endpoint may not exist (404 is expected)
+        console.warn('Failed to load org ID from auth service:', error);
       }
 
+      // Fallback 3: API /api/v1/organizations/current
       try {
         const response = await fetch('/api/v1/organizations/current');
         const data = await response.json();
         if (data?.success && data.data?.id && UUID_REGEX.test(data.data.id)) {
-          setOrgId(data.data.id);
+          setOrgIdValidated(data.data.id);
           if (typeof window !== 'undefined') {
             localStorage.setItem('orgId', data.data.id);
           }
           return;
         }
       } catch (error) {
-        console.error('Failed to resolve organization from API:', error);
+        console.warn('Failed to resolve organization from API:', error);
+      }
+
+      // Last resort: use orgId directly if it's a valid UUID
+      if (orgId && UUID_REGEX.test(orgId)) {
+        setOrgIdValidated(orgId);
       }
     };
-    void loadOrgId();
 
-    const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
-    setIsAdmin(role === 'admin');
-  }, []);
+    void loadOrgId();
+  }, [authLoading, isAuthenticated, orgId]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) {
+      return;
+    }
+
+    fetchConfiguration();
+  }, [authLoading, isAuthenticated]);
 
   const fetchConfiguration = async () => {
-    try {
-      const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null;
-      if (!stored || !UUID_REGEX.test(stored)) {
-        setLoading(false);
-        return;
-      }
+    if (!orgIdValidated) {
+      setLoading(false);
+      return;
+    }
 
+    try {
       const response = await fetch('/api/v1/integrations/woocommerce', {
-        headers: { 'x-org-id': stored },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgIdValidated,
+          'x-csrf-token': await CSRFProtection.getToken(),
+        },
       });
       const data = await response.json();
 
@@ -148,16 +179,37 @@ export default function WooPage() {
       }
     } catch (error) {
       console.error('Error fetching configuration:', error);
+      toast({
+        title: 'Configuration Error',
+        description: 'Failed to load WooCommerce configuration.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveConfiguration = async () => {
-    if (!orgId || !UUID_REGEX.test(orgId)) {
+    console.log('[Save Config] Starting save...', { orgIdValidated, isAuthenticated, config });
+    
+    if (!orgIdValidated || !isAuthenticated) {
+      console.error('[Save Config] Missing requirements:', { orgIdValidated, isAuthenticated });
       toast({
-        title: 'Organization Error',
-        description: 'Could not determine your organization. Please contact support.',
+        title: 'Authentication Required',
+        description: `Please sign in to save configuration. ${!orgIdValidated ? 'Org ID missing.' : ''}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Input validation
+    const sanitizedUrl = InputValidator.sanitizeInput(config.store_url);
+    const isValidUrl = InputValidator.validateUrl(sanitizedUrl);
+
+    if (!sanitizedUrl || !isValidUrl) {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please provide a valid WooCommerce store URL.',
         variant: 'destructive',
       });
       return;
@@ -165,14 +217,43 @@ export default function WooPage() {
 
     setSaving(true);
     try {
+      // Only include credentials if they've been entered (not empty strings)
+      // For updates, empty credentials will be preserved from existing config
+      const requestBody: any = {
+        ...config,
+        store_url: sanitizedUrl,
+      };
+      
+      // Remove empty credentials from request body if updating existing config
+      // This signals to the backend to preserve existing credentials
+      if (config.id) {
+        if (!requestBody.consumer_key || requestBody.consumer_key.trim() === '') {
+          delete requestBody.consumer_key;
+        }
+        if (!requestBody.consumer_secret || requestBody.consumer_secret.trim() === '') {
+          delete requestBody.consumer_secret;
+        }
+      }
+      
+      console.log('[Save Config] Request:', { method: config.id ? 'PUT' : 'POST', orgId: orgIdValidated, body: { ...requestBody, consumer_key: requestBody.consumer_key ? '***' : '(preserved)', consumer_secret: requestBody.consumer_secret ? '***' : '(preserved)' } });
+      
       const response = await fetch('/api/v1/integrations/woocommerce', {
         method: config.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-org-id': orgId,
+          'x-org-id': orgIdValidated,
+          'x-csrf-token': await CSRFProtection.getToken(),
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('[Save Config] Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Save Config] Error response:', errorData);
+        throw new Error(errorData.error || `Save failed: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
 
@@ -195,8 +276,9 @@ export default function WooPage() {
         throw new Error(data.error || 'Failed to save configuration');
       }
     } catch (error: unknown) {
+      console.error('Save configuration error:', error);
       toast({
-        title: 'Error',
+        title: 'Save Failed',
         description: error instanceof Error ? error.message : 'Failed to save configuration',
         variant: 'destructive',
       });
@@ -215,13 +297,49 @@ export default function WooPage() {
       return;
     }
 
+    // Input validation
+    const sanitizedUrl = InputValidator.sanitizeInput(config.store_url);
+    const isValidUrl = InputValidator.validateUrl(sanitizedUrl);
+    const isValidKey = InputValidator.validateConsumerKey(config.consumer_key);
+    const isValidSecret = InputValidator.validateConsumerSecret(config.consumer_secret);
+
+    if (!sanitizedUrl || !isValidUrl) {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please provide a valid WooCommerce store URL.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isValidKey) {
+      toast({
+        title: 'Invalid Consumer Key',
+        description: 'Please provide a valid WooCommerce consumer key.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isValidSecret) {
+      toast({
+        title: 'Invalid Consumer Secret',
+        description: 'Please provide a valid WooCommerce consumer secret.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setTesting(true);
     try {
       const response = await fetch('/api/v1/integrations/woocommerce/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': await CSRFProtection.getToken(),
+        },
         body: JSON.stringify({
-          store_url: config.store_url,
+          store_url: sanitizedUrl,
           consumer_key: config.consumer_key,
           consumer_secret: config.consumer_secret,
         }),
@@ -231,11 +349,7 @@ export default function WooPage() {
       try {
         data = await response.json();
       } catch (parseError) {
-        // If response is not JSON, create error response
-        const text = await response.text();
-        throw new Error(
-          `Connection test failed: ${response.status} ${response.statusText}${text ? ` - ${text.substring(0, 100)}` : ''}`
-        );
+        throw new Error(`Connection test failed: ${response.status} ${response.statusText}`);
       }
 
       if (data.success) {
@@ -248,36 +362,8 @@ export default function WooPage() {
         });
 
         // Update status to active BEFORE saving
-        const updatedConfig = { ...config, status: 'active' as const };
+        const updatedConfig = { ...config, status: 'active' as const, store_url: sanitizedUrl };
         setConfig(updatedConfig);
-
-        // Save the configuration with active status
-        if (config.id && orgId) {
-          setSaving(true);
-          try {
-            const saveResponse = await fetch('/api/v1/integrations/woocommerce', {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-org-id': orgId,
-              },
-              body: JSON.stringify(updatedConfig),
-            });
-
-            const saveData = await saveResponse.json();
-            if (saveData.success) {
-              setConfig(prev => ({
-                ...prev,
-                status: saveData.data.status,
-                store_url: saveData.data.store_url,
-              }));
-            }
-          } catch (saveError) {
-            console.error('Failed to save active status:', saveError);
-          } finally {
-            setSaving(false);
-          }
-        }
       } else {
         throw new Error(data.error || 'Connection test failed');
       }
@@ -293,15 +379,52 @@ export default function WooPage() {
     }
   };
 
+  // Debounce timer ref to prevent rapid successive calls
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRefreshTimeRef = useRef<number>(0);
+  const inFlightRefreshRef = useRef(false);
+  const rateLimitUntilRef = useRef<number>(0);
+
   const refresh = useCallback(async (skipPreview = false) => {
-    if (!orgId) return;
+    if (!orgIdValidated) return;
+    
+    const now = Date.now();
+
+    if (rateLimitUntilRef.current && now < rateLimitUntilRef.current) {
+      const secondsRemaining = Math.ceil((rateLimitUntilRef.current - now) / 1000);
+      toast({
+        title: 'Rate limited',
+        description: `Please wait ${secondsRemaining}s before retrying.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (inFlightRefreshRef.current) {
+      return;
+    }
+
+    // Debounce: prevent calls within 500ms of each other
+    if (now - lastRefreshTimeRef.current < 500) {
+      // Clear any pending refresh and schedule a new one
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+      refreshTimerRef.current = setTimeout(() => {
+        refresh(skipPreview);
+      }, 500 - (now - lastRefreshTimeRef.current));
+      return;
+    }
+    
+    lastRefreshTimeRef.current = now;
+    inFlightRefreshRef.current = true;
     setDataLoading(true);
     try {
       // Skip preview refresh if we have bulk sync data (faster)
       if (!skipPreview) {
         const r = await fetch(`/api/v1/integrations/woocommerce/preview/refresh`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+          headers: { 'Content-Type': 'application/json', 'x-org-id': orgIdValidated },
           body: JSON.stringify({ entities: [entity] }),
         });
         if (!r.ok) throw new Error(`Refresh failed: ${r.status}`);
@@ -309,9 +432,17 @@ export default function WooPage() {
       
       // Always reload table data
       const res = await fetch(
-        `/api/v1/integrations/woocommerce/table?entity=${entity}&orgId=${orgId}&page=1&pageSize=50`
+        `/api/v1/integrations/woocommerce/table?entity=${entity}&orgId=${orgIdValidated}&page=1&pageSize=50`
       );
-      if (!res.ok) throw new Error(`Table load failed: ${res.status}`);
+      if (!res.ok) {
+        // Handle 429 specifically with a longer backoff
+        if (res.status === 429) {
+          const retryAfter = parseInt(res.headers.get('Retry-After') || '30', 10);
+          rateLimitUntilRef.current = Date.now() + retryAfter * 1000;
+          throw new Error(`Rate limit exceeded. Please wait ${retryAfter} seconds before retrying.`);
+        }
+        throw new Error(`Table load failed: ${res.status}`);
+      }
       const json = await res.json();
       setRows(json.data || []);
       setSelected({});
@@ -324,40 +455,25 @@ export default function WooPage() {
       });
     } finally {
       setDataLoading(false);
+      inFlightRefreshRef.current = false;
     }
-  }, [orgId, entity, toast]);
+  }, [orgIdValidated, entity, toast]);
 
   useEffect(() => {
-    if (orgId && config.status === 'active') {
-      // Try to load table data first (fast), then refresh preview in background if needed
-      const loadTableData = async () => {
-        setDataLoading(true);
-        try {
-          const res = await fetch(
-            `/api/v1/integrations/woocommerce/table?entity=${entity}&orgId=${orgId}&page=1&pageSize=50`
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (json.data && json.data.length > 0) {
-              // We have data, show it immediately
-              setRows(json.data || []);
-              setSelected({});
-              setDataLoading(false);
-              // Optionally refresh preview in background (non-blocking)
-              refresh(true).catch(() => {}); // Ignore errors for background refresh
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('Initial table load failed:', e);
-        }
-        // No data found, do full refresh
-        setDataLoading(false);
-        refresh();
-      };
-      loadTableData();
+    if (orgIdValidated && config.status === 'active' && isAuthenticated) {
+      // Use refresh function which handles debouncing and error handling
+      // Skip preview refresh on initial load for faster response
+      refresh(true).catch(() => {}); // Ignore errors for initial load
     }
-  }, [orgId, entity, config.status, refresh]);
+    
+    // Cleanup: clear any pending refresh timer on unmount
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [orgIdValidated, entity, config.status, isAuthenticated, refresh]);
 
   const toggleSelect = useCallback(
     (id: string) => {
@@ -375,8 +491,17 @@ export default function WooPage() {
   }, [rows]);
 
   const persistSelection = useCallback(async () => {
+    if (!orgIdValidated || !isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to save selection.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const selectedRows = rows.filter((r: any) => selected[r.external_id]);
-    if (selectedRows.length === 0 || !orgId) {
+    if (selectedRows.length === 0) {
       toast({
         title: 'No selection',
         description: 'Select at least one row',
@@ -388,7 +513,11 @@ export default function WooPage() {
       const ids = selectedRows.map((r: any) => r.external_id);
       const res = await fetch(`/api/v1/integrations/woocommerce/select`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgIdValidated,
+          'x-csrf-token': await CSRFProtection.getToken(),
+        },
         body: JSON.stringify({ entity, ids, selected: true }),
       });
       if (!res.ok) throw new Error(`Select failed: ${res.status}`);
@@ -400,13 +529,22 @@ export default function WooPage() {
         variant: 'destructive',
       });
     }
-  }, [rows, selected, orgId, entity, toast]);
+  }, [rows, selected, orgIdValidated, isAuthenticated, entity, toast]);
 
   const startSelectedSync = useCallback(async () => {
+    if (!orgIdValidated || !isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to start sync.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const ids = Object.entries(selected)
       .filter(([_, v]) => v)
       .map(([k]) => k);
-    if (ids.length === 0 || !orgId) {
+    if (ids.length === 0) {
       toast({
         title: 'No selection',
         description: 'Select at least one row',
@@ -425,12 +563,15 @@ export default function WooPage() {
       }
       const res = await fetch('/api/v1/integrations/woocommerce/sync/customers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgIdValidated,
+          'x-csrf-token': await CSRFProtection.getToken(),
+        },
         body: JSON.stringify({
-          org_id: orgId,
+          org_id: orgIdValidated,
           action: 'start-selected',
           options: { selectedIds: ids.map(id => Number(id)) },
-          config: { url: '', consumerKey: '', consumerSecret: '' },
         }),
       });
       if (!res.ok) throw new Error(`Sync start failed: ${res.status}`);
@@ -439,16 +580,29 @@ export default function WooPage() {
     } catch (e: any) {
       toast({ title: 'Sync failed', description: e?.message || 'Error', variant: 'destructive' });
     }
-  }, [selected, orgId, entity, toast]);
+  }, [selected, orgIdValidated, isAuthenticated, entity, toast]);
 
   const scheduleFullSync = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgIdValidated || !isAuthenticated || !isAdmin) {
+      toast({
+        title: 'Insufficient Permissions',
+        description: 'Admin access required for this operation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const confirmed = window.confirm('Schedule full WooCommerce customer sync?');
     if (!confirmed) return;
     try {
       const res = await fetch('/api/v1/integrations/woocommerce/schedule/customers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId, 'x-admin': 'true' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgIdValidated,
+          'x-admin': 'true',
+          'x-csrf-token': await CSRFProtection.getToken(),
+        },
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(`Schedule failed: ${res.status}`);
@@ -460,10 +614,23 @@ export default function WooPage() {
     } catch (e: any) {
       toast({ title: 'Schedule failed', description: e?.message || 'Error', variant: 'destructive' });
     }
-  }, [orgId, toast]);
+  }, [orgIdValidated, isAuthenticated, isAdmin, toast]);
 
   const handleBulkSync = useCallback(async () => {
-    if (!orgId || !config.store_url) {
+    console.log('[Bulk Sync] Starting bulk sync...', { orgIdValidated, isAuthenticated });
+    
+    if (!orgIdValidated || !isAuthenticated) {
+      console.error('[Bulk Sync] Missing requirements:', { orgIdValidated, isAuthenticated });
+      toast({
+        title: 'Authentication Required',
+        description: `Please sign in to start bulk sync. ${!orgIdValidated ? 'Org ID missing.' : ''}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const sanitizedUrl = InputValidator.sanitizeInput(config.store_url);
+    if (!sanitizedUrl || !InputValidator.validateUrl(sanitizedUrl)) {
       toast({
         title: 'Configuration Required',
         description: 'Please configure and test your WooCommerce connection first.',
@@ -483,7 +650,8 @@ export default function WooPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-org-id': orgId,
+          'x-org-id': orgIdValidated,
+          'x-csrf-token': await CSRFProtection.getToken(),
         },
         body: JSON.stringify({
           entities: ['products', 'orders', 'customers'],
@@ -492,10 +660,17 @@ export default function WooPage() {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Bulk sync failed: ${res.status}`);
+        const errorMessage = errorData.error || errorData.message || `Bulk sync failed: ${res.status} ${res.statusText}`;
+        console.error('Bulk sync error:', errorMessage, errorData);
+        throw new Error(errorMessage);
       }
 
       const json = await res.json();
+      
+      if (!json.success) {
+        throw new Error(json.error || json.message || 'Bulk sync failed');
+      }
+
       const results = json.data?.results || {};
 
       const summary = Object.entries(results)
@@ -512,10 +687,11 @@ export default function WooPage() {
       });
 
       // Reload table data directly (skip preview refresh since bulk sync already stored it)
-      if (config.status === 'active' && orgId) {
+      if (config.status === 'active' && orgIdValidated && isAuthenticated) {
         await refresh(true); // Pass true to skip preview refresh
       }
     } catch (e: any) {
+      console.error('Bulk sync error:', e);
       toast({
         title: 'Bulk Sync Failed',
         description: e?.message || 'Error initiating bulk sync',
@@ -524,7 +700,37 @@ export default function WooPage() {
     } finally {
       setBulkSyncing(false);
     }
-  }, [orgId, config.store_url, config.status, refresh, toast]);
+  }, [orgIdValidated, isAuthenticated, config.store_url, config.status, refresh, toast]);
+
+  if (authLoading) {
+    return (
+      <AppLayout
+        title="WooCommerce"
+        breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'WooCommerce' }]}
+      >
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <AppLayout
+        title="WooCommerce"
+        breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'WooCommerce' }]}
+      >
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <Shield className="mx-auto h-12 w-12 text-red-500" />
+            <h1 className="mb-4 text-2xl font-bold text-gray-900">Authentication Required</h1>
+            <p className="text-gray-600">Please sign in to access the WooCommerce integration.</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (loading) {
     return (
@@ -686,11 +892,11 @@ export default function WooPage() {
                       autoComplete="new-password"
                       value={config.consumer_key}
                       onChange={e => setConfig(prev => ({ ...prev, consumer_key: e.target.value }))}
-                      placeholder="ck_..."
+                      placeholder={config.id ? "Leave blank to keep existing credentials" : "ck_..."}
                     />
                     <p className="text-muted-foreground text-xs">
                       Your WooCommerce REST API consumer key (found in WooCommerce → Settings →
-                      Advanced → REST API)
+                      Advanced → REST API). {config.id && 'Leave blank to preserve existing credentials.'}
                     </p>
                   </div>
 
@@ -704,10 +910,10 @@ export default function WooPage() {
                       onChange={e =>
                         setConfig(prev => ({ ...prev, consumer_secret: e.target.value }))
                       }
-                      placeholder="cs_..."
+                      placeholder={config.id ? "Leave blank to keep existing credentials" : "cs_..."}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Your WooCommerce REST API consumer secret
+                      Your WooCommerce REST API consumer secret. {config.id && 'Leave blank to preserve existing credentials.'}
                     </p>
                   </div>
 
@@ -735,7 +941,7 @@ export default function WooPage() {
                         </>
                       )}
                     </Button>
-                    <Button type="submit" disabled={saving || !orgId}>
+                    <Button type="submit" disabled={saving || !orgIdValidated}>
                       {saving ? (
                         <>
                           <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -752,7 +958,7 @@ export default function WooPage() {
                       <Button
                         type="button"
                         onClick={handleBulkSync}
-                        disabled={bulkSyncing || !orgId}
+                        disabled={bulkSyncing || !orgIdValidated}
                         variant="default"
                         className="ml-auto"
                       >
@@ -855,7 +1061,7 @@ export default function WooPage() {
 
                 <div className="flex justify-end gap-2 border-t pt-4">
                   <Button variant="outline">Cancel</Button>
-                  <Button onClick={handleSaveConfiguration} disabled={saving || !orgId}>
+                  <Button onClick={handleSaveConfiguration} disabled={saving || !orgIdValidated}>
                     {saving ? 'Saving...' : 'Save Settings'}
                   </Button>
                 </div>
@@ -874,17 +1080,21 @@ export default function WooPage() {
                       variant="outline"
                       onClick={async () => {
                         setEntity(tabEntity);
-                        if (!orgId) return;
+                        if (!orgIdValidated || !isAuthenticated) return;
                         setDataLoading(true);
                         try {
                           const r = await fetch(`/api/v1/integrations/woocommerce/preview/refresh`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'x-org-id': orgIdValidated,
+                              'x-csrf-token': await CSRFProtection.getToken(),
+                            },
                             body: JSON.stringify({ entities: [tabEntity] }),
                           });
                           if (!r.ok) throw new Error(`Refresh failed: ${r.status}`);
                           const res = await fetch(
-                            `/api/v1/integrations/woocommerce/table?entity=${tabEntity}&orgId=${orgId}&page=1&pageSize=50`
+                            `/api/v1/integrations/woocommerce/table?entity=${tabEntity}&orgId=${orgIdValidated}&page=1&pageSize=50`
                           );
                           const json = await res.json();
                           setRows(json.data || []);
@@ -967,18 +1177,31 @@ export default function WooPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Select</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead className="w-12">Select</TableHead>
+                            <TableHead className="w-20">Status</TableHead>
                             {tabEntity === 'products' && (
                               <>
-                                <TableHead>SKU</TableHead>
-                                <TableHead>Name</TableHead>
+                                <TableHead className="w-32">SKU</TableHead>
+                                <TableHead className="min-w-[200px]">Name</TableHead>
+                                <TableHead className="w-32">Regular Price</TableHead>
+                                <TableHead className="w-32">Sale Price</TableHead>
+                                <TableHead className="w-24">SOH</TableHead>
+                                <TableHead className="w-24">Stock Status</TableHead>
+                                <TableHead className="min-w-[150px]">Category</TableHead>
+                                <TableHead className="min-w-[150px]">Tags</TableHead>
+                                <TableHead className="w-32">Brand</TableHead>
+                                <TableHead className="w-32">Type</TableHead>
+                                <TableHead className="w-24">On Sale</TableHead>
                               </>
                             )}
                             {tabEntity === 'orders' && (
                               <>
                                 <TableHead>Order</TableHead>
                                 <TableHead>State</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Payment</TableHead>
                               </>
                             )}
                             {tabEntity === 'customers' && (
@@ -993,7 +1216,7 @@ export default function WooPage() {
                                 <TableHead>Slug</TableHead>
                               </>
                             )}
-                            <TableHead>External ID</TableHead>
+                            <TableHead className="w-24">External ID</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1006,23 +1229,91 @@ export default function WooPage() {
                                   onChange={() => toggleSelect(r.external_id)}
                                 />
                               </TableCell>
-                              <TableCell>{r.status}</TableCell>
+                              <TableCell>
+                                <Badge variant={r.status === 'new' ? 'default' : r.status === 'updated' ? 'secondary' : 'outline'}>
+                                  {r.status}
+                                </Badge>
+                              </TableCell>
                               {tabEntity === 'products' && (
                                 <>
-                                  <TableCell>{r.display?.sku || ''}</TableCell>
-                                  <TableCell>{r.display?.name || ''}</TableCell>
+                                  <TableCell className="font-mono text-sm">{r.sku || r.display?.sku || ''}</TableCell>
+                                  <TableCell className="font-medium">{r.name || r.display?.name || ''}</TableCell>
+                                  <TableCell className="font-mono">
+                                    {r.regular_price !== null && r.regular_price !== undefined
+                                      ? `R ${r.regular_price.toFixed(2)}`
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-green-600">
+                                    {r.sale_price !== null && r.sale_price !== undefined
+                                      ? `R ${r.sale_price.toFixed(2)}`
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-center">
+                                    {r.stock_quantity !== null && r.stock_quantity !== undefined ? r.stock_quantity : '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant={
+                                        r.stock_status === 'instock'
+                                          ? 'default'
+                                          : r.stock_status === 'outofstock'
+                                            ? 'destructive'
+                                            : 'secondary'
+                                      }
+                                    >
+                                      {r.stock_status || '-'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-sm">{r.category_names || '-'}</TableCell>
+                                  <TableCell className="text-sm">{r.tag_names || '-'}</TableCell>
+                                  <TableCell className="text-sm">{r.brand || '-'}</TableCell>
+                                  <TableCell className="text-sm">{r.type || '-'}</TableCell>
+                                  <TableCell className="text-center">
+                                    {r.on_sale ? (
+                                      <Badge variant="default" className="bg-green-600">
+                                        Yes
+                                      </Badge>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </TableCell>
                                 </>
                               )}
                               {tabEntity === 'orders' && (
                                 <>
-                                  <TableCell>{r.display?.order_number || ''}</TableCell>
-                                  <TableCell>{r.display?.status || ''}</TableCell>
+                                  <TableCell>{r.display?.order_number || r.raw?.number || ''}</TableCell>
+                                  <TableCell>{r.display?.status || r.raw?.status || ''}</TableCell>
+                                  <TableCell className="font-mono text-sm">
+                                    {r.raw?.currency && r.raw?.total
+                                      ? `${r.raw.currency} ${parseFloat(r.raw.total).toFixed(2)}`
+                                      : r.raw?.total || ''}
+                                  </TableCell>
+                                  <TableCell>
+                                    {r.display?.customer_email ||
+                                      r.raw?.billing?.email ||
+                                      r.raw?.customer_email ||
+                                      ''}
+                                  </TableCell>
+                                  <TableCell>
+                                    {r.raw?.date_created
+                                      ? new Date(r.raw.date_created).toLocaleString()
+                                      : ''}
+                                  </TableCell>
+                                  <TableCell>
+                                    {r.display?.payment_method ||
+                                      r.raw?.payment_method_title ||
+                                      r.raw?.payment_method ||
+                                      ''}
+                                  </TableCell>
                                 </>
                               )}
                               {tabEntity === 'customers' && (
                                 <>
-                                  <TableCell>{r.display?.email || ''}</TableCell>
-                                  <TableCell>{r.display?.name || ''}</TableCell>
+                                  <TableCell>{r.display?.email || r.raw?.email || ''}</TableCell>
+                                  <TableCell>
+                                    {r.display?.name ||
+                                      `${r.raw?.first_name || ''} ${r.raw?.last_name || ''}`.trim()}
+                                  </TableCell>
                                 </>
                               )}
                               {tabEntity === 'categories' && (
@@ -1031,7 +1322,7 @@ export default function WooPage() {
                                   <TableCell>{r.display?.slug || ''}</TableCell>
                                 </>
                               )}
-                              <TableCell>{r.external_id}</TableCell>
+                              <TableCell className="font-mono text-xs">{r.external_id}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

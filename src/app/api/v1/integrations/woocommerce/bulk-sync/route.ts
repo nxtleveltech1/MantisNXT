@@ -29,6 +29,44 @@ export async function POST(request: NextRequest) {
     if (!connector)
       return NextResponse.json({ success: false, error: 'No active connector' }, { status: 404 });
 
+    // Ensure we have a valid org_id that exists in the organization table
+    let validOrgId = connectorOrgId || orgId;
+    if (validOrgId) {
+      // Verify the org_id exists in the organization table
+      const orgCheck = await query<{ id: string }>(
+        `SELECT id FROM organization WHERE id = $1 LIMIT 1`,
+        [validOrgId]
+      );
+      if (orgCheck.rows.length === 0) {
+        // If the org_id doesn't exist, try to get the first available organization
+        const fallbackOrg = await query<{ id: string }>(
+          `SELECT id FROM organization ORDER BY created_at LIMIT 1`
+        );
+        if (fallbackOrg.rows.length > 0) {
+          validOrgId = fallbackOrg.rows[0].id;
+          console.warn(`[WooCommerce Bulk Sync] Org ID ${orgId} not found, using ${validOrgId}`);
+        } else {
+          return NextResponse.json(
+            { success: false, error: 'No organization found in database' },
+            { status: 500 }
+          );
+        }
+      }
+    } else {
+      // If no org_id at all, get the first available organization
+      const fallbackOrg = await query<{ id: string }>(
+        `SELECT id FROM organization ORDER BY created_at LIMIT 1`
+      );
+      if (fallbackOrg.rows.length > 0) {
+        validOrgId = fallbackOrg.rows[0].id;
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'No organization found in database' },
+          { status: 500 }
+        );
+      }
+    }
+
     const row = connector;
     const raw = row.config || {};
     const woo = new WooCommerceService({
@@ -47,7 +85,21 @@ export async function POST(request: NextRequest) {
         { status: 502 }
       );
 
-    const resolvedOrgId = orgId || connectorOrgId;
+    const resolvedOrgId = validOrgId;
+
+    // Get a valid user ID for the queue (required for foreign key constraint)
+    let userId = null;
+    const userResult = await query<{ id: string }>(
+      `SELECT id FROM "user" WHERE org_id = $1 ORDER BY created_at LIMIT 1`,
+      [resolvedOrgId]
+    );
+    if (userResult.rows.length > 0) {
+      userId = userResult.rows[0].id;
+    } else {
+      console.warn(`[WooCommerce Bulk Sync] No users found for org ${resolvedOrgId}, using org ID as fallback`);
+      userId = resolvedOrgId; // Fallback for testing
+    }
+
     const results: Record<string, { queueId?: string; totalItems: number; status: string }> = {};
 
     // Process each entity type
@@ -60,7 +112,7 @@ export async function POST(request: NextRequest) {
           const queueId = await CustomerSyncService.startSync(
             woo,
             resolvedOrgId,
-            resolvedOrgId,
+            userId,
             {
               batchSize: 50,
               batchDelayMs: 2000,

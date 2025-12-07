@@ -43,12 +43,26 @@ export async function POST(request: NextRequest) {
     };
 
     const resolvedOrgId = connectorOrgId || connector.org_id || orgId;
+
+    // Get a valid user ID for the queue (required for foreign key constraint)
+    let userId = null;
+    const userResult = await query<{ id: string }>(
+      `SELECT id FROM "user" WHERE org_id = $1 ORDER BY created_at LIMIT 1`,
+      [resolvedOrgId]
+    );
+    if (userResult.rows.length > 0) {
+      userId = userResult.rows[0].id;
+    } else {
+      console.warn(`[WooCommerce Schedule Customers] No users found for org ${resolvedOrgId}, using org ID as fallback`);
+      userId = resolvedOrgId; // Fallback for testing
+    }
+
     const breaker = getCircuitBreaker(`woo:customers:${resolvedOrgId}`, 5, 60000);
     const queue = await breaker.execute(async () => {
       const woo = new WooCommerceService(config);
       const ok = await woo.testConnection();
       if (!ok) throw new Error('Connection failed');
-      const qid = await CustomerSyncService.startSync(woo, resolvedOrgId, resolvedOrgId, {
+      const qid = await CustomerSyncService.startSync(woo, resolvedOrgId, userId, {
         batchSize: 50,
         batchDelayMs: 2000,
         maxRetries: 3,

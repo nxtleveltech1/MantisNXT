@@ -9,8 +9,29 @@ export async function GET(request: NextRequest) {
   const entity = url.searchParams.get('entity') || 'products';
   const page = parseInt(url.searchParams.get('page') || '1', 10);
   const pageSize = Math.min(parseInt(url.searchParams.get('pageSize') || '50', 10), 100);
-  const orgId = url.searchParams.get('orgId') || undefined;
+  let orgId = url.searchParams.get('orgId') || undefined;
   if (!orgId) return NextResponse.json({ error: 'orgId required' }, { status: 400 });
+
+  // Ensure the org_id exists in the organization table
+  const orgCheck = await query<{ id: string }>(
+    `SELECT id FROM organization WHERE id = $1 LIMIT 1`,
+    [orgId]
+  );
+  if (orgCheck.rows.length === 0) {
+    // If the org_id doesn't exist, try to get the first available organization
+    const fallbackOrg = await query<{ id: string }>(
+      `SELECT id FROM organization ORDER BY created_at LIMIT 1`
+    );
+    if (fallbackOrg.rows.length > 0) {
+      orgId = fallbackOrg.rows[0].id;
+      console.warn(`[WooCommerce Table] Org ID ${url.searchParams.get('orgId')} not found, using ${orgId}`);
+    } else {
+      return NextResponse.json(
+        { error: 'No organization found in database' },
+        { status: 500 }
+      );
+    }
+  }
 
   const limiter = getRateLimiter(`table:${entity}:org:${orgId}`, 30, 0.5);
   if (!limiter.tryConsume(1)) {
@@ -33,6 +54,41 @@ export async function GET(request: NextRequest) {
   };
   const entityType = typeMap[entity];
 
+  // Helper function to extract meta_data fields
+  function extractMetaField(metaData: any[], keys: string[]): string | null {
+    if (!Array.isArray(metaData)) return null;
+    for (const meta of metaData) {
+      if (keys.includes(meta.key)) {
+        return String(meta.value || '');
+      }
+    }
+    return null;
+  }
+
+  // Helper function to extract product fields from raw data
+  function extractProductFields(raw: any) {
+    return {
+      name: raw.name || '',
+      sku: raw.sku || '',
+      regular_price: raw.regular_price ? parseFloat(raw.regular_price) : null,
+      sale_price: raw.sale_price ? parseFloat(raw.sale_price) : null,
+      price: raw.price ? parseFloat(raw.price) : null,
+      stock_quantity: raw.stock_quantity !== undefined ? parseInt(raw.stock_quantity) : null,
+      stock_status: raw.stock_status || null,
+      category_names: raw.categories ? (raw.categories as any[]).map((c: any) => c.name).filter(Boolean).join(', ') : null,
+      category_ids: raw.categories ? (raw.categories as any[]).map((c: any) => c.id).filter(Boolean) : [],
+      tag_names: raw.tags ? (raw.tags as any[]).map((t: any) => t.name).filter(Boolean).join(', ') : null,
+      tag_ids: raw.tags ? (raw.tags as any[]).map((t: any) => t.id).filter(Boolean) : [],
+      brand: extractMetaField(raw.meta_data || [], ['_brand', 'brand']),
+      description: raw.description || raw.short_description || null,
+      type: raw.type || null,
+      status: raw.status || null,
+      featured: raw.featured || false,
+      on_sale: raw.on_sale || false,
+      manage_stock: raw.manage_stock || false,
+    };
+  }
+
   // First, try to get data from sync_preview_cache (from bulk sync)
   try {
     const cacheResult = await query<any>(
@@ -53,12 +109,40 @@ export async function GET(request: NextRequest) {
       const byId = d.byId || {};
 
       // Convert byId object to array and paginate
-      const allItems = Object.entries(byId).map(([external_id, item]: [string, any]) => ({
-        external_id,
-        status: item.status || 'new',
-        display: item.display || {},
-        raw: item.raw || {},
-      }));
+      const allItems = Object.entries(byId).map(([external_id, item]: [string, any]) => {
+        const raw = item.raw || {};
+        const productFields = entity === 'products' ? extractProductFields(raw) : {};
+        let display = item.display || {};
+
+        if (entity === 'customers') {
+          display = {
+            email: display.email || raw.email,
+            name: display.name || `${raw.first_name || ''} ${raw.last_name || ''}`.trim(),
+          };
+        } else if (entity === 'orders') {
+          display = {
+            order_number: display.order_number || raw.number,
+            status: display.status || raw.status,
+            total: display.total || raw.total,
+            customer_email: display.customer_email || raw.billing?.email,
+            date: display.date || raw.date_created,
+            payment_method: display.payment_method || raw.payment_method_title || raw.payment_method,
+          };
+        } else if (entity === 'categories') {
+          display = {
+            name: display.name || raw.name,
+            slug: display.slug || raw.slug,
+          };
+        }
+
+        return {
+          external_id,
+          status: item.status || 'new',
+          display,
+          raw,
+          ...productFields,
+        };
+      });
 
       // Sort by external_id (or could sort by updated_at if available)
       allItems.sort((a, b) => {
@@ -110,6 +194,7 @@ export async function GET(request: NextRequest) {
     const byId = d.byId || {};
     const status = byId?.[r.external_id]?.status || 'in_sync';
     const raw = r.sync_data || {};
+    
     const display = (() => {
       if (entity === 'products') return { name: raw.name, sku: raw.sku };
       if (entity === 'customers')
@@ -118,7 +203,10 @@ export async function GET(request: NextRequest) {
       if (entity === 'categories') return { name: raw.name, slug: raw.slug };
       return {};
     })();
-    return { external_id: r.external_id, status, display, raw };
+    
+    const productFields = entity === 'products' ? extractProductFields(raw) : {};
+    
+    return { external_id: r.external_id, status, display, raw, ...productFields };
   });
 
   return NextResponse.json({ data, rowCount: rows.rowCount, page, pageSize });

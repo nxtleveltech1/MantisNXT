@@ -177,14 +177,40 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // First, fetch the existing config to preserve credentials if not provided
+    const existingResult = await query<{ config: any }>(
+      `SELECT config FROM integration_connector WHERE id = $1 AND provider = 'woocommerce' AND org_id = $2`,
+      [body.id, orgId]
+    );
+
+    if (existingResult.rows.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Configuration not found',
+        },
+        { status: 404 }
+      );
+    }
+
+    const existingConfig = existingResult.rows[0].config || {};
+
+    // Only update credentials if new ones are provided (non-empty strings)
+    // This prevents overwriting saved credentials when user doesn't re-enter them
+    // Handle both undefined (not sent) and empty string cases
+    const hasNewConsumerKey =
+      body.consumer_key !== undefined && body.consumer_key !== null && body.consumer_key.trim() !== '';
+    const hasNewConsumerSecret =
+      body.consumer_secret !== undefined && body.consumer_secret !== null && body.consumer_secret.trim() !== '';
+
     const config = {
-      store_url: body.store_url,
-      consumer_key: body.consumer_key,
-      consumer_secret: body.consumer_secret,
-      auto_sync_products: body.auto_sync_products,
-      auto_import_orders: body.auto_import_orders,
-      sync_customers: body.sync_customers,
-      sync_frequency: body.sync_frequency,
+      store_url: body.store_url || existingConfig.store_url,
+      consumer_key: hasNewConsumerKey ? body.consumer_key : existingConfig.consumer_key || '',
+      consumer_secret: hasNewConsumerSecret ? body.consumer_secret : existingConfig.consumer_secret || '',
+      auto_sync_products: body.auto_sync_products ?? existingConfig.auto_sync_products ?? true,
+      auto_import_orders: body.auto_import_orders ?? existingConfig.auto_import_orders ?? true,
+      sync_customers: body.sync_customers ?? existingConfig.sync_customers ?? true,
+      sync_frequency: body.sync_frequency ?? existingConfig.sync_frequency ?? 60,
     };
 
     const sql = `

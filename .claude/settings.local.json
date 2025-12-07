@@ -55,7 +55,8 @@
       "Bash(npx tsx scripts/apply-extraction-migrations.ts)",
       "Bash(npx tsx:*)",
       "Bash(src/components/supplier-portfolio/EnhancedPricelistUpload.tsx.restored)",
-      "Bash(src/app/nxt-spp/page.tsx.restored)"
+      "Bash(src/app/nxt-spp/page.tsx.restored)",
+      "Bash(npm run dev)"
     ],
     "deny": [],
     "ask": []
