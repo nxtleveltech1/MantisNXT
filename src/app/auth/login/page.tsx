@@ -132,7 +132,7 @@ export default function LoginPage() {
             style={{
               backgroundImage: 'url(/images/login-background.jpg)',
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: '45% center',
               backgroundRepeat: 'no-repeat',
             }}
           />
@@ -210,7 +210,7 @@ export default function LoginPage() {
           style={{
             backgroundImage: 'url(/images/login-background.jpg)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: '45% center',
             backgroundRepeat: 'no-repeat',
           }}
         />
