@@ -104,7 +104,7 @@ function UniversalSearch() {
         <Button
           variant="outline"
           className={cn(
-            'relative h-9 w-full justify-start text-sm text-muted-foreground sm:w-48 md:w-56 lg:w-64'
+            'relative h-9 w-full justify-start text-sm text-muted-foreground sm:w-64 md:w-80 lg:w-96'
           )}
           onClick={() => setIsOpen(true)}
         >
@@ -209,7 +209,7 @@ function UniversalSearch() {
 
 // Notifications Component
 function NotificationBell() {
-  const [notificationCount, setNotificationCount] = useState(3); // Mock count
+  const [notificationCount] = useState(3); // Mock count
 
   return (
     <DropdownMenu>
@@ -379,7 +379,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
 
       {/* Right: Action Icons */}
       <div className="flex flex-1 items-center justify-end gap-1">
-        <div className="hidden lg:block mr-2">
+        <div className="hidden lg:block mr-4">
           <UniversalSearch />
         </div>
         {/* Mobile Search - shown when center search is hidden */}
