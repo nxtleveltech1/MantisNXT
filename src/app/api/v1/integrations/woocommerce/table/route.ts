@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
         if (entity === 'customers') {
           display = {
-            email: display.email || raw.email,
+            email: display.email || raw.email || raw.billing?.email || raw.shipping?.email || '-',
             name: display.name || `${raw.first_name || ''} ${raw.last_name || ''}`.trim(),
           };
         } else if (entity === 'orders') {

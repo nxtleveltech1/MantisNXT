@@ -46,6 +46,7 @@ interface WooCommerceConfig {
   store_url: string;
   consumer_key: string;
   consumer_secret: string;
+  has_credentials?: boolean;
   status: 'active' | 'inactive' | 'error';
   auto_sync_products: boolean;
   auto_import_orders: boolean;
@@ -63,6 +64,7 @@ export default function WooPage() {
     store_url: '',
     consumer_key: '',
     consumer_secret: '',
+    has_credentials: false,
     status: 'inactive',
     auto_sync_products: true,
     auto_import_orders: true,
@@ -170,6 +172,7 @@ export default function WooPage() {
           store_url: data.data.store_url || '',
           consumer_key: '', // Never expose in UI
           consumer_secret: '', // Never expose in UI
+          has_credentials: data.data.has_credentials ?? false,
           status: data.data.status || 'inactive',
           auto_sync_products: data.data.auto_sync_products ?? true,
           auto_import_orders: data.data.auto_import_orders ?? true,
@@ -262,6 +265,7 @@ export default function WooPage() {
           ...prev,
           id: data.data.id,
           store_url: data.data.store_url,
+          has_credentials: data.data.has_credentials ?? prev.has_credentials,
           status: data.data.status,
           auto_sync_products: data.data.auto_sync_products,
           auto_import_orders: data.data.auto_import_orders,
@@ -288,20 +292,37 @@ export default function WooPage() {
   };
 
   const handleTestConnection = async () => {
-    if (!config.store_url || !config.consumer_key || !config.consumer_secret) {
+    const sanitizedUrl = InputValidator.sanitizeInput(config.store_url);
+    const usingStoredCredentials =
+      !!config.has_credentials && !config.consumer_key && !config.consumer_secret;
+
+    if (!sanitizedUrl || (!usingStoredCredentials && (!config.consumer_key || !config.consumer_secret))) {
       toast({
         title: 'Missing Fields',
-        description: 'Please fill in all connection fields before testing.',
+        description: usingStoredCredentials
+          ? 'Store URL is required to test your saved connection.'
+          : 'Please fill in all connection fields before testing.',
         variant: 'destructive',
       });
       return;
     }
 
-    // Input validation
-    const sanitizedUrl = InputValidator.sanitizeInput(config.store_url);
     const isValidUrl = InputValidator.validateUrl(sanitizedUrl);
-    const isValidKey = InputValidator.validateConsumerKey(config.consumer_key);
-    const isValidSecret = InputValidator.validateConsumerSecret(config.consumer_secret);
+    const isValidKey = usingStoredCredentials
+      ? true
+      : InputValidator.validateConsumerKey(config.consumer_key);
+    const isValidSecret = usingStoredCredentials
+      ? true
+      : InputValidator.validateConsumerSecret(config.consumer_secret);
+
+    if (usingStoredCredentials && !orgIdValidated) {
+      toast({
+        title: 'Organization Required',
+        description: 'Please sign in again to test with saved credentials.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!sanitizedUrl || !isValidUrl) {
       toast({
@@ -332,17 +353,24 @@ export default function WooPage() {
 
     setTesting(true);
     try {
+      const csrfToken = await CSRFProtection.getToken();
+      const payload: Record<string, unknown> = { store_url: sanitizedUrl };
+
+      if (usingStoredCredentials) {
+        payload.useStoredCredentials = true;
+      } else {
+        payload.consumer_key = config.consumer_key;
+        payload.consumer_secret = config.consumer_secret;
+      }
+
       const response = await fetch('/api/v1/integrations/woocommerce/test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': await CSRFProtection.getToken(),
+          'x-csrf-token': csrfToken,
+          ...(orgIdValidated ? { 'x-org-id': orgIdValidated } : {}),
         },
-        body: JSON.stringify({
-          store_url: sanitizedUrl,
-          consumer_key: config.consumer_key,
-          consumer_secret: config.consumer_secret,
-        }),
+        body: JSON.stringify(payload),
       });
 
       let data;
@@ -362,7 +390,12 @@ export default function WooPage() {
         });
 
         // Update status to active BEFORE saving
-        const updatedConfig = { ...config, status: 'active' as const, store_url: sanitizedUrl };
+        const updatedConfig = {
+          ...config,
+          status: 'active' as const,
+          store_url: sanitizedUrl,
+          has_credentials: true,
+        };
         setConfig(updatedConfig);
       } else {
         throw new Error(data.error || 'Connection test failed');
@@ -922,10 +955,10 @@ export default function WooPage() {
                       type="button"
                       onClick={handleTestConnection}
                       disabled={
+                        testing ||
                         !config.store_url ||
-                        !config.consumer_key ||
-                        !config.consumer_secret ||
-                        testing
+                        (!config.has_credentials &&
+                          (!config.consumer_key || !config.consumer_secret))
                       }
                       variant="outline"
                     >
@@ -1284,9 +1317,9 @@ export default function WooPage() {
                                   <TableCell>{r.display?.order_number || r.raw?.number || ''}</TableCell>
                                   <TableCell>{r.display?.status || r.raw?.status || ''}</TableCell>
                                   <TableCell className="font-mono text-sm">
-                                    {r.raw?.currency && r.raw?.total
-                                      ? `${r.raw.currency} ${parseFloat(r.raw.total).toFixed(2)}`
-                                      : r.raw?.total || ''}
+                                    {r.raw?.total !== null && r.raw?.total !== undefined && r.raw.total !== ''
+                                      ? `${r.raw?.currency || '$'} ${parseFloat(r.raw.total).toFixed(2)}`
+                                      : '-'}
                                   </TableCell>
                                   <TableCell>
                                     {r.display?.customer_email ||

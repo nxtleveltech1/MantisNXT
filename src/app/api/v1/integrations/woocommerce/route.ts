@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
         (config->>'auto_sync_products')::boolean as auto_sync_products,
         (config->>'auto_import_orders')::boolean as auto_import_orders,
         (config->>'sync_customers')::boolean as sync_customers,
-        (config->>'sync_frequency')::int as sync_frequency
+        (config->>'sync_frequency')::int as sync_frequency,
+        (config->>'consumer_key') is not null and config->>'consumer_key' != '' as has_consumer_key,
+        (config->>'consumer_secret') is not null and config->>'consumer_secret' != '' as has_consumer_secret
       FROM integration_connector
       WHERE provider = 'woocommerce' AND org_id = $1
       ORDER BY created_at DESC
@@ -62,6 +64,16 @@ export async function GET(request: NextRequest) {
     }
 
     const row: any = result.rows[0];
+    const credentialCheck = await query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM woocommerce_credentials
+         WHERE org_id = $1
+           AND connector_id IN ($2, 'woocommerce')
+           AND (expires_at IS NULL OR expires_at > NOW())
+       ) as exists`,
+      [orgId, row.id]
+    );
+
     const masked = {
       id: row.id,
       name: row.name,
@@ -71,6 +83,11 @@ export async function GET(request: NextRequest) {
       auto_import_orders: row.auto_import_orders,
       sync_customers: row.sync_customers,
       sync_frequency: row.sync_frequency,
+      has_credentials:
+        row.has_consumer_key ||
+        row.has_consumer_secret ||
+        credentialCheck.rows[0]?.exists ||
+        false,
     };
     return NextResponse.json({ success: true, data: masked });
   } catch (error: unknown) {
@@ -147,6 +164,7 @@ export async function POST(request: NextRequest) {
       auto_import_orders: row.auto_import_orders,
       sync_customers: row.sync_customers,
       sync_frequency: row.sync_frequency,
+      has_credentials: Boolean(body.consumer_key && body.consumer_secret),
     };
     return NextResponse.json({ success: true, data: masked });
   } catch (error: unknown) {
@@ -260,6 +278,7 @@ export async function PUT(request: NextRequest) {
       auto_import_orders: row.auto_import_orders,
       sync_customers: row.sync_customers,
       sync_frequency: row.sync_frequency,
+      has_credentials: Boolean(config.consumer_key && config.consumer_secret),
     };
     return NextResponse.json({ success: true, data: masked });
   } catch (error: unknown) {
