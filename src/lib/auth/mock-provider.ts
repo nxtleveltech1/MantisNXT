@@ -303,7 +303,7 @@ export class MockAuthProvider implements AuthProvider {
     // Set current user and session
     this.currentUser = user;
     this.sessionToken = `mock-token-${user.id}-${Date.now()}`;
-    
+
     // Persist session to localStorage
     this.saveSession(user, this.sessionToken);
 
@@ -321,6 +321,11 @@ export class MockAuthProvider implements AuthProvider {
     this.sessionToken = null;
     // Clear persisted session
     this.saveSession(null, null);
+  }
+
+  // Alias for logout - used by auth-context
+  async signOut(): Promise<void> {
+    return this.logout();
   }
 
   async register(data: RegistrationData): Promise<AuthResult> {
@@ -410,7 +415,7 @@ export class MockAuthProvider implements AuthProvider {
     newUser.email_verified = true;
     this.currentUser = newUser;
     this.sessionToken = `mock-token-${newUser.id}-${Date.now()}`;
-    
+
     // Persist session to localStorage
     this.saveSession(newUser, this.sessionToken);
 
