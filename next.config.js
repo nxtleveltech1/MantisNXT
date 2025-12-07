@@ -2,10 +2,7 @@
 const path = require('path');
 
 const nextConfig = {
-  eslint: {
-    // Skip linting during production builds to avoid blocking deploys on warnings
-    ignoreDuringBuilds: true,
-  },
+  // eslint: { ignoreDuringBuilds: true }, // Deprecated in Next.js 16, moved to CLI/build process
   typescript: {
     // Skip TypeScript checking during build - errors documented in TYPESCRIPT_FIXES_NEEDED.md
     // This allows deployment while type errors are being fixed
@@ -14,7 +11,16 @@ const nextConfig = {
     tsconfigPath: './tsconfig.build.json',
   },
   images: {
-    domains: ['localhost', 'cdn.mantisnxt.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.mantisnxt.com',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     unoptimized: process.env.NODE_ENV === 'development', // Disable image optimization in dev to prevent errors
