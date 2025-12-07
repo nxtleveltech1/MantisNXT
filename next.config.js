@@ -168,7 +168,7 @@ const nextConfig = {
 
   // CSS optimization
   experimental: {
-    optimizeCss: true,
+    // optimizeCss: true, // Disabled to prevent syntax errors in production builds
   },
 
   // Configure redirects if needed

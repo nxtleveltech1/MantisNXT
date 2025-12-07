@@ -85,10 +85,7 @@ export const sidebarData = {
           title: 'Supplier Directory',
           url: '/directories/suppliers',
         },
-        {
-          title: 'Performance',
-          url: '/suppliers/performance',
-        },
+
       ],
     },
     {
