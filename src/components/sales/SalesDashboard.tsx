@@ -13,13 +13,31 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { ShoppingCart, TrendingUp, DollarSign } from 'lucide-react';
 import { SalesDashboardData } from '@/lib/sales/analytics-service';
+import { CHART_COLORS, SALES_COLORS, GRADIENT_PAIRS } from '@/lib/colors';
 
 interface SalesDashboardProps {
     channel: 'online' | 'in-store' | 'all';
     title: string;
 }
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-3 shadow-xl">
+                <p className="mb-1 text-sm font-medium text-white">{label}</p>
+                {payload.map((entry: any, index: number) => (
+                    <p key={index} className="text-sm" style={{ color: entry.color }}>
+                        R {entry.value.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                    </p>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
 
 export default function SalesDashboard({ channel, title }: SalesDashboardProps) {
     const [data, setData] = useState<SalesDashboardData | null>(null);
@@ -49,7 +67,7 @@ export default function SalesDashboard({ channel, title }: SalesDashboardProps) 
 
     if (error) {
         return (
-            <div className="p-4 text-red-500 bg-red-50 rounded border border-red-200">
+            <div className="p-4 rounded border" style={{ backgroundColor: `${CHART_COLORS[0]}10`, borderColor: `${CHART_COLORS[0]}40`, color: CHART_COLORS[0] }}>
                 Error loading sales data: {error}
             </div>
         );
@@ -57,49 +75,64 @@ export default function SalesDashboard({ channel, title }: SalesDashboardProps) 
 
     const { summary, trend, recentOrders } = data!;
 
+    // Get channel-specific color
+    const channelColor = channel === 'online' ? SALES_COLORS.online : channel === 'in-store' ? SALES_COLORS.inStore : SALES_COLORS.total;
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
                 <div className="flex items-center space-x-2">
-                    <Badge variant={channel === 'online' ? 'default' : channel === 'in-store' ? 'secondary' : 'outline'}>
+                    <Badge
+                        style={{
+                            backgroundColor: `${channelColor}20`,
+                            color: channelColor,
+                            borderColor: `${channelColor}40`
+                        }}
+                    >
                         {channel === 'all' ? 'All Channels' : channel === 'online' ? 'Online Store' : 'In-Store POS'}
                     </Badge>
                 </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Card>
+                <Card style={{ borderLeftWidth: '4px', borderLeftColor: SALES_COLORS.total }}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <DollarSign className="h-4 w-4" style={{ color: SALES_COLORS.total }} />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${summary.totalSales.toLocaleString()}</div>
+                        <div className="text-2xl font-bold" style={{ color: SALES_COLORS.total }}>
+                            R{summary.totalSales.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             Across all {channel === 'all' ? 'channels' : 'transactions'}
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card style={{ borderLeftWidth: '4px', borderLeftColor: SALES_COLORS.orders }}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                        <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                        <ShoppingCart className="h-4 w-4" style={{ color: SALES_COLORS.orders }} />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{summary.orderCount.toLocaleString()}</div>
+                        <div className="text-2xl font-bold" style={{ color: SALES_COLORS.orders }}>
+                            {summary.orderCount.toLocaleString()}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             Total completed orders
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card style={{ borderLeftWidth: '4px', borderLeftColor: SALES_COLORS.trend }}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <TrendingUp className="h-4 w-4" style={{ color: SALES_COLORS.trend }} />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${summary.avgOrderValue.toFixed(2)}</div>
+                        <div className="text-2xl font-bold" style={{ color: SALES_COLORS.trend }}>
+                            R{summary.avgOrderValue.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             Per transaction
                         </p>
@@ -115,10 +148,41 @@ export default function SalesDashboard({ channel, title }: SalesDashboardProps) 
                     <CardContent className="pl-2">
                         <ResponsiveContainer width="100%" height={350}>
                             <LineChart data={trend}>
-                                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                <Tooltip />
-                                <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
+                                <defs>
+                                    <linearGradient id="salesLineGradient" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stopColor="#FF00FF" />
+                                        <stop offset="15%" stopColor="#BF00FF" />
+                                        <stop offset="30%" stopColor="#00BFFF" />
+                                        <stop offset="50%" stopColor="#00FFFF" />
+                                        <stop offset="65%" stopColor="#39FF14" />
+                                        <stop offset="80%" stopColor="#FFFF00" />
+                                        <stop offset="100%" stopColor="#FF6600" />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="hsl(var(--muted-foreground))"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    stroke="hsl(var(--muted-foreground))"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(value) => `R${(value / 1000).toFixed(0)}K`}
+                                />
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="value"
+                                    stroke="url(#salesLineGradient)"
+                                    strokeWidth={3}
+                                    dot={{ fill: channelColor, strokeWidth: 2, stroke: 'white', r: 4 }}
+                                    activeDot={{ fill: channelColor, strokeWidth: 2, stroke: 'white', r: 6 }}
+                                />
                             </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -127,7 +191,7 @@ export default function SalesDashboard({ channel, title }: SalesDashboardProps) 
                     <CardHeader>
                         <CardTitle>Recent Orders</CardTitle>
                         <div className="text-sm text-muted-foreground">
-                            Latest transactions from {channel}
+                            Latest transactions from {channel === 'all' ? 'all channels' : channel}
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -135,17 +199,26 @@ export default function SalesDashboard({ channel, title }: SalesDashboardProps) 
                             {recentOrders.length === 0 ? (
                                 <div className="text-sm text-muted-foreground">No recent orders found.</div>
                             ) : (
-                                recentOrders.map((order) => (
+                                recentOrders.map((order, index) => (
                                     <div key={order.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium leading-none">{order.orderNumber}</p>
                                             <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge variant={order.status === 'completed' ? 'default' : 'secondary'} className="text-[10px] px-1 py-0 h-5">
+                                            <Badge
+                                                style={{
+                                                    backgroundColor: order.status === 'completed' ? `${SALES_COLORS.total}20` : `${CHART_COLORS[3]}20`,
+                                                    color: order.status === 'completed' ? SALES_COLORS.total : CHART_COLORS[3],
+                                                    fontSize: '10px',
+                                                    padding: '2px 6px'
+                                                }}
+                                            >
                                                 {order.status}
                                             </Badge>
-                                            <div className="font-medium text-sm">${order.total.toFixed(2)}</div>
+                                            <div className="font-medium text-sm" style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>
+                                                R{order.total.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </div>
                                         </div>
                                     </div>
                                 ))
@@ -167,7 +240,7 @@ function DashboardSkeleton() {
             </div>
             <div className="grid gap-4 md:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                    <Card key={i}>
+                    <Card key={i} style={{ borderLeftWidth: '4px', borderLeftColor: CHART_COLORS[i % CHART_COLORS.length] }}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <Skeleton className="h-4 w-20" />
                             <Skeleton className="h-4 w-4" />

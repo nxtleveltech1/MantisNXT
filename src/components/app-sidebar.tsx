@@ -8,12 +8,12 @@ import {
   Building2,
   DollarSign,
   Gift,
-  Layout,
   LayoutDashboard,
-  LineChart,
   MessageSquare,
   Package,
   Plug,
+  ShoppingBag,
+  Tag,
   TrendingUp,
   Users,
   Settings as SettingsIcon,
@@ -89,107 +89,111 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Inventory',
-      url: '/inventory',
-      icon: Package,
+      title: 'Product Management',
+      url: '/catalog/categories',
+      icon: ShoppingBag,
       items: [
         {
-          title: 'Inventory Overview',
+          title: 'Inventory',
           url: '/inventory',
+          icon: Package,
         },
         {
           title: 'Locations',
           url: '/inventory/locations',
         },
-      ],
-    },
-    {
-      title: 'Pricing Optimization',
-      url: '/pricing-optimization',
-      icon: LineChart,
-      items: [
-        {
-          title: 'Overview',
-          url: '/pricing-optimization',
-        },
-        {
-          title: 'Rules',
-          url: '/pricing-optimization/rules',
-        },
-        {
-          title: 'Optimization Runs',
-          url: '/pricing-optimization/optimization',
-        },
-        {
-          title: 'Analytics',
-          url: '/pricing-optimization/analytics',
-        },
-        {
-          title: 'Competitive Intelligence',
-          url: '/pricing-optimization/competitive-intelligence',
-        },
-        {
-          title: 'Competitors',
-          url: '/pricing-optimization/competitive-intelligence/competitors',
-        },
-        {
-          title: 'Scraping Jobs',
-          url: '/pricing-optimization/competitive-intelligence/jobs',
-        },
-        {
-          title: 'Product Matches',
-          url: '/pricing-optimization/competitive-intelligence/matches',
-        },
-        {
-          title: 'Alerts',
-          url: '/pricing-optimization/competitive-intelligence/alerts',
-        },
-        {
-          title: 'Price Positioning',
-          url: '/pricing-optimization/competitive-intelligence/positioning',
-        },
-        {
-          title: 'Price History',
-          url: '/pricing-optimization/competitive-intelligence/history',
-        },
-        {
-          title: 'Trend Analysis',
-          url: '/pricing-optimization/competitive-intelligence/trends',
-        },
-        {
-          title: 'Settings',
-          url: '/pricing-optimization/competitive-intelligence/settings',
-        },
-      ],
-    },
-    {
-      title: 'Categories',
-      url: '/catalog/categories',
-      icon: Layout,
-      items: [
-        {
-          title: 'Dashboard',
-          url: '/catalog/categories',
-        },
-        {
-          title: 'AI Categorization',
-          url: '/catalog/categories/ai-categorization',
-        },
         {
           title: 'Categories',
-          url: '/catalog/categories/categories',
+          url: '/catalog/categories',
+          items: [
+            {
+              title: 'Dashboard',
+              url: '/catalog/categories',
+            },
+            {
+              title: 'AI Categorization',
+              url: '/catalog/categories/ai-categorization',
+            },
+            {
+              title: 'Categories',
+              url: '/catalog/categories/categories',
+            },
+            {
+              title: 'Analytics',
+              url: '/catalog/categories/analytics',
+            },
+            {
+              title: 'Exceptions',
+              url: '/catalog/categories/exceptions',
+            },
+          ],
         },
         {
           title: 'Tags',
           url: '/catalog/tags/ai-tagging',
+          icon: Tag,
         },
         {
-          title: 'Analytics',
-          url: '/catalog/categories/analytics',
+          title: 'Meta Data',
+          url: '/catalog/metadata',
         },
         {
-          title: 'Exceptions',
-          url: '/catalog/categories/exceptions',
+          title: 'Pricing Optimization',
+          url: '/pricing-optimization',
+          items: [
+            {
+              title: 'Overview',
+              url: '/pricing-optimization',
+            },
+            {
+              title: 'Rules',
+              url: '/pricing-optimization/rules',
+            },
+            {
+              title: 'Optimization Runs',
+              url: '/pricing-optimization/optimization',
+            },
+            {
+              title: 'Analytics',
+              url: '/pricing-optimization/analytics',
+            },
+            {
+              title: 'Competitive Intelligence',
+              url: '/pricing-optimization/competitive-intelligence',
+            },
+            {
+              title: 'Competitors',
+              url: '/pricing-optimization/competitive-intelligence/competitors',
+            },
+            {
+              title: 'Scraping Jobs',
+              url: '/pricing-optimization/competitive-intelligence/jobs',
+            },
+            {
+              title: 'Product Matches',
+              url: '/pricing-optimization/competitive-intelligence/matches',
+            },
+            {
+              title: 'Alerts',
+              url: '/pricing-optimization/competitive-intelligence/alerts',
+            },
+            {
+              title: 'Price Positioning',
+              url: '/pricing-optimization/competitive-intelligence/positioning',
+            },
+            {
+              title: 'Price History',
+              url: '/pricing-optimization/competitive-intelligence/history',
+            },
+            {
+              title: 'Trend Analysis',
+              url: '/pricing-optimization/competitive-intelligence/trends',
+            },
+            {
+              title: 'Settings',
+              url: '/pricing-optimization/competitive-intelligence/settings',
+            },
+          ],
         },
       ],
     },

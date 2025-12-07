@@ -1,6 +1,7 @@
 /**
  * Stock Alerts Widget
  * Displays critical, warning, and info level stock alerts
+ * Using MantisNXT vibrant rainbow color palette
  */
 
 'use client';
@@ -12,8 +13,31 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, AlertCircle, Info, Package } from 'lucide-react';
 import { useStockAlerts } from '@/hooks/api/useDashboardWidgets';
 import { cn } from '@/lib/utils';
+import { CHART_COLORS, MANTIS_COLORS } from '@/lib/colors';
 
 type AlertFilter = 'all' | 'critical' | 'warning' | 'info';
+
+// Alert colors based on MantisNXT palette
+const ALERT_COLORS = {
+  critical: {
+    bg: `${MANTIS_COLORS.red}15`,
+    border: `${MANTIS_COLORS.red}40`,
+    text: MANTIS_COLORS.red,
+    icon: MANTIS_COLORS.red,
+  },
+  warning: {
+    bg: `${MANTIS_COLORS.orange}15`,
+    border: `${MANTIS_COLORS.orange}40`,
+    text: MANTIS_COLORS.orange,
+    icon: MANTIS_COLORS.orange,
+  },
+  info: {
+    bg: `${MANTIS_COLORS.cyan}15`,
+    border: `${MANTIS_COLORS.cyan}40`,
+    text: MANTIS_COLORS.cyan,
+    icon: MANTIS_COLORS.cyan,
+  },
+};
 
 export function StockAlertsWidget() {
   const { data, isLoading, error } = useStockAlerts();
@@ -31,7 +55,7 @@ export function StockAlertsWidget() {
         <CardContent>
           <div className="space-y-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-muted h-16 animate-pulse rounded" />
+              <div key={i} className="h-16 animate-pulse rounded" style={{ background: `linear-gradient(90deg, ${CHART_COLORS[i % CHART_COLORS.length]}20, transparent)` }} />
             ))}
           </div>
         </CardContent>
@@ -47,7 +71,7 @@ export function StockAlertsWidget() {
         </CardHeader>
         <CardContent>
           <div className="py-8 text-center">
-            <AlertTriangle className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8" style={{ color: MANTIS_COLORS.orange }} />
             <p className="text-muted-foreground text-sm">Failed to load alerts</p>
           </div>
         </CardContent>
@@ -75,42 +99,21 @@ export function StockAlertsWidget() {
   };
 
   const getSeverityColors = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return {
-          bg: 'bg-red-50 dark:bg-red-900/20',
-          border: 'border-red-200 dark:border-red-800',
-          text: 'text-red-700 dark:text-red-300',
-          icon: 'text-red-600 dark:text-red-400',
-        };
-      case 'warning':
-        return {
-          bg: 'bg-orange-50 dark:bg-orange-900/20',
-          border: 'border-orange-200 dark:border-orange-800',
-          text: 'text-orange-700 dark:text-orange-300',
-          icon: 'text-orange-600 dark:text-orange-400',
-        };
-      case 'info':
-        return {
-          bg: 'bg-blue-50 dark:bg-blue-900/20',
-          border: 'border-blue-200 dark:border-blue-800',
-          text: 'text-blue-700 dark:text-blue-300',
-          icon: 'text-blue-600 dark:text-blue-400',
-        };
-      default:
-        return {
-          bg: 'bg-muted',
-          border: 'border-border',
-          text: 'text-muted-foreground',
-          icon: 'text-muted-foreground',
-        };
-    }
+    return ALERT_COLORS[severity as keyof typeof ALERT_COLORS] || {
+      bg: 'hsl(var(--muted))',
+      border: 'hsl(var(--border))',
+      text: 'hsl(var(--muted-foreground))',
+      icon: 'hsl(var(--muted-foreground))',
+    };
   };
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm">
+    <Card className="bg-card border-border rounded-xl border shadow-sm h-full">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5" style={{ color: MANTIS_COLORS.orange }} />
+          Stock Alerts
+        </CardTitle>
         <CardDescription className="text-muted-foreground text-sm">
           {summary.total} total alerts
         </CardDescription>
@@ -119,45 +122,45 @@ export function StockAlertsWidget() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              filter === 'all'
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-muted hover:bg-muted-foreground/10 border-border'
-            )}
+            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            style={{
+              backgroundColor: filter === 'all' ? MANTIS_COLORS.blue : `${MANTIS_COLORS.blue}15`,
+              color: filter === 'all' ? 'white' : MANTIS_COLORS.blue,
+              borderColor: MANTIS_COLORS.blue,
+            }}
           >
             All ({summary.total})
           </button>
           <button
             onClick={() => setFilter('critical')}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              filter === 'critical'
-                ? 'border-red-600 bg-red-600 text-white'
-                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30'
-            )}
+            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            style={{
+              backgroundColor: filter === 'critical' ? MANTIS_COLORS.red : `${MANTIS_COLORS.red}15`,
+              color: filter === 'critical' ? 'white' : MANTIS_COLORS.red,
+              borderColor: MANTIS_COLORS.red,
+            }}
           >
             Critical ({summary.critical})
           </button>
           <button
             onClick={() => setFilter('warning')}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              filter === 'warning'
-                ? 'border-orange-600 bg-orange-600 text-white'
-                : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300 dark:hover:bg-orange-900/30'
-            )}
+            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            style={{
+              backgroundColor: filter === 'warning' ? MANTIS_COLORS.orange : `${MANTIS_COLORS.orange}15`,
+              color: filter === 'warning' ? 'white' : MANTIS_COLORS.orange,
+              borderColor: MANTIS_COLORS.orange,
+            }}
           >
             Warning ({summary.warning})
           </button>
           <button
             onClick={() => setFilter('info')}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              filter === 'info'
-                ? 'border-blue-600 bg-blue-600 text-white'
-                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30'
-            )}
+            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            style={{
+              backgroundColor: filter === 'info' ? MANTIS_COLORS.cyan : `${MANTIS_COLORS.cyan}15`,
+              color: filter === 'info' ? 'white' : MANTIS_COLORS.cyan,
+              borderColor: MANTIS_COLORS.cyan,
+            }}
           >
             Info ({summary.info})
           </button>
@@ -166,7 +169,7 @@ export function StockAlertsWidget() {
       <CardContent>
         {filteredAlerts.length === 0 ? (
           <div className="py-8 text-center">
-            <Package className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <Package className="mx-auto mb-2 h-8 w-8" style={{ color: MANTIS_COLORS.emerald }} />
             <p className="text-muted-foreground text-sm">No alerts to display</p>
           </div>
         ) : (
@@ -176,23 +179,27 @@ export function StockAlertsWidget() {
               return (
                 <div
                   key={`${alert.productId}-${index}`}
-                  className={cn(
-                    'rounded-lg border p-3 transition-colors hover:shadow-sm',
-                    colors.bg,
-                    colors.border
-                  )}
+                  className="rounded-lg border p-3 transition-all hover:shadow-md hover:scale-[1.01]"
+                  style={{
+                    backgroundColor: colors.bg,
+                    borderColor: colors.border,
+                  }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={cn('mt-0.5 shrink-0', colors.icon)}>
+                    <div className="mt-0.5 shrink-0" style={{ color: colors.icon }}>
                       {getSeverityIcon(alert.severity)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={cn('truncate text-sm font-medium', colors.text)}>
+                        <p className="truncate text-sm font-medium" style={{ color: colors.text }}>
                           {alert.productName}
                         </p>
                         {alert.sku && (
-                          <Badge variant="outline" className="shrink-0 text-xs">
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 text-xs"
+                            style={{ borderColor: colors.border, color: colors.text }}
+                          >
                             {alert.sku}
                           </Badge>
                         )}
@@ -215,7 +222,11 @@ export function StockAlertsWidget() {
         )}
         {filteredAlerts.length > 20 && (
           <div className="mt-4 text-center">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ borderColor: MANTIS_COLORS.blue, color: MANTIS_COLORS.blue }}
+            >
               View All {filteredAlerts.length} Alerts
             </Button>
           </div>

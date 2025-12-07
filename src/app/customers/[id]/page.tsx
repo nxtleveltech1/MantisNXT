@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   User,
@@ -94,13 +94,9 @@ export default function CustomerDetailsPage() {
   const [transactions, setTransactions] = useState<LoyaltyTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (customerId) {
-      fetchCustomerDetails();
-    }
-  }, [customerId, fetchCustomerDetails]);
-
   const fetchCustomerDetails = useCallback(async () => {
+    if (!customerId) return;
+
     try {
       setLoading(true);
 
@@ -137,6 +133,10 @@ export default function CustomerDetailsPage() {
       setLoading(false);
     }
   }, [customerId, toast]);
+
+  useEffect(() => {
+    fetchCustomerDetails();
+  }, [fetchCustomerDetails]);
 
   const handleDeleteCustomer = async () => {
     if (!confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
@@ -728,9 +728,9 @@ export default function CustomerDetailsPage() {
                     <p className="text-2xl font-bold">
                       {customer.acquisition_date
                         ? Math.floor(
-                            (new Date().getTime() - new Date(customer.acquisition_date).getTime()) /
-                              (1000 * 60 * 60 * 24)
-                          )
+                          (new Date().getTime() - new Date(customer.acquisition_date).getTime()) /
+                          (1000 * 60 * 60 * 24)
+                        )
                         : 'N/A'}
                     </p>
                   </div>

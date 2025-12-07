@@ -1,6 +1,8 @@
 /**
  * Location Distribution Widget
- * Shows product distribution across In-Store/Main vs Dropshipping locations
+ * Shows product distribution across locations
+ * All currency in ZAR (R) - South African Rands
+ * Using MantisNXT vibrant rainbow color palette
  */
 
 'use client';
@@ -15,17 +17,20 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   Cell,
+  PieChart,
+  Pie,
+  Legend,
 } from 'recharts';
 import { useLocationAnalytics, formatCurrency } from '@/hooks/api/useDashboardWidgets';
-import { Store, Truck } from 'lucide-react';
+import { Store, Globe, Truck, MapPin, Package } from 'lucide-react';
+import { LOCATION_COLORS, CHART_COLORS, GRADIENT_PAIRS } from '@/lib/colors';
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border-border rounded-lg border p-3 shadow-lg">
-        <p className="mb-2 text-sm font-medium">{payload[0]?.payload?.type}</p>
+      <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-3 shadow-xl">
+        <p className="mb-2 text-sm font-medium text-white">{payload[0]?.payload?.locationName || payload[0]?.payload?.type}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}:{' '}
@@ -54,7 +59,7 @@ export function LocationDistributionWidget() {
         </CardHeader>
         <CardContent>
           <div className="flex h-[300px] items-center justify-center">
-            <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" style={{ borderColor: CHART_COLORS[0], borderTopColor: 'transparent' }} />
           </div>
         </CardContent>
       </Card>
@@ -69,136 +74,173 @@ export function LocationDistributionWidget() {
         </CardHeader>
         <CardContent>
           <div className="py-8 text-center">
-            <p className="text-sm text-red-600">Failed to load location data</p>
+            <p className="text-sm" style={{ color: CHART_COLORS[0] }}>Failed to load location data</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const distribution = data.data?.distribution || [];
   const locations = data.data?.locations || [];
 
-  const chartData = distribution.map(item => ({
-    type: item.type,
-    'Product Count': item.productCount,
-    'Total Value': item.totalValue,
+  // Calculate totals
+  const totalProducts = locations.reduce((sum: number, item: any) => sum + item.productCount, 0);
+  const totalValue = locations.reduce((sum: number, item: any) => sum + item.totalValue, 0);
+
+  // Prepare chart data from locations (top 6)
+  const chartData = locations.slice(0, 6).map((loc: any, index: number) => ({
+    ...loc,
+    fill: LOCATION_COLORS[index % LOCATION_COLORS.length],
   }));
 
-  // Calculate totals
-  const totalProducts = distribution.reduce((sum, item) => sum + item.productCount, 0);
-  const totalValue = distribution.reduce((sum, item) => sum + item.totalValue, 0);
-
-  const inStoreData = distribution.find(d => d.type === 'In-Store/Main') || {
-    productCount: 0,
-    totalValue: 0,
-  };
-  const dropshipData = distribution.find(d => d.type === 'Dropshipping') || {
-    productCount: 0,
-    totalValue: 0,
+  // Get icon for location type
+  const getLocationIcon = (type: string, name: string) => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('online')) return <Globe className="h-4 w-4" style={{ color: CHART_COLORS[6] }} />;
+    if (nameLower.includes('drop') || type === 'supplier') return <Truck className="h-4 w-4" style={{ color: CHART_COLORS[2] }} />;
+    if (nameLower.includes('store') || nameLower.includes('main')) return <Store className="h-4 w-4" style={{ color: CHART_COLORS[7] }} />;
+    return <MapPin className="h-4 w-4" style={{ color: CHART_COLORS[8] }} />;
   };
 
   return (
     <Card className="bg-card border-border rounded-xl border shadow-sm">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">Product Distribution by Location</CardTitle>
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <Package className="h-5 w-5" style={{ color: CHART_COLORS[5] }} />
+          Product Distribution by Location
+        </CardTitle>
         <CardDescription className="text-muted-foreground text-sm">
-          Inventory spread across locations
+          Inventory spread across {locations.length} locations
         </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Summary Stats */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="bg-muted/50 border-border rounded-lg border p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
-                <Store className="text-primary h-4 w-4" />
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {chartData.map((loc: any, index: number) => (
+            <div
+              key={loc.locationId}
+              className="rounded-lg border p-4 transition-all hover:shadow-md hover:scale-105"
+              style={{
+                borderLeftWidth: '4px',
+                borderLeftColor: LOCATION_COLORS[index % LOCATION_COLORS.length],
+                background: `linear-gradient(135deg, ${LOCATION_COLORS[index % LOCATION_COLORS.length]}08, transparent)`
+              }}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                {getLocationIcon(loc.locationType, loc.locationName)}
+                <span className="text-sm font-medium truncate" title={loc.locationName}>
+                  {loc.locationName}
+                </span>
               </div>
-              <span className="text-sm font-medium">In-Store/Main</span>
-            </div>
-            <div className="text-2xl font-bold">{inStoreData.productCount.toLocaleString()}</div>
-            <div className="text-muted-foreground mt-1 text-xs">
-              {formatCurrency(inStoreData.totalValue)}
-            </div>
-            <div className="text-muted-foreground mt-1 text-xs">
-              {totalProducts > 0
-                ? ((inStoreData.productCount / totalProducts) * 100).toFixed(1)
-                : '0'}
-              % of total
-            </div>
-          </div>
-
-          <div className="bg-muted/50 border-border rounded-lg border p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-                <Truck className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <div className="text-2xl font-bold" style={{ color: LOCATION_COLORS[index % LOCATION_COLORS.length] }}>
+                {loc.productCount.toLocaleString()}
               </div>
-              <span className="text-sm font-medium">Dropshipping</span>
+              <div className="text-muted-foreground mt-1 text-xs">
+                {formatCurrency(loc.totalValue)}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                {loc.valuePercentage}% of total
+              </div>
             </div>
-            <div className="text-2xl font-bold">{dropshipData.productCount.toLocaleString()}</div>
-            <div className="text-muted-foreground mt-1 text-xs">
-              {formatCurrency(dropshipData.totalValue)}
-            </div>
-            <div className="text-muted-foreground mt-1 text-xs">
-              {totalProducts > 0
-                ? ((dropshipData.productCount / totalProducts) * 100).toFixed(1)
-                : '0'}
-              % of total
-            </div>
-          </div>
+          ))}
+        </div>
 
-          <div className="bg-primary/5 border-primary/20 rounded-lg border p-4">
-            <span className="text-muted-foreground text-sm font-medium">Total</span>
-            <div className="mt-2 text-2xl font-bold">{totalProducts.toLocaleString()}</div>
-            <div className="text-muted-foreground mt-1 text-xs">{formatCurrency(totalValue)}</div>
-            <div className="text-muted-foreground mt-1 text-xs">{locations.length} locations</div>
+        {/* Totals Row */}
+        <div className="mb-6 grid grid-cols-2 gap-4">
+          <div className="rounded-lg p-4 text-center" style={{ background: `linear-gradient(135deg, ${GRADIENT_PAIRS.success.start}15, ${GRADIENT_PAIRS.success.end}05)`, border: `1px solid ${GRADIENT_PAIRS.success.start}30` }}>
+            <div className="text-3xl font-bold" style={{ color: GRADIENT_PAIRS.success.start }}>{totalProducts.toLocaleString()}</div>
+            <div className="text-sm text-muted-foreground">Total Products</div>
+          </div>
+          <div className="rounded-lg p-4 text-center" style={{ background: `linear-gradient(135deg, ${GRADIENT_PAIRS.info.start}15, ${GRADIENT_PAIRS.info.end}05)`, border: `1px solid ${GRADIENT_PAIRS.info.start}30` }}>
+            <div className="text-3xl font-bold" style={{ color: GRADIENT_PAIRS.info.start }}>{formatCurrency(totalValue)}</div>
+            <div className="text-sm text-muted-foreground">Total Value</div>
           </div>
         </div>
 
         {/* Chart */}
         {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis
-                dataKey="type"
-                type="category"
-                tick={{ fontSize: 12 }}
-                stroke="hsl(var(--muted-foreground))"
-                width={120}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar dataKey="Product Count" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Total Value" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Bar Chart */}
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--border))" />
+                <YAxis
+                  dataKey="locationName"
+                  type="category"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                  width={100}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="productCount" name="Products" radius={[0, 4, 4, 0]}>
+                  {chartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* Pie Chart */}
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  dataKey="totalValue"
+                  nameKey="locationName"
+                  strokeWidth={2}
+                  stroke="hsl(var(--background))"
+                >
+                  {chartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  formatter={(value: string) => <span className="text-xs">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-[300px] items-center justify-center">
+          <div className="flex h-[200px] items-center justify-center">
             <p className="text-muted-foreground text-sm">No distribution data available</p>
           </div>
         )}
 
-        {/* Detailed Location Breakdown */}
-        {locations.length > 0 && (
+        {/* Location Details List */}
+        {locations.length > 6 && (
           <div className="mt-6">
-            <h4 className="mb-3 text-sm font-medium">Location Details</h4>
+            <h4 className="mb-3 text-sm font-medium">All Locations</h4>
             <div className="max-h-[200px] space-y-2 overflow-y-auto">
-              {locations.slice(0, 10).map(location => (
+              {locations.map((location: any, index: number) => (
                 <div
                   key={location.locationId}
                   className="hover:bg-muted/50 flex items-center justify-between rounded-lg p-2 transition-colors"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{location.locationName}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {location.productCount} products · {formatCurrency(location.totalValue)}
-                    </p>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {getLocationIcon(location.locationType, location.locationName)}
+                    <div>
+                      <p className="truncate text-sm font-medium">{location.locationName}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {location.productCount} products · {formatCurrency(location.totalValue)}
+                      </p>
+                    </div>
                   </div>
                   <div className="ml-4 text-right">
-                    <div className="text-muted-foreground text-xs font-medium">
-                      {location.locationType}
+                    <div
+                      className="text-xs font-medium px-2 py-1 rounded"
+                      style={{
+                        backgroundColor: `${LOCATION_COLORS[index % LOCATION_COLORS.length]}20`,
+                        color: LOCATION_COLORS[index % LOCATION_COLORS.length]
+                      }}
+                    >
+                      {location.valuePercentage}%
                     </div>
                   </div>
                 </div>

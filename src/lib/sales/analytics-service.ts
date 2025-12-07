@@ -44,15 +44,23 @@ export async function getSalesDashboardData(
     let whereClause = 'WHERE 1=1';
 
     if (channel !== 'all') {
-        // Determine connector type based on channel
-        // 'online' -> 'woocommerce', 'in-store' -> 'odoo' (assumption)
-        // Need to join integration_connector
+        // Filter by connector name or config channel
+        // In-Store: 'In-Store POS' connector or config->>'channel' = 'in-store'
+        // Online: 'Online Store' connector or config->>'channel' = 'online'
         whereClause += ` AND EXISTS (
       SELECT 1 FROM integration_connector ic 
       WHERE ic.id = so.connector_id 
-      AND ic.provider = $${params.length + 1}
+      AND (
+        ic.name ILIKE $${params.length + 1}
+        OR ic.config->>'channel' = $${params.length + 2}
+        OR ic.provider::text = ANY($${params.length + 3}::text[])
+      )
     )`;
-        params.push(channel === 'online' ? 'woocommerce' : 'odoo');
+        if (channel === 'online') {
+            params.push('%Online%', 'online', ['shopify', 'woocommerce']);
+        } else {
+            params.push('%In-Store%', 'in-store', ['custom_api', 'odoo']);
+        }
     }
 
     if (startDate) {
@@ -87,12 +95,12 @@ export async function getSalesDashboardData(
         daily_sales: number;
     }>(`
     SELECT 
-      TO_CHAR(created_at, 'YYYY-MM-DD') as day,
+      TO_CHAR(created_at, 'DD-MON''YY') as day,
       SUM(total) as daily_sales
     FROM sales_orders so
     ${whereClause}
-    GROUP BY day
-    ORDER BY day ASC
+    GROUP BY TO_CHAR(created_at, 'DD-MON''YY'), DATE(created_at)
+    ORDER BY DATE(created_at) ASC
   `, params);
 
     // Recent Orders
@@ -120,13 +128,18 @@ export async function getSalesDashboardData(
             date: row.day,
             value: Number(row.daily_sales),
         })),
-        recentOrders: recentOrdersRes.rows.map(row => ({
-            id: row.id,
-            orderNumber: row.order_number || row.id.substring(0, 8),
-            total: Number(row.total),
-            status: row.status || 'completed',
-            date: new Date(row.created_at).toISOString(),
-        })),
+        recentOrders: recentOrdersRes.rows.map(row => {
+            const d = new Date(row.created_at);
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const formattedDate = `${d.getDate().toString().padStart(2, '0')}-${months[d.getMonth()]}'${d.getFullYear().toString().slice(-2)}`;
+            return {
+                id: row.id,
+                orderNumber: row.order_number || row.id.substring(0, 8),
+                total: Number(row.total),
+                status: row.status || 'completed',
+                date: formattedDate,
+            };
+        }),
     };
 }
 
