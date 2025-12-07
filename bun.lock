@@ -64,6 +64,7 @@
         "framer-motion": "^12.23.24",
         "jsonrepair": "^3.13.1",
         "jsonwebtoken": "^9.0.2",
+        "lightningcss": "^1.30.2",
         "lucide-react": "^0.555.0",
         "motion": "^12.23.24",
         "next": "^15.5.3",

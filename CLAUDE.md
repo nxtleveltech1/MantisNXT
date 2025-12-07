@@ -15,6 +15,12 @@ settingSources: ["project"]
 ```py
 setting_sources = ["project"]
 ```
+**Bun Rules Applied**: This project follows the [Bun Framework](https://github.com/T3-Content/auto-draftify/blob/main/CLAUDE.md) philosophy where applicable.
+
+**Python**: set in your agent config:
+```py
+setting_sources = ["project"]
+```
 Place this file at the repo root as `CLAUDE.md` or in `.claude/CLAUDE.md`.
 
 ---
@@ -27,14 +33,12 @@ We ship **working, maintainable, production‑ready** agents, not demos. Outcome
 ## 2) SDK Quickstart (TS & Python)
 
 ### Install
-- **TypeScript / Node**
+### Install
+- **Bun (Required)**
 ```bash
-npm install @anthropic-ai/claude-agent-sdk
+bun add @anthropic-ai/claude-agent-sdk
 ```
-- **Python**
-```bash
-pip install claude-agent-sdk
-```
+
 
 ### Auth
 - **Default:** `ANTHROPIC_API_KEY`
@@ -135,25 +139,37 @@ If scope is vague/large, **decompose**. If uncertainty remains, ask targeted que
 - CI must be **green** before proceeding. On failure, fix or **revert** promptly.
 - Milestone commits minimize rollback cost.
 
-### Rule 8 — **Streaming vs Single**
+### Rule 8 — **Bun First (Framework Rules)**
+- **Runtime**: Always use `bun <file>` or `bun run <script>`.
+- **Testing**: Use `bun test` (compatible with Jest/Vitest expect syntax).
+- **Env**: Rely on Bun's automatic `.env` loading; avoid `dotenv`.
+- **APIs**:
+  - Prefer `Bun.file(...)` over `fs.readFile`.
+  - Prefer `Bun.write(...)` over `fs.writeFile`.
+  - Use `Bun.env.KEY` or `process.env.KEY`.
+- **Note**: This project uses Next.js. While we prefer `Bun` APIs, we run Next.js via `bun run dev/start`.
+
+### Rule 9 — **Streaming vs Single**
 - Use **Streaming** for interactive debugging, multi‑tool sequences, eval loops, long I/O.
 - Use **Single** for simple, bounded steps.
 - State choice + rationale in the Plan.
 
-### Rule 9 — **UI/UX Standards**
+### Rule 10 — **UI/UX Standards**
 - Accessible, legible, consistent. Favor clarity and predictable interactions.
 - Progressive disclosure over clutter; include micro‑interactions and loading states.
 
-### Rule 10 — **Communication**
+### Rule 11 — **Communication**
 - Ask before assuming when success criteria/constraints aren’t crystal‑clear.
 - After each milestone: report outcome, evidence (tests/checks), next steps/blockers + proposed resolutions.
 
-### Rule 11 — **Anti‑Patterns (never do)**
+### Rule 12 — **Anti‑Patterns (never do)**
 - Ship dummy/pro‑forma implementations without consent.
 - Skip lint/type/tests “to move fast”.
 - Silent, large‑scale refactors.
 - Abandon required libraries because of friction.
 - Undocumented architectural changes.
+- Using `node` or `npm` commands when `bun` is available.
+
 
 ---
 
