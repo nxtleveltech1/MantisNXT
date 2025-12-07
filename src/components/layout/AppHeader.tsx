@@ -104,7 +104,7 @@ function UniversalSearch() {
         <Button
           variant="outline"
           className={cn(
-            'relative h-9 w-full justify-start text-sm text-muted-foreground sm:w-48 sm:pr-8 md:w-64 lg:w-[500px]'
+            'relative h-9 w-full justify-start text-sm text-muted-foreground sm:w-48 md:w-56 lg:w-64'
           )}
           onClick={() => setIsOpen(true)}
         >
@@ -375,13 +375,13 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
         )}
       </div>
 
-      {/* Center: Universal Search (Desktop) - Wider and Offset Left */}
-      <div className="absolute left-[44%] top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
-        <UniversalSearch />
-      </div>
+
 
       {/* Right: Action Icons */}
       <div className="flex flex-1 items-center justify-end gap-1">
+        <div className="hidden lg:block mr-2">
+          <UniversalSearch />
+        </div>
         {/* Mobile Search - shown when center search is hidden */}
         <div className="lg:hidden">
           <UniversalSearch />

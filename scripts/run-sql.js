@@ -18,7 +18,7 @@ async function main() {
 
   const sql = fs.readFileSync(filePath, 'utf8')
 
-  const connectionString = 'postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/neondb?channel_binding=require&sslmode=require'
+  const connectionString = 'postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require'
 
   const client = new Client({ connectionString })
   try {

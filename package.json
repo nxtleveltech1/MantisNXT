@@ -4,11 +4,11 @@
   "private": true,
   "packageManager": "bun@latest",
   "scripts": {
-    "dev": "bun next dev",
+    "dev": "bun next dev --webpack",
     "dev:stop": "bun scripts/dev-server-manager.js stop",
     "dev:status": "bun scripts/dev-server-manager.js status",
     "dev:restart": "bun scripts/dev-server-manager.js restart",
-    "dev:raw": "bun next dev",
+    "dev:raw": "bun next dev --webpack",
     "build": "bun next build --webpack",
     "build:strict": "bun run type-check && bun next build --webpack",
     "start": "bun next start",

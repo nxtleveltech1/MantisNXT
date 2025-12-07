@@ -315,6 +315,20 @@ export const sidebarData = {
       icon: DollarSign,
       items: [
         {
+          title: 'Sales',
+          url: '/financial/sales',
+          items: [
+            {
+              title: 'Online',
+              url: '/financial/sales/online',
+            },
+            {
+              title: 'In-Store',
+              url: '/financial/sales/in-store',
+            },
+          ],
+        },
+        {
           title: 'Invoices',
           url: '/financial/invoices',
         },
