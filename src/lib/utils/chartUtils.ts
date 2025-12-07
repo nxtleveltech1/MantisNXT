@@ -5,13 +5,13 @@
  * to ensure consistent styling across the dashboard
  */
 
-// Chart color palette from CSS variables
+// Chart color palette from CSS variables (using direct HEX values)
 export const CHART_COLORS = {
-  primary: 'hsl(var(--chart-1))', // Green
-  secondary: 'hsl(var(--chart-2))', // Purple
-  tertiary: 'hsl(var(--chart-3))', // Blue
-  quaternary: 'hsl(var(--chart-4))', // Amber
-  quinary: 'hsl(var(--chart-5))', // Red
+  primary: 'var(--chart-1)', // Neon Orange
+  secondary: 'var(--chart-2)', // Neon Lime
+  tertiary: 'var(--chart-3)', // Neon Cyan
+  quaternary: 'var(--chart-4)', // Neon Purple
+  quinary: 'var(--chart-5)', // Neon Yellow
 } as const;
 
 // Format currency values

@@ -1,98 +1,89 @@
 /**
- * MantisNXT NEON Color Palette
- * Pure neon colors - vibrant, bright, electric
- * NO pastels, NO muted colors
+ * MantisNXT Color Palette
+ * Colors from admin Color Palette settings
  */
 
-// PURE NEON colors - maximum saturation and brightness
+// Chart colors from admin settings
 export const MANTIS_COLORS = {
-    // Primary NEON colors
-    neonMagenta: '#FF00FF',   // Electric magenta
-    neonPurple: '#BF00FF',    // Neon purple
-    neonOrange: '#FF6600',    // Neon orange
-    neonYellow: '#FFFF00',    // Electric yellow
-    neonLime: '#39FF14',      // Neon lime green
-    neonGreen: '#00FF00',     // Pure neon green
-    neonCyan: '#00FFFF',      // Electric cyan
-    neonBlue: '#00BFFF',      // Neon blue
+    chart1: '#7F00FF',    // Purple
+    chart2: '#00E5FF',    // Cyan/Aqua
+    chart3: '#00FF66',    // Green
+    chart4: '#FFFF00',    // Yellow
+    chart5: '#FF6600',    // Orange
 
     // Semantic aliases
-    success: '#39FF14',       // Neon lime
-    warning: '#FF6600',       // Neon orange
-    error: '#FF00FF',         // Neon magenta
-    info: '#00FFFF',          // Neon cyan
+    primary: '#7F00FF',
+    success: '#00FF66',
+    warning: '#FFFF00',
+    error: '#FF6600',
+    info: '#00E5FF',
 };
 
-// Chart color array - ALL NEON
+// Chart color array (matches CSS --chart-1 through --chart-5)
 export const CHART_COLORS = [
-    '#FF6600', // Neon Orange
-    '#FFFF00', // Neon Yellow  
-    '#39FF14', // Neon Lime
-    '#00FFFF', // Neon Cyan
-    '#00BFFF', // Neon Blue
-    '#BF00FF', // Neon Purple
-    '#FF00FF', // Neon Magenta
+    '#7F00FF', // Chart 1 - Purple
+    '#00E5FF', // Chart 2 - Cyan/Aqua
+    '#00FF66', // Chart 3 - Green
+    '#FFFF00', // Chart 4 - Yellow
+    '#FF6600', // Chart 5 - Orange
 ];
 
-// Gradient pairs - NEON gradients
+// Gradient pairs
 export const GRADIENT_PAIRS = {
-    primary: { start: '#FF6600', end: '#FFFF00' },    // Orange to Yellow
-    success: { start: '#39FF14', end: '#00FFFF' },    // Lime to Cyan
-    info: { start: '#00FFFF', end: '#00BFFF' },       // Cyan to Blue
-    warning: { start: '#FFFF00', end: '#FF6600' },    // Yellow to Orange
-    danger: { start: '#FF00FF', end: '#BF00FF' },     // Magenta to Purple
-    rainbow: { start: '#BF00FF', end: '#00FFFF' },    // Purple to Cyan
+    primary: { start: '#7F00FF', end: '#00E5FF' },
+    success: { start: '#00FF66', end: '#00E5FF' },
+    info: { start: '#00E5FF', end: '#FFFF00' },
+    warning: { start: '#FFFF00', end: '#FF6600' },
+    danger: { start: '#FF6600', end: '#7F00FF' },
+    rainbow: { start: '#7F00FF', end: '#FF6600' },
 };
 
-// KPI Card color schemes - ALL NEON
+// KPI Card color schemes
 export const KPI_COLORS = {
-    suppliers: '#00BFFF',     // Neon Blue
-    inventory: '#39FF14',     // Neon Lime
-    alerts: '#FF6600',        // Neon Orange
-    products: '#BF00FF',      // Neon Purple
-    salesTotal: '#00FFFF',    // Neon Cyan
-    salesInStore: '#FF6600',  // Neon Orange
-    salesOnline: '#39FF14',   // Neon Lime
-    avgOrder: '#FFFF00',      // Neon Yellow
+    suppliers: '#00E5FF',
+    inventory: '#00FF66',
+    alerts: '#FF6600',
+    products: '#FFFF00',
+    salesTotal: '#00FF66',
+    salesInStore: '#FF6600',
+    salesOnline: '#00E5FF',
+    avgOrder: '#FFFF00',
 };
 
-// Location colors - ALL NEON
+// Location colors
 export const LOCATION_COLORS = [
-    '#FF6600', // Neon Orange
-    '#39FF14', // Neon Lime
-    '#00FFFF', // Neon Cyan
-    '#BF00FF', // Neon Purple
-    '#00BFFF', // Neon Blue
-    '#FFFF00', // Neon Yellow
+    '#7F00FF',
+    '#00FF66',
+    '#00E5FF',
+    '#FFFF00',
+    '#FF6600',
 ];
 
-// Category colors - ALL NEON
+// Category colors
 export const CATEGORY_COLORS = [
-    '#39FF14', // Neon Lime (primary)
-    '#00FFFF', // Neon Cyan
-    '#00BFFF', // Neon Blue
-    '#BF00FF', // Neon Purple
-    '#FF6600', // Neon Orange
-    '#FFFF00', // Neon Yellow
-    '#FF00FF', // Neon Magenta
+    '#7F00FF',
+    '#00FF66',
+    '#00E5FF',
+    '#FFFF00',
+    '#FF6600',
 ];
 
-// Sales chart colors - ALL NEON
+// Sales chart colors
 export const SALES_COLORS = {
-    total: '#39FF14',       // Neon Lime
-    inStore: '#FF6600',     // Neon Orange  
-    online: '#00FFFF',      // Neon Cyan
-    trend: '#00BFFF',       // Neon Blue
-    orders: '#BF00FF',      // Neon Purple
+    total: '#00FF66',
+    inStore: '#FF6600',
+    online: '#00E5FF',
+    trend: '#FFFF00',
+    orders: '#7F00FF',
 };
 
-// CSS variable exports
+// CSS variable exports (matches globals.css)
 export const CSS_COLORS = {
-    '--chart-1': '#FF6600',
-    '--chart-2': '#39FF14',
-    '--chart-3': '#00FFFF',
-    '--chart-4': '#BF00FF',
-    '--chart-5': '#00BFFF',
+    '--chart-1': '#7F00FF',
+    '--chart-2': '#00E5FF',
+    '--chart-3': '#00FF66',
+    '--chart-4': '#FFFF00',
+    '--chart-5': '#FF6600',
 };
 
 export default CHART_COLORS;

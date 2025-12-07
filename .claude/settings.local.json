@@ -56,7 +56,9 @@
       "Bash(npx tsx:*)",
       "Bash(src/components/supplier-portfolio/EnhancedPricelistUpload.tsx.restored)",
       "Bash(src/app/nxt-spp/page.tsx.restored)",
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "Bash(bun --version)",
+      "Bash(bun run lint)"
     ],
     "deny": [],
     "ask": []

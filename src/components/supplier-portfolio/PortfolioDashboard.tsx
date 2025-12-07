@@ -236,8 +236,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
             </div>
             <div className="flex items-center gap-1.5 text-sm">
               <div className="bg-chart-1/10 flex items-center gap-1 rounded-md px-2 py-1">
-                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-1))]" />
-                <span className="font-semibold text-[hsl(var(--chart-1))]">+12%</span>
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--chart-1)]" />
+                <span className="font-semibold text-[var(--chart-1)]">+12%</span>
               </div>
               <span className="text-muted-foreground">vs last month</span>
             </div>
@@ -264,8 +264,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
             </div>
             <div className="flex items-center gap-1.5 text-sm">
               <div className="bg-chart-2/10 flex items-center gap-1 rounded-md px-2 py-1">
-                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-2))]" />
-                <span className="font-semibold text-[hsl(var(--chart-2))]">+24%</span>
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--chart-2)]" />
+                <span className="font-semibold text-[var(--chart-2)]">+24%</span>
               </div>
               <span className="text-muted-foreground">from all uploads</span>
             </div>
@@ -292,8 +292,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
             </div>
             <div className="flex items-center gap-1.5 text-sm">
               <div className="bg-chart-3/10 flex items-center gap-1 rounded-md px-2 py-1">
-                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-3))]" />
-                <span className="font-semibold text-[hsl(var(--chart-3))]">+8%</span>
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--chart-3)]" />
+                <span className="font-semibold text-[var(--chart-3)]">+8%</span>
               </div>
               <span className="text-muted-foreground">ready for stocking</span>
             </div>
@@ -320,8 +320,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
             </div>
             <div className="flex items-center gap-1.5 text-sm">
               <div className="bg-chart-5/10 flex items-center gap-1 rounded-md px-2 py-1">
-                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-5))]" />
-                <span className="font-semibold text-[hsl(var(--chart-5))]">+15%</span>
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--chart-5)]" />
+                <span className="font-semibold text-[var(--chart-5)]">+15%</span>
               </div>
               <span className="text-muted-foreground">total value on hand</span>
             </div>

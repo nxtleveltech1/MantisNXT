@@ -11,10 +11,12 @@
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
-  @media (width >= --theme(--breakpoint-sm)) {
+
+  @media (width >=--theme(--breakpoint-sm)) {
     max-width: none;
   }
-  @media (width >= 1400px) {
+
+  @media (width >=1400px) {
     max-width: 1400px;
   }
 }
@@ -31,54 +33,67 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
   }
+
   @keyframes meteor {
     0% {
       transform: rotate(215deg) translateX(0);
       opacity: 1;
     }
+
     70% {
       opacity: 1;
     }
+
     100% {
       transform: rotate(215deg) translateX(-500px);
       opacity: 0;
     }
   }
+
   @keyframes shimmer {
+
     0%,
     90%,
     100% {
       background-position: calc(-100% - var(--shimmer-width)) 0;
     }
+
     30%,
     60% {
       background-position: calc(100% + var(--shimmer-width)) 0;
     }
   }
+
   @keyframes marquee {
     from {
       transform: translateX(0);
     }
+
     to {
       transform: translateX(calc(-100% - var(--gap)));
     }
   }
+
   @keyframes marquee-vertical {
     from {
       transform: translateY(0);
     }
+
     to {
       transform: translateY(calc(-100% - var(--gap)));
     }
@@ -94,6 +109,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -236,11 +252,11 @@
     --border: oklch(0.9301 0.0075 260.7315);
     --input: oklch(0.9301 0.0075 260.7315);
     --ring: oklch(0.6315 0.2014 278.9491);
-    --chart-1: #FF6600;
-    --chart-2: #39FF14;
-    --chart-3: #00FFFF;
-    --chart-4: #BF00FF;
-    --chart-5: #FFFF00;
+    --chart-1: #7F00FF;
+    --chart-2: #00E5FF;
+    --chart-3: #00FF66;
+    --chart-4: #FFFF00;
+    --chart-5: #FF6600;
     --sidebar: oklch(1.0000 0 0);
     --sidebar-foreground: oklch(0.2869 0.0619 260.6289);
     --sidebar-primary: oklch(0.6315 0.2014 278.9491);
@@ -302,11 +318,11 @@
     --border: oklch(0.4674 0.0440 258.3431);
     --input: oklch(0.4674 0.0440 258.3431);
     --ring: oklch(0.7471 0.1322 279.3617);
-    --chart-1: #FF6600;
-    --chart-2: #39FF14;
-    --chart-3: #00FFFF;
-    --chart-4: #BF00FF;
-    --chart-5: #FFFF00;
+    --chart-1: #7F00FF;
+    --chart-2: #00E5FF;
+    --chart-3: #00FF66;
+    --chart-4: #FFFF00;
+    --chart-5: #FF6600;
     --sidebar: oklch(0.2869 0.0619 260.6289);
     --sidebar-foreground: oklch(0.9963 0.0011 197.1391);
     --sidebar-primary: oklch(0.7471 0.1322 279.3617);
@@ -418,8 +434,8 @@
   * {
     border-color: var(--border);
     transition: background-color 200ms ease-in-out,
-                border-color 200ms ease-in-out,
-                color 200ms ease-in-out;
+      border-color 200ms ease-in-out,
+      color 200ms ease-in-out;
   }
 
   body {
@@ -491,6 +507,15 @@
     line-height: 1.6;
   }
 
+  /* Body text - updated for new typography */
+  body {
+    font-family: var(--font-sans);
+    font-size: clamp(0.95rem, 1.2vw + 0.6rem, 1.1rem);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    font-weight: 400;
+  }
+
   /* Focus Visible - Accessibility */
   *:focus-visible {
     outline: 2px solid var(--ring);
@@ -501,15 +526,25 @@
 @layer components {
 
   @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 }
 
 @layer utilities {
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideIn {
@@ -517,6 +552,7 @@
       opacity: 0;
       transform: translateY(-10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -528,6 +564,7 @@
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -583,11 +620,11 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: #FF6600;
-  --chart-2: #39FF14;
-  --chart-3: #00FFFF;
-  --chart-4: #BF00FF;
-  --chart-5: #FFFF00;
+  --chart-1: #7F00FF;
+  --chart-2: #00E5FF;
+  --chart-3: #00FF66;
+  --chart-4: #FFFF00;
+  --chart-5: #FF6600;
   --sidebar: hsl(0 0% 98%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
   --sidebar-primary: hsl(240 5.9% 10%);
@@ -617,11 +654,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: #FF6600;
-  --chart-2: #39FF14;
-  --chart-3: #00FFFF;
-  --chart-4: #BF00FF;
-  --chart-5: #FFFF00;
+  --chart-1: #7F00FF;
+  --chart-2: #00E5FF;
+  --chart-3: #00FF66;
+  --chart-4: #FFFF00;
+  --chart-5: #FF6600;
   --sidebar: hsl(240 5.9% 10%);
   --sidebar-foreground: hsl(240 4.8% 95.9%);
   --sidebar-primary: hsl(224.3 76.3% 48%);
@@ -636,6 +673,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -104,8 +104,8 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
         <AreaChart data={chartData}>
           <defs>
             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#39FF14" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#00FFFF" stopOpacity={0.1} />
+              <stop offset="5%" stopColor="#7F00FF" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#00E5FF" stopOpacity={0.1} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -128,7 +128,7 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
             type="monotone"
             dataKey="totalValue"
             name="Value"
-            stroke="#39FF14"
+            stroke="#7F00FF"
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorValue)"
