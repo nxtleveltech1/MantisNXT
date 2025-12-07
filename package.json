@@ -9,7 +9,7 @@
     "dev:status": "bun scripts/dev-server-manager.js status",
     "dev:restart": "bun scripts/dev-server-manager.js restart",
     "dev:raw": "bun next dev",
-    "build": "bun next build --no-lint",
+    "build": "bun next build",
     "build:strict": "bun run type-check && bun next build",
     "start": "bun next start",
     "lint": "bun x eslint . --ext .ts,.tsx",
