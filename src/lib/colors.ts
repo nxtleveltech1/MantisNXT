@@ -5,9 +5,9 @@
 
 // Chart colors from admin settings
 export const MANTIS_COLORS = {
-    chart1: '#7F00FF',    // Purple
+    chart1: '#7F00FF',    // Purple/Violet
     chart2: '#00E5FF',    // Cyan/Aqua
-    chart3: '#00FF66',    // Green
+    chart3: '#00FF66',    // Green/Lime
     chart4: '#FFFF00',    // Yellow
     chart5: '#FF6600',    // Orange
 
@@ -21,9 +21,9 @@ export const MANTIS_COLORS = {
 
 // Chart color array (matches CSS --chart-1 through --chart-5)
 export const CHART_COLORS = [
-    '#7F00FF', // Chart 1 - Purple
+    '#7F00FF', // Chart 1 - Purple/Violet
     '#00E5FF', // Chart 2 - Cyan/Aqua
-    '#00FF66', // Chart 3 - Green
+    '#00FF66', // Chart 3 - Green/Lime
     '#FFFF00', // Chart 4 - Yellow
     '#FF6600', // Chart 5 - Orange
 ];

@@ -825,6 +825,7 @@ class ProviderClient implements AIClient {
           providerMetadata: result.providerMetadata,
         },
         messages: responseMessages,
+        toolCalls: result.toolCalls,
         rawResponse: result.response,
       };
     } catch (error) {

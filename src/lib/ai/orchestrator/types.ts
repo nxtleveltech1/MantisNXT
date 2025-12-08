@@ -63,7 +63,7 @@ export const conversationTurnSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string(),
-        arguments: z.record(z.unknown()),
+        arguments: z.unknown(),
       })
     )
     .optional(),
@@ -105,7 +105,7 @@ export type OrchestratorRequest = z.infer<typeof orchestratorRequestSchema>;
 export const toolCallWithResultSchema = z.object({
   id: z.string(),
   name: z.string(),
-  arguments: z.record(z.unknown()),
+  arguments: z.unknown(),
   result: z.unknown().optional(),
   success: z.boolean().optional(),
   executionTimeMs: z.number().int().min(0).optional(),

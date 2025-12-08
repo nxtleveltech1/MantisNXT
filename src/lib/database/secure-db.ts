@@ -526,7 +526,7 @@ export class SecureQueryBuilder {
       .replace(/[<>]/g, '') // Remove angle brackets
       .replace(/&/g, '&') // HTML entity encoding
       .replace(/"/g, '"')
-      .replace(/'/g, ''')
+      .replace(/'/g, '')
       .trim()
       .slice(0, 4000); // Limit length
   }

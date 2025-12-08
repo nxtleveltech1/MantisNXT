@@ -26,6 +26,7 @@ import { getProviderClient, getProviderClientsForFallback } from '../providers';
 import { toolRegistry } from '../tools/registry';
 import { toolExecutor } from '../tools/executor';
 import type { AIProviderId, AIClient } from '@/types/ai';
+import { normalizeToolCalls } from './tool-call-utils';
 
 /**
  * Unified AI Orchestrator
@@ -296,13 +297,13 @@ Available Tools:`;
   private async generateResponse(
     provider: AIClient,
     messages: ModelMessage[],
-    toolSchemas?: any[],
+    toolSchemas?: unknown[],
     options?: OrchestratorRequest['options']
   ): Promise<{
     content: string;
-    toolCalls?: any[];
+    toolCalls?: ToolCallWithResult[];
     model?: string;
-    usage?: any;
+    usage?: unknown;
   }> {
     const chatMessages = messages.map(msg => ({
       role: msg.role as 'user' | 'assistant' | 'system',
@@ -314,9 +315,17 @@ Available Tools:`;
       temperature: options?.temperature,
     });
 
+    const rawToolCalls = Array.isArray(response.toolCalls)
+      ? response.toolCalls
+      : typeof response.rawResponse === 'object' && response.rawResponse
+        ? (response.rawResponse as { toolCalls?: unknown[] }).toolCalls
+        : undefined;
+
+    const toolCalls = normalizeToolCalls(Array.isArray(rawToolCalls) ? rawToolCalls : undefined);
+
     return {
       content: response.text,
-      toolCalls: response.rawResponse?.toolCalls,
+      toolCalls,
       model: response.model,
       usage: response.usage,
     };
@@ -326,7 +335,7 @@ Available Tools:`;
    * Execute tool calls
    */
   private async executeToolCalls(
-    toolCalls: any[],
+    toolCalls: ToolCallWithResult[],
     context: { sessionId: string; userId: string; orgId?: string }
   ): Promise<ToolCallWithResult[]> {
     const results: ToolCallWithResult[] = [];
@@ -335,10 +344,12 @@ Available Tools:`;
       try {
         const startTime = Date.now();
 
+        const toolArguments = toolCall.arguments ?? {};
+
         // Execute the tool
         const result = await toolExecutor.execute(
           toolCall.name,
-          toolCall.arguments,
+          toolArguments,
           {
             orgId: context.orgId || '',
             userId: context.userId,
@@ -354,7 +365,7 @@ Available Tools:`;
         results.push({
           id: toolCall.id,
           name: toolCall.name,
-          arguments: toolCall.arguments,
+          arguments: toolArguments,
           result: result.data,
           success: result.success,
           executionTimeMs,
@@ -372,7 +383,7 @@ Available Tools:`;
         results.push({
           id: toolCall.id,
           name: toolCall.name,
-          arguments: toolCall.arguments,
+          arguments: toolArguments,
           success: false,
           executionTimeMs: 0,
           error: {

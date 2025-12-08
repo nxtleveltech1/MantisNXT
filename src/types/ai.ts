@@ -70,6 +70,7 @@ export interface AITextResult {
 
 export interface AIChatResult extends AITextResult {
   messages?: AIChatMessage[];
+  toolCalls?: Array<unknown>;
   rawResponse?: unknown;
 }
 
@@ -156,6 +157,7 @@ export interface AIProviderRuntimeOptions {
   signal?: AbortSignal;
   metadata?: Record<string, unknown>;
   responseFormat?: 'text' | 'json';
+  tools?: Record<string, unknown>;
 }
 
 export interface AIEmbeddingOptions extends AIProviderRuntimeOptions {

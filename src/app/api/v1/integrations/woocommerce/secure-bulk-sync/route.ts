@@ -21,7 +21,8 @@ import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { CustomerSyncService } from '@/lib/services/CustomerSyncService';
 import { SecureCredentialManager } from '@/lib/services/SecureCredentialManager';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
-import { withSecurity, validateInput, getActiveWooConnector } from '@/lib/middleware/security';
+import { withSecurity, validateInput } from '@/lib/middleware/security';
+import { getActiveWooConnector } from '@/lib/utils/woocommerce-connector';
 
 // Input validation schema
 const validateBulkSyncInput = validateInput<BulkSyncRequest>((data) => {

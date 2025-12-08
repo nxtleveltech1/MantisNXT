@@ -46,6 +46,7 @@ export { default as AIVoice } from './ai-voice';
 export { default as ScrollText } from './scroll-text';
 export { default as MatrixText } from './matrix-text';
 export { default as DynamicText } from './dynamic-text';
+export { default as DynamicTextWrapper } from './dynamic-text-wrapper';
 export { default as GlitchText } from './glitch-text';
 export { default as ShimmerText } from './shimmer-text';
 export { default as SlicedText } from './sliced-text';

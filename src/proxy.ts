@@ -36,7 +36,7 @@ function parseAllowlist(input: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export function middleware(request: Request) {
+export function proxy(request: Request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
@@ -51,7 +51,6 @@ export function middleware(request: Request) {
   }
 
   // Check if pathname matches any public endpoint
-  // Using startsWith to match both exact paths and sub-paths (e.g., /api/suppliers and /api/suppliers/v3)
   if (ALWAYS_PUBLIC_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint))) {
     return NextResponse.next();
   }
@@ -75,25 +74,10 @@ export function middleware(request: Request) {
   }
 
   // TEMPORARY FIX: Bypass strict authorization check to fix dashboard 401 errors
-  // The frontend currently relies on cookie auth or internal network trust but doesn't send Bearer tokens
-  // TODO: Implement proper token propagation in frontend or switch to cookie-based middleware check
-  /*
-  // Require Authorization header (Bearer token). We avoid verifying in middleware to keep edge-safe.
-  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Authentication required',
-        code: 'NO_TOKEN',
-      },
-      { status: 401 }
-    );
-  }
-  */
-
   return NextResponse.next();
 }
+
+export default proxy;
 
 export const config = {
   matcher: ['/api/:path*'],
