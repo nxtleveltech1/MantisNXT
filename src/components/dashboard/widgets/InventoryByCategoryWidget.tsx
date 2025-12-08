@@ -2,7 +2,7 @@
  * Inventory by Category Widgets
  * Multiple chart views for category-based inventory analysis
  * All currency in ZAR (R) - South African Rands
- * Using MantisNXT vibrant rainbow color palette
+ * Using professional subdued purple-gray palette from tweakcn theme
  */
 
 'use client';
@@ -32,8 +32,8 @@ import { CHART_COLORS, CATEGORY_COLORS, SALES_COLORS, GRADIENT_PAIRS } from '@/l
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-3 shadow-xl">
-        <p className="mb-1 text-sm font-medium text-white">{label}</p>
+      <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-xl">
+        <p className="mb-1 text-sm font-medium text-popover-foreground">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.name.includes('Value') || entry.name.includes('Sales') ? formatCurrency(entry.value) : entry.value.toLocaleString()}
@@ -87,16 +87,19 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4 text-center">
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.total}15, ${SALES_COLORS.total}05)`, border: `1px solid ${SALES_COLORS.total}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.total }}>{data.summary.totalCategories}</div>
+        {/* Categories */}
+        <div className="rounded-lg p-3 bg-muted/50 border border-border">
+          <div className="text-2xl font-bold text-primary">{data.summary.totalCategories}</div>
           <div className="text-muted-foreground text-xs">Categories</div>
         </div>
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.trend}15, ${SALES_COLORS.trend}05)`, border: `1px solid ${SALES_COLORS.trend}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.trend }}>{formatCurrency(data.summary.totalValue)}</div>
+        {/* Total Value */}
+        <div className="rounded-lg p-3 bg-muted/50 border border-border">
+          <div className="text-2xl font-bold text-foreground">{formatCurrency(data.summary.totalValue)}</div>
           <div className="text-muted-foreground text-xs">Total Value</div>
         </div>
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.orders}15, ${SALES_COLORS.orders}05)`, border: `1px solid ${SALES_COLORS.orders}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.orders }}>{data.summary.totalProducts.toLocaleString()}</div>
+        {/* Products */}
+        <div className="rounded-lg p-3 bg-muted/50 border border-border">
+          <div className="text-2xl font-bold text-primary">{data.summary.totalProducts.toLocaleString()}</div>
           <div className="text-muted-foreground text-xs">Products</div>
         </div>
       </div>
@@ -104,8 +107,8 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
         <AreaChart data={chartData}>
           <defs>
             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#7F00FF" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#00E5FF" stopOpacity={0.1} />
+              <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -128,7 +131,7 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
             type="monotone"
             dataKey="totalValue"
             name="Value"
-            stroke="#7F00FF"
+            stroke="#6366F1"
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorValue)"
@@ -335,13 +338,9 @@ export function SalesTimelineChart({ period = 'week' }: { period?: 'day' | 'week
         <LineChart data={chartData}>
           <defs>
             <linearGradient id="salesGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#FF00FF" />
-              <stop offset="15%" stopColor="#BF00FF" />
-              <stop offset="30%" stopColor="#00BFFF" />
-              <stop offset="50%" stopColor="#00FFFF" />
-              <stop offset="65%" stopColor="#39FF14" />
-              <stop offset="80%" stopColor="#FFFF00" />
-              <stop offset="100%" stopColor="#FF6600" />
+              <stop offset="0%" stopColor="#6366F1" />
+              <stop offset="50%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#7C3AED" />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

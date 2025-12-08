@@ -116,8 +116,8 @@ export default function LoginPage() {
   // Show loading while checking auth state
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-900"></div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -126,7 +126,7 @@ export default function LoginPage() {
     return (
       <div className="relative min-h-screen">
         {/* Background Image */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
+        <div className="bg-background absolute inset-0 z-0">
           <div
             className="absolute inset-0"
             style={{
@@ -136,7 +136,7 @@ export default function LoginPage() {
               backgroundRepeat: 'no-repeat',
             }}
           />
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-background/40" />
         </div>
 
         {/* Content - Two Factor Form at bottom center */}
@@ -151,11 +151,11 @@ export default function LoginPage() {
             maxWidth: '28rem',
           }}
         >
-          <div className="space-y-6 rounded-lg border border-red-900/50 bg-black/60 p-6 backdrop-blur-sm">
+          <div className="space-y-6 rounded-lg border border-border bg-card/80 p-6 backdrop-blur-sm">
             {error && (
-              <Alert variant="destructive" className="rounded-lg border-red-700 bg-red-900/90">
+              <Alert variant="destructive" className="rounded-lg">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-white">{error}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
@@ -167,7 +167,7 @@ export default function LoginPage() {
                 value={twoFactorCode}
                 onChange={e => setTwoFactorCode(e.target.value)}
                 maxLength={6}
-                className="h-12 rounded-lg border-red-700/50 bg-red-900/30 text-center text-lg tracking-widest text-white placeholder:text-white/60"
+                className="h-12 rounded-lg text-center text-lg tracking-widest"
                 aria-label="Enter 6-digit verification code"
                 autoComplete="one-time-code"
               />
@@ -176,7 +176,7 @@ export default function LoginPage() {
             <Button
               onClick={handleTwoFactorSubmit}
               disabled={isLoading || twoFactorCode.length !== 6}
-              className="h-12 w-full rounded-lg bg-red-900 font-medium text-white hover:bg-red-800"
+              className="h-12 w-full rounded-lg font-medium"
             >
               {isLoading ? 'Verifying...' : 'Verify'}
             </Button>
@@ -190,7 +190,7 @@ export default function LoginPage() {
                   setTwoFactorCode('');
                   setError(null);
                 }}
-                className="text-sm text-white/80 hover:text-white"
+                className="text-muted-foreground hover:text-foreground text-sm"
               >
                 Back to login
               </Button>
@@ -204,7 +204,7 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
+      <div className="bg-background absolute inset-0 z-0">
         <div
           className="absolute inset-0"
           style={{
@@ -214,7 +214,7 @@ export default function LoginPage() {
             backgroundRepeat: 'no-repeat',
           }}
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-background/40" />
       </div>
 
       {/* Content - Login Form at bottom center */}
@@ -229,12 +229,12 @@ export default function LoginPage() {
           maxWidth: '28rem',
         }}
       >
-        {/* Login Form - Dark semi-transparent panel */}
-        <div className="space-y-6 rounded-lg border border-red-900/50 bg-black/60 p-6 backdrop-blur-sm">
+        {/* Login Form - Semi-transparent panel */}
+        <div className="space-y-6 rounded-lg border border-border bg-card/80 p-6 backdrop-blur-sm">
           {error && (
-            <Alert variant="destructive" className="rounded-lg border-red-700 bg-red-900/90">
+            <Alert variant="destructive" className="rounded-lg">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-white">{error}</AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
@@ -245,17 +245,17 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Username or Email</FormLabel>
+                    <FormLabel>Username or Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="Username or Email"
-                        className="h-12 rounded-lg border-red-700/50 bg-red-900/30 text-white placeholder:text-white/60"
+                        className="h-12 rounded-lg"
                         autoComplete="email"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-300" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -265,13 +265,13 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password"
-                          className="h-12 rounded-lg border-red-700/50 bg-red-900/30 pr-12 text-white placeholder:text-white/60"
+                          className="h-12 rounded-lg pr-12"
                           autoComplete="current-password"
                           {...field}
                         />
@@ -279,28 +279,24 @@ export default function LoginPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute top-1/2 right-1 h-10 w-10 -translate-y-1/2 hover:bg-transparent"
+                          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-10 w-10 -translate-y-1/2 hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-white/60" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="h-4 w-4 text-white/60" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-red-300" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="h-12 w-full rounded-lg bg-red-900 font-medium text-white hover:bg-red-800"
-              >
+              <Button type="submit" disabled={isLoading} className="h-12 w-full rounded-lg font-medium">
                 {isLoading ? (
                   'Signing in...'
                 ) : (

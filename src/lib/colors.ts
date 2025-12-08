@@ -1,89 +1,89 @@
 /**
  * MantisNXT Color Palette
- * Colors from admin Color Palette settings
+ * Professional subdued purple-gray theme from tweakcn
  */
 
-// Chart colors from admin settings
+// Chart colors - Professional purple/indigo palette (from tweakcn theme)
 export const MANTIS_COLORS = {
-    chart1: '#7F00FF',    // Purple/Violet
-    chart2: '#00E5FF',    // Cyan/Aqua
-    chart3: '#00FF66',    // Green/Lime
-    chart4: '#FFFF00',    // Yellow
-    chart5: '#FF6600',    // Orange
+    chart1: '#7C7C8A',    // Gray-blue (muted)
+    chart2: '#6366F1',    // Indigo
+    chart3: '#8B5CF6',    // Violet
+    chart4: '#7C3AED',    // Purple
+    chart5: '#5B21B6',    // Deep purple
 
     // Semantic aliases
-    primary: '#7F00FF',
-    success: '#00FF66',
-    warning: '#FFFF00',
-    error: '#FF6600',
-    info: '#00E5FF',
+    primary: '#6366F1',
+    success: '#22C55E',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#3B82F6',
 };
 
 // Chart color array (matches CSS --chart-1 through --chart-5)
 export const CHART_COLORS = [
-    '#7F00FF', // Chart 1 - Purple/Violet
-    '#00E5FF', // Chart 2 - Cyan/Aqua
-    '#00FF66', // Chart 3 - Green/Lime
-    '#FFFF00', // Chart 4 - Yellow
-    '#FF6600', // Chart 5 - Orange
+    '#7C7C8A', // Chart 1 - Gray-blue (muted)
+    '#6366F1', // Chart 2 - Indigo
+    '#8B5CF6', // Chart 3 - Violet
+    '#7C3AED', // Chart 4 - Purple
+    '#5B21B6', // Chart 5 - Deep purple
 ];
 
-// Gradient pairs
+// Gradient pairs - subtle professional gradients
 export const GRADIENT_PAIRS = {
-    primary: { start: '#7F00FF', end: '#00E5FF' },
-    success: { start: '#00FF66', end: '#00E5FF' },
-    info: { start: '#00E5FF', end: '#FFFF00' },
-    warning: { start: '#FFFF00', end: '#FF6600' },
-    danger: { start: '#FF6600', end: '#7F00FF' },
-    rainbow: { start: '#7F00FF', end: '#FF6600' },
+    primary: { start: '#6366F1', end: '#8B5CF6' },
+    success: { start: '#22C55E', end: '#10B981' },
+    info: { start: '#3B82F6', end: '#6366F1' },
+    warning: { start: '#F59E0B', end: '#EF4444' },
+    danger: { start: '#EF4444', end: '#DC2626' },
+    rainbow: { start: '#6366F1', end: '#8B5CF6' },
 };
 
 // KPI Card color schemes
 export const KPI_COLORS = {
-    suppliers: '#00E5FF',
-    inventory: '#00FF66',
-    alerts: '#FF6600',
-    products: '#FFFF00',
-    salesTotal: '#00FF66',
-    salesInStore: '#FF6600',
-    salesOnline: '#00E5FF',
-    avgOrder: '#FFFF00',
+    suppliers: '#6366F1',
+    inventory: '#22C55E',
+    alerts: '#F59E0B',
+    products: '#3B82F6',
+    salesTotal: '#22C55E',
+    salesInStore: '#6366F1',
+    salesOnline: '#8B5CF6',
+    avgOrder: '#F59E0B',
 };
 
-// Location colors
+// Location colors - professional palette
 export const LOCATION_COLORS = [
-    '#7F00FF',
-    '#00FF66',
-    '#00E5FF',
-    '#FFFF00',
-    '#FF6600',
+    '#6366F1', // In-Store - Indigo
+    '#22C55E', // Online - Green
+    '#3B82F6', // Warehouse - Blue
+    '#F59E0B', // Supplier - Amber
+    '#8B5CF6', // Other - Violet
 ];
 
 // Category colors
 export const CATEGORY_COLORS = [
-    '#7F00FF',
-    '#00FF66',
-    '#00E5FF',
-    '#FFFF00',
-    '#FF6600',
+    '#6366F1',
+    '#8B5CF6',
+    '#3B82F6',
+    '#22C55E',
+    '#F59E0B',
 ];
 
 // Sales chart colors
 export const SALES_COLORS = {
-    total: '#00FF66',
-    inStore: '#FF6600',
-    online: '#00E5FF',
-    trend: '#FFFF00',
-    orders: '#7F00FF',
+    total: '#22C55E',
+    inStore: '#6366F1',
+    online: '#8B5CF6',
+    trend: '#F59E0B',
+    orders: '#3B82F6',
 };
 
 // CSS variable exports (matches globals.css)
 export const CSS_COLORS = {
-    '--chart-1': '#7F00FF',
-    '--chart-2': '#00E5FF',
-    '--chart-3': '#00FF66',
-    '--chart-4': '#FFFF00',
-    '--chart-5': '#FF6600',
+    '--chart-1': '#7C7C8A',
+    '--chart-2': '#6366F1',
+    '--chart-3': '#8B5CF6',
+    '--chart-4': '#7C3AED',
+    '--chart-5': '#5B21B6',
 };
 
 export default CHART_COLORS;

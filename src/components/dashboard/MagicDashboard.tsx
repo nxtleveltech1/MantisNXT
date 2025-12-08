@@ -216,24 +216,24 @@ const MagicDashboard = () => {
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen space-y-6 bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-900 p-6">
+      <div className="min-h-screen space-y-6 bg-background p-6">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-neutral-800/60" />
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
-        <div className="h-[450px] animate-pulse rounded-xl bg-neutral-800/60" />
+        <div className="h-[450px] animate-pulse rounded-xl bg-muted" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-850 p-6 text-slate-100">
+    <div className="min-h-screen space-y-6 bg-background p-6 text-foreground">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-neutral-900/70 p-4 shadow-2xl backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-lg md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold tracking-tight text-white">Dashboard</h1>
-          <p className="text-sm text-slate-400">Live overview in a dark, glassy shell with subtle color pops.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Live overview in a dark, glassy shell with subtle color pops.</p>
         </div>
         <div className="flex items-center gap-3">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
@@ -241,7 +241,7 @@ const MagicDashboard = () => {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20"
+            className="gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -251,132 +251,124 @@ const MagicDashboard = () => {
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Active Suppliers</CardTitle>
-              <Building2 className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Suppliers</CardTitle>
+              <Building2 className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{metrics.activeSuppliers}</div>
-            <p className="text-xs text-slate-400 mt-1">{metrics.preferredSuppliers} preferred</p>
+            <div className="text-3xl font-bold text-foreground">{metrics.activeSuppliers}</div>
+            <p className="text-xs text-muted-foreground mt-1">{metrics.preferredSuppliers} preferred</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-400/20 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Total Inventory Value</CardTitle>
-              <Package className="h-4 w-4 text-sky-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Inventory Value</CardTitle>
+              <Package className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{formatZARCompact(metrics.totalInventoryValue)}</div>
-            <div className="mt-1 flex items-center gap-1 text-sky-300">
+            <div className="text-3xl font-bold text-foreground">{formatZARCompact(metrics.totalInventoryValue)}</div>
+            <div className="mt-1 flex items-center gap-1 text-primary">
               <TrendingUp className="h-3 w-3" />
               <span className="text-xs">+{metrics.changePercent.toFixed(1)}% vs last period</span>
             </div>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-sky-400/20 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Stock Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-amber-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Stock Alerts</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-warning" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-200">{metrics.stockAlerts}</div>
-            <p className="text-xs text-slate-400 mt-1">
+            <div className="text-3xl font-bold text-warning">{metrics.stockAlerts}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {metrics.outOfStockItems} out of stock / {metrics.lowStockAlerts} low
             </p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-amber-400/20 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Supplier Products</CardTitle>
-              <Boxes className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Supplier Products</CardTitle>
+              <Boxes className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{(metrics.totalProducts || 0).toLocaleString()}</div>
-            <p className="text-xs text-slate-400 mt-1">Total in catalog</p>
+            <div className="text-3xl font-bold text-foreground">{(metrics.totalProducts || 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total in catalog</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-300/15 blur-3xl" />
         </Card>
       </div>
 
       {/* Sales Overview Row */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Total Sales</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {salesLoading ? '...' : formatZARCompact(salesMetrics?.totalSales || 0)}
             </div>
-            <p className="text-xs mt-1 text-slate-400">{salesMetrics?.orderCount || 0} orders total</p>
+            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.orderCount || 0} orders total</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-300/15 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">In-Store Sales</CardTitle>
-              <Store className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">In-Store Sales</CardTitle>
+              <Store className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {salesLoading ? '...' : formatZARCompact(salesMetrics?.inStoreSales || 0)}
             </div>
-            <p className="text-xs mt-1 text-slate-400">{salesMetrics?.inStoreOrders || 0} orders</p>
+            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.inStoreOrders || 0} orders</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-400/15 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Online Sales</CardTitle>
-              <Globe className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Online Sales</CardTitle>
+              <Globe className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {salesLoading ? '...' : formatZARCompact(salesMetrics?.onlineSales || 0)}
             </div>
-            <p className="text-xs mt-1 text-slate-400">{salesMetrics?.onlineOrders || 0} orders</p>
+            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.onlineOrders || 0} orders</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-300/15 blur-3xl" />
         </Card>
 
-        <Card className="relative overflow-hidden border border-white/10 bg-neutral-900/70 shadow-2xl backdrop-blur-xl">
+        <Card className="relative overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-300">Avg Order Value</CardTitle>
-              <TrendingUp className="h-4 w-4 text-rose-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
+              <TrendingUp className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {salesLoading ? '...' : formatZAR(salesMetrics?.avgOrderValue || 0)}
             </div>
-            <p className="text-xs mt-1 text-slate-400">Per transaction</p>
+            <p className="text-xs mt-1 text-muted-foreground">Per transaction</p>
           </CardContent>
-          <div className="absolute bottom-0 right-0 h-24 w-24 bg-rose-300/15 blur-3xl" />
         </Card>
       </div>
 

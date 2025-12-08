@@ -50,7 +50,7 @@ export function FlippableWidget({ views, defaultViewId, className }: FlippableWi
                 variant={index === currentViewIndex ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setCurrentViewIndex(index)}
-                className="h-8"
+                className={`h-8 ${index === currentViewIndex ? 'bg-[#06B6D4] hover:bg-[#0891B2] text-white' : ''}`}
               >
                 {view.title}
               </Button>

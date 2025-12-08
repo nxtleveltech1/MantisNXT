@@ -10,7 +10,7 @@ import type {
   SignUpData,
   AuthResult,
 } from '@/types/auth';
-import { mockAuthProvider } from './mock-provider';
+import { apiAuthProvider } from './api-auth-provider';
 
 // Create context
 const AuthContextProvider = createContext<AuthContext | null>(null);
@@ -19,7 +19,7 @@ const AuthContextProvider = createContext<AuthContext | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authProvider] = useState<AuthProviderType>(mockAuthProvider);
+  const [authProvider] = useState<AuthProviderType>(apiAuthProvider);
 
   // Initialize auth state
   useEffect(() => {

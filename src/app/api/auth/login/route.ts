@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { sign as signJwt, verify as verifyJwt } from 'jsonwebtoken';
 import type { JwtPayload, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { db } from '@/lib/database';
 
 // Validation schema
 const LoginSchema = z.object({
@@ -12,46 +13,6 @@ const LoginSchema = z.object({
   remember_me: z.boolean().default(false),
   two_factor_code: z.string().optional(),
 });
-
-// Mock user database - in production, this would be a real database
-const mockUsers = [
-  {
-    id: 'user_001',
-    email: 'gambew@gmail.com',
-    name: 'System Administrator',
-    role: 'admin',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    permissions: ['read', 'write', 'delete', 'admin', 'bulk_operations', 'user_management'],
-    organizationId: 'org_001',
-    isActive: true,
-    twoFactorEnabled: false,
-    lastLogin: new Date(),
-  },
-  {
-    id: 'user_002',
-    email: 'manager@company.com',
-    name: 'Inventory Manager',
-    role: 'manager',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    permissions: ['read', 'write', 'bulk_operations'],
-    organizationId: 'org_001',
-    isActive: true,
-    twoFactorEnabled: false,
-    lastLogin: new Date(),
-  },
-  {
-    id: 'user_003',
-    email: 'user@company.com',
-    name: 'Regular User',
-    role: 'user',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    permissions: ['read'],
-    organizationId: 'org_001',
-    isActive: true,
-    twoFactorEnabled: false,
-    lastLogin: new Date(),
-  },
-];
 
 // JWT secret - allow a harmless placeholder only during static build so Vercel can compile
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
@@ -73,9 +34,49 @@ export async function POST(request: NextRequest) {
     const validatedData = LoginSchema.parse(body);
     const { email, password, remember_me, two_factor_code } = validatedData;
 
-    // Find user
-    const user = mockUsers.find(u => u.email === email);
-    if (!user) {
+    // Query user from database
+    const userResult = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password_hash,
+        u.display_name as name,
+        u.first_name,
+        u.last_name,
+        u.org_id,
+        u.department,
+        u.job_title,
+        u.is_active,
+        u.is_suspended,
+        u.two_factor_enabled,
+        u.email_verified,
+        u.last_login_at,
+        u.failed_login_attempts,
+        u.locked_until,
+        o.name as org_name,
+        COALESCE(
+          array_agg(DISTINCT r.slug) FILTER (WHERE r.slug IS NOT NULL),
+          ARRAY[]::text[]
+        ) as roles,
+        COALESCE(
+          array_agg(DISTINCT perm.name) FILTER (WHERE perm.name IS NOT NULL),
+          ARRAY[]::text[]
+        ) as permissions
+      FROM auth.users_extended u
+      JOIN organization o ON u.org_id = o.id
+      LEFT JOIN auth.user_roles ur ON u.id = ur.user_id
+        AND (ur.effective_until IS NULL OR ur.effective_until > NOW())
+      LEFT JOIN auth.roles r ON ur.role_id = r.id AND r.is_active = TRUE
+      LEFT JOIN auth.role_permissions rp ON r.id = rp.role_id
+      LEFT JOIN auth.permissions perm ON rp.permission_id = perm.id
+      WHERE u.email = $1
+      GROUP BY u.id, o.id, o.name
+      `,
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -86,12 +87,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is active
-    if (!user.isActive) {
+    const user = userResult.rows[0];
+
+    // Check if account is locked
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Account is disabled',
+          message: `Account locked until ${new Date(user.locked_until).toLocaleTimeString()}`,
+          error: 'ACCOUNT_LOCKED',
+        },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is active
+    if (!user.is_active || user.is_suspended) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Account is disabled or suspended',
           error: 'ACCOUNT_DISABLED',
         },
         { status: 401 }
@@ -99,12 +114,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.password_hash || '');
     if (!isValidPassword) {
+      // Record failed login attempt
+      const failedAttempts = (user.failed_login_attempts || 0) + 1;
+      const lockUntil = failedAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null; // 15 min lockout
+
+      await db.query(
+        `
+        UPDATE auth.users_extended
+        SET failed_login_attempts = $1, locked_until = $2
+        WHERE id = $3
+        `,
+        [failedAttempts, lockUntil, user.id]
+      );
+
+      const remaining = 5 - failedAttempts;
+      const message =
+        remaining > 0
+          ? `Invalid email or password. ${remaining} attempts remaining.`
+          : 'Account locked due to too many failed attempts.';
+
       return NextResponse.json(
         {
           success: false,
-          message: 'Invalid email or password',
+          message,
           error: 'INVALID_CREDENTIALS',
         },
         { status: 401 }
@@ -112,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check 2FA if enabled
-    if (user.twoFactorEnabled && !two_factor_code) {
+    if (user.two_factor_enabled && !two_factor_code) {
       return NextResponse.json(
         {
           success: false,
@@ -125,14 +159,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // TODO: Verify 2FA code if provided
+    // if (user.two_factor_enabled && two_factor_code) { ... }
+
+    // Reset failed login attempts and update last login
+    await db.query(
+      `
+      UPDATE auth.users_extended
+      SET failed_login_attempts = 0, locked_until = NULL, last_login_at = NOW()
+      WHERE id = $1
+      `,
+      [user.id]
+    );
+
+    // Determine primary role
+    const primaryRole = user.roles.includes('super_admin')
+      ? 'super_admin'
+      : user.roles.includes('admin')
+        ? 'admin'
+        : user.roles.includes('manager')
+          ? 'manager'
+          : user.roles.includes('user')
+            ? 'user'
+            : 'viewer';
+
     // Generate JWT token
     const tokenPayload = {
       userId: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: primaryRole,
+      roles: user.roles,
       permissions: user.permissions,
-      organizationId: user.organizationId,
+      organizationId: user.org_id,
     };
 
     const signOptions: SignOptions = {
@@ -140,9 +199,6 @@ export async function POST(request: NextRequest) {
     };
 
     const token = signJwt(tokenPayload as Record<string, unknown>, JWT_SECRET, signOptions);
-
-    // Update last login
-    user.lastLogin = new Date();
 
     // Return success response
     return NextResponse.json(
@@ -154,10 +210,18 @@ export async function POST(request: NextRequest) {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            role: primaryRole,
+            roles: user.roles,
             permissions: user.permissions,
-            organizationId: user.organizationId,
-            lastLogin: user.lastLogin,
+            organizationId: user.org_id,
+            organization: user.org_name,
+            department: user.department,
+            jobTitle: user.job_title,
+            emailVerified: user.email_verified,
+            twoFactorEnabled: user.two_factor_enabled,
+            lastLogin: new Date(),
           },
           token,
           expiresIn: remember_me ? '30d' : JWT_EXPIRES_IN,
@@ -210,9 +274,46 @@ export async function GET(request: NextRequest) {
     try {
       const decoded = verifyJwt(token, JWT_SECRET) as JwtPayload;
 
-      // Find user to get current data
-      const user = mockUsers.find(u => u.id === decoded.userId);
-      if (!user || !user.isActive) {
+      // Query user from database
+      const userResult = await db.query(
+        `
+        SELECT
+          u.id,
+          u.email,
+          u.display_name as name,
+          u.first_name,
+          u.last_name,
+          u.org_id,
+          u.department,
+          u.job_title,
+          u.is_active,
+          u.is_suspended,
+          u.two_factor_enabled,
+          u.email_verified,
+          u.last_login_at,
+          o.name as org_name,
+          COALESCE(
+            array_agg(DISTINCT r.slug) FILTER (WHERE r.slug IS NOT NULL),
+            ARRAY[]::text[]
+          ) as roles,
+          COALESCE(
+            array_agg(DISTINCT perm.name) FILTER (WHERE perm.name IS NOT NULL),
+            ARRAY[]::text[]
+          ) as permissions
+        FROM auth.users_extended u
+        JOIN organization o ON u.org_id = o.id
+        LEFT JOIN auth.user_roles ur ON u.id = ur.user_id
+          AND (ur.effective_until IS NULL OR ur.effective_until > NOW())
+        LEFT JOIN auth.roles r ON ur.role_id = r.id AND r.is_active = TRUE
+        LEFT JOIN auth.role_permissions rp ON r.id = rp.role_id
+        LEFT JOIN auth.permissions perm ON rp.permission_id = perm.id
+        WHERE u.id = $1
+        GROUP BY u.id, o.id, o.name
+        `,
+        [decoded.userId]
+      );
+
+      if (userResult.rows.length === 0 || !userResult.rows[0].is_active) {
         return NextResponse.json(
           {
             success: false,
@@ -223,6 +324,17 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      const user = userResult.rows[0];
+      const primaryRole = user.roles.includes('super_admin')
+        ? 'super_admin'
+        : user.roles.includes('admin')
+          ? 'admin'
+          : user.roles.includes('manager')
+            ? 'manager'
+            : user.roles.includes('user')
+              ? 'user'
+              : 'viewer';
+
       return NextResponse.json({
         success: true,
         message: 'Authentication valid',
@@ -231,10 +343,18 @@ export async function GET(request: NextRequest) {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            role: primaryRole,
+            roles: user.roles,
             permissions: user.permissions,
-            organizationId: user.organizationId,
-            lastLogin: user.lastLogin,
+            organizationId: user.org_id,
+            organization: user.org_name,
+            department: user.department,
+            jobTitle: user.job_title,
+            emailVerified: user.email_verified,
+            twoFactorEnabled: user.two_factor_enabled,
+            lastLogin: user.last_login_at,
           },
         },
       });

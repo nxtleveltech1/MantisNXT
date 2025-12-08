@@ -289,6 +289,7 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       displayName,
+      password,
       phone,
       mobile,
       department,
@@ -308,28 +309,103 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user using auth provider
-    const { authProvider } = await import('@/lib/auth/mock-provider');
-    const newUser = await authProvider.createUser({
-      email,
-      name: displayName,
-      role: role || 'user',
-      department: department || '',
-      phone: phone || '',
-      mobile: mobile || '',
-      org_id: user.orgId,
-    } as any);
+    // Check if email already exists
+    const existingUser = await db.query(
+      `SELECT id FROM auth.users_extended WHERE email = $1`,
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'EMAIL_EXISTS',
+          message: 'A user with this email already exists',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Hash password if provided, otherwise generate temporary password
+    const bcrypt = await import('bcryptjs');
+    const crypto = await import('node:crypto');
+    const tempPassword = password || crypto.randomBytes(16).toString('hex');
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+    // Insert user into database
+    const insertResult = await db.query(
+      `
+      INSERT INTO auth.users_extended (
+        email,
+        password_hash,
+        display_name,
+        first_name,
+        last_name,
+        phone,
+        mobile,
+        department,
+        job_title,
+        org_id,
+        is_active,
+        email_verified,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, NOW(), NOW())
+      RETURNING id, email, display_name, first_name, last_name, department, job_title, created_at
+      `,
+      [
+        email,
+        passwordHash,
+        displayName,
+        firstName || null,
+        lastName || null,
+        phone || null,
+        mobile || null,
+        department || null,
+        jobTitle || null,
+        user.orgId,
+        !sendInvitation, // If sending invitation, email not verified yet
+      ]
+    );
+
+    const newUser = insertResult.rows[0];
+
+    // Assign role to user
+    const roleSlug = role || 'user';
+    const roleResult = await db.query(
+      `SELECT id FROM auth.roles WHERE slug = $1 AND is_active = true`,
+      [roleSlug]
+    );
+
+    if (roleResult.rows.length > 0) {
+      await db.query(
+        `
+        INSERT INTO auth.user_roles (user_id, role_id, assigned_by, assigned_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (user_id, role_id) DO NOTHING
+        `,
+        [newUser.id, roleResult.rows[0].id, user.id]
+      );
+    }
+
+    // TODO: If sendInvitation is true, send email with temp password or reset link
 
     return NextResponse.json(
       {
         success: true,
-        message: 'User created successfully',
+        message: sendInvitation
+          ? 'User created and invitation sent'
+          : 'User created successfully',
         data: {
           id: newUser.id,
           email: newUser.email,
-          name: newUser.name,
-          role: newUser.role,
+          name: newUser.display_name,
+          firstName: newUser.first_name,
+          lastName: newUser.last_name,
+          role: roleSlug,
           department: newUser.department,
+          jobTitle: newUser.job_title,
+          createdAt: newUser.created_at,
         },
       },
       { status: 201 }

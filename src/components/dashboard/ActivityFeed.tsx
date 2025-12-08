@@ -168,25 +168,25 @@ export default function ActivityFeed({
       return (
         <div
           key={activity.id}
-          className="flex items-start space-x-4 border-b border-gray-100 p-4 transition-colors last:border-b-0 hover:bg-gray-50"
+          className="flex items-start space-x-4 border-b border-border p-4 transition-colors last:border-b-0 hover:bg-muted/50"
         >
           <div className="flex-shrink-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-              <IconComponent className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <IconComponent className="h-5 w-5 text-primary" />
             </div>
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center justify-between">
-              <h4 className="truncate text-sm font-medium text-gray-900">{activity.title}</h4>
+              <h4 className="truncate text-sm font-medium text-foreground">{activity.title}</h4>
               <Badge variant={priorityColor} className="text-xs">
                 {activity.priority}
               </Badge>
             </div>
 
-            <p className="mb-2 line-clamp-2 text-sm text-gray-600">{activity.description}</p>
+            <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">{activity.description}</p>
 
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <Clock className="h-3 w-3" />
                 <span title={formatTimestamp(activity.timestamp)}>
@@ -288,8 +288,8 @@ export default function ActivityFeed({
 
       <CardContent className="p-0">
         {activities.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Activity className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+          <div className="p-8 text-center text-muted-foreground">
+            <Activity className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
             <p>No recent activities found</p>
           </div>
         ) : (

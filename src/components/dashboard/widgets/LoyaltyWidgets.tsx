@@ -45,8 +45,8 @@ export function LoyaltySignupsWidget() {
             <p className="text-muted-foreground text-sm font-medium">New Sign-ups</p>
             <p className="text-muted-foreground/70 text-xs">Last 30 days</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
-            <UserPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <UserPlus className="h-5 w-5 text-primary" />
           </div>
         </div>
 
@@ -54,10 +54,10 @@ export function LoyaltySignupsWidget() {
           <div className="text-3xl font-bold">{data.signups.thisMonth}</div>
           <div className="flex items-center gap-1 text-sm">
             <TrendingUp
-              className={`h-4 w-4 ${data.signups.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+              className={`h-4 w-4 ${data.signups.trend === 'up' ? 'text-chart-2' : 'text-destructive'}`}
             />
             <span
-              className={`font-medium ${data.signups.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+              className={`font-medium ${data.signups.trend === 'up' ? 'text-chart-2' : 'text-destructive'}`}
             >
               {data.signups.trendValue}
             </span>
@@ -72,9 +72,9 @@ export function LoyaltySignupsWidget() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
+          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Loyalty program integration in progress
           </p>
         </div>
@@ -96,8 +96,8 @@ export function ActiveMembersWidget() {
             <p className="text-muted-foreground text-sm font-medium">Active Members</p>
             <p className="text-muted-foreground/70 text-xs">Loyalty program</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-            <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-2/10">
+            <Users className="h-5 w-5 text-chart-2" />
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export function ActiveMembersWidget() {
           <div className="border-border space-y-2 border-t pt-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Active rate</span>
-              <span className="font-medium text-green-600">{activePercentage}%</span>
+              <span className="font-medium text-chart-2">{activePercentage}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Inactive</span>
@@ -121,9 +121,9 @@ export function ActiveMembersWidget() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
+          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Loyalty program integration in progress
           </p>
         </div>
@@ -145,8 +145,8 @@ export function PointsEconomyWidget() {
             <p className="text-muted-foreground text-sm font-medium">Points Economy</p>
             <p className="text-muted-foreground/70 text-xs">Total & value</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
-            <Gift className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-4/10">
+            <Gift className="h-5 w-5 text-chart-4" />
           </div>
         </div>
 
@@ -157,8 +157,8 @@ export function PointsEconomyWidget() {
           </div>
 
           <div className="flex items-center gap-1 text-sm">
-            <Award className="h-4 w-4 text-purple-600" />
-            <span className="font-medium text-purple-600">
+            <Award className="h-4 w-4 text-chart-4" />
+            <span className="font-medium text-chart-4">
               {formatCurrency(data.points.pointsValue)}
             </span>
             <span className="text-muted-foreground text-xs">value</span>
@@ -175,14 +175,14 @@ export function PointsEconomyWidget() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Redemption rate</span>
-              <span className="font-medium text-purple-600">{data.points.redemptionRate}%</span>
+              <span className="font-medium text-chart-4">{data.points.redemptionRate}%</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
+          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Loyalty program integration in progress
           </p>
         </div>
