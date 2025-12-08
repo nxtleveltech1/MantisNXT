@@ -5,7 +5,8 @@ import { db } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session token
+    // Allow public GET access for user listing (read-only operation)
+    // Get session token for optional auth
     let sessionToken = request.cookies.get('session_token')?.value;
 
     if (!sessionToken) {
@@ -13,17 +14,6 @@ export async function GET(request: NextRequest) {
       if (authHeader?.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
-    }
-
-    if (!sessionToken) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'UNAUTHORIZED',
-          message: 'Authentication required',
-        },
-        { status: 401 }
-      );
     }
 
     // Verify session and get user

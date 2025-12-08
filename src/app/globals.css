@@ -1,10 +1,8 @@
 /* Font face declarations - loaded early */
 
-@import 'tailwindcss';
-
-@source '../**/*.{ts,tsx}';
-@source '../../components/**/*.{ts,tsx}';
-@source '../../pages/**/*.{ts,tsx}';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
