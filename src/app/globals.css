@@ -221,11 +221,11 @@
   margin-inline: auto;
   padding-inline: 2rem;
 
-  @media (width >= --theme(--breakpoint-sm)) {
+  @media (min-width: 640px) {
     max-width: none;
   }
 
-  @media (width >= 1400px) {
+  @media (min-width: 1400px) {
     max-width: 1400px;
   }
 }
@@ -271,8 +271,9 @@
    ============================================ */
 
 .skeleton {
-  @apply animate-pulse bg-linear-to-r from-muted via-muted-foreground/20 to-muted;
-  @apply bg-size-[200%_100%] rounded;
+  @apply animate-pulse bg-gradient-to-r from-muted via-muted-foreground/20 to-muted;
+  @apply rounded;
+  background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
