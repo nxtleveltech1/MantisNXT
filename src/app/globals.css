@@ -234,13 +234,13 @@
    BUTTON UTILITIES
    ============================================ */
 
-@utility btn-primary {
+.btn-primary {
   @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
   @apply shadow-md hover:shadow-lg active:scale-[0.98];
   @apply rounded-md px-4 py-2 font-medium;
 }
 
-@utility btn-secondary {
+.btn-secondary {
   @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all duration-200;
   @apply shadow-sm hover:shadow-md active:scale-[0.98];
   @apply rounded-md px-4 py-2 font-medium;
@@ -250,18 +250,18 @@
    CARD UTILITIES
    ============================================ */
 
-@utility card-hover {
+.card-hover {
   @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
   @apply border border-border/50;
 }
 
-@utility card-interactive {
+.card-interactive {
   @apply cursor-pointer transition-all duration-200;
   @apply hover:shadow-md hover:border-primary/30 active:scale-[0.99];
   @apply border border-border;
 }
 
-@utility card-modern {
+.card-modern {
   @apply rounded-lg border border-border bg-card shadow-sm;
   @apply transition-all duration-200;
 }
@@ -270,7 +270,7 @@
    SKELETON LOADING
    ============================================ */
 
-@utility skeleton {
+.skeleton {
   @apply animate-pulse bg-linear-to-r from-muted via-muted-foreground/20 to-muted;
   @apply bg-size-[200%_100%] rounded;
   animation: shimmer 1.5s infinite;
@@ -280,19 +280,19 @@
    BADGE UTILITIES
    ============================================ */
 
-@utility badge-success {
+.badge-success {
   @apply bg-success/10 text-success border-success/20;
 }
 
-@utility badge-warning {
+.badge-warning {
   @apply bg-warning/10 text-warning border-warning/20;
 }
 
-@utility badge-error {
+.badge-error {
   @apply bg-destructive/10 text-destructive border-destructive/20;
 }
 
-@utility badge-info {
+.badge-info {
   @apply bg-info/10 text-info border-info/20;
 }
 
@@ -300,19 +300,19 @@
    TRANSITION UTILITIES
    ============================================ */
 
-@utility transition-smooth {
+.transition-smooth {
   @apply transition-all duration-300 ease-in-out;
 }
 
-@utility transition-fast {
+.transition-fast {
   @apply transition-all duration-150 ease-in-out;
 }
 
-@utility transition-slow {
+.transition-slow {
   @apply transition-all duration-500 ease-in-out;
 }
 
-@utility theme-transition {
+.theme-transition {
   transition:
     background-color 200ms ease-in-out,
     color 200ms ease-in-out,
@@ -323,15 +323,15 @@
    ANIMATION UTILITIES
    ============================================ */
 
-@utility animate-fade-in {
+.animate-fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-@utility animate-slide-in {
+.animate-slide-in {
   animation: slideIn 0.4s ease-out;
 }
 
-@utility animate-scale-in {
+.animate-scale-in {
   animation: scaleIn 0.3s ease-out;
 }
 
@@ -339,11 +339,11 @@
    GLASS UTILITIES
    ============================================ */
 
-@utility glass {
+.glass {
   @apply bg-card/80 backdrop-blur-md border border-border/20;
 }
 
-@utility glass-dark {
+.glass-dark {
   @apply bg-background/80 backdrop-blur-md border border-border/20;
 }
 
