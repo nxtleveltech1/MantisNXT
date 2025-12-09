@@ -53,6 +53,34 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Ensure CSS files are served with correct Content-Type
+        source: '/_next/static/css/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+      {
+        // Ensure all static CSS files have correct headers
+        source: '/:path*\\.css',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
     ];
   },
 
