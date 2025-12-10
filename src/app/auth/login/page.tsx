@@ -62,9 +62,20 @@ export default function LoginPage() {
         password: data.password,
       });
 
+      console.log('Sign-in attempt status:', signInAttempt.status);
+      console.log('Sign-in attempt:', JSON.stringify(signInAttempt, null, 2));
+
       // Check if we need 2FA
       if (signInAttempt.status === 'needs_second_factor') {
+        console.log('2FA required - supportedSecondFactors:', signInAttempt.supportedSecondFactors);
         setRequiresTwoFactor(true);
+        return;
+      }
+
+      // Check for first factor verification needed
+      if (signInAttempt.status === 'needs_first_factor') {
+        console.log('First factor needed - supportedFirstFactors:', signInAttempt.supportedFirstFactors);
+        setError('Additional verification required. Check your email for a code.');
         return;
       }
 
@@ -74,8 +85,8 @@ export default function LoginPage() {
         router.push('/');
       } else {
         // Handle other statuses
-        console.log('Sign-in status:', signInAttempt.status);
-        setError('Sign-in incomplete. Please try again.');
+        console.log('Unhandled sign-in status:', signInAttempt.status);
+        setError(`Sign-in status: ${signInAttempt.status}. Please try again.`);
       }
     } catch (err: unknown) {
       console.error('Sign in error:', err);
