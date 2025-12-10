@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import type { User } from '@/types/auth';
-import { authProvider } from '@/lib/auth/mock-provider';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateUserFormSchema } from '@/lib/auth/validation';
@@ -72,9 +71,43 @@ export default function UserProfilePage() {
   });
 
   const loadUser = useCallback(async () => {
+    // Handle "new" user case - don't try to fetch
+    if (userId === 'new') {
+      setIsLoading(false);
+      setIsEditing(true); // Start in edit mode for new user
+      reset({
+        name: '',
+        email: '',
+        role: 'user',
+        department: '',
+        phone: '',
+        is_active: true,
+        permissions: [],
+        id_number: '',
+        employment_equity: undefined,
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/v1/admin/users/${userId}`);
+
+      // Get auth token from localStorage
+      const authToken =
+        typeof window !== 'undefined' ? localStorage.getItem('mantis_auth_token') : null;
+
+      const headers: HeadersInit = {};
+
+      // Add Authorization header if token exists
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
+        headers,
+        credentials: 'include', // Include cookies for session-based auth
+      });
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -83,6 +116,7 @@ export default function UserProfilePage() {
           return;
         }
         if (response.status === 404) {
+          setUser(null);
           setError('User not found');
           return;
         }
@@ -148,39 +182,70 @@ export default function UserProfilePage() {
   }, [loadUser]);
 
   const onSubmit = async (data: UpdateUserFormData) => {
-    if (!user) return;
+    const isNewUser = userId === 'new';
 
     try {
       setIsSaving(true);
       setError(null);
       setSuccess(null);
 
-      const response = await fetch(`/api/v1/admin/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const url = isNewUser ? '/api/v1/admin/users' : `/api/v1/admin/users/${userId}`;
+
+      const method = isNewUser ? 'POST' : 'PUT';
+
+      // Get auth token from localStorage
+      const authToken =
+        typeof window !== 'undefined' ? localStorage.getItem('mantis_auth_token') : null;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if token exists
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        credentials: 'include', // Include cookies for session-based auth
         body: JSON.stringify({
           firstName: data.name.split(' ')[0],
           lastName: data.name.split(' ').slice(1).join(' '),
           displayName: data.name,
+          email: data.email,
           phone: data.phone,
           department: data.department,
+          role: data.role,
           isActive: data.is_active,
+          sendInvitation: isNewUser ? true : false, // Send invitation email for new users
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to update user');
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+        throw new Error(result.message || `Failed to ${isNewUser ? 'create' : 'update'} user`);
       }
 
-      setSuccess('User updated successfully');
-      setIsEditing(false);
-      await loadUser();
+      setSuccess(`User ${isNewUser ? 'created' : 'updated'} successfully`);
+
+      if (isNewUser) {
+        // Redirect to the new user's page
+        router.push(`/admin/users/${result.data?.id || userId}`);
+      } else {
+        setIsEditing(false);
+        await loadUser();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user');
+      setError(
+        err instanceof Error ? err.message : `Failed to ${isNewUser ? 'create' : 'update'} user`
+      );
     } finally {
       setIsSaving(false);
     }
@@ -196,8 +261,21 @@ export default function UserProfilePage() {
     }
 
     try {
+      // Get auth token from localStorage
+      const authToken =
+        typeof window !== 'undefined' ? localStorage.getItem('mantis_auth_token') : null;
+
+      const headers: HeadersInit = {};
+
+      // Add Authorization header if token exists
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`/api/v1/admin/users/${userId}`, {
         method: 'DELETE',
+        headers,
+        credentials: 'include', // Include cookies for session-based auth
       });
 
       const result = await response.json();
@@ -216,11 +294,23 @@ export default function UserProfilePage() {
     if (!user) return;
 
     try {
+      // Get auth token from localStorage
+      const authToken =
+        typeof window !== 'undefined' ? localStorage.getItem('mantis_auth_token') : null;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if token exists
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`/api/v1/admin/users/${userId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
+        credentials: 'include', // Include cookies for session-based auth
         body: JSON.stringify({
           isActive: !user.is_active,
         }),
@@ -244,17 +334,20 @@ export default function UserProfilePage() {
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Users', href: '/admin/users' },
-          { label: 'Loading...' },
+          { label: userId === 'new' ? 'New User' : 'Loading...' },
         ]}
       >
         <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
         </div>
       </AppLayout>
     );
   }
 
-  if (!user) {
+  // For "new" user, show create form even without user data
+  const isNewUser = userId === 'new';
+
+  if (!isNewUser && !user) {
     return (
       <AppLayout
         breadcrumbs={[
@@ -263,9 +356,17 @@ export default function UserProfilePage() {
           { label: 'Not Found' },
         ]}
       >
-        <Alert variant="destructive">
-          <AlertDescription>User not found</AlertDescription>
-        </Alert>
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <AlertDescription>User not found</AlertDescription>
+          </Alert>
+          <div className="flex gap-3">
+            <Button onClick={() => router.push('/admin/users')} variant="outline">
+              Back to Users
+            </Button>
+            <Button onClick={() => router.push('/admin/users/new')}>Create User</Button>
+          </div>
+        </div>
       </AppLayout>
     );
   }
@@ -283,7 +384,7 @@ export default function UserProfilePage() {
       breadcrumbs={[
         { label: 'Admin', href: '/admin' },
         { label: 'Users', href: '/admin/users' },
-        { label: user.name },
+        { label: isNewUser ? 'New User' : user?.name || 'User' },
       ]}
     >
       <div className="space-y-6">
@@ -291,53 +392,67 @@ export default function UserProfilePage() {
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={user.profile_image} />
-              <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
+              <AvatarImage src={user?.profile_image} />
+              <AvatarFallback className="text-lg">
+                {isNewUser ? 'NU' : user ? getInitials(user.name) : 'U'}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold">{user.name}</h1>
-              <div className="mt-1 flex items-center gap-2">
-                <Badge variant="outline">
-                  {USER_ROLES.find(r => r.value === user.role)?.label}
-                </Badge>
-                <Badge variant={user.is_active ? 'default' : 'destructive'}>
-                  {user.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-                {user.two_factor_enabled && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    2FA
+              <h1 className="text-3xl font-bold">
+                {isNewUser ? 'New User' : user?.name || 'User'}
+              </h1>
+              {!isNewUser && user && (
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge variant="outline">
+                    {USER_ROLES.find(r => r.value === user.role)?.label}
                   </Badge>
-                )}
-              </div>
+                  <Badge variant={user.is_active ? 'default' : 'destructive'}>
+                    {user.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                  {user.two_factor_enabled && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      2FA
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {isEditing ? (
+            {isEditing || isNewUser ? (
               <>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setIsEditing(false);
-                    reset();
+                    if (isNewUser) {
+                      router.push('/admin/users');
+                    } else {
+                      setIsEditing(false);
+                      reset();
+                    }
                   }}
                   disabled={isSaving}
                 >
                   <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={isSaving || !isDirty}>
+                <Button
+                  size="sm"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isSaving || (!isNewUser && !isDirty)}
+                >
                   {isSaving ? (
                     <>
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Saving...
+                      {isNewUser ? 'Creating...' : 'Saving...'}
                     </>
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Save Changes
+                      {isNewUser ? 'Create User' : 'Save Changes'}
                     </>
                   )}
                 </Button>
@@ -348,27 +463,31 @@ export default function UserProfilePage() {
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Button>
-                <Button
-                  variant={user.is_active ? 'outline' : 'default'}
-                  size="sm"
-                  onClick={toggleStatus}
-                >
-                  {user.is_active ? (
-                    <>
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Deactivate
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Activate
-                    </>
-                  )}
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleDelete}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
+                {user && (
+                  <>
+                    <Button
+                      variant={user.is_active ? 'outline' : 'default'}
+                      size="sm"
+                      onClick={toggleStatus}
+                    >
+                      {user.is_active ? (
+                        <>
+                          <XCircle className="mr-2 h-4 w-4" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Activate
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleDelete}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -394,18 +513,22 @@ export default function UserProfilePage() {
               <UserIcon className="mr-2 h-4 w-4" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="permissions">
-              <Shield className="mr-2 h-4 w-4" />
-              Permissions
-            </TabsTrigger>
-            <TabsTrigger value="activity">
-              <Activity className="mr-2 h-4 w-4" />
-              Activity
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <Lock className="mr-2 h-4 w-4" />
-              Security
-            </TabsTrigger>
+            {!isNewUser && (
+              <>
+                <TabsTrigger value="permissions">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Permissions
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  <Activity className="mr-2 h-4 w-4" />
+                  Activity
+                </TabsTrigger>
+                <TabsTrigger value="security">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Security
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Profile Tab */}
@@ -432,7 +555,7 @@ export default function UserProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
                       <div className="flex items-center">
-                        <Mail className="text-muted-foreground mr-2 h-4 w-4" />
+                        <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="email"
                           type="email"
@@ -449,7 +572,7 @@ export default function UserProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <div className="flex items-center">
-                        <Phone className="text-muted-foreground mr-2 h-4 w-4" />
+                        <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="phone"
                           {...register('phone')}
@@ -466,7 +589,7 @@ export default function UserProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="department">Department</Label>
                       <div className="flex items-center">
-                        <Building2 className="text-muted-foreground mr-2 h-4 w-4" />
+                        <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="department"
                           {...register('department')}
@@ -551,146 +674,158 @@ export default function UserProfilePage() {
                     </div>
                   </div>
 
-                  <Separator />
+                  {!isNewUser && user && (
+                    <>
+                      <Separator />
 
-                  <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                    <div>
-                      <span className="text-muted-foreground">Created:</span>
-                      <span className="ml-2 font-medium">{formatDate(user.created_at)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Last Login:</span>
-                      <span className="ml-2 font-medium">
-                        {user.last_login ? formatDate(user.last_login) : 'Never'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Email Verified:</span>
-                      <span className="ml-2 font-medium">{user.email_verified ? 'Yes' : 'No'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Password Changed:</span>
-                      <span className="ml-2 font-medium">
-                        {formatDate(user.password_changed_at)}
-                      </span>
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                        <div>
+                          <span className="text-muted-foreground">Created:</span>
+                          <span className="ml-2 font-medium">{formatDate(user.created_at)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Last Login:</span>
+                          <span className="ml-2 font-medium">
+                            {user.last_login ? formatDate(user.last_login) : 'Never'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Email Verified:</span>
+                          <span className="ml-2 font-medium">
+                            {user.email_verified ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Password Changed:</span>
+                          <span className="ml-2 font-medium">
+                            {formatDate(user.password_changed_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </form>
           </TabsContent>
 
           {/* Permissions Tab */}
-          <TabsContent value="permissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Permissions</CardTitle>
-                <CardDescription>Manage permissions and access controls</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {user.permissions.length === 0 ? (
-                    <p className="text-muted-foreground py-8 text-center">
-                      No permissions assigned
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {user.permissions.map(permission => (
-                        <div
-                          key={permission.id}
-                          className="flex items-center justify-between rounded-lg border p-4"
-                        >
-                          <div>
-                            <p className="font-medium">{permission.name}</p>
-                            <p className="text-muted-foreground text-sm">
-                              {permission.resource} - {permission.action}
-                            </p>
+          {!isNewUser && user && (
+            <TabsContent value="permissions">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Permissions</CardTitle>
+                  <CardDescription>Manage permissions and access controls</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {user.permissions.length === 0 ? (
+                      <p className="py-8 text-center text-muted-foreground">
+                        No permissions assigned
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {user.permissions.map(permission => (
+                          <div
+                            key={permission.id}
+                            className="flex items-center justify-between rounded-lg border p-4"
+                          >
+                            <div>
+                              <p className="font-medium">{permission.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {permission.resource} - {permission.action}
+                              </p>
+                            </div>
+                            <Badge variant="outline">{permission.action}</Badge>
                           </div>
-                          <Badge variant="outline">{permission.action}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* Activity Tab */}
-          <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>User login history and actions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4 rounded-lg border p-4">
-                    <Clock className="text-muted-foreground h-5 w-5" />
-                    <div className="flex-1">
-                      <p className="font-medium">Last Login</p>
-                      <p className="text-muted-foreground text-sm">
-                        {user.last_login ? formatDate(user.last_login) : 'Never logged in'}
-                      </p>
+          {!isNewUser && user && (
+            <TabsContent value="activity">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>User login history and actions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4 rounded-lg border p-4">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium">Last Login</p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.last_login ? formatDate(user.last_login) : 'Never logged in'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="py-8 text-center text-muted-foreground">
+                      <p>Activity tracking coming soon</p>
                     </div>
                   </div>
-                  <div className="text-muted-foreground py-8 text-center">
-                    <p>Activity tracking coming soon</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* Security Tab */}
-          <TabsContent value="security">
-            <Card>
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>Authentication and security configuration</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="flex items-center space-x-4">
-                    <Shield className="text-muted-foreground h-5 w-5" />
-                    <div>
-                      <p className="font-medium">Two-Factor Authentication</p>
-                      <p className="text-muted-foreground text-sm">
-                        {user.two_factor_enabled ? 'Enabled' : 'Disabled'}
-                      </p>
+          {!isNewUser && user && (
+            <TabsContent value="security">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security Settings</CardTitle>
+                  <CardDescription>Authentication and security configuration</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="flex items-center space-x-4">
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Two-Factor Authentication</p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.two_factor_enabled ? 'Enabled' : 'Disabled'}
+                        </p>
+                      </div>
                     </div>
+                    <Badge variant={user.two_factor_enabled ? 'default' : 'secondary'}>
+                      {user.two_factor_enabled ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
-                  <Badge variant={user.two_factor_enabled ? 'default' : 'secondary'}>
-                    {user.two_factor_enabled ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="flex items-center space-x-4">
-                    <Mail className="text-muted-foreground h-5 w-5" />
-                    <div>
-                      <p className="font-medium">Email Verification</p>
-                      <p className="text-muted-foreground text-sm">
-                        {user.email_verified ? 'Verified' : 'Not Verified'}
-                      </p>
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="flex items-center space-x-4">
+                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Email Verification</p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.email_verified ? 'Verified' : 'Not Verified'}
+                        </p>
+                      </div>
                     </div>
+                    <Badge variant={user.email_verified ? 'default' : 'secondary'}>
+                      {user.email_verified ? 'Verified' : 'Unverified'}
+                    </Badge>
                   </div>
-                  <Badge variant={user.email_verified ? 'default' : 'secondary'}>
-                    {user.email_verified ? 'Verified' : 'Unverified'}
-                  </Badge>
-                </div>
 
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full">
-                    Force Password Reset
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Reset Two-Factor Authentication
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full">
+                      Force Password Reset
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      Reset Two-Factor Authentication
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>

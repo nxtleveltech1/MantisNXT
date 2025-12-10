@@ -332,7 +332,9 @@ export class NeonAuthService {
       return user;
     } catch (error) {
       console.error('Session verification error:', error);
-      return null;
+      // Don't swallow DB errors as auth failures - rethrow them
+      // This prevents 401 logouts during DB glitches
+      throw error;
     }
   }
 

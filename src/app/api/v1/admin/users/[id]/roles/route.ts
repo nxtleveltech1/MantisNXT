@@ -1,21 +1,17 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { neonAuthService } from '@/lib/auth/neon-auth-service';
 import { db } from '@/lib/database';
+import { verifyAuth, isAdmin } from '@/lib/auth/auth-helper';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Await params (Next.js 15 requirement)
+    const { id: userId } = await params;
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
+    // Verify authentication
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -26,26 +22,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
-        },
-        { status: 401 }
-      );
-    }
-
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -55,8 +33,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         { status: 403 }
       );
     }
-
-    const userId = params.id;
     const body = await request.json();
     const { roleId, effectiveFrom, effectiveTo } = body;
 
@@ -75,9 +51,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const roleCheck = await db.query(
       `
       SELECT id FROM auth.roles
-      WHERE id = $1 AND org_id = $2 AND is_active = TRUE
+      WHERE id = $1 AND is_active = TRUE
     `,
-      [roleId, user.orgId]
+      [roleId]
     );
 
     if (roleCheck.rows.length === 0) {

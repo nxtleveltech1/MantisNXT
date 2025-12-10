@@ -11,11 +11,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, CheckCircle2, User as UserIcon } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider';
-import type { User as UserType } from '@/types/auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 interface ProfileFormData {
   name: string;
@@ -25,8 +23,7 @@ interface ProfileFormData {
 }
 
 export default function AccountProfilePage() {
-  const [user, setUser] = useState<UserType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -41,30 +38,35 @@ export default function AccountProfilePage() {
     },
   });
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setIsLoading(true);
-        const currentUser = await authProvider.getCurrentUser();
-        if (!currentUser) {
-          router.push('/auth/login');
-          return;
-        }
-        setUser(currentUser);
-        form.reset({
-          name: currentUser.name,
-          phone: currentUser.phone,
-          mobile: currentUser.mobile || '',
-          department: currentUser.department,
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUser();
-  }, [router, form]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Reset form when user loads
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name,
+        phone: user.phone,
+        mobile: user.mobile || '',
+        department: user.department,
+      });
+    }
+  }, [user, form]);
+
+  // Show loading state while checking authentication
+  if (authLoading || !isAuthenticated || !user) {
+    return (
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!user) return;
@@ -96,17 +98,7 @@ export default function AccountProfilePage() {
       }
 
       setSuccess('Profile updated successfully');
-      // Reload user data
-      const currentUser = await authProvider.getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-        form.reset({
-          name: currentUser.name,
-          phone: currentUser.phone,
-          mobile: currentUser.mobile || '',
-          department: currentUser.department,
-        });
-      }
+      // Form will be reset with updated data when user context updates
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -122,26 +114,6 @@ export default function AccountProfilePage() {
       .toUpperCase()
       .slice(0, 2);
   };
-
-  if (isLoading) {
-    return (
-      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
-        <Alert variant="destructive">
-          <AlertDescription>Failed to load user data</AlertDescription>
-        </Alert>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Profile' }]}>
@@ -205,7 +177,7 @@ export default function AccountProfilePage() {
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" value={user.email} disabled />
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       Email cannot be changed. Contact administrator.
                     </p>
                   </div>
@@ -281,7 +253,7 @@ export default function AccountProfilePage() {
                   {user.email_verified ? (
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                   ) : (
-                    <UserIcon className="text-muted-foreground h-5 w-5" />
+                    <UserIcon className="h-5 w-5 text-muted-foreground" />
                   )}
                   <span className="text-sm">
                     {user.email_verified ? 'Verified' : 'Not Verified'}
@@ -290,7 +262,7 @@ export default function AccountProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label>Member Since</Label>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {new Date(user.created_at).toLocaleDateString()}
                 </p>
               </div>

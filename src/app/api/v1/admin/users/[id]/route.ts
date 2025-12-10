@@ -1,21 +1,18 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { neonAuthService } from '@/lib/auth/neon-auth-service';
 import { db } from '@/lib/database';
+import { verifyAuth, isAdmin } from '@/lib/auth/auth-helper';
+import { getOrCreateRole } from '@/lib/auth/ensure-roles';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Await params (Next.js 15 requirement)
+    const { id: userId } = await params;
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
+    // Verify authentication
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -26,26 +23,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
-        },
-        { status: 401 }
-      );
-    }
-
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -55,8 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         { status: 403 }
       );
     }
-
-    const userId = params.id;
 
     // Get user details
     const result = await db.query(
@@ -72,7 +49,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         u.phone,
         u.mobile,
         u.org_id,
-        o.name as org_name,
         u.department,
         u.job_title,
         u.is_active,
@@ -82,23 +58,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         u.last_login_at,
         u.last_activity_at,
         COALESCE(
-          array_agg(DISTINCT jsonb_build_object(
-            'id', r.id,
-            'name', r.name,
-            'slug', r.slug,
-            'level', r.role_level
-          )) FILTER (WHERE r.id IS NOT NULL),
-          ARRAY[]::jsonb[]
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', r.id,
+              'name', r.name,
+              'slug', r.slug,
+              'level', COALESCE(r.role_level, 0)
+            )
+          ) FILTER (WHERE r.id IS NOT NULL),
+          '[]'::json
         ) as roles
       FROM auth.users_extended u
-      JOIN organization o ON u.org_id = o.id
       LEFT JOIN auth.user_roles ur ON u.id = ur.user_id
         AND (ur.effective_until IS NULL OR ur.effective_until > NOW())
       LEFT JOIN auth.roles r ON ur.role_id = r.id AND r.is_active = TRUE
-      WHERE u.id = $1 AND u.org_id = $2
-      GROUP BY u.id, o.id, o.name
+      WHERE u.id = $1
+      GROUP BY u.id, u.email, u.email_verified, u.first_name, u.last_name, u.display_name, u.avatar_url, u.phone, u.mobile, u.org_id, u.department, u.job_title, u.is_active, u.is_suspended, u.two_factor_enabled, u.created_at, u.last_login_at, u.last_activity_at
     `,
-      [userId, user.orgId]
+      [userId]
     );
 
     if (result.rows.length === 0) {
@@ -128,7 +105,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           phone: row.phone,
           mobile: row.mobile,
           orgId: row.org_id,
-          orgName: row.org_name,
           department: row.department,
           jobTitle: row.job_title,
           isActive: row.is_active,
@@ -156,19 +132,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Await params (Next.js 15 requirement)
+    const { id: userId } = await params;
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
+    // Verify authentication
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -179,26 +151,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
-        },
-        { status: 401 }
-      );
-    }
-
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -208,13 +162,96 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         { status: 403 }
       );
     }
-
-    const userId = params.id;
     const body = await request.json();
+    console.log('[UpdateUser] Received body:', JSON.stringify(body, null, 2));
 
-    // Update user using auth provider
-    const { authProvider } = await import('@/lib/auth/mock-provider');
-    await authProvider.updateUser(userId, body as any);
+    const {
+      firstName,
+      lastName,
+      displayName,
+      phone,
+      mobile,
+      department,
+      jobTitle,
+      isActive,
+      role,
+    } = body;
+
+    console.log('[UpdateUser] Parsed fields:', {
+      userId,
+      firstName,
+      lastName,
+      displayName,
+      phone,
+      mobile,
+      department,
+      jobTitle,
+      isActive,
+      role,
+    });
+
+    // Update user in database
+    await db.query(
+      `
+      UPDATE auth.users_extended
+      SET
+        first_name = COALESCE($1, first_name),
+        last_name = COALESCE($2, last_name),
+        display_name = COALESCE($3, display_name),
+        phone = COALESCE($4, phone),
+        mobile = COALESCE($5, mobile),
+        department = COALESCE($6, department),
+        job_title = COALESCE($7, job_title),
+        is_active = COALESCE($8, is_active),
+        updated_at = NOW()
+      WHERE id = $9
+      `,
+      [
+        firstName || null,
+        lastName || null,
+        displayName || null,
+        phone || null,
+        mobile || null,
+        department || null,
+        jobTitle || null,
+        isActive !== undefined ? isActive : null,
+        userId,
+      ]
+    );
+
+    // Update role if provided
+    if (role) {
+      console.log('[UpdateUser] Looking for role:', role, 'in org:', user.orgId);
+
+      // Use getOrCreateRole to ensure the role exists
+      const roleId = await getOrCreateRole(
+        user.orgId || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        role
+      );
+
+      if (roleId) {
+        console.log('[UpdateUser] Found/created role:', roleId);
+        // Remove existing roles
+        await db.query(`DELETE FROM auth.user_roles WHERE user_id = $1`, [userId]);
+
+        // Assign new role
+        await db.query(
+          `
+          INSERT INTO auth.user_roles (user_id, role_id, assigned_by, assigned_at)
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (user_id, role_id) DO NOTHING
+          `,
+          [userId, roleId, user.id]
+        );
+        console.log('[UpdateUser] Role updated successfully');
+      } else {
+        console.warn(
+          '[UpdateUser] Could not find or create role with slug:',
+          role,
+          '- role not updated'
+        );
+      }
+    }
 
     return NextResponse.json(
       {
@@ -237,19 +274,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Await params (Next.js 15 requirement)
+    const { id: userId } = await params;
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
+    // Verify authentication
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -260,26 +296,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
-        },
-        { status: 401 }
-      );
-    }
-
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -289,8 +307,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 403 }
       );
     }
-
-    const userId = params.id;
 
     // Don't allow deleting yourself
     if (userId === user.id) {

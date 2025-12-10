@@ -44,8 +44,6 @@ import {
   Edit,
   Plus,
 } from 'lucide-react';
-import AppLayout from '@/components/layout/AppLayout';
-
 export default function CurrencySettingsPage() {
   const [config, setConfig] = useState<CurrencyConfig>(DEFAULT_CURRENCY_CONFIG);
   const [isModified, setIsModified] = useState(false);
@@ -114,8 +112,7 @@ export default function CurrencySettingsPage() {
   const vatPreview = getVATPreview();
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -569,7 +566,6 @@ export default function CurrencySettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

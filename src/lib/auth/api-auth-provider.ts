@@ -212,32 +212,48 @@ export class ApiAuthProvider implements AuthProvider {
       return this.currentUser;
     }
 
-    // If we have a token but no user, fetch from API
+    // If we have a token but no user, try to decode it and return a basic user
+    // Don't make API calls during initialization - let actual API calls validate the token
     if (this.authToken) {
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${this.authToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          // Token is invalid, clear it
-          this.authToken = null;
-          this.saveToken(null);
-          return null;
-        }
-
-        const result = await response.json();
-        if (result.success && result.data?.user) {
-          this.currentUser = this.mapApiUserToUser(result.data.user);
-          return this.currentUser;
+        // Try to decode JWT to get basic user info without API call
+        const tokenParts = this.authToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          // Return a minimal user object based on token
+          // The actual user data will be validated on API calls
+          return {
+            id: payload.userId || '',
+            email: payload.email || '',
+            name: payload.name || payload.email || '',
+            role: (payload.role || 'user') as any,
+            org_id: payload.organizationId || '',
+            department: '',
+            permissions: [],
+            created_at: new Date(),
+            last_login: new Date(),
+            is_active: true,
+            phone: '',
+            preferences: {
+              language: 'en',
+              timezone: 'Africa/Johannesburg',
+              date_format: 'dd/mm/yyyy',
+              currency: 'ZAR',
+              notifications: {
+                email_notifications: true,
+                sms_notifications: false,
+                push_notifications: true,
+                digest_frequency: 'daily',
+              },
+            },
+            two_factor_enabled: false,
+            email_verified: true,
+            password_changed_at: new Date(),
+          };
         }
       } catch (error) {
         console.error('Get current user error:', error);
-        this.authToken = null;
-        this.saveToken(null);
+        // Don't clear token - let API calls validate it
       }
     }
 

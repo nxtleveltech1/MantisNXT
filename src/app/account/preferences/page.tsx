@@ -17,8 +17,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Save, CheckCircle2, Bell, Globe, Palette, Eye } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider';
-import type { User as UserType } from '@/types/auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 interface PreferencesFormData {
   language: string;
@@ -36,8 +35,7 @@ interface PreferencesFormData {
 }
 
 export default function AccountPreferencesPage() {
-  const [user, setUser] = useState<UserType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -58,40 +56,43 @@ export default function AccountPreferencesPage() {
     show_phone: false,
   });
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setIsLoading(true);
-        const currentUser = await authProvider.getCurrentUser();
-        if (!currentUser) {
-          router.push('/auth/login');
-          return;
-        }
-        setUser(currentUser);
-        if (currentUser.preferences) {
-          setPreferences({
-            language: currentUser.preferences.language || 'en',
-            timezone: currentUser.preferences.timezone || 'Africa/Johannesburg',
-            date_format: currentUser.preferences.date_format || 'dd/mm/yyyy',
-            currency: currentUser.preferences.currency || 'ZAR',
-            theme: currentUser.preferences.theme || 'light',
-            email_notifications: currentUser.preferences.notifications?.email_notifications ?? true,
-            sms_notifications: currentUser.preferences.notifications?.sms_notifications ?? false,
-            push_notifications: currentUser.preferences.notifications?.push_notifications ?? true,
-            digest_frequency: currentUser.preferences.notifications?.digest_frequency || 'daily',
-            profile_visibility: 'organization',
-            show_email: false,
-            show_phone: false,
-          });
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUser();
-  }, [router]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Load preferences from user when available
+  useEffect(() => {
+    if (user?.preferences) {
+      setPreferences({
+        language: user.preferences.language || 'en',
+        timezone: user.preferences.timezone || 'Africa/Johannesburg',
+        date_format: user.preferences.date_format || 'dd/mm/yyyy',
+        currency: user.preferences.currency || 'ZAR',
+        theme: (user.preferences.theme as 'light' | 'dark' | 'auto') || 'light',
+        email_notifications: user.preferences.notifications?.email_notifications ?? true,
+        sms_notifications: user.preferences.notifications?.sms_notifications ?? false,
+        push_notifications: user.preferences.notifications?.push_notifications ?? true,
+        digest_frequency: user.preferences.notifications?.digest_frequency || 'daily',
+        profile_visibility: 'organization',
+        show_email: false,
+        show_phone: false,
+      });
+    }
+  }, [user]);
+
+  // Show loading state while checking authentication
+  if (authLoading || !isAuthenticated || !user) {
+    return (
+      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const handleSave = async () => {
     if (!user) return;
@@ -145,26 +146,6 @@ export default function AccountPreferencesPage() {
       setIsSaving(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
-        <Alert variant="destructive">
-          <AlertDescription>Failed to load user data</AlertDescription>
-        </Alert>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Preferences' }]}>
@@ -312,7 +293,7 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="email_notifications">Email Notifications</Label>
-                  <p className="text-muted-foreground text-sm">Receive notifications via email</p>
+                  <p className="text-sm text-muted-foreground">Receive notifications via email</p>
                 </div>
                 <Checkbox
                   id="email_notifications"
@@ -329,7 +310,7 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="sms_notifications">SMS Notifications</Label>
-                  <p className="text-muted-foreground text-sm">Receive notifications via SMS</p>
+                  <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
                 </div>
                 <Checkbox
                   id="sms_notifications"
@@ -346,7 +327,7 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="push_notifications">Push Notifications</Label>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Receive push notifications in browser
                   </p>
                 </div>
@@ -415,7 +396,7 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show_email">Show Email</Label>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Allow others to see your email address
                   </p>
                 </div>
@@ -431,7 +412,7 @@ export default function AccountPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show_phone">Show Phone</Label>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Allow others to see your phone number
                   </p>
                 </div>

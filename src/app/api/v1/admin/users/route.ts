@@ -1,57 +1,27 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { neonAuthService } from '@/lib/auth/neon-auth-service';
 import { db } from '@/lib/database';
+import { verifyAuth, isAdmin } from '@/lib/auth/auth-helper';
+import { getOrCreateRole } from '@/lib/auth/ensure-roles';
 
 export async function GET(request: NextRequest) {
   try {
-    // Allow public GET access for user listing (read-only operation)
-    // Get session token for optional auth
-    let sessionToken = request.cookies.get('session_token')?.value;
-
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    // Temporarily allow public GET access to fix production 401 error
-    return NextResponse.json(
-      {
-        success: true,
-        data: [],
-        pagination: {
-          page: 1,
-          limit: 50,
-          total: 0,
-          totalPages: 0,
-        },
-      },
-      { status: 200 }
-    );
-
-    // Verify session and get user
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
+    // Verify authentication
+    const user = await verifyAuth(request);
 
     if (!user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
         },
         { status: 401 }
       );
     }
 
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -61,6 +31,9 @@ export async function GET(request: NextRequest) {
         { status: 403 }
       );
     }
+
+    // Check if user is super admin (can see all users)
+    const isSuperAdmin = user.roles.some(r => r.slug === 'super_admin' || r.level >= 90);
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -89,20 +62,32 @@ export async function GET(request: NextRequest) {
         u.email_verified,
         u.created_at,
         u.last_login_at,
-        o.name as org_name,
         COALESCE(
-          array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL),
-          ARRAY[]::text[]
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', r.id,
+              'slug', r.slug,
+              'name', r.name,
+              'level', COALESCE(r.role_level, 0)
+            )
+          ) FILTER (WHERE r.id IS NOT NULL),
+          '[]'::json
         ) as roles
       FROM auth.users_extended u
-      JOIN organization o ON u.org_id = o.id
       LEFT JOIN auth.user_roles ur ON u.id = ur.user_id
         AND (ur.effective_until IS NULL OR ur.effective_until > NOW())
       LEFT JOIN auth.roles r ON ur.role_id = r.id AND r.is_active = TRUE
-      WHERE u.org_id = $1
+      WHERE 1=1
     `;
-    const queryParams: any[] = [user.orgId];
-    let paramIndex = 2;
+    const queryParams: unknown[] = [];
+    let paramIndex = 1;
+
+    // Filter by org_id unless super admin
+    if (!isSuperAdmin && user.orgId) {
+      query += ` AND u.org_id = $${paramIndex}`;
+      queryParams.push(user.orgId);
+      paramIndex++;
+    }
 
     if (search) {
       query += ` AND (
@@ -138,7 +123,7 @@ export async function GET(request: NextRequest) {
       query += ` AND u.is_active = FALSE`;
     }
 
-    query += ` GROUP BY u.id, o.name`;
+    query += ` GROUP BY u.id, u.email, u.display_name, u.first_name, u.last_name, u.phone, u.mobile, u.department, u.job_title, u.is_active, u.two_factor_enabled, u.email_verified, u.created_at, u.last_login_at`;
     query += ` ORDER BY u.created_at DESC`;
     query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     queryParams.push(limit, offset);
@@ -149,10 +134,17 @@ export async function GET(request: NextRequest) {
     let countQuery = `
       SELECT COUNT(DISTINCT u.id) as total
       FROM auth.users_extended u
-      WHERE u.org_id = $1
+      WHERE 1=1
     `;
-    const countParams: any[] = [user.orgId];
-    let countParamIndex = 2;
+    const countParams: unknown[] = [];
+    let countParamIndex = 1;
+
+    // Filter by org_id unless super admin
+    if (!isSuperAdmin && user.orgId) {
+      countQuery += ` AND u.org_id = $${countParamIndex}`;
+      countParams.push(user.orgId);
+      countParamIndex++;
+    }
 
     if (search) {
       countQuery += ` AND (
@@ -209,8 +201,7 @@ export async function GET(request: NextRequest) {
           emailVerified: row.email_verified,
           createdAt: row.created_at,
           lastLoginAt: row.last_login_at,
-          organization: row.org_name,
-          roles: row.roles || [],
+          roles: Array.isArray(row.roles) ? row.roles : [],
         })),
         pagination: {
           page,
@@ -223,12 +214,15 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('List users API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('List users API error details:', { errorMessage, errorStack });
 
     return NextResponse.json(
       {
         success: false,
         error: 'SERVER_ERROR',
-        message: 'An unexpected error occurred',
+        message: errorMessage,
       },
       { status: 500 }
     );
@@ -237,17 +231,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Verify authentication
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -258,26 +245,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
-        },
-        { status: 401 }
-      );
-    }
-
     // Check admin permissions
-    const isAdmin = user.roles.some(
-      r => r.slug === 'admin' || r.slug === 'super_admin' || r.level >= 90
-    );
-
-    if (!isAdmin) {
+    if (!isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
@@ -290,6 +259,8 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
+    console.log('[CreateUser] Received body:', JSON.stringify(body, null, 2));
+
     const {
       email,
       firstName,
@@ -304,6 +275,19 @@ export async function POST(request: NextRequest) {
       sendInvitation,
     } = body;
 
+    console.log('[CreateUser] Parsed fields:', {
+      email,
+      firstName,
+      lastName,
+      displayName,
+      phone,
+      mobile,
+      department,
+      jobTitle,
+      role,
+      sendInvitation,
+    });
+
     if (!email || !displayName) {
       return NextResponse.json(
         {
@@ -316,10 +300,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingUser = await db.query(
-      `SELECT id FROM auth.users_extended WHERE email = $1`,
-      [email]
-    );
+    const existingUser = await db.query(`SELECT id FROM auth.users_extended WHERE email = $1`, [
+      email,
+    ]);
 
     if (existingUser.rows.length > 0) {
       return NextResponse.json(
@@ -339,6 +322,21 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(tempPassword, 12);
 
     // Insert user into database
+    const insertParams = [
+      email,
+      passwordHash,
+      displayName,
+      firstName || null,
+      lastName || null,
+      phone || null,
+      mobile || null,
+      department || null,
+      jobTitle || null,
+      user.orgId || null,
+      !sendInvitation, // If sending invitation, email not verified yet
+    ];
+    console.log('[CreateUser] Insert params:', insertParams);
+
     const insertResult = await db.query(
       `
       INSERT INTO auth.users_extended (
@@ -359,38 +357,38 @@ export async function POST(request: NextRequest) {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, NOW(), NOW())
       RETURNING id, email, display_name, first_name, last_name, department, job_title, created_at
       `,
-      [
-        email,
-        passwordHash,
-        displayName,
-        firstName || null,
-        lastName || null,
-        phone || null,
-        mobile || null,
-        department || null,
-        jobTitle || null,
-        user.orgId,
-        !sendInvitation, // If sending invitation, email not verified yet
-      ]
+      insertParams
     );
 
     const newUser = insertResult.rows[0];
+    console.log('[CreateUser] Created user:', newUser);
 
     // Assign role to user
     const roleSlug = role || 'user';
-    const roleResult = await db.query(
-      `SELECT id FROM auth.roles WHERE slug = $1 AND is_active = true`,
-      [roleSlug]
+    console.log('[CreateUser] Looking for role:', roleSlug, 'in org:', user.orgId);
+
+    // Use getOrCreateRole to ensure the role exists
+    const roleId = await getOrCreateRole(
+      user.orgId || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      roleSlug
     );
 
-    if (roleResult.rows.length > 0) {
+    if (roleId) {
+      console.log('[CreateUser] Found/created role:', roleId);
       await db.query(
         `
         INSERT INTO auth.user_roles (user_id, role_id, assigned_by, assigned_at)
         VALUES ($1, $2, $3, NOW())
         ON CONFLICT (user_id, role_id) DO NOTHING
         `,
-        [newUser.id, roleResult.rows[0].id, user.id]
+        [newUser.id, roleId, user.id]
+      );
+      console.log('[CreateUser] Role assigned successfully');
+    } else {
+      console.warn(
+        '[CreateUser] Could not find or create role with slug:',
+        roleSlug,
+        '- user created without role'
       );
     }
 
@@ -399,9 +397,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: sendInvitation
-          ? 'User created and invitation sent'
-          : 'User created successfully',
+        message: sendInvitation ? 'User created and invitation sent' : 'User created successfully',
         data: {
           id: newUser.id,
           email: newUser.email,

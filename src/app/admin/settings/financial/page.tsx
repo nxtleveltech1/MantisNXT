@@ -32,8 +32,6 @@ import {
   Receipt,
   Calendar,
 } from 'lucide-react';
-import AppLayout from '@/components/layout/AppLayout';
-
 interface FinancialSettings {
   vat: {
     enabled: boolean;
@@ -235,8 +233,7 @@ export default function FinancialSettingsPage() {
   );
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -1101,7 +1098,6 @@ export default function FinancialSettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

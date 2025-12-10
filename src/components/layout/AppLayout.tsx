@@ -82,14 +82,14 @@ export default function AppLayout({
       <AppSidebar />
       <SidebarInset>
         <AppHeader title={title} subtitle={breadcrumbSubtitle} />
-        <div className="flex flex-1 flex-col gap-2 p-4 md:p-6 lg:p-8">
+        <div className="flex flex-1 flex-col gap-2 px-4 pt-4 pb-4 md:px-6 md:pt-4 md:pb-6 lg:px-8 lg:pt-4 lg:pb-8">
           {showQuickLinks && quickLinks.length > 0 ? (
             <div className="mb-0 flex justify-end">
               <SectionQuickLinks
                 sectionTitle={currentSection?.title ?? title}
                 links={quickLinks}
                 activePath={pathname ?? ''}
-                className="w-full justify-end gap-3"
+                className="w-full justify-end gap-1.5"
               />
             </div>
           ) : null}

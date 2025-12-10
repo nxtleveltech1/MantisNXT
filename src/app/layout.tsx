@@ -1,52 +1,31 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { Providers } from './providers';
 import '@/lib/fetch-interceptor';
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-});
+export const metadata: Metadata = {
+  title: 'MantisNXT Dashboard',
+  description: 'Procurement and inventory management system',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-ZA" suppressHydrationWarning className={inter.variable}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Prevent flash of unstyled content (FOUC)
-              (function() {
-                const theme = localStorage.getItem('theme') || 'system';
-                const root = document.documentElement;
-
-                if (theme === 'system') {
-                  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  root.classList.add(isDark ? 'dark' : 'light');
-                } else {
-                  root.classList.add(theme);
-                }
-              })();
-            `,
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    >
+      <html lang="en-ZA" suppressHydrationWarning>
+        <head />
+        <body
+          className="theme-transition antialiased"
+          style={{
+            fontFamily:
+              'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
           }}
-        />
-      </head>
-      <body className="font-inter theme-transition antialiased">
-        <Providers>{children}</Providers>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Initialize authentication state
-              if (typeof window !== 'undefined') {
-                window.__AUTH_INITIALIZED__ = true;
-              }
-            `,
-          }}
-        />
-      </body>
-    </html>
+        >
+          <Providers>{children}</Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

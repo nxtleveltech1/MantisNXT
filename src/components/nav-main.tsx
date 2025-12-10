@@ -49,7 +49,23 @@ export function NavMain({
             subItem.items?.some(subSubItem => pathname?.startsWith(subSubItem.url))
           );
           const isOpen = item.isActive || isChildActive;
+          const hasSubItems = item.items && item.items.length > 0;
 
+          // If no sub-items, render as direct link
+          if (!hasSubItems) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url} asChild>
+                  <Link href={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          }
+
+          // Has sub-items, render as collapsible
           return (
             <Collapsible key={item.title} asChild defaultOpen={isOpen} className="group/collapsible">
               <SidebarMenuItem>

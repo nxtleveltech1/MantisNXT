@@ -9,7 +9,8 @@ import { Download, Upload, Plus, Users, Activity, Shield, User as UserIcon } fro
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { authProvider } from '@/lib/auth/mock-provider';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useAuth as useClerkAuth } from '@clerk/nextjs';
 import type { User } from '@/types/auth';
 
 import { UserTable } from '@/components/admin/users/UserTable';
@@ -17,6 +18,8 @@ import type { UserFilterState } from '@/components/admin/users/UserFilters';
 import { UserFilters } from '@/components/admin/users/UserFilters';
 
 export default function UsersPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { getToken } = useClerkAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +39,39 @@ export default function UsersPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/v1/admin/users');
+      // Check authentication
+      if (!isAuthenticated) {
+        console.warn('[UsersPage] Not authenticated, redirecting to login');
+        router.push('/auth/login');
+        return;
+      }
+
+      // Get Clerk session token
+      const token = await getToken();
+
+      if (!token) {
+        console.warn('[UsersPage] No Clerk token found, redirecting to login');
+        router.push('/auth/login');
+        return;
+      }
+
+      console.log('[UsersPage] Clerk token obtained');
+
+      const headers: HeadersInit = {
+        'Authorization': `Bearer ${token}`,
+      };
+
+      const response = await fetch('/api/v1/admin/users', {
+        headers,
+        credentials: 'include', // Include cookies for session-based auth
+      });
+
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('[UsersPage] API error:', response.status, result);
         if (response.status === 401) {
+          console.warn('[UsersPage] Unauthorized, redirecting to login');
           router.push('/auth/login');
           return;
         }
@@ -85,11 +116,14 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [router, isAuthenticated, getToken]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    // Wait for auth to finish loading before attempting to load users
+    if (!authLoading) {
+      loadUsers();
+    }
+  }, [loadUsers, authLoading]);
 
   // Get unique departments for filter
   const departments = useMemo(() => {

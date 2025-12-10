@@ -430,15 +430,21 @@ export default function EmailSettingsPage() {
               <CardContent>
                 <div className="space-y-3">
                   {emailTemplates.map(template => (
-                    <button
-                      type="button"
+                    <div
                       key={template.id}
-                      className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      role="button"
+                      tabIndex={0}
+                      className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${
                         selectedTemplate?.id === template.id
                           ? 'border-blue-200 bg-blue-50'
                           : 'hover:bg-gray-50'
                       }`}
                       onClick={() => setSelectedTemplate(template)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedTemplate(template);
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -461,7 +467,7 @@ export default function EmailSettingsPage() {
                           </Button>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </CardContent>

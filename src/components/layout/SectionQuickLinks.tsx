@@ -28,60 +28,27 @@ export function SectionQuickLinks({
 }: SectionQuickLinksProps) {
   if (!links?.length) return null;
 
-  const normalizedActive = normalizePath(activePath);
-
-  // Find the best matching link (longest URL that is a prefix of current path)
-  const activeLinkUrl = links.reduce((best, link) => {
-    const target = normalizePath(link.url);
-    if (normalizedActive === target || normalizedActive.startsWith(`${target}/`)) {
-      if (!best || target.length > best.length) {
-        return target;
-      }
-    }
-    return best;
-  }, '');
-
   return (
     <div
       className={cn(
-        'flex flex-nowrap items-center gap-2 overflow-x-auto pb-2 md:pb-0',
-        'w-full justify-end',
+        'ml-auto flex flex-nowrap items-center gap-4 overflow-x-auto pb-2 md:pb-0',
+        'justify-end',
         className
       )}
     >
       {links.map(link => {
-        const normalizedTarget = normalizePath(link.url);
-        const isActive = normalizedTarget === activeLinkUrl;
-
         return (
           <Link
             key={`${link.title}-${link.url}`}
             href={link.url}
             className={cn(
-              'inline-flex min-w-[122px] items-center justify-center gap-2 rounded-full border px-4 py-2 text-[10px] leading-none font-semibold tracking-[0.14em] whitespace-nowrap uppercase transition-all duration-300 ease-out',
-              'shadow-[0_18px_44px_-24px_rgba(0,0,0,0.45)] backdrop-blur-3xl hover:-translate-y-0.5',
-              isActive
-                ? 'border-white/42 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.56),rgba(255,255,255,0)_44%),radial-gradient(circle_at_82%_6%,rgba(255,255,255,0.26),rgba(255,255,255,0)_46%),linear-gradient(155deg,rgba(210,218,226,0.82),rgba(165,175,185,0.72),rgba(125,135,145,0.64))] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),_0_20px_60px_-34px_rgba(0,0,0,0.52)]'
-                : 'border-white/30 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.54),rgba(255,255,255,0)_44%),radial-gradient(circle_at_82%_6%,rgba(255,255,255,0.22),rgba(255,255,255,0)_46%),linear-gradient(155deg,rgba(236,240,244,0.72),rgba(205,214,224,0.52),rgba(178,187,197,0.4))] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.74),_0_16px_52px_-30px_rgba(0,0,0,0.48)] hover:border-white/46 hover:shadow-[0_20px_50px_-26px_rgba(0,0,0,0.52)]'
+              'inline-flex items-center justify-center gap-1 rounded-sm border px-2.5 py-2 text-[9px] leading-none font-medium tracking-normal whitespace-nowrap capitalize transition-all duration-300 ease-out',
+              'border-red-900/50 bg-[radial-gradient(circle_at_20%_18%,rgba(180,60,60,0.7),rgba(120,30,30,0)_44%),radial-gradient(circle_at_82%_6%,rgba(160,50,50,0.4),rgba(100,20,20,0)_46%),linear-gradient(155deg,rgba(140,35,35,0.9),rgba(100,25,25,0.8),rgba(70,18,18,0.75))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),_0_16px_52px_-30px_rgba(0,0,0,0.5)] backdrop-blur-3xl hover:-translate-y-0.5 hover:border-red-800/60 hover:shadow-[0_20px_50px_-26px_rgba(0,0,0,0.6)]'
             )}
             aria-label={`${sectionTitle} - ${link.title}`}
           >
-            <span className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'h-2.5 w-2.5 rounded-full bg-slate-800/72 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2),_0_0_10px_rgba(255,255,255,0.5)]',
-                  isActive &&
-                    'bg-slate-900 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.28),_0_0_12px_rgba(255,255,255,0.55)]'
-                )}
-              />
-              <span
-                className={cn(
-                  'drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] transition-colors',
-                  isActive ? 'text-slate-900' : 'text-slate-800'
-                )}
-              >
-                {link.title}
-              </span>
+            <span className="text-[9px] font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+              {link.title}
             </span>
           </Link>
         );

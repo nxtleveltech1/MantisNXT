@@ -3,8 +3,14 @@ import { NextResponse } from 'next/server';
 import { neonAuthService } from '@/lib/auth/neon-auth-service';
 import { db } from '@/lib/database';
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id: sessionId } = await params;
+
     // Get session token
     let sessionToken = request.cookies.get('session_token')?.value;
 
@@ -39,8 +45,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         { status: 401 }
       );
     }
-
-    const sessionId = params.id;
 
     // Verify the session belongs to the user
     const sessionCheck = await db.query(

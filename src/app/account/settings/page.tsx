@@ -9,56 +9,43 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Lock, Bell, Eye, Shield, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-import { authProvider } from '@/lib/auth/mock-provider';
-import type { User as UserType } from '@/types/auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export default function AccountSettingsPage() {
-  const [user, setUser] = useState<UserType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('profile');
   const router = useRouter();
 
+  // Redirect to login if not authenticated (only after auth check is complete)
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setIsLoading(true);
-        const currentUser = await authProvider.getCurrentUser();
-        if (!currentUser) {
-          router.push('/auth/login');
-          return;
-        }
-        setUser(currentUser);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUser();
-  }, [router]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  // Show loading state while checking authentication
+  if (authLoading) {
     return (
       <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Settings' }]}>
         <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
         </div>
       </AppLayout>
     );
   }
 
-  if (!user) {
+  // Don't render if not authenticated (redirect is happening)
+  if (!isAuthenticated || !user) {
     return (
       <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Settings' }]}>
-        <Alert variant="destructive">
-          <AlertDescription>Failed to load user data</AlertDescription>
-        </Alert>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        </div>
       </AppLayout>
     );
   }
@@ -86,7 +73,7 @@ export default function AccountSettingsPage() {
           </Alert>
         )}
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="profile">
               <User className="mr-2 h-4 w-4" />
@@ -123,7 +110,7 @@ export default function AccountSettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" defaultValue={user.email} disabled />
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       Email cannot be changed. Contact administrator.
                     </p>
                   </div>
@@ -155,7 +142,7 @@ export default function AccountSettingsPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="mb-2 text-lg font-semibold">Password</h3>
-                    <p className="text-muted-foreground mb-4 text-sm">
+                    <p className="mb-4 text-sm text-muted-foreground">
                       Change your password to keep your account secure
                     </p>
                     <Link href="/account/security">
@@ -170,7 +157,7 @@ export default function AccountSettingsPage() {
                     <h3 className="mb-2 text-lg font-semibold">Two-Factor Authentication</h3>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {user.two_factor_enabled
                             ? '2FA is enabled on your account'
                             : 'Add an extra layer of security to your account'}
@@ -180,7 +167,7 @@ export default function AccountSettingsPage() {
                         {user.two_factor_enabled ? (
                           <Shield className="h-5 w-5 text-green-500" />
                         ) : (
-                          <Shield className="text-muted-foreground h-5 w-5" />
+                          <Shield className="h-5 w-5 text-muted-foreground" />
                         )}
                         <Button variant="outline" size="sm">
                           {user.two_factor_enabled ? 'Manage 2FA' : 'Enable 2FA'}
@@ -191,7 +178,7 @@ export default function AccountSettingsPage() {
 
                   <div className="border-t pt-4">
                     <h3 className="mb-2 text-lg font-semibold">Active Sessions</h3>
-                    <p className="text-muted-foreground mb-4 text-sm">
+                    <p className="mb-4 text-sm text-muted-foreground">
                       Manage devices that are currently signed in to your account
                     </p>
                     <Link href="/account/security">
@@ -236,7 +223,7 @@ export default function AccountSettingsPage() {
                   <Label htmlFor="profile-visibility">Profile Visibility</Label>
                   <select
                     id="profile-visibility"
-                    className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     defaultValue="organization"
                   >
                     <option value="public">Public</option>

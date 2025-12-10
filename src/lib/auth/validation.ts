@@ -280,12 +280,13 @@ export const updateUserFormSchema = z.object({
   }),
   department: z
     .string()
-    .min(2, 'Department must be at least 2 characters')
-    .max(50, 'Department must be less than 50 characters'),
-  phone: southAfricanPhoneSchema,
+    .max(50, 'Department must be less than 50 characters')
+    .optional()
+    .or(z.literal('')),
+  phone: southAfricanPhoneSchema.optional().or(z.literal('')),
   is_active: z.boolean(),
   permissions: z.array(z.string()).default([]),
-  id_number: southAfricanIdSchema.optional(),
+  id_number: southAfricanIdSchema.optional().or(z.literal('')),
   employment_equity: z
     .enum(EMPLOYMENT_EQUITY_OPTIONS.map(e => e.value) as [string, ...string[]])
     .optional(),

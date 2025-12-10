@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import type { User } from '@/types/auth';
 import { USER_ROLES } from '@/types/auth';
-import { authProvider } from '@/lib/auth/mock-provider';
+import { useAuth } from '@/lib/auth/auth-context';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ export default function UserRolesPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params?.id as string;
+  const { user: currentUser, isLoading: authLoading, isAuthenticated } = useAuth();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,31 +44,74 @@ export default function UserRolesPage() {
   const [effectiveTo, setEffectiveTo] = useState<Date | undefined>();
   const [hasEndDate, setHasEndDate] = useState(false);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   const loadUser = useCallback(async () => {
+    if (!currentUser) return;
+
     try {
       setIsLoading(true);
-      const currentUser = await authProvider.getCurrentUser();
-      if (!currentUser) {
-        router.push('/auth/login');
-        return;
+      const response = await fetch(`/api/v1/admin/users/${userId}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+        if (response.status === 404) {
+          setError('User not found');
+          return;
+        }
+        throw new Error(result.message || 'Failed to load user');
       }
 
-      const users = await authProvider.getUsersByOrganization(currentUser.org_id);
-      const foundUser = users.find(u => u.id === userId);
+      const foundUser = result.data;
+      // Transform API response to match User type
+      const userData: User = {
+        id: foundUser.id,
+        email: foundUser.email,
+        name: foundUser.displayName || `${foundUser.firstName} ${foundUser.lastName}`.trim(),
+        role: foundUser.roles?.[0]?.slug || 'user',
+        org_id: foundUser.orgId,
+        department: foundUser.department || '',
+        permissions: [],
+        created_at: foundUser.createdAt,
+        last_login: foundUser.lastLoginAt,
+        is_active: foundUser.isActive,
+        profile_image: foundUser.avatarUrl,
+        phone: foundUser.phone || '',
+        mobile: foundUser.mobile,
+        preferences: {
+          language: 'en',
+          timezone: 'Africa/Johannesburg',
+          date_format: 'dd/mm/yyyy',
+          currency: 'ZAR',
+          notifications: {
+            email_notifications: true,
+            sms_notifications: false,
+            push_notifications: true,
+            digest_frequency: 'daily',
+          },
+        },
+        two_factor_enabled: foundUser.twoFactorEnabled || false,
+        email_verified: foundUser.emailVerified || false,
+        password_changed_at: new Date(),
+      };
 
-      if (!foundUser) {
-        setError('User not found');
-        return;
-      }
-
-      setUser(foundUser);
-      setSelectedRole(foundUser.role);
+      setUser(userData);
+      setSelectedRole(userData.role);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user');
     } finally {
       setIsLoading(false);
     }
-  }, [router, userId]);
+  }, [currentUser, router, userId]);
 
   useEffect(() => {
     loadUser();
@@ -81,7 +125,26 @@ export default function UserRolesPage() {
       setError(null);
       setSuccess(null);
 
-      await authProvider.updateUser(userId, { role: selectedRole as unknown });
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: selectedRole,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+        throw new Error(result.message || 'Failed to update role');
+      }
+
       setSuccess('Role assignment updated successfully');
       await loadUser();
     } catch (err) {
@@ -91,7 +154,8 @@ export default function UserRolesPage() {
     }
   };
 
-  if (isLoading) {
+  // Show loading state while checking authentication or loading user
+  if (authLoading || isLoading || !isAuthenticated) {
     return (
       <AppLayout
         breadcrumbs={[
@@ -102,7 +166,7 @@ export default function UserRolesPage() {
         ]}
       >
         <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
         </div>
       </AppLayout>
     );
@@ -229,13 +293,13 @@ export default function UserRolesPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-muted/50 rounded-lg border p-4">
+                <div className="rounded-lg border bg-muted/50 p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <Badge variant="default">
                       {USER_ROLES.find(r => r.value === user.role)?.label}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {USER_ROLES.find(r => r.value === user.role)?.description}
                   </p>
                 </div>
@@ -244,7 +308,7 @@ export default function UserRolesPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
-                    <Info className="text-muted-foreground mr-2 h-4 w-4" />
+                    <Info className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Assigned:</span>
                     <span className="ml-auto font-medium">{format(user.created_at, 'PP')}</span>
                   </div>
@@ -273,7 +337,7 @@ export default function UserRolesPage() {
                       className={cn(
                         'flex items-start space-x-3 rounded-lg border p-4 text-left transition-all',
                         selectedRole === role.value
-                          ? 'border-primary bg-primary/5 ring-primary ring-2 ring-offset-2'
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary ring-offset-2'
                           : 'hover:border-primary/50'
                       )}
                     >
@@ -287,13 +351,13 @@ export default function UserRolesPage() {
                           )}
                         >
                           {selectedRole === role.value && (
-                            <div className="bg-primary h-2 w-2 rounded-full" />
+                            <div className="h-2 w-2 rounded-full bg-primary" />
                           )}
                         </div>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 font-semibold">{role.label}</div>
-                        <p className="text-muted-foreground text-sm">{role.description}</p>
+                        <p className="text-sm text-muted-foreground">{role.description}</p>
                       </div>
                     </button>
                   ))}
@@ -414,7 +478,7 @@ export default function UserRolesPage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {getPermissionPreview(selectedRole).map((permission, index) => (
                   <div key={index} className="flex items-center space-x-2 rounded-lg border p-3">
-                    <ChevronRight className="text-primary h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 text-primary" />
                     <span className="text-sm">{permission}</span>
                   </div>
                 ))}

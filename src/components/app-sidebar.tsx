@@ -85,7 +85,6 @@ export const sidebarData = {
           title: 'Supplier Directory',
           url: '/directories/suppliers',
         },
-
       ],
     },
     {
@@ -401,18 +400,18 @@ export const sidebarData = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar variant="sidebar" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <span className="text-lg font-bold">N</span>
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">MantisNXT</span>
-                  <span className="text-muted-foreground truncate text-xs">Procurement</span>
+                <div className="flex items-center justify-center">
+                  <img
+                    src="/images/nxt-logo.png"
+                    alt=""
+                    className="h-10 w-auto object-contain"
+                  />
                 </div>
               </Link>
             </SidebarMenuButton>

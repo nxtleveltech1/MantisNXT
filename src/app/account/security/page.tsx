@@ -12,8 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Lock, Shield, Monitor, CheckCircle2, XCircle } from 'lucide-react';
 
-import { authProvider } from '@/lib/auth/mock-provider';
-import type { User as UserType } from '@/types/auth';
+import { useAuth } from '@/lib/auth/auth-context';
 
 interface PasswordFormData {
   currentPassword: string;
@@ -22,8 +21,7 @@ interface PasswordFormData {
 }
 
 export default function AccountSecurityPage() {
-  const [user, setUser] = useState<UserType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -40,24 +38,12 @@ export default function AccountSecurityPage() {
     },
   });
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setIsLoading(true);
-        const currentUser = await authProvider.getCurrentUser();
-        if (!currentUser) {
-          router.push('/auth/login');
-          return;
-        }
-        setUser(currentUser);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUser();
-  }, [router]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const onSubmitPassword = async (data: PasswordFormData) => {
     if (data.newPassword !== data.confirmPassword) {
@@ -101,22 +87,13 @@ export default function AccountSecurityPage() {
     }
   };
 
-  if (isLoading) {
+  // Show loading state while checking authentication
+  if (authLoading || !isAuthenticated || !user) {
     return (
       <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Security' }]}>
         <div className="flex min-h-[400px] items-center justify-center">
-          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
         </div>
-      </AppLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <AppLayout breadcrumbs={[{ label: 'Account', href: '/account' }, { label: 'Security' }]}>
-        <Alert variant="destructive">
-          <AlertDescription>Failed to load user data</AlertDescription>
-        </Alert>
       </AppLayout>
     );
   }
@@ -169,7 +146,7 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
                     {showCurrentPassword ? (
@@ -205,7 +182,7 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -233,7 +210,7 @@ export default function AccountSecurityPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
@@ -272,7 +249,7 @@ export default function AccountSecurityPage() {
                 <p className="text-sm font-medium">
                   {user.two_factor_enabled ? '2FA is enabled' : '2FA is disabled'}
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {user.two_factor_enabled
                     ? 'Your account is protected with two-factor authentication'
                     : 'Enable two-factor authentication for enhanced security'}
@@ -282,7 +259,7 @@ export default function AccountSecurityPage() {
                 {user.two_factor_enabled ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <XCircle className="text-muted-foreground h-5 w-5" />
+                  <XCircle className="h-5 w-5 text-muted-foreground" />
                 )}
                 <Button variant="outline">
                   {user.two_factor_enabled ? 'Manage 2FA' : 'Enable 2FA'}
@@ -306,17 +283,17 @@ export default function AccountSecurityPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="flex items-center gap-3">
-                  <Monitor className="text-muted-foreground h-5 w-5" />
+                  <Monitor className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Current Session</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       This device • Last active: Just now
                     </p>
                   </div>
                 </div>
                 <Badge variant="default">Active</Badge>
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Session management will be available after API implementation
               </p>
             </div>

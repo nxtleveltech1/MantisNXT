@@ -262,3 +262,6 @@ temp_*.sql
 *.backup
 *.old
 MantisNXT.zip
+
+# clerk configuration (can include secrets)
+/.clerk/

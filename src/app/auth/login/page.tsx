@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSignIn, useAuth } from '@clerk/nextjs';
 import { useForm } from 'react-hook-form';
 import type { Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +20,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-import { useAuth } from '@/lib/auth/auth-context';
 import { loginFormSchema, type LoginFormData } from '@/lib/auth/validation';
 
 export default function LoginPage() {
@@ -27,18 +27,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
-  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const router = useRouter();
-  const { signIn, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isLoaded, signIn, setActive } = useSignIn();
+  const { isSignedIn } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (isSignedIn) {
       router.push('/');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isSignedIn, router]);
 
   const form = useForm<LoginFormData, unknown, LoginFormData>({
     resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, unknown, LoginFormData>,
@@ -50,38 +50,48 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    if (!isLoaded || !signIn) return;
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const result = await signIn({
-        email: data.email,
+      // Start the sign-in process
+      const signInAttempt = await signIn.create({
+        identifier: data.email,
         password: data.password,
-        remember_me: data.remember_me,
-        two_factor_code: requiresTwoFactor ? twoFactorCode : undefined,
       });
 
-      if (result.success && result.user) {
-        // Small delay to ensure auth state is updated
-        setTimeout(() => {
-          router.push('/');
-        }, 100);
-      } else if (result.requires_two_factor) {
+      // Check if we need 2FA
+      if (signInAttempt.status === 'needs_second_factor') {
         setRequiresTwoFactor(true);
-        setTwoFactorToken(result.two_factor_token!);
-        setError(null);
-      } else {
-        setError(result.message || 'Login failed');
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+
+      // If sign-in is complete, set the session as active
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.push('/');
+      } else {
+        // Handle other statuses
+        console.log('Sign-in status:', signInAttempt.status);
+        setError('Sign-in incomplete. Please try again.');
+      }
+    } catch (err: unknown) {
+      console.error('Sign in error:', err);
+      const clerkError = err as { errors?: Array<{ message?: string; longMessage?: string }> };
+      if (clerkError.errors && clerkError.errors.length > 0) {
+        setError(clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Sign-in failed');
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleTwoFactorSubmit = async () => {
-    if (!twoFactorToken || !twoFactorCode) {
+    if (!isLoaded || !signIn || !twoFactorCode) {
       setError('Please enter the verification code');
       return;
     }
@@ -90,31 +100,33 @@ export default function LoginPage() {
       setIsLoading(true);
       setError(null);
 
-      const data = form.getValues();
-      const result = await signIn({
-        email: data.email,
-        password: data.password,
-        remember_me: data.remember_me,
-        two_factor_code: twoFactorCode,
+      // Attempt to verify the 2FA code
+      const signInAttempt = await signIn.attemptSecondFactor({
+        strategy: 'totp',
+        code: twoFactorCode,
       });
 
-      if (result.success && result.user) {
-        // Small delay to ensure auth state is updated
-        setTimeout(() => {
-          router.push('/');
-        }, 100);
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.push('/');
       } else {
-        setError(result.message || 'Invalid verification code');
+        setError('Verification failed. Please try again.');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } catch (err: unknown) {
+      console.error('2FA error:', err);
+      const clerkError = err as { errors?: Array<{ message?: string; longMessage?: string }> };
+      if (clerkError.errors && clerkError.errors.length > 0) {
+        setError(clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Verification failed');
+      } else {
+        setError('Invalid verification code');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading while checking auth state
-  if (authLoading) {
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -186,7 +198,6 @@ export default function LoginPage() {
                 variant="link"
                 onClick={() => {
                   setRequiresTwoFactor(false);
-                  setTwoFactorToken(null);
                   setTwoFactorCode('');
                   setError(null);
                 }}
