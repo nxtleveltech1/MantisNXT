@@ -213,33 +213,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Loyalty',
-      url: '/admin/loyalty/programs',
-      icon: Gift,
-      items: [
-        {
-          title: 'Programs',
-          url: '/admin/loyalty/programs',
-        },
-        {
-          title: 'Rewards',
-          url: '/admin/loyalty/rewards',
-        },
-        {
-          title: 'Rules',
-          url: '/admin/loyalty/rules',
-        },
-        {
-          title: 'Redemptions',
-          url: '/admin/loyalty/redemptions',
-        },
-        {
-          title: 'Analytics',
-          url: '/admin/loyalty/analytics',
-        },
-      ],
-    },
-    {
       title: 'AI Services',
       url: '/admin/ai/config',
       icon: Bot,
@@ -343,21 +316,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Communication',
-      url: '/communication/messages',
-      icon: MessageSquare,
-      items: [
-        {
-          title: 'Messages',
-          url: '/communication/messages',
-        },
-        {
-          title: 'Notifications',
-          url: '/communication/notifications',
-        },
-      ],
-    },
-    {
       title: 'System Integration',
       url: '/system/integrations',
       icon: Plug,
@@ -382,19 +340,14 @@ export const sidebarData = {
   ],
   projects: [
     {
-      name: 'Procurement Ops',
-      url: '/suppliers',
-      icon: Building2,
+      name: 'Loyalty',
+      url: '/admin/loyalty/programs',
+      icon: Gift,
     },
     {
-      name: 'Customer Success',
-      url: '/customers',
-      icon: Users,
-    },
-    {
-      name: 'AI Initiatives',
-      url: '/admin/ai/config',
-      icon: Bot,
+      name: 'Communication',
+      url: '/communication/messages',
+      icon: MessageSquare,
     },
   ],
 };
