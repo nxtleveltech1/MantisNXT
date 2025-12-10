@@ -1,20 +1,15 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { neonAuthService } from '@/lib/auth/neon-auth-service';
+import { verifyAuth } from '@/lib/auth/auth-helper';
+import { db } from '@/lib/database';
+import { syncUserProfileToClerk } from '@/lib/auth/clerk-sync';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session token from cookie or Authorization header
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Verify authentication using Clerk
+    const user = await verifyAuth(request);
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -25,46 +20,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
+    // Get full user data from database
+    const userResult = await db.query(
+      `
+      SELECT 
+        u.id,
+        u.clerk_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.display_name,
+        u.avatar_url,
+        u.phone,
+        u.mobile,
+        u.department,
+        u.job_title,
+        u.org_id,
+        u.email_verified,
+        u.two_factor_enabled,
+        u.is_active,
+        u.created_at,
+        u.updated_at
+      FROM auth.users_extended u
+      WHERE u.clerk_id = $1 OR u.email = $2
+      LIMIT 1
+      `,
+      [user.clerkId, user.email]
+    );
 
-    if (!user) {
+    if (userResult.rows.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
+          error: 'USER_NOT_FOUND',
+          message: 'User profile not found',
         },
-        { status: 401 }
+        { status: 404 }
       );
     }
+
+    const dbUser = userResult.rows[0];
 
     // Return user information
     return NextResponse.json(
       {
         success: true,
         data: {
-          id: user.id,
-          email: user.email,
-          emailVerified: user.emailVerified,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          displayName: user.displayName,
-          avatarUrl: user.avatarUrl,
-          phone: user.phone,
-          mobile: user.mobile,
-          orgId: user.orgId,
-          orgName: user.orgName,
-          department: user.department,
-          jobTitle: user.jobTitle,
+          id: dbUser.id,
+          email: dbUser.email,
+          emailVerified: dbUser.email_verified,
+          firstName: dbUser.first_name,
+          lastName: dbUser.last_name,
+          displayName: dbUser.display_name,
+          avatarUrl: dbUser.avatar_url,
+          phone: dbUser.phone,
+          mobile: dbUser.mobile,
+          orgId: dbUser.org_id,
+          department: dbUser.department,
+          jobTitle: dbUser.job_title,
           roles: user.roles,
           permissions: user.permissions,
-          isActive: user.isActive,
-          isSuspended: user.isSuspended,
-          twoFactorEnabled: user.twoFactorEnabled,
-          lastLoginAt: user.lastLoginAt,
-          lastActivityAt: user.lastActivityAt,
-          preferences: user.preferences,
+          isActive: dbUser.is_active,
+          twoFactorEnabled: dbUser.two_factor_enabled,
+          createdAt: dbUser.created_at,
+          updatedAt: dbUser.updated_at,
         },
       },
       { status: 200 }
@@ -85,17 +104,10 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get session token
-    let sessionToken = request.cookies.get('session_token')?.value;
+    // Verify authentication using Clerk
+    const authUser = await verifyAuth(request);
 
-    if (!sessionToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    if (!sessionToken) {
+    if (!authUser) {
       return NextResponse.json(
         {
           success: false,
@@ -106,46 +118,137 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Verify session and get user
-    const user = await neonAuthService.verifySession(sessionToken);
+    // Parse request body
+    const body = await request.json();
+    const { firstName, lastName, displayName, phone, mobile, department, jobTitle, avatarUrl } =
+      body;
 
-    if (!user) {
+    // Get current user from database to ensure we have the correct ID
+    const currentUserResult = await db.query(
+      `
+      SELECT id, clerk_id, org_id, role
+      FROM auth.users_extended
+      WHERE clerk_id = $1 OR email = $2
+      LIMIT 1
+      `,
+      [authUser.clerkId, authUser.email]
+    );
+
+    if (currentUserResult.rows.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'INVALID_SESSION',
-          message: 'Invalid or expired session',
+          error: 'USER_NOT_FOUND',
+          message: 'User profile not found in database',
         },
-        { status: 401 }
+        { status: 404 }
       );
     }
 
-    // Parse request body
-    const body = await request.json();
-    const { firstName, lastName, displayName, phone, mobile, department, jobTitle } = body;
+    const dbUser = currentUserResult.rows[0];
+    const userId = dbUser.id;
+    const clerkId = dbUser.clerk_id || authUser.clerkId;
 
-    // Update user profile
-    // In production, this would update the database
-    // For now, we'll use the mock provider
-    const { authProvider } = await import('@/lib/auth/mock-provider');
-    await authProvider.updateProfile({
-      id: user.id,
-      name: displayName || `${firstName} ${lastName}`.trim(),
-      phone,
-      mobile,
-      department,
-    } as any);
+    // Calculate display name if not provided
+    const finalDisplayName =
+      displayName || (firstName && lastName ? `${firstName} ${lastName}`.trim() : null);
+
+    // Update user profile in database
+    await db.query(
+      `
+      UPDATE auth.users_extended SET
+        first_name = COALESCE($1, first_name),
+        last_name = COALESCE($2, last_name),
+        display_name = COALESCE($3, display_name),
+        phone = COALESCE($4, phone),
+        mobile = COALESCE($5, mobile),
+        department = COALESCE($6, department),
+        job_title = COALESCE($7, job_title),
+        avatar_url = COALESCE($8, avatar_url),
+        updated_at = NOW()
+      WHERE id = $9
+      `,
+      [
+        firstName || null,
+        lastName || null,
+        finalDisplayName || null,
+        phone || null,
+        mobile || null,
+        department || null,
+        jobTitle || null,
+        avatarUrl || null,
+        userId,
+      ]
+    );
+
+    // Sync changes to Clerk (if clerk_id exists)
+    if (clerkId) {
+      try {
+        await syncUserProfileToClerk(clerkId, {
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          displayName: finalDisplayName || undefined,
+          phone: phone || undefined,
+          mobile: mobile || undefined,
+          department: department || undefined,
+          jobTitle: jobTitle || undefined,
+          avatarUrl: avatarUrl || undefined,
+          orgId: dbUser.org_id || undefined,
+          role: dbUser.role || undefined,
+        });
+      } catch (syncError) {
+        // Log error but don't fail the request - database update succeeded
+        console.error('[Profile Update] Failed to sync to Clerk:', syncError);
+      }
+    }
+
+    // Fetch updated user data
+    const updatedUserResult = await db.query(
+      `
+      SELECT 
+        id,
+        email,
+        first_name,
+        last_name,
+        display_name,
+        avatar_url,
+        phone,
+        mobile,
+        department,
+        job_title,
+        org_id,
+        email_verified,
+        two_factor_enabled,
+        is_active,
+        updated_at
+      FROM auth.users_extended
+      WHERE id = $1
+      `,
+      [userId]
+    );
+
+    const updatedUser = updatedUserResult.rows[0];
 
     return NextResponse.json(
       {
         success: true,
         message: 'Profile updated successfully',
         data: {
-          id: user.id,
-          displayName: displayName || user.displayName,
-          phone: phone || user.phone,
-          mobile: mobile || user.mobile,
-          department: department || user.department,
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.first_name,
+          lastName: updatedUser.last_name,
+          displayName: updatedUser.display_name,
+          avatarUrl: updatedUser.avatar_url,
+          phone: updatedUser.phone,
+          mobile: updatedUser.mobile,
+          department: updatedUser.department,
+          jobTitle: updatedUser.job_title,
+          orgId: updatedUser.org_id,
+          emailVerified: updatedUser.email_verified,
+          twoFactorEnabled: updatedUser.two_factor_enabled,
+          isActive: updatedUser.is_active,
+          updatedAt: updatedUser.updated_at,
         },
       },
       { status: 200 }
@@ -157,7 +260,7 @@ export async function PUT(request: NextRequest) {
       {
         success: false,
         error: 'SERVER_ERROR',
-        message: 'An unexpected error occurred',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
       },
       { status: 500 }
     );

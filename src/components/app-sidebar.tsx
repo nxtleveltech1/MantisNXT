@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Activity,
   Bot,
@@ -401,22 +402,22 @@ export const sidebarData = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="sidebar" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex items-center justify-center">
-                  <img
-                    src="/images/nxt-logo.png"
-                    alt=""
-                    className="h-10 w-auto object-contain"
-                  />
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex items-center justify-center p-4">
+          <Link href="/" className="flex items-center justify-center w-full">
+            <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg bg-black p-3">
+              <Image
+                src="/images/nxt-logo.png"
+                alt="NXT DOTX"
+                width={140}
+                height={40}
+                className="object-contain"
+                priority
+                unoptimized
+              />
+            </div>
+          </Link>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={sidebarData.navMain} label={null} />

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { verifyAuth, isAdmin } from '@/lib/auth/auth-helper';
 import { getOrCreateRole } from '@/lib/auth/ensure-roles';
+import { getEmailService } from '@/lib/services/EmailService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -392,12 +393,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: If sendInvitation is true, send email with temp password or reset link
+    // Send invitation email if requested
+    let emailSent = false;
+    if (sendInvitation) {
+      const orgId = user.orgId || 'default';
+      const emailService = getEmailService(orgId);
+
+      const isConfigured = await emailService.isConfigured();
+      if (isConfigured) {
+        const emailResult = await emailService.sendInvitation({
+          email: newUser.email,
+          name: displayName,
+          inviterName: user.displayName || user.email || 'An administrator',
+          tempPassword: password ? undefined : tempPassword, // Only include temp password if auto-generated
+          setupUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/login`,
+          role: roleSlug,
+        });
+
+        if (emailResult.success) {
+          emailSent = true;
+          console.log(`[CreateUser] Invitation email sent to ${email} via ${emailResult.provider}`);
+        } else {
+          console.error('[CreateUser] Failed to send invitation email:', emailResult.error);
+        }
+      } else {
+        console.warn('[CreateUser] Email service not configured. Temp password:', tempPassword);
+      }
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: sendInvitation ? 'User created and invitation sent' : 'User created successfully',
+        message: sendInvitation
+          ? emailSent
+            ? 'User created and invitation sent'
+            : 'User created but invitation email could not be sent'
+          : 'User created successfully',
         data: {
           id: newUser.id,
           email: newUser.email,

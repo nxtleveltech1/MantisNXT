@@ -105,6 +105,11 @@ interface ClerkUserData {
   first_name: string | null;
   last_name: string | null;
   image_url: string;
+  phone_numbers?: Array<{
+    id: string;
+    phone_number: string;
+    verification: { status: string } | null;
+  }>;
   public_metadata: Record<string, unknown>;
   private_metadata: Record<string, unknown>;
   created_at: number;
@@ -113,8 +118,17 @@ interface ClerkUserData {
 }
 
 async function handleUserCreated(data: ClerkUserData) {
-  const { id, email_addresses, primary_email_address_id, first_name, last_name, public_metadata } =
-    data;
+  const {
+    id,
+    email_addresses,
+    primary_email_address_id,
+    first_name,
+    last_name,
+    image_url,
+    phone_numbers,
+    public_metadata,
+    two_factor_enabled,
+  } = data;
 
   // Get primary email
   const primaryEmail = email_addresses.find(e => e.id === primary_email_address_id);
@@ -135,7 +149,37 @@ async function handleUserCreated(data: ClerkUserData) {
     department?: string;
     phone?: string;
     mobile?: string;
+    job_title?: string;
   };
+
+  // Extract phone numbers from Clerk's phone_numbers array
+  let primaryPhone: string | null = null;
+  let mobilePhone: string | null = null;
+
+  if (phone_numbers && phone_numbers.length > 0) {
+    // Get verified phone numbers first, then any phone number
+    const verifiedPhone = phone_numbers.find(
+      p => p.verification?.status === 'verified' || p.verification?.status === 'verified'
+    );
+    const firstPhone = phone_numbers[0];
+
+    if (verifiedPhone || firstPhone) {
+      primaryPhone = (verifiedPhone || firstPhone)?.phone_number || null;
+    }
+
+    // If there's a second phone number, use it as mobile
+    if (phone_numbers.length > 1) {
+      mobilePhone = phone_numbers[1]?.phone_number || null;
+    }
+  }
+
+  // Fallback to metadata if phone_numbers array is empty
+  if (!primaryPhone && metadata.phone) {
+    primaryPhone = metadata.phone;
+  }
+  if (!mobilePhone && metadata.mobile) {
+    mobilePhone = metadata.mobile;
+  }
 
   console.log(`[Clerk Webhook] Creating user: ${email} (Clerk ID: ${id})`);
 
@@ -164,21 +208,26 @@ async function handleUserCreated(data: ClerkUserData) {
       display_name,
       first_name,
       last_name,
+      avatar_url,
       phone,
       mobile,
       department,
+      job_title,
       org_id,
       is_active,
       email_verified,
       two_factor_enabled,
       created_at,
       updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, $12, NOW(), NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, $14, NOW(), NOW())
     ON CONFLICT (email) DO UPDATE SET
       clerk_id = EXCLUDED.clerk_id,
       display_name = EXCLUDED.display_name,
       first_name = EXCLUDED.first_name,
       last_name = EXCLUDED.last_name,
+      avatar_url = EXCLUDED.avatar_url,
+      phone = EXCLUDED.phone,
+      mobile = EXCLUDED.mobile,
       updated_at = NOW()
     `,
     [
@@ -188,12 +237,14 @@ async function handleUserCreated(data: ClerkUserData) {
       displayName,
       first_name,
       last_name,
-      metadata.phone || null,
-      metadata.mobile || null,
+      image_url || null,
+      primaryPhone,
+      mobilePhone,
       metadata.department || null,
+      metadata.job_title || null,
       metadata.org_id || null,
       primaryEmail?.verification?.status === 'verified',
-      data.two_factor_enabled,
+      two_factor_enabled,
     ]
   );
 
@@ -212,6 +263,8 @@ async function handleUserUpdated(data: ClerkUserData) {
     primary_email_address_id,
     first_name,
     last_name,
+    image_url,
+    phone_numbers,
     public_metadata,
     two_factor_enabled,
   } = data;
@@ -235,7 +288,37 @@ async function handleUserUpdated(data: ClerkUserData) {
     department?: string;
     phone?: string;
     mobile?: string;
+    job_title?: string;
   };
+
+  // Extract phone numbers from Clerk's phone_numbers array
+  let primaryPhone: string | null = null;
+  let mobilePhone: string | null = null;
+
+  if (phone_numbers && phone_numbers.length > 0) {
+    // Get verified phone numbers first, then any phone number
+    const verifiedPhone = phone_numbers.find(
+      p => p.verification?.status === 'verified' || p.verification?.status === 'verified'
+    );
+    const firstPhone = phone_numbers[0];
+
+    if (verifiedPhone || firstPhone) {
+      primaryPhone = (verifiedPhone || firstPhone)?.phone_number || null;
+    }
+
+    // If there's a second phone number, use it as mobile
+    if (phone_numbers.length > 1) {
+      mobilePhone = phone_numbers[1]?.phone_number || null;
+    }
+  }
+
+  // Fallback to metadata if phone_numbers array is empty or not provided
+  if (!primaryPhone && metadata.phone) {
+    primaryPhone = metadata.phone;
+  }
+  if (!mobilePhone && metadata.mobile) {
+    mobilePhone = metadata.mobile;
+  }
 
   console.log(`[Clerk Webhook] Updating user: ${email} (Clerk ID: ${id})`);
 
@@ -245,22 +328,26 @@ async function handleUserUpdated(data: ClerkUserData) {
       display_name = $1,
       first_name = $2,
       last_name = $3,
-      phone = $4,
-      mobile = $5,
-      department = $6,
-      org_id = COALESCE($7, org_id),
-      email_verified = $8,
-      two_factor_enabled = $9,
+      avatar_url = COALESCE($4, avatar_url),
+      phone = COALESCE($5, phone),
+      mobile = COALESCE($6, mobile),
+      department = COALESCE($7, department),
+      job_title = COALESCE($8, job_title),
+      org_id = COALESCE($9, org_id),
+      email_verified = $10,
+      two_factor_enabled = $11,
       updated_at = NOW()
-    WHERE clerk_id = $10 OR email = $11
+    WHERE clerk_id = $12 OR email = $13
     `,
     [
       displayName,
       first_name,
       last_name,
-      metadata.phone || null,
-      metadata.mobile || null,
+      image_url || null,
+      primaryPhone,
+      mobilePhone,
       metadata.department || null,
+      metadata.job_title || null,
       metadata.org_id || null,
       primaryEmail?.verification?.status === 'verified',
       two_factor_enabled,

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/database';
 import crypto from 'node:crypto';
+import { getEmailService } from '@/lib/services/EmailService';
 
 const ForgotPasswordSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -13,9 +14,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email } = ForgotPasswordSchema.parse(body);
 
-    // Look up user
+    // Look up user with org_id
     const userResult = await db.query(
-      `SELECT id, email, display_name, is_active FROM auth.users_extended WHERE email = $1`,
+      `SELECT id, email, display_name, is_active, org_id FROM auth.users_extended WHERE email = $1`,
       [email]
     );
 
@@ -35,10 +36,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     // Delete any existing tokens for this user
-    await db.query(
-      `DELETE FROM auth.password_reset_tokens WHERE user_id = $1`,
-      [user.id]
-    );
+    await db.query(`DELETE FROM auth.password_reset_tokens WHERE user_id = $1`, [user.id]);
 
     // Insert new token
     await db.query(
@@ -47,9 +45,29 @@ export async function POST(request: NextRequest) {
       [user.id, tokenHash, expiresAt]
     );
 
-    // TODO: Send email with reset link
-    // The reset link should be: ${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}
-    console.log(`Password reset token generated for ${email}. Token: ${resetToken}`);
+    // Send password reset email using org-specific settings
+    const orgId = user.org_id || 'default';
+    const emailService = getEmailService(orgId);
+
+    const isConfigured = await emailService.isConfigured();
+    if (isConfigured) {
+      const emailResult = await emailService.sendPasswordReset({
+        email: user.email,
+        name: user.display_name || undefined,
+        resetToken,
+        expiresIn: '1 hour',
+      });
+
+      if (!emailResult.success) {
+        console.error('Failed to send password reset email:', emailResult.error);
+        // Still return success to prevent email enumeration
+      } else {
+        console.log(`Password reset email sent to ${email} via ${emailResult.provider}`);
+      }
+    } else {
+      // Log token in development when email is not configured
+      console.warn('⚠️  Email service not configured. Password reset token:', resetToken);
+    }
 
     return NextResponse.json({
       success: true,

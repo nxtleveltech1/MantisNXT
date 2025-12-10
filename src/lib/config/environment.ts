@@ -66,11 +66,15 @@ const envSchema = z.object({
   UPLOAD_MAX_SIZE: z.string().regex(/^\d+$/).default('10485760'), // 10MB
   UPLOAD_DIR: z.string().default('/app/uploads'),
 
-  // Optional: External services
+  // Optional: External services - Email
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM_ADDRESS: z.string().email().optional().default('noreply@mantisnxt.com'),
+  EMAIL_FROM_NAME: z.string().optional().default('MantisNXT'),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.string().regex(/^\d+$/).optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  SMTP_SECURE: z.string().optional(),
 
   // Optional: Monitoring
   SENTRY_DSN: z.string().url().optional(),

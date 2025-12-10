@@ -53,6 +53,35 @@ function mapClerkUserToUser(clerkUser: ReturnType<typeof useUser>['user']): User
     },
   };
 
+  // Extract phone numbers from Clerk's phoneNumbers array
+  let primaryPhone: string | undefined = undefined;
+  let mobilePhone: string | undefined = undefined;
+
+  if (clerkUser.phoneNumbers && clerkUser.phoneNumbers.length > 0) {
+    // Get verified phone numbers first, then any phone number
+    const verifiedPhone = clerkUser.phoneNumbers.find(
+      p => p.verification?.status === 'verified'
+    );
+    const firstPhone = clerkUser.phoneNumbers[0];
+
+    if (verifiedPhone || firstPhone) {
+      primaryPhone = (verifiedPhone || firstPhone)?.phoneNumber || undefined;
+    }
+
+    // If there's a second phone number, use it as mobile
+    if (clerkUser.phoneNumbers.length > 1) {
+      mobilePhone = clerkUser.phoneNumbers[1]?.phoneNumber || undefined;
+    }
+  }
+
+  // Fallback to metadata if phoneNumbers array is empty
+  if (!primaryPhone && metadata.phone) {
+    primaryPhone = metadata.phone;
+  }
+  if (!mobilePhone && metadata.mobile) {
+    mobilePhone = metadata.mobile;
+  }
+
   // Safely get dates with fallbacks
   const createdAt = new Date(clerkUser.createdAt);
   const lastSignIn = clerkUser.lastSignInAt ? new Date(clerkUser.lastSignInAt) : createdAt;
@@ -69,11 +98,11 @@ function mapClerkUserToUser(clerkUser: ReturnType<typeof useUser>['user']): User
     created_at: createdAt,
     last_login: lastSignIn,
     is_active: true,
-    profile_image: clerkUser.imageUrl,
+    profile_image: clerkUser.imageUrl || undefined, // Avatar URL from Clerk
     id_number: metadata.id_number,
     employment_equity: metadata.employment_equity,
-    phone: metadata.phone || '',
-    mobile: metadata.mobile,
+    phone: primaryPhone || '',
+    mobile: mobilePhone,
     address: metadata.address,
     preferences: metadata.preferences || defaultPreferences,
     two_factor_enabled: clerkUser.twoFactorEnabled,
