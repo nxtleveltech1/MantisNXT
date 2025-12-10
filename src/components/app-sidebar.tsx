@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -248,45 +249,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Administration',
-      url: '/admin/settings/general',
-      icon: SettingsIcon,
-      items: [
-        {
-          title: 'Users & Accounts',
-          url: '/admin/users',
-        },
-        {
-          title: 'Roles & Permissions',
-          url: '/admin/roles',
-        },
-        {
-          title: 'General Settings',
-          url: '/admin/settings/general',
-        },
-        {
-          title: 'Currency & Tax',
-          url: '/admin/settings/currency',
-        },
-        {
-          title: 'Regional Settings',
-          url: '/admin/settings/regional',
-        },
-        {
-          title: 'Email & Notifications',
-          url: '/admin/settings/email',
-        },
-        {
-          title: 'Backup & Recovery',
-          url: '/admin/settings/backup',
-        },
-        {
-          title: 'Integrations',
-          url: '/admin/settings/integrations',
-        },
-      ],
-    },
-    {
       title: 'Financial',
       url: '/financial/invoices',
       icon: DollarSign,
@@ -330,6 +292,45 @@ export const sidebarData = {
         },
       ],
     },
+    {
+      title: 'Administration',
+      url: '/admin/settings/general',
+      icon: SettingsIcon,
+      items: [
+        {
+          title: 'Users & Accounts',
+          url: '/admin/users',
+        },
+        {
+          title: 'Roles & Permissions',
+          url: '/admin/roles',
+        },
+        {
+          title: 'General Settings',
+          url: '/admin/settings/general',
+        },
+        {
+          title: 'Currency & Tax',
+          url: '/admin/settings/currency',
+        },
+        {
+          title: 'Regional Settings',
+          url: '/admin/settings/regional',
+        },
+        {
+          title: 'Email & Notifications',
+          url: '/admin/settings/email',
+        },
+        {
+          title: 'Backup & Recovery',
+          url: '/admin/settings/backup',
+        },
+        {
+          title: 'Integrations',
+          url: '/admin/settings/integrations',
+        },
+      ],
+    },
   ],
   navSecondary: [
     {
@@ -353,21 +354,31 @@ export const sidebarData = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [logoError, setLogoError] = useState(false);
+
   return (
     <Sidebar variant="sidebar" {...props}>
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center justify-center p-4">
           <Link href="/" className="flex items-center justify-center w-full">
             <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg bg-black p-3">
-              <Image
-                src="/images/nxt-logo.png"
-                alt="NXT DOTX"
-                width={140}
-                height={40}
-                className="object-contain"
-                priority
-                unoptimized
-              />
+              {!logoError ? (
+                <Image
+                  src="/favicon.svg"
+                  alt="MantisNXT"
+                  width={140}
+                  height={40}
+                  className="object-contain"
+                  priority
+                  unoptimized
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="flex items-center gap-2 text-white">
+                  <Building2 className="h-6 w-6" />
+                  <span className="text-lg font-bold">MantisNXT</span>
+                </div>
+              )}
             </div>
           </Link>
         </div>
