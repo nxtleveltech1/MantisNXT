@@ -1,90 +1,74 @@
 /**
- * Compact Inventory Value Meter for Sidebar
- * Old-school VU meter-style vertical segmented bar visualization
+ * System Processing UV Meter
+ * Horizontal circular lights that flash based on system processing load
+ * Green (low) to Red (high) - 7 circular indicators
  */
 
 'use client';
 
-import React from 'react';
-import { useInventoryByCategory, formatCurrency } from '@/hooks/api/useDashboardWidgets';
+import React, { useState, useEffect } from 'react';
 
-export function InventoryValueMeter() {
-  const { data, isLoading, error } = useInventoryByCategory('month');
+export function SystemProcessingMeter() {
+  const [processingLoad, setProcessingLoad] = useState(0);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-32 w-full items-center justify-center rounded-lg border border-border bg-muted/30 p-4">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-primary" />
-      </div>
-    );
-  }
+  // Calculate processing load - simulate based on system activity
+  useEffect(() => {
+    // Simulate processing load that varies over time
+    // In a real implementation, this would use actual system metrics
+    const interval = setInterval(() => {
+      // Simulate varying load (0-100%)
+      const baseLoad = Math.random() * 40 + 20; // Base load between 20-60%
+      const variation = Math.sin(Date.now() / 2000) * 15; // Oscillating variation
+      const load = Math.max(0, Math.min(100, baseLoad + variation));
+      setProcessingLoad(load);
+    }, 500); // Update every 500ms for smooth animation
 
-  if (error || !data?.success) {
-    return (
-      <div className="flex h-32 w-full items-center justify-center rounded-lg border border-border bg-muted/30 p-4">
-        <p className="text-muted-foreground text-xs">Unable to load data</p>
-      </div>
-    );
-  }
+    return () => clearInterval(interval);
+  }, []);
 
-  const totalValue = data.summary?.totalValue || 0;
-  const maxValue = 100000000; // R100M as max for gauge scale
-  const percentage = Math.min((totalValue / maxValue) * 100, 100);
-
-  // VU meter segments - 7 segments total
-  // Colors from top (red) to bottom (green)
-  const segments = [
-    { color: '#DC2626', threshold: 85 }, // Red - top
-    { color: '#EA580C', threshold: 70 }, // Orange-red
-    { color: '#F97316', threshold: 55 }, // Orange
-    { color: '#FBBF24', threshold: 40 }, // Yellow-orange
-    { color: '#FCD34D', threshold: 25 }, // Yellow
-    { color: '#84CC16', threshold: 10 }, // Light green
-    { color: '#22C55E', threshold: 0 }, // Green - bottom
+  // 7 circular lights - colors from green (left) to red (right)
+  const lights = [
+    { color: '#22C55E', threshold: 0 }, // Green 1
+    { color: '#4ADE80', threshold: 14 }, // Green 2
+    { color: '#84CC16', threshold: 28 }, // Green 3
+    { color: '#FCD34D', threshold: 42 }, // Yellow 1
+    { color: '#FBBF24', threshold: 57 }, // Yellow 2
+    { color: '#F97316', threshold: 71 }, // Orange
+    { color: '#DC2626', threshold: 85 }, // Red
   ];
 
-  // Calculate how many segments should be active
-  const activeSegments = segments.filter(seg => percentage >= seg.threshold).length;
+  // Calculate how many lights should be active
+  const activeLights = lights.filter(light => processingLoad >= light.threshold).length;
 
   return (
-    <div className="w-full space-y-3 rounded-lg border border-border bg-card p-4">
-      <div className="space-y-1">
-        <p className="text-muted-foreground text-xs font-medium">SYSTEM PROCESSING</p>
-        <p className="text-sm font-semibold text-foreground">{formatCurrency(totalValue)}</p>
-      </div>
-      
-      {/* VU Meter - Vertical Segmented Bars (stacked vertically) */}
-      <div className="flex flex-col items-center gap-1">
-        {segments.map((segment, index) => {
-          const isActive = index < activeSegments;
-          const reverseIndex = segments.length - index - 1; // Reverse order (red at top)
-          
+    <div className="w-full space-y-2 px-2 pb-2">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        SYSTEM PROCESSING
+      </p>
+
+      {/* Horizontal UV Meter - 7 Circular Lights */}
+      <div className="flex items-center justify-between gap-1">
+        {lights.map((light, index) => {
+          const isActive = index < activeLights;
+          const shouldFlash = isActive && processingLoad > light.threshold;
+
           return (
-            <div
-              key={index}
-              className={`w-full rounded-full transition-all duration-500 ${
-                isActive ? 'opacity-100' : 'opacity-30'
-              }`}
-              style={{
-                height: '14px',
-                backgroundColor: segment.color,
-                boxShadow: isActive
-                  ? `0 2px 6px ${segment.color}50, inset 0 1px 3px rgba(255,255,255,0.5), inset 0 -1px 2px rgba(0,0,0,0.2)`
-                  : `inset 0 1px 2px rgba(0,0,0,0.15)`,
-                transform: isActive ? 'scale(1.02)' : 'scale(0.98)',
-                border: isActive ? `1px solid ${segment.color}80` : '1px solid rgba(0,0,0,0.1)',
-              }}
-            />
+            <div key={index} className="relative flex-1">
+              <div
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                  isActive ? 'opacity-100' : 'opacity-20'
+                } ${shouldFlash ? 'animate-pulse' : ''}`}
+                style={{
+                  backgroundColor: light.color,
+                  boxShadow: isActive
+                    ? `0 0 8px ${light.color}80, 0 0 4px ${light.color}60, inset 0 1px 2px rgba(255,255,255,0.4)`
+                    : 'none',
+                }}
+              />
+            </div>
           );
         })}
-      </div>
-
-      {/* Scale indicators */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Low</span>
-        <span className="text-muted-foreground">High</span>
       </div>
     </div>
   );
 }
-

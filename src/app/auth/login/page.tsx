@@ -74,7 +74,10 @@ export default function LoginPage() {
 
       // Check for first factor verification needed
       if (signInAttempt.status === 'needs_first_factor') {
-        console.log('First factor needed - supportedFirstFactors:', signInAttempt.supportedFirstFactors);
+        console.log(
+          'First factor needed - supportedFirstFactors:',
+          signInAttempt.supportedFirstFactors
+        );
         setError('Additional verification required. Check your email for a code.');
         return;
       }
@@ -92,7 +95,9 @@ export default function LoginPage() {
       console.error('Sign in error:', err);
       const clerkError = err as { errors?: Array<{ message?: string; longMessage?: string }> };
       if (clerkError.errors && clerkError.errors.length > 0) {
-        setError(clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Sign-in failed');
+        setError(
+          clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Sign-in failed'
+        );
       } else {
         setError('An unexpected error occurred');
       }
@@ -127,7 +132,9 @@ export default function LoginPage() {
       console.error('2FA error:', err);
       const clerkError = err as { errors?: Array<{ message?: string; longMessage?: string }> };
       if (clerkError.errors && clerkError.errors.length > 0) {
-        setError(clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Verification failed');
+        setError(
+          clerkError.errors[0].longMessage || clerkError.errors[0].message || 'Verification failed'
+        );
       } else {
         setError('Invalid verification code');
       }
@@ -149,17 +156,17 @@ export default function LoginPage() {
     return (
       <div className="relative min-h-screen">
         {/* Background Image */}
-        <div className="bg-background absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 bg-background">
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'url(/images/nxt-tunnel-background.jpg)',
+              backgroundImage: 'url(/images/login-background.jpg)',
               backgroundSize: 'cover',
               backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
             }}
           />
-          <div className="absolute inset-0 bg-background/30" />
+          <div className="bg-background/30 absolute inset-0" />
         </div>
 
         {/* Content - Two Factor Form at bottom center */}
@@ -174,7 +181,7 @@ export default function LoginPage() {
             maxWidth: '28rem',
           }}
         >
-          <div className="space-y-6 rounded-lg border border-border bg-card/80 p-6 backdrop-blur-sm">
+          <div className="bg-card/80 space-y-6 rounded-lg border border-border p-6 backdrop-blur-sm">
             {error && (
               <Alert variant="destructive" className="rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -212,7 +219,7 @@ export default function LoginPage() {
                   setTwoFactorCode('');
                   setError(null);
                 }}
-                className="text-muted-foreground hover:text-foreground text-sm"
+                className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Back to login
               </Button>
@@ -226,17 +233,17 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen">
       {/* Background Image */}
-      <div className="bg-background absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-background">
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'url(/images/nxt-tunnel-background.jpg)',
+            backgroundImage: 'url(/images/login-background.jpg)',
             backgroundSize: 'cover',
             backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
           }}
         />
-        <div className="absolute inset-0 bg-background/30" />
+        <div className="bg-background/30 absolute inset-0" />
       </div>
 
       {/* Content - Login Form at bottom center */}
@@ -252,7 +259,7 @@ export default function LoginPage() {
         }}
       >
         {/* Login Form - Semi-transparent panel */}
-        <div className="space-y-6 rounded-lg border border-border bg-card/80 p-6 backdrop-blur-sm">
+        <div className="bg-card/80 space-y-6 rounded-lg border border-border p-6 backdrop-blur-sm">
           {error && (
             <Alert variant="destructive" className="rounded-lg">
               <AlertCircle className="h-4 w-4" />
@@ -301,7 +308,7 @@ export default function LoginPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-10 w-10 -translate-y-1/2 hover:bg-transparent"
+                          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
@@ -318,7 +325,11 @@ export default function LoginPage() {
                 )}
               />
 
-              <Button type="submit" disabled={isLoading} className="h-12 w-full rounded-lg font-medium">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="h-12 w-full rounded-lg font-medium"
+              >
                 {isLoading ? (
                   'Signing in...'
                 ) : (

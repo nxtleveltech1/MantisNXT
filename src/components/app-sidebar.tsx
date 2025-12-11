@@ -25,7 +25,7 @@ import { NavMain } from '@/components/nav-main';
 import { NavProjects } from '@/components/nav-projects';
 import { NavSecondary } from '@/components/nav-secondary';
 import { NavUser } from '@/components/nav-user';
-import { InventoryValueMeter } from '@/components/sidebar/InventoryValueMeter';
+import { SystemProcessingMeter } from '@/components/sidebar/InventoryValueMeter';
 import {
   Sidebar,
   SidebarContent,
@@ -362,7 +362,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center justify-center p-4">
           <Link href="/" className="flex items-center justify-center w-full">
-            <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg bg-black p-3">
+            <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg p-3">
               {!logoError ? (
                 <Image
                   src="/images/logo.svg"
@@ -391,11 +391,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
         ) : null}
       </SidebarContent>
-      <SidebarFooter className="space-y-4">
+      <SidebarFooter className="space-y-2 border-t border-sidebar-border pt-2">
         <NavUser user={sidebarData.user} />
-        <div className="px-2 pb-2">
-          <InventoryValueMeter />
-        </div>
+        <SystemProcessingMeter />
       </SidebarFooter>
     </Sidebar>
   );
