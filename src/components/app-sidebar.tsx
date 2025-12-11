@@ -25,6 +25,7 @@ import { NavMain } from '@/components/nav-main';
 import { NavProjects } from '@/components/nav-projects';
 import { NavSecondary } from '@/components/nav-secondary';
 import { NavUser } from '@/components/nav-user';
+import { InventoryValueMeter } from '@/components/sidebar/InventoryValueMeter';
 import {
   Sidebar,
   SidebarContent,
@@ -277,6 +278,8 @@ export const sidebarData = {
         },
       ],
     },
+  ],
+  navSecondary: [
     {
       title: 'System Integration',
       url: '/system/integrations',
@@ -331,8 +334,6 @@ export const sidebarData = {
         },
       ],
     },
-  ],
-  navSecondary: [
     {
       title: 'Support',
       url: '/support',
@@ -364,7 +365,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg bg-black p-3">
               {!logoError ? (
                 <Image
-                  src="/favicon.svg"
+                  src="/images/logo.svg"
                   alt="MantisNXT"
                   width={140}
                   height={40}
@@ -390,8 +391,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
         ) : null}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="space-y-4">
         <NavUser user={sidebarData.user} />
+        <div className="px-2 pb-2">
+          <InventoryValueMeter />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

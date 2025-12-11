@@ -114,3 +114,5 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
 let activityIdCounter = 0;
 export const generateActivityId = (prefix = 'activity') => `${prefix}-${++activityIdCounter}-${Date.now()}`;
 
+
+

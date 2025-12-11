@@ -31,7 +31,6 @@ import { formatCurrency } from '@/hooks/api/useDashboardWidgets';
 // New Widget Components
 import { FlippableWidget } from '@/components/dashboard/widgets/FlippableWidget';
 import {
-  InventoryValueAreaChart,
   ProductCountBarChart,
   SalesByCategoryPieChart,
   SalesTimelineChart,
@@ -183,12 +182,6 @@ const MagicDashboard = () => {
 
   // Flippable widget views
   const mainWidgetViews = [
-    {
-      id: 'inventory-value',
-      title: 'Inventory Value by Category',
-      description: 'Total stock value distributed across categories',
-      component: <InventoryValueAreaChart dateRange={timeRange} />,
-    },
     {
       id: 'product-count',
       title: 'Products by Category',
@@ -374,7 +367,7 @@ const MagicDashboard = () => {
 
       {/* Main Chart - Full Width */}
       <div className="w-full">
-        <FlippableWidget views={mainWidgetViews} defaultViewId="inventory-value" />
+        <FlippableWidget views={mainWidgetViews} defaultViewId="product-count" />
       </div>
 
       {/* Location Distribution - Full Width */}
