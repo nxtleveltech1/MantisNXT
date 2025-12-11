@@ -10,10 +10,19 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Clerk publishable key is REQUIRED for the application to function
+  // This must be set in Vercel environment variables:
+  // Settings → Environment Variables → Add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  // Get your key from: https://dashboard.clerk.com/last-active?path=api-keys
+  const clerkPublishableKey =
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+    // Fallback placeholder for build-time static generation
+    // This allows the build to complete, but Clerk will fail at runtime if the real key isn't set
+    // Format matches Clerk's test key pattern to pass format validation
+    'pk_test_BUILD_PLACEHOLDER_REPLACE_WITH_REAL_KEY_IN_VERCEL_ENV_VARS';
+
   return (
-    <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    >
+    <ClerkProvider publishableKey={clerkPublishableKey}>
       <html lang="en-ZA" suppressHydrationWarning>
         <head />
         <body
