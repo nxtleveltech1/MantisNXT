@@ -10,18 +10,22 @@ import React, { useState, useEffect } from 'react';
 
 export function SystemProcessingMeter() {
   const [processingLoad, setProcessingLoad] = useState(0);
+  const [flickerState, setFlickerState] = useState<boolean[]>(new Array(7).fill(false));
 
-  // Calculate processing load - simulate based on system activity
+  // Calculate processing load - simulate based on system activity with rapid flickering
   useEffect(() => {
-    // Simulate processing load that varies over time
-    // In a real implementation, this would use actual system metrics
+    // Simulate processing load that varies rapidly for flickering effect
     const interval = setInterval(() => {
-      // Simulate varying load (0-100%)
-      const baseLoad = Math.random() * 40 + 20; // Base load between 20-60%
-      const variation = Math.sin(Date.now() / 2000) * 15; // Oscillating variation
-      const load = Math.max(0, Math.min(100, baseLoad + variation));
+      // Rapid variation for flickering effect (0-100%)
+      const baseLoad = Math.random() * 50 + 30; // Base load between 30-80%
+      const rapidVariation = Math.sin(Date.now() / 300) * 25; // Fast oscillation
+      const randomSpike = Math.random() * 20; // Random spikes
+      const load = Math.max(0, Math.min(100, baseLoad + rapidVariation + randomSpike));
       setProcessingLoad(load);
-    }, 500); // Update every 500ms for smooth animation
+
+      // Update flicker state for each light
+      setFlickerState(prev => prev.map((_, i) => Math.random() > 0.6));
+    }, 100); // Update every 100ms for rapid flickering
 
     return () => clearInterval(interval);
   }, []);
@@ -47,22 +51,26 @@ export function SystemProcessingMeter() {
       </p>
 
       {/* Horizontal UV Meter - 7 Circular Lights */}
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-1.5">
         {lights.map((light, index) => {
           const isActive = index < activeLights;
-          const shouldFlash = isActive && processingLoad > light.threshold;
+          const shouldFlicker = isActive && flickerState[index];
 
           return (
-            <div key={index} className="relative flex-1">
+            <div key={index} className="relative flex flex-1 justify-center">
               <div
-                className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                  isActive ? 'opacity-100' : 'opacity-20'
-                } ${shouldFlash ? 'animate-pulse' : ''}`}
+                className={`h-4 w-4 rounded-full transition-all duration-100 ${
+                  isActive ? 'opacity-100' : 'opacity-15'
+                }`}
                 style={{
                   backgroundColor: light.color,
                   boxShadow: isActive
-                    ? `0 0 8px ${light.color}80, 0 0 4px ${light.color}60, inset 0 1px 2px rgba(255,255,255,0.4)`
+                    ? `0 0 20px ${light.color}, 0 0 12px ${light.color}DD, 0 0 6px ${light.color}FF, inset 0 1px 3px rgba(255,255,255,0.7)`
                     : 'none',
+                  filter: isActive
+                    ? `brightness(1.5) drop-shadow(0 0 8px ${light.color})`
+                    : 'brightness(0.3)',
+                  animation: shouldFlicker ? 'flicker 0.12s ease-in-out infinite' : 'none',
                 }}
               />
             </div>

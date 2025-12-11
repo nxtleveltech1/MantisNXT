@@ -362,22 +362,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center justify-center p-4">
           <Link href="/" className="flex items-center justify-center w-full">
-            <div className="relative flex items-center justify-center w-full min-h-[48px] rounded-lg p-3">
+            <div className="relative flex items-center justify-center w-full min-h-[64px] rounded-lg p-2">
               {!logoError ? (
                 <Image
                   src="/images/logo.svg"
                   alt="MantisNXT"
-                  width={140}
-                  height={40}
-                  className="object-contain"
+                  width={200}
+                  height={60}
+                  className="w-full h-full object-contain"
                   priority
                   unoptimized
                   onError={() => setLogoError(true)}
                 />
               ) : (
                 <div className="flex items-center gap-2 text-white">
-                  <Building2 className="h-6 w-6" />
-                  <span className="text-lg font-bold">MantisNXT</span>
+                  <Building2 className="h-8 w-8" />
+                  <span className="text-xl font-bold">MantisNXT</span>
                 </div>
               )}
             </div>
