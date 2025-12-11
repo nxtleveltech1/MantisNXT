@@ -153,13 +153,13 @@ export default function LoginPage() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'url(/images/login-background.jpg)',
+              backgroundImage: 'url(/images/nxt-tunnel-background.jpg)',
               backgroundSize: 'cover',
-              backgroundPosition: '45% center',
+              backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
             }}
           />
-          <div className="absolute inset-0 bg-background/40" />
+          <div className="absolute inset-0 bg-background/30" />
         </div>
 
         {/* Content - Two Factor Form at bottom center */}
@@ -230,13 +230,13 @@ export default function LoginPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'url(/images/login-background.jpg)',
+            backgroundImage: 'url(/images/nxt-tunnel-background.jpg)',
             backgroundSize: 'cover',
-            backgroundPosition: '45% center',
+            backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
           }}
         />
-        <div className="absolute inset-0 bg-background/40" />
+        <div className="absolute inset-0 bg-background/30" />
       </div>
 
       {/* Content - Login Form at bottom center */}
