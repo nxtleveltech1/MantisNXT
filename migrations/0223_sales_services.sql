@@ -37,11 +37,11 @@ ALTER TABLE sales_orders
     ALTER COLUMN connector_id DROP NOT NULL,
     DROP CONSTRAINT IF EXISTS sales_orders_connector_id_external_id_key;
 
--- Add manual creation support columns to sales_orders
+-- Add manual creation support columns to sales_orders (quotation_id FK added after quotations table is created)
 ALTER TABLE sales_orders
     ADD COLUMN IF NOT EXISTS document_number text,
     ADD COLUMN IF NOT EXISTS status_enum sales_order_status DEFAULT 'draft',
-    ADD COLUMN IF NOT EXISTS quotation_id uuid REFERENCES quotations(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS quotation_id uuid,
     ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     ADD COLUMN IF NOT EXISTS updated_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     ADD COLUMN IF NOT EXISTS notes text,
@@ -245,6 +245,19 @@ CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at);
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_invoice_items_product ON invoice_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_invoice_items_sku ON invoice_items(sku);
+
+-- Add foreign key constraint for quotation_id after quotations table exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'sales_orders_quotation_id_fkey'
+    ) THEN
+        ALTER TABLE sales_orders
+        ADD CONSTRAINT sales_orders_quotation_id_fkey 
+        FOREIGN KEY (quotation_id) REFERENCES quotations(id) ON DELETE SET NULL;
+    END IF;
+END$$;
 
 -- Indexes for extended sales_orders
 CREATE INDEX IF NOT EXISTS idx_sales_orders_quotation ON sales_orders(quotation_id);
