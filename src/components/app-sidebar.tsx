@@ -9,11 +9,13 @@ import {
   Bot,
   Building2,
   DollarSign,
+  FileText,
   Gift,
   LayoutDashboard,
   MessageSquare,
   Package,
   Plug,
+  Receipt,
   ShoppingBag,
   Tag,
   TrendingUp,
@@ -211,6 +213,29 @@ export const sidebarData = {
         {
           title: 'Add Customer',
           url: '/customers/new',
+        },
+      ],
+    },
+    {
+      title: 'Sales Services',
+      url: '/sales/quotations',
+      icon: FileText,
+      items: [
+        {
+          title: 'Quotations',
+          url: '/sales/quotations',
+        },
+        {
+          title: 'Sales Orders',
+          url: '/sales/sales-orders',
+        },
+        {
+          title: 'Proforma Invoices',
+          url: '/sales/proforma-invoices',
+        },
+        {
+          title: 'Invoices',
+          url: '/sales/invoices',
         },
       ],
     },
