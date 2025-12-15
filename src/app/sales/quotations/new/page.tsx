@@ -88,13 +88,6 @@ export default function NewQuotationPage() {
     });
   };
 
-  const removeItem = (index: number) => {
-    setFormData({
-      ...formData,
-      items: formData.items.filter((_, i) => i !== index),
-    });
-  };
-
   const handleCustomerSelect = (customerId: string, customer?: { id: string; name: string; company?: string | null }) => {
     setFormData({ ...formData, customer_id: customerId });
     if (customer) {
