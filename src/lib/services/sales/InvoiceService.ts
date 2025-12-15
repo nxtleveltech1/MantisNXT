@@ -195,7 +195,7 @@ export class InvoiceService {
           data.proforma_invoice_id || null,
           documentNumber,
           data.status || 'draft',
-          data.currency || 'USD',
+          data.currency || 'ZAR',
           data.due_date || null,
           data.reference_number || null,
           data.notes || null,

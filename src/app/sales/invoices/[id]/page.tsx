@@ -66,7 +66,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: invoice.currency || 'USD',
+      currency: invoice.currency || 'ZAR',
     }).format(amount);
   };
 

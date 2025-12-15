@@ -116,7 +116,7 @@ export default function QuotationDetailPage({ params }: { params: Promise<{ id: 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: quotation.currency || 'USD',
+      currency: quotation.currency || 'ZAR',
     }).format(amount);
   };
 

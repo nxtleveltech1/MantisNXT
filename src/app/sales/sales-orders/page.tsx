@@ -72,7 +72,7 @@ export default function SalesOrdersPage() {
     if (!amount) return '-';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: currency || 'ZAR',
     }).format(amount);
   };
 

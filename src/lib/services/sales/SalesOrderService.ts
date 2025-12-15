@@ -187,7 +187,7 @@ export class SalesOrderService {
           data.customer_id,
           documentNumber,
           data.status_enum || 'draft',
-          data.currency || 'USD',
+          data.currency || 'ZAR',
           total,
           totalTax,
           data.quotation_id || null,

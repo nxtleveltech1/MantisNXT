@@ -24,7 +24,7 @@ const createQuotationSchema = z.object({
   customer_id: z.string().uuid(),
   document_number: z.string().optional(),
   status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired', 'converted']).optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('ZAR'),
   valid_until: z.string().optional().nullable(),
   reference_number: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),

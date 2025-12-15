@@ -22,7 +22,7 @@ const createSalesOrderSchema = z.object({
   status_enum: z
     .enum(['draft', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'])
     .optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('ZAR'),
   quotation_id: z.string().uuid().optional().nullable(),
   billing_address: z.record(z.unknown()).optional(),
   shipping_address: z.record(z.unknown()).optional(),

@@ -7,8 +7,21 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const search = searchParams.get('search');
 
-    const { data, count } = await CustomerService.getCustomers(limit, offset);
+    let data: unknown[];
+    let count: number;
+
+    if (search) {
+      // Use search method for filtered results
+      data = await CustomerService.searchCustomers(search, limit);
+      count = data.length; // Search doesn't return count, approximate
+    } else {
+      // Use regular getCustomers for pagination
+      const result = await CustomerService.getCustomers(limit, offset);
+      data = result.data;
+      count = result.count;
+    }
 
     return NextResponse.json({
       success: true,
@@ -22,7 +35,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch customers',
+        error: error instanceof Error ? error.message : 'Failed to fetch customers',
       },
       { status: 500 }
     );

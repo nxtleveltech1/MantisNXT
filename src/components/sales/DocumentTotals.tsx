@@ -8,7 +8,7 @@ interface DocumentTotalsProps {
   className?: string;
 }
 
-export function DocumentTotals({ subtotal, totalTax, total, currency = 'USD', className }: DocumentTotalsProps) {
+export function DocumentTotals({ subtotal, totalTax, total, currency = 'ZAR', className }: DocumentTotalsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

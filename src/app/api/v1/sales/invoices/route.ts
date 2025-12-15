@@ -28,7 +28,7 @@ const createInvoiceSchema = z.object({
   status: z
     .enum(['draft', 'sent', 'paid', 'partially_paid', 'overdue', 'cancelled', 'refunded'])
     .optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('ZAR'),
   due_date: z.string().optional().nullable(),
   reference_number: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),

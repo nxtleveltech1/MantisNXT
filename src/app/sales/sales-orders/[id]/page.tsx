@@ -131,7 +131,7 @@ export default function SalesOrderDetailPage({ params }: { params: Promise<{ id:
                 subtotal={subtotal}
                 totalTax={totalTax}
                 total={total}
-                currency={salesOrder.currency || 'USD'}
+                currency={salesOrder.currency || 'ZAR'}
               />
             </div>
           </CardContent>

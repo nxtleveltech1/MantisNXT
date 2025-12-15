@@ -25,7 +25,7 @@ const createProformaInvoiceSchema = z.object({
   sales_order_id: z.string().uuid().optional().nullable(),
   document_number: z.string().optional(),
   status: z.enum(['draft', 'sent', 'paid', 'cancelled', 'converted']).optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('ZAR'),
   reference_number: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   billing_address: z.record(z.unknown()).optional(),

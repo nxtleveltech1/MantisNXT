@@ -66,7 +66,7 @@ export default function ProformaInvoicesPage() {
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: currency || 'ZAR',
     }).format(amount);
   };
 

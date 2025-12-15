@@ -174,7 +174,7 @@ export class QuotationService {
           data.customer_id,
           documentNumber,
           data.status || 'draft',
-          data.currency || 'USD',
+          data.currency || 'ZAR',
           data.valid_until || null,
           data.reference_number || null,
           data.notes || null,

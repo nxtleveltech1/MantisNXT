@@ -180,7 +180,7 @@ export class ProformaInvoiceService {
           data.sales_order_id || null,
           documentNumber,
           data.status || 'draft',
-          data.currency || 'USD',
+          data.currency || 'ZAR',
           data.reference_number || null,
           data.notes || null,
           data.billing_address ? JSON.stringify(data.billing_address) : '{}',

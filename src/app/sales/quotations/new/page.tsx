@@ -2,47 +2,52 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, X } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CustomerSelector } from '@/components/sales/CustomerSelector';
+import { AdvancedCustomerSearch } from '@/components/sales/AdvancedCustomerSearch';
+import { AdvancedProductSearch } from '@/components/sales/AdvancedProductSearch';
 import { DocumentTotals } from '@/components/sales/DocumentTotals';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+
+interface QuotationItem {
+  product_id?: string;
+  sku?: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  tax_amount: number;
+  subtotal: number;
+  total: number;
+}
 
 export default function NewQuotationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string; company?: string | null } | null>(null);
   const [formData, setFormData] = useState({
     customer_id: '',
-    currency: 'USD',
+    currency: 'ZAR',
     valid_until: '',
     reference_number: '',
     notes: '',
-    items: [
-      {
-        name: '',
-        quantity: 1,
-        unit_price: 0,
-        tax_rate: 0,
-        tax_amount: 0,
-        subtotal: 0,
-        total: 0,
-      },
-    ],
+    items: [] as QuotationItem[],
   });
 
-  const calculateItemTotals = (item: typeof formData.items[0]) => {
+  const calculateItemTotals = (item: QuotationItem) => {
     const subtotal = item.quantity * item.unit_price;
     const taxAmount = subtotal * item.tax_rate;
     const total = subtotal + taxAmount;
     return { subtotal, tax_amount: taxAmount, total };
   };
 
-  const updateItem = (index: number, updates: Partial<typeof formData.items[0]>) => {
+  const updateItem = (index: number, updates: Partial<QuotationItem>) => {
     const newItems = [...formData.items];
     const updatedItem = { ...newItems[index], ...updates };
     const totals = calculateItemTotals(updatedItem);
@@ -50,21 +55,36 @@ export default function NewQuotationPage() {
     setFormData({ ...formData, items: newItems });
   };
 
-  const addItem = () => {
+  const handleProductSelect = (product: {
+    id: string;
+    sku: string;
+    name: string;
+    sale_price?: number | null;
+    cost_price?: number | null;
+  }) => {
+    const newItem: QuotationItem = {
+      product_id: product.id,
+      sku: product.sku,
+      name: product.name,
+      quantity: 1,
+      unit_price: product.sale_price || product.cost_price || 0,
+      tax_rate: 0.15, // Default 15% VAT for South Africa
+      tax_amount: 0,
+      subtotal: 0,
+      total: 0,
+    };
+    const totals = calculateItemTotals(newItem);
     setFormData({
       ...formData,
-      items: [
-        ...formData.items,
-        {
-          name: '',
-          quantity: 1,
-          unit_price: 0,
-          tax_rate: 0,
-          tax_amount: 0,
-          subtotal: 0,
-          total: 0,
-        },
-      ],
+      items: [...formData.items, { ...newItem, ...totals }],
+    });
+    toast.success(`Added ${product.name} to quotation`);
+  };
+
+  const removeItem = (index: number) => {
+    setFormData({
+      ...formData,
+      items: formData.items.filter((_, i) => i !== index),
     });
   };
 
@@ -73,6 +93,13 @@ export default function NewQuotationPage() {
       ...formData,
       items: formData.items.filter((_, i) => i !== index),
     });
+  };
+
+  const handleCustomerSelect = (customerId: string, customer?: { id: string; name: string; company?: string | null }) => {
+    setFormData({ ...formData, customer_id: customerId });
+    if (customer) {
+      setSelectedCustomer(customer);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,10 +172,29 @@ export default function NewQuotationPage() {
                   <div className="space-y-4">
                     <div>
                       <Label>Customer *</Label>
-                      <CustomerSelector
+                      <AdvancedCustomerSearch
                         value={formData.customer_id}
-                        onValueChange={customerId => setFormData({ ...formData, customer_id: customerId })}
+                        onValueChange={handleCustomerSelect}
+                        placeholder="Search customers by name, email, company, phone..."
                       />
+                      {selectedCustomer && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <Badge variant="outline">
+                            {selectedCustomer.company || selectedCustomer.name}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setFormData({ ...formData, customer_id: '' });
+                              setSelectedCustomer(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -160,76 +206,93 @@ export default function NewQuotationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {formData.items.map((item, index) => (
-                      <div key={index} className="space-y-2 rounded-lg border p-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Product Name *</Label>
-                            <Input
-                              value={item.name}
-                              onChange={e => updateItem(index, { name: e.target.value })}
-                              placeholder="Product name"
-                            />
-                          </div>
-                          <div>
-                            <Label>Quantity *</Label>
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              onChange={e => updateItem(index, { quantity: parseFloat(e.target.value) || 0 })}
-                              min="0.01"
-                              step="0.01"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <Label>Unit Price *</Label>
-                            <Input
-                              type="number"
-                              value={item.unit_price}
-                              onChange={e => updateItem(index, { unit_price: parseFloat(e.target.value) || 0 })}
-                              min="0"
-                              step="0.01"
-                            />
-                          </div>
-                          <div>
-                            <Label>Tax Rate</Label>
-                            <Input
-                              type="number"
-                              value={item.tax_rate}
-                              onChange={e => updateItem(index, { tax_rate: parseFloat(e.target.value) || 0 })}
-                              min="0"
-                              max="1"
-                              step="0.01"
-                            />
-                          </div>
-                          <div>
-                            <Label>Total</Label>
-                            <Input
-                              value={new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: formData.currency,
-                              }).format(item.total)}
-                              disabled
-                            />
-                          </div>
-                        </div>
-                        {formData.items.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeItem(index)}
-                          >
-                            Remove Item
-                          </Button>
-                        )}
+                    <div>
+                      <Label>Add Product</Label>
+                      <AdvancedProductSearch
+                        onProductSelect={handleProductSelect}
+                        excludeProductIds={formData.items.map(item => item.product_id || '').filter(Boolean)}
+                        placeholder="Search products by name, SKU, category, brand..."
+                      />
+                    </div>
+                    {formData.items.length === 0 ? (
+                      <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+                        <p>No items added yet. Use the search above to add products.</p>
                       </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={addItem}>
-                      Add Item
-                    </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        {formData.items.map((item, index) => (
+                          <div key={index} className="space-y-3 rounded-lg border p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{item.name}</span>
+                                  {item.sku && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.sku}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItem(index)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                              <div>
+                                <Label>Quantity *</Label>
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={e => updateItem(index, { quantity: parseFloat(e.target.value) || 0 })}
+                                  min="0.01"
+                                  step="0.01"
+                                />
+                              </div>
+                              <div>
+                                <Label>Unit Price (ZAR) *</Label>
+                                <Input
+                                  type="number"
+                                  value={item.unit_price}
+                                  onChange={e => updateItem(index, { unit_price: parseFloat(e.target.value) || 0 })}
+                                  min="0"
+                                  step="0.01"
+                                />
+                              </div>
+                              <div>
+                                <Label>Tax Rate (VAT)</Label>
+                                <Input
+                                  type="number"
+                                  value={item.tax_rate}
+                                  onChange={e => updateItem(index, { tax_rate: parseFloat(e.target.value) || 0 })}
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  placeholder="0.15"
+                                />
+                              </div>
+                              <div>
+                                <Label>Total (ZAR)</Label>
+                                <Input
+                                  value={new Intl.NumberFormat('en-ZA', {
+                                    style: 'currency',
+                                    currency: 'ZAR',
+                                    minimumFractionDigits: 2,
+                                  }).format(item.total)}
+                                  disabled
+                                  className="font-medium"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -246,7 +309,11 @@ export default function NewQuotationPage() {
                     <Input
                       value={formData.currency}
                       onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                      placeholder="ZAR"
                     />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Default: ZAR (South African Rand)
+                    </p>
                   </div>
                   <div>
                     <Label>Valid Until</Label>
