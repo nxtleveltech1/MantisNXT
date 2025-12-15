@@ -186,6 +186,7 @@ export function AdvancedCustomerSearch({
     onValueChange(customer.id, customer);
     setOpen(false);
     setSearchTerm('');
+    setFilters({}); // Clear filters after selection
   };
 
   return (
