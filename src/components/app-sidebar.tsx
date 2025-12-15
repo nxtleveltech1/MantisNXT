@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Users,
   Settings as SettingsIcon,
+  Archive,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -236,6 +237,21 @@ export const sidebarData = {
         {
           title: 'Invoices',
           url: '/sales/invoices',
+        },
+      ],
+    },
+    {
+      title: 'DocuStore',
+      url: '/docustore',
+      icon: Archive,
+      items: [
+        {
+          title: 'All Documents',
+          url: '/docustore',
+        },
+        {
+          title: 'Upload Document',
+          url: '/docustore/new',
         },
       ],
     },

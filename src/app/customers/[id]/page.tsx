@@ -28,6 +28,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, formatDateTime } from '@/lib/utils';
+import { FileText, ExternalLink, Plus } from 'lucide-react';
+import Link from 'next/link';
 
 interface Customer {
   id: string;
@@ -348,6 +350,7 @@ export default function CustomerDetailsPage() {
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="loyalty">Loyalty Program</TabsTrigger>
             <TabsTrigger value="transactions">Transaction History</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -687,6 +690,10 @@ export default function CustomerDetailsPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="documents" className="space-y-4">
+            <CustomerDocumentsTab customerId={customerId} />
+          </TabsContent>
+
           <TabsContent value="analytics" className="space-y-4">
             <Card className="border-border">
               <CardHeader>
@@ -817,5 +824,114 @@ export default function CustomerDetailsPage() {
         </Tabs>
       </div>
     </AppLayout>
+  );
+}
+
+// Customer Documents Tab Component
+function CustomerDocumentsTab({ customerId }: { customerId: string }) {
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [customerId]);
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/v1/docustore?entity_type=customer&entity_id=${customerId}&status=active`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setDocuments(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-muted-foreground">Loading documents...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Linked Documents</CardTitle>
+            <CardDescription>
+              Documents from DocuStore linked to this customer
+            </CardDescription>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/docustore/new?link_customer=${customerId}`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Link Document
+            </Link>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {documents.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No documents linked to this customer</p>
+            <Button variant="outline" className="mt-4" asChild>
+              <Link href={`/docustore/new?link_customer=${customerId}`}>
+                <Plus className="mr-2 h-4 w-4" />
+                Link a Document
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {documents.map(doc => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-medium">{doc.title}</div>
+                    {doc.description && (
+                      <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                        {doc.description}
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      {doc.document_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {doc.document_type}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(doc.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/docustore/${doc.id}`}>
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
