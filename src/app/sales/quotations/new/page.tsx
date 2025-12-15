@@ -103,35 +103,103 @@ export default function NewQuotationPage() {
       return;
     }
 
-    if (formData.items.length === 0 || formData.items.some(item => !item.name || item.quantity <= 0)) {
-      toast.error('Please add at least one valid item');
+    // Validate customer_id is a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(formData.customer_id)) {
+      toast.error('Invalid customer selected. Please select a customer again.');
+      return;
+    }
+
+    if (formData.items.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    if (formData.items.some(item => !item.name || item.name.trim() === '')) {
+      toast.error('All items must have a product name');
+      return;
+    }
+
+    if (formData.items.some(item => item.quantity <= 0)) {
+      toast.error('All items must have a quantity greater than 0');
+      return;
+    }
+
+    if (formData.items.some(item => item.unit_price < 0)) {
+      toast.error('All items must have a valid unit price');
       return;
     }
 
     setLoading(true);
     try {
+      // Prepare items with required fields
+      const items = formData.items.map((item, index) => {
+        // Only include product_id if it's a valid UUID, otherwise set to null
+        let productId = null;
+        if (item.product_id) {
+          // Check if it's a valid UUID format
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(item.product_id)) {
+            productId = item.product_id;
+          }
+        }
+
+        return {
+          product_id: productId,
+          sku: item.sku || null,
+          name: item.name,
+          description: null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+          tax_amount: item.tax_amount,
+          subtotal: item.subtotal,
+          total: item.total,
+          line_number: index + 1,
+        };
+      });
+
+      const payload = {
+        customer_id: formData.customer_id,
+        currency: formData.currency || 'ZAR',
+        valid_until: formData.valid_until || null,
+        reference_number: formData.reference_number || null,
+        notes: formData.notes || null,
+        items,
+      };
+
       const response = await fetch('/api/v1/sales/quotations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          valid_until: formData.valid_until || null,
-          reference_number: formData.reference_number || null,
-          notes: formData.notes || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
-      if (result.success) {
+      if (!response.ok) {
+        // Handle validation errors
+        if (result.details && Array.isArray(result.details)) {
+          const errorMessages = result.details
+            .map((err: { path: string[]; message: string }) => `${err.path.join('.')}: ${err.message}`)
+            .join(', ');
+          toast.error(`Validation error: ${errorMessages}`, { duration: 5000 });
+        } else {
+          toast.error(result.error || `Failed to create quotation (${response.status})`, { duration: 5000 });
+        }
+        console.error('Quotation creation failed:', { status: response.status, result });
+        return;
+      }
+
+      if (result.success && result.data?.id) {
         toast.success('Quotation created successfully');
         router.push(`/sales/quotations/${result.data.id}`);
       } else {
-        toast.error(result.error || 'Failed to create quotation');
+        toast.error(result.error || 'Failed to create quotation - no ID returned');
+        console.error('Unexpected response format:', result);
       }
     } catch (error) {
       console.error('Error creating quotation:', error);
-      toast.error('Error creating quotation');
+      toast.error(error instanceof Error ? error.message : 'Error creating quotation');
     } finally {
       setLoading(false);
     }
