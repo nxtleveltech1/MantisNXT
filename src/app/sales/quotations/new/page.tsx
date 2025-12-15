@@ -144,17 +144,36 @@ export default function NewQuotationPage() {
           }
         }
 
+        // Ensure all numeric values are proper numbers
+        const quantity = Number(item.quantity);
+        const unitPrice = Number(item.unit_price);
+        const taxRate = Number(item.tax_rate);
+        const taxAmount = Number(item.tax_amount);
+        const subtotal = Number(item.subtotal);
+        const total = Number(item.total);
+
+        // Validate numbers
+        if (isNaN(quantity) || quantity <= 0) {
+          throw new Error(`Item ${index + 1}: Invalid quantity`);
+        }
+        if (isNaN(unitPrice) || unitPrice < 0) {
+          throw new Error(`Item ${index + 1}: Invalid unit price`);
+        }
+        if (isNaN(taxRate) || taxRate < 0 || taxRate > 1) {
+          throw new Error(`Item ${index + 1}: Invalid tax rate (must be between 0 and 1)`);
+        }
+
         return {
           product_id: productId,
           sku: item.sku || null,
-          name: item.name,
+          name: item.name.trim(),
           description: null,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          tax_rate: item.tax_rate,
-          tax_amount: item.tax_amount,
-          subtotal: item.subtotal,
-          total: item.total,
+          quantity,
+          unit_price: unitPrice,
+          tax_rate: taxRate,
+          tax_amount: taxAmount,
+          subtotal,
+          total,
           line_number: index + 1,
         };
       });

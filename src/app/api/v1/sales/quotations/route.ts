@@ -73,10 +73,18 @@ export async function POST(request: NextRequest) {
     const orgId = await getOrgId(request);
     const body = await request.json();
 
-    const validated = createQuotationSchema.parse({
-      ...body,
-      org_id: orgId,
+    console.log('Received quotation creation request:', {
+      orgId,
+      bodyKeys: Object.keys(body),
+      customer_id: body.customer_id,
+      itemsCount: body.items?.length,
+      firstItem: body.items?.[0],
     });
+
+    // Validate without org_id first to see exact errors
+    const validated = createQuotationSchema.parse(body);
+
+    console.log('Validation passed, creating quotation...');
 
     const quotation = await QuotationService.createQuotation({
       ...validated,
@@ -92,11 +100,19 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', {
+        errors: error.errors,
+        receivedBody: error instanceof Error ? error.message : 'Unknown error',
+      });
       return NextResponse.json(
         {
           success: false,
           error: 'Validation error',
-          details: error.errors,
+          details: error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message,
+            code: err.code,
+          })),
         },
         { status: 400 }
       );
