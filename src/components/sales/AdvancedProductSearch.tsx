@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Package, Building2, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,7 @@ export function AdvancedProductSearch({
   }>({
     stockStatus: 'all',
   });
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Get unique values for filters
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -80,6 +81,15 @@ export function AdvancedProductSearch({
       fetchProducts();
     }
   }, [open, debouncedSearch, filters]);
+
+  // Focus input when popover opens
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [open]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -213,10 +223,11 @@ export function AdvancedProductSearch({
           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[700px] p-0" align="start">
+      <PopoverContent className="w-[700px] p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
         <Command shouldFilter={false}>
           <div className="border-b p-2">
             <CommandInput
+              ref={inputRef}
               placeholder={placeholder}
               value={searchTerm}
               onValueChange={setSearchTerm}

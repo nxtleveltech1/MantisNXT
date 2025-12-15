@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Building2, User, Mail, Phone, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export function AdvancedCustomerSearch({
     minLifetimeValue?: number;
     maxLifetimeValue?: number;
   }>({});
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -84,6 +85,15 @@ export function AdvancedCustomerSearch({
       fetchCustomers();
     }
   }, [open, debouncedSearch, filters]);
+
+  // Focus input when popover opens
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [open]);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -209,10 +219,11 @@ export function AdvancedCustomerSearch({
           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[600px] p-0" align="start">
+      <PopoverContent className="w-[600px] p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
         <Command shouldFilter={false}>
           <div className="border-b p-2">
             <CommandInput
+              ref={inputRef}
               placeholder={placeholder}
               value={searchTerm}
               onValueChange={setSearchTerm}

@@ -35,22 +35,37 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   );
 };
 
-const CommandInput = React.forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <input
-      ref={ref}
-      className={cn(
-        'flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
-        className
-      )}
-      {...props}
-    />
-  </div>
-));
+interface CommandInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  onValueChange?: (value: string) => void;
+}
+
+const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(
+  ({ className, onValueChange, onChange, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (onValueChange) {
+        onValueChange(e.target.value);
+      }
+      if (onChange) {
+        onChange(e);
+      }
+    };
+
+    return (
+      <div className="flex items-center border-b px-3">
+        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+        <input
+          ref={ref}
+          className={cn(
+            'flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+            className
+          )}
+          onChange={handleChange}
+          {...props}
+        />
+      </div>
+    );
+  }
+);
 
 CommandInput.displayName = 'CommandInput';
 
