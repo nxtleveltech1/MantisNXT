@@ -75,6 +75,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         CROSS JOIN LATERAL jsonb_array_elements_text(sp.attrs_json->'tags') AS tag_val
         WHERE sp.attrs_json ? 'tags' AND sp.supplier_product_id = $1
         GROUP BY sp.supplier_product_id
+      ),
+      supplier_discounts AS (
+        SELECT 
+          sp.supplier_product_id,
+          COALESCE(
+            (sp.attrs_json->>'base_discount')::numeric,
+            COALESCE(
+              (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
+              0
+            )
+          ) AS base_discount
+        FROM core.supplier_product sp
+        LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
+          AND sprof.profile_name = 'default' 
+          AND sprof.is_active = true
+        WHERE sp.supplier_product_id = $1
       )
       SELECT
         sp.*, 
@@ -88,6 +104,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         c.is_active AS category_is_active,
         cp.price AS current_price, 
         cp.currency,
+        COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) AS cost_ex_vat,
+        COALESCE(sd.base_discount, 0) AS base_discount,
+        CASE
+          WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
+            AND COALESCE(sd.base_discount, 0) > 0
+          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) - 
+               (COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * COALESCE(sd.base_discount, 0) / 100)
+          ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
+        END AS cost_after_discount,
         pp.previous_price,
         pp.valid_to AS previous_price_valid_to,
         ls.qty_on_hand,
@@ -104,6 +129,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id
       LEFT JOIN product_tags pt ON pt.supplier_product_id = sp.supplier_product_id
       LEFT JOIN attrs_json_tags at ON at.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN supplier_discounts sd ON sd.supplier_product_id = sp.supplier_product_id
       WHERE sp.supplier_product_id = $1
       LIMIT 1
     `;

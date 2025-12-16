@@ -60,8 +60,12 @@ interface ProductData {
     cost_including?: number;
     cost_excluding?: number;
     rsp?: number;
+    base_discount?: number;
     [key: string]: unknown;
   };
+  base_discount?: number;
+  cost_after_discount?: number;
+  cost_ex_vat?: number;
   category_id?: string;
   category_name?: string;
   category_parent_id?: string;
@@ -543,7 +547,26 @@ export default function ProductProfileDialog({
                         <p className="text-muted-foreground text-sm font-medium">Cost Ex VAT</p>
                         <p className="mt-1 text-2xl font-bold">
                           {formatCurrency(
-                            product.attrs_json?.cost_excluding ?? product.current_price
+                            product.cost_ex_vat ?? product.attrs_json?.cost_excluding ?? product.current_price
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">Base Discount</p>
+                        <p className="mt-1 text-xl font-semibold">
+                          {(product.base_discount ?? product.attrs_json?.base_discount ?? 0).toFixed(2)}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">Cost After Discount</p>
+                        <p className="mt-1 text-xl font-semibold">
+                          {formatCurrency(
+                            product.cost_after_discount ?? 
+                            (() => {
+                              const costExVat = product.cost_ex_vat ?? product.attrs_json?.cost_excluding ?? product.current_price ?? 0;
+                              const discount = product.base_discount ?? product.attrs_json?.base_discount ?? 0;
+                              return discount > 0 ? costExVat - (costExVat * discount / 100) : costExVat;
+                            })()
                           )}
                         </p>
                       </div>

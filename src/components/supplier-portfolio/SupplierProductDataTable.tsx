@@ -78,8 +78,11 @@ interface SelectionProduct {
     cost_including?: number;
     cost_excluding?: number;
     rsp?: number;
+    base_discount?: number;
     [key: string]: unknown;
   };
+  base_discount?: number;
+  cost_after_discount?: number;
   category_id?: string;
   category_name?: string;
   tags?: Array<{ tag_id: string; name: string; type?: string }> | string[];
@@ -119,6 +122,8 @@ type ColumnId =
   | 'brand'
   | 'category'
   | 'cost_ex_vat'
+  | 'base_discount'
+  | 'cost_after_discount'
   | 'rsp'
   | 'price_change'
   | 'status'
@@ -151,6 +156,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'category', label: 'Category', visible: true, sortable: true, width: 'w-32' },
   { id: 'tags', label: 'Tags', visible: true, sortable: false, width: 'w-48' },
   { id: 'cost_ex_vat', label: 'Cost ExVAT', visible: true, sortable: true, width: 'w-32' },
+  { id: 'base_discount', label: 'Base Discount', visible: true, sortable: true, width: 'w-32' },
+  { id: 'cost_after_discount', label: 'Cost After Discount', visible: true, sortable: true, width: 'w-40' },
   { id: 'rsp', label: 'RSP', visible: true, sortable: true, width: 'w-32' },
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
@@ -248,6 +255,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
         selected_at: p.selected_at,
         is_selected: true,
         attrs_json: p.attrs_json || {},
+        base_discount: p.base_discount,
+        cost_after_discount: p.cost_after_discount,
       }));
 
       setProducts(mapped);
@@ -897,6 +906,54 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                                   typeof costExVat === 'number'
                                     ? costExVat
                                     : parseFloat(String(costExVat)) || 0
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      }
+
+                      if (col.id === 'base_discount') {
+                        const discount = product.base_discount ?? product.attrs_json?.base_discount ?? 0;
+                        return (
+                          <TableCell key={col.id}>
+                            {discount !== undefined && discount !== null && discount > 0 ? (
+                              <div className="font-medium">
+                                {typeof discount === 'number'
+                                  ? `${discount.toFixed(2)}%`
+                                  : `${parseFloat(String(discount)).toFixed(2)}%`}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">0.00%</span>
+                            )}
+                          </TableCell>
+                        );
+                      }
+
+                      if (col.id === 'cost_after_discount') {
+                        const costAfterDiscount = product.cost_after_discount;
+                        const costExVat = product.attrs_json?.cost_excluding ?? product.current_price;
+                        const discount = product.base_discount ?? product.attrs_json?.base_discount ?? 0;
+                        
+                        // Calculate if not provided
+                        let calculatedCost = costAfterDiscount;
+                        if (calculatedCost === undefined && costExVat !== undefined && costExVat !== null && discount > 0) {
+                          const cost = typeof costExVat === 'number' ? costExVat : parseFloat(String(costExVat)) || 0;
+                          calculatedCost = cost - (cost * discount / 100);
+                        } else if (calculatedCost === undefined) {
+                          calculatedCost = typeof costExVat === 'number' ? costExVat : parseFloat(String(costExVat)) || null;
+                        }
+
+                        return (
+                          <TableCell key={col.id}>
+                            {calculatedCost !== undefined && calculatedCost !== null ? (
+                              <div className="font-medium">
+                                {formatCostAmount(
+                                  typeof calculatedCost === 'number'
+                                    ? calculatedCost
+                                    : parseFloat(String(calculatedCost)) || 0
                                 )}
                               </div>
                             ) : (

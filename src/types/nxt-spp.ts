@@ -393,6 +393,8 @@ export interface ProductTableBySupplier {
   internal_product_name?: string;
   sup_soh?: number;
   qty_on_hand?: number;
+  base_discount?: number;
+  cost_after_discount?: number;
 }
 
 /**

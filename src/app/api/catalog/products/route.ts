@@ -171,6 +171,21 @@ export async function GET(request: NextRequest) {
         FROM core.ai_tag_assignment ata
         LEFT JOIN core.ai_tag_library tl ON tl.tag_id = ata.tag_id
         GROUP BY ata.supplier_product_id
+      ),
+      supplier_discounts AS (
+        SELECT 
+          sp.supplier_product_id,
+          COALESCE(
+            (sp.attrs_json->>'base_discount')::numeric,
+            COALESCE(
+              (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
+              0
+            )
+          ) AS base_discount
+        FROM core.supplier_product sp
+        LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
+          AND sprof.profile_name = 'default' 
+          AND sprof.is_active = true
       )
       SELECT
         sp.supplier_product_id,
@@ -183,6 +198,14 @@ export async function GET(request: NextRequest) {
         sp.attrs_json->>'description' AS description,
         COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) AS cost_ex_vat,
         COALESCE((sp.attrs_json->>'cost_including')::numeric, NULL) AS cost_inc_vat,
+        COALESCE(sd.base_discount, 0) AS base_discount,
+        CASE
+          WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
+            AND COALESCE(sd.base_discount, 0) > 0
+          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) - 
+               (COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * COALESCE(sd.base_discount, 0) / 100)
+          ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
+        END AS cost_after_discount,
         COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
         sp.attrs_json,
         sp.uom,
@@ -213,6 +236,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id
       LEFT JOIN product_tags pt ON pt.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN supplier_discounts sd ON sd.supplier_product_id = sp.supplier_product_id
       LEFT JOIN LATERAL (
         SELECT r.brand
         FROM spp.pricelist_row r

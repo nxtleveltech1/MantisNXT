@@ -56,6 +56,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         FROM core.ai_tag_assignment ata
         LEFT JOIN core.ai_tag_library tl ON tl.tag_id = ata.tag_id
         GROUP BY ata.supplier_product_id
+      ),
+      supplier_discounts AS (
+        SELECT 
+          sp.supplier_product_id,
+          COALESCE(
+            (sp.attrs_json->>'base_discount')::numeric,
+            COALESCE(
+              (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
+              0
+            )
+          ) AS base_discount
+        FROM core.supplier_product sp
+        LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
+          AND sprof.profile_name = 'default' 
+          AND sprof.is_active = true
       )
       SELECT
         isi.selection_id,
@@ -75,6 +90,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         c.name AS category_name,
         cp.price AS current_price,
         cp.currency,
+        COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) AS cost_ex_vat,
+        COALESCE(sd.base_discount, 0) AS base_discount,
+        CASE
+          WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
+            AND COALESCE(sd.base_discount, 0) > 0
+          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) - 
+               (COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * COALESCE(sd.base_discount, 0) / 100)
+          ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
+        END AS cost_after_discount,
         ls.qty_on_hand,
         ls.qty_on_hand AS sup_soh,
         sp.first_seen_at,
@@ -88,6 +112,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id
       LEFT JOIN product_tags pt ON pt.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN supplier_discounts sd ON sd.supplier_product_id = sp.supplier_product_id
       WHERE isi.selection_id = $1 AND isi.status = 'selected'
       ORDER BY s.name, sp.name_from_supplier
     `;

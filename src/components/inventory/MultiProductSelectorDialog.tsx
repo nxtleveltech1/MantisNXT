@@ -122,21 +122,37 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     align: 'right',
     sortable: false,
   },
-  { key: 'rsp', label: 'RSP', visible: true, order: 18, align: 'right', sortable: false },
   {
-    key: 'cost_inc_vat',
-    label: 'Cost IncVAT',
+    key: 'base_discount',
+    label: 'Base Discount',
+    visible: true,
+    order: 18,
+    align: 'right',
+    sortable: false,
+  },
+  {
+    key: 'cost_after_discount',
+    label: 'Cost After Discount',
     visible: true,
     order: 19,
     align: 'right',
     sortable: false,
   },
-  { key: 'quantity', label: 'Quantity', visible: true, order: 20, align: 'right', sortable: false },
+  { key: 'rsp', label: 'RSP', visible: true, order: 20, align: 'right', sortable: false },
+  {
+    key: 'cost_inc_vat',
+    label: 'Cost IncVAT',
+    visible: true,
+    order: 21,
+    align: 'right',
+    sortable: false,
+  },
+  { key: 'quantity', label: 'Quantity', visible: true, order: 22, align: 'right', sortable: false },
   {
     key: 'currency',
     label: 'Currency',
     visible: false,
-    order: 21,
+    order: 23,
     align: 'right',
     sortable: false,
   },
@@ -144,7 +160,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'first_seen',
     label: 'First Seen',
     visible: false,
-    order: 22,
+    order: 24,
     align: 'left',
     sortable: true,
   },
@@ -152,11 +168,11 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'last_seen',
     label: 'Last Seen',
     visible: false,
-    order: 23,
+    order: 25,
     align: 'left',
     sortable: true,
   },
-  { key: 'active', label: 'Active', visible: false, order: 24, align: 'left', sortable: false },
+  { key: 'active', label: 'Active', visible: false, order: 26, align: 'left', sortable: false },
 ];
 
 // Load columns from localStorage or return defaults
@@ -213,6 +229,8 @@ type CatalogRow = {
   current_price?: number;
   cost_ex_vat?: number;
   cost_inc_vat?: number;
+  base_discount?: number;
+  cost_after_discount?: number;
   rsp?: number;
   currency?: string;
   series_range?: string;
@@ -223,6 +241,7 @@ type CatalogRow = {
     cost_including?: number;
     cost_excluding?: number;
     rsp?: number;
+    base_discount?: number;
     brand?: string;
     [key: string]: unknown;
   };
@@ -734,6 +753,36 @@ export default function MultiProductSelectorDialog({
           <TableCell key={column.key} className={className}>
             {row.previous_cost !== undefined && row.previous_cost !== null
               ? formatCost(row.previous_cost)
+              : '-'}
+          </TableCell>
+        );
+      case 'base_discount':
+        const discount = row.base_discount ?? row.attrs_json?.base_discount ?? 0;
+        return (
+          <TableCell key={column.key} className={className}>
+            {discount !== undefined && discount !== null && discount > 0
+              ? `${typeof discount === 'number' ? discount.toFixed(2) : parseFloat(String(discount)).toFixed(2)}%`
+              : '0.00%'}
+          </TableCell>
+        );
+      case 'cost_after_discount':
+        const costAfterDiscount = row.cost_after_discount;
+        const costExVat = row.cost_ex_vat ?? row.attrs_json?.cost_excluding ?? row.current_price;
+        const rowDiscount = row.base_discount ?? row.attrs_json?.base_discount ?? 0;
+        
+        // Calculate if not provided
+        let calculatedCost = costAfterDiscount;
+        if (calculatedCost === undefined && costExVat !== undefined && costExVat !== null && rowDiscount > 0) {
+          const cost = typeof costExVat === 'number' ? costExVat : parseFloat(String(costExVat)) || 0;
+          calculatedCost = cost - (cost * rowDiscount / 100);
+        } else if (calculatedCost === undefined) {
+          calculatedCost = typeof costExVat === 'number' ? costExVat : parseFloat(String(costExVat)) || null;
+        }
+
+        return (
+          <TableCell key={column.key} className={className}>
+            {calculatedCost !== undefined && calculatedCost !== null
+              ? formatCost(calculatedCost)
               : '-'}
           </TableCell>
         );

@@ -17,6 +17,7 @@ export interface ProfileData {
       currency?: string;
       tax_inclusive?: boolean;
       markup_percentage?: number;
+      discount_percentage?: number;
     };
     business_rules?: {
       minimum_order_value?: number;

@@ -84,6 +84,8 @@ export class QuotationService {
     filters?: { status?: string; customer_id?: string }
   ): Promise<{ data: Quotation[]; count: number }> {
     try {
+      console.log('QuotationService.getQuotations called with:', { orgId, limit, offset, filters });
+      
       const conditions: string[] = ['org_id = $1'];
       const params: unknown[] = [orgId];
       let paramIndex = 2;
@@ -102,26 +104,39 @@ export class QuotationService {
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+      console.log('Executing count query...');
       // Get total count
       const countResult = await query<{ count: string }>(
         `SELECT COUNT(*) as count FROM quotations ${whereClause}`,
         params
       );
       const count = parseInt(countResult.rows[0]?.count || '0', 10);
+      console.log('Count result:', count);
 
       // Get quotations
       params.push(limit, offset);
-      const result = await query<Quotation>(
-        `SELECT * FROM quotations
+      const querySql = `SELECT * FROM quotations
          ${whereClause}
          ORDER BY created_at DESC
-         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-        params
-      );
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      
+      console.log('Executing quotations query:', querySql);
+      console.log('Query params:', params);
+      
+      const result = await query<Quotation>(querySql, params);
+      console.log('Query returned', result.rows.length, 'rows');
 
       return { data: result.rows, count };
     } catch (error) {
       console.error('Error fetching quotations:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        // Check if it's a table doesn't exist error
+        if (error.message.includes('does not exist') || error.message.includes('relation') || error.message.includes('table')) {
+          throw new Error(`Database table 'quotations' may not exist. Please run migrations. Original error: ${error.message}`);
+        }
+      }
       throw error;
     }
   }

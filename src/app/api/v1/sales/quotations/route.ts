@@ -38,11 +38,15 @@ const createQuotationSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const orgId = await getOrgId(request);
+    console.log('GET /api/v1/sales/quotations - orgId:', orgId);
+    
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
     const status = searchParams.get('status') || undefined;
     const customer_id = searchParams.get('customer_id') || undefined;
+
+    console.log('Fetching quotations with filters:', { orgId, limit, offset, status, customer_id });
 
     const { data, count } = await QuotationService.getQuotations(orgId, limit, offset, {
       status,
@@ -58,10 +62,14 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Error in GET /api/v1/sales/quotations:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch quotations';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch quotations',
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
       { status: 500 }
     );
@@ -71,6 +79,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const orgId = await getOrgId(request);
+    console.log('POST /api/v1/sales/quotations - orgId:', orgId);
+    
     const body = await request.json();
 
     console.log('Received quotation creation request:', {
@@ -119,10 +129,14 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Error in POST /api/v1/sales/quotations:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create quotation';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create quotation',
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
       { status: 500 }
     );

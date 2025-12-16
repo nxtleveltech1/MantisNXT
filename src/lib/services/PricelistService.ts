@@ -581,6 +581,76 @@ export class PricelistService {
 
       pricesUpdated = priceResult.rowCount || 0;
 
+      // Step 4: Update stock on hand (SUP SOH) from attrs_json.stock or attrs_json.stock_qty
+      // First, get or create a default location for this supplier
+      const locationResult = await client.query(
+        `SELECT location_id FROM core.stock_location 
+         WHERE supplier_id = $1 OR type = 'internal' 
+         ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
+        [upload.supplier_id]
+      );
+      
+      const defaultLocationId = locationResult.rows[0]?.location_id;
+      
+      if (defaultLocationId) {
+        const stockUpdateQuery = `
+          INSERT INTO core.stock_on_hand (
+            location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
+          )
+          SELECT DISTINCT ON (sp.supplier_product_id)
+            $3::uuid as location_id,
+            sp.supplier_product_id,
+            COALESCE(
+              (r.attrs_json->>'stock')::int,
+              (r.attrs_json->>'stock_qty')::int,
+              (r.attrs_json->>'qty_on_hand')::int,
+              0
+            ) as qty,
+            NULL as unit_cost,
+            NOW() as as_of_ts,
+            'import' as source
+          FROM spp.pricelist_row r
+          JOIN core.supplier_product sp
+            ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
+          WHERE r.upload_id = $2
+            AND (
+              (r.attrs_json->>'stock')::int IS NOT NULL OR
+              (r.attrs_json->>'stock_qty')::int IS NOT NULL OR
+              (r.attrs_json->>'qty_on_hand')::int IS NOT NULL
+            )
+            ${filterValidOnly ? `AND ${validRowCondition}` : ''}
+          ON CONFLICT (location_id, supplier_product_id)
+          DO UPDATE SET
+            qty = EXCLUDED.qty,
+            as_of_ts = NOW(),
+            source = 'import'
+        `;
+        
+        try {
+          await client.query(stockUpdateQuery, [upload.supplier_id, uploadId, defaultLocationId]);
+        } catch (stockError) {
+          // Log but don't fail the merge if stock update fails
+          console.warn('[PricelistService] Stock update failed:', stockError);
+          errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        }
+      }
+
+      // Only update stock if core.stock_on_hand table exists
+      const stockTableCheck = await client.query(
+        'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)',
+        ['core', 'stock_on_hand']
+      );
+
+      if (stockTableCheck.rows[0]?.exists) {
+        try {
+          await client.query(stockUpdateQuery, [upload.supplier_id, uploadId]);
+        } catch (stockError) {
+          // Log but don't fail the merge if stock update fails
+          console.warn('[PricelistService] Stock update failed:', stockError);
+          errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        }
+      }
+
       // Update upload status and invalidate cache on success
       await client.query(
         'UPDATE spp.pricelist_upload SET status = $1, processed_at = NOW() WHERE upload_id = $2',

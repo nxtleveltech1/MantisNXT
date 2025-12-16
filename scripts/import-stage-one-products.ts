@@ -313,10 +313,14 @@ function transformProductToPricelistRow(
     undefined;
 
   // Build attributes JSON
+  const stockQty = parseInt(product.stock) || 0;
+  const stockOnOrder = parseInt(product.custom_fields?.stock_on_order || '0') || 0;
+  
   const attrs: Record<string, unknown> = {
     external_id: product.id,
     permalink: product.permalink,
-    stock: parseInt(product.stock) || 0,
+    stock: stockQty,
+    qty_on_order: stockOnOrder, // Store stock_on_order as qty_on_order for API queries
     status: product.status,
   };
 

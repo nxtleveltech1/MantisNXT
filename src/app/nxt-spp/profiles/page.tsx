@@ -94,6 +94,7 @@ interface ProfileData {
       currency?: string;
       tax_inclusive?: boolean;
       markup_percentage?: number;
+      discount_percentage?: number;
     };
     business_rules?: {
       minimum_order_value?: number;
@@ -185,6 +186,7 @@ export default function SupplierProfilesPage() {
         currency: 'ZAR',
         tax_inclusive: false,
         markup_percentage: 0,
+        discount_percentage: 0,
       },
       business_rules: {
         minimum_order_value: 0,
@@ -1041,6 +1043,29 @@ export default function SupplierProfilesPage() {
                     disabled={!editing}
                     placeholder="e.g., ZAR, USD, EUR"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discount_percentage">Base Discount (%)</Label>
+                  <Input
+                    id="discount_percentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={formData.guidelines?.pricing?.discount_percentage || 0}
+                    onChange={e =>
+                      updateFormData('guidelines', 'pricing', {
+                        ...formData.guidelines?.pricing,
+                        discount_percentage: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    disabled={!editing}
+                    placeholder="0.00"
+                  />
+                  <p className="text-sm text-gray-600">
+                    Default discount percentage applied to all products from this supplier. Can be overridden per product.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
