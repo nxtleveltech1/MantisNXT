@@ -156,12 +156,33 @@ export class QuotationService {
 
   static async createQuotation(data: QuotationInsert): Promise<Quotation> {
     try {
+      console.log('Creating quotation with data:', {
+        org_id: data.org_id,
+        customer_id: data.customer_id,
+        itemsCount: data.items?.length,
+        currency: data.currency,
+      });
+
       // Generate document number if not provided
       let documentNumber = data.document_number;
       if (!documentNumber) {
+        console.log('Generating document number...');
         documentNumber = await DocumentNumberingService.generateDocumentNumber(data.org_id, 'QUO');
+        console.log('Generated document number:', documentNumber);
       }
 
+      // Prepare JSON fields safely
+      const billingAddressJson = data.billing_address 
+        ? (typeof data.billing_address === 'string' ? data.billing_address : JSON.stringify(data.billing_address))
+        : '{}';
+      const shippingAddressJson = data.shipping_address
+        ? (typeof data.shipping_address === 'string' ? data.shipping_address : JSON.stringify(data.shipping_address))
+        : '{}';
+      const metadataJson = data.metadata
+        ? (typeof data.metadata === 'string' ? data.metadata : JSON.stringify(data.metadata))
+        : '{}';
+
+      console.log('Inserting quotation...');
       // Insert quotation
       const quotationResult = await query<Quotation>(
         `INSERT INTO quotations (
@@ -178,19 +199,36 @@ export class QuotationService {
           data.valid_until || null,
           data.reference_number || null,
           data.notes || null,
-          data.billing_address ? JSON.stringify(data.billing_address) : '{}',
-          data.shipping_address ? JSON.stringify(data.shipping_address) : '{}',
-          data.metadata ? JSON.stringify(data.metadata) : '{}',
+          billingAddressJson,
+          shippingAddressJson,
+          metadataJson,
           data.created_by || null,
         ]
       );
 
       const quotation = quotationResult.rows[0];
+      if (!quotation) {
+        throw new Error('Failed to create quotation - no ID returned');
+      }
+
+      console.log('Quotation created with ID:', quotation.id);
 
       // Insert items
       if (data.items && data.items.length > 0) {
+        console.log(`Inserting ${data.items.length} items...`);
         for (let i = 0; i < data.items.length; i++) {
           const item = data.items[i];
+          console.log(`Inserting item ${i + 1}:`, {
+            name: item.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total,
+          });
+
+          const itemMetadataJson = item.metadata
+            ? (typeof item.metadata === 'string' ? item.metadata : JSON.stringify(item.metadata))
+            : '{}';
+
           await query(
             `INSERT INTO quotation_items (
               quotation_id, product_id, supplier_product_id, sku, name, description,
@@ -210,21 +248,32 @@ export class QuotationService {
               item.subtotal,
               item.total,
               item.line_number || i + 1,
-              item.metadata ? JSON.stringify(item.metadata) : '{}',
+              itemMetadataJson,
             ]
           );
         }
+        console.log('All items inserted successfully');
       }
 
       // Totals are calculated by trigger, fetch updated quotation
+      console.log('Fetching updated quotation...');
       const updatedResult = await query<Quotation>(
         'SELECT * FROM quotations WHERE id = $1',
         [quotation.id]
       );
 
+      if (!updatedResult.rows[0]) {
+        throw new Error('Failed to fetch created quotation');
+      }
+
+      console.log('Quotation created successfully:', updatedResult.rows[0].id);
       return updatedResult.rows[0];
     } catch (error) {
       console.error('Error creating quotation:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       throw error;
     }
   }
