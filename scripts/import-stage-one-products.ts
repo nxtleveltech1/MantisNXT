@@ -175,6 +175,22 @@ function parseXML(xmlString: string): ProductsResponse {
       };
     }
 
+    // Extract attributes if present (may contain product variations/attributes)
+    const attributesMatch = productXml.match(/<attributes>(.*?)<\/attributes>/s);
+    if (attributesMatch && attributesMatch[1].trim()) {
+      // Try to parse as JSON if it looks like JSON, otherwise store as string
+      const attributesContent = attributesMatch[1].trim();
+      try {
+        product.attributes = JSON.parse(attributesContent);
+      } catch {
+        // If not JSON, store as raw XML string for later processing
+        product.attributes = attributesContent;
+      }
+    } else if (productXml.includes('<attributes/>') || productXml.includes('<attributes />')) {
+      // Empty attributes tag - store as empty object
+      product.attributes = {};
+    }
+
     products.push(product);
   }
 
@@ -312,7 +328,7 @@ function transformProductToPricelistRow(
       : product.categories?.sub_categories?.sub_category) ||
     undefined;
 
-  // Build attributes JSON
+  // Build attributes JSON - store ALL extracted data
   const stockQty = parseInt(product.stock) || 0;
   const stockOnOrder = parseInt(product.custom_fields?.stock_on_order || '0') || 0;
   
@@ -324,29 +340,69 @@ function transformProductToPricelistRow(
     status: product.status,
   };
 
+  // Store short_description if available
+  if (product.short_description) {
+    attrs.short_description = decodeHtmlEntities(product.short_description);
+  }
+
+  // Store full description
   if (product.description) {
     attrs.description = decodeHtmlEntities(product.description);
   }
 
-  if (product.custom_fields?.features) {
-    attrs.features = decodeHtmlEntities(product.custom_fields.features);
+  // Store all categories (main + all sub_categories)
+  if (product.categories) {
+    attrs.main_category = product.categories.main_category || null;
+    if (product.categories.sub_categories?.sub_category) {
+      const subCats = Array.isArray(product.categories.sub_categories.sub_category)
+        ? product.categories.sub_categories.sub_category
+        : [product.categories.sub_categories.sub_category];
+      attrs.sub_categories = subCats;
+    }
   }
 
-  if (product.custom_fields?.specifications) {
-    attrs.specifications = decodeHtmlEntities(product.custom_fields.specifications);
+  // Store all brands (not just first one)
+  if (product.brands?.brand) {
+    const brands = Array.isArray(product.brands.brand)
+      ? product.brands.brand
+      : [product.brands.brand];
+    attrs.brands = brands;
   }
 
+  // Store all images
   if (product.images?.image) {
     const images = Array.isArray(product.images.image) ? product.images.image : [product.images.image];
     attrs.images = images;
   }
 
-  if (product.custom_fields?.model_number) {
-    attrs.model_number = product.custom_fields.model_number;
+  // Store all custom_fields
+  if (product.custom_fields) {
+    if (product.custom_fields.model_number) {
+      attrs.model_number = product.custom_fields.model_number;
+    }
+    if (product.custom_fields.part_number) {
+      attrs.part_number = product.custom_fields.part_number;
+    }
+    if (product.custom_fields.features) {
+      attrs.features = decodeHtmlEntities(product.custom_fields.features);
+    }
+    if (product.custom_fields.specifications) {
+      attrs.specifications = decodeHtmlEntities(product.custom_fields.specifications);
+    }
+    if (product.custom_fields.quantity_per_pack) {
+      attrs.quantity_per_pack = product.custom_fields.quantity_per_pack;
+    }
+    if (product.custom_fields.packing_weight) {
+      attrs.packing_weight = product.custom_fields.packing_weight;
+    }
+    if (product.custom_fields.product_video) {
+      attrs.product_video = product.custom_fields.product_video;
+    }
   }
 
-  if (product.custom_fields?.part_number) {
-    attrs.part_number = product.custom_fields.part_number;
+  // Store attributes if present
+  if (product.attributes) {
+    attrs.attributes = product.attributes;
   }
 
   return {

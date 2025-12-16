@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2 } from 'lucide-react';
+import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -239,24 +239,53 @@ type CatalogRow = {
   };
 };
 
-export function CatalogTable() {
+interface CatalogTableProps {
+  initialParams?: URLSearchParams;
+  isPopOut?: boolean;
+}
+
+export function CatalogTable(props: CatalogTableProps = {}) {
+  const { initialParams, isPopOut = false } = props;
+  // Initialize state from URL params if provided (for pop-out window)
+  const getInitialValue = useCallback((key: string, defaultValue: string) => {
+    if (initialParams?.has(key)) {
+      return initialParams.get(key) || defaultValue;
+    }
+    return defaultValue;
+  }, [initialParams]);
+
   const [rows, setRows] = useState<CatalogRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [search, setSearch] = useState(() => getInitialValue('search', ''));
+  const [page, setPage] = useState(() => parseInt(getInitialValue('page', '1'), 10));
+  const [limit, setLimit] = useState(() => parseInt(getInitialValue('limit', '50'), 10));
   const [total, setTotal] = useState(0);
   const [suppliers, setSuppliers] = useState<{ supplier_id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<
     Array<{ category_id?: string; id?: string; name: string }>
   >([]);
-  const [supplierId, setSupplierId] = useState<string>('all');
-  const [categoryId, setCategoryId] = useState<string>('all');
-  const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all');
-  const [priceMin, setPriceMin] = useState<string>('');
-  const [priceMax, setPriceMax] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('supplier_name');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [supplierId, setSupplierId] = useState<string>(() => {
+    const val = getInitialValue('supplier_id', 'all');
+    return val || 'all';
+  });
+  const [categoryId, setCategoryId] = useState<string>(() => {
+    const raw = getInitialValue('category_raw', '');
+    if (raw) return `raw:${raw}`;
+    return getInitialValue('category_id', 'all');
+  });
+  const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>(() => {
+    const val = getInitialValue('is_active', 'all');
+    if (val === 'true') return 'active';
+    if (val === 'false') return 'inactive';
+    return 'all';
+  });
+  const [priceMin, setPriceMin] = useState<string>(() => getInitialValue('price_min', ''));
+  const [priceMax, setPriceMax] = useState<string>(() => getInitialValue('price_max', ''));
+  const [sortBy, setSortBy] = useState<string>(() => getInitialValue('sort_by', 'supplier_name'));
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(() => {
+    const val = getInitialValue('sort_dir', 'asc');
+    return val === 'desc' ? 'desc' : 'asc';
+  });
   const [columns, setColumns] = useState<ColumnDef[]>(() => loadColumnsFromStorage());
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -269,6 +298,39 @@ export function CatalogTable() {
     brands: 0,
   });
   const [metricsLoading, setMetricsLoading] = useState(false);
+
+  // Function to open pop-out window with current filter state
+  const handlePopOut = useCallback(() => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (supplierId && supplierId !== 'all') params.set('supplier_id', supplierId);
+    if (categoryId && categoryId !== 'all') {
+      if (categoryId.startsWith('raw:')) {
+        params.set('category_raw', categoryId.slice(4));
+      } else {
+        params.set('category_id', categoryId);
+      }
+    }
+    if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
+    if (priceMin) params.set('price_min', priceMin);
+    if (priceMax) params.set('price_max', priceMax);
+    params.set('sort_by', sortBy);
+    params.set('sort_dir', sortDir);
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    
+    const url = `/nxt-spp/catalog/popout?${params.toString()}`;
+    const width = Math.min(1920, window.screen.width - 100);
+    const height = Math.min(1080, window.screen.height - 100);
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    window.open(
+      url,
+      'catalog-popout',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no`
+    );
+  }, [search, supplierId, categoryId, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
 
   // Save columns to localStorage whenever they change
   useEffect(() => {
@@ -659,14 +721,19 @@ export function CatalogTable() {
   };
 
   return (
-    <Card>
+    <Card className={isPopOut ? 'h-full' : ''}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
           Supplier Inventory Portfolio
+          {isPopOut && (
+            <Badge variant="outline" className="ml-2">
+              Pop-out View
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isPopOut ? 'h-[calc(100%-5rem)] flex flex-col' : ''}>
         {/* Summary Cards */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -811,10 +878,18 @@ export function CatalogTable() {
         </div>
 
         <div className="mb-2 flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={() => setColumnDialogOpen(true)}>
-            <Settings2 className="mr-2 h-4 w-4" />
-            Manage Columns
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setColumnDialogOpen(true)}>
+              <Settings2 className="mr-2 h-4 w-4" />
+              Manage Columns
+            </Button>
+            {!isPopOut && (
+              <Button variant="outline" size="sm" onClick={handlePopOut}>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Pop Out
+              </Button>
+            )}
+          </div>
           <ColumnManagementDialog
             open={columnDialogOpen}
             onOpenChange={setColumnDialogOpen}
@@ -824,7 +899,7 @@ export function CatalogTable() {
           />
         </div>
 
-        <div className="overflow-auto rounded-md border">
+        <div className={`overflow-auto rounded-md border ${isPopOut ? 'flex-1' : ''}`}>
           <Table>
             <TableHeader>
               <TableRow>{visibleColumns.map(column => renderHeaderCell(column))}</TableRow>
