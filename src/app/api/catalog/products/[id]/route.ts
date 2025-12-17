@@ -97,7 +97,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         s.name AS supplier_name, 
         s.code AS supplier_code,
         c.category_id,
-        c.name AS category_name,
+        CASE WHEN c.name IS NOT NULL AND c.name <> '' THEN c.name ELSE cat.category_raw END AS category_name,
         c.parent_id AS category_parent_id,
         c.path AS category_path,
         c.level AS category_level,
@@ -124,6 +124,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
+      LEFT JOIN LATERAL (
+        SELECT r.category_raw
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku AND r.category_raw IS NOT NULL AND r.category_raw <> ''
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) cat ON TRUE
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id

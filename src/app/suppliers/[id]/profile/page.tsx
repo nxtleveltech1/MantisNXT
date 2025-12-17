@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -136,7 +136,7 @@ type UploadRow = {
   received_at: string;
 };
 
-export default function SupplierProfilePage() {
+function SupplierProfileContent() {
   const params = useParams();
   const router = useRouter();
   const search = useSearchParams();
@@ -1551,5 +1551,32 @@ export default function SupplierProfilePage() {
         </Tabs>
       </div>
     </AppLayout>
+  );
+}
+
+export default function SupplierProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout
+          title="Supplier Profile"
+          breadcrumbs={[
+            { label: 'Suppliers', href: '/suppliers' },
+            { label: 'Directory', href: '/directories/suppliers' },
+            { label: 'Profile' },
+          ]}
+        >
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <Loader
+              title="Loading supplier profile..."
+              subtitle="Please wait while we fetch the supplier information"
+              size="md"
+            />
+          </div>
+        </AppLayout>
+      }
+    >
+      <SupplierProfileContent />
+    </Suspense>
   );
 }

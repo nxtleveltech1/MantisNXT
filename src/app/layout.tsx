@@ -22,7 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     'pk_test_BUILD_PLACEHOLDER_REPLACE_WITH_REAL_KEY_IN_VERCEL_ENV_VARS';
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
+    >
       <html lang="en-ZA" suppressHydrationWarning>
         <head />
         <body
