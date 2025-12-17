@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,7 @@ type RuleRow = {
   updated_at: string;
 };
 
-export default function SupplierRulesPage() {
+function SupplierRulesContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const crumbs = pathname.startsWith('/nxt-spp')
@@ -401,5 +401,24 @@ export default function SupplierRulesPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function SupplierRulesPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout
+          title="Supplier Rules"
+          breadcrumbs={[{ label: 'Administration', href: '/admin/settings/general' }, { label: 'Supplier Rules' }]}
+        >
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="text-muted-foreground">Loading supplier rules...</div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <SupplierRulesContent />
+    </Suspense>
   );
 }
