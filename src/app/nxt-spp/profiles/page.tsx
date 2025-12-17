@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -155,7 +155,7 @@ function normalizeRule(rule: SupplierRule | SupplierRuleSnake): NormalizedRule {
   };
 }
 
-export default function SupplierProfilesPage() {
+function SupplierProfilesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -1583,5 +1583,24 @@ export default function SupplierProfilesPage() {
         </Card>
       </div>
     </AppLayout>
+  );
+}
+
+export default function SupplierProfilesPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout
+          title="Supplier Profiles"
+          breadcrumbs={[{ label: 'NXT-SPP', href: '/nxt-spp' }, { label: 'Profiles' }]}
+        >
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="text-muted-foreground">Loading supplier profiles...</div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <SupplierProfilesContent />
+    </Suspense>
   );
 }

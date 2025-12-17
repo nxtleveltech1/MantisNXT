@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import ProductSelectionWizard from '@/components/suppliers/ProductSelectionWizard';
 import AppLayout from '@/components/layout/AppLayout';
 
-export default function PromotePricelistPage() {
+function PromotePricelistContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,5 +56,21 @@ export default function PromotePricelistPage() {
         onCancel={handleCancel}
       />
     </AppLayout>
+  );
+}
+
+export default function PromotePricelistPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout>
+          <div className="mx-auto max-w-2xl p-8 text-center">
+            <div className="text-muted-foreground">Loading pricelist promotion...</div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <PromotePricelistContent />
+    </Suspense>
   );
 }
