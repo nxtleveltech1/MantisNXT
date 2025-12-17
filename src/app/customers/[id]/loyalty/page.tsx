@@ -8,7 +8,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Award, Gift, History, TrendingUp, Users, Package } from 'lucide-react';
@@ -113,10 +113,10 @@ function LoyaltyPortalContent({ customerId }: { customerId: string }) {
 
 export default function CustomerLoyaltyPage({ params }: PageProps) {
   // In production, verify the user has access to this customer ID
-  const { data: session } = useSession();
+  const { user } = useUser();
 
   // Example: Check if user can access this customer
-  // if (!session || session.user.customerId !== params.id) {
+  // if (!user) {
   //   redirect('/unauthorized');
   // }
 

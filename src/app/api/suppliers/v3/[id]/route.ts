@@ -10,6 +10,7 @@ import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepos
 import { SupplierService } from '@/lib/suppliers/services/SupplierService';
 import type { UpdateSupplierData, APIResponse } from '@/lib/suppliers/types/SupplierDomain';
 import { CacheInvalidator } from '@/lib/cache/invalidation';
+import { query } from '@/lib/database';
 
 // Initialize services
 const repository = new PostgreSQLSupplierRepository();
@@ -69,6 +70,9 @@ const UpdateSupplierSchema = z.object({
     .optional(),
 
   notes: z.string().optional(),
+
+  // Discount settings
+  baseDiscountPercent: z.number().min(0).max(100).optional(),
 });
 
 function createErrorResponse(
@@ -122,7 +126,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return createErrorResponse('Supplier not found', 404);
     }
 
-    return createSuccessResponse(supplier);
+    // Fetch additional fields not in standard service (JSON feed, discount)
+    const additionalFields = await query<{
+      json_feed_url: string | null;
+      json_feed_enabled: boolean;
+      json_feed_type: string;
+      json_feed_interval_minutes: number;
+      json_feed_last_sync: Date | null;
+      json_feed_last_status: Record<string, unknown> | null;
+      base_discount_percent: number | null;
+    }>(
+      `SELECT 
+        json_feed_url, json_feed_enabled, json_feed_type, 
+        json_feed_interval_minutes, json_feed_last_sync, json_feed_last_status,
+        base_discount_percent
+       FROM core.supplier WHERE supplier_id = $1`,
+      [id]
+    );
+
+    // Merge additional fields into supplier response
+    const enrichedSupplier = {
+      ...supplier,
+      jsonFeedUrl: additionalFields.rows[0]?.json_feed_url || null,
+      jsonFeedEnabled: additionalFields.rows[0]?.json_feed_enabled || false,
+      jsonFeedType: additionalFields.rows[0]?.json_feed_type || 'woocommerce',
+      jsonFeedIntervalMinutes: additionalFields.rows[0]?.json_feed_interval_minutes || 60,
+      jsonFeedLastSync: additionalFields.rows[0]?.json_feed_last_sync || null,
+      jsonFeedLastStatus: additionalFields.rows[0]?.json_feed_last_status || null,
+      baseDiscountPercent: additionalFields.rows[0]?.base_discount_percent || 0,
+    };
+
+    return createSuccessResponse(enrichedSupplier);
   } catch (error) {
     console.error('Error fetching supplier:', error);
     return createErrorResponse('Failed to fetch supplier', 500, {
@@ -162,6 +196,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const updatedSupplier = await supplierService.updateSupplier(id, updateData);
+
+    // Handle base discount update directly (not part of standard SupplierService)
+    if (body.baseDiscountPercent !== undefined) {
+      await query(
+        `UPDATE core.supplier 
+         SET base_discount_percent = $1, updated_at = NOW() 
+         WHERE supplier_id = $2`,
+        [body.baseDiscountPercent, id]
+      );
+      // Add to returned supplier object
+      (updatedSupplier as any).baseDiscountPercent = body.baseDiscountPercent;
+    }
 
     // Invalidate cache after successful update
     CacheInvalidator.invalidateSupplier(id, updatedSupplier.name);

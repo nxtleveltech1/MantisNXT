@@ -176,13 +176,13 @@ export async function GET(request: NextRequest) {
         SELECT 
           sp.supplier_product_id,
           COALESCE(
+            s.base_discount_percent,
             (sp.attrs_json->>'base_discount')::numeric,
-            COALESCE(
-              (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
-              0
-            )
+            (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
+            0
           ) AS base_discount
         FROM core.supplier_product sp
+        JOIN core.supplier s ON s.supplier_id = sp.supplier_id
         LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
           AND sprof.profile_name = 'default' 
           AND sprof.is_active = true
@@ -197,15 +197,30 @@ export async function GET(request: NextRequest) {
         COALESCE(br.brand, sp.attrs_json->>'brand') AS brand,
         sp.attrs_json->>'description' AS description,
         COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) AS cost_ex_vat,
-        COALESCE((sp.attrs_json->>'cost_including')::numeric, NULL) AS cost_inc_vat,
+        -- VAT is 15% of cost_ex_vat
+        COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * 0.15 AS vat_amount,
         COALESCE(sd.base_discount, 0) AS base_discount,
+        -- Cost after discount = cost_ex_vat * (1 - discount%)
         CASE
           WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
             AND COALESCE(sd.base_discount, 0) > 0
-          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) - 
-               (COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * COALESCE(sd.base_discount, 0) / 100)
+          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * 
+               (1 - COALESCE(sd.base_discount, 0) / 100)
           ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
         END AS cost_after_discount,
+        -- Cost inc VAT = cost_after_discount * 1.15
+        CASE
+          WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
+          THEN (
+            CASE
+              WHEN COALESCE(sd.base_discount, 0) > 0
+              THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) * 
+                   (1 - COALESCE(sd.base_discount, 0) / 100)
+              ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
+            END
+          ) * 1.15
+          ELSE NULL
+        END AS cost_inc_vat,
         COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
         sp.attrs_json,
         sp.uom,
@@ -219,8 +234,16 @@ export async function GET(request: NextRequest) {
         cp.price AS current_price,
         cp.currency,
         ls.qty_on_hand,
-        ls.qty_on_hand AS sup_soh,
-        qty.qty_on_order,
+        -- SUP-SOH: prefer JSON sync data, then stock_on_hand table
+        COALESCE(
+          (sp.attrs_json->>'stock_quantity')::int,
+          ls.qty_on_hand
+        ) AS sup_soh,
+        -- Stock on Order: prefer JSON sync data, then pricelist row
+        COALESCE(
+          (sp.attrs_json->>'qty_on_order')::int,
+          qty.qty_on_order
+        ) AS qty_on_order,
         pp.previous_price AS previous_cost,
         CASE
           WHEN pp.previous_price IS NOT NULL AND cp.price IS NOT NULL

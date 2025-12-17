@@ -52,6 +52,12 @@ import {
   ArrowRight,
   Database,
   BarChart3,
+  RefreshCw,
+  Percent,
+  Link2,
+  Play,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 type Supplier = {
@@ -108,6 +114,20 @@ type Supplier = {
     paymentTerms?: string;
   };
   notes?: string;
+  // JSON Feed fields
+  jsonFeedUrl?: string;
+  jsonFeedEnabled?: boolean;
+  jsonFeedType?: string;
+  jsonFeedIntervalMinutes?: number;
+  jsonFeedLastSync?: string;
+  jsonFeedLastStatus?: {
+    success: boolean;
+    message?: string;
+    productsUpdated?: number;
+    timestamp?: string;
+  };
+  // Discount fields
+  baseDiscountPercent?: number;
 };
 type RuleRow = {
   id: number;
@@ -178,6 +198,26 @@ function SupplierProfileContent() {
     total_value?: number;
     recent_changes?: number;
   } | null>(null);
+
+  // JSON Feed state
+  const [feedUrl, setFeedUrl] = useState('');
+  const [feedType, setFeedType] = useState('woocommerce');
+  const [feedEnabled, setFeedEnabled] = useState(false);
+  const [feedInterval, setFeedInterval] = useState(60);
+  const [feedSyncing, setFeedSyncing] = useState(false);
+  const [feedSyncLogs, setFeedSyncLogs] = useState<Array<{
+    logId: string;
+    syncStartedAt: string;
+    status: string;
+    productsUpdated: number;
+    productsCreated: number;
+    productsFailed: number;
+    errorMessage?: string;
+  }>>([]);
+
+  // Discount state
+  const [baseDiscount, setBaseDiscount] = useState(0);
+  const [discountSaving, setDiscountSaving] = useState(false);
 
   useEffect(() => {
     if (!supplierId) return;
@@ -301,7 +341,44 @@ function SupplierProfileContent() {
     loadUploads();
     loadAudit();
     loadMetrics();
+
+    // Load sync status
+    const loadSyncStatus = async () => {
+      try {
+        const res = await fetch(`/api/suppliers/${supplierId}/sync`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            const { status, logs } = data.data;
+            if (status) {
+              setFeedUrl(status.feedUrl || '');
+              setFeedType(status.feedType || 'woocommerce');
+              setFeedEnabled(status.feedEnabled || false);
+              setFeedInterval(status.intervalMinutes || 60);
+            }
+            if (logs) {
+              setFeedSyncLogs(logs);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading sync status:', error);
+      }
+    };
+
+    loadSyncStatus();
   }, [supplierId]);
+
+  // Sync state from supplier when loaded
+  useEffect(() => {
+    if (supplier) {
+      setFeedUrl(supplier.jsonFeedUrl || '');
+      setFeedType(supplier.jsonFeedType || 'woocommerce');
+      setFeedEnabled(supplier.jsonFeedEnabled || false);
+      setFeedInterval(supplier.jsonFeedIntervalMinutes || 60);
+      setBaseDiscount(supplier.baseDiscountPercent || 0);
+    }
+  }, [supplier]);
 
   const synthesizeRule = async () => {
     try {
@@ -534,7 +611,7 @@ function SupplierProfileContent() {
           }}
           className="space-y-6"
         >
-          <TabsList className="bg-muted/50 grid w-full grid-cols-5 p-1">
+          <TabsList className="bg-muted/50 grid w-full grid-cols-7 p-1">
             <TabsTrigger
               value="overview"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -564,6 +641,20 @@ function SupplierProfileContent() {
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               Uploads
+            </TabsTrigger>
+            <TabsTrigger
+              value="sync"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <RefreshCw className="mr-1 h-3.5 w-3.5" />
+              Data Sync
+            </TabsTrigger>
+            <TabsTrigger
+              value="discounts"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Percent className="mr-1 h-3.5 w-3.5" />
+              Discounts
             </TabsTrigger>
           </TabsList>
 
@@ -1545,6 +1636,391 @@ function SupplierProfileContent() {
                   autoValidate={false}
                   autoMerge={false}
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Data Sync Tab */}
+          <TabsContent value="sync" className="space-y-6">
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <Link2 className="text-primary h-5 w-5" />
+                  JSON Feed Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure a JSON/API endpoint to automatically sync product data, stock levels,
+                  and pricing from external systems like WooCommerce.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Feed URL / API Endpoint</Label>
+                      <Input
+                        value={feedUrl}
+                        onChange={(e) => setFeedUrl(e.target.value)}
+                        placeholder="https://example.com/wp-json/wc/v3/products"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-muted-foreground text-xs">
+                        Enter the full URL to the JSON product feed. Supports WooCommerce REST API
+                        and similar formats.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Feed Type</Label>
+                        <Select value={feedType} onValueChange={setFeedType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="woocommerce">WooCommerce</SelectItem>
+                            <SelectItem value="stage_one">Stage One</SelectItem>
+                            <SelectItem value="custom">Custom JSON</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Sync Interval</Label>
+                        <Select
+                          value={String(feedInterval)}
+                          onValueChange={(v) => setFeedInterval(parseInt(v))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select interval" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">Every 15 minutes</SelectItem>
+                            <SelectItem value="30">Every 30 minutes</SelectItem>
+                            <SelectItem value="60">Every hour</SelectItem>
+                            <SelectItem value="240">Every 4 hours</SelectItem>
+                            <SelectItem value="1440">Daily</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant={feedEnabled ? 'default' : 'outline'}
+                        onClick={() => setFeedEnabled(!feedEnabled)}
+                        className="flex-1"
+                      >
+                        {feedEnabled ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Auto-Sync Enabled
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Auto-Sync Disabled
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            setError(null);
+                            const res = await fetch(`/api/suppliers/${supplierId}/sync`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                feedUrl,
+                                feedType,
+                                enabled: feedEnabled,
+                                intervalMinutes: feedInterval,
+                              }),
+                            });
+                            if (!res.ok) throw new Error('Failed to save configuration');
+                            const data = await res.json();
+                            if (data.success) {
+                              // Success notification could be added here
+                            }
+                          } catch (e: any) {
+                            setError(e?.message || 'Failed to save configuration');
+                          }
+                        }}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Save Configuration
+                      </Button>
+
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setFeedSyncing(true);
+                            setError(null);
+                            const res = await fetch(`/api/suppliers/${supplierId}/sync`, {
+                              method: 'POST',
+                            });
+                            const data = await res.json();
+                            if (!data.success) {
+                              throw new Error(data.error || 'Sync failed');
+                            }
+                            // Reload sync logs
+                            const statusRes = await fetch(`/api/suppliers/${supplierId}/sync`);
+                            const statusData = await statusRes.json();
+                            if (statusData.success && statusData.data?.logs) {
+                              setFeedSyncLogs(statusData.data.logs);
+                            }
+                          } catch (e: any) {
+                            setError(e?.message || 'Sync failed');
+                          } finally {
+                            setFeedSyncing(false);
+                          }
+                        }}
+                        disabled={!feedUrl || feedSyncing}
+                      >
+                        {feedSyncing ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Play className="mr-2 h-4 w-4" />
+                        )}
+                        {feedSyncing ? 'Syncing...' : 'Sync Now'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Last Sync Status</Label>
+                      {supplier?.jsonFeedLastSync ? (
+                        <div className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {new Date(supplier.jsonFeedLastSync).toLocaleString()}
+                            </span>
+                            <Badge
+                              variant={
+                                supplier.jsonFeedLastStatus?.success ? 'default' : 'destructive'
+                              }
+                            >
+                              {supplier.jsonFeedLastStatus?.success ? 'Success' : 'Failed'}
+                            </Badge>
+                          </div>
+                          {supplier.jsonFeedLastStatus?.message && (
+                            <p className="text-muted-foreground text-sm">
+                              {supplier.jsonFeedLastStatus.message}
+                            </p>
+                          )}
+                          {supplier.jsonFeedLastStatus?.productsUpdated !== undefined && (
+                            <p className="text-muted-foreground mt-1 text-xs">
+                              {supplier.jsonFeedLastStatus.productsUpdated} products updated
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm">
+                          No sync history yet
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Sync Logs */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <History className="text-primary h-5 w-5" />
+                  Sync History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {feedSyncLogs.length > 0 ? (
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-3">
+                      {feedSyncLogs.map((log) => (
+                        <div
+                          key={log.logId}
+                          className="flex items-center justify-between rounded-lg border p-4"
+                        >
+                          <div className="flex-1">
+                            <div className="mb-1 flex items-center gap-2">
+                              <Clock className="text-muted-foreground h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {new Date(log.syncStartedAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="text-muted-foreground text-xs">
+                              {log.productsUpdated} updated, {log.productsCreated} created
+                              {log.productsFailed > 0 && `, ${log.productsFailed} failed`}
+                            </div>
+                            {log.errorMessage && (
+                              <div className="mt-1 text-xs text-red-500">{log.errorMessage}</div>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              log.status === 'success'
+                                ? 'default'
+                                : log.status === 'error'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                          >
+                            {log.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <RefreshCw className="text-muted-foreground mb-4 h-12 w-12 opacity-50" />
+                    <p className="text-muted-foreground text-sm">No sync history yet</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Configure a feed URL above and run your first sync
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Discounts Tab */}
+          <TabsContent value="discounts" className="space-y-6">
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <Percent className="text-primary h-5 w-5" />
+                  Supplier Discounts
+                </CardTitle>
+                <CardDescription>
+                  Configure discount percentages that will be applied to products from this
+                  supplier. The base discount is used to calculate the "Cost After Discount" in the
+                  supplier portfolio.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Base Discount Percentage</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          value={baseDiscount}
+                          onChange={(e) => setBaseDiscount(parseFloat(e.target.value) || 0)}
+                          className="max-w-[150px]"
+                        />
+                        <span className="text-muted-foreground text-lg font-medium">%</span>
+                      </div>
+                      <p className="text-muted-foreground text-xs">
+                        This percentage will be subtracted from the Cost Ex VAT to calculate the
+                        discounted cost.
+                      </p>
+                    </div>
+
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Pricing Formula:</strong>
+                        <br />
+                        Cost After Discount = Cost Ex VAT × (1 - Base Discount ÷ 100)
+                        <br />
+                        Cost Inc VAT = Cost After Discount × 1.15
+                      </AlertDescription>
+                    </Alert>
+
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setDiscountSaving(true);
+                          setError(null);
+                          // Save base discount via supplier API
+                          const res = await fetch(`/api/suppliers/v3/${supplierId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              baseDiscountPercent: baseDiscount,
+                            }),
+                          });
+                          if (!res.ok) throw new Error('Failed to save discount');
+                          // Reload supplier
+                          const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}`);
+                          const supplierData = await supplierRes.json();
+                          if (supplierData.success && supplierData.data) {
+                            setSupplier(supplierData.data);
+                          }
+                        } catch (e: any) {
+                          setError(e?.message || 'Failed to save discount');
+                        } finally {
+                          setDiscountSaving(false);
+                        }
+                      }}
+                      disabled={discountSaving}
+                    >
+                      {discountSaving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                      )}
+                      Save Discount
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Example Calculation</Label>
+                      <div className="rounded-lg border p-4">
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cost Ex VAT:</span>
+                            <span className="font-mono font-medium">R 100.00</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Base Discount ({baseDiscount}%):</span>
+                            <span className="font-mono font-medium text-red-500">
+                              - R {(100 * baseDiscount / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cost After Discount:</span>
+                            <span className="font-mono font-semibold">
+                              R {(100 * (1 - baseDiscount / 100)).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">VAT (15%):</span>
+                            <span className="font-mono font-medium">
+                              + R {(100 * (1 - baseDiscount / 100) * 0.15).toFixed(2)}
+                            </span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between">
+                            <span className="font-medium">Cost Inc VAT:</span>
+                            <span className="font-mono text-lg font-bold text-green-600">
+                              R {(100 * (1 - baseDiscount / 100) * 1.15).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+                      <strong>Note:</strong> Changes to the base discount will affect all products
+                      from this supplier in the Supplier Inventory Portfolio view. Historical prices
+                      and cost diffs are preserved for audit purposes.
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
