@@ -518,7 +518,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       }
 
       // If updating core.supplier, store all business info in contact_info JSONB
-      if (isView && updateBusinessInfo && existingColumns.has('contact_info')) {
+      if (updateBusinessInfo && existingColumns.has('contact_info')) {
         // Get existing contact_info to merge with new data
         const existingData = await client.query(
           `SELECT contact_info FROM core.supplier WHERE CAST(supplier_id AS TEXT) = $1`,

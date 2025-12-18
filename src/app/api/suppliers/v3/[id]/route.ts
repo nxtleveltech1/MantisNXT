@@ -127,36 +127,52 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch additional fields not in standard service (JSON feed, discount)
-    const additionalFields = await query<{
-      json_feed_url: string | null;
-      json_feed_enabled: boolean;
-      json_feed_type: string;
-      json_feed_interval_minutes: number;
-      json_feed_last_sync: Date | null;
-      json_feed_last_status: Record<string, unknown> | null;
-      base_discount_percent: number | null;
-    }>(
-      `SELECT 
-        json_feed_url, json_feed_enabled, json_feed_type, 
-        json_feed_interval_minutes, json_feed_last_sync, json_feed_last_status,
-        base_discount_percent
-       FROM core.supplier WHERE supplier_id = $1`,
-      [id]
-    );
+    try {
+      const additionalFields = await query<{
+        json_feed_url: string | null;
+        json_feed_enabled: boolean;
+        json_feed_type: string;
+        json_feed_interval_minutes: number;
+        json_feed_last_sync: Date | null;
+        json_feed_last_status: Record<string, unknown> | null;
+        base_discount_percent: number | null;
+      }>(
+        `SELECT 
+          json_feed_url, json_feed_enabled, json_feed_type, 
+          json_feed_interval_minutes, json_feed_last_sync, json_feed_last_status,
+          base_discount_percent
+         FROM core.supplier WHERE supplier_id = $1`,
+        [id]
+      );
 
-    // Merge additional fields into supplier response
-    const enrichedSupplier = {
-      ...supplier,
-      jsonFeedUrl: additionalFields.rows[0]?.json_feed_url || null,
-      jsonFeedEnabled: additionalFields.rows[0]?.json_feed_enabled || false,
-      jsonFeedType: additionalFields.rows[0]?.json_feed_type || 'woocommerce',
-      jsonFeedIntervalMinutes: additionalFields.rows[0]?.json_feed_interval_minutes || 60,
-      jsonFeedLastSync: additionalFields.rows[0]?.json_feed_last_sync || null,
-      jsonFeedLastStatus: additionalFields.rows[0]?.json_feed_last_status || null,
-      baseDiscountPercent: additionalFields.rows[0]?.base_discount_percent || 0,
-    };
+      // Merge additional fields into supplier response
+      const enrichedSupplier = {
+        ...supplier,
+        jsonFeedUrl: additionalFields.rows[0]?.json_feed_url || null,
+        jsonFeedEnabled: additionalFields.rows[0]?.json_feed_enabled || false,
+        jsonFeedType: additionalFields.rows[0]?.json_feed_type || 'woocommerce',
+        jsonFeedIntervalMinutes: additionalFields.rows[0]?.json_feed_interval_minutes || 60,
+        jsonFeedLastSync: additionalFields.rows[0]?.json_feed_last_sync || null,
+        jsonFeedLastStatus: additionalFields.rows[0]?.json_feed_last_status || null,
+        baseDiscountPercent: additionalFields.rows[0]?.base_discount_percent || 0,
+      };
 
-    return createSuccessResponse(enrichedSupplier);
+      return createSuccessResponse(enrichedSupplier);
+    } catch (queryError) {
+      console.error('[Supplier API] Error fetching additional fields:', queryError);
+      // If query fails, return supplier without additional fields
+      const enrichedSupplier = {
+        ...supplier,
+        jsonFeedUrl: null,
+        jsonFeedEnabled: false,
+        jsonFeedType: 'woocommerce',
+        jsonFeedIntervalMinutes: 60,
+        jsonFeedLastSync: null,
+        jsonFeedLastStatus: null,
+        baseDiscountPercent: 0,
+      };
+      return createSuccessResponse(enrichedSupplier);
+    }
   } catch (error) {
     console.error('Error fetching supplier:', error);
     return createErrorResponse('Failed to fetch supplier', 500, {
@@ -176,8 +192,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const body = await request.json();
 
+    // Normalize baseDiscountPercent to ensure it's a number
+    if (body.baseDiscountPercent !== undefined) {
+      const discountValue = typeof body.baseDiscountPercent === 'number' 
+        ? body.baseDiscountPercent 
+        : parseFloat(String(body.baseDiscountPercent));
+      
+      if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
+        return createErrorResponse('baseDiscountPercent must be a number between 0 and 100', 400);
+      }
+      
+      body.baseDiscountPercent = discountValue;
+    }
+
     const validationResult = UpdateSupplierSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('[Supplier API] Validation error:', validationResult.error.issues);
       return createErrorResponse('Validation failed', 400, validationResult.error.issues);
     }
 

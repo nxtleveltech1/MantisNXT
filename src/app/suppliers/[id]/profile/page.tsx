@@ -1943,20 +1943,31 @@ function SupplierProfileContent() {
                         try {
                           setDiscountSaving(true);
                           setError(null);
+                          
+                          // Ensure baseDiscount is a valid number
+                          const discountValue = typeof baseDiscount === 'number' ? baseDiscount : parseFloat(String(baseDiscount)) || 0;
+                          
                           // Save base discount via supplier API
                           const res = await fetch(`/api/suppliers/v3/${supplierId}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              baseDiscountPercent: baseDiscount,
+                              baseDiscountPercent: discountValue,
                             }),
                           });
-                          if (!res.ok) throw new Error('Failed to save discount');
+                          
+                          const responseData = await res.json();
+                          
+                          if (!res.ok) {
+                            throw new Error(responseData.error || responseData.details?.message || 'Failed to save discount');
+                          }
+                          
                           // Reload supplier
                           const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}`);
                           const supplierData = await supplierRes.json();
                           if (supplierData.success && supplierData.data) {
                             setSupplier(supplierData.data);
+                            setBaseDiscount(supplierData.data.baseDiscountPercent || 0);
                           }
                         } catch (e: any) {
                           setError(e?.message || 'Failed to save discount');
