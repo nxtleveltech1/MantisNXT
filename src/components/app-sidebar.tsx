@@ -22,6 +22,7 @@ import {
   Users,
   Settings as SettingsIcon,
   Archive,
+  CheckSquare,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -61,6 +62,21 @@ export const sidebarData = {
       title: 'System Health',
       url: '/system-health',
       icon: Activity,
+    },
+    {
+      title: 'Project Management',
+      url: '/project-management',
+      icon: CheckSquare,
+      items: [
+        {
+          title: 'Tasks',
+          url: '/project-management',
+        },
+        {
+          title: 'Settings',
+          url: '/project-management/settings',
+        },
+      ],
     },
     {
       title: 'Suppliers',
