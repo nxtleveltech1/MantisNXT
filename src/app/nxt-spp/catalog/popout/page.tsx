@@ -11,7 +11,7 @@ import { CatalogTable } from '@/components/catalog/CatalogTable';
 
 function PopOutContent() {
   const searchParams = useSearchParams();
-  
+
   // Convert searchParams to URLSearchParams for CatalogTable
   const initialParams = React.useMemo(() => {
     const params = new URLSearchParams();
@@ -27,7 +27,7 @@ function PopOutContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Supplier Inventory Portfolio</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="mt-1 text-sm text-muted-foreground">
               Pop-out view for expanded product listings and filtering
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function CatalogPopOutPage() {
         <div className="flex h-screen items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-            <p className="text-muted-foreground text-sm">Loading catalog...</p>
+            <p className="text-sm text-muted-foreground">Loading catalog...</p>
           </div>
         </div>
       }
@@ -58,4 +58,3 @@ export default function CatalogPopOutPage() {
     </Suspense>
   );
 }
-

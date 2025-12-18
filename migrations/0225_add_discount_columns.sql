@@ -30,3 +30,5 @@ INSERT INTO schema_migrations (migration_name)
 VALUES ('0225_add_discount_columns')
 ON CONFLICT (migration_name) DO NOTHING;
 
+
+

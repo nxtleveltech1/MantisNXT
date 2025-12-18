@@ -167,6 +167,31 @@ const ENV_VARIABLES: EnvVariable[] = [
     pattern: /^https:\/\/hooks\.slack\.com\/.+/,
     description: 'Slack webhook for production alerts',
   },
+  // Dart-AI (Project Management module)
+  {
+    name: 'DARTAI_TOKEN_ENCRYPTION_KEY',
+    required: true,
+    type: 'secret',
+    minLength: 32,
+    minEntropy: 256,
+    description: 'Encryption key for per-user Dart-AI API tokens (AES-256-GCM key material)',
+  },
+  {
+    name: 'DARTAI_API_BASE_URL',
+    required: false,
+    type: 'url',
+    pattern: /^https?:\/\/.+/,
+    description: 'Override Dart-AI public API base URL',
+    example: 'https://app.dartai.com/api/v0/public',
+  },
+  {
+    name: 'DARTAI_WEBHOOK_SIGNING_SECRET',
+    required: false,
+    type: 'secret',
+    minLength: 32,
+    minEntropy: 256,
+    description: 'Webhook signing secret for Dart-AI webhooks (optional Phase 1b)',
+  },
 ];
 
 // ============================================================================

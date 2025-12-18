@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSignIn, useAuth } from '@clerk/nextjs';
 import { useForm } from 'react-hook-form';
 import type { Resolver } from 'react-hook-form';
@@ -22,6 +22,14 @@ import {
 
 import { loginFormSchema, type LoginFormData } from '@/lib/auth/validation';
 
+function getSafeRedirectPath(value: string | null): string | null {
+  if (!value) return null;
+  // Only allow relative, app-internal redirects to avoid open-redirect vulnerabilities.
+  // Clerk may provide `redirect_url` depending on the flow.
+  if (value.startsWith('/') && !value.startsWith('//')) return value;
+  return null;
+}
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,15 +38,24 @@ export default function LoginPage() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoaded, signIn, setActive } = useSignIn();
   const { isSignedIn } = useAuth();
+
+  const redirectAfterAuth =
+    getSafeRedirectPath(
+      searchParams.get('redirect_url') ??
+        searchParams.get('redirectUrl') ??
+        searchParams.get('returnUrl') ??
+        searchParams.get('next')
+    ) ?? '/';
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isSignedIn) {
-      router.push('/');
+      router.push(redirectAfterAuth);
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn, redirectAfterAuth, router]);
 
   const form = useForm<LoginFormData, unknown, LoginFormData>({
     resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, unknown, LoginFormData>,
@@ -85,7 +102,7 @@ export default function LoginPage() {
       // If sign-in is complete, set the session as active
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.push('/');
+        router.push(redirectAfterAuth);
       } else {
         // Handle other statuses
         console.log('Unhandled sign-in status:', signInAttempt.status);
@@ -124,7 +141,7 @@ export default function LoginPage() {
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.push('/');
+        router.push(redirectAfterAuth);
       } else {
         setError('Verification failed. Please try again.');
       }
