@@ -5,7 +5,7 @@
  */
 
 import { query } from '@/lib/database';
-import { StorageFactory } from '@/lib/docustore/storage';
+import { StorageFactory, DatabaseStorage } from '@/lib/docustore/storage';
 import type {
   Document,
   DocumentVersion,
@@ -324,6 +324,13 @@ export class DocumentService {
 
     // Create version record
     const versionId = uuidv4();
+    const storageProvider = (process.env.DOCUSTORE_STORAGE_PROVIDER as any) || 'database';
+    
+    // For database storage, we need to update the path with the version ID
+    const finalStoragePath = storageProvider === 'database' 
+      ? `db://version/${versionId}` 
+      : storeResult.path;
+
     const versionResult2 = await query<DocumentVersion>(
       `INSERT INTO docustore.document_versions (
         id, document_id, version_number, storage_path, storage_provider,
@@ -334,8 +341,8 @@ export class DocumentService {
         versionId,
         input.document_id,
         versionNumber,
-        storeResult.path,
-        'filesystem',
+        finalStoragePath,
+        storageProvider,
         input.filename,
         input.mime_type,
         fileMetadata.size,
@@ -345,6 +352,11 @@ export class DocumentService {
     );
 
     const version = versionResult2.rows[0];
+
+    // If using database storage, persist the content now that we have versionId
+    if (storageProvider === 'database' && storage instanceof DatabaseStorage) {
+      await (storage as DatabaseStorage).persistContent(versionId, 'version', input.file);
+    }
 
     // Update document's current_version_id
     await query(

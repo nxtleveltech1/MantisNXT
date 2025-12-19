@@ -109,7 +109,18 @@ export class DartAiClient {
   }
 
   async listTasks(params: { token: string; query?: Record<string, string | undefined> }) {
-    return this.requestJson({ token: params.token, path: '/tasks/list', method: 'GET', query: params.query });
+    const result = await this.requestJson({ token: params.token, path: '/tasks/list', method: 'GET', query: params.query });
+    if (!result.ok) return result;
+    
+    // Log the raw response structure for debugging
+    console.log('[Dart-AI Client] listTasks raw response:', {
+      hasData: !!result.data,
+      dataType: typeof result.data,
+      isArray: Array.isArray(result.data),
+      keys: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
+    });
+    
+    return result;
   }
 
   async createTask(params: { token: string; body: unknown }) {
@@ -148,6 +159,41 @@ export class DartAiClient {
       method: 'POST',
       body: params.body,
     });
+  }
+
+  // Docs/Notes endpoints
+  async listDocs(params: { token: string; query?: Record<string, string | undefined> }) {
+    return this.requestJson({ token: params.token, path: '/docs/list', method: 'GET', query: params.query });
+  }
+
+  async getDoc(params: { token: string; id: string }) {
+    return this.requestJson({ token: params.token, path: `/docs/${params.id}`, method: 'GET' });
+  }
+
+  async createDoc(params: { token: string; body: unknown }) {
+    return this.requestJson({ token: params.token, path: '/docs', method: 'POST', body: params.body });
+  }
+
+  async updateDoc(params: { token: string; id: string; body: unknown }) {
+    return this.requestJson({ token: params.token, path: `/docs/${params.id}`, method: 'PUT', body: params.body });
+  }
+
+  async deleteDoc(params: { token: string; id: string }) {
+    return this.requestJson({ token: params.token, path: `/docs/${params.id}`, method: 'DELETE' });
+  }
+
+  // Views/Plans endpoints
+  async getView(params: { token: string; id: string }) {
+    return this.requestJson({ token: params.token, path: `/views/${params.id}`, method: 'GET' });
+  }
+
+  // Comments endpoints
+  async listComments(params: { token: string; query?: Record<string, string | undefined> }) {
+    return this.requestJson({ token: params.token, path: '/comments/list', method: 'GET', query: params.query });
+  }
+
+  async createComment(params: { token: string; body: unknown }) {
+    return this.requestJson({ token: params.token, path: '/comments', method: 'POST', body: params.body });
   }
 }
 

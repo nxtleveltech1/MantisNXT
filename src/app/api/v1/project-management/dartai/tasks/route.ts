@@ -69,29 +69,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Normalize the response structure - Dart-AI may return different formats
+    // Normalize the response structure - Dart-AI returns PaginatedConciseTaskList with { count, results: [...] }
     let tasks: unknown[] = [];
     const data = result.data;
+    
+    console.log('[Dart-AI Tasks] Raw response structure:', {
+      hasData: !!data,
+      dataType: typeof data,
+      isArray: Array.isArray(data),
+      keys: data && typeof data === 'object' ? Object.keys(data) : [],
+    });
     
     if (Array.isArray(data)) {
       tasks = data;
     } else if (data && typeof data === 'object') {
-      // Try common response structures
-      if ('results' in data && Array.isArray((data as { results?: unknown }).results)) {
-        tasks = (data as { results: unknown[] }).results;
-      } else
-      if ('items' in data && Array.isArray(data.items)) {
-        tasks = data.items;
-      } else if ('item' in data) {
-        tasks = Array.isArray(data.item) ? data.item : [data.item];
-      } else if ('tasks' in data && Array.isArray(data.tasks)) {
-        tasks = data.tasks;
-      } else if ('data' in data && Array.isArray(data.data)) {
-        tasks = data.data;
+      const obj = data as Record<string, unknown>;
+      // Dart-AI schema: PaginatedConciseTaskList has 'results' array
+      if ('results' in obj && Array.isArray(obj.results)) {
+        tasks = obj.results as unknown[];
+      } else if ('items' in obj && Array.isArray(obj.items)) {
+        tasks = obj.items as unknown[];
+      } else if ('item' in obj) {
+        tasks = Array.isArray(obj.item) ? (obj.item as unknown[]) : [obj.item];
+      } else if ('tasks' in obj && Array.isArray(obj.tasks)) {
+        tasks = obj.tasks as unknown[];
+      } else if ('data' in obj && Array.isArray(obj.data)) {
+        tasks = obj.data as unknown[];
+      } else {
+        // Last resort: if it's an object with an id field, treat as single task
+        if ('id' in obj) {
+          tasks = [obj];
+        }
       }
     }
 
-    console.log('[Dart-AI Tasks] Successfully fetched tasks:', { count: tasks.length });
+    console.log('[Dart-AI Tasks] Successfully fetched tasks:', { 
+      count: tasks.length,
+      sampleTask: tasks.length > 0 ? Object.keys(tasks[0] as Record<string, unknown>) : [],
+    });
 
     return NextResponse.json({ data: tasks, error: null });
   } catch (error: unknown) {

@@ -6,6 +6,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Package,
   MapPin,
@@ -32,6 +33,7 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [loading, setLoading] = useState(true);
   const [deliveryId, setDeliveryId] = useState<string>('');
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,6 +66,56 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
       router.push('/logistics/deliveries');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateStatus = async (status: Delivery['status']) => {
+    if (!deliveryId) return;
+    try {
+      setStatusUpdating(true);
+      const response = await fetch(`/api/v1/logistics/deliveries/${deliveryId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Status updated');
+        fetchDelivery(deliveryId);
+      } else {
+        toast.error(result.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Error updating status');
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const cancelDelivery = async () => {
+    if (!delivery) return;
+    const ok = window.confirm(`Cancel delivery ${delivery.delivery_number}?`);
+    if (!ok) return;
+    await updateStatus('cancelled');
+  };
+
+  const deleteDelivery = async () => {
+    if (!delivery) return;
+    const ok = window.confirm(`Delete delivery ${delivery.delivery_number}? This cannot be undone.`);
+    if (!ok) return;
+    try {
+      const response = await fetch(`/api/v1/logistics/deliveries/${deliveryId}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Delivery deleted');
+        router.push('/logistics/deliveries');
+      } else {
+        toast.error(result.error || 'Failed to delete delivery');
+      }
+    } catch (error) {
+      console.error('Error deleting delivery:', error);
+      toast.error('Error deleting delivery');
     }
   };
 
@@ -138,10 +190,16 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
     );
   }
 
-  const formatAddress = (address: any) => {
+  const formatAddress = (address: unknown) => {
     if (typeof address === 'string') return address;
     if (typeof address === 'object' && address !== null) {
-      return address.formatted || JSON.stringify(address);
+      const maybeFormatted = (address as { formatted?: unknown }).formatted;
+      if (typeof maybeFormatted === 'string' && maybeFormatted.trim()) return maybeFormatted;
+      try {
+        return JSON.stringify(address);
+      } catch {
+        return 'Address';
+      }
     }
     return 'N/A';
   };
@@ -177,7 +235,29 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="min-w-[220px]">
+              <Select
+                value={delivery.status}
+                onValueChange={(v) => void updateStatus(v as Delivery['status'])}
+                disabled={statusUpdating}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">pending</SelectItem>
+                  <SelectItem value="confirmed">confirmed</SelectItem>
+                  <SelectItem value="picked_up">picked_up</SelectItem>
+                  <SelectItem value="in_transit">in_transit</SelectItem>
+                  <SelectItem value="out_for_delivery">out_for_delivery</SelectItem>
+                  <SelectItem value="delivered">delivered</SelectItem>
+                  <SelectItem value="failed">failed</SelectItem>
+                  <SelectItem value="cancelled">cancelled</SelectItem>
+                  <SelectItem value="returned">returned</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {delivery.tracking_number && (
               <Link href={`/logistics/tracking/${delivery.tracking_number}`}>
                 <Button variant="outline">
@@ -186,9 +266,19 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
                 </Button>
               </Link>
             )}
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+            <Link href={`/logistics/deliveries/${deliveryId}/edit`}>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
+            {delivery.status !== 'cancelled' && delivery.status !== 'delivered' ? (
+              <Button variant="outline" onClick={() => void cancelDelivery()} disabled={statusUpdating}>
+                Cancel Delivery
+              </Button>
+            ) : null}
+            <Button variant="destructive" onClick={() => void deleteDelivery()}>
+              Delete
             </Button>
           </div>
         </div>
@@ -451,4 +541,5 @@ export default function DeliveryDetailPage({ params }: DeliveryDetailPageProps) 
     </AppLayout>
   );
 }
+
 

@@ -3,9 +3,10 @@
  * 
  * Storage abstraction layer for DocuStore files.
  * Supports filesystem (default) with ability to swap to S3/R2 later.
+ * Added 'database' provider for on-platform cloud storage.
  */
 
-export type StorageProvider = 'filesystem' | 's3' | 'r2';
+export type StorageProvider = 'filesystem' | 's3' | 'r2' | 'database';
 
 export interface StorageConfig {
   provider: StorageProvider;

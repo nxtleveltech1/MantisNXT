@@ -5,7 +5,7 @@
  */
 
 import { query } from '@/lib/database';
-import { StorageFactory } from '@/lib/docustore/storage';
+import { StorageFactory, DatabaseStorage } from '@/lib/docustore/storage';
 import type { DocumentWithRelations, DocumentArtifact } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { renderHtmlToPdfBuffer } from '@/lib/services/pdf/html-to-pdf';
@@ -83,6 +83,11 @@ export class PDFService {
 
     // Create artifact record
     const artifactId = uuidv4();
+    const storageProvider = (process.env.DOCUSTORE_STORAGE_PROVIDER as any) || 'database';
+    const finalStoragePath = storageProvider === 'database'
+      ? `db://artifact/${artifactId}`
+      : storeResult.path;
+
     const artifactResult = await query<DocumentArtifact>(
       `INSERT INTO docustore.document_artifacts (
         id, document_id, artifact_type, storage_path, storage_provider,
@@ -93,8 +98,8 @@ export class PDFService {
         artifactId,
         documentId,
         'docustore_record',
-        storeResult.path,
-        'filesystem',
+        finalStoragePath,
+        storageProvider,
         filename,
         'application/pdf',
         fileMetadata.size,
@@ -110,6 +115,11 @@ export class PDFService {
     );
 
     const artifact = artifactResult.rows[0];
+
+    // If using database storage, persist content
+    if (storageProvider === 'database' && storage instanceof DatabaseStorage) {
+      await (storage as DatabaseStorage).persistContent(artifactId, 'artifact', pdfBuffer);
+    }
 
     // Log event
     await query(
@@ -179,6 +189,10 @@ export class PDFService {
     // Create artifact record (link to first document if available, or create a placeholder)
     const artifactId = uuidv4();
     const documentId = documents.length > 0 ? documents[0].id : tempDocId;
+    const storageProvider = (process.env.DOCUSTORE_STORAGE_PROVIDER as any) || 'database';
+    const finalStoragePath = storageProvider === 'database'
+      ? `db://artifact/${artifactId}`
+      : storeResult.path;
 
     const artifactResult = await query<DocumentArtifact>(
       `INSERT INTO docustore.document_artifacts (
@@ -190,8 +204,8 @@ export class PDFService {
         artifactId,
         documentId,
         'audit_pack',
-        storeResult.path,
-        'filesystem',
+        finalStoragePath,
+        storageProvider,
         filename,
         'application/pdf',
         fileMetadata.size,
@@ -206,7 +220,14 @@ export class PDFService {
       ]
     );
 
-    return artifactResult.rows[0];
+    const artifact = artifactResult.rows[0];
+
+    // If using database storage, persist content
+    if (storageProvider === 'database' && storage instanceof DatabaseStorage) {
+      await (storage as DatabaseStorage).persistContent(artifactId, 'artifact', pdfBuffer);
+    }
+
+    return artifact;
   }
 
   /**

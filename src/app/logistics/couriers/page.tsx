@@ -137,6 +137,46 @@ export default function CourierProvidersPage() {
     }
   };
 
+  const handleTestConnection = async (provider: CourierProvider) => {
+    try {
+      const response = await fetch(
+        `/api/v1/logistics/courier-providers/${provider.id}/validate-credentials`,
+        { method: 'POST' }
+      );
+      const result = await response.json();
+      if (result.success && result.data?.ok) {
+        toast.success(`${provider.name}: connection OK`);
+      } else if (result.success && !result.data?.ok) {
+        toast.error(`${provider.name}: connection failed`);
+      } else {
+        toast.error(result.error || `${provider.name}: failed to test connection`);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error('Error testing connection');
+    }
+  };
+
+  const handleDeleteProvider = async (provider: CourierProvider) => {
+    const confirmed = window.confirm(`Delete courier provider "${provider.name}"? This cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      const response = await fetch(`/api/v1/logistics/courier-providers/${provider.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Courier provider deleted');
+        fetchCourierProviders();
+      } else {
+        toast.error(result.error || 'Failed to delete courier provider');
+      }
+    } catch (error) {
+      console.error('Error deleting provider:', error);
+      toast.error('Error deleting courier provider');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -443,6 +483,28 @@ export default function CourierProvidersPage() {
                     >
                       <Settings className="mr-1 h-4 w-4" />
                       Configure
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleTestConnection(provider)}
+                      disabled={
+                        !provider.api_endpoint ||
+                        !provider.api_credentials ||
+                        Object.keys(provider.api_credentials).length === 0
+                      }
+                      title={
+                        !provider.api_endpoint
+                          ? 'Set an API endpoint first'
+                          : !provider.api_credentials || Object.keys(provider.api_credentials).length === 0
+                            ? 'Add credentials first'
+                            : 'Test provider connection'
+                      }
+                    >
+                      Test
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteProvider(provider)}>
+                      Delete
                     </Button>
                   </div>
                 </CardContent>
