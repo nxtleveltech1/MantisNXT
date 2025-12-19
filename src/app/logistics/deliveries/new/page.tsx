@@ -3,6 +3,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Package, User, Clock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function NewDeliveryPage() {
   const router = useRouter();
@@ -88,39 +90,43 @@ export default function NewDeliveryPage() {
       const result = await response.json();
 
       if (result.success) {
+        toast.success('Delivery created successfully');
         router.push(`/logistics/deliveries/${result.data.id}`);
       } else {
-        alert(`Error: ${result.error || 'Failed to create delivery'}`);
+        toast.error(result.error || 'Failed to create delivery');
       }
     } catch (error) {
       console.error('Error creating delivery:', error);
-      alert('Failed to create delivery. Please try again.');
+      toast.error('Failed to create delivery. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/logistics/deliveries">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Deliveries
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Delivery</h1>
-              <p className="text-gray-600">Schedule a new delivery request</p>
-            </div>
+    <AppLayout
+      title="New Delivery"
+      breadcrumbs={[
+        { label: 'Courier Logistics', href: '/logistics/dashboard' },
+        { label: 'Deliveries', href: '/logistics/deliveries' },
+        { label: 'New Delivery' },
+      ]}
+    >
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/logistics/deliveries">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Deliveries
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Create New Delivery</h1>
+            <p className="text-muted-foreground">Schedule a new delivery request</p>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Customer Information */}
           <Card>
             <CardHeader>
@@ -418,7 +424,7 @@ export default function NewDeliveryPage() {
                   value={formData.special_instructions}
                   onChange={(e) => handleInputChange('special_instructions', e.target.value)}
                   rows={3}
-                  placeholder="Any special instructions for the courier..."
+                  placeholder="Any special instructions for the courier provider..."
                 />
               </div>
             </CardContent>
@@ -437,10 +443,6 @@ export default function NewDeliveryPage() {
           </div>
         </form>
       </div>
-    </div>
+    </AppLayout>
   );
 }
-
-
-
-

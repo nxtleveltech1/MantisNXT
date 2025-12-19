@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LiveTracking } from '@/components/logistics/LiveTracking';
@@ -59,36 +60,48 @@ export default function TrackingPage({ params }: TrackingPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Loading tracking information...</p>
+      <AppLayout
+        title="Tracking"
+        breadcrumbs={[
+          { label: 'Courier Logistics', href: '/logistics/dashboard' },
+          { label: 'Tracking' },
+        ]}
+      >
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-center">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
+            <p className="text-gray-600">Loading tracking information...</p>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (error || !trackingData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Tracking Not Found</h2>
-              <p className="text-gray-600 mb-4">
-                {error || `No tracking information found for ${trackingNumber}`}
-              </p>
-              <Link href="/logistics/deliveries">
-                <Button variant="outline">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Deliveries
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AppLayout
+        title="Tracking"
+        breadcrumbs={[
+          { label: 'Courier Logistics', href: '/logistics/dashboard' },
+          { label: 'Tracking' },
+        ]}
+      >
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Tracking Not Found</h2>
+            <p className="text-gray-600 mb-4">
+              {error || `No tracking information found for ${trackingNumber}`}
+            </p>
+            <Link href="/logistics/deliveries">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Deliveries
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </AppLayout>
     );
   }
 
@@ -96,25 +109,15 @@ export default function TrackingPage({ params }: TrackingPageProps) {
   const history = trackingData.tracking_history || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/logistics/deliveries">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Live Tracking</h1>
-              <p className="text-gray-600">Track your delivery in real-time</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
+    <AppLayout
+      title="Live Tracking"
+      breadcrumbs={[
+        { label: 'Courier Logistics', href: '/logistics/dashboard' },
+        { label: 'Tracking', href: '/logistics/tracking' },
+        { label: trackingNumber },
+      ]}
+    >
+      <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Tracking Details */}
           <div className="lg:col-span-1 space-y-6">
@@ -198,7 +201,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
               deliveryId={delivery.id}
               initialData={{
                 status: delivery.status,
-                courier: delivery.courier_provider_id || 'Courier',
+                courier: delivery.courier_provider_id || 'Courier Provider',
                 packageType: delivery.package_type || 'Package',
                 estimatedTime: delivery.estimated_delivery_date
                   ? new Date(delivery.estimated_delivery_date).toLocaleTimeString()
@@ -208,10 +211,6 @@ export default function TrackingPage({ params }: TrackingPageProps) {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
-
-
-
-

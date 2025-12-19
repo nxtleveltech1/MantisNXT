@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, RefreshCw, CheckCircle2, AlertCircle, Loader2, Edit2, Trash2, GripVertical } from 'lucide-react';
+import {
+  Plus,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Edit2,
+  Trash2,
+  GripVertical,
+  FolderKanban,
+  Filter,
+} from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +52,7 @@ interface Task {
   title: string;
   status?: string;
   dartboard?: string;
+  dartboardId?: string;
   description?: string;
   assignee?: string;
   assignees?: string[];
@@ -43,6 +62,14 @@ interface Task {
   dueAt?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+interface Dartboard {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  [key: string]: unknown;
 }
 
 interface TaskCreatePayload {
@@ -65,6 +92,10 @@ export default function ProjectManagementPage() {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
+  const [dartboards, setDartboards] = useState<Dartboard[]>([]);
+  const [dartboardsLoading, setDartboardsLoading] = useState(false);
+  const [selectedDartboard, setSelectedDartboard] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'all' | 'backlog'>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState<TaskCreatePayload['item']>({
@@ -86,8 +117,16 @@ export default function ProjectManagementPage() {
   useEffect(() => {
     if (connected) {
       loadTasks();
+      loadDartboards();
     }
   }, [connected]);
+
+  useEffect(() => {
+    if (connected) {
+      loadTasks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDartboard]);
 
   const checkConnection = async () => {
     try {
@@ -105,25 +144,20 @@ export default function ProjectManagementPage() {
   const loadTasks = async () => {
     setTasksLoading(true);
     try {
-      const res = await fetch('/api/v1/project-management/dartai/tasks');
+      const url = selectedDartboard
+        ? `/api/v1/project-management/dartai/tasks?dartboard=${selectedDartboard}`
+        : '/api/v1/project-management/dartai/tasks';
+      const res = await fetch(url);
       const data = await res.json();
       if (data.error) {
         throw new Error(data.error.message || 'Failed to load tasks');
       }
-      // Dart-AI returns tasks in various formats - handle all cases
-      let taskList: Task[] = [];
-      if (Array.isArray(data.data)) {
-        taskList = data.data;
-      } else if (Array.isArray(data.data?.items)) {
-        taskList = data.data.items;
-      } else if (Array.isArray(data.data?.item)) {
-        taskList = data.data.item;
-      } else if (data.data?.item && typeof data.data.item === 'object') {
-        // Single task wrapped
-        taskList = [data.data.item];
-      }
+      // The API route now normalizes the response to always return an array
+      const taskList: Task[] = Array.isArray(data.data) ? data.data : [];
+      console.log('[PM] Loaded tasks:', { count: taskList.length, selectedDartboard });
       setTasks(taskList);
     } catch (error: unknown) {
+      console.error('[PM] Failed to load tasks:', error);
       toast({
         title: 'Failed to load tasks',
         description: error instanceof Error ? error.message : 'Unknown error',
@@ -131,6 +165,43 @@ export default function ProjectManagementPage() {
       });
     } finally {
       setTasksLoading(false);
+    }
+  };
+
+  // Filter tasks for backlog view (tasks that are not completed)
+  const filteredTasks = React.useMemo(() => {
+    if (viewMode === 'backlog') {
+      return tasks.filter(
+        task =>
+          !task.status ||
+          (task.status.toLowerCase() !== 'completed' &&
+            task.status.toLowerCase() !== 'done' &&
+            task.status.toLowerCase() !== 'closed')
+      );
+    }
+    return tasks;
+  }, [tasks, viewMode]);
+
+  const loadDartboards = async () => {
+    setDartboardsLoading(true);
+    try {
+      const res = await fetch('/api/v1/project-management/dartai/dartboards');
+      const data = await res.json();
+      if (data.error) {
+        console.warn('[PM] Failed to load dartboards:', data.error);
+        // Don't show error toast - dartboards are optional
+        setDartboards([]);
+        return;
+      }
+      const dartboardList: Dartboard[] = Array.isArray(data.data) ? data.data : [];
+      console.log('[PM] Loaded dartboards:', { count: dartboardList.length });
+      setDartboards(dartboardList);
+    } catch (error: unknown) {
+      console.error('[PM] Failed to load dartboards:', error);
+      // Don't show error toast - dartboards are optional
+      setDartboards([]);
+    } finally {
+      setDartboardsLoading(false);
     }
   };
 
@@ -345,8 +416,8 @@ export default function ProjectManagementPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Tasks</h2>
-            <p className="text-muted-foreground">Manage your Dart-AI tasks</p>
+            <h2 className="text-2xl font-bold">Project Management</h2>
+            <p className="text-muted-foreground">Manage your Dart-AI projects, backlogs, and tasks</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={loadTasks} disabled={tasksLoading}>
@@ -363,15 +434,102 @@ export default function ProjectManagementPage() {
           </div>
         </div>
 
+        {/* Dartboards/Projects Section */}
+        {dartboards.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderKanban className="h-5 w-5" />
+                Projects / Dartboards
+              </CardTitle>
+              <CardDescription>Select a project to filter tasks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Select value={selectedDartboard || 'all'} onValueChange={value => setSelectedDartboard(value === 'all' ? null : value)}>
+                  <SelectTrigger className="w-[300px]">
+                    <SelectValue placeholder="All Projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    {dartboards.map(dartboard => (
+                      <SelectItem key={dartboard.id} value={dartboard.id}>
+                        {dartboard.name || dartboard.title || dartboard.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedDartboard && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const dartboard = dartboards.find(d => d.id === selectedDartboard);
+                      if (dartboard) {
+                        setFormData(prev => ({ ...prev, dartboard: dartboard.id }));
+                        setCreateDialogOpen(true);
+                      }
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Task to {dartboards.find(d => d.id === selectedDartboard)?.name || 'Project'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tasks Section */}
         <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  {viewMode === 'backlog' ? 'Backlog' : 'Tasks'}
+                  {selectedDartboard && (
+                    <Badge variant="secondary">
+                      {dartboards.find(d => d.id === selectedDartboard)?.name || selectedDartboard}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {viewMode === 'backlog'
+                    ? 'Tasks that need to be started'
+                    : selectedDartboard
+                      ? `Tasks in ${dartboards.find(d => d.id === selectedDartboard)?.name || 'selected project'}`
+                      : 'All your tasks across all projects'}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('all')}
+                >
+                  All Tasks
+                </Button>
+                <Button
+                  variant={viewMode === 'backlog' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('backlog')}
+                >
+                  Backlog
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="p-0">
             {tasksLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-            ) : tasks.length === 0 ? (
+            ) : filteredTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <p className="text-muted-foreground mb-4">No tasks found</p>
+                <p className="text-muted-foreground mb-4">
+                  {viewMode === 'backlog' ? 'No backlog tasks found' : 'No tasks found'}
+                </p>
                 <Button onClick={() => setCreateDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create your first task
@@ -391,7 +549,7 @@ export default function ProjectManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tasks.map((task, index) => (
+                  {filteredTasks.map((task, index) => (
                     <TableRow key={task.id}>
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -405,7 +563,7 @@ export default function ProjectManagementPage() {
                               <GripVertical className="h-3 w-3" />
                             </Button>
                           )}
-                          {index < tasks.length - 1 && (
+                          {index < filteredTasks.length - 1 && (
                             <Button
                               variant="ghost"
                               size="sm"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,8 +37,8 @@ export default function LogisticsDashboard() {
     activeDeliveries: 24,
     completedToday: 47,
     pendingPickups: 12,
-    activeCouriers: 8,
-    totalCouriers: 15,
+    activeCourierProviders: 8,
+    totalCourierProviders: 15,
     avgDeliveryTime: '32 min',
     successRate: 94.2,
     revenue: 12450,
@@ -48,7 +49,7 @@ export default function LogisticsDashboard() {
     {
       id: 1,
       type: 'warning',
-      message: 'Courier Thabo Mthembu has been delayed for 15+ minutes',
+      message: 'Delivery DEL-001 has been delayed for 15+ minutes',
       time: '2 min ago',
       deliveryId: 'DEL-001',
     },
@@ -62,7 +63,7 @@ export default function LogisticsDashboard() {
     {
       id: 3,
       type: 'info',
-      message: 'New courier Nomsa Dlamini has joined the team',
+      message: 'New courier provider FastWay has been configured',
       time: '1 hour ago',
       deliveryId: null,
     },
@@ -79,36 +80,13 @@ export default function LogisticsDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Logistics Management Dashboard</h1>
-              <p className="text-gray-600">Real-time overview of your delivery operations</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Live Updates</span>
-              </div>
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-              <Button variant="outline" size="sm">
-                <Bell className="h-4 w-4 mr-2" />
-                Alerts (3)
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
+    <AppLayout
+      title="Courier Logistics Dashboard"
+      breadcrumbs={[{ label: 'Courier Logistics' }]}
+    >
+      <div className="space-y-6">
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Deliveries</CardTitle>
@@ -125,15 +103,15 @@ export default function LogisticsDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Couriers</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Providers</CardTitle>
               <Users className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {dashboardStats.activeCouriers}/{dashboardStats.totalCouriers}
+                {dashboardStats.activeCourierProviders}/{dashboardStats.totalCourierProviders}
               </div>
               <Progress
-                value={(dashboardStats.activeCouriers / dashboardStats.totalCouriers) * 100}
+                value={(dashboardStats.activeCourierProviders / dashboardStats.totalCourierProviders) * 100}
                 className="mt-2"
               />
             </CardContent>
@@ -173,7 +151,7 @@ export default function LogisticsDashboard() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="live-tracking">Live Tracking</TabsTrigger>
-            <TabsTrigger value="couriers">Couriers</TabsTrigger>
+            <TabsTrigger value="providers">Providers</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="operations">Operations</TabsTrigger>
           </TabsList>
@@ -212,14 +190,14 @@ export default function LogisticsDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {[
-                      { id: 'DEL-001', courier: 'Thabo Mthembu', status: 'in_transit', eta: '15 min' },
-                      { id: 'DEL-002', courier: 'Nomsa Dlamini', status: 'out_for_delivery', eta: '8 min' },
-                      { id: 'DEL-003', courier: 'Pieter van der Merwe', status: 'pickup', eta: '22 min' },
+                      { id: 'DEL-001', provider: 'PostNet', status: 'in_transit', eta: '15 min' },
+                      { id: 'DEL-002', provider: 'FastWay', status: 'out_for_delivery', eta: '8 min' },
+                      { id: 'DEL-003', provider: 'CourierGuy', status: 'pickup', eta: '22 min' },
                     ].map((delivery) => (
                       <div key={delivery.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                         <div>
                           <p className="font-mono text-xs">{delivery.id}</p>
-                          <p className="text-sm">{delivery.courier}</p>
+                          <p className="text-sm">{delivery.provider}</p>
                         </div>
                         <div className="text-right">
                           <Badge variant="outline" className="text-xs">
@@ -235,31 +213,31 @@ export default function LogisticsDashboard() {
             </div>
           </TabsContent>
 
-          {/* Couriers Tab */}
-          <TabsContent value="couriers" className="space-y-6">
+          {/* Providers Tab */}
+          <TabsContent value="providers" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Courier Performance</CardTitle>
-                  <CardDescription>Today&apos;s courier statistics</CardDescription>
+                  <CardTitle>Provider Performance</CardTitle>
+                  <CardDescription>Today&apos;s provider statistics</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { name: 'Thabo Mthembu', deliveries: 8, rating: 4.9, status: 'active' },
-                    { name: 'Nomsa Dlamini', deliveries: 12, rating: 4.8, status: 'active' },
-                    { name: 'Pieter van der Merwe', deliveries: 6, rating: 4.7, status: 'break' },
-                    { name: 'Lerato Molefe', deliveries: 4, rating: 4.6, status: 'active' },
-                  ].map((courier) => (
-                    <div key={courier.name} className="flex items-center justify-between p-3 border rounded-lg">
+                    { name: 'PostNet', deliveries: 8, rating: 4.9, status: 'active' },
+                    { name: 'FastWay', deliveries: 12, rating: 4.8, status: 'active' },
+                    { name: 'CourierGuy', deliveries: 6, rating: 4.7, status: 'active' },
+                    { name: 'DHL', deliveries: 4, rating: 4.6, status: 'active' },
+                  ].map((provider) => (
+                    <div key={provider.name} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">{courier.name}</p>
-                        <p className="text-sm text-gray-600">{courier.deliveries} deliveries today</p>
+                        <p className="font-medium">{provider.name}</p>
+                        <p className="text-sm text-gray-600">{provider.deliveries} deliveries today</p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm">⭐ {courier.rating}</span>
-                          <Badge variant={courier.status === 'active' ? 'default' : 'secondary'}>
-                            {courier.status}
+                          <span className="text-sm">⭐ {provider.rating}</span>
+                          <Badge variant={provider.status === 'active' ? 'default' : 'secondary'}>
+                            {provider.status}
                           </Badge>
                         </div>
                       </div>
@@ -270,14 +248,14 @@ export default function LogisticsDashboard() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Fleet Status</CardTitle>
-                  <CardDescription>Vehicle and courier availability</CardDescription>
+                  <CardTitle>Provider Status</CardTitle>
+                  <CardDescription>Provider availability</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-green-50 rounded-lg">
                       <div className="text-2xl font-bold text-green-600">8</div>
-                      <div className="text-sm text-green-700">Available</div>
+                      <div className="text-sm text-green-700">Active</div>
                     </div>
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">5</div>
@@ -285,11 +263,11 @@ export default function LogisticsDashboard() {
                     </div>
                     <div className="text-center p-4 bg-orange-50 rounded-lg">
                       <div className="text-2xl font-bold text-orange-600">2</div>
-                      <div className="text-sm text-orange-700">On Break</div>
+                      <div className="text-sm text-orange-700">Inactive</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-gray-600">0</div>
-                      <div className="text-sm text-gray-700">Offline</div>
+                      <div className="text-sm text-gray-700">Suspended</div>
                     </div>
                   </div>
                 </CardContent>
@@ -331,10 +309,6 @@ export default function LogisticsDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AppLayout>
   );
 }
-
-
-
-

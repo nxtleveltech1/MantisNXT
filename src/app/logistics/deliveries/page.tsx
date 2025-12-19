@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Search, Filter, MapPin, Clock, User } from 'lucide-react';
+import { Package, Search, Filter, MapPin, Clock, User, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import type { Delivery } from '@/types/logistics';
 
 export default function DeliveriesPage() {
@@ -33,9 +35,12 @@ export default function DeliveriesPage() {
 
       if (result.success) {
         setDeliveries(result.data);
+      } else {
+        toast.error('Failed to fetch deliveries');
       }
     } catch (error) {
       console.error('Error fetching deliveries:', error);
+      toast.error('Error loading deliveries');
     } finally {
       setLoading(false);
     }
@@ -73,27 +78,26 @@ export default function DeliveriesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Deliveries</h1>
-              <p className="text-gray-600">Manage and track all deliveries</p>
-            </div>
-            <Link href="/logistics/deliveries/new">
-              <Button>
-                <Package className="h-4 w-4 mr-2" />
-                New Delivery
-              </Button>
-            </Link>
+    <AppLayout
+      title="Deliveries"
+      breadcrumbs={[{ label: 'Courier Logistics', href: '/logistics/dashboard' }, { label: 'Deliveries' }]}
+    >
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Deliveries</h1>
+            <p className="text-muted-foreground">Manage and track all deliveries</p>
           </div>
+          <Link href="/logistics/deliveries/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Delivery
+            </Button>
+          </Link>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
         {/* Filters */}
-        <Card className="mb-6">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
@@ -226,10 +230,6 @@ export default function DeliveriesPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
-
-
-
-

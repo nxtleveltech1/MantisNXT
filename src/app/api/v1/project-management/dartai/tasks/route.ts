@@ -49,14 +49,47 @@ export async function GET(request: NextRequest) {
     const result = await client.listTasks({ token, query });
 
     if (!result.ok) {
+      console.error('[Dart-AI Tasks] Failed to list tasks:', {
+        status: result.status,
+        body: result.body,
+      });
       return NextResponse.json(
-        { data: null, error: { code: 'DARTAI_ERROR', message: 'Failed to list tasks' } },
-        { status: result.status }
+        {
+          data: null,
+          error: {
+            code: 'DARTAI_ERROR',
+            message: `Failed to list tasks: ${result.status}`,
+            details: result.body,
+          },
+        },
+        { status: result.status >= 400 && result.status < 500 ? result.status : 500 }
       );
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    // Normalize the response structure - Dart-AI may return different formats
+    let tasks: unknown[] = [];
+    const data = result.data;
+    
+    if (Array.isArray(data)) {
+      tasks = data;
+    } else if (data && typeof data === 'object') {
+      // Try common response structures
+      if ('items' in data && Array.isArray(data.items)) {
+        tasks = data.items;
+      } else if ('item' in data) {
+        tasks = Array.isArray(data.item) ? data.item : [data.item];
+      } else if ('tasks' in data && Array.isArray(data.tasks)) {
+        tasks = data.tasks;
+      } else if ('data' in data && Array.isArray(data.data)) {
+        tasks = data.data;
+      }
+    }
+
+    console.log('[Dart-AI Tasks] Successfully fetched tasks:', { count: tasks.length });
+
+    return NextResponse.json({ data: tasks, error: null });
   } catch (error: unknown) {
+    console.error('[Dart-AI Tasks] Unexpected error:', error);
     return createErrorResponse(error, 500);
   }
 }
@@ -87,7 +120,6 @@ export async function POST(request: NextRequest) {
     return createErrorResponse(error, 500);
   }
 }
-
 
 
 

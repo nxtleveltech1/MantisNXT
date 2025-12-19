@@ -260,7 +260,7 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Logistics',
+      title: 'Courier Logistics',
       url: '/logistics/dashboard',
       icon: Truck,
       items: [
@@ -277,7 +277,7 @@ export const sidebarData = {
           url: '/logistics/deliveries/new',
         },
         {
-          title: 'Couriers',
+          title: 'Courier Providers',
           url: '/logistics/couriers',
         },
         {
