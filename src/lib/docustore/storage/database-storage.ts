@@ -10,7 +10,7 @@ import { createHash } from 'crypto';
 import type { StorageConfig, StoredFile, StorageResult } from './types';
 
 export class DatabaseStorage {
-  constructor(config: StorageConfig) {
+  constructor(_config: StorageConfig) {
     // No specific config needed for DB storage yet as it uses the main DB
   }
 
@@ -25,11 +25,11 @@ export class DatabaseStorage {
    * Store a file in the database
    */
   async store(
-    documentId: string,
+    _documentId: string,
     type: 'version' | 'artifact',
-    filename: string,
-    content: Buffer,
-    mimeType: string,
+    _filename: string,
+    _content: Buffer,
+    _mimeType: string,
     targetId?: string // This would be the version_id or artifact_id
   ): Promise<StorageResult> {
     try {

@@ -483,7 +483,7 @@ export class DocumentService {
   /**
    * Download file content
    */
-  static async downloadFile(storagePath: string, storageProvider: string): Promise<Buffer | null> {
+  static async downloadFile(storagePath: string, _storageProvider: string): Promise<Buffer | null> {
     const storage = StorageFactory.getDefault();
     return await storage.retrieve(storagePath);
   }

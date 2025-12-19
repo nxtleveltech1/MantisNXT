@@ -57,7 +57,7 @@ export class FilesystemStorage {
     type: 'version' | 'artifact',
     filename: string,
     content: Buffer,
-    mimeType: string
+    _mimeType: string
   ): Promise<StorageResult> {
     try {
       const storagePath = this.getStoragePath(documentId, type, filename);
@@ -65,7 +65,7 @@ export class FilesystemStorage {
       
       await writeFile(storagePath, content);
       
-      const checksum = this.calculateChecksum(content);
+      // const checksum = this.calculateChecksum(content);
       
       return {
         success: true,
