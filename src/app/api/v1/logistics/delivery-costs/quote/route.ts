@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { DeliveryCostService } from '@/lib/services/logistics';
-import { getOrgId } from '../../../sales/_helpers';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
 const getQuotesSchema = z.object({
   pickup_address: z.record(z.unknown()),

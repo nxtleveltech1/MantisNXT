@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
-import { getOrgId } from '../../sales/_helpers';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 import type { DeliveryServiceTier } from '@/types/logistics';
 
 export async function GET(request: NextRequest) {

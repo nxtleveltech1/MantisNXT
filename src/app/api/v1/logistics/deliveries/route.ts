@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { DeliveryService } from '@/lib/services/logistics';
-import { getOrgId } from '../../sales/_helpers';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
 const createDeliverySchema = z.object({
   quotation_id: z.string().uuid().optional().nullable(),

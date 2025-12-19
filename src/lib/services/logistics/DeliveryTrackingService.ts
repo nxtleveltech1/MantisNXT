@@ -120,7 +120,7 @@ export class DeliveryTrackingService {
       }
 
       // Get courier provider
-      const provider = await CourierProviderService.getProviderById(
+      const provider = await CourierProviderService.getCourierProviderById(
         delivery.courier_provider_id,
         orgId
       );
@@ -298,7 +298,7 @@ export class DeliveryTrackingService {
         delivery.status !== 'cancelled'
       ) {
         try {
-          const provider = await CourierProviderService.getProviderById(
+          const provider = await CourierProviderService.getCourierProviderById(
             delivery.courier_provider_id,
             orgId
           );

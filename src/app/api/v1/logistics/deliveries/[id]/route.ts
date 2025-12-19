@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DeliveryService } from '@/lib/services/logistics';
-import { getOrgId } from '../../../sales/_helpers';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
 export async function GET(
   request: NextRequest,
