@@ -33,6 +33,18 @@ const createQuotationSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
   created_by: z.string().uuid().optional().nullable(),
   items: z.array(quotationItemSchema).min(1),
+  // Delivery options
+  delivery_options: z
+    .object({
+      delivery_address: z.record(z.unknown()).optional(),
+      delivery_contact_name: z.string().optional(),
+      delivery_contact_phone: z.string().optional(),
+      service_tier_id: z.string().uuid().optional(),
+      preferred_courier_provider_id: z.string().uuid().optional(),
+      selected_cost_quote_id: z.string().uuid().optional(),
+      special_instructions: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function GET(request: NextRequest) {

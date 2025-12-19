@@ -267,7 +267,13 @@ export default function ProjectManagementSettingsPage() {
                 </div>
               </>
             ) : (
-              <>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleConnect();
+                }}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="token">Dart-AI API Token</Label>
                   <Input
@@ -276,7 +282,7 @@ export default function ProjectManagementSettingsPage() {
                     value={token}
                     onChange={e => setToken(e.target.value)}
                     placeholder="Enter your Dart-AI API token"
-                    autoComplete="off"
+                    autoComplete="current-password"
                   />
                   <p className="text-muted-foreground text-xs">
                     You can find your API token in your Dart-AI account settings. The token will be encrypted and
@@ -284,7 +290,7 @@ export default function ProjectManagementSettingsPage() {
                   </p>
                 </div>
 
-                <Button onClick={handleConnect} disabled={saving || !token.trim()}>
+                <Button type="submit" disabled={saving || !token.trim()}>
                   {saving ? (
                     <>
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -297,7 +303,7 @@ export default function ProjectManagementSettingsPage() {
                     </>
                   )}
                 </Button>
-              </>
+              </form>
             )}
           </CardContent>
         </Card>
@@ -330,5 +336,6 @@ export default function ProjectManagementSettingsPage() {
     </AppLayout>
   );
 }
+
 
 

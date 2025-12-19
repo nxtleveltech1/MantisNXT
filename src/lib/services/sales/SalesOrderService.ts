@@ -226,6 +226,72 @@ export class SalesOrderService {
         }
       }
 
+      // Auto-create delivery if quotation had delivery options
+      if (data.quotation_id) {
+        try {
+          const deliveryOptionsResult = await query(
+            'SELECT * FROM quotation_delivery_options WHERE quotation_id = $1',
+            [data.quotation_id]
+          );
+
+          if (deliveryOptionsResult.rows.length > 0) {
+            const deliveryOptions = deliveryOptionsResult.rows[0];
+            const { DeliveryService } = await import('@/lib/services/logistics');
+
+            // Get quotation to get customer info
+            const quotationResult = await query(
+              'SELECT customer_id FROM quotations WHERE id = $1',
+              [data.quotation_id]
+            );
+            const quotation = quotationResult.rows[0];
+
+            if (quotation) {
+              // Create delivery record
+              await DeliveryService.createDelivery({
+                org_id: data.org_id,
+                quotation_id: data.quotation_id,
+                sales_order_id: salesOrder.id,
+                customer_id: quotation.customer_id || data.customer_id,
+                delivery_address: deliveryOptions.delivery_address || {},
+                delivery_contact_name: deliveryOptions.delivery_contact_name,
+                delivery_contact_phone: deliveryOptions.delivery_contact_phone,
+                service_tier_id: deliveryOptions.service_tier_id,
+                courier_provider_id: deliveryOptions.preferred_courier_provider_id,
+                special_instructions: deliveryOptions.special_instructions,
+                status: 'pending',
+                created_by: data.created_by,
+              });
+
+              // Save delivery options for sales order
+              await query(
+                `INSERT INTO sales_order_delivery_options (
+                  sales_order_id, delivery_address, delivery_contact_name, delivery_contact_phone,
+                  service_tier_id, courier_provider_id
+                ) VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (sales_order_id) DO UPDATE SET
+                  delivery_address = EXCLUDED.delivery_address,
+                  delivery_contact_name = EXCLUDED.delivery_contact_name,
+                  delivery_contact_phone = EXCLUDED.delivery_contact_phone,
+                  service_tier_id = EXCLUDED.service_tier_id,
+                  courier_provider_id = EXCLUDED.courier_provider_id,
+                  updated_at = now()`,
+                [
+                  salesOrder.id,
+                  JSON.stringify(deliveryOptions.delivery_address || {}),
+                  deliveryOptions.delivery_contact_name || null,
+                  deliveryOptions.delivery_contact_phone || null,
+                  deliveryOptions.service_tier_id || null,
+                  deliveryOptions.preferred_courier_provider_id || null,
+                ]
+              );
+            }
+          }
+        } catch (deliveryError) {
+          console.error('Error creating delivery from quotation:', deliveryError);
+          // Don't fail sales order creation if delivery creation fails
+        }
+      }
+
       return salesOrder;
     } catch (error) {
       console.error('Error creating sales order:', error);

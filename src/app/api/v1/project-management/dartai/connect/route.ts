@@ -32,6 +32,8 @@ function getRequestMeta(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+
+    // Core property validation
     if (!user.orgId) {
       return NextResponse.json(
         { data: null, error: { code: 'ORG_REQUIRED', message: 'Organization context required' } },
@@ -39,12 +41,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If Clerk user isn't synced into auth.users_extended yet, we can't store per-user tokens.
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+    // UUID format validation for database safety
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(user.orgId)) {
+      return NextResponse.json(
+        { data: null, error: { code: 'INVALID_ORG_ID', message: 'Organization ID must be a valid UUID' } },
+        { status: 400 }
+      );
+    }
+
+    if (!uuidRegex.test(user.id)) {
       return NextResponse.json(
         {
           data: { connected: false },
-          error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet' },
+          error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet (UUID required)' },
         },
         { status: 409 }
       );
@@ -54,8 +65,24 @@ export async function GET(request: NextRequest) {
       const status = await getDartAiTokenStatus({ orgId: user.orgId, userId: user.id });
       return NextResponse.json({ data: status, error: null });
     } catch (dbError: unknown) {
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+
+      // Handle missing encryption key
+      if (errorMessage.includes('DARTAI_TOKEN_ENCRYPTION_KEY')) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: 'CONFIG_MISSING',
+              message: 'Server configuration incomplete. DARTAI_TOKEN_ENCRYPTION_KEY env var is required.',
+            },
+          },
+          { status: 503 }
+        );
+      }
+
       // Handle database errors (e.g., table doesn't exist yet)
-      if (dbError instanceof Error && dbError.message.includes('does not exist')) {
+      if (errorMessage.includes('does not exist')) {
         return NextResponse.json(
           {
             data: { connected: false },
@@ -83,6 +110,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+
     if (!user.orgId) {
       return NextResponse.json(
         { data: null, error: { code: 'ORG_REQUIRED', message: 'Organization context required' } },
@@ -90,9 +118,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(user.orgId)) {
       return NextResponse.json(
-        { data: null, error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet' } },
+        { data: null, error: { code: 'INVALID_ORG_ID', message: 'Organization ID must be a valid UUID' } },
+        { status: 400 }
+      );
+    }
+
+    if (!uuidRegex.test(user.id)) {
+      return NextResponse.json(
+        { data: null, error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet (UUID required)' } },
         { status: 409 }
       );
     }
@@ -108,8 +145,23 @@ export async function POST(request: NextRequest) {
         ...meta,
       });
     } catch (dbError: unknown) {
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+
+      // Handle missing encryption key
+      if (errorMessage.includes('DARTAI_TOKEN_ENCRYPTION_KEY')) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: 'CONFIG_MISSING',
+              message: 'Server configuration incomplete. DARTAI_TOKEN_ENCRYPTION_KEY env var is required.',
+            },
+          },
+          { status: 503 }
+        );
+      }
       // Handle database errors (e.g., table doesn't exist yet)
-      if (dbError instanceof Error && dbError.message.includes('does not exist')) {
+      if (errorMessage.includes('does not exist')) {
         return NextResponse.json(
           {
             data: null,
@@ -169,6 +221,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+
     if (!user.orgId) {
       return NextResponse.json(
         { data: null, error: { code: 'ORG_REQUIRED', message: 'Organization context required' } },
@@ -176,9 +229,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(user.orgId)) {
       return NextResponse.json(
-        { data: null, error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet' } },
+        { data: null, error: { code: 'INVALID_ORG_ID', message: 'Organization ID must be a valid UUID' } },
+        { status: 400 }
+      );
+    }
+
+    if (!uuidRegex.test(user.id)) {
+      return NextResponse.json(
+        { data: null, error: { code: 'USER_NOT_SYNCED', message: 'User record not synced yet (UUID required)' } },
         { status: 409 }
       );
     }
@@ -191,5 +253,3 @@ export async function DELETE(request: NextRequest) {
     return createErrorResponse(error, 500);
   }
 }
-
-

@@ -23,6 +23,9 @@ import {
   Settings as SettingsIcon,
   Archive,
   CheckSquare,
+  Truck,
+  MapPin,
+  Route,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -253,6 +256,37 @@ export const sidebarData = {
         {
           title: 'Invoices',
           url: '/sales/invoices',
+        },
+      ],
+    },
+    {
+      title: 'Logistics',
+      url: '/logistics/dashboard',
+      icon: Truck,
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/logistics/dashboard',
+        },
+        {
+          title: 'Deliveries',
+          url: '/logistics/deliveries',
+        },
+        {
+          title: 'New Delivery',
+          url: '/logistics/deliveries/new',
+        },
+        {
+          title: 'Couriers',
+          url: '/logistics/couriers',
+        },
+        {
+          title: 'Route Planning',
+          url: '/logistics/routes',
+        },
+        {
+          title: 'Tracking',
+          url: '/logistics/tracking',
         },
       ],
     },

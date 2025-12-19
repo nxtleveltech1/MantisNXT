@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdvancedCustomerSearch } from '@/components/sales/AdvancedCustomerSearch';
 import { AdvancedProductSearch } from '@/components/sales/AdvancedProductSearch';
 import { DocumentTotals } from '@/components/sales/DocumentTotals';
+import { DeliverySelector } from '@/components/logistics/DeliverySelector';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
@@ -39,6 +40,12 @@ export default function NewQuotationPage() {
     notes: '',
     items: [] as QuotationItem[],
   });
+  const [deliveryOptions, setDeliveryOptions] = useState<{
+    delivery_address?: any;
+    service_tier_id?: string;
+    selected_cost_quote_id?: string;
+    special_instructions?: string;
+  } | null>(null);
 
   const calculateItemTotals = (item: QuotationItem) => {
     const subtotal = item.quantity * item.unit_price;
@@ -178,7 +185,7 @@ export default function NewQuotationPage() {
         };
       });
 
-      const payload = {
+      const payload: any = {
         customer_id: formData.customer_id,
         currency: formData.currency || 'ZAR',
         valid_until: formData.valid_until || null,
@@ -186,6 +193,11 @@ export default function NewQuotationPage() {
         notes: formData.notes || null,
         items,
       };
+
+      // Add delivery options if provided
+      if (deliveryOptions) {
+        payload.delivery_options = deliveryOptions;
+      }
 
       const response = await fetch('/api/v1/sales/quotations', {
         method: 'POST',
@@ -376,6 +388,13 @@ export default function NewQuotationPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Delivery Options */}
+              <DeliverySelector
+                onDeliverySelected={(options) => {
+                  setDeliveryOptions(options);
+                }}
+              />
             </div>
 
             <div className="space-y-6">

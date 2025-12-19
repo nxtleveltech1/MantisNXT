@@ -61,6 +61,15 @@ export interface QuotationInsert {
   metadata?: Record<string, unknown>;
   created_by?: string | null;
   items: Omit<QuotationItem, 'id' | 'quotation_id'>[];
+  // Delivery options
+  delivery_options?: {
+    delivery_address?: Record<string, unknown>;
+    delivery_contact_name?: string;
+    delivery_contact_phone?: string;
+    service_tier_id?: string;
+    preferred_courier_provider_id?: string;
+    special_instructions?: string;
+  };
 }
 
 export interface QuotationUpdate {
@@ -282,6 +291,39 @@ export class QuotationService {
       }
 
       console.log('Quotation created successfully:', updatedResult.rows[0].id);
+
+      // Handle delivery options if provided
+      if (data.delivery_options) {
+        try {
+          await query(
+            `INSERT INTO quotation_delivery_options (
+              quotation_id, delivery_address, delivery_contact_name, delivery_contact_phone,
+              service_tier_id, preferred_courier_provider_id, special_instructions
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (quotation_id) DO UPDATE SET
+              delivery_address = EXCLUDED.delivery_address,
+              delivery_contact_name = EXCLUDED.delivery_contact_name,
+              delivery_contact_phone = EXCLUDED.delivery_contact_phone,
+              service_tier_id = EXCLUDED.service_tier_id,
+              preferred_courier_provider_id = EXCLUDED.preferred_courier_provider_id,
+              special_instructions = EXCLUDED.special_instructions,
+              updated_at = now()`,
+            [
+              updatedResult.rows[0].id,
+              JSON.stringify(data.delivery_options.delivery_address || {}),
+              data.delivery_options.delivery_contact_name || null,
+              data.delivery_options.delivery_contact_phone || null,
+              data.delivery_options.service_tier_id || null,
+              data.delivery_options.preferred_courier_provider_id || null,
+              data.delivery_options.special_instructions || null,
+            ]
+          );
+        } catch (deliveryError) {
+          console.error('Error saving delivery options:', deliveryError);
+          // Don't fail quotation creation if delivery options fail
+        }
+      }
+
       return updatedResult.rows[0];
     } catch (error) {
       console.error('Error creating quotation:', error);
