@@ -1,157 +1,16 @@
 #!/usr/bin/env bun
 
-/**
- * Generate SQL migration for new category hierarchy
- * Parses numbered hierarchy format (1, 1.1, 1.1.1, etc.) and generates INSERT statements
- */
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-interface CategoryNode {
-  number: string;
-  name: string;
-  level: number;
-  parent?: string;
-}
+const sqlFile = join(process.cwd(), 'migrations', 'new_category_hierarchy.sql');
+const sql = readFileSync(sqlFile, 'utf-8');
 
-function parseCategoryHierarchy(input: string): CategoryNode[] {
-  const lines = input
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && /^\d+\./.test(line));
+// Count INSERT statements
+const insertMatches = sql.match(/INSERT INTO core\.category/g);
+console.log(`INSERT statements in SQL file: ${insertMatches?.length || 0}`);
 
-  const categories: CategoryNode[] = [];
-  const parentMap = new Map<string, string>(); // Maps "1.1" -> "1", "1.1.1" -> "1.1"
-
-  for (const line of lines) {
-    // Extract number and name (e.g., "1. Guitars" or "1.1.1 Solid-Body")
-    // Format: "1. Name" or "1.1 Name" or "1.1.1 Name"
-    const match = line.match(/^(\d+(?:\.\d+)*)\.?\s+(.+)$/);
-    if (!match) continue;
-
-    const [, numberStr, name] = match;
-    // Remove trailing dot if present and normalize
-    const number = numberStr.replace(/\.$/, '');
-    const parts = number.split('.');
-    const level = parts.length;
-
-    // Determine parent number
-    let parent: string | undefined;
-    if (parts.length > 1) {
-      const parentParts = parts.slice(0, -1);
-      parent = parentParts.join('.');
-    }
-
-    categories.push({
-      number,
-      name: name.trim(),
-      level,
-      parent,
-    });
-
-    if (parent) {
-      parentMap.set(number, parent);
-    }
-  }
-
-  return categories;
-}
-
-function generatePath(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-function buildFullPath(categories: CategoryNode[], cat: CategoryNode): string {
-  const pathParts: string[] = [];
-  let current: CategoryNode | undefined = cat;
-  
-  while (current) {
-    pathParts.unshift(generatePath(current.name));
-    if (current.parent) {
-      current = categories.find((c) => c.number === current!.parent);
-    } else {
-      current = undefined;
-    }
-  }
-  
-  return '/' + pathParts.join('/');
-}
-
-function generateSQL(categories: CategoryNode[]): string {
-  const sql: string[] = [];
-
-  sql.push('-- ===============================================');
-  sql.push('-- NEW CATEGORY HIERARCHY MIGRATION');
-  sql.push('-- Generated from category hierarchy specification');
-  sql.push('-- ===============================================');
-  sql.push('');
-  sql.push('BEGIN;');
-  sql.push('');
-  sql.push('-- Step 1: Set all product category references to NULL');
-  sql.push('UPDATE core.product SET category_id = NULL WHERE category_id IS NOT NULL;');
-  sql.push('UPDATE core.supplier_product SET category_id = NULL WHERE category_id IS NOT NULL;');
-  sql.push('');
-  sql.push('-- Step 2: Delete all existing categories');
-  sql.push('DELETE FROM core.category;');
-  sql.push('');
-  sql.push('-- Step 3: Insert new category hierarchy');
-  sql.push('');
-
-  // Sort by level and number to ensure parents are created before children
-  const sorted = [...categories].sort((a, b) => {
-    if (a.level !== b.level) return a.level - b.level;
-    return a.number.localeCompare(b.number, undefined, { numeric: true });
-  });
-
-  for (const cat of sorted) {
-    const fullPath = buildFullPath(categories, cat);
-    const escapedName = cat.name.replace(/'/g, "''");
-
-    sql.push(`-- ${cat.number} ${cat.name} (Level ${cat.level})`);
-
-    if (cat.level === 1) {
-      // Top-level category
-      sql.push(
-        `INSERT INTO core.category (category_id, name, parent_id, level, path, is_active, created_at, updated_at)`,
-        `VALUES (gen_random_uuid(), '${escapedName}', NULL, ${cat.level}, '${fullPath}', true, NOW(), NOW());`
-      );
-    } else {
-      // Child category - find parent by building parent path
-      const parentPath = buildFullPath(
-        categories,
-        categories.find((c) => c.number === cat.parent)!
-      );
-      
-      sql.push(
-        `INSERT INTO core.category (category_id, name, parent_id, level, path, is_active, created_at, updated_at)`,
-        `SELECT`,
-        `  gen_random_uuid(),`,
-        `  '${escapedName}',`,
-        `  parent.category_id,`,
-        `  ${cat.level},`,
-        `  '${fullPath}',`,
-        `  true,`,
-        `  NOW(),`,
-        `  NOW()`,
-        `FROM core.category parent`,
-        `WHERE parent.path = '${parentPath}';`
-      );
-    }
-    sql.push('');
-  }
-
-  sql.push('COMMIT;');
-  sql.push('');
-  sql.push('-- Migration complete');
-  sql.push(`-- Total categories created: ${sorted.length}`);
-
-  return sql.join('\n');
-}
-
-// Read from stdin or use provided text
+// Count categories by parsing the numbered format
 const categoryText = `1. Guitars, Basses & Amps
 1.1 Electric Guitars
 1.1.1 Solid-Body (Standard/Extended Range)
@@ -445,7 +304,30 @@ const categoryText = `1. Guitars, Basses & Amps
 15.4.2 Lubricants & Contact Cleaners
 15.4.3 Tools & Testers (Multimeters/Soldering Kits)`;
 
-const categories = parseCategoryHierarchy(categoryText);
-const sql = generateSQL(categories);
+const lines = categoryText
+  .split('\n')
+  .map((line) => line.trim())
+  .filter((line) => line.length > 0 && /^\d+\./.test(line));
 
-console.log(sql);
+console.log(`Total categories in specification: ${lines.length}`);
+console.log(`\nBreakdown by level:`);
+const byLevel: Record<number, number> = {};
+lines.forEach((line) => {
+  const match = line.match(/^(\d+(?:\.\d+)*)\.?\s+/);
+  if (match) {
+    const number = match[1].replace(/\.$/, '');
+    const level = number.split('.').length;
+    byLevel[level] = (byLevel[level] || 0) + 1;
+  }
+});
+
+Object.keys(byLevel)
+  .sort((a, b) => Number(a) - Number(b))
+  .forEach((level) => {
+    console.log(`  Level ${level}: ${byLevel[Number(level)]}`);
+  });
+
+console.log(`\nExpected total: ${lines.length} categories`);
+console.log(`Current in database: 262 categories`);
+console.log(`Missing: ${lines.length - 262} categories`);
+

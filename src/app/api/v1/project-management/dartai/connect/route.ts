@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If Clerk user isn’t synced into auth.users_extended yet, we can’t store per-user tokens.
+    // If Clerk user isn't synced into auth.users_extended yet, we can't store per-user tokens.
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
       return NextResponse.json(
         {
@@ -50,9 +50,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const status = await getDartAiTokenStatus({ orgId: user.orgId, userId: user.id });
-    return NextResponse.json({ data: status, error: null });
+    try {
+      const status = await getDartAiTokenStatus({ orgId: user.orgId, userId: user.id });
+      return NextResponse.json({ data: status, error: null });
+    } catch (dbError: unknown) {
+      // Handle database errors (e.g., table doesn't exist yet)
+      if (dbError instanceof Error && dbError.message.includes('does not exist')) {
+        return NextResponse.json(
+          {
+            data: { connected: false },
+            error: {
+              code: 'MIGRATION_REQUIRED',
+              message: 'Database migration required. Please run migrations to set up Dart-AI integration.',
+            },
+          },
+          { status: 503 }
+        );
+      }
+      throw dbError;
+    }
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json(
+        { data: null, error: { code: 'AUTH_REQUIRED', message: 'Authentication required' } },
+        { status: 401 }
+      );
+    }
     return createErrorResponse(error, 500);
   }
 }
@@ -77,12 +100,29 @@ export async function POST(request: NextRequest) {
     const body = ConnectSchema.parse(await request.json());
     const meta = getRequestMeta(request);
 
-    await upsertDartAiUserToken({
-      orgId: user.orgId,
-      userId: user.id,
-      token: body.token,
-      ...meta,
-    });
+    try {
+      await upsertDartAiUserToken({
+        orgId: user.orgId,
+        userId: user.id,
+        token: body.token,
+        ...meta,
+      });
+    } catch (dbError: unknown) {
+      // Handle database errors (e.g., table doesn't exist yet)
+      if (dbError instanceof Error && dbError.message.includes('does not exist')) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: 'MIGRATION_REQUIRED',
+              message: 'Database migration required. Please run migrations to set up Dart-AI integration.',
+            },
+          },
+          { status: 503 }
+        );
+      }
+      throw dbError;
+    }
 
     // Validate token immediately by calling /config
     const client = new DartAiClient();
@@ -98,7 +138,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await markDartAiTokenValidated({ orgId: user.orgId, userId: user.id, ...meta });
+    try {
+      await markDartAiTokenValidated({ orgId: user.orgId, userId: user.id, ...meta });
+    } catch (dbError: unknown) {
+      // Log but don't fail if validation marking fails
+      console.error('Failed to mark token as validated:', dbError);
+    }
 
     return NextResponse.json({
       data: { connected: true, validated: true, config: validation.data },
@@ -109,6 +154,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { data: null, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' } },
         { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json(
+        { data: null, error: { code: 'AUTH_REQUIRED', message: 'Authentication required' } },
+        { status: 401 }
       );
     }
     return createErrorResponse(error, 500);
