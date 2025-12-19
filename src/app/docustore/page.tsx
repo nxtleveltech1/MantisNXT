@@ -43,6 +43,7 @@ import {
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import JSZip from 'jszip';
 
 interface Document {
   id: string;
@@ -155,6 +156,52 @@ export default function DocuStorePage() {
     );
   };
 
+  const handleBulkExport = async () => {
+    if (selectedDocs.length === 0) return;
+    
+    const zip = new JSZip();
+    const folder = zip.folder("docustore-export");
+    
+    toast.loading(`Preparing export for ${selectedDocs.length} documents...`);
+    
+    try {
+      for (const id of selectedDocs) {
+        const doc = documents.find(d => d.id === id);
+        if (!doc) continue;
+        
+        // Fetch document detail to get current version
+        const response = await fetch(`/api/v1/docustore/${id}`);
+        const result = await response.json();
+        
+        if (result.success && result.data.current_version) {
+          const downloadResponse = await fetch(`/api/v1/docustore/${id}/download?type=current`);
+          if (downloadResponse.ok) {
+            const blob = await downloadResponse.blob();
+            folder?.file(`${doc.title}_${result.data.current_version.original_filename}`, blob);
+          }
+        }
+      }
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = window.URL.createObjectURL(content);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = `docustore-export-${new Date().toISOString().split('T')[0]}.zip`;
+      window.document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      window.document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Export completed successfully');
+      setSelectedDocs([]);
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to export documents');
+      console.error(error);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchDocuments();
@@ -255,7 +302,7 @@ export default function DocuStorePage() {
               <span>Documents Selected</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="h-8">
+              <Button variant="ghost" size="sm" className="h-8" onClick={handleBulkExport}>
                 <Download className="h-4 w-4 mr-2" />
                 Export Selected
               </Button>
