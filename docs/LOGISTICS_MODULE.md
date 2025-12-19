@@ -287,3 +287,5 @@ For issues or questions, refer to:
 - Component usage: See component files in `src/components/logistics/`
 - Database schema: `migrations/0228_logistics_module.sql`
 
+
+

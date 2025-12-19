@@ -357,3 +357,5 @@ INSERT INTO schema_migrations (migration_name)
 VALUES ('0228_logistics_module')
 ON CONFLICT (migration_name) DO NOTHING;
 
+
+
