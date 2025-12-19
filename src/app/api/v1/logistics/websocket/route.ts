@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getOrgId } from '@/app/api/v1/_helpers';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 import { DeliveryTrackingService } from '@/lib/services/logistics/DeliveryTrackingService';
 
 /**
