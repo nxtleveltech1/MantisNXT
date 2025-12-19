@@ -16,16 +16,16 @@ export function QuickActions() {
     },
     {
       icon: Users,
-      label: 'Assign Courier',
-      description: 'Assign to available courier',
+      label: 'Courier Providers',
+      description: 'Manage provider accounts',
       href: '/logistics/couriers',
       color: 'text-green-600',
     },
     {
       icon: Package,
-      label: 'Track Package',
-      description: 'View delivery status',
-      href: '/logistics/deliveries',
+      label: 'Tracking',
+      description: 'Track a delivery',
+      href: '/logistics/tracking',
       color: 'text-purple-600',
     },
     {

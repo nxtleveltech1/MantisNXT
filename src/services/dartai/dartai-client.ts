@@ -55,6 +55,19 @@ export class DartAiClient {
     return { ok: true as const, status: res.status, data: DartAiUnknownSchema.parse(json) };
   }
 
+  private extractListResultsArray(data: unknown): unknown[] {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== 'object') return [];
+
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.results)) return obj.results;
+    if (Array.isArray(obj.items)) return obj.items;
+    if (Array.isArray(obj.tasks)) return obj.tasks;
+    if (Array.isArray(obj.data)) return obj.data;
+    if (obj.item !== undefined) return Array.isArray(obj.item) ? (obj.item as unknown[]) : [obj.item];
+    return [];
+  }
+
   async getConfig(params: { token: string }) {
     const res = await this.requestJson({ token: params.token, path: '/config', method: 'GET' });
     if (!res.ok) return res;
@@ -66,39 +79,33 @@ export class DartAiClient {
   }
 
   async listDartboards(params: { token: string; query?: Record<string, string | undefined> }) {
-    // Note: Dart-AI API doesn't have a direct list endpoint, but we can extract dartboard IDs from tasks
-    // This is a helper that fetches tasks and extracts unique dartboard IDs
-    const tasksResult = await this.listTasks({ token: params.token, query: params.query });
+    // Dart-AI public API does not expose a dartboards list endpoint.
+    // We derive "projects" from task list results (ConciseTask.dartboard is the dartboard title).
+    const tasksResult = await this.listTasks({
+      token: params.token,
+      query: {
+        no_defaults: 'true',
+        limit: '200',
+        ...(params.query || {}),
+      },
+    });
     if (!tasksResult.ok) {
       return tasksResult;
     }
     
-    // Extract unique dartboard IDs from tasks
-    const tasks = Array.isArray(tasksResult.data) 
-      ? tasksResult.data 
-      : Array.isArray(tasksResult.data?.items) 
-        ? tasksResult.data.items 
-        : Array.isArray(tasksResult.data?.item)
-          ? tasksResult.data.item
-          : [];
-    
-    const dartboardIds = new Set<string>();
-    tasks.forEach((task: unknown) => {
-      if (task && typeof task === 'object' && 'dartboard' in task && typeof task.dartboard === 'string') {
-        dartboardIds.add(task.dartboard);
+    const tasks = this.extractListResultsArray(tasksResult.data);
+
+    const dartboardTitles = new Set<string>();
+    for (const task of tasks) {
+      if (task && typeof task === 'object') {
+        const dartboard = (task as Record<string, unknown>).dartboard;
+        if (typeof dartboard === 'string' && dartboard.trim().length > 0) {
+          dartboardTitles.add(dartboard.trim());
+        }
       }
-    });
-    
-    // Fetch each dartboard
-    const dartboards = await Promise.all(
-      Array.from(dartboardIds).map(id => this.getDartboard({ token: params.token, id }))
-    );
-    
-    const successfulDartboards = dartboards
-      .filter(d => d.ok)
-      .map(d => d.data);
-    
-    return { ok: true as const, status: 200, data: successfulDartboards };
+    }
+
+    return { ok: true as const, status: 200, data: Array.from(dartboardTitles).sort() };
   }
 
   async listTasks(params: { token: string; query?: Record<string, string | undefined> }) {

@@ -64,13 +64,7 @@ interface Task {
   updatedAt?: string;
 }
 
-interface Dartboard {
-  id: string;
-  name?: string;
-  title?: string;
-  description?: string;
-  [key: string]: unknown;
-}
+type DartboardTitle = string;
 
 interface TaskCreatePayload {
   item: {
@@ -92,7 +86,7 @@ export default function ProjectManagementPage() {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [dartboards, setDartboards] = useState<Dartboard[]>([]);
+  const [dartboards, setDartboards] = useState<DartboardTitle[]>([]);
   const [dartboardsLoading, setDartboardsLoading] = useState(false);
   const [selectedDartboard, setSelectedDartboard] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'backlog'>('all');
@@ -145,7 +139,7 @@ export default function ProjectManagementPage() {
     setTasksLoading(true);
     try {
       const url = selectedDartboard
-        ? `/api/v1/project-management/dartai/tasks?dartboard=${selectedDartboard}`
+        ? `/api/v1/project-management/dartai/tasks?dartboard=${encodeURIComponent(selectedDartboard)}`
         : '/api/v1/project-management/dartai/tasks';
       const res = await fetch(url);
       const data = await res.json();
@@ -193,7 +187,7 @@ export default function ProjectManagementPage() {
         setDartboards([]);
         return;
       }
-      const dartboardList: Dartboard[] = Array.isArray(data.data) ? data.data : [];
+      const dartboardList: DartboardTitle[] = Array.isArray(data.data) ? data.data : [];
       console.log('[PM] Loaded dartboards:', { count: dartboardList.length });
       setDartboards(dartboardList);
     } catch (error: unknown) {
@@ -446,15 +440,18 @@ export default function ProjectManagementPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <Select value={selectedDartboard || 'all'} onValueChange={value => setSelectedDartboard(value === 'all' ? null : value)}>
+                <Select
+                  value={selectedDartboard || 'all'}
+                  onValueChange={value => setSelectedDartboard(value === 'all' ? null : value)}
+                >
                   <SelectTrigger className="w-[300px]">
                     <SelectValue placeholder="All Projects" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Projects</SelectItem>
-                    {dartboards.map(dartboard => (
-                      <SelectItem key={dartboard.id} value={dartboard.id}>
-                        {dartboard.name || dartboard.title || dartboard.id}
+                    {dartboards.map(dartboardTitle => (
+                      <SelectItem key={dartboardTitle} value={dartboardTitle}>
+                        {dartboardTitle}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -464,15 +461,15 @@ export default function ProjectManagementPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const dartboard = dartboards.find(d => d.id === selectedDartboard);
-                      if (dartboard) {
-                        setFormData(prev => ({ ...prev, dartboard: dartboard.id }));
+                      const dartboardTitle = dartboards.find(d => d === selectedDartboard);
+                      if (dartboardTitle) {
+                        setFormData(prev => ({ ...prev, dartboard: dartboardTitle }));
                         setCreateDialogOpen(true);
                       }
                     }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Task to {dartboards.find(d => d.id === selectedDartboard)?.name || 'Project'}
+                    Add Task to {selectedDartboard}
                   </Button>
                 )}
               </div>
@@ -490,7 +487,7 @@ export default function ProjectManagementPage() {
                   {viewMode === 'backlog' ? 'Backlog' : 'Tasks'}
                   {selectedDartboard && (
                     <Badge variant="secondary">
-                      {dartboards.find(d => d.id === selectedDartboard)?.name || selectedDartboard}
+                      {selectedDartboard}
                     </Badge>
                   )}
                 </CardTitle>
@@ -498,7 +495,7 @@ export default function ProjectManagementPage() {
                   {viewMode === 'backlog'
                     ? 'Tasks that need to be started'
                     : selectedDartboard
-                      ? `Tasks in ${dartboards.find(d => d.id === selectedDartboard)?.name || 'selected project'}`
+                      ? `Tasks in ${selectedDartboard}`
                       : 'All your tasks across all projects'}
                 </CardDescription>
               </div>

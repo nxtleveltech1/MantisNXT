@@ -45,6 +45,9 @@ export async function GET(request: NextRequest) {
     for (const [key, value] of searchParams.entries()) {
       query[key] = value || undefined;
     }
+    // Dart defaults can hide tasks (e.g. assigned-only). Pull everything unless caller overrides.
+    if (!('no_defaults' in query)) query.no_defaults = 'true';
+    if (!('limit' in query)) query.limit = '100';
 
     const result = await client.listTasks({ token, query });
 
@@ -74,6 +77,9 @@ export async function GET(request: NextRequest) {
       tasks = data;
     } else if (data && typeof data === 'object') {
       // Try common response structures
+      if ('results' in data && Array.isArray((data as { results?: unknown }).results)) {
+        tasks = (data as { results: unknown[] }).results;
+      } else
       if ('items' in data && Array.isArray(data.items)) {
         tasks = data.items;
       } else if ('item' in data) {

@@ -9,6 +9,8 @@ export { CourierProviderService } from './CourierProviderService';
 export { DeliveryCostService } from './DeliveryCostService';
 export { DeliveryTrackingService } from './DeliveryTrackingService';
 export { DropshippingService } from './DropshippingService';
+export { LogisticsSettingsService } from './LogisticsSettingsService';
+export type { LogisticsSettings } from './LogisticsSettingsService';
 
 // Export courier provider clients
 export * from './CourierProviderClients';

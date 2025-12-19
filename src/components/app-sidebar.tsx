@@ -288,6 +288,14 @@ export const sidebarData = {
           title: 'Tracking',
           url: '/logistics/tracking',
         },
+        {
+          title: 'Reports',
+          url: '/logistics/reports',
+        },
+        {
+          title: 'Settings',
+          url: '/logistics/settings',
+        },
       ],
     },
     {

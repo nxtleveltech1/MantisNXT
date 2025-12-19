@@ -7,7 +7,7 @@ import { requirePmDartAiToken } from '@/lib/project-management/dartai-auth';
 
 /**
  * GET /api/v1/project-management/dartai/dartboards
- * Lists all dartboards (projects) by extracting unique dartboard IDs from tasks
+ * Lists all dartboards (projects) by extracting unique dartboard titles from tasks
  */
 export async function GET(request: NextRequest) {
   try {

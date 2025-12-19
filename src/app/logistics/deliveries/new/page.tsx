@@ -64,27 +64,41 @@ export default function NewDeliveryPage() {
         street: formData.delivery_address,
       };
 
+      // Prepare payload, converting empty strings to undefined
+      const payload: Record<string, any> = {
+        customer_name: formData.customer_name || undefined,
+        customer_phone: formData.customer_phone || undefined,
+        customer_email: formData.customer_email || undefined,
+        pickup_address: pickupAddress,
+        pickup_contact_name: formData.pickup_contact_name || undefined,
+        pickup_contact_phone: formData.pickup_contact_phone || undefined,
+        delivery_address: deliveryAddress,
+        delivery_contact_name: formData.delivery_contact_name || undefined,
+        delivery_contact_phone: formData.delivery_contact_phone || undefined,
+        package_type: formData.package_type || undefined,
+        weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
+        dimensions_length_cm: formData.dimensions_length_cm
+          ? parseFloat(formData.dimensions_length_cm)
+          : undefined,
+        dimensions_width_cm: formData.dimensions_width_cm
+          ? parseFloat(formData.dimensions_width_cm)
+          : undefined,
+        dimensions_height_cm: formData.dimensions_height_cm
+          ? parseFloat(formData.dimensions_height_cm)
+          : undefined,
+        declared_value: formData.declared_value ? parseFloat(formData.declared_value) : undefined,
+        requires_signature: formData.requires_signature,
+        is_fragile: formData.is_fragile,
+        is_insured: formData.is_insured,
+        special_instructions: formData.special_instructions || undefined,
+      };
+
       const response = await fetch('/api/v1/logistics/deliveries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          pickup_address: pickupAddress,
-          delivery_address: deliveryAddress,
-          weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
-          dimensions_length_cm: formData.dimensions_length_cm
-            ? parseFloat(formData.dimensions_length_cm)
-            : undefined,
-          dimensions_width_cm: formData.dimensions_width_cm
-            ? parseFloat(formData.dimensions_width_cm)
-            : undefined,
-          dimensions_height_cm: formData.dimensions_height_cm
-            ? parseFloat(formData.dimensions_height_cm)
-            : undefined,
-          declared_value: formData.declared_value ? parseFloat(formData.declared_value) : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -93,7 +107,13 @@ export default function NewDeliveryPage() {
         toast.success('Delivery created successfully');
         router.push(`/logistics/deliveries/${result.data.id}`);
       } else {
-        toast.error(result.error || 'Failed to create delivery');
+        // Show detailed validation errors if available
+        if (result.details && Array.isArray(result.details)) {
+          const errorMessages = result.details.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ');
+          toast.error(`Validation error: ${errorMessages}`);
+        } else {
+          toast.error(result.error || 'Failed to create delivery');
+        }
       }
     } catch (error) {
       console.error('Error creating delivery:', error);
