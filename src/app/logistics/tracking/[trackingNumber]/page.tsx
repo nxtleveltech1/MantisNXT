@@ -19,40 +19,59 @@ export default function TrackingPage({ params }: TrackingPageProps) {
   const [trackingNumber, setTrackingNumber] = useState<string>('');
 
   useEffect(() => {
+    let isMounted = true;
     params.then((p) => {
-      setTrackingNumber(p.trackingNumber);
-      fetchTrackingData(p.trackingNumber);
+      if (isMounted) {
+        setTrackingNumber(p.trackingNumber);
+        fetchTrackingData(p.trackingNumber);
+      }
     });
+    return () => {
+      isMounted = false;
+    };
   }, [params]);
 
   const fetchTrackingData = async (trackNum: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       // Find delivery by tracking number
-      const response = await fetch(`/api/v1/logistics/deliveries?tracking_number=${trackNum}`);
+      const response = await fetch(`/api/v1/logistics/deliveries?tracking_number=${encodeURIComponent(trackNum)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
 
-      if (result.success && result.data.length > 0) {
+      if (result.success && result.data && result.data.length > 0) {
         const delivery = result.data[0];
 
         // Get tracking history
-        const trackResponse = await fetch(`/api/v1/logistics/deliveries/${delivery.id}/track`);
-        const trackResult = await trackResponse.json();
+        try {
+          const trackResponse = await fetch(`/api/v1/logistics/deliveries/${delivery.id}/track`);
+          const trackResult = await trackResponse.json();
 
-        if (trackResult.success) {
-          setTrackingData({
-            delivery,
-            tracking_history: trackResult.data.tracking_history || [],
-          });
-        } else {
+          if (trackResult.success) {
+            setTrackingData({
+              delivery,
+              tracking_history: trackResult.data?.tracking_history || [],
+            });
+          } else {
+            setTrackingData({ delivery, tracking_history: [] });
+          }
+        } catch (trackErr) {
+          console.error('Error fetching tracking history:', trackErr);
+          // Still show delivery info even if history fails
           setTrackingData({ delivery, tracking_history: [] });
         }
       } else {
-        setError(`No tracking information found for ${trackNum}`);
+        setError(`No tracking information found for tracking number: ${trackNum}`);
       }
     } catch (err) {
       console.error('Error fetching tracking data:', err);
-      setError('Failed to fetch tracking data');
+      setError(err instanceof Error ? err.message : 'Failed to fetch tracking data');
     } finally {
       setLoading(false);
     }

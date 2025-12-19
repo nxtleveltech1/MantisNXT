@@ -48,6 +48,18 @@ export async function GET(request: NextRequest) {
   try {
     const orgId = await getOrgId(request);
     const searchParams = request.nextUrl.searchParams;
+    const tracking_number = searchParams.get('tracking_number');
+
+    // If tracking_number is provided, use the dedicated method
+    if (tracking_number) {
+      const delivery = await DeliveryService.getDeliveryByTrackingNumber(tracking_number, orgId);
+      return NextResponse.json({
+        success: true,
+        data: delivery ? [delivery] : [],
+        count: delivery ? 1 : 0,
+      });
+    }
+
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
     const status = searchParams.get('status') || undefined;
