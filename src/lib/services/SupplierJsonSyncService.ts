@@ -41,6 +41,7 @@ export interface ExternalProduct {
   images?: Array<{ src: string }>;
   description?: string;
   short_description?: string;
+  stock_on_order?: string | number;
   [key: string]: unknown;
 }
 
@@ -204,27 +205,50 @@ export class SupplierJsonSyncService {
   /**
    * Fetch products from the JSON feed with pagination support
    */
-  async fetchProductsFromFeed(feedUrl: string, page = 1, perPage = 100): Promise<ExternalProduct[]> {
+  async fetchProductsFromFeed(feedUrl: string, feedType: string, page = 1, perPage = 100): Promise<ExternalProduct[]> {
     // Build URL with pagination
     const url = new URL(feedUrl);
     url.searchParams.set('page', String(page));
     url.searchParams.set('per_page', String(perPage));
 
-    console.log(`[JsonSync] Fetching from ${url.toString()}`);
+    console.log(`[JsonSync] Fetching ${feedType} from ${url.toString()}`);
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        Accept: 'application/json',
+        Accept: feedType === 'stage_one' ? 'application/xml, application/json' : 'application/json',
         'Content-Type': 'application/json',
+        'User-Agent': 'MantisNXT/1.0',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Feed request failed: ${response.status} ${response.statusText}`);
+      let errorDetails = '';
+      try {
+        const text = await response.text();
+        errorDetails = text.slice(0, 100);
+      } catch (e) {
+        errorDetails = response.statusText;
+      }
+      throw new Error(`Feed request failed (${response.status}): ${errorDetails}`);
     }
 
-    const data = await response.json();
+    const text = await response.text();
+
+    if (feedType === 'stage_one' || text.trim().startsWith('<?xml')) {
+      return this.parseStageOneXml(text);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('[JsonSync] Failed to parse response as JSON:', text.slice(0, 500));
+      if (text.trim().startsWith('<html') || text.trim().startsWith('<!DOCTYPE')) {
+        throw new Error('Feed URL returned HTML instead of JSON. Please check the URL.');
+      }
+      throw new Error(`Invalid JSON response from feed: ${text.slice(0, 100)}...`);
+    }
 
     // Handle both array response and wrapped response
     if (Array.isArray(data)) {
@@ -239,24 +263,129 @@ export class SupplierJsonSyncService {
   }
 
   /**
+   * Parse Stage One XML format
+   */
+  private parseStageOneXml(xmlString: string): ExternalProduct[] {
+    const products: ExternalProduct[] = [];
+    
+    // Extract products using regex (simple and efficient for this structure)
+    const productMatches = xmlString.matchAll(/<product>(.*?)<\/product>/gs);
+    
+    for (const match of productMatches) {
+      const productXml = match[1];
+      
+      const id = this.extractXmlText(productXml, 'id');
+      const title = this.extractXmlText(productXml, 'title');
+      const sku = this.extractXmlText(productXml, 'sku');
+      const price = this.extractXmlText(productXml, 'price');
+      const stock = this.extractXmlText(productXml, 'stock');
+      const status = this.extractXmlText(productXml, 'status');
+      const description = this.extractXmlText(productXml, 'description');
+      const shortDescription = this.extractXmlText(productXml, 'short_description');
+      
+      if (!id || !sku) continue;
+
+      // Map XML fields to ExternalProduct format
+      const product: ExternalProduct = {
+        id,
+        sku,
+        name: title || 'Unknown Product',
+        regular_price: price,
+        price: price,
+        stock_quantity: stock ? parseInt(stock) : null,
+        stock_status: status === 'publish' ? 'instock' : 'outofstock',
+        description,
+        short_description: shortDescription,
+      };
+
+      // Extract images
+      const imagesMatch = productXml.match(/<images>(.*?)<\/images>/s);
+      if (imagesMatch) {
+        const imagesXml = imagesMatch[1];
+        const imageMatches = imagesXml.matchAll(/<image>(.*?)<\/image>/g);
+        const images: Array<{ src: string }> = [];
+        for (const imageMatch of imageMatches) {
+          images.push({ src: imageMatch[1].trim() });
+        }
+        if (images.length > 0) {
+          product.images = images;
+        }
+      }
+
+      // Extract categories
+      const categoriesMatch = productXml.match(/<categories>(.*?)<\/categories>/s);
+      if (categoriesMatch) {
+        const categoriesXml = categoriesMatch[1];
+        const mainCategory = this.extractXmlText(categoriesXml, 'main_category');
+        const categories: Array<{ id: number; name: string }> = [];
+        if (mainCategory) {
+          categories.push({ id: 0, name: mainCategory });
+        }
+        
+        const subCategoryMatches = categoriesXml.matchAll(/<sub_category>(.*?)<\/sub_category>/g);
+        for (const subMatch of subCategoryMatches) {
+          categories.push({ id: 0, name: subMatch[1].trim() });
+        }
+        if (categories.length > 0) {
+          product.categories = categories;
+        }
+      }
+
+      // Extract custom fields (like stock_on_order)
+      const customFieldsMatch = productXml.match(/<custom_fields>(.*?)<\/custom_fields>/s);
+      if (customFieldsMatch) {
+        const customFieldsXml = customFieldsMatch[1];
+        const stockOnOrder = this.extractXmlText(customFieldsXml, 'stock_on_order');
+        if (stockOnOrder) {
+          product.stock_on_order = stockOnOrder;
+        }
+      }
+
+      products.push(product);
+    }
+    
+    return products;
+  }
+
+  /**
+   * Helper to extract text from XML tag
+   */
+  private extractXmlText(xml: string, tagName: string): string | undefined {
+    const regex = new RegExp(`<${tagName}>(.*?)<\/${tagName}>`, 's');
+    const match = xml.match(regex);
+    if (match && match[1]) {
+      return match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#13;/g, '\n')
+        .replace(/&apos;/g, "'")
+        .trim();
+    }
+    return undefined;
+  }
+
+  /**
    * Fetch all products with automatic pagination
    */
-  async fetchAllProducts(feedUrl: string, maxPages = 50): Promise<ExternalProduct[]> {
+  async fetchAllProducts(feedUrl: string, feedType: string, maxPages = 50): Promise<ExternalProduct[]> {
     const allProducts: ExternalProduct[] = [];
     let page = 1;
     let hasMore = true;
 
     while (hasMore && page <= maxPages) {
-      const products = await this.fetchProductsFromFeed(feedUrl, page, 100);
+      const products = await this.fetchProductsFromFeed(feedUrl, feedType, page, 100);
 
       if (products.length === 0) {
         hasMore = false;
       } else {
         allProducts.push(...products);
-        page++;
-
-        // Small delay to be polite to the API
-        if (hasMore) {
+        
+        if (products.length < 100) {
+          hasMore = false;
+        } else {
+          page++;
           await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
@@ -294,7 +423,11 @@ export class SupplierJsonSyncService {
     // Determine quantity on order based on backorder settings
     // If backorders are allowed and stock is 0 or negative, we assume items are on order
     let qtyOnOrder: number | null = null;
-    if (
+    
+    // Check for explicit stock_on_order (from Stage One)
+    if (external.stock_on_order !== undefined && external.stock_on_order !== null) {
+      qtyOnOrder = parseInt(String(external.stock_on_order)) || 0;
+    } else if (
       (external.backorders_allowed || external.backorders === 'yes' || external.backorders === 'notify') &&
       (supSoh === null || supSoh <= 0) &&
       external.stock_status === 'onbackorder'
@@ -315,6 +448,9 @@ export class SupplierJsonSyncService {
       backorders_allowed: external.backorders_allowed || external.backorders === 'yes',
       manage_stock: external.manage_stock,
       last_sync_at: new Date().toISOString(),
+      ...(external.description ? { description: external.description } : {}),
+      ...(external.short_description ? { short_description: external.short_description } : {}),
+      ...(external.permalink ? { permalink: external.permalink } : {}),
     };
 
     // Include categories if present
@@ -562,8 +698,8 @@ export class SupplierJsonSyncService {
 
     try {
       // Fetch all products
-      console.log(`[JsonSync] Fetching products from ${config.feedUrl}`);
-      const products = await this.fetchAllProducts(config.feedUrl);
+      console.log(`[JsonSync] Fetching products from ${config.feedUrl} (${config.feedType})`);
+      const products = await this.fetchAllProducts(config.feedUrl, config.feedType);
       stats.productsFetched = products.length;
       console.log(`[JsonSync] Fetched ${products.length} products`);
 
