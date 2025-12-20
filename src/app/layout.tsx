@@ -21,12 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // Format matches Clerk's test key pattern to pass format validation
     'pk_test_BUILD_PLACEHOLDER_REPLACE_WITH_REAL_KEY_IN_VERCEL_ENV_VARS';
 
+  // Redirect URLs are configured via environment variables to avoid deprecation warnings.
+  // Set these in your .env.local or Vercel environment variables:
+  // - CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
+  // - CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
+  // See: https://clerk.com/docs/guides/development/customize-redirect-urls
   return (
-    <ClerkProvider
-      publishableKey={clerkPublishableKey}
-      signInFallbackRedirectUrl="/"
-      signUpFallbackRedirectUrl="/"
-    >
+    <ClerkProvider publishableKey={clerkPublishableKey}>
       <html lang="en-ZA" suppressHydrationWarning>
         <head />
         <body
