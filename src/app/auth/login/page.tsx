@@ -275,8 +275,8 @@ export default function LoginPage() {
           maxWidth: '28rem',
         }}
       >
-        {/* Login Form - Semi-transparent panel */}
-        <div className="bg-card/80 space-y-6 rounded-lg border border-border p-6 backdrop-blur-sm">
+        {/* Login Form - Liquid glassy black panel */}
+        <div className="space-y-6 rounded-lg border border-border/20 p-6 backdrop-blur-md bg-black/90 shadow-2xl">
           {error && (
             <Alert variant="destructive" className="rounded-lg">
               <AlertCircle className="h-4 w-4" />
@@ -291,12 +291,11 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username or Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="Username or Email"
-                        className="h-12 rounded-lg"
+                        className="h-12 rounded-lg placeholder:text-white text-white"
                         autoComplete="email"
                         {...field}
                       />
@@ -311,13 +310,12 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password"
-                          className="h-12 rounded-lg pr-12"
+                          className="h-12 rounded-lg pr-12 placeholder:text-white text-white"
                           autoComplete="current-password"
                           {...field}
                         />
@@ -345,7 +343,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="h-12 w-full rounded-lg font-medium"
+                className="h-12 w-full rounded-lg font-medium bg-red-800 hover:bg-red-900 text-white"
               >
                 {isLoading ? (
                   'Signing in...'
