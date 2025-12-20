@@ -606,6 +606,42 @@ export class SupplierJsonSyncService {
   }
 
   /**
+   * Update sync log progress (without marking as complete)
+   */
+  private async updateSyncLogProgress(
+    logId: string,
+    stats: {
+      productsFetched: number;
+      productsProcessed: number;
+      productsUpdated: number;
+      productsCreated: number;
+      productsFailed: number;
+    }
+  ): Promise<void> {
+    await query(
+      `UPDATE core.supplier_json_feed_log
+       SET 
+         products_fetched = $1,
+         products_updated = $2,
+         products_created = $3,
+         products_failed = $4,
+         details = $5
+       WHERE log_id = $6`,
+      [
+        stats.productsFetched,
+        stats.productsUpdated,
+        stats.productsCreated,
+        stats.productsFailed,
+        JSON.stringify({
+          productsProcessed: stats.productsProcessed,
+          progress: stats.productsFetched > 0 ? Math.round((stats.productsProcessed / stats.productsFetched) * 100) : 0,
+        }),
+        logId,
+      ]
+    );
+  }
+
+  /**
    * Update sync log with results
    */
   private async updateSyncLog(
@@ -703,17 +739,57 @@ export class SupplierJsonSyncService {
       stats.productsFetched = products.length;
       console.log(`[JsonSync] Fetched ${products.length} products`);
 
-      // Sync each product
-      for (const product of products) {
-        const mapped = this.mapProduct(product);
-        const result = await this.syncProduct(mapped);
+      // Update log with initial progress
+      await this.updateSyncLogProgress(logId, {
+        productsFetched: stats.productsFetched,
+        productsProcessed: 0,
+        productsUpdated: 0,
+        productsCreated: 0,
+        productsFailed: 0,
+      });
 
-        if (result.action === 'created') {
-          stats.productsCreated++;
-        } else if (result.action === 'updated') {
-          stats.productsUpdated++;
-        } else if (result.action === 'error') {
-          stats.productsFailed++;
+      // Process products in batches to avoid overwhelming the database
+      const BATCH_SIZE = 50;
+      let processed = 0;
+
+      for (let i = 0; i < products.length; i += BATCH_SIZE) {
+        const batch = products.slice(i, i + BATCH_SIZE);
+        
+        // Process batch in parallel (but limit concurrency)
+        const batchResults = await Promise.allSettled(
+          batch.map(async (product) => {
+            const mapped = this.mapProduct(product);
+            return await this.syncProduct(mapped);
+          })
+        );
+
+        // Count results
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            if (result.value.action === 'created') {
+              stats.productsCreated++;
+            } else if (result.value.action === 'updated') {
+              stats.productsUpdated++;
+            } else if (result.value.action === 'error') {
+              stats.productsFailed++;
+            }
+          } else {
+            stats.productsFailed++;
+          }
+        }
+
+        processed += batch.length;
+
+        // Update progress every batch
+        if (processed % (BATCH_SIZE * 2) === 0 || processed === products.length) {
+          await this.updateSyncLogProgress(logId, {
+            productsFetched: stats.productsFetched,
+            productsProcessed: processed,
+            productsUpdated: stats.productsUpdated,
+            productsCreated: stats.productsCreated,
+            productsFailed: stats.productsFailed,
+          });
+          console.log(`[JsonSync] Progress: ${processed}/${products.length} products processed`);
         }
       }
 

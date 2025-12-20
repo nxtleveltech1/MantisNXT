@@ -765,7 +765,7 @@ function SupplierProfilesContent() {
                       <TableRow
                         key={supplier.id}
                         className="hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={() => router.push(`/nxt-spp/profiles?supplier_id=${supplier.id}`)}
+                        onClick={() => router.push(`/suppliers/${supplier.id}/profile`)}
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -827,11 +827,20 @@ function SupplierProfilesContent() {
                               <DropdownMenuItem
                                 onClick={e => {
                                   e.stopPropagation();
+                                  router.push(`/suppliers/${supplier.id}/profile`);
+                                }}
+                              >
+                                <Building2 className="mr-2 h-4 w-4" />
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={e => {
+                                  e.stopPropagation();
                                   router.push(`/nxt-spp/profiles?supplier_id=${supplier.id}`);
                                 }}
                               >
                                 <Settings className="mr-2 h-4 w-4" />
-                                Manage Profile
+                                Manage Profile Settings
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={e => {
@@ -901,6 +910,14 @@ function SupplierProfilesContent() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/suppliers/${supplierId}/profile`)}
+              className="gap-2"
+            >
+              <Building2 className="h-4 w-4" />
+              View Full Profile
+            </Button>
             {!editing ? (
               <Button onClick={() => setEditing(true)} className="gap-2">
                 <Edit className="h-4 w-4" />

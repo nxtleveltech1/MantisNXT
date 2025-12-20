@@ -1760,21 +1760,49 @@ function SupplierProfileContent() {
                           try {
                             setFeedSyncing(true);
                             setError(null);
+                            
+                            // Start sync with extended timeout (5 minutes)
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 300000);
+                            
                             const res = await fetch(`/api/suppliers/${supplierId}/sync`, {
                               method: 'POST',
+                              signal: controller.signal,
                             });
+                            clearTimeout(timeoutId);
+                            
+                            if (!res.ok) {
+                              const errorData = await res.json().catch(() => ({ error: 'Sync request failed' }));
+                              throw new Error(errorData.error || `Sync failed: ${res.status} ${res.statusText}`);
+                            }
+                            
                             const data = await res.json();
                             if (!data.success) {
                               throw new Error(data.error || 'Sync failed');
                             }
-                            // Reload sync logs
-                            const statusRes = await fetch(`/api/suppliers/${supplierId}/sync`);
+                            
+                            // Reload sync logs and supplier status
+                            const [statusRes, supplierRes] = await Promise.all([
+                              fetch(`/api/suppliers/${supplierId}/sync`),
+                              fetch(`/api/suppliers/v3/${supplierId}`),
+                            ]);
+                            
                             const statusData = await statusRes.json();
                             if (statusData.success && statusData.data?.logs) {
                               setFeedSyncLogs(statusData.data.logs);
                             }
+                            
+                            const supplierData = await supplierRes.json();
+                            if (supplierData.success && supplierData.data) {
+                              setSupplier(supplierData.data);
+                            }
+                            
                           } catch (e: any) {
-                            setError(e?.message || 'Sync failed');
+                            if (e.name === 'AbortError') {
+                              setError('Sync is taking longer than expected. The sync may still be processing in the background. Please check sync history for status.');
+                            } else {
+                              setError(e?.message || 'Sync failed');
+                            }
                           } finally {
                             setFeedSyncing(false);
                           }
@@ -1782,11 +1810,16 @@ function SupplierProfileContent() {
                         disabled={!feedUrl || feedSyncing}
                       >
                         {feedSyncing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
                         ) : (
-                          <Play className="mr-2 h-4 w-4" />
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Sync Now
+                          </>
                         )}
-                        {feedSyncing ? 'Syncing...' : 'Sync Now'}
                       </Button>
                     </div>
                   </div>

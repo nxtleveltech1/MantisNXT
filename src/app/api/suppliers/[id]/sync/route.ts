@@ -55,9 +55,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// Increase timeout for sync operations (up to 5 minutes for Vercel Pro)
+export const maxDuration = 300; // 5 minutes
+
 /**
  * POST /api/suppliers/[id]/sync
  * Trigger a manual sync
+ * Note: Optimized with batching to handle large product catalogs efficiently
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
@@ -78,8 +82,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Perform sync
-    console.log(`[Sync API] Starting manual sync for supplier ${supplierId}`);
+    // Check if a sync is already in progress
+    const recentLogs = await service.getSyncLogs(1);
+    const inProgress = recentLogs.length > 0 && recentLogs[0].status === 'in_progress';
+
+    if (inProgress) {
+      return NextResponse.json({
+        success: false,
+        error: 'A sync is already in progress. Please wait for it to complete.',
+        data: {
+          logId: recentLogs[0].logId,
+        },
+      });
+    }
+
+    // Perform sync (optimized with batching)
+    console.log(`[Sync API] Starting sync for supplier ${supplierId}`);
     const result = await service.sync();
 
     return NextResponse.json({
