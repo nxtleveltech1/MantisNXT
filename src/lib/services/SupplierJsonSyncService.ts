@@ -263,6 +263,22 @@ export class SupplierJsonSyncService {
   }
 
   /**
+   * Extract pagination metadata from Stage One XML
+   */
+  private extractStageOneMeta(xmlString: string): { currentPage: number; totalPages: number; perPage: number; total: number } | null {
+    const metaMatch = xmlString.match(/<meta>(.*?)<\/meta>/s);
+    if (metaMatch) {
+      const metaXml = metaMatch[1];
+      const currentPage = parseInt(this.extractXmlText(metaXml, 'current_page') || '1');
+      const totalPages = parseInt(this.extractXmlText(metaXml, 'total_pages') || '1');
+      const perPage = parseInt(this.extractXmlText(metaXml, 'per_page') || '100');
+      const total = parseInt(this.extractXmlText(metaXml, 'total') || '0');
+      return { currentPage, totalPages, perPage, total };
+    }
+    return null;
+  }
+
+  /**
    * Parse Stage One XML format
    */
   private parseStageOneXml(xmlString: string): ExternalProduct[] {
@@ -373,8 +389,50 @@ export class SupplierJsonSyncService {
     const allProducts: ExternalProduct[] = [];
     let page = 1;
     let hasMore = true;
+    let totalPages: number | null = null;
 
-    while (hasMore && page <= maxPages) {
+    // For Stage One XML, fetch first page to get pagination metadata
+    if (feedType === 'stage_one') {
+      const url = new URL(feedUrl);
+      url.searchParams.set('page', '1');
+      url.searchParams.set('per_page', '100');
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          Accept: 'application/xml, application/json',
+          'User-Agent': 'MantisNXT/1.0',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Feed request failed (${response.status}): ${response.statusText}`);
+      }
+
+      const text = await response.text();
+      const products = this.parseStageOneXml(text);
+      const meta = this.extractStageOneMeta(text);
+      
+      allProducts.push(...products);
+      
+      if (meta) {
+        totalPages = meta.totalPages;
+        // If we got all products on first page, return early
+        if (meta.currentPage >= meta.totalPages) {
+          return allProducts;
+        }
+        page = 2; // Start from page 2 since we already got page 1
+      } else {
+        // No meta info, fall back to checking product count
+        if (products.length < 100) {
+          return allProducts;
+        }
+        page = 2;
+      }
+    }
+
+    // Continue pagination
+    while (hasMore && page <= maxPages && (totalPages === null || page <= totalPages)) {
       const products = await this.fetchProductsFromFeed(feedUrl, feedType, page, 100);
 
       if (products.length === 0) {
@@ -382,10 +440,24 @@ export class SupplierJsonSyncService {
       } else {
         allProducts.push(...products);
         
-        if (products.length < 100) {
-          hasMore = false;
+        // For Stage One with known total pages, check against that
+        if (totalPages !== null) {
+          if (page >= totalPages) {
+            hasMore = false;
+          } else {
+            page++;
+          }
         } else {
-          page++;
+          // For other formats, use product count to determine if more pages exist
+          if (products.length < 100) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+        
+        // Small delay to be polite to the API
+        if (hasMore) {
           await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
@@ -758,7 +830,7 @@ export class SupplierJsonSyncService {
         // Process batch in parallel (but limit concurrency)
         const batchResults = await Promise.allSettled(
           batch.map(async (product) => {
-            const mapped = this.mapProduct(product);
+        const mapped = this.mapProduct(product);
             return await this.syncProduct(mapped);
           })
         );
@@ -767,14 +839,14 @@ export class SupplierJsonSyncService {
         for (const result of batchResults) {
           if (result.status === 'fulfilled') {
             if (result.value.action === 'created') {
-              stats.productsCreated++;
+          stats.productsCreated++;
             } else if (result.value.action === 'updated') {
-              stats.productsUpdated++;
+          stats.productsUpdated++;
             } else if (result.value.action === 'error') {
               stats.productsFailed++;
             }
           } else {
-            stats.productsFailed++;
+          stats.productsFailed++;
           }
         }
 

@@ -26,6 +26,7 @@ import {
   Truck,
   MapPin,
   Route,
+  Store,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -256,6 +257,33 @@ export const sidebarData = {
         {
           title: 'Invoices',
           url: '/sales/invoices',
+        },
+      ],
+    },
+    {
+      title: 'Sales Channels',
+      url: '/sales-channels',
+      icon: Store,
+      items: [
+        {
+          title: 'WooCommerce',
+          url: '/sales-channels?channel=woocommerce',
+        },
+        {
+          title: 'WhatsApp',
+          url: '/sales-channels?channel=whatsapp',
+        },
+        {
+          title: 'Facebook',
+          url: '/sales-channels?channel=facebook',
+        },
+        {
+          title: 'Instagram',
+          url: '/sales-channels?channel=instagram',
+        },
+        {
+          title: 'TikTok',
+          url: '/sales-channels?channel=tiktok',
         },
       ],
     },

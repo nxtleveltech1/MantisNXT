@@ -50,6 +50,13 @@ export const CORE_TABLES = {
   ANALYTICS_DASHBOARD_CONFIG: 'core.analytics_dashboard_config',
   PURCHASE_ORDERS: 'core.purchase_orders',
   PURCHASE_ORDER_ITEMS: 'core.purchase_order_items',
+  // Sales Channels tables (from migration 0040)
+  SALES_CHANNEL: 'core.sales_channel',
+  CHANNEL_PRODUCT: 'core.channel_product',
+  CHANNEL_STOCK_ALLOCATION: 'core.channel_stock_allocation',
+  CHANNEL_ORDER: 'core.channel_order',
+  CHANNEL_ORDER_ITEM: 'core.channel_order_item',
+  CHANNEL_SYNC_LOG: 'core.channel_sync_log',
 } as const;
 
 /**

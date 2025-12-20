@@ -1,8 +1,8 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Loader } from '@googlemaps/js-api-loader';
 
 interface GoogleMapsWrapperProps {
   children: (map: google.maps.Map | null, isLoaded: boolean) => React.ReactNode;
@@ -10,6 +10,19 @@ interface GoogleMapsWrapperProps {
   zoom?: number;
   className?: string;
   onLoad?: (map: google.maps.Map) => void;
+}
+
+// Create loader instance outside component to avoid re-creation
+let loaderInstance: Loader | null = null;
+
+function getLoader() {
+  if (!loaderInstance) {
+    loaderInstance = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      version: 'weekly',
+    });
+  }
+  return loaderInstance;
 }
 
 export function GoogleMapsWrapper({
@@ -22,48 +35,50 @@ export function GoogleMapsWrapper({
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const onLoadRef = useRef(onLoad);
+  
+  // Keep onLoad ref up to date
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  }, [onLoad]);
+
+  const initMap = useCallback(async () => {
+    try {
+      const loader = getLoader();
+      const { Map } = await loader.importLibrary('maps');
+
+      if (mapRef.current) {
+        const mapInstance = new Map(mapRef.current, {
+          center,
+          zoom,
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }],
+            },
+          ],
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          zoomControl: true,
+        });
+
+        setMap(mapInstance);
+        setIsLoaded(true);
+        if (onLoadRef.current) {
+          onLoadRef.current(mapInstance);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading Google Maps:', error);
+      setIsLoaded(false);
+    }
+  }, [center, zoom]);
 
   useEffect(() => {
-    const initMap = async () => {
-      setOptions({
-        apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'demo-key',
-        version: 'weekly',
-      });
-
-      try {
-        const { Map } = (await importLibrary('maps')) as google.maps.MapsLibrary;
-
-        if (mapRef.current) {
-          const mapInstance = new Map(mapRef.current, {
-            center,
-            zoom,
-            styles: [
-              {
-                featureType: 'poi',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }],
-              },
-            ],
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: true,
-            zoomControl: true,
-          });
-
-          setMap(mapInstance);
-          setIsLoaded(true);
-          if (onLoad) {
-            onLoad(mapInstance);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading Google Maps:', error);
-        setIsLoaded(false);
-      }
-    };
-
     initMap();
-  }, [center, zoom, onLoad]);
+  }, [initMap]);
 
   return (
     <div className={className}>
