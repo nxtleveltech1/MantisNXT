@@ -100,7 +100,7 @@ export abstract class BaseChannelAdapter {
   /**
    * Map channel order to internal format
    */
-  protected mapChannelOrderToInternal(channelOrder: ChannelOrder): ChannelOrderInsert {
+  mapChannelOrderToInternal(channelOrder: ChannelOrder): ChannelOrderInsert {
     return {
       external_order_id: channelOrder.external_order_id,
       order_number: channelOrder.order_number,

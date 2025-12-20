@@ -92,19 +92,61 @@ export async function POST(
     const eventType = body.type || body.event || headers['x-webhook-event'] || 'order.created';
 
     if (eventType.includes('order') || eventType.includes('Order')) {
-      // Fetch the order from the channel
-      const orders = await adapter.fetchOrders();
-      
-      if (orders.length > 0) {
-        // Process the most recent order (or find the specific one from webhook data)
-        const orderData = orders[0];
-        const mappedOrder = adapter.mapChannelOrderToInternal(orderData);
+      // For WooCommerce, the order data might be in the webhook payload
+      if (channel.channel_type === 'woocommerce' && body.order) {
+        // Map WooCommerce order from webhook payload
+        const wooOrder = body.order;
+        const mappedOrder: any = {
+          external_order_id: String(wooOrder.id),
+          order_number: wooOrder.number,
+          order_status: wooOrder.status,
+          currency: wooOrder.currency,
+          subtotal: parseFloat(wooOrder.subtotal || 0),
+          tax_amount: parseFloat(wooOrder.total_tax || 0),
+          shipping_amount: parseFloat(wooOrder.shipping_total || 0),
+          discount_amount: parseFloat(wooOrder.discount_total || 0),
+          total_amount: parseFloat(wooOrder.total),
+          payment_method: wooOrder.payment_method_title,
+          billing_address: wooOrder.billing || {},
+          shipping_address: wooOrder.shipping || {},
+          customer_info: {
+            email: wooOrder.billing?.email,
+            phone: wooOrder.billing?.phone,
+            first_name: wooOrder.billing?.first_name,
+            last_name: wooOrder.billing?.last_name,
+          },
+          items: (wooOrder.line_items || []).map((item: any) => ({
+            channel_product_id: String(item.product_id),
+            sku: item.sku,
+            name: item.name,
+            quantity: item.quantity,
+            unit_price: parseFloat(item.price),
+            subtotal: parseFloat(item.subtotal),
+            tax_amount: parseFloat(item.total_tax || 0),
+            total: parseFloat(item.total),
+          })),
+        };
 
         await ChannelOrderService.createChannelOrder({
           ...mappedOrder,
           channel_id: params.id,
           org_id: orgId,
         });
+      } else {
+        // For other channels, fetch the order from the channel
+        const orders = await adapter.fetchOrders();
+        
+        if (orders.length > 0) {
+          // Process the most recent order (or find the specific one from webhook data)
+          const orderData = orders[0];
+          const mappedOrder = adapter.mapChannelOrderToInternal(orderData);
+
+          await ChannelOrderService.createChannelOrder({
+            ...mappedOrder,
+            channel_id: params.id,
+            org_id: orgId,
+          });
+        }
       }
     }
 
