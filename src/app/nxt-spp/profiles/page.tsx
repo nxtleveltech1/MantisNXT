@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -239,9 +239,10 @@ function SupplierProfilesContent() {
       // If no supplier ID is provided, load suppliers list for selection
       loadSuppliersList();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supplierId]);
 
-  const loadSuppliersList = async () => {
+  const loadSuppliersList = useCallback(async () => {
     try {
       setLoading(true);
       const suppliersList = await getSuppliers();
@@ -256,7 +257,7 @@ function SupplierProfilesContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const loadSupplierData = async () => {
     if (!supplierId) return;
@@ -494,8 +495,28 @@ function SupplierProfilesContent() {
   }
 
   // Filter and sort suppliers for directory view
+  // Use ref to store suppliers and prevent infinite loops from array reference changes
+  const suppliersRef = useRef<Supplier[]>([]);
+  const suppliersKeyRef = useRef<string>('');
+  const [suppliersVersion, setSuppliersVersion] = useState(0);
+  
+  // Update ref only when suppliers actually change (by comparing IDs)
+  useEffect(() => {
+    const currentKey = suppliers.map(s => s.id).sort().join(',');
+    if (suppliersKeyRef.current !== currentKey) {
+      suppliersRef.current = suppliers;
+      suppliersKeyRef.current = currentKey;
+      setSuppliersVersion(v => v + 1); // Trigger re-render
+    }
+  }, [suppliers]);
+
   const filteredAndSortedSuppliers = useMemo(() => {
-    let filtered = suppliers || [];
+    const suppliersList = suppliersRef.current;
+    if (!suppliersList || suppliersList.length === 0) {
+      return [];
+    }
+
+    let filtered = [...suppliersList];
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -514,7 +535,7 @@ function SupplierProfilesContent() {
     }
 
     // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
+    filtered.sort((a, b) => {
       let aValue: string | number = '';
       let bValue: string | number = '';
 
@@ -543,7 +564,7 @@ function SupplierProfilesContent() {
     });
 
     return filtered;
-  }, [suppliers, searchQuery, statusFilter, sortField, sortDirection]);
+  }, [suppliersVersion, searchQuery, statusFilter, sortField, sortDirection]);
 
   const handleSort = (field: 'name' | 'code' | 'status' | 'tier') => {
     if (sortField === field) {
