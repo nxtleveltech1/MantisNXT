@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { APService } from '@/lib/services/financial';
-import { getOrgId } from '../_helpers';
+import { getOrgId } from '../../_helpers';
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +26,7 @@ export async function GET(
       );
     }
 
-    const lineItems = await APService.getInvoiceLineItems(params.id);
+    const lineItems = await APService.getInvoiceLineItems(id);
 
     return NextResponse.json({
       data: {

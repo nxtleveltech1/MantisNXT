@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { APService } from '@/lib/services/financial';
-import { getOrgId } from '../_helpers';
+import { getOrgId } from '../../_helpers';
 import { createAPPaymentSchema } from '@/lib/validation/financial';
 
 export async function GET(request: NextRequest) {
