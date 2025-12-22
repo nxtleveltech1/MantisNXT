@@ -45,6 +45,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useModuleVisibility } from '@/hooks/useModuleVisibility';
+import { useAuth } from '@/lib/auth/auth-context';
+import { isAdmin } from '@/lib/auth/auth-helper';
 
 export const sidebarData = {
   user: {
@@ -687,6 +690,10 @@ export const sidebarData = {
           title: 'Integrations',
           url: '/admin/settings/integrations',
         },
+        {
+          title: 'Module Visibility',
+          url: '/admin/settings/module-visibility',
+        },
       ],
     },
     {
@@ -709,8 +716,77 @@ export const sidebarData = {
   ],
 };
 
+// Mapping between sidebar item titles and module visibility keys
+const MODULE_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibilityService').ModuleVisibilitySettings> = {
+  'Dashboard (AI)': 'dashboard',
+  'Analytics': 'analytics',
+  'System Health': 'systemHealth',
+  'Project Management': 'projectManagement',
+  'Suppliers': 'suppliers',
+  'Product Management': 'productManagement',
+  'Customers': 'customers',
+  'Sales Services': 'salesServices',
+  'Sales Channels': 'salesChannels',
+  'Courier Logistics': 'courierLogistics',
+  'Rentals': 'rentals',
+  'Repairs Workshop': 'repairsWorkshop',
+  'DocuStore': 'docustore',
+  'AI Services': 'aiServices',
+  'Financial': 'financial',
+  'System Integration': 'systemIntegration',
+  'Administration': 'administration',
+  'Support': 'support',
+};
+
+const PROJECT_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibilityService').ModuleVisibilitySettings> = {
+  'Loyalty': 'loyalty',
+  'Communication': 'communication',
+};
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [logoError, setLogoError] = useState(false);
+  const { settings } = useModuleVisibility();
+  const { user, hasRole } = useAuth();
+  const userIsAdmin = hasRole('admin') || hasRole('super_admin');
+
+  // Filter navMain items based on visibility settings
+  const filteredNavMain = React.useMemo(() => {
+    return sidebarData.navMain.filter(item => {
+      const moduleKey = MODULE_KEY_MAP[item.title];
+      if (!moduleKey) return true; // Show items without mapping (fallback)
+      
+      // Administration is always visible to admins
+      if (moduleKey === 'administration' && userIsAdmin) {
+        return true;
+      }
+      
+      return settings[moduleKey] !== false;
+    });
+  }, [settings, userIsAdmin]);
+
+  // Filter navSecondary items based on visibility settings
+  const filteredNavSecondary = React.useMemo(() => {
+    return sidebarData.navSecondary.filter(item => {
+      const moduleKey = MODULE_KEY_MAP[item.title];
+      if (!moduleKey) return true; // Show items without mapping (fallback)
+      
+      // Administration is always visible to admins
+      if (moduleKey === 'administration' && userIsAdmin) {
+        return true;
+      }
+      
+      return settings[moduleKey] !== false;
+    });
+  }, [settings, userIsAdmin]);
+
+  // Filter projects based on visibility settings
+  const filteredProjects = React.useMemo(() => {
+    return sidebarData.projects.filter(project => {
+      const moduleKey = PROJECT_KEY_MAP[project.name];
+      if (!moduleKey) return true; // Show items without mapping (fallback)
+      return settings[moduleKey] !== false;
+    });
+  }, [settings]);
 
   return (
     <Sidebar variant="sidebar" {...props}>
@@ -743,10 +819,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarData.navMain} label={null} />
-        <NavProjects projects={sidebarData.projects} />
-        {sidebarData.navSecondary.length ? (
-          <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
+        <NavMain items={filteredNavMain} label={null} />
+        {filteredProjects.length > 0 && <NavProjects projects={filteredProjects} />}
+        {filteredNavSecondary.length > 0 ? (
+          <NavSecondary items={filteredNavSecondary} className="mt-auto" />
         ) : null}
       </SidebarContent>
       <SidebarFooter className="space-y-2 border-t border-sidebar-border pt-2">
