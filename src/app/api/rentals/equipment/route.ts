@@ -39,10 +39,39 @@ export async function GET(request: NextRequest) {
       | 'maintenance'
       | 'retired'
       | undefined;
-    const category_id = searchParams.get('category_id') || undefined;
+    
+    // Validate category_id is a valid UUID if provided
+    let category_id: string | undefined = undefined;
+    const categoryIdParam = searchParams.get('category_id');
+    if (categoryIdParam) {
+      // Basic UUID validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(categoryIdParam)) {
+        category_id = categoryIdParam;
+      }
+      // If invalid UUID, just ignore it rather than erroring
+    }
+    
     const is_active = searchParams.get('is_active') === 'true' ? true : undefined;
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined;
+    
+    // Validate limit and offset are valid numbers
+    let limit: number | undefined = undefined;
+    const limitParam = searchParams.get('limit');
+    if (limitParam) {
+      const parsedLimit = parseInt(limitParam, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        limit = parsedLimit;
+      }
+    }
+    
+    let offset: number | undefined = undefined;
+    const offsetParam = searchParams.get('offset');
+    if (offsetParam) {
+      const parsedOffset = parseInt(offsetParam, 10);
+      if (!isNaN(parsedOffset) && parsedOffset >= 0) {
+        offset = parsedOffset;
+      }
+    }
 
     const equipment = await equipmentService.listEquipment({
       equipment_type,
