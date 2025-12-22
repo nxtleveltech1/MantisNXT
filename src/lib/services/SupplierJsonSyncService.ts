@@ -407,8 +407,11 @@ export class SupplierJsonSyncService {
     let hasMore = true;
     let totalPages: number | null = null;
 
+    // Normalize feedType for comparison (case-insensitive, handle spaces)
+    const normalizedFeedType = feedType?.toLowerCase().replace(/\s+/g, '_') || '';
+
     // For Stage One XML, fetch first page to get pagination metadata
-    if (feedType === 'stage_one') {
+    if (normalizedFeedType === 'stage_one') {
       const url = new URL(feedUrl);
       url.searchParams.set('page', '1');
       url.searchParams.set('per_page', '100');
