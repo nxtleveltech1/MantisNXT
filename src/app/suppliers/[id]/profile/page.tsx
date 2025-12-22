@@ -239,6 +239,26 @@ function SupplierProfileContent() {
     }
   }, [supplierId]);
 
+  // Extract loadAudit to be reusable for refreshing after uploads/syncs
+  const loadAudit = useCallback(async () => {
+    if (!supplierId) return;
+    try {
+      setLoading((prev) => ({ ...prev, activity: true }));
+      const res = await fetch(`/api/spp/audit?supplier_id=${supplierId}&limit=50`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setActivity(data.data || []);
+      } else {
+        setActivity([]);
+      }
+    } catch (error) {
+      console.error('Error loading activity:', error);
+      setActivity([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, activity: false }));
+    }
+  }, [supplierId]);
+
   useEffect(() => {
     if (!supplierId) return;
 
@@ -289,23 +309,6 @@ function SupplierProfileContent() {
       }
     };
 
-    const loadAudit = async () => {
-      try {
-        setLoading((prev) => ({ ...prev, activity: true }));
-        const res = await fetch(`/api/spp/audit?supplier_id=${supplierId}&limit=50`);
-        const data = await res.json();
-        if (data.success && data.data) {
-          setActivity(data.data || []);
-        } else {
-          setActivity([]);
-        }
-      } catch (error) {
-        console.error('Error loading activity:', error);
-        setActivity([]);
-      } finally {
-        setLoading((prev) => ({ ...prev, activity: false }));
-      }
-    };
 
     const loadMetrics = async () => {
       try {
@@ -1627,8 +1630,8 @@ function SupplierProfileContent() {
                   open={false}
                   onOpenChange={() => {}}
                   onComplete={async () => {
-                    // Reload uploads after successful upload
-                    await loadUploads();
+                    // Reload uploads and activity after successful upload
+                    await Promise.all([loadUploads(), loadAudit()]);
                   }}
                   defaultSupplierId={supplierId}
                   autoValidate={false}
@@ -1779,7 +1782,7 @@ function SupplierProfileContent() {
                               throw new Error(data.error || 'Sync failed');
                             }
                             
-                            // Reload sync logs, supplier status, and recent uploads
+                            // Reload sync logs, supplier status, recent uploads, and activity
                             const [statusRes, supplierRes] = await Promise.all([
                               fetch(`/api/suppliers/${supplierId}/sync`),
                               fetch(`/api/suppliers/v3/${supplierId}`),
@@ -1795,8 +1798,8 @@ function SupplierProfileContent() {
                               setSupplier(supplierData.data);
                             }
                             
-                            // Refresh recent uploads after sync completes
-                            await loadUploads();
+                            // Refresh recent uploads and activity after sync completes
+                            await Promise.all([loadUploads(), loadAudit()]);
                             
                           } catch (e: any) {
                             if (e.name === 'AbortError') {
