@@ -27,6 +27,8 @@ import {
   MapPin,
   Route,
   Store,
+  Wrench,
+  Calendar,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -323,6 +325,68 @@ export const sidebarData = {
         {
           title: 'Settings',
           url: '/logistics/settings',
+        },
+      ],
+    },
+    {
+      title: 'Rentals',
+      url: '/rentals',
+      icon: Calendar,
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/rentals',
+        },
+        {
+          title: 'Equipment',
+          url: '/rentals/equipment',
+        },
+        {
+          title: 'Reservations',
+          url: '/rentals/reservations',
+        },
+        {
+          title: 'New Reservation',
+          url: '/rentals/reservations/new',
+        },
+        {
+          title: 'Packages',
+          url: '/rentals/packages',
+        },
+        {
+          title: 'Damage Reports',
+          url: '/rentals/damage',
+        },
+      ],
+    },
+    {
+      title: 'Repairs Workshop',
+      url: '/repairs',
+      icon: Wrench,
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/repairs',
+        },
+        {
+          title: 'Repair Orders',
+          url: '/repairs/orders',
+        },
+        {
+          title: 'New Repair Order',
+          url: '/repairs/orders/new',
+        },
+        {
+          title: 'Technicians',
+          url: '/repairs/technicians',
+        },
+        {
+          title: 'Preventive Maintenance',
+          url: '/repairs/preventive-maintenance',
+        },
+        {
+          title: 'Parts Inventory',
+          url: '/repairs/parts',
         },
       ],
     },
