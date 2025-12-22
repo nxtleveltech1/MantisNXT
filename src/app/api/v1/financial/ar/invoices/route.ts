@@ -7,12 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ARService } from '@/lib/services/financial';
-import { getOrgId } from '../_helpers';
+import { getOrgId } from '../../_helpers';
 import { createARInvoiceSchema } from '@/lib/validation/financial';
 
 export async function GET(request: NextRequest) {
   try {
     const orgId = await getOrgId(request);
+    const searchParams = request.nextUrl.searchParams;
 
     const filters = {
       customer_id: searchParams.get('customer_id') || undefined,
