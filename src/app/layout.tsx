@@ -26,8 +26,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // - CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
   // - CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
   // See: https://clerk.com/docs/guides/development/customize-redirect-urls
+  const signInFallbackRedirectUrl = process.env.CLERK_SIGN_IN_FALLBACK_REDIRECT_URL || '/';
+  const signUpFallbackRedirectUrl = process.env.CLERK_SIGN_UP_FALLBACK_REDIRECT_URL || '/';
+  
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider 
+      publishableKey={clerkPublishableKey}
+      signInFallbackRedirectUrl={signInFallbackRedirectUrl}
+      signUpFallbackRedirectUrl={signUpFallbackRedirectUrl}
+    >
       <html lang="en-ZA" suppressHydrationWarning>
         <head />
         <body

@@ -211,12 +211,15 @@ export class SupplierJsonSyncService {
     url.searchParams.set('page', String(page));
     url.searchParams.set('per_page', String(perPage));
 
-    console.log(`[JsonSync] Fetching ${feedType} from ${url.toString()}`);
+    // Normalize feedType for comparison (case-insensitive, handle spaces)
+    const normalizedFeedType = feedType?.toLowerCase().replace(/\s+/g, '_') || '';
+
+    console.log(`[JsonSync] Fetching ${feedType} (normalized: ${normalizedFeedType}) from ${url.toString()}`);
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        Accept: feedType === 'stage_one' ? 'application/xml, application/json' : 'application/json',
+        Accept: normalizedFeedType === 'stage_one' ? 'application/xml, application/json' : 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'MantisNXT/1.0',
       },
@@ -233,9 +236,17 @@ export class SupplierJsonSyncService {
       throw new Error(`Feed request failed (${response.status}): ${errorDetails}`);
     }
 
+    // Check Content-Type header to detect XML responses
+    const contentType = response.headers.get('content-type') || '';
+    const isXmlContentType = contentType.includes('xml') || contentType.includes('text/xml') || contentType.includes('application/xml');
+    
     const text = await response.text();
+    const textTrimmed = text.trim();
+    const isXmlResponse = isXmlContentType || textTrimmed.startsWith('<?xml');
 
-    if (feedType === 'stage_one' || text.trim().startsWith('<?xml')) {
+    // Handle Stage One XML feeds or any XML response
+    if (normalizedFeedType === 'stage_one' || isXmlResponse) {
+      console.log(`[JsonSync] Detected XML response (Content-Type: ${contentType}, startsWith: ${textTrimmed.substring(0, 20)})`);
       return this.parseStageOneXml(text);
     }
 
@@ -244,7 +255,12 @@ export class SupplierJsonSyncService {
       data = JSON.parse(text);
     } catch (e) {
       console.error('[JsonSync] Failed to parse response as JSON:', text.slice(0, 500));
-      if (text.trim().startsWith('<html') || text.trim().startsWith('<!DOCTYPE')) {
+      // If it looks like XML but wasn't caught above, try parsing as XML
+      if (textTrimmed.startsWith('<?xml')) {
+        console.log('[JsonSync] Response appears to be XML, attempting XML parse');
+        return this.parseStageOneXml(text);
+      }
+      if (textTrimmed.startsWith('<html') || textTrimmed.startsWith('<!DOCTYPE')) {
         throw new Error('Feed URL returned HTML instead of JSON. Please check the URL.');
       }
       throw new Error(`Invalid JSON response from feed: ${text.slice(0, 100)}...`);
