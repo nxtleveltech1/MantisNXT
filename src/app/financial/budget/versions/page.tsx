@@ -30,6 +30,7 @@ export default function BudgetVersionsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

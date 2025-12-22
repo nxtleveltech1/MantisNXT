@@ -30,6 +30,7 @@ export default function AssetRegisterPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

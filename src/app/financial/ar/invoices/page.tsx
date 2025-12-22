@@ -108,6 +108,7 @@ export default function ARInvoicesPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

@@ -96,6 +96,7 @@ export default function BalanceSheetPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

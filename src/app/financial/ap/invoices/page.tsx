@@ -101,6 +101,7 @@ export default function APInvoicesPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

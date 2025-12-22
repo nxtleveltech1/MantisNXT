@@ -30,6 +30,7 @@ export default function CostCentersPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

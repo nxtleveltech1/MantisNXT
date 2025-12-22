@@ -30,6 +30,7 @@ export default function TaxConfigPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

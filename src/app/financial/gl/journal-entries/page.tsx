@@ -98,6 +98,7 @@ export default function JournalEntriesPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

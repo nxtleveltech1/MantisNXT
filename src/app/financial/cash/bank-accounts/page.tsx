@@ -30,6 +30,7 @@ export default function BankAccountsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }
