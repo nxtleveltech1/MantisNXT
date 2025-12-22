@@ -727,7 +727,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="w-full h-full object-contain"
                   priority
                   unoptimized
-                  onError={() => setLogoError(true)}
+                  onError={(e) => {
+                    console.warn('Logo failed to load, using fallback');
+                    setLogoError(true);
+                  }}
                 />
               ) : (
                 <div className="flex items-center gap-2 text-white">

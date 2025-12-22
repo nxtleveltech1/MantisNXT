@@ -99,8 +99,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await verifyAuth(request);
     if (!user) {
+      console.warn('[POST /api/rentals/equipment] Authentication failed - no user returned from verifyAuth');
       return NextResponse.json(
-        { success: false, error: 'UNAUTHORIZED', message: 'Authentication required' },
+        { 
+          success: false, 
+          error: 'UNAUTHORIZED', 
+          message: 'Authentication required. Please ensure you are logged in.' 
+        },
         { status: 401 }
       );
     }
@@ -113,6 +118,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: equipment }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.warn('[POST /api/rentals/equipment] Validation error:', error.errors);
       return NextResponse.json(
         {
           success: false,
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error in POST /api/rentals/equipment:', error);
+    console.error('[POST /api/rentals/equipment] Error:', error);
     return NextResponse.json(
       {
         success: false,
