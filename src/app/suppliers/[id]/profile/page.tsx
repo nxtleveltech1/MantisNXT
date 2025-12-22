@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -219,6 +219,26 @@ function SupplierProfileContent() {
   const [baseDiscount, setBaseDiscount] = useState(0);
   const [discountSaving, setDiscountSaving] = useState(false);
 
+  // Extract loadUploads to be reusable for refreshing after uploads/syncs
+  const loadUploads = useCallback(async () => {
+    if (!supplierId) return;
+    try {
+      setLoading((prev) => ({ ...prev, uploads: true }));
+      const res = await fetch(`/api/spp/upload?supplier_id=${supplierId}&limit=50`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setUploads(data.data.uploads || data.data || []);
+      } else {
+        setUploads([]);
+      }
+    } catch (error) {
+      console.error('Error loading uploads:', error);
+      setUploads([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, uploads: false }));
+    }
+  }, [supplierId]);
+
   useEffect(() => {
     if (!supplierId) return;
 
@@ -266,24 +286,6 @@ function SupplierProfileContent() {
         console.error('Error loading profiles:', error);
       } finally {
         setLoading((prev) => ({ ...prev, profiles: false }));
-      }
-    };
-
-    const loadUploads = async () => {
-      try {
-        setLoading((prev) => ({ ...prev, uploads: true }));
-        const res = await fetch(`/api/spp/upload?supplier_id=${supplierId}&limit=50`);
-        const data = await res.json();
-        if (data.success && data.data) {
-          setUploads(data.data.uploads || data.data || []);
-        } else {
-          setUploads([]);
-        }
-      } catch (error) {
-        console.error('Error loading uploads:', error);
-        setUploads([]);
-      } finally {
-        setLoading((prev) => ({ ...prev, uploads: false }));
       }
     };
 
@@ -1626,11 +1628,7 @@ function SupplierProfileContent() {
                   onOpenChange={() => {}}
                   onComplete={async () => {
                     // Reload uploads after successful upload
-                    const res = await fetch(`/api/spp/upload?supplier_id=${supplierId}&limit=50`);
-                    const data = await res.json();
-                    if (data.success && data.data) {
-                      setUploads(data.data.uploads || data.data || []);
-                    }
+                    await loadUploads();
                   }}
                   defaultSupplierId={supplierId}
                   autoValidate={false}
@@ -1781,7 +1779,7 @@ function SupplierProfileContent() {
                               throw new Error(data.error || 'Sync failed');
                             }
                             
-                            // Reload sync logs and supplier status
+                            // Reload sync logs, supplier status, and recent uploads
                             const [statusRes, supplierRes] = await Promise.all([
                               fetch(`/api/suppliers/${supplierId}/sync`),
                               fetch(`/api/suppliers/v3/${supplierId}`),
@@ -1796,6 +1794,9 @@ function SupplierProfileContent() {
                             if (supplierData.success && supplierData.data) {
                               setSupplier(supplierData.data);
                             }
+                            
+                            // Refresh recent uploads after sync completes
+                            await loadUploads();
                             
                           } catch (e: any) {
                             if (e.name === 'AbortError') {
