@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReportService, type BalanceSheet } from '@/lib/services/financial';
 
@@ -37,11 +38,18 @@ export default function BalanceSheetPage() {
   }, []);
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Balance Sheet</h2>
-        <p className="text-muted-foreground">Financial position statement</p>
-      </div>
+    <AppLayout 
+      title="Balance Sheet" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Financial Reports', href: '/financial/reports/balance-sheet' },
+        { label: 'Balance Sheet' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-muted-foreground">Financial position statement</p>
+        </div>
 
       <Card>
         <CardHeader>
@@ -88,6 +96,6 @@ export default function BalanceSheetPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }

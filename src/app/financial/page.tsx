@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
@@ -89,26 +90,6 @@ export default function FinancialDashboardPage() {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading dashboard...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-destructive">Error: {error}</div>
-        </div>
-      </div>
-    );
-  }
-
   const overviewData = data || {
     ap_balance: 0,
     ar_balance: 0,
@@ -118,11 +99,29 @@ export default function FinancialDashboardPage() {
     ap_aging: { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_over_90: 0 },
   };
 
+  if (loading) {
+    return (
+      <AppLayout title="Financial Dashboard" breadcrumbs={[{ label: 'Financial', href: '/financial' }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading dashboard...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout title="Financial Dashboard" breadcrumbs={[{ label: 'Financial', href: '/financial' }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-destructive">Error: {error}</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Financial Dashboard</h2>
-      </div>
+    <AppLayout title="Financial Dashboard" breadcrumbs={[{ label: 'Financial', href: '/financial' }]}>
+      <div className="space-y-4">
 
       {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -304,6 +303,6 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }

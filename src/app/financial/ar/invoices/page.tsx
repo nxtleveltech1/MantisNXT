@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -40,19 +41,26 @@ export default function ARInvoicesPage() {
   }, []);
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Customer Invoices</h2>
-          <p className="text-muted-foreground">Manage accounts receivable invoices (including Sales Services invoices)</p>
+    <AppLayout 
+      title="Customer Invoices" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Accounts Receivable', href: '/financial/ar/invoices' },
+        { label: 'Customer Invoices' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-muted-foreground">Manage accounts receivable invoices (including Sales Services invoices)</p>
+          </div>
+          <Button asChild>
+            <Link href="/financial/ar/invoices/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Invoice
+            </Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/financial/ar/invoices/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
-          </Link>
-        </Button>
-      </div>
 
       <Card>
         <CardHeader>
@@ -100,6 +108,6 @@ export default function ARInvoicesPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }

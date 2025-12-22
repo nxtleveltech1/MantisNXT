@@ -2,15 +2,23 @@
  * Fixed Assets - Asset Register Page
  */
 
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AssetRegisterPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Asset Register</h2>
-        <p className="text-muted-foreground">Manage fixed assets</p>
-      </div>
+    <AppLayout 
+      title="Asset Register" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Fixed Assets', href: '/financial/assets/register' },
+        { label: 'Asset Register' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-muted-foreground">Manage fixed assets</p>
+        </div>
       <Card>
         <CardHeader>
           <CardTitle>Asset Register</CardTitle>
@@ -22,7 +30,7 @@ export default function AssetRegisterPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }
 

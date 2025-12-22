@@ -2,15 +2,23 @@
  * Budgeting - Budget Versions Page
  */
 
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function BudgetVersionsPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Budget Versions</h2>
-        <p className="text-muted-foreground">Manage budget versions</p>
-      </div>
+    <AppLayout 
+      title="Budget Versions" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Budgeting', href: '/financial/budget/versions' },
+        { label: 'Budget Versions' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-muted-foreground">Manage budget versions</p>
+        </div>
       <Card>
         <CardHeader>
           <CardTitle>Budget Versions</CardTitle>
@@ -22,7 +30,7 @@ export default function BudgetVersionsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }
 

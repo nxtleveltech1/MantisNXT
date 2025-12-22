@@ -2,15 +2,23 @@
  * Tax Management - Tax Configuration Page
  */
 
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TaxConfigPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Tax Configuration</h2>
-        <p className="text-muted-foreground">Manage tax rates and configuration</p>
-      </div>
+    <AppLayout 
+      title="Tax Configuration" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Tax Management', href: '/financial/tax/config' },
+        { label: 'Tax Configuration' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-muted-foreground">Manage tax rates and configuration</p>
+        </div>
       <Card>
         <CardHeader>
           <CardTitle>Tax Configuration</CardTitle>
@@ -22,7 +30,7 @@ export default function TaxConfigPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }
 

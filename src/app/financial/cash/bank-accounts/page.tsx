@@ -2,15 +2,23 @@
  * Cash Management - Bank Accounts Page
  */
 
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function BankAccountsPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Bank Accounts</h2>
-        <p className="text-muted-foreground">Manage bank accounts</p>
-      </div>
+    <AppLayout 
+      title="Bank Accounts" 
+      breadcrumbs={[
+        { label: 'Financial', href: '/financial' },
+        { label: 'Cash Management', href: '/financial/cash/bank-accounts' },
+        { label: 'Bank Accounts' }
+      ]}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-muted-foreground">Manage bank accounts</p>
+        </div>
       <Card>
         <CardHeader>
           <CardTitle>Bank Accounts</CardTitle>
@@ -22,7 +30,7 @@ export default function BankAccountsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppLayout>
   );
 }
 
