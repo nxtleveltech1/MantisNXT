@@ -5,6 +5,7 @@
 export type EquipmentCondition = 'excellent' | 'good' | 'fair' | 'poor' | 'damaged';
 export type EquipmentAvailabilityStatus = 'available' | 'rented' | 'maintenance' | 'retired';
 export type ReservationStatus = 'pending' | 'confirmed' | 'picked_up' | 'active' | 'returned' | 'cancelled';
+export type RentalPaymentStatus = 'pending' | 'deposit_paid' | 'partially_paid' | 'paid' | 'overdue' | 'refunded' | 'cancelled';
 export type DamageType = 'physical_damage' | 'missing_parts' | 'malfunction' | 'cosmetic';
 export type DamageSeverity = 'minor' | 'moderate' | 'major' | 'total_loss';
 export type DamageReportStatus = 'reported' | 'assessed' | 'invoiced' | 'paid' | 'closed';
@@ -102,6 +103,37 @@ export interface Reservation {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Financial fields
+  ar_invoice_id?: string;
+  quote_id?: string;
+  quote_number?: string;
+  quote_date?: string;
+  quote_expiry_date?: string;
+  quote_approved?: boolean;
+  quote_approved_at?: string;
+  quote_approved_by?: string;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_rental_amount: number;
+  total_amount_due: number;
+  payment_status: RentalPaymentStatus;
+  amount_paid: number;
+  amount_due: number;
+  payment_terms?: string;
+  due_date?: string;
+  first_payment_date?: string;
+  fully_paid_date?: string;
+  currency: string;
+  exchange_rate: number;
+  late_return_fee: number;
+  cleaning_fee: number;
+  other_charges: number;
+  other_charges_description?: string;
+  refund_amount: number;
+  refund_date?: string;
+  refund_reason?: string;
 }
 
 export interface ReservationItem {
@@ -118,6 +150,13 @@ export interface ReservationItem {
   damage_assessed: boolean;
   damage_cost: number;
   damage_notes?: string;
+  // Financial fields
+  tax_rate: number;
+  tax_amount: number;
+  discount_percentage: number;
+  discount_amount: number;
+  line_total_before_tax: number;
+  line_total_after_tax: number;
 }
 
 export interface RentalAgreement {

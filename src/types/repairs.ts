@@ -5,6 +5,7 @@
 export type RepairOrderType = 'repair' | 'maintenance' | 'calibration' | 'inspection';
 export type RepairPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type RepairOrderStatus = 'received' | 'diagnosed' | 'in_progress' | 'waiting_parts' | 'testing' | 'completed' | 'cancelled';
+export type RepairPaymentStatus = 'pending' | 'quote_sent' | 'quote_approved' | 'deposit_paid' | 'partially_paid' | 'paid' | 'overdue' | 'warranty_covered' | 'cancelled';
 export type TestResult = 'pass' | 'fail' | 'partial';
 export type PMType = 'scheduled' | 'inspection' | 'calibration' | 'cleaning';
 
@@ -48,11 +49,51 @@ export interface RepairOrder {
   warranty_expiry?: string;
   customer_quote_approved?: boolean;
   customer_quote_approved_at?: string;
-  invoice_id?: string;
+  invoice_id?: string; // Deprecated - use ar_invoice_id
   notes?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Financial fields
+  ar_invoice_id?: string;
+  quote_id?: string;
+  quote_number?: string;
+  quote_date?: string;
+  quote_expiry_date?: string;
+  quote_sent_date?: string;
+  quote_approved?: boolean;
+  quote_approved_at?: string;
+  quote_approved_by?: string;
+  estimated_labor_hours: number;
+  estimated_labor_cost: number;
+  estimated_parts_cost: number;
+  estimated_total_cost: number;
+  tax_rate: number;
+  tax_amount: number;
+  discount_amount: number;
+  subtotal: number;
+  total_cost_before_tax: number;
+  total_cost_after_tax: number;
+  payment_status: RepairPaymentStatus;
+  amount_paid: number;
+  amount_due: number;
+  payment_terms?: string;
+  due_date?: string;
+  first_payment_date?: string;
+  fully_paid_date?: string;
+  currency: string;
+  exchange_rate: number;
+  deposit_required: boolean;
+  deposit_amount: number;
+  deposit_paid: number;
+  deposit_paid_date?: string;
+  diagnostic_fee: number;
+  rush_fee: number;
+  other_charges: number;
+  other_charges_description?: string;
+  refund_amount: number;
+  refund_date?: string;
+  refund_reason?: string;
 }
 
 export interface RepairOrderItem {
@@ -64,6 +105,13 @@ export interface RepairOrderItem {
   unit_cost?: number;
   line_total: number;
   notes?: string;
+  // Financial fields
+  tax_rate: number;
+  tax_amount: number;
+  discount_percentage: number;
+  discount_amount: number;
+  line_total_before_tax: number;
+  line_total_after_tax: number;
 }
 
 export interface RepairTimeline {
