@@ -303,6 +303,7 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       </div>
+      </div>
     </AppLayout>
   );
 }
