@@ -74,7 +74,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const orgId = user.orgId || 'default';
+    const orgId = user.orgId;
+    
+    if (!orgId || orgId === '') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'INVALID_ORG',
+          message: 'Organization ID is required. Please ensure you are associated with an organization.',
+        },
+        { status: 400 }
+      );
+    }
+
     const settings = await ModuleVisibilityService.getSettings(orgId);
 
     return NextResponse.json({
@@ -130,7 +142,18 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validatedData = UpdateModuleVisibilitySchema.parse(body);
 
-    const orgId = user.orgId || 'default';
+    const orgId = user.orgId;
+    
+    if (!orgId || orgId === '') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'INVALID_ORG',
+          message: 'Organization ID is required. Please ensure you are associated with an organization.',
+        },
+        { status: 400 }
+      );
+    }
 
     // Save settings to database
     const updatedSettings = await ModuleVisibilityService.saveSettings(

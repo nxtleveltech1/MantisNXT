@@ -75,8 +75,14 @@ export class ModuleVisibilityService {
   /**
    * Get module visibility settings for an organization
    */
-  static async getSettings(orgId: string): Promise<ModuleVisibilitySettings> {
+  static async getSettings(orgId: string | null | undefined): Promise<ModuleVisibilitySettings> {
     try {
+      // Validate orgId - must be a valid UUID or null
+      if (!orgId || orgId === 'default' || orgId === '') {
+        console.warn('[ModuleVisibility] Invalid or missing orgId, returning default settings');
+        return DEFAULT_SETTINGS;
+      }
+
       const result = await db.query(
         `SELECT config_value FROM auth.system_config 
          WHERE org_id = $1 AND config_key = $2`,
@@ -104,11 +110,22 @@ export class ModuleVisibilityService {
    * Save module visibility settings for an organization
    */
   static async saveSettings(
-    orgId: string,
+    orgId: string | null | undefined,
     settings: Partial<ModuleVisibilitySettings>,
-    updatedBy?: string
+    updatedBy?: string | null
   ): Promise<ModuleVisibilitySettings> {
     try {
+      // Validate orgId - must be a valid UUID
+      if (!orgId || orgId === 'default' || orgId === '') {
+        throw new Error('Invalid organization ID. Organization ID is required and must be a valid UUID.');
+      }
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(orgId)) {
+        throw new Error(`Invalid organization ID format: ${orgId}. Expected UUID format.`);
+      }
+
       // Get existing settings to merge
       const existingSettings = await this.getSettings(orgId);
       
@@ -118,7 +135,7 @@ export class ModuleVisibilityService {
         ...settings,
       };
 
-      // Upsert settings
+      // Upsert settings - updated_by can be null if not provided
       await db.query(
         `INSERT INTO auth.system_config (org_id, config_key, config_value, category, updated_by, updated_at)
          VALUES ($1, $2, $3, 'ui', $4, NOW())
@@ -127,8 +144,8 @@ export class ModuleVisibilityService {
            config_value = $3,
            updated_by = $4,
            updated_at = NOW(),
-           version = auth.system_config.version + 1`,
-        [orgId, this.CONFIG_KEY, JSON.stringify(settingsToStore), updatedBy]
+           version = COALESCE(auth.system_config.version, 0) + 1`,
+        [orgId, this.CONFIG_KEY, JSON.stringify(settingsToStore), updatedBy || null]
       );
 
       console.log(`[ModuleVisibility] Settings saved for org ${orgId}`);
