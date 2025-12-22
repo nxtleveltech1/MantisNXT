@@ -264,6 +264,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   const [categories, setCategories] = useState<
     Array<{ category_id?: string; id?: string; name: string }>
   >([]);
+  const [brands, setBrands] = useState<Array<{ brand: string; name: string }>>([]);
   const [supplierId, setSupplierId] = useState<string>(() => {
     const val = getInitialValue('supplier_id', 'all');
     return val || 'all';
@@ -272,6 +273,10 @@ export function CatalogTable(props: CatalogTableProps = {}) {
     const raw = getInitialValue('category_raw', '');
     if (raw) return `raw:${raw}`;
     return getInitialValue('category_id', 'all');
+  });
+  const [brandFilter, setBrandFilter] = useState<string>(() => {
+    const val = getInitialValue('brand', 'all');
+    return val || 'all';
   });
   const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>(() => {
     const val = getInitialValue('is_active', 'all');
@@ -311,6 +316,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
         params.set('category_id', categoryId);
       }
     }
+    if (brandFilter && brandFilter !== 'all') params.set('brand', brandFilter);
     if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
     if (priceMin) params.set('price_min', priceMin);
     if (priceMax) params.set('price_max', priceMax);
@@ -330,7 +336,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       'catalog-popout',
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no`
     );
-  }, [search, supplierId, categoryId, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
+  }, [search, supplierId, categoryId, brandFilter, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
 
   // Save columns to localStorage whenever they change
   useEffect(() => {
@@ -360,6 +366,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
           params.append('category_id', categoryId);
         }
       }
+      if (brandFilter && brandFilter !== 'all') params.append('brand', brandFilter);
       if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
       if (priceMin) params.set('price_min', priceMin);
       if (priceMax) params.set('price_max', priceMax);
@@ -379,7 +386,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
     } finally {
       setLoading(false);
     }
-  }, [search, supplierId, categoryId, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
+  }, [search, supplierId, categoryId, brandFilter, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
 
   useEffect(() => {
     fetchData();
@@ -419,14 +426,17 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   useEffect(() => {
     (async () => {
       try {
-        const [sres, cres] = await Promise.all([
+        const [sres, cres, bres] = await Promise.all([
           fetch('/api/catalog/suppliers'),
           fetch('/api/catalog/categories'),
+          fetch('/api/catalog/brands'),
         ]);
         const sjson = await sres.json();
         const cjson = await cres.json();
+        const bjson = await bres.json();
         setSuppliers(sjson.data || []);
         setCategories(cjson.data || []);
+        setBrands(bjson.data || []);
       } catch (e) {
         // ignore
       }
@@ -842,6 +852,21 @@ export function CatalogTable(props: CatalogTableProps = {}) {
                     value={String(c.category_id ?? c.id)}
                   >
                     {c.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Select value={brandFilter} onValueChange={setBrandFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All brands" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All brands</SelectItem>
+              {brands
+                .filter(b => b && b.brand)
+                .map(b => (
+                  <SelectItem key={b.brand} value={b.brand}>
+                    {b.name || b.brand}
                   </SelectItem>
                 ))}
             </SelectContent>

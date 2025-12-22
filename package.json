@@ -79,6 +79,7 @@
     "deploy:rollback:app": "bun --bun scripts/emergency-rollback.ts --app-only --latest",
     "deploy:rollback:db": "bun --bun scripts/emergency-rollback.ts --db-only --latest",
     "verify:deployment-system": "bun --bun scripts/verify-deployment-system.ts",
+    "verify:vercel": "bun --bun scripts/verify-vercel-setup.ts",
     "// Production Configuration": "Environment and secrets management",
     "secrets:generate": "bun --bun scripts/generate-production-secrets.ts",
     "env:validate": "bun --bun scripts/validate-env-config.ts",

@@ -63,6 +63,7 @@ import ProductProfileDialog from '@/components/products/ProductProfileDialog';
 
 const ALL_SUPPLIERS_VALUE = '__all-suppliers__';
 const ALL_CATEGORIES_VALUE = '__all-categories__';
+const ALL_BRANDS_VALUE = '__all-brands__';
 
 // Enhanced Product Type with Complete Selection Data
 interface SelectionProduct {
@@ -183,6 +184,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSupplier, setFilterSupplier] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterBrand, setFilterBrand] = useState<string>('');
 
   // UI state
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -404,6 +406,11 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
       filtered = filtered.filter(p => p.category_id === filterCategory);
     }
 
+    // Brand filter
+    if (filterBrand) {
+      filtered = filtered.filter(p => p.brand === filterBrand);
+    }
+
     // Sort
     filtered.sort((a, b) => {
       const aVal: unknown = a[sortColumn as keyof SelectionProduct];
@@ -420,9 +427,9 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
     });
 
     setFilteredProducts(filtered);
-  }, [products, searchTerm, filterSupplier, filterCategory, sortColumn, sortDirection]);
+  }, [products, searchTerm, filterSupplier, filterCategory, filterBrand, sortColumn, sortDirection]);
 
-  // Get unique suppliers and categories for filters
+  // Get unique suppliers, categories, and brands for filters
   const suppliers = useMemo(() => {
     const unique = new Map();
     products.forEach(p => {
@@ -441,6 +448,16 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
       }
     });
     return Array.from(unique.values());
+  }, [products]);
+
+  const brandsList = useMemo(() => {
+    const unique = new Set<string>();
+    products.forEach(p => {
+      if (p.brand) {
+        unique.add(p.brand);
+      }
+    });
+    return Array.from(unique).sort();
   }, [products]);
 
   // Selection handlers
@@ -592,6 +609,28 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                     {categories.map((c: unknown) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Brand Filter */}
+              {brandsList.length > 0 && (
+                <Select
+                  value={filterBrand || ALL_BRANDS_VALUE}
+                  onValueChange={value =>
+                    setFilterBrand(value === ALL_BRANDS_VALUE ? '' : value)
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Brands" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_BRANDS_VALUE}>All Brands</SelectItem>
+                    {brandsList.map((brand: string) => (
+                      <SelectItem key={brand} value={brand}>
+                        {brand}
                       </SelectItem>
                     ))}
                   </SelectContent>

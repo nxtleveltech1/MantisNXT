@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const supplierIds = searchParams.getAll('supplier_id');
     const categoryIds = searchParams.getAll('category_id');
     const categoryRaw = searchParams.getAll('category_raw');
+    const brandFilters = searchParams.getAll('brand');
     const search = searchParams.get('search') || undefined;
     const isActiveParam = searchParams.get('is_active');
     const isActive = isActiveParam === null ? undefined : isActiveParam === 'true';
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
     }
     const hasCategoryIdFilter = categoryIds && categoryIds.length > 0;
     const hasCategoryRawFilter = categoryRaw && categoryRaw.length > 0;
+    const hasBrandFilter = brandFilters && brandFilters.length > 0;
 
     if (hasCategoryIdFilter && hasCategoryRawFilter) {
       conditions.push(
@@ -49,6 +51,10 @@ export async function GET(request: NextRequest) {
     } else if (hasCategoryRawFilter) {
       conditions.push(`cat.category_raw = ANY($${idx++}::text[])`);
       params.push(categoryRaw);
+    }
+    if (hasBrandFilter) {
+      conditions.push(`COALESCE(br.brand, sp.attrs_json->>'brand') = ANY($${idx++}::text[])`);
+      params.push(brandFilters);
     }
     if (typeof isActive === 'boolean') {
       conditions.push(`sp.is_active = $${idx++}`);
@@ -71,7 +77,7 @@ export async function GET(request: NextRequest) {
     const whereSql = conditions.join(' AND ');
 
     const needsJoinsForCount =
-      hasCategoryRawFilter || typeof priceMin === 'number' || typeof priceMax === 'number';
+      hasCategoryRawFilter || hasBrandFilter || typeof priceMin === 'number' || typeof priceMax === 'number';
     let total = 0;
     if (needsJoinsForCount) {
       const countSql = `
@@ -94,6 +100,14 @@ export async function GET(request: NextRequest) {
           ORDER BY u.received_at DESC, r.row_num DESC
           LIMIT 1
         ) cat ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT r.brand
+          FROM spp.pricelist_row r
+          JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+          WHERE r.supplier_sku = sp.supplier_sku AND r.brand IS NOT NULL AND r.brand <> ''
+          ORDER BY u.received_at DESC, r.row_num DESC
+          LIMIT 1
+        ) br ON TRUE
         WHERE ${whereSql}
       `;
       const countRes = await dbQuery<{ total: number }>(countSql, params);
@@ -142,7 +156,7 @@ export async function GET(request: NextRequest) {
         FROM core.price_history ph
         JOIN current_prices cp ON cp.supplier_product_id = ph.supplier_product_id
         WHERE ph.is_current = false
-          AND ph.valid_to < cp.valid_from
+          AND ph.valid_to <= cp.valid_from
         ORDER BY ph.supplier_product_id, ph.valid_to DESC
       ),
       latest_stock AS (

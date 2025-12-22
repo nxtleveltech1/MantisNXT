@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         FROM core.price_history ph
         JOIN current_prices cp ON cp.supplier_product_id = ph.supplier_product_id
         WHERE ph.is_current = false
-          AND ph.valid_to < cp.valid_from
+          AND ph.valid_to <= cp.valid_from
         ORDER BY ph.supplier_product_id, ph.valid_to DESC
       ),
       latest_stock AS (

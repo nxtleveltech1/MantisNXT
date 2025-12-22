@@ -274,8 +274,10 @@ export default function MultiProductSelectorDialog({
   const [categories, setCategories] = useState<
     Array<{ category_id?: string; id?: string; name: string }>
   >([]);
+  const [brands, setBrands] = useState<Array<{ brand: string; name: string }>>([]);
   const [supplierId, setSupplierId] = useState<string>('all');
   const [categoryId, setCategoryId] = useState<string>('all');
+  const [brandFilter, setBrandFilter] = useState<string>('all');
   const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all');
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
@@ -313,6 +315,7 @@ export default function MultiProductSelectorDialog({
     if (!open) {
       setSupplierId('all');
       setCategoryId('all');
+      setBrandFilter('all');
       setIsActive('all');
       setPriceMin('');
       setPriceMax('');
@@ -354,6 +357,7 @@ export default function MultiProductSelectorDialog({
           params.append('category_id', categoryId);
         }
       }
+      if (brandFilter && brandFilter !== 'all') params.append('brand', brandFilter);
       if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
       if (priceMin) params.set('price_min', priceMin);
       if (priceMax) params.set('price_max', priceMax);
@@ -382,6 +386,7 @@ export default function MultiProductSelectorDialog({
     search,
     supplierId,
     categoryId,
+    brandFilter,
     isActive,
     priceMin,
     priceMax,
@@ -435,14 +440,17 @@ export default function MultiProductSelectorDialog({
     if (!open) return;
     (async () => {
       try {
-        const [sres, cres] = await Promise.all([
+        const [sres, cres, bres] = await Promise.all([
           fetch('/api/catalog/suppliers'),
           fetch('/api/catalog/categories'),
+          fetch('/api/catalog/brands'),
         ]);
         const sjson = await sres.json();
         const cjson = await cres.json();
+        const bjson = await bres.json();
         setSuppliers(sjson.data || []);
         setCategories(cjson.data || []);
+        setBrands(bjson.data || []);
       } catch (e) {
         // ignore
       }
@@ -1003,13 +1011,14 @@ export default function MultiProductSelectorDialog({
     }
   };
 
-  const hasActiveFilters = search || categoryId !== 'all' || supplierId !== 'all';
+  const hasActiveFilters = search || categoryId !== 'all' || supplierId !== 'all' || brandFilter !== 'all';
   const totalCount = total || rows.length;
 
   const clearFilters = () => {
     setSearch('');
     setCategoryId('all');
     setSupplierId('all');
+    setBrandFilter('all');
     setPage(1);
   };
 
@@ -1144,6 +1153,21 @@ export default function MultiProductSelectorDialog({
                           value={String(c.category_id ?? c.id)}
                         >
                           {c.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Select value={brandFilter} onValueChange={setBrandFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All brands" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All brands</SelectItem>
+                    {brands
+                      .filter(b => b && b.brand)
+                      .map(b => (
+                        <SelectItem key={b.brand} value={b.brand}>
+                          {b.name || b.brand}
                         </SelectItem>
                       ))}
                   </SelectContent>
