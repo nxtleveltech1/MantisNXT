@@ -378,30 +378,194 @@ export const sidebarData = {
     },
     {
       title: 'Financial',
-      url: '/financial/invoices',
+      url: '/financial',
       icon: DollarSign,
       items: [
         {
-          title: 'Sales',
-          url: '/financial/sales',
+          title: 'Dashboard',
+          url: '/financial',
+        },
+        {
+          title: 'Accounts Payable',
+          url: '/financial/ap/invoices',
           items: [
             {
-              title: 'Online',
-              url: '/financial/sales/online',
+              title: 'Vendor Invoices',
+              url: '/financial/ap/invoices',
             },
             {
-              title: 'In-Store',
-              url: '/financial/sales/in-store',
+              title: 'Payments',
+              url: '/financial/ap/payments',
+            },
+            {
+              title: 'Aging Report',
+              url: '/financial/ap/aging',
+            },
+            {
+              title: 'Credit Notes',
+              url: '/financial/ap/credit-notes',
             },
           ],
         },
         {
-          title: 'Invoices',
-          url: '/financial/invoices',
+          title: 'Accounts Receivable',
+          url: '/financial/ar/invoices',
+          items: [
+            {
+              title: 'Customer Invoices',
+              url: '/financial/ar/invoices',
+            },
+            {
+              title: 'Receipts',
+              url: '/financial/ar/receipts',
+            },
+            {
+              title: 'Aging Report',
+              url: '/financial/ar/aging',
+            },
+            {
+              title: 'Credit Notes',
+              url: '/financial/ar/credit-notes',
+            },
+          ],
         },
         {
-          title: 'Payments',
-          url: '/financial/payments',
+          title: 'General Ledger',
+          url: '/financial/gl/accounts',
+          items: [
+            {
+              title: 'Chart of Accounts',
+              url: '/financial/gl/accounts',
+            },
+            {
+              title: 'Journal Entries',
+              url: '/financial/gl/journal-entries',
+            },
+            {
+              title: 'Trial Balance',
+              url: '/financial/gl/trial-balance',
+            },
+            {
+              title: 'Period Management',
+              url: '/financial/gl/periods',
+            },
+          ],
+        },
+        {
+          title: 'Cash Management',
+          url: '/financial/cash/bank-accounts',
+          items: [
+            {
+              title: 'Bank Accounts',
+              url: '/financial/cash/bank-accounts',
+            },
+            {
+              title: 'Reconciliation',
+              url: '/financial/cash/reconciliation',
+            },
+            {
+              title: 'Cash Forecast',
+              url: '/financial/cash/forecast',
+            },
+            {
+              title: 'Petty Cash',
+              url: '/financial/cash/petty-cash',
+            },
+          ],
+        },
+        {
+          title: 'Financial Reports',
+          url: '/financial/reports/balance-sheet',
+          items: [
+            {
+              title: 'Balance Sheet',
+              url: '/financial/reports/balance-sheet',
+            },
+            {
+              title: 'Income Statement',
+              url: '/financial/reports/income-statement',
+            },
+            {
+              title: 'Cash Flow',
+              url: '/financial/reports/cash-flow',
+            },
+            {
+              title: 'Custom Reports',
+              url: '/financial/reports/custom',
+            },
+          ],
+        },
+        {
+          title: 'Budgeting',
+          url: '/financial/budget/versions',
+          items: [
+            {
+              title: 'Budget Versions',
+              url: '/financial/budget/versions',
+            },
+            {
+              title: 'Budget vs Actual',
+              url: '/financial/budget/variance',
+            },
+            {
+              title: 'Forecasts',
+              url: '/financial/budget/forecasts',
+            },
+          ],
+        },
+        {
+          title: 'Tax Management',
+          url: '/financial/tax/config',
+          items: [
+            {
+              title: 'Tax Configuration',
+              url: '/financial/tax/config',
+            },
+            {
+              title: 'Tax Returns',
+              url: '/financial/tax/returns',
+            },
+            {
+              title: 'Tax Reports',
+              url: '/financial/tax/reports',
+            },
+          ],
+        },
+        {
+          title: 'Fixed Assets',
+          url: '/financial/assets/register',
+          items: [
+            {
+              title: 'Asset Register',
+              url: '/financial/assets/register',
+            },
+            {
+              title: 'Depreciation',
+              url: '/financial/assets/depreciation',
+            },
+            {
+              title: 'Disposals',
+              url: '/financial/assets/disposals',
+            },
+          ],
+        },
+        {
+          title: 'Cost Accounting',
+          url: '/financial/cost/centers',
+          items: [
+            {
+              title: 'Cost Centers',
+              url: '/financial/cost/centers',
+            },
+            {
+              title: 'Allocations',
+              url: '/financial/cost/allocations',
+            },
+            {
+              title: 'Project Costing',
+              url: '/financial/cost/projects',
+            },
+          ],
         },
       ],
     },
