@@ -13,12 +13,35 @@ import { createAPPaymentSchema } from '@/lib/validation/financial';
 export async function GET(request: NextRequest) {
   try {
     const orgId = await getOrgId(request);
+    const searchParams = request.nextUrl.searchParams;
+    
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const vendor_id = searchParams.get('vendor_id') || undefined;
+    const status = searchParams.get('status') || undefined;
+    const date_from = searchParams.get('date_from') || undefined;
+    const date_to = searchParams.get('date_to') || undefined;
+    const payment_method = searchParams.get('payment_method') || undefined;
 
-    // List payments logic would go here
+    const { data, count } = await APService.getPayments(
+      orgId,
+      {
+        vendor_id,
+        status,
+        date_from,
+        date_to,
+        payment_method,
+      },
+      limit,
+      offset
+    );
+
     return NextResponse.json({
       success: true,
-      data: [],
-      count: 0,
+      data,
+      count,
+      limit,
+      offset,
     });
   } catch (error) {
     console.error('Error fetching AP payments:', error);

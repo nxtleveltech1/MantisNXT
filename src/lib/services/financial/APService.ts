@@ -407,6 +407,82 @@ export class APService {
   }
 
   /**
+   * Get payments
+   */
+  static async getPayments(
+    orgId: string,
+    filters?: {
+      vendor_id?: string;
+      status?: string;
+      date_from?: string;
+      date_to?: string;
+      payment_method?: string;
+    },
+    limit = 50,
+    offset = 0
+  ): Promise<{ data: APPayment[]; count: number }> {
+    try {
+      const conditions: string[] = ['org_id = $1'];
+      const params: unknown[] = [orgId];
+      let paramIndex = 2;
+
+      if (filters?.vendor_id) {
+        conditions.push(`vendor_id = $${paramIndex}`);
+        params.push(filters.vendor_id);
+        paramIndex++;
+      }
+
+      if (filters?.status) {
+        conditions.push(`status = $${paramIndex}`);
+        params.push(filters.status);
+        paramIndex++;
+      }
+
+      if (filters?.date_from) {
+        conditions.push(`payment_date >= $${paramIndex}`);
+        params.push(filters.date_from);
+        paramIndex++;
+      }
+
+      if (filters?.date_to) {
+        conditions.push(`payment_date <= $${paramIndex}`);
+        params.push(filters.date_to);
+        paramIndex++;
+      }
+
+      if (filters?.payment_method) {
+        conditions.push(`payment_method = $${paramIndex}`);
+        params.push(filters.payment_method);
+        paramIndex++;
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      // Get count
+      const countResult = await query<{ count: string }>(
+        `SELECT COUNT(*) as count FROM ap_payments ${whereClause}`,
+        params
+      );
+      const count = parseInt(countResult.rows[0]?.count || '0', 10);
+
+      // Get payments
+      params.push(limit, offset);
+      const result = await query<APPayment>(
+        `SELECT * FROM ap_payments
+         ${whereClause}
+         ORDER BY payment_date DESC, created_at DESC
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        params
+      );
+
+      return { data: result.rows, count };
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Allocate payment to invoices
    */
   static async allocatePayment(
