@@ -63,7 +63,9 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       this.activeSessions.set(session.id, session);
 
       // Select appropriate provider
+      console.log('[Orchestrator] Selecting provider...');
       const provider = this.selectProvider(validatedRequest);
+      console.log('[Orchestrator] Provider selected:', provider.id);
       this.emitEvent('provider_selected', {
         sessionId: session.id,
         providerId: provider.id,
@@ -80,12 +82,14 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       const toolSchemas = availableTools.length > 0 ? toolRegistry.getToolsSchema() : undefined;
 
       // Generate response
+      console.log('[Orchestrator] Generating AI response...');
       const aiResponse = await this.generateResponse(
         provider,
         messages,
         toolSchemas,
         validatedRequest.options
       );
+      console.log('[Orchestrator] AI response generated successfully');
 
       // Execute tool calls if present
       let toolResults: ToolCallWithResult[] = [];
@@ -507,14 +511,22 @@ Available Tools:`;
    * Process a request (convenience wrapper that handles session lookup)
    */
   async process(request: OrchestratorRequest): Promise<OrchestratorResponse> {
-    const session = this.getSession(request.sessionId);
-    if (!session) {
-      throw new OrchestratorError(
-        `Session ${request.sessionId} not found`,
-        'SESSION_NOT_FOUND'
-      );
+    try {
+      console.log('[Orchestrator] Processing request for session:', request.sessionId);
+      const session = this.getSession(request.sessionId);
+      if (!session) {
+        console.error('[Orchestrator] Session not found:', request.sessionId);
+        throw new OrchestratorError(
+          `Session ${request.sessionId} not found`,
+          'SESSION_NOT_FOUND'
+        );
+      }
+      console.log('[Orchestrator] Session found, processing request');
+      return await this.processRequest(request, session);
+    } catch (error) {
+      console.error('[Orchestrator] Error in process():', error);
+      throw error;
     }
-    return this.processRequest(request, session);
   }
 
   /**

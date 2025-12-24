@@ -104,10 +104,18 @@ export async function POST(request: NextRequest) {
               }
             }
           } catch (error) {
-            const formattedError = ErrorHandler.formatForUser(error);
+            console.error('[Chat API] Streaming error:', error);
+            const aiError = ErrorHandler.getInstance().handle(error, {
+              endpoint: '/api/ai/chat',
+              operation: 'chat_stream',
+            });
+            const userMessage = ErrorHandler.getInstance().formatForUser(aiError);
             const errorData = JSON.stringify({
               type: 'error',
-              error: formattedError,
+              error: {
+                code: aiError.code,
+                message: userMessage,
+              },
               done: true,
             });
             controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
@@ -144,8 +152,29 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[Chat API] Error processing request:', error);
-    const formattedError = ErrorHandler.formatForUser(error);
-    return NextResponse.json({ data: null, error: formattedError }, { status: 500 });
+    console.error('[Chat API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[Chat API] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
+    
+    // Convert error to AIError and format for user
+    const aiError = ErrorHandler.getInstance().handle(error, {
+      endpoint: '/api/ai/chat',
+      operation: 'chat',
+    });
+    const userMessage = ErrorHandler.getInstance().formatForUser(aiError);
+    
+    return NextResponse.json(
+      { 
+        data: null, 
+        error: {
+          code: aiError.code,
+          message: userMessage,
+        }
+      }, 
+      { status: 500 }
+    );
   }
 }
 
