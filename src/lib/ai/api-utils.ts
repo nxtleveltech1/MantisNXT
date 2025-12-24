@@ -202,6 +202,9 @@ export function extractServiceType(
     throw new ConfigurationError('Service type is required', 'unknown');
   }
 
+  // Normalize chatbot to assistant (database stores assistant as chatbot)
+  const normalizedType = serviceType === 'chatbot' ? 'assistant' : serviceType;
+
   const validTypes = [
     'demand_forecasting',
     'anomaly_detection',
@@ -209,11 +212,11 @@ export function extractServiceType(
     'assistant',
     'supplier_discovery',
   ];
-  if (!validTypes.includes(serviceType)) {
+  if (!validTypes.includes(normalizedType)) {
     throw new ConfigurationError(`Invalid service type: ${serviceType}`, serviceType);
   }
 
-  return serviceType as
+  return normalizedType as
     | 'demand_forecasting'
     | 'anomaly_detection'
     | 'supplier_scoring'
