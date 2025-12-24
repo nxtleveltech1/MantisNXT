@@ -45,7 +45,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify session ownership
-    const session = await orchestrator.getSession(validatedBody.sessionId);
+    const session = orchestrator.getSession(validatedBody.sessionId);
+    if (!session) {
+      return NextResponse.json(
+        { data: null, error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } },
+        { status: 404 }
+      );
+    }
     if (session.userId !== userId) {
       return NextResponse.json(
         { data: null, error: { code: 'ACCESS_DENIED', message: 'Session access denied' } },
@@ -137,6 +143,7 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
+    console.error('[Chat API] Error processing request:', error);
     const formattedError = ErrorHandler.formatForUser(error);
     return NextResponse.json({ data: null, error: formattedError }, { status: 500 });
   }

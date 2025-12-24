@@ -27,6 +27,7 @@ import { toolRegistry } from '../tools/registry';
 import { toolExecutor } from '../tools/executor';
 import type { AIProviderId, AIClient } from '@/types/ai';
 import { normalizeToolCalls } from './tool-call-utils';
+import { contextManager } from './context-manager';
 
 /**
  * Unified AI Orchestrator
@@ -482,9 +483,51 @@ Available Tools:`;
   }
 
   /**
-   * Get session by ID
+   * Get session by ID (loads from context manager if not in active sessions)
    */
   getSession(sessionId: string): OrchestratorSession | undefined {
-    return this.activeSessions.get(sessionId);
+    // Check active sessions first
+    let session = this.activeSessions.get(sessionId);
+    if (session) {
+      return session;
+    }
+
+    // Try to load from context manager
+    const loadedSession = contextManager.loadSession(sessionId);
+    if (loadedSession) {
+      // Add to active sessions
+      this.activeSessions.set(sessionId, loadedSession);
+      return loadedSession;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Process a request (convenience wrapper that handles session lookup)
+   */
+  async process(request: OrchestratorRequest): Promise<OrchestratorResponse> {
+    const session = this.getSession(request.sessionId);
+    if (!session) {
+      throw new OrchestratorError(
+        `Session ${request.sessionId} not found`,
+        'SESSION_NOT_FOUND'
+      );
+    }
+    return this.processRequest(request, session);
+  }
+
+  /**
+   * Process a streaming request (convenience wrapper that handles session lookup)
+   */
+  async *processStreaming(request: OrchestratorRequest): OrchestratorStream {
+    const session = this.getSession(request.sessionId);
+    if (!session) {
+      throw new OrchestratorError(
+        `Session ${request.sessionId} not found`,
+        'SESSION_NOT_FOUND'
+      );
+    }
+    yield* this.processStreamingRequest(request, session);
   }
 }
