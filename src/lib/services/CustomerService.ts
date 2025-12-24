@@ -185,6 +185,7 @@ export class CustomerService {
          WHERE name ILIKE $1
             OR email ILIKE $1
             OR company ILIKE $1
+            OR phone ILIKE $1
          ORDER BY created_at DESC
          LIMIT $2`,
         [`%${searchTerm}%`, limit]

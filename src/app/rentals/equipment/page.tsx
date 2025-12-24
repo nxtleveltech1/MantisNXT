@@ -30,6 +30,32 @@ export default function EquipmentPage() {
     fetchEquipment();
   }, []);
 
+  // Refresh equipment list when page becomes visible (e.g., returning from new equipment page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchEquipment();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Also refresh when returning to this page via router
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchEquipment();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const fetchEquipment = async () => {
     try {
       setLoading(true);
@@ -71,10 +97,15 @@ export default function EquipmentPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Equipment Catalog</h1>
-          <Button onClick={() => router.push('/rentals/equipment/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Equipment
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchEquipment}>
+              Refresh
+            </Button>
+            <Button onClick={() => router.push('/rentals/equipment/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Equipment
+            </Button>
+          </div>
         </div>
 
         <Card>

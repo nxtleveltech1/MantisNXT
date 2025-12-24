@@ -23,6 +23,7 @@ export default function EquipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
+    sku: '',
     name: '',
     equipment_type: '',
     brand: '',
@@ -55,6 +56,7 @@ export default function EquipmentDetailPage() {
         const eq = result.data;
         setEquipment(eq);
         setFormData({
+          sku: eq.sku || '',
           name: eq.name || '',
           equipment_type: eq.equipment_type || '',
           brand: eq.brand || '',
@@ -90,6 +92,7 @@ export default function EquipmentDetailPage() {
   const handleSave = async () => {
     try {
       const payload: any = {
+        sku: formData.sku,
         name: formData.name,
         equipment_type: formData.equipment_type,
         brand: formData.brand || undefined,
@@ -122,7 +125,7 @@ export default function EquipmentDetailPage() {
           description: equipmentId === 'new' ? 'Equipment created' : 'Equipment updated',
         });
         if (equipmentId === 'new') {
-          router.push(`/rentals/equipment/${result.data.equipment_id}`);
+          router.push(`/rentals/equipment`);
         } else {
           setEditing(false);
           fetchEquipment();
@@ -204,6 +207,16 @@ export default function EquipmentDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="EQUIP-001"
+                    disabled={equipmentId !== 'new'}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
                   <Input

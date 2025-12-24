@@ -115,15 +115,16 @@ export default function CustomersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch customers
+  // Fetch customers with server-side search
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [debouncedSearch]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v1/customers?limit=1000');
+      const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
+      const response = await fetch(`/api/v1/customers?limit=1000${searchParam}`);
       const result = await response.json();
 
       if (result.success) {
@@ -164,21 +165,9 @@ export default function CustomersPage() {
     }
   };
 
-  // Apply filters and search
+  // Apply filters (search is now handled server-side)
   const filteredCustomers = useMemo(() => {
     let result = [...customers];
-
-    // Apply search
-    if (debouncedSearch) {
-      const search = debouncedSearch.toLowerCase();
-      result = result.filter(
-        c =>
-          c.name.toLowerCase().includes(search) ||
-          c.email?.toLowerCase().includes(search) ||
-          c.company?.toLowerCase().includes(search) ||
-          c.phone?.toLowerCase().includes(search)
-      );
-    }
 
     // Apply segment filter
     if (filters.segment && filters.segment.length > 0) {
@@ -546,11 +535,17 @@ export default function CustomersPage() {
         {/* Results Summary */}
         <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-sm">
-            Showing{' '}
-            <span className="text-foreground font-semibold">{filteredCustomers.length}</span> of{' '}
-            <span className="text-foreground font-semibold">{customers.length}</span> customers
-            {debouncedSearch && (
-              <span className="text-muted-foreground"> matching &quot;{debouncedSearch}&quot;</span>
+            {debouncedSearch ? (
+              <>
+                Showing <span className="text-foreground font-semibold">{filteredCustomers.length}</span> results
+                <span className="text-muted-foreground"> for &quot;{debouncedSearch}&quot;</span>
+              </>
+            ) : (
+              <>
+                Showing{' '}
+                <span className="text-foreground font-semibold">{filteredCustomers.length}</span> of{' '}
+                <span className="text-foreground font-semibold">{customers.length}</span> customers
+              </>
             )}
           </p>
         </div>
