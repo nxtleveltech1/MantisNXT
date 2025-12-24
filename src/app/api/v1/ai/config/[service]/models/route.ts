@@ -53,6 +53,23 @@ async function listAnthropicModels(baseUrl: string, apiKey: string, abort: Abort
   return items.map((m: unknown) => String(m.id || m.name)).filter(Boolean);
 }
 
+async function listGoogleModels(baseUrl: string, apiKey: string, abort: AbortSignal) {
+  const root = baseUrl.replace(/\/+$/, '');
+  // Google Gemini API uses /v1/models or /v1beta/models
+  const url = root.includes('/v1') || root.includes('/v1beta')
+    ? `${root}/models`
+    : `${root}/v1/models`;
+  const res = await fetch(url, {
+    headers: { 'x-goog-api-key': apiKey },
+    signal: abort,
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Google models failed: ${res.status}`);
+  const data = await res.json();
+  const items = Array.isArray(data?.models) ? data.models : [];
+  return items.map((m: unknown) => String(m.name || m.id)).filter(Boolean);
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ service: string }> }
@@ -71,6 +88,7 @@ export async function POST(
     if (!baseUrl) {
       if (provider === 'openai') baseUrl = 'https://api.openai.com';
       else if (provider === 'anthropic') baseUrl = 'https://api.anthropic.com';
+      else if (provider === 'google') baseUrl = 'https://generativelanguage.googleapis.com';
     }
 
     if (!apiKey || !baseUrl) {
@@ -84,9 +102,13 @@ export async function POST(
     const t = setTimeout(() => controller.abort(), 8000);
 
     let models: string[] = [];
-    if (provider === 'anthropic')
+    if (provider === 'anthropic') {
       models = await listAnthropicModels(baseUrl, apiKey, controller.signal);
-    else models = await listOpenAIModels(baseUrl, apiKey, controller.signal);
+    } else if (provider === 'google') {
+      models = await listGoogleModels(baseUrl, apiKey, controller.signal);
+    } else {
+      models = await listOpenAIModels(baseUrl, apiKey, controller.signal);
+    }
 
     clearTimeout(t);
     const normalizedProvider = normalizeProviderKey(provider);

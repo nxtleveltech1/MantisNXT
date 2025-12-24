@@ -1,0 +1,53 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    user: root
+    working_dir: /app
+    entrypoint: ["/usr/local/bin/mantisnxt-entrypoint"]
+    volumes:
+      # Mount the repo for live editing
+      - .:/app:cached
+      # Keep dependencies inside the container (avoid Windows bind-mount perf issues)
+      - mantisnxt_node_modules:/app/node_modules
+      # Persist Bun cache between rebuilds
+      - mantisnxt_bun_cache:/home/node/.bun
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      # File watching on Windows bind mounts can be unreliable; polling is safer.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+
+      # App ports
+      PORT: "3000"
+      APP_PORT: "3000"
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+
+      # Neon / Postgres + auth secrets
+      # IMPORTANT: Do NOT set these here with empty defaults, or they will override `.env.local`.
+      # Put them in `.env.local` (mounted into the container) so secrets are not committed.
+
+      # Redis (optional; defaults to local service)
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      - redis
+    ports:
+      - "3000:3000"
+    # For manual docker-compose usage (outside Dev Containers), start the dev server directly.
+    # Dev Containers will override this command (see `.devcontainer/devcontainer.json`).
+    command: ["bash", "-c", "bun install && bun next dev --turbopack -H 0.0.0.0 -p 3000"]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - mantisnxt_redis_data:/data
+
+volumes:
+  mantisnxt_node_modules:
+  mantisnxt_bun_cache:
+  mantisnxt_redis_data:
+
+

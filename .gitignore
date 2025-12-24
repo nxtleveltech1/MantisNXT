@@ -39,6 +39,9 @@ server.log
 .env.test.local
 .env.production.local
 
+# MCP local config (may contain API keys)
+.mcp.json
+
 # Vercel
 .vercel
 

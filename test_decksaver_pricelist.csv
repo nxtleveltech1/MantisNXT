@@ -1,4 +1,0 @@
-supplier_sku,name,brand,uom,pack_size,price,currency,category_raw,vat_code,barcode
-DS001,Decksaver Cover for Pioneer DJM-900,Decksaver,EA,1,899.00,ZAR,DJ Equipment,15%,1234567890123
-DS002,Decksaver Cover for Pioneer XDJ-RX,Decksaver,EA,1,1299.00,ZAR,DJ Equipment,15%,1234567890124
-DS003,Decksaver Cover for Pioneer DDJ-1000,Decksaver,EA,1,799.00,ZAR,DJ Equipment,15%,1234567890125

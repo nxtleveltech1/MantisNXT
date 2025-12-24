@@ -48,12 +48,12 @@ The inventory management system has been fully integrated with the NXT-SPP (Supp
 
 2. **Install dependencies**
    ```bash
-   npm install
+   bun install
    ```
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env.local
+   cp env.example .env.local
    # Edit .env.local with your database credentials
    ```
 
@@ -190,11 +190,13 @@ For a live-reloading dev server inside Docker, use the development compose file:
 ```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
-This mounts the repository into the container, installs dependencies, and runs `npm run dev`.
+This mounts the repository into the container, installs dependencies, and runs the dev server.
+
+**Important**: create a `.env.local` (see `env.example`) with a valid Neon connection string before starting, or the app will fail fast on env validation.
 
 ### Cursor / VS Code Dev Containers
 
-A `.devcontainer/devcontainer.json` is included. In Cursor (or VS Code) choose **Dev Containers: Open Folder in Container...** and select the project; the editor will attach to the `docker-compose.dev.yml` service and run `npm install` automatically.
+A `.devcontainer/devcontainer.json` is included. In Cursor (or VS Code) choose **Dev Containers: Open Folder in Container...** and select the project; the editor will attach to the `docker-compose.dev.yml` service and run `bun install` automatically.
 
 ## Contributing
 

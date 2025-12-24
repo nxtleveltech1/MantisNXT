@@ -2,16 +2,25 @@
   "name": "MantisNXT Dev",
   "dockerComposeFile": ["../docker-compose.dev.yml"],
   "service": "app",
+  "runServices": ["app", "redis"],
   "workspaceFolder": "/app",
   "overrideCommand": true,
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "bun install",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js dev server",
+      "onAutoForward": "openBrowser"
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "ms-ossdata.vscode-postgresql"
       ],
       "settings": {
         "editor.formatOnSave": true,
