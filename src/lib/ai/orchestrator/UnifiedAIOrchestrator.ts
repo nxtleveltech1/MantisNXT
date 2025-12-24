@@ -156,29 +156,28 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       this.setState('streaming_response', { sessionId: session.id });
 
       // Select provider and prepare
-      const provider = this.selectProvider(validatedRequest);
+      const provider = await this.selectProvider(validatedRequest, session);
       const systemPrompt = this.buildSystemPrompt(session, validatedRequest);
       const messages = this.buildMessages(validatedRequest, systemPrompt);
       const availableTools = this.getAvailableTools(validatedRequest.options.tools || []);
       const toolSchemas = availableTools.length > 0 ? toolRegistry.getToolsSchema() : undefined;
 
-      // Select provider for streaming
-      const provider = await this.selectProvider(validatedRequest, session);
+      // Convert messages to prompt string for streaming
+      const prompt = messages
+        .map(m => `${m.role === 'system' ? 'System' : m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n\n');
 
       // Stream the response
-      const stream = await provider.streamText(
-        messages.map(m => ({ role: m.role, content: m.content })).join('\n'),
-        {
-          maxTokens: validatedRequest.options.maxTokens,
-          temperature: validatedRequest.options.temperature,
-        }
-      );
+      const stream = await provider.streamText(prompt, {
+        maxTokens: validatedRequest.options.maxTokens,
+        temperature: validatedRequest.options.temperature,
+      });
 
       for await (const chunk of stream) {
         yield {
           type: 'text',
-          content: chunk.token,
-          done: chunk.done || false,
+          content: chunk.token || '',
+          done: chunk.done ?? false,
           metadata: {
             provider: provider.id,
             sessionId: session.id,
