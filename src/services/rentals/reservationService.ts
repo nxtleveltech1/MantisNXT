@@ -1,3 +1,4 @@
+// UPDATE: [2025-01-27] Complete reservation service with full financial calculations and automatic rental agreement generation
 /**
  * Reservation Service
  * Handles rental reservation management
@@ -11,6 +12,7 @@ import type {
   ReservationStatus,
 } from '@/types/rentals';
 import { generateReservationNumber } from '@/lib/utils/reservation-number';
+import { generateRentalAgreement } from './agreementService';
 
 export async function getReservationById(reservationId: string): Promise<Reservation | null> {
   const result = await query<Reservation>(
@@ -116,9 +118,10 @@ export async function createReservation(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Calculate total equipment value and security deposit
+    // Calculate total equipment value, security deposit, and rental costs
     let totalEquipmentValue = 0;
     let totalSecurityDeposit = 0;
+    let subtotal = 0;
 
     for (const item of input.items) {
       const equipment = await client.query(
@@ -133,11 +136,21 @@ export async function createReservation(
       const eq = equipment.rows[0];
       const dailyRate = eq.rental_rate_daily || 0;
       const lineTotal = dailyRate * rentalPeriodDays * item.quantity;
-      totalEquipmentValue += eq.replacement_value || 0;
+      subtotal += lineTotal;
+      totalEquipmentValue += (eq.replacement_value || 0) * item.quantity;
       totalSecurityDeposit += (eq.security_deposit || 0) * item.quantity;
     }
 
-    // Create reservation
+    // Calculate delivery and setup costs
+    const deliveryCost = input.delivery_required ? 500 : 0;
+    const setupCost = input.setup_required ? 300 : 0;
+    const totalBeforeTax = subtotal + deliveryCost + setupCost;
+    const taxRate = 0.15; // 15% VAT
+    const taxAmount = totalBeforeTax * taxRate;
+    const totalRentalAmount = totalBeforeTax + taxAmount;
+    const totalAmountDue = totalRentalAmount + totalSecurityDeposit;
+
+    // Create reservation with all financial fields
     const reservationResult = await client.query<Reservation>(
       `
         INSERT INTO rentals.reservations (
@@ -145,9 +158,12 @@ export async function createReservation(
           event_date_start, event_date_end, rental_start_date, rental_end_date,
           pickup_location_id, delivery_address, delivery_required, delivery_cost,
           setup_required, setup_cost, status, total_equipment_value,
-          security_deposit_amount, created_by
+          security_deposit_amount, created_by,
+          subtotal, tax_rate, tax_amount, discount_amount,
+          total_rental_amount, total_amount_due, payment_status,
+          amount_due, currency, exchange_rate
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16, $17, $18, $19, $20, $21, $22, $23, 'pending', $24, 'ZAR', 1.0)
         RETURNING *
       `,
       [
@@ -162,12 +178,19 @@ export async function createReservation(
         input.pickup_location_id || null,
         input.delivery_address || null,
         input.delivery_required || false,
-        0, // delivery_cost calculated separately
+        deliveryCost,
         input.setup_required || false,
-        0, // setup_cost calculated separately
+        setupCost,
         totalEquipmentValue,
         totalSecurityDeposit,
         createdBy,
+        subtotal,
+        taxRate,
+        taxAmount,
+        0, // discount_amount
+        totalRentalAmount,
+        totalAmountDue,
+        totalAmountDue, // amount_due
       ]
     );
 
@@ -205,6 +228,9 @@ export async function createReservation(
         ]
       );
     }
+
+    // Generate rental agreement
+    await generateRentalAgreement(client, reservation.reservation_id, reservationNumber);
 
     return reservation;
   });

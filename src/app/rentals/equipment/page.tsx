@@ -1,3 +1,4 @@
+// UPDATE: [2025-01-27] Fixed equipment list refresh and auto-refresh on page visibility
 'use client';
 
 import React, { useState, useEffect } from 'react';

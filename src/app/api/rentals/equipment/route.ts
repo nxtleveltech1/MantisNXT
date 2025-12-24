@@ -1,3 +1,4 @@
+// UPDATE: [2025-01-27] Fixed equipment API to default to active equipment for proper listing
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth/auth-helper';
@@ -73,11 +74,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Default to showing only active equipment if not specified
     const equipment = await equipmentService.listEquipment({
       equipment_type,
       availability_status,
       category_id,
-      is_active,
+      is_active: is_active !== undefined ? is_active : true, // Default to active only
       limit,
       offset,
     });

@@ -1,3 +1,4 @@
+// UPDATE: [2025-01-27] Complete reservation creation form with equipment selection, financial breakdown, and contract generation
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -67,11 +68,14 @@ export default function NewReservationPage() {
         setCustomers(customersData.data || []);
       }
 
-      // Fetch available equipment
-      const equipmentRes = await fetch('/api/rentals/equipment?availability_status=available&limit=100');
+      // Fetch all active equipment (not just available - we'll filter in UI)
+      const equipmentRes = await fetch('/api/rentals/equipment?limit=1000');
       const equipmentData = await equipmentRes.json();
       if (equipmentData.success) {
-        setAvailableEquipment(equipmentData.data || []);
+        // Filter to show available and active equipment
+        setAvailableEquipment((equipmentData.data || []).filter(
+          (eq: Equipment) => eq.availability_status === 'available' && eq.is_active
+        ));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -115,14 +119,54 @@ export default function NewReservationPage() {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const calculateTotal = () => {
-    if (!formData.rental_start_date || !formData.rental_end_date) return 0;
+  const calculateFinancials = () => {
+    if (!formData.rental_start_date || !formData.rental_end_date) {
+      return {
+        days: 0,
+        subtotal: 0,
+        deliveryCost: formData.delivery_required ? 500 : 0, // Default delivery cost
+        setupCost: formData.setup_required ? 300 : 0, // Default setup cost
+        taxRate: 0.15, // 15% VAT
+        taxAmount: 0,
+        totalSecurityDeposit: 0,
+        totalAmount: 0,
+      };
+    }
     
     const start = new Date(formData.rental_start_date);
     const end = new Date(formData.rental_end_date);
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     
-    return items.reduce((sum, item) => sum + (item.daily_rate * item.quantity * days), 0);
+    const subtotal = items.reduce((sum, item) => {
+      const equipment = availableEquipment.find(e => e.equipment_id === item.equipment_id);
+      const dailyRate = equipment?.rental_rate_daily || item.daily_rate || 0;
+      return sum + (dailyRate * item.quantity * days);
+    }, 0);
+    
+    const deliveryCost = formData.delivery_required ? 500 : 0;
+    const setupCost = formData.setup_required ? 300 : 0;
+    const totalBeforeTax = subtotal + deliveryCost + setupCost;
+    const taxRate = 0.15; // 15% VAT
+    const taxAmount = totalBeforeTax * taxRate;
+    const totalAmount = totalBeforeTax + taxAmount;
+    
+    // Calculate total security deposit
+    const totalSecurityDeposit = items.reduce((sum, item) => {
+      const equipment = availableEquipment.find(e => e.equipment_id === item.equipment_id);
+      const deposit = equipment?.security_deposit || 0;
+      return sum + (deposit * item.quantity);
+    }, 0);
+    
+    return {
+      days,
+      subtotal,
+      deliveryCost,
+      setupCost,
+      taxRate,
+      taxAmount,
+      totalSecurityDeposit,
+      totalAmount,
+    };
   };
 
   const handleSubmit = async () => {
@@ -276,16 +320,10 @@ export default function NewReservationPage() {
                   onChange={(e) => setFormData({ ...formData, rental_end_date: e.target.value })}
                 />
               </div>
-              {formData.rental_start_date && formData.rental_end_date && (
-                <div className="rounded-lg bg-muted p-3">
+              {formData.rental_start_date && formData.rental_end_date && items.length > 0 && (
+                <div className="rounded-lg bg-muted p-3 space-y-1">
                   <p className="text-sm font-medium">
-                    Total Days: {Math.ceil(
-                      (new Date(formData.rental_end_date).getTime() - new Date(formData.rental_start_date).getTime()) /
-                      (1000 * 60 * 60 * 24)
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Estimated Total: R {calculateTotal().toFixed(2)}
+                    Rental Period: {calculateFinancials().days} day(s)
                   </p>
                 </div>
               )}
@@ -359,7 +397,7 @@ export default function NewReservationPage() {
                 onChange={(e) => setFormData({ ...formData, delivery_required: e.target.checked })}
                 className="h-4 w-4"
               />
-              <Label htmlFor="delivery_required">Delivery Required</Label>
+              <Label htmlFor="delivery_required">Delivery Required (R 500.00)</Label>
             </div>
             {formData.delivery_required && (
               <div className="space-y-2">
@@ -380,10 +418,70 @@ export default function NewReservationPage() {
                 onChange={(e) => setFormData({ ...formData, setup_required: e.target.checked })}
                 className="h-4 w-4"
               />
-              <Label htmlFor="setup_required">Setup Required</Label>
+              <Label htmlFor="setup_required">Setup Required (R 300.00)</Label>
             </div>
           </CardContent>
         </Card>
+
+        {/* Financial Breakdown */}
+        {items.length > 0 && formData.rental_start_date && formData.rental_end_date && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Breakdown</CardTitle>
+              <CardDescription>Rental cost calculation and contract summary</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Equipment Rental ({calculateFinancials().days} days)</span>
+                  <span className="font-medium">R {calculateFinancials().subtotal.toFixed(2)}</span>
+                </div>
+                {formData.delivery_required && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span className="font-medium">R {calculateFinancials().deliveryCost.toFixed(2)}</span>
+                  </div>
+                )}
+                {formData.setup_required && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Setup</span>
+                    <span className="font-medium">R {calculateFinancials().setupCost.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm border-t pt-2">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">
+                    R {(calculateFinancials().subtotal + calculateFinancials().deliveryCost + calculateFinancials().setupCost).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">VAT ({(calculateFinancials().taxRate * 100).toFixed(0)}%)</span>
+                  <span className="font-medium">R {calculateFinancials().taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>Total Rental Amount</span>
+                  <span>R {calculateFinancials().totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">Security Deposit Required</span>
+                  <span className="font-medium text-orange-600">R {calculateFinancials().totalSecurityDeposit.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <span>Total Amount Due</span>
+                  <span className="text-primary">
+                    R {(calculateFinancials().totalAmount + calculateFinancials().totalSecurityDeposit).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 mt-4">
+                <p className="text-sm text-blue-900 dark:text-blue-100">
+                  <strong>Note:</strong> A rental agreement/contract will be automatically generated upon reservation creation.
+                  The security deposit will be refunded upon return of equipment in good condition.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );

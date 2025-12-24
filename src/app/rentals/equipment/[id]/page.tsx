@@ -1,3 +1,4 @@
+// UPDATE: [2025-01-27] Added SKU field to equipment form and fixed redirect after creation
 'use client';
 
 import React, { useState, useEffect } from 'react';
