@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Package, DollarSign, Loader2 } from 'lucide-react';
 import { CostComparison } from './CostComparison';
+import { AddressAutocomplete } from './AddressAutocomplete';
 import type { Address, DeliveryServiceTier } from '@/types/logistics';
 
 interface DeliverySelectorProps {
@@ -144,19 +145,14 @@ export function DeliverySelector({
       <CardContent className="space-y-6">
         {/* Delivery Address */}
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="delivery_address">Delivery Address *</Label>
-            <Textarea
-              id="delivery_address"
-              value={deliveryAddress.formatted || ''}
-              onChange={(e) =>
-                setDeliveryAddress({ ...deliveryAddress, formatted: e.target.value })
-              }
-              placeholder="Enter full delivery address"
-              rows={3}
-              required
-            />
-          </div>
+          <AddressAutocomplete
+            id="delivery_address"
+            label="Delivery Address"
+            value={deliveryAddress.formatted || ''}
+            onAddressChange={setDeliveryAddress}
+            placeholder="Start typing delivery address..."
+            required
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="delivery_contact_name">Contact Name</Label>

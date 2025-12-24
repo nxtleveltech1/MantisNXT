@@ -236,6 +236,13 @@ export class UnifiedAIOrchestrator extends EventEmitter {
 
     // Create provider client with database credentials
     const baseConfig = getProviderConfigFromAI(providerId);
+    if (!baseConfig) {
+      throw new OrchestratorError(
+        `Provider ${providerId} is not available in the system configuration`,
+        'PROVIDER_NOT_AVAILABLE'
+      );
+    }
+
     const customConfig = {
       ...baseConfig,
       enabled: true,
@@ -251,9 +258,17 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       },
     };
     
-    const client = new ProviderClient(customConfig);
-    console.log('[Orchestrator] Using database-configured provider:', providerId, 'model:', model || 'default');
-    return client;
+    try {
+      const client = new ProviderClient(customConfig);
+      console.log('[Orchestrator] Using database-configured provider:', providerId, 'model:', model || 'default');
+      return client;
+    } catch (error) {
+      throw new OrchestratorError(
+        `Failed to initialize provider ${providerId}: ${error instanceof Error ? error.message : String(error)}`,
+        'PROVIDER_INIT_FAILED',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**

@@ -15,6 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Package, User, Clock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { AddressAutocomplete } from '@/components/logistics/AddressAutocomplete';
+import type { Address } from '@/types/logistics';
 
 export default function NewDeliveryPage() {
   const router = useRouter();
@@ -23,10 +25,10 @@ export default function NewDeliveryPage() {
     customer_name: '',
     customer_phone: '',
     customer_email: '',
-    pickup_address: '',
+    pickup_address: { formatted: '' } as Address,
     pickup_contact_name: '',
     pickup_contact_phone: '',
-    delivery_address: '',
+    delivery_address: { formatted: '' } as Address,
     delivery_contact_name: '',
     delivery_contact_phone: '',
     package_type: '',
@@ -42,7 +44,7 @@ export default function NewDeliveryPage() {
     is_insured: false,
   });
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | Address) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -54,25 +56,15 @@ export default function NewDeliveryPage() {
     setLoading(true);
 
     try {
-      // Parse addresses (simplified - in production, use proper address parsing)
-      const pickupAddress = {
-        formatted: formData.pickup_address,
-        street: formData.pickup_address,
-      };
-      const deliveryAddress = {
-        formatted: formData.delivery_address,
-        street: formData.delivery_address,
-      };
-
       // Prepare payload, converting empty strings to undefined
       const payload: Record<string, any> = {
         customer_name: formData.customer_name || undefined,
         customer_phone: formData.customer_phone || undefined,
         customer_email: formData.customer_email || undefined,
-        pickup_address: pickupAddress,
+        pickup_address: formData.pickup_address.formatted ? formData.pickup_address : undefined,
         pickup_contact_name: formData.pickup_contact_name || undefined,
         pickup_contact_phone: formData.pickup_contact_phone || undefined,
-        delivery_address: deliveryAddress,
+        delivery_address: formData.delivery_address.formatted ? formData.delivery_address : undefined,
         delivery_contact_name: formData.delivery_contact_name || undefined,
         delivery_contact_phone: formData.delivery_contact_phone || undefined,
         package_type: formData.package_type || undefined,
@@ -200,16 +192,14 @@ export default function NewDeliveryPage() {
               <CardDescription>Where the package will be collected from</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="pickup_address">Address *</Label>
-                <Textarea
-                  id="pickup_address"
-                  value={formData.pickup_address}
-                  onChange={(e) => handleInputChange('pickup_address', e.target.value)}
-                  required
-                  rows={2}
-                />
-              </div>
+              <AddressAutocomplete
+                id="pickup_address"
+                label="Address"
+                value={formData.pickup_address.formatted || ''}
+                onAddressChange={(address) => handleInputChange('pickup_address', address)}
+                placeholder="Start typing pickup address..."
+                required
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pickup_contact_name">Contact Name</Label>
@@ -242,16 +232,14 @@ export default function NewDeliveryPage() {
               <CardDescription>Where the package will be delivered to</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="delivery_address">Address *</Label>
-                <Textarea
-                  id="delivery_address"
-                  value={formData.delivery_address}
-                  onChange={(e) => handleInputChange('delivery_address', e.target.value)}
-                  required
-                  rows={2}
-                />
-              </div>
+              <AddressAutocomplete
+                id="delivery_address"
+                label="Address"
+                value={formData.delivery_address.formatted || ''}
+                onAddressChange={(address) => handleInputChange('delivery_address', address)}
+                placeholder="Start typing delivery address..."
+                required
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="delivery_contact_name">Contact Name</Label>

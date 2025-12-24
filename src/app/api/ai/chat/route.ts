@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { orchestrator } from '@/lib/ai/orchestrator';
+import { orchestrator, OrchestratorError } from '@/lib/ai/orchestrator';
 import { preferenceManager } from '@/lib/ai/preferences';
 import { ErrorHandler } from '@/lib/ai/errors';
 
@@ -156,7 +156,30 @@ export async function POST(request: NextRequest) {
     console.error('[Chat API] Error details:', {
       message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : 'Unknown',
+      code: (error as any)?.code,
     });
+    
+    // Handle OrchestratorError with appropriate status codes
+    if (error instanceof OrchestratorError) {
+      const orchestratorError = error;
+      const statusCode = 
+        orchestratorError.code === 'SERVICE_NOT_CONFIGURED' || orchestratorError.code === 'PROVIDER_NOT_CONFIGURED' ? 400 :
+        orchestratorError.code === 'SESSION_NOT_FOUND' ? 404 :
+        orchestratorError.code === 'ACCESS_DENIED' || orchestratorError.code === 'AUTH_REQUIRED' ? 403 :
+        orchestratorError.code === 'MISSING_ORG_ID' ? 400 :
+        500;
+      
+      return NextResponse.json(
+        { 
+          data: null, 
+          error: {
+            code: orchestratorError.code,
+            message: orchestratorError.message,
+          }
+        }, 
+        { status: statusCode }
+      );
+    }
     
     // Convert error to AIError and format for user
     const aiError = ErrorHandler.getInstance().handle(error, {
