@@ -22,12 +22,14 @@ import {
   orchestratorRequestSchema,
   conversationTurnSchema,
 } from './types';
-import { getProviderClient, getProviderClientsForFallback } from '../providers';
+import { getProviderClient, getProviderClientsForFallback, ProviderClient } from '../providers';
+import { getProviderConfig as getProviderConfigFromAI } from '../config';
 import { toolRegistry } from '../tools/registry';
 import { toolExecutor } from '../tools/executor';
 import type { AIProviderId, AIClient } from '@/types/ai';
 import { normalizeToolCalls } from './tool-call-utils';
 import { contextManager } from './context-manager';
+import { getConfig } from '@/app/api/v1/ai/config/_store';
 
 /**
  * Unified AI Orchestrator
@@ -64,7 +66,7 @@ export class UnifiedAIOrchestrator extends EventEmitter {
 
       // Select appropriate provider
       console.log('[Orchestrator] Selecting provider...');
-      const provider = this.selectProvider(validatedRequest);
+      const provider = await this.selectProvider(validatedRequest, session);
       console.log('[Orchestrator] Provider selected:', provider.id);
       this.emitEvent('provider_selected', {
         sessionId: session.id,
@@ -160,6 +162,9 @@ export class UnifiedAIOrchestrator extends EventEmitter {
       const availableTools = this.getAvailableTools(validatedRequest.options.tools || []);
       const toolSchemas = availableTools.length > 0 ? toolRegistry.getToolsSchema() : undefined;
 
+      // Select provider for streaming
+      const provider = await this.selectProvider(validatedRequest, session);
+
       // Stream the response
       const stream = await provider.streamText(
         messages.map(m => ({ role: m.role, content: m.content })).join('\n'),
@@ -199,27 +204,57 @@ export class UnifiedAIOrchestrator extends EventEmitter {
 
   /**
    * Select the best AI provider for the request
+   * Loads assistant service config from database (ai_service_config table)
    */
-  private selectProvider(request: OrchestratorRequest): AIClient {
-    // Use fallback chain if configured
-    const clients = getProviderClientsForFallback();
-
-    // For now, just return the first healthy provider
-    // TODO: Implement intelligent provider selection based on:
-    // - Provider preferences
-    // - Request characteristics
-    // - Provider health status
-    // - Cost optimization
-    // - Response quality requirements
-
-    for (const client of clients) {
-      // Basic health check - in production, use actual health monitoring
-      if (client) {
-        return client;
-      }
+  private async selectProvider(request: OrchestratorRequest, session: OrchestratorSession): Promise<AIClient> {
+    if (!session.orgId) {
+      throw new OrchestratorError('Organization ID required for provider selection', 'MISSING_ORG_ID');
     }
 
-    throw new OrchestratorError('No healthy AI providers available', 'NO_PROVIDERS_AVAILABLE');
+    // Load assistant service config from database
+    const assistantConfig = await getConfig(session.orgId, 'assistant');
+    
+    if (!assistantConfig || !assistantConfig.enabled) {
+      throw new OrchestratorError(
+        'Assistant service not configured or disabled. Please configure it in AI Settings.',
+        'SERVICE_NOT_CONFIGURED'
+      );
+    }
+
+    const config = assistantConfig.config;
+    const providerId = (config.activeProvider || config.provider || 'openai') as AIProviderId;
+    const providerSection = config.providers?.[providerId] || {};
+    const apiKey = providerSection.apiKey || config.apiKey;
+    const baseUrl = providerSection.baseUrl || config.baseUrl;
+    const model = providerSection.model || config.model;
+
+    if (!apiKey) {
+      throw new OrchestratorError(
+        `Provider ${providerId} API key not configured for assistant service`,
+        'PROVIDER_NOT_CONFIGURED'
+      );
+    }
+
+    // Create provider client with database credentials
+    const baseConfig = getProviderConfigFromAI(providerId);
+    const customConfig = {
+      ...baseConfig,
+      enabled: true,
+      credentials: {
+        ...baseConfig.credentials,
+        apiKey: apiKey as string,
+        baseUrl: baseUrl as string | undefined,
+      },
+      models: {
+        ...baseConfig.models,
+        default: model as string || baseConfig.models.default,
+        chat: model as string || baseConfig.models.chat,
+      },
+    };
+    
+    const client = new ProviderClient(customConfig);
+    console.log('[Orchestrator] Using database-configured provider:', providerId, 'model:', model || 'default');
+    return client;
   }
 
   /**

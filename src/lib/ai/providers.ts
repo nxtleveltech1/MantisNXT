@@ -489,7 +489,7 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
   }
 };
 
-class ProviderClient implements AIClient {
+export class ProviderClient implements AIClient {
   readonly id: AIProviderId;
   readonly supportsStreaming: boolean;
   readonly supportsEmbeddings: boolean;
@@ -1110,7 +1110,20 @@ export const getProviderClient = (providerId: AIProviderId): AIClient =>
 
 export const getProviderClientsForFallback = (preferred?: AIProviderId): AIClient[] => {
   const chain = getProviderFallbackChain(preferred);
-  return chain.map(providerId => getOrCreateProviderClient(providerId));
+  const clients: AIClient[] = [];
+  
+  for (const providerId of chain) {
+    try {
+      const client = getOrCreateProviderClient(providerId);
+      clients.push(client);
+    } catch (error) {
+      console.warn(`[Providers] Failed to initialize provider ${providerId}:`, error instanceof Error ? error.message : String(error));
+      // Continue to next provider in fallback chain
+      continue;
+    }
+  }
+  
+  return clients;
 };
 
 export const getProviderHealthStatus = (providerId: AIProviderId): AIProviderHealth =>
