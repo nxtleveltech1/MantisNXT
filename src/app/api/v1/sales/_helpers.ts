@@ -1,7 +1,20 @@
+// UPDATE: [2025-12-25] Added getUserId helper for DocuStore integration
+
 import type { NextRequest } from 'next/server';
 import { query } from '@/lib/database';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Get user ID from request headers
+ */
+export async function getUserId(request: NextRequest): Promise<string | undefined> {
+  const userId = request.headers.get('x-user-id') ?? request.headers.get('x-clerk-user-id');
+  if (userId && UUID_REGEX.test(userId)) {
+    return userId;
+  }
+  return undefined;
+}
 
 /**
  * Get organization ID from request with fallback

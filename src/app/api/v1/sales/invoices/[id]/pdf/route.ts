@@ -1,49 +1,13 @@
+// UPDATE: [2025-12-25] Added DocuStore integration for invoice PDF storage
+
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { InvoiceService } from '@/lib/services/sales';
-import { query } from '@/lib/database/unified-connection';
-import { getOrgId } from '../../../_helpers';
-import { getPlatformBranding } from '@/lib/services/pdf/platform-branding';
-import { renderHtmlToPdfBuffer } from '@/lib/services/pdf/html-to-pdf';
-import { renderSalesDocumentHtml } from '@/lib/services/sales/documents/sales-document-template';
+import { getOrgId, getUserId } from '../../../_helpers';
+import { SalesPDFService } from '@/lib/services/sales/documents/sales-pdf-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-type CustomerRow = {
-  id: string;
-  org_id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-  address: unknown | null;
-};
-
-function normalizeAddressLines(address: unknown): string[] | null {
-  if (!address || typeof address !== 'object') return null;
-  const a = address as Record<string, unknown>;
-
-  const parts = [
-    typeof a.street === 'string' ? a.street : null,
-    typeof a.city === 'string' ? a.city : null,
-    typeof a.state === 'string' ? a.state : null,
-    typeof a.postal_code === 'string' ? a.postal_code : null,
-    typeof a.country === 'string' ? a.country : null,
-  ].filter((x): x is string => Boolean(x && x.trim()));
-
-  return parts.length > 0 ? parts : null;
-}
-
-async function getCustomer(orgId: string, customerId: string): Promise<CustomerRow | null> {
-  const result = await query<CustomerRow>(
-    `SELECT id, org_id, name, email, phone, company, address
-     FROM customer
-     WHERE id = $1 AND org_id = $2`,
-    [customerId, orgId]
-  );
-  return result.rows[0] ?? null;
-}
 
 export async function GET(
   request: NextRequest,
@@ -52,6 +16,10 @@ export async function GET(
   try {
     const { id } = await context.params;
     const orgId = await getOrgId(request);
+    const userId = await getUserId(request).catch(() => undefined);
+    
+    // Check if we should store in DocuStore
+    const storeInDocuStore = request.nextUrl.searchParams.get('store') === 'true';
 
     const invoice = await InvoiceService.getInvoiceById(id, orgId);
     if (!invoice) {
@@ -62,59 +30,123 @@ export async function GET(
     }
 
     const items = await InvoiceService.getInvoiceItems(id);
-    const customer = await getCustomer(orgId, invoice.customer_id);
+    const customer = await SalesPDFService.getCustomerInfo(orgId, invoice.customer_id);
 
-    const meta = invoice.metadata ?? null;
-    const source = meta && typeof meta === 'object' && typeof meta.source === 'string' ? meta.source : null;
-    const salesperson =
-      meta && typeof meta === 'object' && typeof meta.salesperson === 'string' ? meta.salesperson : null;
-
-    const branding = await getPlatformBranding();
-    const html = renderSalesDocumentHtml({
-      kind: 'invoice',
-      logoDataUri: branding.logoDataUri,
-      accentHex: branding.accentHex,
-      companyDisplayName: 'NXT Level Tech',
-      customer: {
-        name: customer?.name ?? invoice.customer_id,
-        company: customer?.company ?? null,
-        email: customer?.email ?? null,
-        phone: customer?.phone ?? null,
-        addressLines: normalizeAddressLines(customer?.address ?? null),
-      },
-      header: {
-        documentNumber: invoice.document_number,
+    const result = await SalesPDFService.generatePDF({
+      document: {
+        id: invoice.id,
+        org_id: orgId,
+        customer_id: invoice.customer_id,
+        document_number: invoice.document_number,
+        reference_number: invoice.reference_number,
         status: invoice.status,
         currency: invoice.currency,
-        issueDate: invoice.created_at,
-        dueDate: invoice.due_date ?? null,
-        referenceNumber: invoice.reference_number ?? null,
-        source,
-        salesperson,
+        subtotal: invoice.subtotal,
+        total_tax: invoice.total_tax,
+        total: invoice.total,
+        amount_paid: invoice.amount_paid,
+        amount_due: invoice.amount_due,
+        notes: invoice.notes,
+        due_date: invoice.due_date,
+        created_at: invoice.created_at,
+        metadata: invoice.metadata,
       },
       items,
-      totals: {
-        subtotal: invoice.subtotal,
-        totalTax: invoice.total_tax,
-        total: invoice.total,
-        amountPaid: invoice.amount_paid,
-        amountDue: invoice.amount_due,
+      customer: customer || {
+        id: invoice.customer_id,
+        name: invoice.customer_id,
       },
-      notes: invoice.notes ?? null,
+      documentKind: 'invoice',
+      storeInDocuStore,
+      userId,
     });
 
-    const pdfBuffer = await renderHtmlToPdfBuffer({ html });
+    // If stored, return metadata in headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${invoice.document_number}.pdf"`,
+      'Cache-Control': 'no-store, max-age=0',
+    };
+    
+    if (result.documentId) {
+      headers['X-DocuStore-Document-Id'] = result.documentId;
+    }
+    if (result.artifactId) {
+      headers['X-DocuStore-Artifact-Id'] = result.artifactId;
+    }
 
-    const filename = `${invoice.document_number}.pdf`;
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${filename}"`,
-        'Cache-Control': 'no-store, max-age=0',
+    return new NextResponse(result.pdfBuffer, { headers });
+  } catch (error: unknown) {
+    console.error('Error in GET /api/v1/sales/invoices/[id]/pdf:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to generate PDF' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST - Generate PDF and store in DocuStore
+ */
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const orgId = await getOrgId(request);
+    const userId = await getUserId(request).catch(() => undefined);
+
+    const invoice = await InvoiceService.getInvoiceById(id, orgId);
+    if (!invoice) {
+      return NextResponse.json(
+        { success: false, error: 'Invoice not found' },
+        { status: 404 }
+      );
+    }
+
+    const items = await InvoiceService.getInvoiceItems(id);
+    const customer = await SalesPDFService.getCustomerInfo(orgId, invoice.customer_id);
+
+    const result = await SalesPDFService.generatePDF({
+      document: {
+        id: invoice.id,
+        org_id: orgId,
+        customer_id: invoice.customer_id,
+        document_number: invoice.document_number,
+        reference_number: invoice.reference_number,
+        status: invoice.status,
+        currency: invoice.currency,
+        subtotal: invoice.subtotal,
+        total_tax: invoice.total_tax,
+        total: invoice.total,
+        amount_paid: invoice.amount_paid,
+        amount_due: invoice.amount_due,
+        notes: invoice.notes,
+        due_date: invoice.due_date,
+        created_at: invoice.created_at,
+        metadata: invoice.metadata,
+      },
+      items,
+      customer: customer || {
+        id: invoice.customer_id,
+        name: invoice.customer_id,
+      },
+      documentKind: 'invoice',
+      storeInDocuStore: true,
+      userId,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        documentId: result.documentId,
+        artifactId: result.artifactId,
+        documentNumber: invoice.document_number,
       },
     });
   } catch (error: unknown) {
-    console.error('Error in GET /api/v1/sales/invoices/[id]/pdf:', error);
+    console.error('Error in POST /api/v1/sales/invoices/[id]/pdf:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to generate PDF' },
       { status: 500 }

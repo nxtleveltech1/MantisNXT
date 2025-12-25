@@ -94,6 +94,14 @@ export interface SigningDocument {
   // Metadata
   tags: string[];
   metadata?: Record<string, unknown>;
+  
+  // Additional properties for API integration
+  hasArtifacts?: boolean;
+  entityLinks?: Array<{
+    entity_type: string;
+    entity_id: string;
+    link_type: string;
+  }>;
 }
 
 // Folder with nested documents
@@ -125,6 +133,7 @@ export type DocumentAction =
   | 'sign'
   | 'edit'
   | 'download'
+  | 'generate_pdf'
   | 'resend'
   | 'void'
   | 'delete'

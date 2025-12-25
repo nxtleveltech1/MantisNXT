@@ -1,4 +1,4 @@
-// UPDATE: [2025-12-25] Complete DocuStore interface with signing workflow, folders, and signer management
+// UPDATE: [2025-12-25] Complete DocuStore interface with real API integration and document generation
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -12,7 +12,6 @@ import {
   Globe,
   RefreshCw,
   FileText,
-  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,6 @@ import { AdvancedSearchDialog } from '@/components/docustore/AdvancedSearchDialo
 import type {
   SigningDocument,
   DocuStoreFolder,
-  FolderWithDocuments,
   StatusCounts,
   FolderCounts,
   DocumentSigningStatus,
@@ -51,215 +49,162 @@ import type {
   AdvancedSearchParams,
   DocuStoreRowItem,
 } from '@/types/docustore';
-import { getAvatarInitials } from '@/types/docustore';
 
-// Mock data generator for demo purposes
-function generateMockData(): {
-  documents: SigningDocument[];
-  folders: DocuStoreFolder[];
-  statusCounts: StatusCounts;
-  folderCounts: FolderCounts;
-} {
-  const signers = [
-    { name: 'Mohamed Elabbouri', email: 'mohamed@hello.com' },
-    { name: 'Abdallah Shadid', email: 'abdallah@hello.com' },
-    { name: 'Mohamed Mosaad', email: 'mosaad@hello.com' },
-    { name: 'Ahmed Ali', email: 'ahmed@hello.com' },
-    { name: 'Sara Johnson', email: 'sara@hello.com' },
-  ];
+// API response types
+interface ApiDocument {
+  id: string;
+  org_id: string;
+  title: string;
+  description?: string;
+  document_type?: string;
+  status: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  artifacts?: Array<{
+    id: string;
+    artifact_type: string;
+    filename: string;
+    storage_path: string;
+  }>;
+  links?: Array<{
+    entity_type: string;
+    entity_id: string;
+    link_type: string;
+  }>;
+}
 
-  const folders: DocuStoreFolder[] = [
-    { id: 'agreements', name: 'Agreements', slug: 'agreements', documentCount: 12, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-    { id: 'contracts', name: 'Contracts', slug: 'contracts', documentCount: 10, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-    { id: 'freelancers', name: 'Freelancers', slug: 'freelancers', documentCount: 24, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  ];
+// Transform API document to UI format
+function transformApiDocument(doc: ApiDocument): SigningDocument {
+  // Determine signing status based on document status and metadata
+  let signingStatus: DocumentSigningStatus = 'draft';
+  if (doc.status === 'active') {
+    const signingMeta = doc.metadata?.signing_status as string | undefined;
+    if (signingMeta === 'pending_your_signature') {
+      signingStatus = 'pending_your_signature';
+    } else if (signingMeta === 'pending_other_signatures') {
+      signingStatus = 'pending_other_signatures';
+    } else if (signingMeta === 'completed' || doc.metadata?.completed) {
+      signingStatus = 'completed';
+    } else {
+      signingStatus = 'pending_other_signatures';
+    }
+  } else if (doc.status === 'archived') {
+    signingStatus = 'completed';
+  }
 
-  const documents: SigningDocument[] = [
-    {
-      id: '1',
-      title: 'Service provider agreement',
-      signingStatus: 'pending_your_signature',
-      requiresMySignature: true,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's1', documentId: '1', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
-        { id: 's2', documentId: '1', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[1].name) },
-        { id: 's3', documentId: '1', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 3, avatarInitials: getAvatarInitials(signers[2].name) },
-        { id: 's4', documentId: '1', name: signers[3].name, email: signers[3].email, role: 'signer', status: 'pending', order: 4, avatarInitials: getAvatarInitials(signers[3].name) },
-      ],
-      recipients: [
-        { id: 'r1', documentId: '1', email: 'ahmed@hello.com', type: 'cc' },
-        { id: 'r2', documentId: '1', email: 'ahmed@hello.com', type: 'cc' },
-      ],
-      totalSigners: 4,
-      signedCount: 2,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '2',
-      title: 'Service provider agreement',
-      signingStatus: 'draft',
-      requiresMySignature: false,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's5', documentId: '2', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
-      ],
-      recipients: [],
-      totalSigners: 1,
-      signedCount: 0,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '3',
-      title: 'Service provider agreement',
-      signingStatus: 'draft',
-      requiresMySignature: false,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's6', documentId: '3', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
-      ],
-      recipients: [],
-      totalSigners: 1,
-      signedCount: 0,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '4',
-      title: 'Service provider agreement',
-      signingStatus: 'pending_your_signature',
-      requiresMySignature: true,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's7', documentId: '4', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
-      ],
-      recipients: [],
-      totalSigners: 1,
-      signedCount: 0,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '5',
-      title: 'Service provider agreement',
-      signingStatus: 'pending_other_signatures',
-      requiresMySignature: false,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's8', documentId: '5', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
-        { id: 's9', documentId: '5', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 2, avatarInitials: getAvatarInitials(signers[2].name) },
-      ],
-      recipients: [],
-      totalSigners: 2,
-      signedCount: 0,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '6',
-      title: 'Service provider agreement',
-      signingStatus: 'pending_other_signatures',
-      requiresMySignature: false,
-      folderId: 'contracts',
-      folderName: 'Contracts',
-      signers: [
-        { id: 's10', documentId: '6', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
-        { id: 's11', documentId: '6', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 2, avatarInitials: getAvatarInitials(signers[2].name) },
-      ],
-      recipients: [],
-      totalSigners: 2,
-      signedCount: 1,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '7',
-      title: 'Service provider agreement',
-      signingStatus: 'completed',
-      requiresMySignature: false,
-      folderId: 'agreements',
-      folderName: 'Agreements',
-      signers: [
-        { id: 's12', documentId: '7', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
-        { id: 's13', documentId: '7', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[0].name) },
-      ],
-      recipients: [],
-      totalSigners: 2,
-      signedCount: 2,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-    {
-      id: '8',
-      title: 'Service provider agreement',
-      signingStatus: 'completed',
-      requiresMySignature: false,
-      folderId: 'agreements',
-      folderName: 'Agreements',
-      signers: [
-        { id: 's14', documentId: '8', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
-        { id: 's15', documentId: '8', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[0].name) },
-      ],
-      recipients: [],
-      totalSigners: 2,
-      signedCount: 2,
-      tags: [],
-      createdAt: '2021-05-04',
-      updatedAt: '2021-05-04',
-      lastEditedAt: '2021-05-04',
-      ownerId: 'user1',
-    },
-  ];
+  // Extract folder info from document type
+  const folderName = doc.document_type 
+    ? doc.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    : 'Uncategorized';
 
-  const statusCounts: StatusCounts = {
-    all: 104,
-    draft: 14,
-    pendingYourSignature: 18,
-    pendingOtherSignatures: 24,
-    completed: 36,
-    voided: 12,
+  return {
+    id: doc.id,
+    title: doc.title,
+    signingStatus,
+    requiresMySignature: signingStatus === 'pending_your_signature',
+    folderId: doc.document_type || 'uncategorized',
+    folderName,
+    signers: [], // Will be populated from workflow if available
+    recipients: [],
+    totalSigners: 0,
+    signedCount: 0,
+    tags: doc.tags || [],
+    createdAt: doc.created_at,
+    updatedAt: doc.updated_at,
+    lastEditedAt: doc.updated_at,
+    ownerId: doc.created_by || '',
+    documentType: doc.document_type,
+    hasArtifacts: (doc.artifacts?.length || 0) > 0,
+    entityLinks: doc.links,
   };
+}
 
-  const folderCounts: FolderCounts = {
-    all: 104,
-    sharedWithMe: 36,
-    folders: {
-      agreements: 12,
-      contracts: 10,
-      freelancers: 24,
-    },
-    deleted: 22,
+// Fetch documents from API
+async function fetchDocuments(params?: {
+  status?: string;
+  document_type?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ documents: SigningDocument[]; total: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.document_type) searchParams.set('document_type', params.document_type);
+  if (params?.search) searchParams.set('search', params.search);
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  if (params?.offset) searchParams.set('offset', String(params.offset));
+
+  const response = await fetch(`/api/v1/docustore?${searchParams.toString()}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch documents');
+  }
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || 'Unknown error');
+  }
+
+  return {
+    documents: (result.data || []).map(transformApiDocument),
+    total: result.total || 0,
   };
+}
 
-  return { documents, folders, statusCounts, folderCounts };
+// Build folders from document types
+function buildFoldersFromDocuments(documents: SigningDocument[]): DocuStoreFolder[] {
+  const folderMap = new Map<string, { count: number; name: string }>();
+  
+  documents.forEach(doc => {
+    const folderId = doc.folderId || 'uncategorized';
+    const existing = folderMap.get(folderId);
+    if (existing) {
+      existing.count++;
+    } else {
+      folderMap.set(folderId, {
+        count: 1,
+        name: doc.folderName || folderId,
+      });
+    }
+  });
+
+  return Array.from(folderMap.entries()).map(([id, { count, name }]) => ({
+    id,
+    name,
+    slug: id,
+    documentCount: count,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
+}
+
+// Calculate status counts
+function calculateStatusCounts(documents: SigningDocument[]): StatusCounts {
+  return {
+    all: documents.length,
+    draft: documents.filter(d => d.signingStatus === 'draft').length,
+    pendingYourSignature: documents.filter(d => d.signingStatus === 'pending_your_signature').length,
+    pendingOtherSignatures: documents.filter(d => d.signingStatus === 'pending_other_signatures').length,
+    completed: documents.filter(d => d.signingStatus === 'completed').length,
+    voided: documents.filter(d => d.signingStatus === 'voided').length,
+  };
+}
+
+// Calculate folder counts
+function calculateFolderCounts(documents: SigningDocument[], folders: DocuStoreFolder[]): FolderCounts {
+  const folderCounts: Record<string, number> = {};
+  folders.forEach(folder => {
+    folderCounts[folder.id] = folder.documentCount;
+  });
+
+  return {
+    all: documents.length,
+    sharedWithMe: 0, // Would need sharing logic
+    folders: folderCounts,
+    deleted: 0, // Would need soft delete query
+  };
 }
 
 export default function DocuStorePage() {
@@ -295,38 +240,109 @@ export default function DocuStorePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      const data = generateMockData();
-      setDocuments(data.documents);
-      setFolders(data.folders);
-      setStatusCounts(data.statusCounts);
-      setFolderCounts(data.folderCounts);
+  // Load data from API
+  const loadData = useCallback(async (showLoadingState = true) => {
+    if (showLoadingState) setLoading(true);
+    try {
+      const params: Parameters<typeof fetchDocuments>[0] = {
+        limit: 200,
+      };
+      if (selectedStatus !== 'all') {
+        params.status = 'active';
+      }
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      
+      const result = await fetchDocuments(params);
+      
+      setDocuments(result.documents);
+      
+      // Build folders from document types
+      const derivedFolders = buildFoldersFromDocuments(result.documents);
+      setFolders(derivedFolders);
+      
+      // Calculate status counts
+      setStatusCounts(calculateStatusCounts(result.documents));
+      setFolderCounts(calculateFolderCounts(result.documents, derivedFolders));
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      toast.error('Failed to load documents');
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [searchTerm, selectedStatus]);
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    const data = generateMockData();
-    setDocuments(data.documents);
-    setFolders(data.folders);
-    setStatusCounts(data.statusCounts);
-    setFolderCounts(data.folderCounts);
-    setRefreshing(false);
-    toast.success('Documents refreshed');
+    try {
+      await loadData(false);
+      toast.success('Documents refreshed');
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  // Handle document download
+  const handleDownload = useCallback(async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/v1/docustore/${documentId}/download`);
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'document.pdf';
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Download started');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
+    }
+  }, []);
+
+  // Handle PDF generation
+  const handleGeneratePdf = useCallback(async (documentId: string) => {
+    try {
+      toast.loading('Generating PDF...');
+      const response = await fetch(`/api/v1/docustore/${documentId}/generate-pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'docustore_record' }),
+      });
+      
+      if (!response.ok) throw new Error('PDF generation failed');
+      
+      const result = await response.json();
+      if (result.success) {
+        toast.dismiss();
+        toast.success('PDF generated successfully');
+        await loadData(false);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    }
+  }, [loadData]);
 
   // Handle document action
   const handleAction = useCallback(
-    (documentId: string, action: DocumentAction) => {
+    async (documentId: string, action: DocumentAction) => {
       switch (action) {
         case 'sign':
           toast.info('Opening signing interface...');
@@ -336,20 +352,42 @@ export default function DocuStorePage() {
           router.push(`/docustore/${documentId}`);
           break;
         case 'download':
-          toast.success('Download started');
+          await handleDownload(documentId);
+          break;
+        case 'generate_pdf':
+          await handleGeneratePdf(documentId);
           break;
         case 'resend':
           toast.success('Reminders sent to pending signers');
           break;
         case 'void':
-          toast.warning('Document voided');
+          try {
+            const response = await fetch(`/api/v1/docustore/${documentId}`, {
+              method: 'DELETE',
+            });
+            if (response.ok) {
+              toast.warning('Document voided');
+              await loadData(false);
+            }
+          } catch {
+            toast.error('Failed to void document');
+          }
           break;
         case 'delete':
-          setDocuments((prev) => prev.filter((d) => d.id !== documentId));
-          toast.success('Document deleted');
+          try {
+            const response = await fetch(`/api/v1/docustore/${documentId}`, {
+              method: 'DELETE',
+            });
+            if (response.ok) {
+              setDocuments((prev) => prev.filter((d) => d.id !== documentId));
+              toast.success('Document deleted');
+            }
+          } catch {
+            toast.error('Failed to delete document');
+          }
           break;
         case 'duplicate':
-          toast.success('Document duplicated');
+          toast.info('Duplicate functionality coming soon');
           break;
         case 'share':
           toast.info('Share dialog opened');
@@ -358,7 +396,7 @@ export default function DocuStorePage() {
           break;
       }
     },
-    [router]
+    [router, handleDownload, handleGeneratePdf, loadData]
   );
 
   // Filter documents

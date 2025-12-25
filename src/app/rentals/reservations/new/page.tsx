@@ -444,6 +444,40 @@ export default function NewReservationPage() {
               <CardDescription>Rental cost calculation and contract summary</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Line Item Breakdown */}
+              {items.length > 0 && (
+                <div className="space-y-2 border-b pb-4">
+                  <h4 className="text-sm font-semibold">Equipment Line Items</h4>
+                  <div className="space-y-2">
+                    {items.map((item, index) => {
+                      const equipment = availableEquipment.find(e => e.equipment_id === item.equipment_id);
+                      const dailyRate = Number(equipment?.rental_rate_daily) || Number(item.daily_rate) || 0;
+                      const days = calculateFinancials().days;
+                      const lineTotal = dailyRate * item.quantity * days;
+                      const securityDeposit = Number(equipment?.security_deposit) || 0;
+                      return (
+                        <div key={index} className="flex justify-between text-sm pl-4 border-l-2 border-primary/20 bg-muted/30 rounded-r-md py-2">
+                          <div className="flex-1">
+                            <div className="font-medium">{item.equipment_name}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {item.quantity} × R {dailyRate.toFixed(2)}/day × {days} {days === 1 ? 'day' : 'days'} = R {lineTotal.toFixed(2)}
+                            </div>
+                            {securityDeposit > 0 && (
+                              <div className="text-xs text-orange-600 mt-1">
+                                Security Deposit: R {(securityDeposit * item.quantity).toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right font-semibold">
+                            R {lineTotal.toFixed(2)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 {items.length > 0 ? (
                   <div className="flex justify-between text-sm">

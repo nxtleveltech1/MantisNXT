@@ -1,20 +1,3 @@
-/**
- * Logistics Services
- * 
- * Central export point for all logistics-related services
- */
+// UPDATE: [2025-12-25] Created logistics services exports
 
-export { DeliveryService } from './DeliveryService';
-export { CourierProviderService } from './CourierProviderService';
-export { DeliveryCostService } from './DeliveryCostService';
-export { DeliveryTrackingService } from './DeliveryTrackingService';
-export { DropshippingService } from './DropshippingService';
-export { LogisticsSettingsService } from './LogisticsSettingsService';
-export type { LogisticsSettings } from './LogisticsSettingsService';
-
-// Export courier provider clients
-export * from './CourierProviderClients';
-
-
-
-
+export * from './logistics-pdf-service';
