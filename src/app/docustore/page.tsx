@@ -39,6 +39,12 @@ import { toast } from 'sonner';
 import { DocuStoreSidebar } from '@/components/docustore/DocuStoreSidebar';
 import { DocumentRow, FolderRow, DocumentTableHeader } from '@/components/docustore/DocumentRow';
 import { AdvancedSearchDialog } from '@/components/docustore/AdvancedSearchDialog';
+import { BulkActionsBar } from '@/components/docustore/BulkActionsBar';
+import { FolderDialog } from '@/components/docustore/FolderDialog';
+import { ShareDialog } from '@/components/docustore/ShareDialog';
+import { PermissionsDialog } from '@/components/docustore/PermissionsDialog';
+import { DocumentPreview } from '@/components/docustore/DocumentPreview';
+import { SigningWorkflowDialog } from '@/components/docustore/SigningWorkflowDialog';
 import type {
   SigningDocument,
   DocuStoreFolder,
@@ -111,12 +117,13 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
     recipients: [],
     totalSigners: 0,
     signedCount: 0,
+    entityLinks: doc.entity_links || [],
     tags: doc.tags || [],
     createdAt: doc.created_at,
     updatedAt: doc.updated_at,
     lastEditedAt: doc.updated_at,
     ownerId: doc.created_by || '',
-    documentType: doc.document_type,
+    documentType: doc.document_type || null,
     hasArtifacts: (doc.artifacts?.length || 0) > 0,
     entityLinks: doc.links,
   };
@@ -236,9 +243,72 @@ export default function DocuStorePage() {
   const [selectedStatus, setSelectedStatus] = useState<DocumentSigningStatus | 'all'>('all');
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchParams>({});
 
+  // Selection state for bulk operations
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
+
+  // Dialog state
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [signingWorkflowDialogOpen, setSigningWorkflowDialogOpen] = useState(false);
+  const [_selectedDocumentId, _setSelectedDocumentId] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Load folders from API
+  const loadFolders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/v1/docustore/folders');
+      if (!response.ok) {
+        throw new Error('Failed to fetch folders');
+      }
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Transform folder tree to flat list for sidebar
+        const flattenFolders = (tree: unknown[]): DocuStoreFolder[] => {
+          const flat: DocuStoreFolder[] = [];
+          for (const node of tree) {
+            const typedNode = node as {
+              folder: {
+                id: string;
+                name: string;
+                slug: string;
+                icon?: string | null;
+                color?: string | null;
+                parent_id?: string | null;
+                created_at: string;
+                updated_at: string;
+              };
+              document_count?: number;
+              children?: unknown[];
+            };
+            flat.push({
+              id: typedNode.folder.id,
+              name: typedNode.folder.name,
+              slug: typedNode.folder.slug,
+              icon: typedNode.folder.icon || undefined,
+              color: typedNode.folder.color || undefined,
+              documentCount: typedNode.document_count || 0,
+              parentId: typedNode.folder.parent_id || null,
+              createdAt: typedNode.folder.created_at,
+              updatedAt: typedNode.folder.updated_at,
+            });
+            if (typedNode.children && typedNode.children.length > 0) {
+              flat.push(...flattenFolders(typedNode.children));
+            }
+          }
+          return flat;
+        };
+        setFolders(flattenFolders(result.data));
+      }
+    } catch (error) {
+      console.error('Error loading folders:', error);
+      // Fallback to derived folders if API fails
+    }
+  }, []);
 
   // Load data from API
   const loadData = useCallback(async (showLoadingState = true) => {
@@ -258,20 +328,25 @@ export default function DocuStorePage() {
       
       setDocuments(result.documents);
       
-      // Build folders from document types
+      // Load folders from API
+      await loadFolders();
+      
+      // Build folders from document types as fallback
       const derivedFolders = buildFoldersFromDocuments(result.documents);
-      setFolders(derivedFolders);
+      if (folders.length === 0) {
+        setFolders(derivedFolders);
+      }
       
       // Calculate status counts
       setStatusCounts(calculateStatusCounts(result.documents));
-      setFolderCounts(calculateFolderCounts(result.documents, derivedFolders));
+      setFolderCounts(calculateFolderCounts(result.documents, folders.length > 0 ? folders : derivedFolders));
     } catch (error) {
       console.error('Error loading documents:', error);
       toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedStatus]);
+  }, [searchTerm, selectedStatus, folders, loadFolders]);
 
   useEffect(() => {
     loadData();
@@ -390,7 +465,16 @@ export default function DocuStorePage() {
           toast.info('Duplicate functionality coming soon');
           break;
         case 'share':
-          toast.info('Share dialog opened');
+          setShareDialogOpen(true);
+          break;
+        case 'permissions':
+          setPermissionsDialogOpen(true);
+          break;
+        case 'preview':
+          setPreviewDialogOpen(true);
+          break;
+        case 'signing_workflow':
+          setSigningWorkflowDialogOpen(true);
           break;
         default:
           break;
@@ -487,6 +571,27 @@ export default function DocuStorePage() {
     toast.success('Filters applied');
   };
 
+  // Handle row selection
+  const handleRowSelect = useCallback((documentId: string, selected: boolean) => {
+    setSelectedDocumentIds((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(documentId);
+      } else {
+        newSet.delete(documentId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((selected: boolean) => {
+    if (selected) {
+      setSelectedDocumentIds(new Set(filteredDocuments.map((d) => d.id)));
+    } else {
+      setSelectedDocumentIds(new Set());
+    }
+  }, [filteredDocuments]);
+
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -509,7 +614,7 @@ export default function DocuStorePage() {
         selectedStatus={selectedStatus}
         onFolderSelect={setSelectedFolderId}
         onStatusSelect={setSelectedStatus}
-        onCreateFolder={() => toast.info('Create folder dialog')}
+        onCreateFolder={() => setFolderDialogOpen(true)}
       />
 
       {/* Main Content */}
@@ -614,9 +719,21 @@ export default function DocuStorePage() {
               </Button>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedDocumentIds.size > 0 && (
+              <BulkActionsBar
+                selectedIds={Array.from(selectedDocumentIds)}
+                onClearSelection={() => setSelectedDocumentIds(new Set())}
+              />
+            )}
+
             {/* Documents Table */}
             <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-              <DocumentTableHeader />
+              <DocumentTableHeader
+                onSelectAll={handleSelectAll}
+                allSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size === filteredDocuments.length}
+                someSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size < filteredDocuments.length}
+              />
 
               {loading ? (
                 <div className="p-6 space-y-4">
@@ -663,7 +780,12 @@ export default function DocuStorePage() {
                         {item.type === 'folder' ? (
                           <FolderRow folder={item.data} onAction={handleAction} />
                         ) : (
-                          <DocumentRow document={item.data} onAction={handleAction} />
+                          <DocumentRow
+                            document={item.data}
+                            onAction={handleAction}
+                            selected={selectedDocumentIds.has(item.data.id)}
+                            onSelect={(selected) => handleRowSelect(item.data.id, selected)}
+                          />
                         )}
                       </motion.div>
                     ))}
@@ -727,6 +849,53 @@ export default function DocuStorePage() {
           </div>
         </main>
       </div>
+
+      {/* Dialogs */}
+      <FolderDialog
+        open={folderDialogOpen}
+        onOpenChange={setFolderDialogOpen}
+        onSuccess={() => {
+          loadData(false);
+          setFolderDialogOpen(false);
+        }}
+      />
+
+      {selectedDocumentId && (
+        <>
+          <ShareDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            documentId={selectedDocumentId}
+            onSuccess={() => {
+              setShareDialogOpen(false);
+              toast.success('Share link created');
+            }}
+          />
+
+          <PermissionsDialog
+            open={permissionsDialogOpen}
+            onOpenChange={setPermissionsDialogOpen}
+            documentId={selectedDocumentId}
+          />
+
+          <DocumentPreview
+            documentId={selectedDocumentId}
+            open={previewDialogOpen}
+            onOpenChange={setPreviewDialogOpen}
+          />
+
+          <SigningWorkflowDialog
+            open={signingWorkflowDialogOpen}
+            onOpenChange={setSigningWorkflowDialogOpen}
+            documentId={selectedDocumentId}
+            onSuccess={() => {
+              setSigningWorkflowDialogOpen(false);
+              loadData(false);
+              toast.success('Signing workflow created');
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

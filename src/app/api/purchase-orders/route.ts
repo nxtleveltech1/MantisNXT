@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 import { z } from 'zod';
 import { CacheInvalidator } from '@/lib/cache/invalidation';
+import { DocumentGenerationHooks } from '@/lib/services/docustore';
 
 const purchaseOrderSchema = z.object({
   supplier_id: z.string().uuid('Valid supplier ID is required'),
@@ -233,6 +234,18 @@ export async function POST(request: NextRequest) {
 
     // Invalidate cache after successful creation
     CacheInvalidator.invalidatePurchaseOrder(insertResult.rows[0].id, validatedData.supplier_id);
+
+    // Auto-generate PDF document in DocuStore
+    const orgId = request.headers.get('x-org-id') || process.env.DEFAULT_ORG_ID || undefined;
+    const userId = request.headers.get('x-user-id') || request.headers.get('x-clerk-user-id') || undefined;
+    if (orgId) {
+      DocumentGenerationHooks.onPurchaseOrderCreated(insertResult.rows[0].id, orgId, userId).catch(
+        (error) => {
+          console.error('Failed to auto-generate purchase order PDF:', error);
+          // Don't fail the request if PDF generation fails
+        }
+      );
+    }
 
     return NextResponse.json({
       success: true,

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth/auth-helper';
 import * as repairOrderService from '@/services/repairs/repairOrderService';
 import { z } from 'zod';
+import { DocumentGenerationHooks } from '@/lib/services/docustore';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
 const createRepairOrderSchema = z.object({
   equipment_id: z.string().uuid().optional(),
@@ -78,6 +80,20 @@ export async function POST(request: NextRequest) {
     const validated = createRepairOrderSchema.parse(body);
 
     const order = await repairOrderService.createRepairOrder(validated, user.id);
+
+    // Auto-generate PDF document in DocuStore
+    try {
+      const orgId = await getOrgId(request);
+      DocumentGenerationHooks.onRepairOrderCreated(order.id, orgId, user.id).catch(
+        (error) => {
+          console.error('Failed to auto-generate repair order PDF:', error);
+          // Don't fail the request if PDF generation fails
+        }
+      );
+    } catch (error) {
+      console.error('Failed to get org ID for document generation:', error);
+      // Continue even if org ID retrieval fails
+    }
 
     return NextResponse.json({ success: true, data: order }, { status: 201 });
   } catch (error) {

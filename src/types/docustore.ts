@@ -139,7 +139,10 @@ export type DocumentAction =
   | 'delete'
   | 'duplicate'
   | 'move'
-  | 'share';
+  | 'share'
+  | 'permissions'
+  | 'preview'
+  | 'signing_workflow';
 
 // Search/filter parameters
 export interface DocuStoreFilters {

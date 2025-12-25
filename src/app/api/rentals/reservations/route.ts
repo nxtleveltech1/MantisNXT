@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth/auth-helper';
 import * as reservationService from '@/services/rentals/reservationService';
 import { z } from 'zod';
+import { DocumentGenerationHooks } from '@/lib/services/docustore';
+import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
 const createReservationSchema = z.object({
   customer_id: z.string().uuid(),
@@ -85,6 +87,20 @@ export async function POST(request: NextRequest) {
     const validated = createReservationSchema.parse(body);
 
     const reservation = await reservationService.createReservation(validated, user.id);
+
+    // Auto-generate PDF document in DocuStore
+    try {
+      const orgId = await getOrgId(request);
+      DocumentGenerationHooks.onRentalReservationCreated(reservation.id, orgId, user.id).catch(
+        (error) => {
+          console.error('Failed to auto-generate rental agreement PDF:', error);
+          // Don't fail the request if PDF generation fails
+        }
+      );
+    } catch (error) {
+      console.error('Failed to get org ID for document generation:', error);
+      // Continue even if org ID retrieval fails
+    }
 
     return NextResponse.json({ success: true, data: reservation }, { status: 201 });
   } catch (error) {

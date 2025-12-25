@@ -7,8 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { GLService } from '@/lib/services/financial';
-import { getOrgId } from '../../_helpers';
+import { getOrgId, getUserId } from '../../_helpers';
 import { createJournalEntrySchema } from '@/lib/validation/financial';
+import { DocumentGenerationHooks } from '@/lib/services/docustore';
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,6 +60,15 @@ export async function POST(request: NextRequest) {
     });
 
     const entry = await GLService.createJournalEntry(validated);
+
+    // Auto-generate PDF document in DocuStore
+    const userId = await getUserId(request);
+    DocumentGenerationHooks.onJournalEntryCreated(entry.id, orgId, userId).catch(
+      (error) => {
+        console.error('Failed to auto-generate journal entry PDF:', error);
+        // Don't fail the request if PDF generation fails
+      }
+    );
 
     return NextResponse.json(
       {

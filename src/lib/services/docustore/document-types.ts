@@ -98,6 +98,9 @@ export const DOCUMENT_TYPES = {
   SYNC_REPORT: 'sync_report',
   INTEGRATION_LOG: 'integration_log',
   
+  // Analytics Module
+  ANALYTICS_REPORT: 'analytics_report',
+  
   // Analytics & Reports
   ANALYTICS_REPORT: 'analytics_report',
   CUSTOM_REPORT: 'custom_report',

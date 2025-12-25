@@ -2,7 +2,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SalesOrderService } from '@/lib/services/sales';
-import { getOrgId } from '../_helpers';
+import { getOrgId, getUserId } from '../_helpers';
+import { DocumentGenerationHooks } from '@/lib/services/docustore';
 
 const salesOrderItemSchema = z.object({
   product_id: z.string().uuid().optional().nullable(),
@@ -80,6 +81,15 @@ export async function POST(request: NextRequest) {
       ...validated,
       org_id: orgId,
     });
+
+    // Auto-generate PDF document in DocuStore
+    const userId = await getUserId(request);
+    DocumentGenerationHooks.onSalesOrderCreated(salesOrder.id, orgId, userId).catch(
+      (error) => {
+        console.error('Failed to auto-generate sales order PDF:', error);
+        // Don't fail the request if PDF generation fails
+      }
+    );
 
     return NextResponse.json(
       {

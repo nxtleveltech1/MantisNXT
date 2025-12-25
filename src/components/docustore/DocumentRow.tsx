@@ -42,8 +42,8 @@ import { formatSigningStatus, getSigningStatusColor } from '@/types/docustore';
 interface DocumentRowProps {
   document: SigningDocument;
   onAction: (documentId: string, action: DocumentAction) => void;
-  onSelect?: (documentId: string) => void;
-  isSelected?: boolean;
+  selected?: boolean;
+  onSelect?: (selected: boolean) => void;
   className?: string;
 }
 
@@ -104,8 +104,8 @@ function StatusBadge({ status }: { status: DocumentSigningStatus }) {
 export function DocumentRow({
   document,
   onAction,
+  selected = false,
   onSelect,
-  isSelected,
   className,
 }: DocumentRowProps) {
   const primaryAction = getPrimaryAction(document);
@@ -114,10 +114,21 @@ export function DocumentRow({
     <div
       className={cn(
         'group flex items-center gap-4 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border/50',
-        isSelected && 'bg-primary/5',
+        selected && 'bg-primary/5',
         className
       )}
     >
+      {/* Selection Checkbox */}
+      {onSelect && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(e) => onSelect(e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+        />
+      )}
+
       {/* Document Icon */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center">
@@ -286,8 +297,8 @@ export function FolderRow({
                   key={doc.id}
                   document={doc}
                   onAction={onAction}
-                  onSelect={onDocumentSelect}
-                  isSelected={selectedDocuments.includes(doc.id)}
+                  selected={selectedDocuments.includes(doc.id)}
+                  onSelect={(selected) => onDocumentSelect?.(doc.id)}
                   className="pl-12"
                 />
               ))
@@ -304,7 +315,19 @@ export function FolderRow({
 }
 
 // Table Header Component
-export function DocumentTableHeader({ className }: { className?: string }) {
+interface DocumentTableHeaderProps {
+  className?: string;
+  onSelectAll?: (selected: boolean) => void;
+  allSelected?: boolean;
+  someSelected?: boolean;
+}
+
+export function DocumentTableHeader({
+  className,
+  onSelectAll,
+  allSelected = false,
+  someSelected = false,
+}: DocumentTableHeaderProps) {
   return (
     <div
       className={cn(
@@ -312,6 +335,17 @@ export function DocumentTableHeader({ className }: { className?: string }) {
         className
       )}
     >
+      {onSelectAll && (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someSelected && !allSelected;
+          }}
+          onChange={(e) => onSelectAll(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+        />
+      )}
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span>Name</span>
         <ChevronDown className="h-3 w-3" />

@@ -1,9 +1,0 @@
----
-alwaysApply: false
----
-
-# DEPRECATED — See `alwaysapply.mdc`
-
-This file has been superseded by `alwaysapply.mdc` which contains the complete stack configuration, operational directives, and commit discipline rules.
-
-**Do not use this file.** It is retained only to prevent orphan references.

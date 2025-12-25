@@ -105,6 +105,15 @@ export async function POST(request: NextRequest) {
       ...validatedData,
     });
 
+    // Auto-generate PDF document in DocuStore
+    const userId = request.headers.get('x-user-id') || request.headers.get('x-clerk-user-id') || undefined;
+    DocumentGenerationHooks.onDeliveryCreated(delivery.id, orgId, userId).catch(
+      (error) => {
+        console.error('Failed to auto-generate delivery note PDF:', error);
+        // Don't fail the request if PDF generation fails
+      }
+    );
+
     return NextResponse.json(
       {
         success: true,
