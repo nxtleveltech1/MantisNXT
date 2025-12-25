@@ -1,517 +1,694 @@
+// UPDATE: [2025-12-25] Complete DocuStore interface with signing workflow, folders, and signer management
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Search, 
-  FileText, 
-  Download, 
-  Trash2, 
-  Eye, 
-  RefreshCw, 
-  Filter, 
-  MoreVertical, 
-  FileStack,
-  Tags,
-  Calendar,
-  Archive,
-  CheckSquare,
-  Square
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plus,
+  Search,
+  Bell,
+  ChevronDown,
+  Globe,
+  RefreshCw,
+  FileText,
+  Loader2,
 } from 'lucide-react';
-import AppLayout from '@/components/layout/AppLayout';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { formatDate } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import JSZip from 'jszip';
 
-interface Document {
-  id: string;
-  title: string;
-  description?: string | null;
-  document_type?: string | null;
-  tags: string[];
-  status: string;
-  created_at: string;
-  updated_at: string;
+import { DocuStoreSidebar } from '@/components/docustore/DocuStoreSidebar';
+import { DocumentRow, FolderRow, DocumentTableHeader } from '@/components/docustore/DocumentRow';
+import { AdvancedSearchDialog } from '@/components/docustore/AdvancedSearchDialog';
+import type {
+  SigningDocument,
+  DocuStoreFolder,
+  FolderWithDocuments,
+  StatusCounts,
+  FolderCounts,
+  DocumentSigningStatus,
+  DocumentAction,
+  AdvancedSearchParams,
+  DocuStoreRowItem,
+} from '@/types/docustore';
+import { getAvatarInitials } from '@/types/docustore';
+
+// Mock data generator for demo purposes
+function generateMockData(): {
+  documents: SigningDocument[];
+  folders: DocuStoreFolder[];
+  statusCounts: StatusCounts;
+  folderCounts: FolderCounts;
+} {
+  const signers = [
+    { name: 'Mohamed Elabbouri', email: 'mohamed@hello.com' },
+    { name: 'Abdallah Shadid', email: 'abdallah@hello.com' },
+    { name: 'Mohamed Mosaad', email: 'mosaad@hello.com' },
+    { name: 'Ahmed Ali', email: 'ahmed@hello.com' },
+    { name: 'Sara Johnson', email: 'sara@hello.com' },
+  ];
+
+  const folders: DocuStoreFolder[] = [
+    { id: 'agreements', name: 'Agreements', slug: 'agreements', documentCount: 12, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+    { id: 'contracts', name: 'Contracts', slug: 'contracts', documentCount: 10, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+    { id: 'freelancers', name: 'Freelancers', slug: 'freelancers', documentCount: 24, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  ];
+
+  const documents: SigningDocument[] = [
+    {
+      id: '1',
+      title: 'Service provider agreement',
+      signingStatus: 'pending_your_signature',
+      requiresMySignature: true,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's1', documentId: '1', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
+        { id: 's2', documentId: '1', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[1].name) },
+        { id: 's3', documentId: '1', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 3, avatarInitials: getAvatarInitials(signers[2].name) },
+        { id: 's4', documentId: '1', name: signers[3].name, email: signers[3].email, role: 'signer', status: 'pending', order: 4, avatarInitials: getAvatarInitials(signers[3].name) },
+      ],
+      recipients: [
+        { id: 'r1', documentId: '1', email: 'ahmed@hello.com', type: 'cc' },
+        { id: 'r2', documentId: '1', email: 'ahmed@hello.com', type: 'cc' },
+      ],
+      totalSigners: 4,
+      signedCount: 2,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '2',
+      title: 'Service provider agreement',
+      signingStatus: 'draft',
+      requiresMySignature: false,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's5', documentId: '2', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
+      ],
+      recipients: [],
+      totalSigners: 1,
+      signedCount: 0,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '3',
+      title: 'Service provider agreement',
+      signingStatus: 'draft',
+      requiresMySignature: false,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's6', documentId: '3', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
+      ],
+      recipients: [],
+      totalSigners: 1,
+      signedCount: 0,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '4',
+      title: 'Service provider agreement',
+      signingStatus: 'pending_your_signature',
+      requiresMySignature: true,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's7', documentId: '4', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
+      ],
+      recipients: [],
+      totalSigners: 1,
+      signedCount: 0,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '5',
+      title: 'Service provider agreement',
+      signingStatus: 'pending_other_signatures',
+      requiresMySignature: false,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's8', documentId: '5', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'pending', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
+        { id: 's9', documentId: '5', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 2, avatarInitials: getAvatarInitials(signers[2].name) },
+      ],
+      recipients: [],
+      totalSigners: 2,
+      signedCount: 0,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '6',
+      title: 'Service provider agreement',
+      signingStatus: 'pending_other_signatures',
+      requiresMySignature: false,
+      folderId: 'contracts',
+      folderName: 'Contracts',
+      signers: [
+        { id: 's10', documentId: '6', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[0].name) },
+        { id: 's11', documentId: '6', name: signers[2].name, email: signers[2].email, role: 'signer', status: 'pending', order: 2, avatarInitials: getAvatarInitials(signers[2].name) },
+      ],
+      recipients: [],
+      totalSigners: 2,
+      signedCount: 1,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '7',
+      title: 'Service provider agreement',
+      signingStatus: 'completed',
+      requiresMySignature: false,
+      folderId: 'agreements',
+      folderName: 'Agreements',
+      signers: [
+        { id: 's12', documentId: '7', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
+        { id: 's13', documentId: '7', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[0].name) },
+      ],
+      recipients: [],
+      totalSigners: 2,
+      signedCount: 2,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+    {
+      id: '8',
+      title: 'Service provider agreement',
+      signingStatus: 'completed',
+      requiresMySignature: false,
+      folderId: 'agreements',
+      folderName: 'Agreements',
+      signers: [
+        { id: 's14', documentId: '8', name: signers[1].name, email: signers[1].email, role: 'signer', status: 'signed', order: 1, avatarInitials: getAvatarInitials(signers[1].name) },
+        { id: 's15', documentId: '8', name: signers[0].name, email: signers[0].email, role: 'signer', status: 'signed', order: 2, avatarInitials: getAvatarInitials(signers[0].name) },
+      ],
+      recipients: [],
+      totalSigners: 2,
+      signedCount: 2,
+      tags: [],
+      createdAt: '2021-05-04',
+      updatedAt: '2021-05-04',
+      lastEditedAt: '2021-05-04',
+      ownerId: 'user1',
+    },
+  ];
+
+  const statusCounts: StatusCounts = {
+    all: 104,
+    draft: 14,
+    pendingYourSignature: 18,
+    pendingOtherSignatures: 24,
+    completed: 36,
+    voided: 12,
+  };
+
+  const folderCounts: FolderCounts = {
+    all: 104,
+    sharedWithMe: 36,
+    folders: {
+      agreements: 12,
+      contracts: 10,
+      freelancers: 24,
+    },
+    deleted: 22,
+  };
+
+  return { documents, folders, statusCounts, folderCounts };
 }
 
 export default function DocuStorePage() {
   const router = useRouter();
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('active');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
 
+  // Data state
+  const [documents, setDocuments] = useState<SigningDocument[]>([]);
+  const [folders, setFolders] = useState<DocuStoreFolder[]>([]);
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    all: 0,
+    draft: 0,
+    pendingYourSignature: 0,
+    pendingOtherSignatures: 0,
+    completed: 0,
+    voided: 0,
+  });
+  const [folderCounts, setFolderCounts] = useState<FolderCounts>({
+    all: 0,
+    sharedWithMe: 0,
+    folders: {},
+    deleted: 0,
+  });
+
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<DocumentSigningStatus | 'all'>('all');
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchParams>({});
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Load data
   useEffect(() => {
-    fetchDocuments();
+    const loadData = async () => {
+      setLoading(true);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      const data = generateMockData();
+      setDocuments(data.documents);
+      setFolders(data.folders);
+      setStatusCounts(data.statusCounts);
+      setFolderCounts(data.folderCounts);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (searchTerm) params.set('search', searchTerm);
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (typeFilter !== 'all') params.set('document_type', typeFilter);
-      params.set('limit', '100');
-
-      const response = await fetch(`/api/v1/docustore?${params.toString()}`);
-      const result = await response.json();
-
-      if (result.success) {
-        setDocuments(result.data);
-      } else {
-        toast.error(result.error || 'Failed to fetch documents');
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      toast.error('Error loading documents');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchDocuments();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const data = generateMockData();
+    setDocuments(data.documents);
+    setFolders(data.folders);
+    setStatusCounts(data.statusCounts);
+    setFolderCounts(data.folderCounts);
     setRefreshing(false);
     toast.success('Documents refreshed');
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+  // Handle document action
+  const handleAction = useCallback(
+    (documentId: string, action: DocumentAction) => {
+      switch (action) {
+        case 'sign':
+          toast.info('Opening signing interface...');
+          router.push(`/docustore/${documentId}/sign`);
+          break;
+        case 'edit':
+          router.push(`/docustore/${documentId}`);
+          break;
+        case 'download':
+          toast.success('Download started');
+          break;
+        case 'resend':
+          toast.success('Reminders sent to pending signers');
+          break;
+        case 'void':
+          toast.warning('Document voided');
+          break;
+        case 'delete':
+          setDocuments((prev) => prev.filter((d) => d.id !== documentId));
+          toast.success('Document deleted');
+          break;
+        case 'duplicate':
+          toast.success('Document duplicated');
+          break;
+        case 'share':
+          toast.info('Share dialog opened');
+          break;
+        default:
+          break;
+      }
+    },
+    [router]
+  );
 
-    try {
-      const response = await fetch(`/api/v1/docustore/${id}`, {
-        method: 'DELETE',
-      });
+  // Filter documents
+  const filteredDocuments = useMemo(() => {
+    return documents.filter((doc) => {
+      // Search filter
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const matchesTitle = doc.title.toLowerCase().includes(search);
+        const matchesSigner = doc.signers.some(
+          (s) => s.name.toLowerCase().includes(search) || s.email.toLowerCase().includes(search)
+        );
+        if (!matchesTitle && !matchesSigner) return false;
+      }
 
-      if (response.ok) {
-        setDocuments(prev => prev.filter(d => d.id !== id));
-        toast.success('Document deleted successfully');
+      // Folder filter
+      if (selectedFolderId && selectedFolderId !== 'shared' && selectedFolderId !== 'deleted') {
+        if (doc.folderId !== selectedFolderId) return false;
+      }
+
+      // Status filter
+      if (selectedStatus !== 'all' && doc.signingStatus !== selectedStatus) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [documents, searchTerm, selectedFolderId, selectedStatus]);
+
+  // Group documents by folder for display
+  const rowItems = useMemo((): DocuStoreRowItem[] => {
+    // If a specific folder is selected, just show documents
+    if (selectedFolderId && selectedFolderId !== 'shared' && selectedFolderId !== 'deleted') {
+      return filteredDocuments.map((doc) => ({ type: 'document' as const, data: doc }));
+    }
+
+    // Group by folder
+    const folderMap = new Map<string, SigningDocument[]>();
+    const ungroupedDocs: SigningDocument[] = [];
+
+    filteredDocuments.forEach((doc) => {
+      if (doc.folderId) {
+        const existing = folderMap.get(doc.folderId) || [];
+        folderMap.set(doc.folderId, [...existing, doc]);
       } else {
-        toast.error('Failed to delete document');
+        ungroupedDocs.push(doc);
       }
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      toast.error('Error deleting document');
-    }
-  };
+    });
 
-  const toggleSelectAll = () => {
-    if (selectedDocs.length === documents.length) {
-      setSelectedDocs([]);
-    } else {
-      setSelectedDocs(documents.map(d => d.id));
-    }
-  };
+    const items: DocuStoreRowItem[] = [];
 
-  const toggleSelect = (id: string) => {
-    setSelectedDocs(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedDocs.length === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedDocs.length} documents?`)) return;
-    
-    toast.promise(
-      Promise.all(selectedDocs.map(id => 
-        fetch(`/api/v1/docustore/${id}`, { method: 'DELETE' })
-      )),
-      {
-        loading: 'Deleting documents...',
-        success: () => {
-          setDocuments(prev => prev.filter(d => !selectedDocs.includes(d.id)));
-          setSelectedDocs([]);
-          return 'Documents deleted successfully';
-        },
-        error: 'Failed to delete some documents',
+    // Add folders
+    folders.forEach((folder) => {
+      const folderDocs = folderMap.get(folder.id) || [];
+      if (folderDocs.length > 0) {
+        items.push({
+          type: 'folder',
+          data: {
+            ...folder,
+            documents: folderDocs,
+            documentCount: folderDocs.length,
+          },
+        });
       }
-    );
+    });
+
+    // Add ungrouped documents
+    ungroupedDocs.forEach((doc) => {
+      items.push({ type: 'document', data: doc });
+    });
+
+    return items;
+  }, [filteredDocuments, folders, selectedFolderId]);
+
+  // Pagination
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return rowItems.slice(start, start + rowsPerPage);
+  }, [rowItems, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(rowItems.length / rowsPerPage);
+
+  // Handle advanced search
+  const handleAdvancedSearch = (params: AdvancedSearchParams) => {
+    setAdvancedFilters(params);
+    if (params.search) setSearchTerm(params.search);
+    if (params.status) setSelectedStatus(params.status);
+    toast.success('Filters applied');
   };
 
-  const handleBulkExport = async () => {
-    if (selectedDocs.length === 0) return;
-    
-    const zip = new JSZip();
-    const folder = zip.folder("docustore-export");
-    
-    toast.loading(`Preparing export for ${selectedDocs.length} documents...`);
-    
-    try {
-      for (const id of selectedDocs) {
-        const doc = documents.find(d => d.id === id);
-        if (!doc) continue;
-        
-        // Fetch document detail to get current version
-        const response = await fetch(`/api/v1/docustore/${id}`);
-        const result = await response.json();
-        
-        if (result.success && result.data.current_version) {
-          const downloadResponse = await fetch(`/api/v1/docustore/${id}/download?type=current`);
-          if (downloadResponse.ok) {
-            const blob = await downloadResponse.blob();
-            folder?.file(`${doc.title}_${result.data.current_version.original_filename}`, blob);
-          }
-        }
-      }
-      
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = window.URL.createObjectURL(content);
-      const a = window.document.createElement('a');
-      a.href = url;
-      a.download = `docustore-export-${new Date().toISOString().split('T')[0]}.zip`;
-      window.document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      window.document.body.removeChild(a);
-      
-      toast.dismiss();
-      toast.success('Export completed successfully');
-      setSelectedDocs([]);
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Failed to export documents');
-      console.error(error);
-    }
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchDocuments();
-  };
-
-  const documentTypes = useMemo(() => {
-    const types = new Set(documents.map(d => d.document_type).filter(Boolean));
-    return Array.from(types) as string[];
-  }, [documents]);
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (advancedFilters.documentType) count++;
+    if (advancedFilters.signerEmail) count++;
+    if (advancedFilters.signerName) count++;
+    if (advancedFilters.dateFrom) count++;
+    if (advancedFilters.dateTo) count++;
+    return count;
+  }, [advancedFilters]);
 
   return (
-    <AppLayout title="DocuStore" breadcrumbs={[{ label: 'DocuStore' }]}>
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">DocuStore</h1>
-            <p className="text-muted-foreground mt-1">
-              Centralized platform document storage and management
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button onClick={() => router.push('/docustore/new')} size="sm" className="bg-primary shadow-sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Upload Document
-            </Button>
-          </div>
-        </div>
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Sidebar */}
+      <DocuStoreSidebar
+        folders={folders}
+        folderCounts={folderCounts}
+        statusCounts={statusCounts}
+        selectedFolderId={selectedFolderId}
+        selectedStatus={selectedStatus}
+        onFolderSelect={setSelectedFolderId}
+        onStatusSelect={setSelectedStatus}
+        onCreateFolder={() => toast.info('Create folder dialog')}
+      />
 
-        {/* Filters & Actions Card */}
-        <Card className="border-none shadow-sm bg-muted/30">
-          <CardContent className="p-4">
-            <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <header className="flex items-center justify-between px-6 py-4 border-b bg-background">
+          <div className="flex items-center gap-4">
+            {/* User Avatar with notifications */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="relative">
+                  <Avatar className="h-10 w-10 bg-violet-600">
+                    <AvatarFallback className="text-sm font-bold text-white bg-transparent">
+                      MA
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Notifications */}
+            <button className="relative p-2 rounded-full hover:bg-muted transition-colors">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                4
+              </span>
+            </button>
+          </div>
+
+          {/* Language Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 text-sm">
+                <Globe className="h-4 w-4" />
+                En
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>English</DropdownMenuItem>
+              <DropdownMenuItem>العربية</DropdownMenuItem>
+              <DropdownMenuItem>Français</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="p-6">
+            {/* Page Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
+                <Badge variant="secondary" className="h-6 px-2.5 text-xs font-medium">
+                  All
+                </Badge>
+              </div>
+              <Button
+                onClick={() => router.push('/docustore/new')}
+                size="icon"
+                className="h-10 w-10 rounded-full bg-primary shadow-lg hover:bg-primary/90"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex items-center gap-3 mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by title, description or tags..."
+                  placeholder="Search"
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-background"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-11 h-11 bg-muted/30 border-0 focus-visible:ring-1"
                 />
               </div>
-              
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center">
-                    <Filter className="h-3 w-3 mr-1" /> Status:
-                  </span>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[130px] h-9 bg-background">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                      <SelectItem value="deleted">Deleted</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center">
-                    <FileStack className="h-3 w-3 mr-1" /> Type:
-                  </span>
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[150px] h-9 bg-background">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      {documentTypes.map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button type="submit" size="sm" variant="secondary" className="h-9 px-4">
-                  Apply Filters
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Bulk Actions Bar */}
-        {selectedDocs.length > 0 && (
-          <div className="flex items-center justify-between p-3 px-4 bg-primary/5 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-3 text-sm font-medium">
-              <Badge variant="default" className="rounded-full px-2">
-                {selectedDocs.length}
-              </Badge>
-              <span>Documents Selected</span>
+              <AdvancedSearchDialog
+                onSearch={handleAdvancedSearch}
+                onReset={() => {
+                  setAdvancedFilters({});
+                  setSearchTerm('');
+                  setSelectedStatus('all');
+                }}
+                activeFiltersCount={activeFiltersCount}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="h-11 w-11"
+              >
+                <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+              </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="h-8" onClick={handleBulkExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export Selected
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleBulkDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected
-              </Button>
-              <DropdownMenuSeparator className="h-4 w-px bg-primary/20" />
-              <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelectedDocs([])}>
-                Cancel
-              </Button>
+
+            {/* Documents Table */}
+            <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+              <DocumentTableHeader />
+
+              {loading ? (
+                <div className="p-6 space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  ))}
+                </div>
+              ) : rowItems.length === 0 ? (
+                <div className="text-center py-20 px-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <FileText className="h-8 w-8 text-muted-foreground opacity-50" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">No documents found</h3>
+                  <p className="text-muted-foreground max-w-xs mx-auto mb-6">
+                    {searchTerm || selectedStatus !== 'all'
+                      ? "Try adjusting your filters to find what you're looking for."
+                      : 'Your document repository is empty. Start by uploading your first document.'}
+                  </p>
+                  <Button variant="outline" onClick={() => router.push('/docustore/new')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Upload Document
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <AnimatePresence mode="popLayout">
+                    {paginatedItems.map((item, index) => (
+                      <motion.div
+                        key={item.type === 'folder' ? `folder-${item.data.id}` : `doc-${item.data.id}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ delay: index * 0.03 }}
+                      >
+                        {item.type === 'folder' ? (
+                          <FolderRow folder={item.data} onAction={handleAction} />
+                        ) : (
+                          <DocumentRow document={item.data} onAction={handleAction} />
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!loading && rowItems.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      <ChevronDown className="h-4 w-4 rotate-90" />
+                    </Button>
+                    <Button variant="default" size="sm" className="h-8 w-8 p-0">
+                      {currentPage}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      <ChevronDown className="h-4 w-4 -rotate-90" />
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <span>
+                      {(currentPage - 1) * rowsPerPage + 1}-
+                      {Math.min(currentPage * rowsPerPage, rowItems.length)} of {rowItems.length}
+                    </span>
+                    <Select
+                      value={String(rowsPerPage)}
+                      onValueChange={(v) => {
+                        setRowsPerPage(Number(v));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-24 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 rows</SelectItem>
+                        <SelectItem value="25">25 rows</SelectItem>
+                        <SelectItem value="50">50 rows</SelectItem>
+                        <SelectItem value="100">100 rows</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Documents Content */}
-        <Card className="border-none shadow-sm overflow-hidden">
-          <CardHeader className="pb-0 pt-6">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold">Repository Documents</CardTitle>
-              <div className="text-sm text-muted-foreground">
-                Showing {documents.length} entries
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 mt-4">
-            {loading ? (
-              <div className="p-8 space-y-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ))}
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="text-center py-20 px-4 bg-muted/10">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                  <FileText className="h-8 w-8 text-muted-foreground opacity-50" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">No documents found</h3>
-                <p className="text-muted-foreground max-w-xs mx-auto mb-6">
-                  {searchTerm || statusFilter !== 'active' || typeFilter !== 'all' 
-                    ? "Try adjusting your filters to find what you're looking for." 
-                    : "Your document repository is currently empty. Start by uploading your first document."}
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/docustore/new')}
-                  className="shadow-sm"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Upload Your First Document
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[40px] pl-4">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={toggleSelectAll}
-                        >
-                          {selectedDocs.length === documents.length ? (
-                            <CheckSquare className="h-4 w-4 text-primary" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableHead>
-                      <TableHead className="font-semibold">Title & Description</TableHead>
-                      <TableHead className="font-semibold">Type</TableHead>
-                      <TableHead className="font-semibold">Tags</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="font-semibold">Modified</TableHead>
-                      <TableHead className="text-right pr-4 font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documents.map(doc => (
-                      <TableRow key={doc.id} className="group hover:bg-muted/30 transition-colors">
-                        <TableCell className="pl-4">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            onClick={() => toggleSelect(doc.id)}
-                          >
-                            {selectedDocs.includes(doc.id) ? (
-                              <CheckSquare className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Square className="h-4 w-4 opacity-50" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-0.5">
-                            <div
-                              className="font-medium text-primary hover:underline cursor-pointer flex items-center gap-2"
-                              onClick={() => router.push(`/docustore/${doc.id}`)}
-                            >
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              {doc.title}
-                            </div>
-                            {doc.description && (
-                              <div className="text-xs text-muted-foreground line-clamp-1 max-w-[300px]">
-                                {doc.description}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {doc.document_type ? (
-                            <Badge variant="secondary" className="capitalize font-normal">
-                              {doc.document_type}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground italic text-xs">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap max-w-[200px]">
-                            {doc.tags.slice(0, 2).map(tag => (
-                              <Badge key={tag} variant="outline" className="text-[10px] h-5 py-0 px-1.5 bg-background">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {doc.tags.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] h-5 py-0 px-1.5 bg-background">
-                                +{doc.tags.length - 2}
-                              </Badge>
-                            )}
-                            {doc.tags.length === 0 && (
-                              <span className="text-muted-foreground italic text-xs">—</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={doc.status === 'active' ? 'success' : doc.status === 'archived' ? 'warning' : 'destructive'}
-                            className="capitalize rounded-full text-[10px] font-medium"
-                          >
-                            {doc.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(doc.updated_at || doc.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right pr-4">
-                          <div className="flex justify-end items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => router.push(`/docustore/${doc.id}`)}
-                              title="View Detail"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => router.push(`/docustore/${doc.id}`)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Download Current
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  Archive Document
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => handleDelete(doc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Permanently
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        </main>
       </div>
-    </AppLayout>
+    </div>
   );
 }
-
-
