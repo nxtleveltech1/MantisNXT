@@ -2,7 +2,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getOrgId } from '../../../../_helpers';
+import { getOrgId } from '../../../../sales/_helpers';
 import { LoyaltyPDFService, type RedemptionReceiptData } from '@/lib/services/loyalty/loyalty-pdf-service';
 import { query } from '@/lib/database';
 

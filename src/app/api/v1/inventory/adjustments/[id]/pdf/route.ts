@@ -2,7 +2,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getOrgId } from '../../../../_helpers';
+import { getOrgId } from '../../../../sales/_helpers';
 import { InventoryPDFService, type StockAdjustmentData } from '@/lib/services/inventory/inventory-pdf-service';
 import { query } from '@/lib/database';
 
