@@ -316,11 +316,12 @@ export class DocumentService {
       throw new Error(`Failed to store file: ${storeResult.error || 'Unknown error'}`);
     }
 
-    // Get file metadata
-    const fileMetadata = await storage.getMetadata(storeResult.path);
-    if (!fileMetadata) {
-      throw new Error('Failed to retrieve file metadata');
-    }
+    // Calculate file metadata locally (storage may not have content yet for DB storage)
+    const { createHash } = await import('crypto');
+    const fileMetadata = {
+      size: input.file.length,
+      checksum: createHash('sha256').update(input.file).digest('hex'),
+    };
 
     // Create version record
     const versionId = uuidv4();

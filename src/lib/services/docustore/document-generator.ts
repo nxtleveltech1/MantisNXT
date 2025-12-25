@@ -145,11 +145,14 @@ export class DocumentGenerator {
       throw new Error(`Failed to store PDF: ${storeResult.error || 'Unknown error'}`);
     }
     
-    // Get file metadata
-    const fileMetadata = await storage.getMetadata(storeResult.path);
-    if (!fileMetadata) {
-      throw new Error('Failed to retrieve PDF metadata');
-    }
+    // Calculate file metadata locally (storage may not have content yet for DB storage)
+    const checksum = await import('crypto').then(crypto => 
+      crypto.createHash('sha256').update(pdfBuffer).digest('hex')
+    );
+    const fileMetadata = {
+      size: pdfBuffer.length,
+      checksum,
+    };
     
     // Create artifact record
     const artifactId = uuidv4();
@@ -377,10 +380,14 @@ export class DocumentGenerator {
       throw new Error(`Failed to store PDF: ${storeResult.error || 'Unknown error'}`);
     }
     
-    const fileMetadata = await storage.getMetadata(storeResult.path);
-    if (!fileMetadata) {
-      throw new Error('Failed to retrieve PDF metadata');
-    }
+    // Calculate file metadata locally (storage may not have content yet for DB storage)
+    const regenerateChecksum = await import('crypto').then(crypto => 
+      crypto.createHash('sha256').update(pdfBuffer).digest('hex')
+    );
+    const fileMetadata = {
+      size: pdfBuffer.length,
+      checksum: regenerateChecksum,
+    };
     
     const artifactId = uuidv4();
     const storageProvider = (process.env.DOCUSTORE_STORAGE_PROVIDER as string) || 'database';
