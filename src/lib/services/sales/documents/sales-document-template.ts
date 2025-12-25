@@ -1,6 +1,6 @@
 import { NXT_DEFAULT_DOCUMENT_COPY } from './nxt-document-copy';
 
-export type SalesDocumentKind = 'invoice' | 'quotation';
+export type SalesDocumentKind = 'invoice' | 'quotation' | 'proforma' | 'proforma_invoice' | 'sales_order' | 'credit_note';
 
 export type SalesParty = {
   name: string;
