@@ -56,30 +56,23 @@ import type {
   DocuStoreRowItem,
 } from '@/types/docustore';
 
-// API response types
+// API response types - matches actual API response structure
 interface ApiDocument {
   id: string;
   org_id: string;
   title: string;
-  description?: string;
-  document_type?: string;
+  description?: string | null;
+  document_type?: string | null;
   status: string;
   tags?: string[];
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-  created_by?: string;
-  artifacts?: Array<{
-    id: string;
-    artifact_type: string;
-    filename: string;
-    storage_path: string;
-  }>;
-  links?: Array<{
-    entity_type: string;
-    entity_id: string;
-    link_type: string;
-  }>;
+  created_by?: string | null;
+  current_version_id?: string | null;
+  folder_id?: string | null;
+  expires_at?: string | null;
+  signing_workflow_id?: string | null;
 }
 
 // Transform API document to UI format
@@ -109,22 +102,23 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
   return {
     id: doc.id,
     title: doc.title,
+    description: doc.description || null,
     signingStatus,
     requiresMySignature: signingStatus === 'pending_your_signature',
     folderId: doc.document_type || 'uncategorized',
     folderName,
-    signers: [], // Will be populated from workflow if available
+    signers: [],
     recipients: [],
     totalSigners: 0,
     signedCount: 0,
-    entityLinks: doc.links || [],
+    entityLinks: [],
     tags: doc.tags || [],
     createdAt: doc.created_at,
     updatedAt: doc.updated_at,
     lastEditedAt: doc.updated_at,
     ownerId: doc.created_by || '',
     documentType: doc.document_type || null,
-    hasArtifacts: (doc.artifacts?.length || 0) > 0,
+    hasArtifacts: false,
   };
 }
 
