@@ -117,7 +117,7 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
     recipients: [],
     totalSigners: 0,
     signedCount: 0,
-    entityLinks: doc.entity_links || [],
+    entityLinks: doc.links || [],
     tags: doc.tags || [],
     createdAt: doc.created_at,
     updatedAt: doc.updated_at,
@@ -125,7 +125,6 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
     ownerId: doc.created_by || '',
     documentType: doc.document_type || null,
     hasArtifacts: (doc.artifacts?.length || 0) > 0,
-    entityLinks: doc.links,
   };
 }
 
@@ -252,7 +251,7 @@ export default function DocuStorePage() {
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [signingWorkflowDialogOpen, setSigningWorkflowDialogOpen] = useState(false);
-  const [_selectedDocumentId, _setSelectedDocumentId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -285,17 +284,18 @@ export default function DocuStorePage() {
               document_count?: number;
               children?: unknown[];
             };
-            flat.push({
+            const folder: DocuStoreFolder = {
               id: typedNode.folder.id,
               name: typedNode.folder.name,
               slug: typedNode.folder.slug,
-              icon: typedNode.folder.icon || undefined,
-              color: typedNode.folder.color || undefined,
               documentCount: typedNode.document_count || 0,
-              parentId: typedNode.folder.parent_id || null,
               createdAt: typedNode.folder.created_at,
               updatedAt: typedNode.folder.updated_at,
-            });
+            };
+            if (typedNode.folder.icon) folder.icon = typedNode.folder.icon;
+            if (typedNode.folder.color) folder.color = typedNode.folder.color;
+            if (typedNode.folder.parent_id) folder.parentId = typedNode.folder.parent_id;
+            flat.push(folder);
             if (typedNode.children && typedNode.children.length > 0) {
               flat.push(...flattenFolders(typedNode.children));
             }
@@ -465,15 +465,19 @@ export default function DocuStorePage() {
           toast.info('Duplicate functionality coming soon');
           break;
         case 'share':
+          setSelectedDocumentId(documentId);
           setShareDialogOpen(true);
           break;
         case 'permissions':
+          setSelectedDocumentId(documentId);
           setPermissionsDialogOpen(true);
           break;
         case 'preview':
+          setSelectedDocumentId(documentId);
           setPreviewDialogOpen(true);
           break;
         case 'signing_workflow':
+          setSelectedDocumentId(documentId);
           setSigningWorkflowDialogOpen(true);
           break;
         default:
