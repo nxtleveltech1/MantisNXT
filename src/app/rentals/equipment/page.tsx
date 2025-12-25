@@ -1,4 +1,5 @@
 // UPDATE: [2025-01-27] Fixed equipment list refresh and auto-refresh on page visibility
+// UPDATE: 2025-01-27 Fixed type errors with DECIMAL fields for rental_rate_daily display
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -176,7 +177,7 @@ export default function EquipmentPage() {
                         </TableCell>
                         <TableCell>
                           {item.rental_rate_daily
-                            ? `R ${item.rental_rate_daily.toFixed(2)}`
+                            ? `R ${(Number(item.rental_rate_daily) || 0).toFixed(2)}`
                             : '-'}
                         </TableCell>
                         <TableCell>

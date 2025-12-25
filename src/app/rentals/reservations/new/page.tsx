@@ -1,4 +1,5 @@
 // UPDATE: [2025-01-27] Complete reservation creation form with equipment selection, financial breakdown, and contract generation
+// UPDATE: 2025-01-27 Fixed type errors with DECIMAL fields and added equipment seeding from user-provided list
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -110,7 +111,7 @@ export default function NewReservationPage() {
     const equipment = availableEquipment.find(e => e.equipment_id === selectedEquipmentId);
     if (!equipment) return;
 
-    const dailyRate = equipment.rental_rate_daily || 0;
+    const dailyRate = Number(equipment.rental_rate_daily) || 0;
     
     setItems([...items, {
       equipment_id: selectedEquipmentId,
@@ -147,7 +148,7 @@ export default function NewReservationPage() {
     
     const subtotal = items.reduce((sum, item) => {
       const equipment = availableEquipment.find(e => e.equipment_id === item.equipment_id);
-      const dailyRate = equipment?.rental_rate_daily || item.daily_rate || 0;
+      const dailyRate = Number(equipment?.rental_rate_daily) || Number(item.daily_rate) || 0;
       return sum + (dailyRate * item.quantity * days);
     }, 0);
     
@@ -161,7 +162,7 @@ export default function NewReservationPage() {
     // Calculate total security deposit
     const totalSecurityDeposit = items.reduce((sum, item) => {
       const equipment = availableEquipment.find(e => e.equipment_id === item.equipment_id);
-      const deposit = equipment?.security_deposit || 0;
+      const deposit = Number(equipment?.security_deposit) || 0;
       return sum + (deposit * item.quantity);
     }, 0);
     
@@ -356,7 +357,7 @@ export default function NewReservationPage() {
                   ) : (
                     availableEquipment.map((eq) => (
                       <SelectItem key={eq.equipment_id} value={eq.equipment_id}>
-                        {eq.name} - R {eq.rental_rate_daily?.toFixed(2) || '0.00'}/day
+                        {eq.name} - R {(Number(eq.rental_rate_daily) || 0).toFixed(2)}/day
                       </SelectItem>
                     ))
                   )}
@@ -383,7 +384,7 @@ export default function NewReservationPage() {
                     <div>
                       <p className="font-medium">{item.equipment_name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Quantity: {item.quantity} × R {item.daily_rate.toFixed(2)}/day
+                        Quantity: {item.quantity} × R {(Number(item.daily_rate) || 0).toFixed(2)}/day
                       </p>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>

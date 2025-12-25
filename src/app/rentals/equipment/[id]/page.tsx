@@ -1,4 +1,5 @@
 // UPDATE: [2025-01-27] Added SKU field to equipment form and fixed redirect after creation
+// UPDATE: 2025-01-27 Fixed type errors with DECIMAL fields for rental_rate_daily and security_deposit
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -388,13 +389,13 @@ export default function EquipmentDetailPage() {
                     {equipment.rental_rate_daily && (
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Daily Rate</span>
-                        <span className="font-medium">R {equipment.rental_rate_daily.toFixed(2)}</span>
+                        <span className="font-medium">R {(Number(equipment.rental_rate_daily) || 0).toFixed(2)}</span>
                       </div>
                     )}
                     {equipment.security_deposit && (
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Security Deposit</span>
-                        <span className="font-medium">R {equipment.security_deposit.toFixed(2)}</span>
+                        <span className="font-medium">R {(Number(equipment.security_deposit) || 0).toFixed(2)}</span>
                       </div>
                     )}
                   </CardContent>
