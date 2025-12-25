@@ -68,14 +68,22 @@ export default function NewReservationPage() {
         setCustomers(customersData.data || []);
       }
 
-      // Fetch all active equipment (not just available - we'll filter in UI)
+      // Fetch all active equipment
       const equipmentRes = await fetch('/api/rentals/equipment?limit=1000');
       const equipmentData = await equipmentRes.json();
+      console.log('Equipment API response:', equipmentData);
       if (equipmentData.success) {
-        // Filter to show available and active equipment
-        setAvailableEquipment((equipmentData.data || []).filter(
-          (eq: Equipment) => eq.availability_status === 'available' && eq.is_active
-        ));
+        const equipment = equipmentData.data || [];
+        console.log('Equipment fetched:', equipment.length, 'items');
+        // Show all active equipment (don't filter by availability_status - show all for selection)
+        setAvailableEquipment(equipment.filter((eq: Equipment) => eq.is_active !== false));
+      } else {
+        console.error('Equipment fetch failed:', equipmentData);
+        toast({
+          title: 'Warning',
+          description: 'Failed to load equipment: ' + (equipmentData.error || 'Unknown error'),
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -338,16 +346,20 @@ export default function NewReservationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
-              <Select value={selectedEquipmentId} onValueChange={setSelectedEquipmentId}>
+              <Select value={selectedEquipmentId} onValueChange={setSelectedEquipmentId} disabled={loading || availableEquipment.length === 0}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select equipment" />
+                  <SelectValue placeholder={loading ? "Loading equipment..." : availableEquipment.length === 0 ? "No equipment available - Add equipment first" : "Select equipment"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableEquipment.map((eq) => (
-                    <SelectItem key={eq.equipment_id} value={eq.equipment_id}>
-                      {eq.name} - R {eq.rental_rate_daily?.toFixed(2) || '0.00'}/day
-                    </SelectItem>
-                  ))}
+                  {availableEquipment.length === 0 ? (
+                    <SelectItem value="none" disabled>No equipment available</SelectItem>
+                  ) : (
+                    availableEquipment.map((eq) => (
+                      <SelectItem key={eq.equipment_id} value={eq.equipment_id}>
+                        {eq.name} - R {eq.rental_rate_daily?.toFixed(2) || '0.00'}/day
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <Input
@@ -423,8 +435,8 @@ export default function NewReservationPage() {
           </CardContent>
         </Card>
 
-        {/* Financial Breakdown */}
-        {items.length > 0 && formData.rental_start_date && formData.rental_end_date && (
+        {/* Financial Breakdown - Show when dates are set, even without items */}
+        {formData.rental_start_date && formData.rental_end_date && (
           <Card>
             <CardHeader>
               <CardTitle>Financial Breakdown</CardTitle>
@@ -432,10 +444,17 @@ export default function NewReservationPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Equipment Rental ({calculateFinancials().days} days)</span>
-                  <span className="font-medium">R {calculateFinancials().subtotal.toFixed(2)}</span>
-                </div>
+                {items.length > 0 ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Equipment Rental ({calculateFinancials().days} days)</span>
+                    <span className="font-medium">R {calculateFinancials().subtotal.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Equipment Rental ({calculateFinancials().days} days)</span>
+                    <span>R 0.00 - Add equipment to calculate</span>
+                  </div>
+                )}
                 {formData.delivery_required && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery</span>

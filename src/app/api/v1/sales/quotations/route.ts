@@ -20,6 +20,34 @@ const quotationItemSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+// Enhanced delivery options schema for Shiplogic integration
+const deliveryOptionsSchema = z
+  .object({
+    delivery_address: z.record(z.unknown()).optional(),
+    delivery_contact_name: z.string().optional(),
+    delivery_contact_phone: z.string().optional(),
+    delivery_contact_email: z.string().optional(),
+    service_tier_id: z.string().optional(),
+    preferred_courier_provider_id: z.string().uuid().optional(),
+    selected_cost_quote_id: z.string().uuid().optional(),
+    special_instructions: z.string().optional(),
+    weight_kg: z.number().optional(),
+    dimensions: z
+      .object({
+        length_cm: z.number(),
+        width_cm: z.number(),
+        height_cm: z.number(),
+      })
+      .optional(),
+    declared_value: z.number().optional(),
+    is_insured: z.boolean().optional(),
+    requires_signature: z.boolean().optional(),
+    is_fragile: z.boolean().optional(),
+    package_description: z.string().optional(),
+    delivery_cost: z.number().optional(),
+  })
+  .optional();
+
 const createQuotationSchema = z.object({
   customer_id: z.string().uuid(),
   document_number: z.string().optional(),
@@ -33,18 +61,8 @@ const createQuotationSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
   created_by: z.string().uuid().optional().nullable(),
   items: z.array(quotationItemSchema).min(1),
-  // Delivery options
-  delivery_options: z
-    .object({
-      delivery_address: z.record(z.unknown()).optional(),
-      delivery_contact_name: z.string().optional(),
-      delivery_contact_phone: z.string().optional(),
-      service_tier_id: z.string().uuid().optional(),
-      preferred_courier_provider_id: z.string().uuid().optional(),
-      selected_cost_quote_id: z.string().uuid().optional(),
-      special_instructions: z.string().optional(),
-    })
-    .optional(),
+  delivery_options: deliveryOptionsSchema,
+  generate_pdf: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {

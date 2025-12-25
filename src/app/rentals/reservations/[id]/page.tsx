@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Package, FileText } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Package, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Reservation, ReservationItem } from '@/types/rentals';
+import type { RentalAgreement } from '@/services/rentals/agreementService';
 
 export default function ReservationDetailPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function ReservationDetailPage() {
   const reservationId = params?.id as string;
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [items, setItems] = useState<ReservationItem[]>([]);
+  const [agreement, setAgreement] = useState<RentalAgreement | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,6 +37,17 @@ export default function ReservationDetailPage() {
       if (result.success) {
         setReservation(result.data);
         setItems(result.data.items || []);
+        
+        // Fetch agreement
+        try {
+          const agreementRes = await fetch(`/api/rentals/reservations/${reservationId}/agreement`);
+          const agreementData = await agreementRes.json();
+          if (agreementData.success) {
+            setAgreement(agreementData.data);
+          }
+        } catch (err) {
+          console.error('Error fetching agreement:', err);
+        }
       } else {
         toast({
           title: 'Error',
@@ -308,19 +321,104 @@ export default function ReservationDetailPage() {
                 <CardTitle>Rental Agreement</CardTitle>
                 <CardDescription>Legal agreement and terms</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Agreement Status</span>
-                    <Badge variant="outline">Not Generated</Badge>
+              <CardContent className="space-y-4">
+                {agreement ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Agreement Number</span>
+                        <span className="font-medium">{agreement.agreement_number}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Agreement Type</span>
+                        <Badge>{agreement.agreement_type}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Created</span>
+                        <span className="text-sm">{new Date(agreement.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 border-t pt-4">
+                      <div>
+                        <h4 className="font-semibold mb-2">Terms and Conditions</h4>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
+                          {agreement.terms_and_conditions}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold mb-2">Liability Waiver</h4>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
+                          {agreement.liability_waiver}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {agreement.agreement_pdf_url && (
+                      <Button asChild>
+                        <a href={agreement.agreement_pdf_url} target="_blank" rel="noopener noreferrer">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PDF
+                        </a>
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Rental agreement will be generated automatically when reservation is created.
+                    </p>
+                    <Badge variant="outline">Agreement Generated</Badge>
                   </div>
-                  <Button>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Generate Agreement
-                  </Button>
-                </div>
+                )}
               </CardContent>
             </Card>
+            
+            {/* Financial Breakdown */}
+            {reservation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Breakdown</CardTitle>
+                  <CardDescription>Complete cost breakdown for this reservation</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">{formatCurrency(reservation.subtotal || 0)}</span>
+                  </div>
+                  {reservation.delivery_cost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span className="font-medium">{formatCurrency(reservation.delivery_cost)}</span>
+                    </div>
+                  )}
+                  {reservation.setup_cost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Setup</span>
+                      <span className="font-medium">{formatCurrency(reservation.setup_cost)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm border-t pt-2">
+                    <span className="text-muted-foreground">VAT ({(reservation.tax_rate || 0) * 100}%)</span>
+                    <span className="font-medium">{formatCurrency(reservation.tax_amount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total Rental Amount</span>
+                    <span>{formatCurrency(reservation.total_rental_amount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2 border-t">
+                    <span className="text-muted-foreground">Security Deposit</span>
+                    <span className="font-medium text-orange-600">{formatCurrency(reservation.security_deposit_amount)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                    <span>Total Amount Due</span>
+                    <span className="text-primary">{formatCurrency(reservation.total_amount_due || 0)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

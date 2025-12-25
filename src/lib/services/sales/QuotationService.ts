@@ -1,3 +1,5 @@
+// UPDATE: [2025-12-25] Added DocuStore integration for PDF generation and document linking
+
 /**
  * Quotation Service
  *
@@ -6,6 +8,7 @@
 
 import { query } from '@/lib/database/unified-connection';
 import { DocumentNumberingService } from './DocumentNumberingService';
+import { QuotationPDFService } from '@/lib/services/docustore/quotation-pdf-service';
 
 export interface Quotation {
   id: string;
@@ -61,15 +64,27 @@ export interface QuotationInsert {
   metadata?: Record<string, unknown>;
   created_by?: string | null;
   items: Omit<QuotationItem, 'id' | 'quotation_id'>[];
-  // Delivery options
+  // Delivery options (enhanced)
   delivery_options?: {
     delivery_address?: Record<string, unknown>;
     delivery_contact_name?: string;
     delivery_contact_phone?: string;
+    delivery_contact_email?: string;
     service_tier_id?: string;
     preferred_courier_provider_id?: string;
+    selected_cost_quote_id?: string;
     special_instructions?: string;
+    weight_kg?: number;
+    dimensions?: { length_cm: number; width_cm: number; height_cm: number };
+    declared_value?: number;
+    is_insured?: boolean;
+    requires_signature?: boolean;
+    is_fragile?: boolean;
+    package_description?: string;
+    delivery_cost?: number;
   };
+  // Generate PDF after creation
+  generate_pdf?: boolean;
 }
 
 export interface QuotationUpdate {
@@ -298,29 +313,76 @@ export class QuotationService {
           await query(
             `INSERT INTO quotation_delivery_options (
               quotation_id, delivery_address, delivery_contact_name, delivery_contact_phone,
-              service_tier_id, preferred_courier_provider_id, special_instructions
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+              delivery_contact_email, service_tier_id, preferred_courier_provider_id, 
+              selected_cost_quote_id, special_instructions,
+              weight_kg, dimensions_length_cm, dimensions_width_cm, dimensions_height_cm,
+              package_description, declared_value, is_insured, requires_signature, is_fragile,
+              delivery_cost
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             ON CONFLICT (quotation_id) DO UPDATE SET
               delivery_address = EXCLUDED.delivery_address,
               delivery_contact_name = EXCLUDED.delivery_contact_name,
               delivery_contact_phone = EXCLUDED.delivery_contact_phone,
+              delivery_contact_email = EXCLUDED.delivery_contact_email,
               service_tier_id = EXCLUDED.service_tier_id,
               preferred_courier_provider_id = EXCLUDED.preferred_courier_provider_id,
+              selected_cost_quote_id = EXCLUDED.selected_cost_quote_id,
               special_instructions = EXCLUDED.special_instructions,
+              weight_kg = EXCLUDED.weight_kg,
+              dimensions_length_cm = EXCLUDED.dimensions_length_cm,
+              dimensions_width_cm = EXCLUDED.dimensions_width_cm,
+              dimensions_height_cm = EXCLUDED.dimensions_height_cm,
+              package_description = EXCLUDED.package_description,
+              declared_value = EXCLUDED.declared_value,
+              is_insured = EXCLUDED.is_insured,
+              requires_signature = EXCLUDED.requires_signature,
+              is_fragile = EXCLUDED.is_fragile,
+              delivery_cost = EXCLUDED.delivery_cost,
               updated_at = now()`,
             [
               updatedResult.rows[0].id,
               JSON.stringify(data.delivery_options.delivery_address || {}),
               data.delivery_options.delivery_contact_name || null,
               data.delivery_options.delivery_contact_phone || null,
+              data.delivery_options.delivery_contact_email || null,
               data.delivery_options.service_tier_id || null,
               data.delivery_options.preferred_courier_provider_id || null,
+              data.delivery_options.selected_cost_quote_id || null,
               data.delivery_options.special_instructions || null,
+              data.delivery_options.weight_kg || null,
+              data.delivery_options.dimensions?.length_cm || null,
+              data.delivery_options.dimensions?.width_cm || null,
+              data.delivery_options.dimensions?.height_cm || null,
+              data.delivery_options.package_description || null,
+              data.delivery_options.declared_value || null,
+              data.delivery_options.is_insured || false,
+              data.delivery_options.requires_signature || false,
+              data.delivery_options.is_fragile || false,
+              data.delivery_options.delivery_cost || null,
             ]
           );
         } catch (deliveryError) {
           console.error('Error saving delivery options:', deliveryError);
           // Don't fail quotation creation if delivery options fail
+        }
+      }
+
+      // Generate PDF and store in DocuStore if requested or by default
+      const shouldGeneratePDF = data.generate_pdf !== false;
+      if (shouldGeneratePDF) {
+        try {
+          const quotationData = await QuotationPDFService.getQuotationForPDF(updatedResult.rows[0].id);
+          if (quotationData) {
+            await QuotationPDFService.generateQuotationPDF(
+              quotationData,
+              data.org_id,
+              data.created_by || undefined
+            );
+            console.log('Quotation PDF generated and stored in DocuStore');
+          }
+        } catch (pdfError) {
+          // Log but don't fail quotation creation if PDF generation fails
+          console.error('Error generating quotation PDF:', pdfError);
         }
       }
 

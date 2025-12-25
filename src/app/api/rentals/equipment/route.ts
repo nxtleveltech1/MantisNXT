@@ -74,13 +74,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Default to showing only active equipment if not specified
+    // Don't filter by is_active by default - show all equipment unless explicitly filtered
     const equipment = await equipmentService.listEquipment({
       equipment_type,
       availability_status,
       category_id,
-      is_active: is_active !== undefined ? is_active : true, // Default to active only
-      limit,
+      is_active: is_active !== undefined ? is_active : undefined, // Show all unless specified
+      limit: limit || 1000, // Default to 1000 if not specified
       offset,
     });
 

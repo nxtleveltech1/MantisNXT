@@ -6,11 +6,19 @@ interface DocumentTotalsProps {
   total: number;
   currency?: string;
   className?: string;
+  label?: string;
 }
 
-export function DocumentTotals({ subtotal, totalTax, total, currency = 'ZAR', className }: DocumentTotalsProps) {
+export function DocumentTotals({ 
+  subtotal, 
+  totalTax, 
+  total, 
+  currency = 'ZAR', 
+  className,
+  label,
+}: DocumentTotalsProps) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: currency,
     }).format(amount);
@@ -18,6 +26,9 @@ export function DocumentTotals({ subtotal, totalTax, total, currency = 'ZAR', cl
 
   return (
     <div className={className}>
+      {label && (
+        <div className="text-sm font-medium text-muted-foreground mb-2">{label}</div>
+      )}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal:</span>

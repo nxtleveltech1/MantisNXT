@@ -4,9 +4,21 @@ import { z } from 'zod';
 import { DeliveryCostService } from '@/lib/services/logistics';
 import { getOrgId } from '@/app/api/v1/sales/_helpers';
 
+// Contact schema for pickup/delivery contacts
+const contactSchema = z
+  .object({
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().optional(),
+    company: z.string().optional(),
+  })
+  .optional();
+
 const getQuotesSchema = z.object({
   pickup_address: z.record(z.unknown()),
+  pickup_contact: contactSchema,
   delivery_address: z.record(z.unknown()),
+  delivery_contact: contactSchema,
   weight_kg: z.number().positive(),
   dimensions: z
     .object({
@@ -17,6 +29,7 @@ const getQuotesSchema = z.object({
     .optional(),
   service_tier: z.enum(['standard', 'express', 'urgent']).optional(),
   declared_value: z.number().nonnegative().optional(),
+  package_description: z.string().optional(),
   requires_signature: z.boolean().default(false),
   is_fragile: z.boolean().default(false),
   is_insured: z.boolean().default(false),

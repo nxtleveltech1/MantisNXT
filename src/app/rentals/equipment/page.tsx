@@ -60,15 +60,26 @@ export default function EquipmentPage() {
   const fetchEquipment = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/rentals/equipment');
+      const response = await fetch('/api/rentals/equipment?limit=1000');
       const result = await response.json();
+      console.log('Equipment list API response:', result);
 
       if (result.success) {
-        setEquipment(result.data || []);
+        const equipment = result.data || [];
+        console.log('Equipment loaded:', equipment.length, 'items');
+        setEquipment(equipment);
+        if (equipment.length === 0) {
+          toast({
+            title: 'No Equipment',
+            description: 'No equipment found. Please add equipment first.',
+            variant: 'default',
+          });
+        }
       } else {
+        console.error('Equipment fetch error:', result);
         toast({
           title: 'Error',
-          description: 'Failed to load equipment',
+          description: result.error || 'Failed to load equipment',
           variant: 'destructive',
         });
       }
@@ -76,7 +87,7 @@ export default function EquipmentPage() {
       console.error('Error fetching equipment:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load equipment',
+        description: error instanceof Error ? error.message : 'Failed to load equipment',
         variant: 'destructive',
       });
     } finally {
