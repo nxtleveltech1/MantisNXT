@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Package, FileText, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Package, FileText, Download, Send, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Reservation, ReservationItem } from '@/types/rentals';
 import type { RentalAgreement } from '@/services/rentals/agreementService';
+import { SendAgreementDialog } from '@/components/rentals/SendAgreementDialog';
 
 export default function ReservationDetailPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ReservationDetailPage() {
   const [items, setItems] = useState<ReservationItem[]>([]);
   const [agreement, setAgreement] = useState<RentalAgreement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
   useEffect(() => {
     if (reservationId) {
@@ -316,6 +318,27 @@ export default function ReservationDetailPage() {
           </TabsContent>
 
           <TabsContent value="agreement" className="space-y-4">
+            {/* Send Agreement for Signing Card */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MessageSquare className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Send Agreement for Signing</CardTitle>
+                      <CardDescription>Send via SMS or WhatsApp for digital signature</CardDescription>
+                    </div>
+                  </div>
+                  <Button onClick={() => setSendDialogOpen(true)} disabled={!agreement}>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Agreement
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Rental Agreement</CardTitle>
@@ -355,14 +378,16 @@ export default function ReservationDetailPage() {
                       </div>
                     </div>
                     
-                    {agreement.agreement_pdf_url && (
-                      <Button asChild>
-                        <a href={agreement.agreement_pdf_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="mr-2 h-4 w-4" />
-                          Download PDF
-                        </a>
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {agreement.agreement_pdf_url && (
+                        <Button variant="outline" asChild>
+                          <a href={agreement.agreement_pdf_url} target="_blank" rel="noopener noreferrer">
+                            <Download className="mr-2 h-4 w-4" />
+                            Download PDF
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="text-center py-8">
@@ -422,6 +447,17 @@ export default function ReservationDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Send Agreement Dialog */}
+      <SendAgreementDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        reservationId={reservationId}
+        reservationNumber={reservation.reservation_number}
+        customerName={reservation.customer_name || 'Customer'}
+        customerPhone={reservation.customer_phone}
+        onSent={fetchReservation}
+      />
     </AppLayout>
   );
 }

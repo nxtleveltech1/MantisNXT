@@ -17,8 +17,15 @@ import { generateRentalAgreement } from './agreementService';
 export async function getReservationById(reservationId: string): Promise<Reservation | null> {
   const result = await query<Reservation>(
     `
-      SELECT * FROM rentals.reservations
-      WHERE reservation_id = $1
+      SELECT 
+        r.*,
+        c.name as customer_name,
+        c.email as customer_email,
+        c.phone as customer_phone,
+        c.company as customer_company
+      FROM rentals.reservations r
+      LEFT JOIN customer c ON c.id = r.customer_id
+      WHERE r.reservation_id = $1
     `,
     [reservationId]
   );

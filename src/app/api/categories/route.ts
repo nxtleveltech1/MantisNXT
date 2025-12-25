@@ -179,7 +179,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Legacy schema fallback
+    // Legacy schema fallback - use core.category for consistency
     let level = 0;
     let path = name;
 
@@ -187,8 +187,8 @@ export async function POST(request: Request) {
       const parentResult = await dbQuery<{ path: string; level: number }>(
         `
           SELECT path, level
-          FROM categories
-          WHERE id = $1
+          FROM core.category
+          WHERE category_id = $1
         `,
         [parentId]
       );
@@ -206,24 +206,31 @@ export async function POST(request: Request) {
     }
 
     const insertResult = await dbQuery<{
-      id: string;
+      category_id: string;
       name: string;
-      parentId: string | null;
+      parent_id: string | null;
       path: string;
       level: number;
     }>(
       `
-        INSERT INTO categories (name, parent_id, path, level)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, name, parent_id AS "parentId", path, level
+        INSERT INTO core.category (name, parent_id, path, level, is_active, created_at, updated_at)
+        VALUES ($1, $2::uuid, $3, $4, true, NOW(), NOW())
+        RETURNING category_id, name, parent_id, path, level
       `,
       [name, parentId, path, level]
     );
 
+    const created = insertResult.rows[0];
     return NextResponse.json(
       {
         success: true,
-        category: insertResult.rows[0],
+        category: {
+          id: created.category_id,
+          name: created.name,
+          parentId: created.parent_id,
+          path: created.path,
+          level: Number(created.level ?? 0),
+        },
       },
       { status: 201 }
     );

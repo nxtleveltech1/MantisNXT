@@ -77,6 +77,11 @@ export interface Reservation {
   reservation_id: string;
   reservation_number: string;
   customer_id: string;
+  // Customer info (joined from customer table)
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_company?: string;
   event_name?: string;
   event_type?: string;
   event_date_start?: string;

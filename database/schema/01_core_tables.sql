@@ -8,12 +8,15 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
 
+-- Ensure core schema exists
+CREATE SCHEMA IF NOT EXISTS core;
+
 -- =================
 -- CORE ENTITIES
 -- =================
 
 -- Products master table
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS core.products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sku VARCHAR(100) NOT NULL UNIQUE,
     name VARCHAR(500) NOT NULL,
@@ -37,10 +40,10 @@ CREATE TABLE products (
 );
 
 -- Categories with hierarchical structure
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS core.categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(200) NOT NULL,
-    parent_id UUID REFERENCES categories(id),
+    parent_id UUID REFERENCES core.categories(id),
     path TEXT NOT NULL, -- Materialized path for fast hierarchy queries
     level INTEGER NOT NULL DEFAULT 0,
     sort_order INTEGER DEFAULT 0,
@@ -49,7 +52,7 @@ CREATE TABLE categories (
 );
 
 -- Brands/Manufacturers
-CREATE TABLE brands (
+CREATE TABLE IF NOT EXISTS core.brands (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(200) NOT NULL UNIQUE,
     code VARCHAR(50),
@@ -62,10 +65,10 @@ CREATE TABLE brands (
 -- =================
 
 -- Real-time inventory balances (one record per product-location)
-CREATE TABLE inventory_balances (
+CREATE TABLE IF NOT EXISTS core.inventory_balances (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id),
-    location_id UUID NOT NULL REFERENCES locations(id),
+    product_id UUID NOT NULL REFERENCES core.products(id),
+    location_id UUID NOT NULL REFERENCES core.locations(id),
     quantity_on_hand INTEGER NOT NULL DEFAULT 0,
     quantity_allocated INTEGER NOT NULL DEFAULT 0,
     quantity_available INTEGER GENERATED ALWAYS AS (quantity_on_hand - quantity_allocated) STORED,
@@ -76,10 +79,10 @@ CREATE TABLE inventory_balances (
 );
 
 -- Inventory movements (all transactions)
-CREATE TABLE inventory_movements (
+CREATE TABLE IF NOT EXISTS core.inventory_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id),
-    location_id UUID NOT NULL REFERENCES locations(id),
+    product_id UUID NOT NULL REFERENCES core.products(id),
+    location_id UUID NOT NULL REFERENCES core.locations(id),
     movement_type VARCHAR(20) NOT NULL, -- IN, OUT, ADJUSTMENT, TRANSFER
     reference_type VARCHAR(30), -- PURCHASE, SALE, ADJUSTMENT, TRANSFER, etc.
     reference_id UUID,
@@ -94,7 +97,7 @@ CREATE TABLE inventory_movements (
 );
 
 -- Locations/Warehouses
-CREATE TABLE locations (
+CREATE TABLE IF NOT EXISTS core.locations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
@@ -109,9 +112,9 @@ CREATE TABLE locations (
 -- =================
 
 -- Batch/Lot tracking for products
-CREATE TABLE product_batches (
+CREATE TABLE IF NOT EXISTS core.product_batches (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id),
+    product_id UUID NOT NULL REFERENCES core.products(id),
     batch_number VARCHAR(100) NOT NULL,
     expiry_date DATE,
     manufacture_date DATE,
@@ -128,9 +131,9 @@ CREATE TABLE product_batches (
 -- =================
 
 -- Product price history
-CREATE TABLE product_price_history (
+CREATE TABLE IF NOT EXISTS core.product_price_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id),
+    product_id UUID NOT NULL REFERENCES core.products(id),
     price_type VARCHAR(20) NOT NULL, -- COST, SALE
     old_price DECIMAL(15,4),
     new_price DECIMAL(15,4) NOT NULL,
@@ -140,10 +143,10 @@ CREATE TABLE product_price_history (
 );
 
 -- Stock adjustment audit
-CREATE TABLE stock_adjustments (
+CREATE TABLE IF NOT EXISTS core.stock_adjustments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id),
-    location_id UUID NOT NULL REFERENCES locations(id),
+    product_id UUID NOT NULL REFERENCES core.products(id),
+    location_id UUID NOT NULL REFERENCES core.locations(id),
     adjustment_type VARCHAR(20) NOT NULL, -- COUNT, SHRINKAGE, DAMAGE, EXPIRED
     old_quantity INTEGER NOT NULL,
     new_quantity INTEGER NOT NULL,
@@ -159,23 +162,23 @@ CREATE TABLE stock_adjustments (
 -- FOREIGN KEY CONSTRAINTS
 -- =================
 
-ALTER TABLE products ADD CONSTRAINT fk_products_category
-    FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE core.products ADD CONSTRAINT fk_products_category
+    FOREIGN KEY (category_id) REFERENCES core.categories(id);
 
-ALTER TABLE products ADD CONSTRAINT fk_products_brand
-    FOREIGN KEY (brand_id) REFERENCES brands(id);
+ALTER TABLE core.products ADD CONSTRAINT fk_products_brand
+    FOREIGN KEY (brand_id) REFERENCES core.brands(id);
 
 -- =================
 -- CHECK CONSTRAINTS
 -- =================
 
-ALTER TABLE inventory_balances ADD CONSTRAINT chk_quantities_non_negative
+ALTER TABLE core.inventory_balances ADD CONSTRAINT chk_quantities_non_negative
     CHECK (quantity_on_hand >= 0 AND quantity_allocated >= 0);
 
-ALTER TABLE inventory_movements ADD CONSTRAINT chk_movement_type
+ALTER TABLE core.inventory_movements ADD CONSTRAINT chk_movement_type
     CHECK (movement_type IN ('IN', 'OUT', 'ADJUSTMENT', 'TRANSFER'));
 
-ALTER TABLE product_batches ADD CONSTRAINT chk_batch_quantities
+ALTER TABLE core.product_batches ADD CONSTRAINT chk_batch_quantities
     CHECK (quantity_received >= 0 AND quantity_remaining >= 0 AND quantity_remaining <= quantity_received);
 
 -- =================
@@ -183,15 +186,15 @@ ALTER TABLE product_batches ADD CONSTRAINT chk_batch_quantities
 -- =================
 
 -- Update inventory balances on movements
-CREATE OR REPLACE FUNCTION update_inventory_balance()
+CREATE OR REPLACE FUNCTION core.update_inventory_balance()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Update or insert inventory balance
-    INSERT INTO inventory_balances (product_id, location_id, quantity_on_hand, last_movement_at)
+    INSERT INTO core.inventory_balances (product_id, location_id, quantity_on_hand, last_movement_at)
     VALUES (NEW.product_id, NEW.location_id, NEW.quantity, NEW.created_at)
     ON CONFLICT (product_id, location_id)
     DO UPDATE SET
-        quantity_on_hand = inventory_balances.quantity_on_hand + NEW.quantity,
+        quantity_on_hand = core.inventory_balances.quantity_on_hand + NEW.quantity,
         last_movement_at = NEW.created_at,
         updated_at = NOW();
 
@@ -200,11 +203,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_inventory_balance
-    AFTER INSERT ON inventory_movements
-    FOR EACH ROW EXECUTE FUNCTION update_inventory_balance();
+    AFTER INSERT ON core.inventory_movements
+    FOR EACH ROW EXECUTE FUNCTION core.update_inventory_balance();
 
 -- Update timestamps
-CREATE OR REPLACE FUNCTION update_updated_at()
+CREATE OR REPLACE FUNCTION core.update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -213,5 +216,5 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_products_updated_at
-    BEFORE UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    BEFORE UPDATE ON core.products
+    FOR EACH ROW EXECUTE FUNCTION core.update_updated_at();

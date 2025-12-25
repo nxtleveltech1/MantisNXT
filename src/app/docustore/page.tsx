@@ -136,6 +136,9 @@ async function fetchDocuments(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ documents: SigningDocument[]; total: number }> {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchDocuments:entry',message:'fetchDocuments called',data:{params},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+  // #endregion
   const searchParams = new URLSearchParams();
   if (params?.status) searchParams.set('status', params.status);
   if (params?.document_type) searchParams.set('document_type', params.document_type);
@@ -144,11 +147,17 @@ async function fetchDocuments(params?: {
   if (params?.offset) searchParams.set('offset', String(params.offset));
 
   const response = await fetch(`/api/v1/docustore?${searchParams.toString()}`);
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchDocuments:response',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   if (!response.ok) {
     throw new Error('Failed to fetch documents');
   }
 
   const result = await response.json();
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchDocuments:result',message:'API result parsed',data:{success:result.success,dataLength:result.data?.length,error:result.error},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,C'})}).catch(()=>{});
+  // #endregion
   if (!result.success) {
     throw new Error(result.error || 'Unknown error');
   }
@@ -305,6 +314,9 @@ export default function DocuStorePage() {
         setFolders(flattenFolders(result.data));
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:loadFolders:error',message:'loadFolders caught error',data:{error:String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading folders:', error);
       // Fallback to derived folders if API fails
     }
@@ -312,6 +324,9 @@ export default function DocuStorePage() {
 
   // Load data from API
   const loadData = useCallback(async (showLoadingState = true) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:loadData:entry',message:'loadData called',data:{showLoadingState,selectedStatus,searchTerm},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,E'})}).catch(()=>{});
+    // #endregion
     if (showLoadingState) setLoading(true);
     try {
       const params: Parameters<typeof fetchDocuments>[0] = {
@@ -325,7 +340,9 @@ export default function DocuStorePage() {
       }
       
       const result = await fetchDocuments(params);
-      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:loadData:fetched',message:'Documents fetched',data:{docCount:result.documents.length,total:result.total},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+      // #endregion
       setDocuments(result.documents);
       
       // Load folders from API
@@ -341,6 +358,9 @@ export default function DocuStorePage() {
       setStatusCounts(calculateStatusCounts(result.documents));
       setFolderCounts(calculateFolderCounts(result.documents, folders.length > 0 ? folders : derivedFolders));
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:loadData:error',message:'loadData caught error',data:{error:String(error),stack:(error as Error)?.stack?.slice(0,500)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading documents:', error);
       toast.error('Failed to load documents');
     } finally {
