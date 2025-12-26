@@ -251,7 +251,7 @@ export function FolderRow({
   selectedDocuments = [],
   className,
 }: FolderRowProps) {
-  const [isExpanded, setIsExpanded] = useState(folder.isExpanded ?? false);
+  const [isExpanded, setIsExpanded] = useState(folder.isExpanded ?? true);
 
   return (
     <div className={cn('', className)}>
