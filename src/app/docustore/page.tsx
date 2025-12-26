@@ -481,6 +481,9 @@ export default function DocuStorePage() {
 
   // Filter documents
   const filteredDocuments = useMemo(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:filteredDocuments',message:'Filtering documents',data:{docCount:documents.length,selectedFolderId,selectedStatus,searchTerm},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     return documents.filter((doc) => {
       // Search filter
       if (searchTerm) {
@@ -508,19 +511,41 @@ export default function DocuStorePage() {
 
   // Group documents by folder for display
   const rowItems = useMemo((): DocuStoreRowItem[] => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:rowItems:entry',message:'Building rowItems',data:{filteredCount:filteredDocuments.length,folderCount:folders.length,selectedFolderId,docSample:filteredDocuments.slice(0,2).map(d=>({id:d.id,title:d.title,folderId:d.folderId,documentType:d.documentType})),folderIds:folders.map(f=>({id:f.id,slug:f.slug})).slice(0,3)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     // If a specific folder is selected, just show documents
     if (selectedFolderId && selectedFolderId !== 'shared' && selectedFolderId !== 'deleted') {
       return filteredDocuments.map((doc) => ({ type: 'document' as const, data: doc }));
     }
 
-    // Group by folder
+    // Group by folder - map document_type to folder slug
     const folderMap = new Map<string, SigningDocument[]>();
     const ungroupedDocs: SigningDocument[] = [];
 
     filteredDocuments.forEach((doc) => {
-      if (doc.folderId) {
-        const existing = folderMap.get(doc.folderId) || [];
-        folderMap.set(doc.folderId, [...existing, doc]);
+      // Map document_type to folder slug
+      let folderSlug: string | null = null;
+      if (doc.documentType) {
+        const typeToSlug: Record<string, string> = {
+          'invoice': 'sales',
+          'quotation': 'sales',
+          'sales_order': 'sales',
+          'rental_agreement': 'rentals',
+          'repair_order': 'repairs',
+          'journal_entry': 'financial',
+          'ap_invoice': 'financial',
+          'purchase_order': 'purchasing',
+          'delivery_note': 'logistics',
+          'customer_statement': 'customers',
+          'stock_adjustment': 'inventory',
+        };
+        folderSlug = typeToSlug[doc.documentType] || null;
+      }
+      
+      if (folderSlug) {
+        const existing = folderMap.get(folderSlug) || [];
+        folderMap.set(folderSlug, [...existing, doc]);
       } else {
         ungroupedDocs.push(doc);
       }
@@ -530,7 +555,12 @@ export default function DocuStorePage() {
 
     // Add folders
     folders.forEach((folder) => {
-      const folderDocs = folderMap.get(folder.id) || [];
+      const folderDocs = folderMap.get(folder.slug) || [];
+      // #region agent log
+      if (folderDocs.length > 0) {
+        fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:rowItems:folderMatch',message:'Folder matched with docs',data:{folderSlug:folder.slug,folderId:folder.id,docCount:folderDocs.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+      }
+      // #endregion
       if (folderDocs.length > 0) {
         items.push({
           type: 'folder',
@@ -548,6 +578,9 @@ export default function DocuStorePage() {
       items.push({ type: 'document', data: doc });
     });
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/ec77970d-7ede-4080-bc34-d66bf3313bde',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:rowItems:exit',message:'rowItems built',data:{totalItems:items.length,folderItems:items.filter(i=>i.type==='folder').length,documentItems:items.filter(i=>i.type==='document').length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     return items;
   }, [filteredDocuments, folders, selectedFolderId]);
 
