@@ -70,6 +70,9 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
         if (filtersToUse?.hasActiveContracts !== undefined) {
           params.append('preferred_only', filtersToUse.hasActiveContracts.toString());
         }
+        
+        // Request all suppliers (up to 500)
+        params.append('limit', '500');
 
         const url = `/api/suppliers?${params.toString()}`;
 

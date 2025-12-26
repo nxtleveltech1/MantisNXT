@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
       createdAfter: searchParams.get('createdAfter') || undefined,
       createdBefore: searchParams.get('createdBefore') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 500,
       sortBy: searchParams.get('sortBy') || 'name',
       sortOrder: searchParams.get('sortOrder') || 'asc',
     };

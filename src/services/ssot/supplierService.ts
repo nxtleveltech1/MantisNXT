@@ -15,7 +15,7 @@ export interface SupplierListFilters {
 export async function listSuppliers(
   filters: SupplierListFilters = {}
 ): Promise<{ data: Supplier[]; total: number; page: number; limit: number }> {
-  const { search, status, page = 1, limit = 50, sortBy = 'name', sortOrder = 'asc' } = filters;
+  const { search, status, page = 1, limit = 500, sortBy = 'name', sortOrder = 'asc' } = filters;
 
   const offset = (page - 1) * limit;
 
