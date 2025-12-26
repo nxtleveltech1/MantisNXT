@@ -30,6 +30,8 @@ import { CostPlusOptimizer } from '@/lib/pricing/algorithms/CostPlusOptimizer';
 import { MarketBasedOptimizer } from '@/lib/pricing/algorithms/MarketBasedOptimizer';
 import { DemandElasticityOptimizer } from '@/lib/pricing/algorithms/DemandElasticityOptimizer';
 import { DynamicPricingOptimizer } from '@/lib/pricing/algorithms/DynamicPricingOptimizer';
+import { BaseOptimizer } from '@/lib/pricing/algorithms/BaseOptimizer';
+import type { ProductData } from '@/lib/pricing/algorithms/BaseOptimizer';
 
 export interface StartOptimizationInput {
   run_name: string;
@@ -203,6 +205,8 @@ export class PricingOptimizationService {
   static async getProgress(runId: string): Promise<OptimizationProgress | null> {
     const sql = `
       SELECT 
+        run_id,
+        status,
         progress_percent,
         current_step,
         products_processed,
@@ -218,6 +222,8 @@ export class PricingOptimizationService {
 
     const row = result.rows[0];
     return {
+      run_id: row.run_id,
+      status: row.status as OptimizationStatus,
       progress_percent: Number(row.progress_percent || 0),
       current_step: row.current_step || '',
       products_processed: Number(row.products_processed || 0),
@@ -447,7 +453,7 @@ export class PricingOptimizationService {
   /**
    * Get products in optimization scope
    */
-  private static async getProductsInScope(scope: OptimizationRun['scope']): Promise<unknown[]> {
+  private static async getProductsInScope(scope: OptimizationRun['scope']): Promise<ProductData[]> {
     let sql = `
       SELECT p.*, sp.cost, sp.price, sp.supplier_id, b.name as brand_name, c.name as category_name
       FROM ${CORE_TABLES.PRODUCT} p
@@ -480,8 +486,19 @@ export class PricingOptimizationService {
       params.push(scope.product_ids);
     }
 
-    const result = await query<unknown>(sql, params);
-    return result.rows;
+    const result = await query<ProductData>(sql, params);
+    return result.rows.map(row => ({
+      product_id: row.product_id,
+      sku: row.sku,
+      name: row.name,
+      category_id: row.category_id,
+      brand_id: row.brand_id,
+      supplier_id: row.supplier_id,
+      cost: row.cost ? Number(row.cost) : undefined,
+      price: row.price ? Number(row.price) : undefined,
+      brand_name: row.brand_name,
+      category_name: row.category_name,
+    }));
   }
 
   /**
@@ -490,8 +507,8 @@ export class PricingOptimizationService {
   private static getOptimizers(
     strategy: PricingStrategy,
     config: OptimizationRun['config']
-  ): unknown[] {
-    const optimizers: unknown[] = [];
+  ): BaseOptimizer[] {
+    const optimizers: BaseOptimizer[] = [];
 
     if (config.algorithms) {
       if (config.algorithms.includes('cost_plus')) {

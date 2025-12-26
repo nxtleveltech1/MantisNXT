@@ -1,0 +1,6 @@
+supplier_id,type,name,address_line1,address_line2,city,state,postal_code,country,is_primary,is_active
+"<supplier-uuid-1>","headquarters","Main Office","123 Main Street","Building A, Floor 3","Johannesburg","Gauteng","2000","South Africa",true,true
+"<supplier-uuid-1>","warehouse","Distribution Center","456 Warehouse Road","","Johannesburg","Gauteng","2001","South Africa",false,true
+"<supplier-uuid-2>","headquarters","Head Office","789 Tech Avenue","","Cape Town","Western Cape","8000","South Africa",true,true
+
+

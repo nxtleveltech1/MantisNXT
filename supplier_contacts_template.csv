@@ -1,0 +1,6 @@
+supplier_id,name,type,title,email,phone,mobile,department,is_primary,is_active
+"<supplier-uuid-1>","John Smith","primary","Sales Manager","john.smith@acme.com","+27123456789","+27123456790","Sales",true,true
+"<supplier-uuid-1>","Jane Doe","billing","Accounts Manager","jane.doe@acme.com","+27123456791","","Finance",false,true
+"<supplier-uuid-2>","Mike Johnson","primary","Director","mike@techsupplies.co.za","+27987654321","+27987654322","Management",true,true
+
+

@@ -1,0 +1,6 @@
+supplier_id,overall_rating,quality_rating,delivery_rating,service_rating,price_rating
+"<supplier-uuid-1>",4.50,4.60,4.40,4.50,4.40
+"<supplier-uuid-2>",4.20,4.30,4.10,4.20,4.20
+"<supplier-uuid-3>",0.00,0.00,0.00,0.00,0.00
+
+

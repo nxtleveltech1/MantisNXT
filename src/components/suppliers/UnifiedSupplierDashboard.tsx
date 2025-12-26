@@ -426,7 +426,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [supplierActivities, setSupplierActivities] = useState<unknown[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(100);
 
   // Convert API suppliers to component format with pagination
   const suppliers = useMemo(() => {
