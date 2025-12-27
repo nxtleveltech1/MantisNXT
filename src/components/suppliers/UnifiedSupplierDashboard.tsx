@@ -428,15 +428,12 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(100);
 
-  // Convert API suppliers to component format with pagination
+  // Convert API suppliers to component format (no pagination slicing here)
   const suppliers = useMemo(() => {
-    const transformed = apiSuppliers.map((supplier: unknown) =>
+    return apiSuppliers.map((supplier: unknown) =>
       transformDatabaseSupplierToSupplierData(supplier)
     );
-    // Apply pagination to reduce initial data load
-    const startIndex = (currentPage - 1) * pageSize;
-    return transformed.slice(startIndex, startIndex + pageSize);
-  }, [apiSuppliers, currentPage, pageSize]);
+  }, [apiSuppliers]);
 
   // Legacy code (remove after confirming new transformation works)
   const _legacyTransform = useMemo(() => {
@@ -1256,7 +1253,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSuppliers.map(supplier => (
+                      {filteredSuppliers
+                        .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                        .map(supplier => (
                         <TableRow
                           key={supplier.id}
                           className="hover:bg-muted/50 cursor-pointer"
@@ -1404,10 +1403,46 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from(
-                        { length: Math.min(5, Math.ceil(filteredSuppliers.length / pageSize)) },
-                        (_, i) => {
-                          const pageNum = i + 1;
+                      {(() => {
+                        const totalPages = Math.ceil(filteredSuppliers.length / pageSize);
+                        const maxVisiblePages = 10;
+                        const pages: number[] = [];
+                        
+                        if (totalPages <= maxVisiblePages) {
+                          // Show all pages if 10 or fewer
+                          for (let i = 1; i <= totalPages; i++) {
+                            pages.push(i);
+                          }
+                        } else {
+                          // Show first page, pages around current, and last page
+                          pages.push(1);
+                          
+                          const startPage = Math.max(2, currentPage - 2);
+                          const endPage = Math.min(totalPages - 1, currentPage + 2);
+                          
+                          if (startPage > 2) {
+                            pages.push(-1); // -1 represents ellipsis
+                          }
+                          
+                          for (let i = startPage; i <= endPage; i++) {
+                            pages.push(i);
+                          }
+                          
+                          if (endPage < totalPages - 1) {
+                            pages.push(-1); // -1 represents ellipsis
+                          }
+                          
+                          pages.push(totalPages);
+                        }
+                        
+                        return pages.map((pageNum, idx) => {
+                          if (pageNum === -1) {
+                            return (
+                              <span key={`ellipsis-${idx}`} className="text-muted-foreground px-1">
+                                ...
+                              </span>
+                            );
+                          }
                           return (
                             <Button
                               key={pageNum}
@@ -1419,23 +1454,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                               {pageNum}
                             </Button>
                           );
-                        }
-                      )}
-                      {Math.ceil(filteredSuppliers.length / pageSize) > 5 && (
-                        <>
-                          <span className="text-muted-foreground px-1">...</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setCurrentPage(Math.ceil(filteredSuppliers.length / pageSize))
-                            }
-                            className="min-w-[32px]"
-                          >
-                            {Math.ceil(filteredSuppliers.length / pageSize)}
-                          </Button>
-                        </>
-                      )}
+                        });
+                      })()}
                     </div>
                     <Button
                       variant="outline"
