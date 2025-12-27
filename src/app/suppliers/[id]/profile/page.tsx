@@ -22,6 +22,9 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload';
 import { Loader } from '@/components/kokonutui';
+import { DiscountRulesManager } from '@/components/suppliers/DiscountRulesManager';
+import { SupplierCategoriesTab } from '@/components/suppliers/SupplierCategoriesTab';
+import { SupplierBrandsTab } from '@/components/suppliers/SupplierBrandsTab';
 import {
   FileUp,
   Settings,
@@ -162,7 +165,10 @@ function SupplierProfileContent() {
   const search = useSearchParams();
   const supplierId = String(params?.id || '');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
-  const [activeTab, setActiveTab] = useState<string>(search?.get('tab') || 'overview');
+  const initialTab = search?.get('tab') || 'overview';
+  // Redirect old tab names to new merged tab
+  const normalizedTab = initialTab === 'rules' || initialTab === 'discounts' ? 'pricing-discounts' : initialTab;
+  const [activeTab, setActiveTab] = useState<string>(normalizedTab);
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [uploads, setUploads] = useState<UploadRow[]>([]);
@@ -611,12 +617,14 @@ function SupplierProfileContent() {
         <Tabs
           value={activeTab}
           onValueChange={v => {
-            setActiveTab(v);
-            router.push(`/suppliers/${supplierId}/profile?tab=${v}`);
+            // Normalize old tab names to new merged tab
+            const normalizedTab = v === 'rules' || v === 'discounts' ? 'pricing-discounts' : v;
+            setActiveTab(normalizedTab);
+            router.push(`/suppliers/${supplierId}/profile?tab=${normalizedTab}`);
           }}
           className="space-y-6"
         >
-          <TabsList className="bg-muted/50 grid w-full grid-cols-7 p-1">
+          <TabsList className="bg-muted/50 grid w-full grid-cols-9 p-1">
             <TabsTrigger
               value="overview"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -636,10 +644,22 @@ function SupplierProfileContent() {
               Metrics
             </TabsTrigger>
             <TabsTrigger
-              value="rules"
+              value="pricing-discounts"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
-              Pricelists & Rules
+              Pricing & Discounts
+            </TabsTrigger>
+            <TabsTrigger
+              value="categories"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Categories
+            </TabsTrigger>
+            <TabsTrigger
+              value="brands"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Brands
             </TabsTrigger>
             <TabsTrigger
               value="uploads"
@@ -653,13 +673,6 @@ function SupplierProfileContent() {
             >
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
               Data Sync
-            </TabsTrigger>
-            <TabsTrigger
-              value="discounts"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <Percent className="mr-1 h-3.5 w-3.5" />
-              Discounts
             </TabsTrigger>
           </TabsList>
 
@@ -1377,161 +1390,216 @@ function SupplierProfileContent() {
             )}
           </TabsContent>
 
-          <TabsContent value="rules" className="mt-6 space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <Card className="border shadow-sm lg:col-span-1">
-                <CardHeader className="border-b">
-                  <div className="flex items-center gap-2">
+          <TabsContent value="pricing-discounts" className="mt-6 space-y-6">
+            <div className="space-y-6">
+              {/* Pricelist Rules Section */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                     <Settings className="text-primary h-5 w-5" />
-                    <CardTitle className="text-lg font-semibold">Existing Rules</CardTitle>
-                  </div>
+                    Pricelist Rules
+                  </CardTitle>
+                  <CardDescription>
+                    Configure validation, transformation, and processing rules for pricelist uploads
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[500px]">
-                    <div className="divide-y">
-                      {rules.map(r => (
-                        <div key={r.id} className="group hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between p-4">
-                            <div className="min-w-0 flex-1">
-                              <div className="mb-2 flex items-center justify-between">
-                                <div className="truncate text-sm font-semibold">{r.rule_name}</div>
-                                <Badge variant="outline" className="ml-2 shrink-0 text-xs">
-                                  {r.rule_type}
-                                </Badge>
+                <CardContent>
+                  {error && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <Card className="border shadow-sm lg:col-span-1">
+                      <CardHeader className="border-b">
+                        <div className="flex items-center gap-2">
+                          <Settings className="text-primary h-5 w-5" />
+                          <CardTitle className="text-lg font-semibold">Existing Rules</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <ScrollArea className="h-[500px]">
+                          <div className="divide-y">
+                            {rules.map(r => (
+                              <div key={r.id} className="group hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center justify-between p-4">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="mb-2 flex items-center justify-between">
+                                      <div className="truncate text-sm font-semibold">{r.rule_name}</div>
+                                      <Badge variant="outline" className="ml-2 shrink-0 text-xs">
+                                        {r.rule_type}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-muted-foreground text-xs">
+                                      Order {r.execution_order} • Updated{' '}
+                                      {new Date(r.updated_at).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                  <div className="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => editRule(r)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Edit3 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteRule(r)}
+                                      className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-muted-foreground text-xs">
-                                Order {r.execution_order} • Updated{' '}
-                                {new Date(r.updated_at).toLocaleDateString()}
+                            ))}
+                            {rules.length === 0 && (
+                              <div className="text-muted-foreground p-8 text-center text-sm">
+                                <Settings className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                                <p>No rules yet</p>
                               </div>
-                            </div>
-                            <div className="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-border lg:col-span-2">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                          <FileCog className="text-primary h-5 w-5" />
+                          {editingRule ? 'Edit Rule' : 'Create Rule'}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Rule Name</Label>
+                            <Input
+                              value={ruleName}
+                              onChange={e => setRuleName(e.target.value)}
+                              placeholder="Enter rule name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Type</Label>
+                            <Select value={ruleType} onValueChange={setRuleType}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="validation">Validation</SelectItem>
+                                <SelectItem value="transformation">Transformation</SelectItem>
+                                <SelectItem value="approval">Approval</SelectItem>
+                                <SelectItem value="notification">Notification</SelectItem>
+                                <SelectItem value="enforcement">Enforcement</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Execution Order</Label>
+                            <Input
+                              type="number"
+                              value={ruleOrder}
+                              onChange={e => setRuleOrder(parseInt(e.target.value || '0'))}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Blocking Rule</Label>
+                            <div>
                               <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => editRule(r)}
-                                className="h-8 w-8 p-0"
+                                variant={ruleBlocking ? 'default' : 'outline'}
+                                onClick={() => setRuleBlocking(v => !v)}
+                                className="w-full"
                               >
-                                <Edit3 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteRule(r)}
-                                className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
+                                {ruleBlocking ? 'Yes - Blocks execution' : 'No - Non-blocking'}
                               </Button>
                             </div>
                           </div>
                         </div>
-                      ))}
-                      {rules.length === 0 && (
-                        <div className="text-muted-foreground p-8 text-center text-sm">
-                          <Settings className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                          <p>No rules yet</p>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Natural-language Instruction</Label>
+                          <Textarea
+                            value={nlInstruction}
+                            onChange={e => setNlInstruction(e.target.value)}
+                            rows={4}
+                            placeholder="Describe what this rule should do..."
+                          />
                         </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-              <Card className="border-border lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                    <FileCog className="text-primary h-5 w-5" />
-                    {editingRule ? 'Edit Rule' : 'Create Rule'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Rule Name</Label>
-                      <Input
-                        value={ruleName}
-                        onChange={e => setRuleName(e.target.value)}
-                        placeholder="Enter rule name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Type</Label>
-                      <Select value={ruleType} onValueChange={setRuleType}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="validation">Validation</SelectItem>
-                          <SelectItem value="transformation">Transformation</SelectItem>
-                          <SelectItem value="approval">Approval</SelectItem>
-                          <SelectItem value="notification">Notification</SelectItem>
-                          <SelectItem value="enforcement">Enforcement</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Execution Order</Label>
-                      <Input
-                        type="number"
-                        value={ruleOrder}
-                        onChange={e => setRuleOrder(parseInt(e.target.value || '0'))}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Blocking Rule</Label>
-                      <div>
-                        <Button
-                          variant={ruleBlocking ? 'default' : 'outline'}
-                          onClick={() => setRuleBlocking(v => !v)}
-                          className="w-full"
-                        >
-                          {ruleBlocking ? 'Yes - Blocks execution' : 'No - Non-blocking'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Natural-language Instruction</Label>
-                    <Textarea
-                      value={nlInstruction}
-                      onChange={e => setNlInstruction(e.target.value)}
-                      rows={4}
-                      placeholder="Describe what this rule should do..."
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={synthesizeRule}>
-                      <FileCog className="mr-2 h-4 w-4" />
-                      Generate with AI
-                    </Button>
-                    {editingRule && (
-                      <Button variant="outline" onClick={cancelEdit}>
-                        Cancel
-                      </Button>
-                    )}
-                    <Button onClick={saveRule}>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      {editingRule ? 'Update Rule' : 'Save Rule'}
-                    </Button>
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Rule Config (JSON)</Label>
-                    <Textarea
-                      value={ruleJson}
-                      onChange={e => setRuleJson(e.target.value)}
-                      rows={12}
-                      className="font-mono text-sm"
-                      placeholder="{}"
-                    />
+                        <div className="flex gap-3">
+                          <Button variant="outline" onClick={synthesizeRule}>
+                            <FileCog className="mr-2 h-4 w-4" />
+                            Generate with AI
+                          </Button>
+                          {editingRule && (
+                            <Button variant="outline" onClick={cancelEdit}>
+                              Cancel
+                            </Button>
+                          )}
+                          <Button onClick={saveRule}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            {editingRule ? 'Update Rule' : 'Save Rule'}
+                          </Button>
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Rule Config (JSON)</Label>
+                          <Textarea
+                            value={ruleJson}
+                            onChange={e => setRuleJson(e.target.value)}
+                            rows={12}
+                            className="font-mono text-sm"
+                            placeholder="{}"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Discount Rules Section */}
+              <DiscountRulesManager
+                supplierId={supplierId}
+                baseDiscount={baseDiscount}
+                onBaseDiscountChange={async (discount) => {
+                  try {
+                    setDiscountSaving(true);
+                    setError(null);
+                    const res = await fetch(`/api/suppliers/v3/${supplierId}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ baseDiscountPercent: discount }),
+                    });
+                    const responseData = await res.json();
+                    if (!res.ok) {
+                      throw new Error(responseData.error || 'Failed to save discount');
+                    }
+                    const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}`);
+                    const supplierData = await supplierRes.json();
+                    if (supplierData.success && supplierData.data) {
+                      setSupplier(supplierData.data);
+                      setBaseDiscount(supplierData.data.baseDiscountPercent || 0);
+                    }
+                  } catch (e: any) {
+                    setError(e?.message || 'Failed to save discount');
+                  } finally {
+                    setDiscountSaving(false);
+                  }
+                }}
+              />
             </div>
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-6">
+            <SupplierCategoriesTab supplierId={supplierId} />
+          </TabsContent>
+
+          <TabsContent value="brands" className="mt-6">
+            <SupplierBrandsTab supplierId={supplierId} />
           </TabsContent>
 
           <TabsContent value="uploads" className="space-y-6">
@@ -1927,151 +1995,6 @@ function SupplierProfileContent() {
             </Card>
           </TabsContent>
 
-          {/* Discounts Tab */}
-          <TabsContent value="discounts" className="space-y-6">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                  <Percent className="text-primary h-5 w-5" />
-                  Supplier Discounts
-                </CardTitle>
-                <CardDescription>
-                  Configure discount percentages that will be applied to products from this
-                  supplier. The base discount is used to calculate the "Cost After Discount" in the
-                  supplier portfolio.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Base Discount Percentage</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.5"
-                          value={baseDiscount}
-                          onChange={(e) => setBaseDiscount(parseFloat(e.target.value) || 0)}
-                          className="max-w-[150px]"
-                        />
-                        <span className="text-muted-foreground text-lg font-medium">%</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        This percentage will be subtracted from the Cost Ex VAT to calculate the
-                        discounted cost.
-                      </p>
-                    </div>
-
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Pricing Formula:</strong>
-                        <br />
-                        Cost After Discount = Cost Ex VAT × (1 - Base Discount ÷ 100)
-                        <br />
-                        Cost Inc VAT = Cost After Discount × 1.15
-                      </AlertDescription>
-                    </Alert>
-
-                    <Button
-                      onClick={async () => {
-                        try {
-                          setDiscountSaving(true);
-                          setError(null);
-                          
-                          // Ensure baseDiscount is a valid number
-                          const discountValue = typeof baseDiscount === 'number' ? baseDiscount : parseFloat(String(baseDiscount)) || 0;
-                          
-                          // Save base discount via supplier API
-                          const res = await fetch(`/api/suppliers/v3/${supplierId}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              baseDiscountPercent: discountValue,
-                            }),
-                          });
-                          
-                          const responseData = await res.json();
-                          
-                          if (!res.ok) {
-                            throw new Error(responseData.error || responseData.details?.message || 'Failed to save discount');
-                          }
-                          
-                          // Reload supplier
-                          const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}`);
-                          const supplierData = await supplierRes.json();
-                          if (supplierData.success && supplierData.data) {
-                            setSupplier(supplierData.data);
-                            setBaseDiscount(supplierData.data.baseDiscountPercent || 0);
-                          }
-                        } catch (e: any) {
-                          setError(e?.message || 'Failed to save discount');
-                        } finally {
-                          setDiscountSaving(false);
-                        }
-                      }}
-                      disabled={discountSaving}
-                    >
-                      {discountSaving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                      )}
-                      Save Discount
-                    </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Example Calculation</Label>
-                      <div className="rounded-lg border p-4">
-                        <div className="space-y-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Cost Ex VAT:</span>
-                            <span className="font-mono font-medium">R 100.00</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Base Discount ({baseDiscount}%):</span>
-                            <span className="font-mono font-medium text-red-500">
-                              - R {(100 * baseDiscount / 100).toFixed(2)}
-                            </span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Cost After Discount:</span>
-                            <span className="font-mono font-semibold">
-                              R {(100 * (1 - baseDiscount / 100)).toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">VAT (15%):</span>
-                            <span className="font-mono font-medium">
-                              + R {(100 * (1 - baseDiscount / 100) * 0.15).toFixed(2)}
-                            </span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between">
-                            <span className="font-medium">Cost Inc VAT:</span>
-                            <span className="font-mono text-lg font-bold text-green-600">
-                              R {(100 * (1 - baseDiscount / 100) * 1.15).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
-                      <strong>Note:</strong> Changes to the base discount will affect all products
-                      from this supplier in the Supplier Inventory Portfolio view. Historical prices
-                      and cost diffs are preserved for audit purposes.
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

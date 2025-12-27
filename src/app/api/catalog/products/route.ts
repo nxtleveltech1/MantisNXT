@@ -190,6 +190,52 @@ export async function GET(request: NextRequest) {
         SELECT 
           sp.supplier_product_id,
           COALESCE(
+            -- Priority order: SKU > Brand > Category > Supplier (base discount)
+            -- SKU-level discount
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'sku'
+               AND dr.supplier_sku = sp.supplier_sku
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            -- Brand-level discount
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             JOIN core.product p ON p.product_id = sp.product_id
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'brand'
+               AND dr.brand_id = p.brand_id
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            -- Category-level discount
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'category'
+               AND dr.category_id = sp.category_id
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            -- Supplier-level discount rule
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'supplier'
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            -- Fallback to base_discount_percent
             s.base_discount_percent,
             (sp.attrs_json->>'base_discount')::numeric,
             (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
