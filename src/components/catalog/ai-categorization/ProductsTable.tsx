@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import {
   Table,
   TableBody,
@@ -475,21 +476,19 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
             onChange={e => setSearch(e.target.value)}
             className="max-w-sm"
           />
-          <Select value={supplierId} onValueChange={setSupplierId}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All suppliers</SelectItem>
-              {suppliers
-                .filter(s => s && s.supplier_id)
-                .map(s => (
-                  <SelectItem key={s.supplier_id} value={s.supplier_id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <SearchableSupplierSelect
+            suppliers={suppliers.filter(s => s && s.supplier_id).map(s => ({
+              id: s.supplier_id!,
+              supplier_id: s.supplier_id,
+              name: s.name,
+            }))}
+            value={supplierId}
+            onValueChange={setSupplierId}
+            placeholder="All suppliers"
+            showAllOption={true}
+            allOptionValue="all"
+            className="w-[220px]"
+          />
           <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger className="w-[220px]">
               <SelectValue />

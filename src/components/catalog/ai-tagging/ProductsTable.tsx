@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import {
   Table,
   TableBody,
@@ -460,19 +461,18 @@ export const TagProductsTable = memo(function TagProductsTable({
             />
           </div>
           <div className="flex-1">
-            <Select value={supplierId} onValueChange={setSupplierId}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Suppliers</SelectItem>
-                {suppliers.map(supplier => (
-                  <SelectItem key={supplier.supplier_id} value={supplier.supplier_id}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSupplierSelect
+              suppliers={suppliers.map(supplier => ({
+                id: supplier.supplier_id,
+                supplier_id: supplier.supplier_id,
+                name: supplier.name,
+              }))}
+              value={supplierId}
+              onValueChange={setSupplierId}
+              placeholder="All Suppliers"
+              showAllOption={true}
+              allOptionValue="all"
+            />
           </div>
           <div className="flex-1">
             <Select value={statusFilter} onValueChange={setStatusFilter}>

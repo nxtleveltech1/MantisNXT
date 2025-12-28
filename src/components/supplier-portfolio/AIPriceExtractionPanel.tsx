@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 
 interface ExtractionState {
   status: 'idle' | 'submitting' | 'success' | 'error';
@@ -243,25 +244,19 @@ export function AIPriceExtractionPanel() {
               />
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="supplier">Supplier</Label>
-                  <Select value={supplierId} onValueChange={handleSupplierChange}>
-                    <SelectTrigger id="supplier" className="w-full">
-                      <SelectValue placeholder="Select supplier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {suppliers.map((s: any) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          <span className="flex items-center gap-2">
-                            <Building2 className="text-muted-foreground h-3.5 w-3.5" />
-                            <span>{s.name}</span>
-                            {s.code ? (
-                              <span className="text-muted-foreground text-xs">({s.code})</span>
-                            ) : null}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSupplierSelect
+                    suppliers={suppliers.map((s: any) => ({
+                      id: s.id,
+                      name: s.name,
+                      code: s.code,
+                    }))}
+                    value={supplierId}
+                    onValueChange={handleSupplierChange}
+                    placeholder="Select supplier"
+                    label="Supplier"
+                    id="supplier"
+                    className="w-full"
+                  />
                   <div className="space-y-1 pt-2">
                     <Label htmlFor="org_id">
                       Org ID (UUID) {orgId ? '(detected, override allowed)' : '(required)'}

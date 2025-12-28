@@ -13,17 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { StockLocation } from '@/types/nxt-spp';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 
 interface LocationDialogProps {
   open: boolean;
@@ -335,44 +329,22 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
 
             {/* Supplier ID (conditional) */}
             {type === 'supplier' && (
-              <div className="space-y-2">
-                <Label htmlFor="supplier_id">
-                  Supplier <span className="text-destructive">*</span>
-                </Label>
-                <Select
+              <div>
+                <SearchableSupplierSelect
+                  suppliers={sortedSuppliers}
                   value={supplierId}
                   onValueChange={setSupplierId}
+                  placeholder="Select supplier"
                   disabled={isSubmitting || isLoadingSuppliers}
-                >
-                  <SelectTrigger id="supplier_id">
-                    <SelectValue
-                      placeholder={isLoadingSuppliers ? 'Loading suppliers…' : 'Select supplier'}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoadingSuppliers ? (
-                      <SelectItem value="__loading" disabled>
-                        Loading suppliers…
-                      </SelectItem>
-                    ) : sortedSuppliers.length > 0 ? (
-                      sortedSuppliers.map(supplier => (
-                        <SelectItem key={supplier.id} value={supplier.id}>
-                          {supplier.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="__empty" disabled>
-                        {supplierFetchError ? 'Failed to load suppliers' : 'No suppliers found'}
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-muted-foreground text-xs">
+                  loading={isLoadingSuppliers}
+                  error={supplierFetchError || undefined}
+                  label="Supplier"
+                  required={true}
+                  id="supplier_id"
+                />
+                <p className="text-muted-foreground text-xs mt-2">
                   Supplier-managed locations require a linked supplier.
                 </p>
-                {supplierFetchError && (
-                  <p className="text-destructive text-xs">{supplierFetchError}</p>
-                )}
               </div>
             )}
 

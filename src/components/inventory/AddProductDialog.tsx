@@ -23,16 +23,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useInventoryStore } from '@/lib/stores/inventory-store';
 import { useNotificationStore } from '@/lib/stores/notification-store';
 import type { ProductFormData } from '@/lib/types/inventory';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -219,23 +213,17 @@ export default function AddProductDialog({ open, onOpenChange }: AddProductDialo
                   name="supplier_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Supplier *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select supplier" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {suppliers
-                            .filter(s => s.status === 'active')
-                            .map(supplier => (
-                              <SelectItem key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSupplierSelect
+                          suppliers={suppliers}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select supplier"
+                          filterActive={true}
+                          label="Supplier"
+                          required={true}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

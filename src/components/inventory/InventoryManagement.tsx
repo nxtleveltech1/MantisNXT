@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import {
   Table,
   TableBody,
@@ -853,27 +854,19 @@ export default function InventoryManagement() {
 
                   {/* Supplier Filter */}
                   <div>
-                    <Label className="mb-2 block">Supplier</Label>
-                    <Select
+                    <SearchableSupplierSelect
+                      suppliers={suppliers}
                       value={filters.supplier_id?.[0] || 'all_suppliers'}
                       onValueChange={value =>
                         setFilters({
                           supplier_id: value && value !== 'all_suppliers' ? [value] : undefined,
                         })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="All suppliers" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all_suppliers">All suppliers</SelectItem>
-                        {suppliers.map(supplier => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="All suppliers"
+                      showAllOption={true}
+                      allOptionValue="all_suppliers"
+                      label="Supplier"
+                    />
                   </div>
 
                   {/* Stock Status Filter */}

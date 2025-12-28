@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -573,24 +574,21 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
             <div className="flex flex-wrap gap-2">
               {/* Supplier Filter */}
               {suppliers.length > 0 && (
-                <Select
+                <SearchableSupplierSelect
+                  suppliers={suppliers.map((s: any) => ({
+                    id: s.id,
+                    name: s.name,
+                    code: s.code,
+                  }))}
                   value={filterSupplier || ALL_SUPPLIERS_VALUE}
                   onValueChange={value =>
                     setFilterSupplier(value === ALL_SUPPLIERS_VALUE ? '' : value)
                   }
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="All Suppliers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_SUPPLIERS_VALUE}>All Suppliers</SelectItem>
-                    {suppliers.map((s: unknown) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="All Suppliers"
+                  showAllOption={true}
+                  allOptionValue={ALL_SUPPLIERS_VALUE}
+                  className="w-[200px]"
+                />
               )}
 
               {/* Category Filter */}

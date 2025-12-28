@@ -21,6 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import {
   Dialog,
   DialogContent,
@@ -1124,21 +1125,19 @@ export default function MultiProductSelectorDialog({
                   onChange={e => setSearchInput(e.target.value)}
                   className="max-w-sm"
                 />
-                <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger className="w-[220px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All suppliers</SelectItem>
-                    {suppliers
-                      .filter(s => s && s.supplier_id)
-                      .map(s => (
-                        <SelectItem key={s.supplier_id} value={s.supplier_id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSupplierSelect
+                  suppliers={suppliers.filter(s => s && s.supplier_id).map(s => ({
+                    id: s.supplier_id!,
+                    supplier_id: s.supplier_id,
+                    name: s.name,
+                  }))}
+                  value={supplierId}
+                  onValueChange={setSupplierId}
+                  placeholder="All suppliers"
+                  showAllOption={true}
+                  allOptionValue="all"
+                  className="w-[220px]"
+                />
                 <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger className="w-[220px]">
                     <SelectValue />
