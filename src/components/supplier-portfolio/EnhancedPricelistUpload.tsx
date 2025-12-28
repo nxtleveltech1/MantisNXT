@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -19,12 +19,14 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -40,6 +42,8 @@ import {
   Download,
   AlertTriangle,
   Loader2,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUploadPricelist, useMergeUpload } from '@/hooks/useNeonSpp';
@@ -105,6 +109,8 @@ export function EnhancedPricelistUpload({
   const [ruleBlocking, setRuleBlocking] = useState(false);
   const [ruleJson, setRuleJson] = useState('{}');
   const [nlInstruction, setNlInstruction] = useState('');
+  const [supplierSearchOpen, setSupplierSearchOpen] = useState(false);
+  const [supplierSearchQuery, setSupplierSearchQuery] = useState('');
   // Selection integration removed from NXT-SPP workflow
 
   // Normalize validation result to ensure errors and warnings are always arrays
@@ -204,6 +210,19 @@ export function EnhancedPricelistUpload({
   const suppliers = Array.isArray(suppliersData) ? suppliersData : [];
   const loading = uploadMutation.isPending || mergeMutation.isPending;
 
+  // Filter suppliers based on search query
+  const filteredSuppliers = useMemo(() => {
+    if (!supplierSearchQuery) return suppliers;
+    const query = supplierSearchQuery.toLowerCase().trim();
+    return suppliers.filter(supplier => {
+      const name = (supplier.name || '').toLowerCase();
+      const code = (supplier.code || '').toLowerCase();
+      return name.includes(query) || code.includes(query);
+    });
+  }, [suppliers, supplierSearchQuery]);
+
+  const selectedSupplier = suppliers.find(s => s.id === supplierId);
+
   // Selections list no longer needed here
 
   // Reset state
@@ -215,6 +234,8 @@ export function EnhancedPricelistUpload({
     setValidationResult(null);
     setError(null);
     setValidationProgress(0);
+    setSupplierSearchOpen(false);
+    setSupplierSearchQuery('');
     uploadMutation.reset();
     mergeMutation.reset();
   }, [defaultSupplierId, uploadMutation, mergeMutation]);
@@ -566,24 +587,67 @@ export function EnhancedPricelistUpload({
             {/* Supplier Selection */}
             <div className="space-y-2">
               <Label htmlFor="supplier">Supplier</Label>
-              <Select value={supplierId || undefined} onValueChange={setSupplierId}>
-                <SelectTrigger id="supplier">
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.length > 0 ? (
-                    suppliers.map(supplier => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name} {supplier.code && `(${supplier.code})`}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="text-muted-foreground p-2 text-center text-sm">
-                      No suppliers found
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+              <Popover open={supplierSearchOpen} onOpenChange={setSupplierSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="supplier"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={supplierSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    <span className="truncate">
+                      {selectedSupplier
+                        ? `${selectedSupplier.name}${selectedSupplier.code ? ` (${selectedSupplier.code})` : ''}`
+                        : 'Select supplier'}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search suppliers by name or code..."
+                      value={supplierSearchQuery}
+                      onValueChange={setSupplierSearchQuery}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        {suppliers.length === 0
+                          ? 'No suppliers found'
+                          : 'No suppliers match your search'}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {filteredSuppliers.map(supplier => (
+                          <CommandItem
+                            key={supplier.id}
+                            value={supplier.id}
+                            onSelect={() => {
+                              setSupplierId(supplier.id);
+                              setSupplierSearchOpen(false);
+                              setSupplierSearchQuery('');
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                supplierId === supplier.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            <span className="truncate">
+                              {supplier.name}
+                              {supplier.code && (
+                                <span className="text-muted-foreground"> ({supplier.code})</span>
+                              )}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex items-center gap-2">
