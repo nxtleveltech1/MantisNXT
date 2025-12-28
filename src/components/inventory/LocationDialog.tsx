@@ -18,6 +18,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { StockLocation } from '@/types/nxt-spp';
 import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface LocationDialogProps {
   open: boolean;
