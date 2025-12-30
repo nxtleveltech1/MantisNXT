@@ -105,7 +105,7 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
     description: doc.description || null,
     signingStatus,
     requiresMySignature: signingStatus === 'pending_your_signature',
-    folderId: doc.document_type || 'uncategorized',
+    folderId: doc.folder_id || doc.document_type || 'uncategorized',
     folderName,
     signers: [],
     recipients: [],
@@ -492,9 +492,35 @@ export default function DocuStorePage() {
         if (!matchesTitle && !matchesSigner) return false;
       }
 
-      // Folder filter
+      // Folder filter - match by folder ID, slug, or document_type mapping
       if (selectedFolderId && selectedFolderId !== 'shared' && selectedFolderId !== 'deleted') {
-        if (doc.folderId !== selectedFolderId) return false;
+        const matchingFolder = folders.find(f => f.id === selectedFolderId || f.slug === selectedFolderId);
+        if (matchingFolder) {
+          // Check if document belongs to this folder
+          const docFolderId = doc.folderId;
+          const docFolder = folders.find(f => f.id === docFolderId || f.slug === docFolderId);
+          const typeToSlug: Record<string, string> = {
+            'invoice': 'sales',
+            'quotation': 'sales',
+            'sales_order': 'sales',
+            'rental_agreement': 'rentals',
+            'repair_order': 'repairs',
+            'journal_entry': 'financial',
+            'ap_invoice': 'financial',
+            'purchase_order': 'purchasing',
+            'delivery_note': 'logistics',
+            'customer_statement': 'customers',
+            'stock_adjustment': 'inventory',
+          };
+          const docTypeSlug = doc.documentType ? typeToSlug[doc.documentType] : null;
+          
+          const matchesFolder = 
+            (docFolder && (docFolder.id === matchingFolder.id || docFolder.slug === matchingFolder.slug)) ||
+            docTypeSlug === matchingFolder.slug ||
+            docFolderId === matchingFolder.slug;
+          
+          if (!matchesFolder) return false;
+        }
       }
 
       // Status filter
@@ -513,14 +539,30 @@ export default function DocuStorePage() {
       return filteredDocuments.map((doc) => ({ type: 'document' as const, data: doc }));
     }
 
-    // Group by folder - map document_type to folder slug
+    // Group by folder - use folder_id first, then fallback to document_type mapping
     const folderMap = new Map<string, SigningDocument[]>();
     const ungroupedDocs: SigningDocument[] = [];
+    
+    // Create a map of folder IDs to slugs for quick lookup
+    const folderIdToSlug = new Map<string, string>();
+    folders.forEach((folder) => {
+      folderIdToSlug.set(folder.id, folder.slug);
+    });
 
     filteredDocuments.forEach((doc) => {
-      // Map document_type to folder slug
       let folderSlug: string | null = null;
-      if (doc.documentType) {
+      
+      // First, try to use folder_id if it exists
+      if (doc.folderId && doc.folderId !== 'uncategorized') {
+        // Check if folderId is a UUID (folder ID) or a slug
+        const matchingFolder = folders.find(f => f.id === doc.folderId || f.slug === doc.folderId);
+        if (matchingFolder) {
+          folderSlug = matchingFolder.slug;
+        }
+      }
+      
+      // Fallback: map document_type to folder slug
+      if (!folderSlug && doc.documentType) {
         const typeToSlug: Record<string, string> = {
           'invoice': 'sales',
           'quotation': 'sales',
@@ -547,25 +589,41 @@ export default function DocuStorePage() {
 
     const items: DocuStoreRowItem[] = [];
 
-    // Add folders
-    folders.forEach((folder) => {
-      const folderDocs = folderMap.get(folder.slug) || [];
-      if (folderDocs.length > 0) {
-        items.push({
-          type: 'folder',
-          data: {
-            ...folder,
-            documents: folderDocs,
-            documentCount: folderDocs.length,
-          },
-        });
-      }
-    });
+    // If we have folders, group documents by folder
+    if (folders.length > 0) {
+      // Add folders with their documents
+      folders.forEach((folder) => {
+        const folderDocs = folderMap.get(folder.slug) || [];
+        // Only show folders that have documents
+        if (folderDocs.length > 0) {
+          items.push({
+            type: 'folder',
+            data: {
+              ...folder,
+              documents: folderDocs,
+              documentCount: folderDocs.length,
+            },
+          });
+        }
+      });
 
-    // Add ungrouped documents
-    ungroupedDocs.forEach((doc) => {
-      items.push({ type: 'document', data: doc });
-    });
+      // Add ungrouped documents at the end
+      ungroupedDocs.forEach((doc) => {
+        items.push({ type: 'document', data: doc });
+      });
+    } else {
+      // If no folders exist, just show all documents flat
+      filteredDocuments.forEach((doc) => {
+        items.push({ type: 'document', data: doc });
+      });
+    }
+
+    // Fallback: if no items were added but we have documents, show them all
+    if (items.length === 0 && filteredDocuments.length > 0) {
+      filteredDocuments.forEach((doc) => {
+        items.push({ type: 'document', data: doc });
+      });
+    }
 
     return items;
   }, [filteredDocuments, folders, selectedFolderId]);

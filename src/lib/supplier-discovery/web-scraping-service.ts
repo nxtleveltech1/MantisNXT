@@ -244,8 +244,15 @@ export class WebScrapingService {
         timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       });
 
-      // Wait for dynamic content
-      await page.waitForTimeout(2000);
+      // Wait for dynamic content (Google Sites embeds may need more time)
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Wait for iframes to load (Google Sites uses iframes for embeds)
+      try {
+        await page.waitForSelector('iframe', { timeout: 5000 }).catch(() => {});
+      } catch {
+        // Ignore if no iframes found
+      }
 
       // Extract full page content
       const content = await page.evaluate(() => {

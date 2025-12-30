@@ -180,3 +180,4 @@ INSERT INTO rentals.agreement_deliveries (
 - [ ] Template library for different agreement types
 
 
+

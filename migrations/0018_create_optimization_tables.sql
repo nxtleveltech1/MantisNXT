@@ -285,3 +285,4 @@ CREATE INDEX IF NOT EXISTS idx_price_elasticity_date_range
     ON core.price_elasticity(analysis_start_date, analysis_end_date);
 
 
+

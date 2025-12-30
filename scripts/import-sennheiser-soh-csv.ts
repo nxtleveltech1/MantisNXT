@@ -16,9 +16,9 @@
  *   - CSV file at the specified path
  */
 
+import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { Client } from 'pg';
-import { randomUUID } from 'crypto';
 
 const CSV_FILE_PATH = 'C:\\Users\\garet\\Downloads\\SOH info_20251228_0941.csv';
 const SUPPLIER_NAME = 'Sennheiser Electronics (SA) (Pty) Ltd';
@@ -182,12 +182,52 @@ async function findSupplier(client: Client, supplierName: string): Promise<strin
 }
 
 /**
+ * Find or create stock location for supplier
+ */
+async function getOrCreateStockLocation(
+  client: Client,
+  supplierId: string,
+  supplierName: string
+): Promise<string> {
+  // Try to find existing location for this supplier
+  const existingLocation = await client.query(
+    `SELECT location_id FROM core.stock_location 
+     WHERE supplier_id = $1 AND type = 'supplier' AND is_active = true
+     LIMIT 1`,
+    [supplierId]
+  );
+
+  if (existingLocation.rows.length > 0) {
+    return existingLocation.rows[0].location_id;
+  }
+
+  // Create new location for supplier
+  const locationId = randomUUID();
+  await client.query(
+    `INSERT INTO core.stock_location (
+      location_id,
+      name,
+      type,
+      supplier_id,
+      is_active,
+      created_at,
+      updated_at
+    )
+    VALUES ($1, $2, 'supplier', $3, true, NOW(), NOW())`,
+    [locationId, `${supplierName} - Main Warehouse`, supplierId]
+  );
+
+  return locationId;
+}
+
+/**
  * Import products to database
  */
 async function importProducts(
   client: Client,
   products: ProductRow[],
-  supplierId: string
+  supplierId: string,
+  locationId: string
 ): Promise<{ inserted: number; updated: number; errors: string[] }> {
   let inserted = 0;
   let updated = 0;
@@ -208,16 +248,17 @@ async function importProducts(
 
         const attrsJson = {
           manufacturer_part_number: product.manufacturerProductNo,
-          stock_on_hand: product.totalSOH,
           price_before_discount_ex_vat: product.priceBeforeDiscountExVat,
           currency: 'ZAR',
           imported_from: 'SOH CSV',
           imported_at: new Date().toISOString(),
         };
 
+        let supplierProductId: string;
+
         if (existingResult.rows.length === 0) {
           // Insert new product
-          const supplierProductId = randomUUID();
+          supplierProductId = randomUUID();
 
           await client.query(
             `INSERT INTO core.supplier_product (
@@ -272,7 +313,7 @@ async function importProducts(
           inserted++;
         } else {
           // Update existing product
-          const supplierProductId = existingResult.rows[0].supplier_product_id;
+          supplierProductId = existingResult.rows[0].supplier_product_id;
 
           await client.query(
             `UPDATE core.supplier_product SET
@@ -321,6 +362,34 @@ async function importProducts(
 
           updated++;
         }
+
+        // Insert or update stock on hand
+        if (product.totalSOH > 0 || product.priceBeforeDiscountExVat > 0) {
+          await client.query(
+            `INSERT INTO core.stock_on_hand (
+              soh_id,
+              location_id,
+              supplier_product_id,
+              qty,
+              unit_cost,
+              as_of_ts,
+              source,
+              created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, NOW(), 'import', NOW())
+            ON CONFLICT (location_id, supplier_product_id) DO UPDATE SET
+              qty = EXCLUDED.qty,
+              unit_cost = COALESCE(EXCLUDED.unit_cost, core.stock_on_hand.unit_cost),
+              as_of_ts = NOW()`,
+            [
+              randomUUID(),
+              locationId,
+              supplierProductId,
+              product.totalSOH,
+              product.priceBeforeDiscountExVat > 0 ? product.priceBeforeDiscountExVat : null,
+            ]
+          );
+        }
       } catch (error) {
         const errorMsg = `Row ${product.rowNumber} (${product.productNo}): ${
           error instanceof Error ? error.message : String(error)
@@ -361,9 +430,21 @@ async function main() {
 
     // Step 1: Find supplier ID
     let supplierId: string | null = null;
+    let supplierName: string = SUPPLIER_NAME;
+    
     if (supplierIdArg) {
       supplierId = supplierIdArg;
       console.log(`✅ Using provided supplier ID: ${supplierId}\n`);
+      
+      // Get supplier name for location creation
+      const supplierInfo = await client.query(
+        'SELECT name, code FROM core.supplier WHERE supplier_id = $1',
+        [supplierId]
+      );
+      if (supplierInfo.rows.length > 0) {
+        supplierName = supplierInfo.rows[0].name;
+        console.log(`   Supplier: ${supplierName} (${supplierInfo.rows[0].code})\n`);
+      }
     } else {
       console.log(`🔍 Step 1: Finding supplier "${SUPPLIER_NAME}"...`);
       supplierId = await findSupplier(client, SUPPLIER_NAME);
@@ -388,8 +469,9 @@ async function main() {
         'SELECT name, code FROM core.supplier WHERE supplier_id = $1',
         [supplierId]
       );
+      supplierName = supplierInfo.rows[0].name;
       console.log(
-        `✅ Found supplier: ${supplierInfo.rows[0].name} (${supplierInfo.rows[0].code}) - ID: ${supplierId}\n`
+        `✅ Found supplier: ${supplierName} (${supplierInfo.rows[0].code}) - ID: ${supplierId}\n`
       );
     }
 
@@ -403,9 +485,14 @@ async function main() {
       process.exit(1);
     }
 
-    // Step 3: Import products
-    console.log('📦 Step 3: Importing products...');
-    const result = await importProducts(client, products, supplierId);
+    // Step 3: Get or create stock location
+    console.log('📍 Step 3: Getting or creating stock location...');
+    const locationId = await getOrCreateStockLocation(client, supplierId, supplierName);
+    console.log(`✅ Using location ID: ${locationId}\n`);
+
+    // Step 4: Import products
+    console.log('📦 Step 4: Importing products and stock on hand...');
+    const result = await importProducts(client, products, supplierId, locationId);
 
     console.log('\n✅ Import completed!');
     console.log(`   📥 Inserted: ${result.inserted} products`);

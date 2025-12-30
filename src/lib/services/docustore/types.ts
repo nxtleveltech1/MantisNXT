@@ -11,6 +11,9 @@ export interface Document {
   tags: string[];
   status: 'active' | 'archived' | 'deleted';
   current_version_id?: string | null;
+  folder_id?: string | null;
+  expires_at?: string | null;
+  signing_workflow_id?: string | null;
   metadata: Record<string, unknown>;
   created_by?: string | null;
   updated_by?: string | null;
