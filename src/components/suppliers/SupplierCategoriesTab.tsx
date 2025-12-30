@@ -3,10 +3,29 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, FolderTree, Search } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Loader2, FolderTree, Search, Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Category {
   category_id: string;
@@ -17,18 +36,41 @@ interface Category {
   product_count: number;
 }
 
+interface CategoryOption {
+  id: string;
+  name: string;
+  path: string;
+  level: number;
+  parentId: string | null;
+}
+
 interface SupplierCategoriesTabProps {
   supplierId: string;
 }
 
 export function SupplierCategoriesTab({ supplierId }: SupplierCategoriesTabProps) {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [parentCategories, setParentCategories] = useState<CategoryOption[]>([]);
+  const [loadingParents, setLoadingParents] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    parentId: '',
+  });
 
   useEffect(() => {
     loadCategories();
   }, [supplierId, search]);
+
+  useEffect(() => {
+    if (dialogOpen) {
+      loadParentCategories();
+    }
+  }, [dialogOpen]);
 
   const loadCategories = async () => {
     try {
@@ -46,6 +88,76 @@ export function SupplierCategoriesTab({ supplierId }: SupplierCategoriesTabProps
     }
   };
 
+  const loadParentCategories = async () => {
+    try {
+      setLoadingParents(true);
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setParentCategories(data);
+      }
+    } catch (error) {
+      console.error('Error loading parent categories:', error);
+    } finally {
+      setLoadingParents(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Category name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setCreating(true);
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          parentId: formData.parentId || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to create category');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Category created successfully',
+      });
+
+      // Reset form and close dialog
+      setFormData({
+        name: '',
+        parentId: '',
+      });
+      setDialogOpen(false);
+
+      // Refresh category list
+      await loadCategories();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create category',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filteredCategories = categories.filter((cat) => {
     if (!search) return true;
     const searchLower = search.toLowerCase();
@@ -58,13 +170,83 @@ export function SupplierCategoriesTab({ supplierId }: SupplierCategoriesTabProps
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <FolderTree className="text-primary h-5 w-5" />
-          Product Categories
-        </CardTitle>
-        <CardDescription>
-          Categories associated with products from this supplier
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FolderTree className="text-primary h-5 w-5" />
+              Product Categories
+            </CardTitle>
+            <CardDescription>
+              Categories associated with products from this supplier
+            </CardDescription>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Category</DialogTitle>
+                <DialogDescription>
+                  Create a new category that will be available for this supplier and discount rules.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category-name">
+                    Category Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="category-name"
+                    placeholder="Enter category name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={creating}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category-parent">Parent Category (Optional)</Label>
+                  <Select
+                    value={formData.parentId}
+                    onValueChange={(value) => setFormData({ ...formData, parentId: value })}
+                    disabled={creating || loadingParents}
+                  >
+                    <SelectTrigger id="category-parent">
+                      <SelectValue placeholder="Select parent category (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None (Top Level)</SelectItem>
+                      {parentCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.path || cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {loadingParents && (
+                    <p className="text-muted-foreground text-sm">Loading categories...</p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateCategory} disabled={creating}>
+                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Category
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-4">

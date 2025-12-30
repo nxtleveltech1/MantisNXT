@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -304,6 +304,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
     brands: 0,
   });
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const prevSupplierIdRef = useRef<string>(supplierId);
 
   // Function to open pop-out window with current filter state
   const handlePopOut = useCallback(() => {
@@ -427,22 +428,43 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   useEffect(() => {
     (async () => {
       try {
-        const [sres, cres, bres] = await Promise.all([
+        const [sres, cres] = await Promise.all([
           fetch('/api/catalog/suppliers'),
           fetch('/api/catalog/categories'),
-          fetch('/api/catalog/brands'),
         ]);
         const sjson = await sres.json();
         const cjson = await cres.json();
-        const bjson = await bres.json();
         setSuppliers(sjson.data || []);
         setCategories(cjson.data || []);
-        setBrands(bjson.data || []);
       } catch (e) {
         // ignore
       }
     })();
   }, []);
+
+  // Load brands filtered by selected supplier
+  useEffect(() => {
+    (async () => {
+      try {
+        const url =
+          supplierId && supplierId !== 'all'
+            ? `/api/catalog/brands?supplier_id=${supplierId}`
+            : '/api/catalog/brands';
+        const bres = await fetch(url);
+        const bjson = await bres.json();
+        const availableBrands = (bjson.data || []).map((b: { brand: string }) => b.brand);
+        setBrands(bjson.data || []);
+        // Reset brand filter if supplier changed and current brand is not available for new supplier
+        const supplierChanged = prevSupplierIdRef.current !== supplierId;
+        if (supplierChanged && brandFilter !== 'all' && !availableBrands.includes(brandFilter)) {
+          setBrandFilter('all');
+        }
+        prevSupplierIdRef.current = supplierId;
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, [supplierId, brandFilter]);
 
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 

@@ -24,6 +24,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Percent, Plus, Edit3, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -83,9 +85,11 @@ export function DiscountRulesManager({
     category_id: '',
     brand_id: '',
     supplier_sku: '',
+    bulk_skus: '',
     priority: 0,
     is_active: true,
   });
+  const [bulkMode, setBulkMode] = useState(false);
 
   useEffect(() => {
     loadRules();
@@ -115,11 +119,39 @@ export function DiscountRulesManager({
 
   const loadCategories = async () => {
     try {
-      const res = await fetch(`/api/suppliers/${supplierId}/categories`);
-      const data = await res.json();
-      if (data.success) {
-        setCategories(data.data || []);
-      }
+      // Load supplier-specific categories
+      const supplierRes = await fetch(`/api/suppliers/${supplierId}/categories`);
+      const supplierData = await supplierRes.json();
+      const supplierCategories = supplierData.success ? supplierData.data || [] : [];
+
+      // Also load master categories to include newly created ones
+      const masterRes = await fetch('/api/categories');
+      const masterCategories = await masterRes.json();
+      const masterCategoryList = Array.isArray(masterCategories) ? masterCategories : [];
+
+      // Merge and deduplicate by category_id
+      const categoryMap = new Map<string, Category>();
+      
+      // Add supplier categories first (they have product_count info)
+      supplierCategories.forEach((cat: Category) => {
+        categoryMap.set(cat.category_id, cat);
+      });
+
+      // Add master categories (only if not already present)
+      masterCategoryList.forEach((cat: { id: string; name: string; path: string }) => {
+        if (!categoryMap.has(cat.id)) {
+          categoryMap.set(cat.id, {
+            category_id: cat.id,
+            category_name: cat.name,
+            category_path: cat.path,
+            level: 0,
+            parent_id: null,
+            product_count: 0,
+          });
+        }
+      });
+
+      setCategories(Array.from(categoryMap.values()));
     } catch (error) {
       console.error('Error loading categories:', error);
     }
@@ -127,13 +159,52 @@ export function DiscountRulesManager({
 
   const loadBrands = async () => {
     try {
-      const res = await fetch(`/api/suppliers/${supplierId}/brands`);
-      const data = await res.json();
-      if (data.success) {
-        setBrands(data.data || []);
-      }
+      // Load supplier-specific brands (from products)
+      const supplierRes = await fetch(`/api/suppliers/${supplierId}/brands`);
+      const supplierData = await supplierRes.json();
+      const supplierBrands = supplierData.success ? supplierData.data || [] : [];
+
+      // Also load master brands to include newly created ones
+      // Load all brands (org filtering handled server-side via headers/context)
+      const masterRes = await fetch('/api/brands');
+      const masterData = await masterRes.json();
+      const masterBrandList = masterData.success ? masterData.data || [] : [];
+
+      // Merge and deduplicate by brand_id
+      const brandMap = new Map<string, Brand>();
+      
+      // Add supplier brands first (they have product_count info)
+      supplierBrands.forEach((brand: Brand) => {
+        brandMap.set(brand.brand_id, brand);
+      });
+
+      // Add master brands (only if not already present)
+      masterBrandList.forEach((brand: { brand_id: string; brand_name: string; description?: string | null; logo_url?: string | null; website?: string | null }) => {
+        if (!brandMap.has(brand.brand_id)) {
+          brandMap.set(brand.brand_id, {
+            brand_id: brand.brand_id,
+            brand_name: brand.brand_name,
+            description: brand.description || null,
+            logo_url: brand.logo_url || null,
+            website: brand.website || null,
+            product_count: 0,
+          });
+        }
+      });
+
+      setBrands(Array.from(brandMap.values()));
     } catch (error) {
       console.error('Error loading brands:', error);
+      // Fallback to supplier brands only
+      try {
+        const res = await fetch(`/api/suppliers/${supplierId}/brands`);
+        const data = await res.json();
+        if (data.success) {
+          setBrands(data.data || []);
+        }
+      } catch (fallbackError) {
+        console.error('Error loading supplier brands:', fallbackError);
+      }
     }
   };
 
@@ -147,9 +218,11 @@ export function DiscountRulesManager({
         category_id: rule.category_id || '',
         brand_id: rule.brand_id || '',
         supplier_sku: rule.supplier_sku || '',
+        bulk_skus: '',
         priority: rule.priority,
         is_active: rule.is_active,
       });
+      setBulkMode(false);
     } else {
       setEditingRule(null);
       setFormData({
@@ -159,9 +232,11 @@ export function DiscountRulesManager({
         category_id: '',
         brand_id: '',
         supplier_sku: '',
+        bulk_skus: '',
         priority: 0,
         is_active: true,
       });
+      setBulkMode(false);
     }
     setDialogOpen(true);
   };
@@ -169,6 +244,16 @@ export function DiscountRulesManager({
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingRule(null);
+  };
+
+  const parseSkus = (input: string): string[] => {
+    if (!input.trim()) return [];
+    
+    // Split by newlines, commas, or semicolons, then trim and filter empty
+    return input
+      .split(/[\n,;]+/)
+      .map(sku => sku.trim())
+      .filter(sku => sku.length > 0);
   };
 
   const saveRule = async () => {
@@ -202,15 +287,87 @@ export function DiscountRulesManager({
         return;
       }
 
-      if (formData.scope_type === 'sku' && !formData.supplier_sku) {
-        toast({
-          title: 'Validation Error',
-          description: 'Please enter a supplier SKU',
-          variant: 'destructive',
-        });
+      if (formData.scope_type === 'sku') {
+        if (bulkMode) {
+          const skus = parseSkus(formData.bulk_skus);
+          if (skus.length === 0) {
+            toast({
+              title: 'Validation Error',
+              description: 'Please enter at least one SKU',
+              variant: 'destructive',
+            });
+            return;
+          }
+        } else {
+          if (!formData.supplier_sku) {
+            toast({
+              title: 'Validation Error',
+              description: 'Please enter a supplier SKU',
+              variant: 'destructive',
+            });
+            return;
+          }
+        }
+      }
+
+      // Bulk mode: create multiple rules
+      if (formData.scope_type === 'sku' && bulkMode && !editingRule) {
+        const skus = parseSkus(formData.bulk_skus);
+        const url = `/api/suppliers/${supplierId}/discount-rules`;
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: string[] = [];
+
+        for (const sku of skus) {
+          const payload = {
+            rule_name: `${formData.rule_name} - ${sku}`,
+            discount_percent: formData.discount_percent,
+            scope_type: 'sku',
+            supplier_sku: sku,
+            priority: formData.priority,
+            is_active: formData.is_active,
+          };
+
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+              errorCount++;
+              errors.push(`${sku}: ${data.error || 'Failed to create rule'}`);
+            } else {
+              successCount++;
+            }
+          } catch (error: any) {
+            errorCount++;
+            errors.push(`${sku}: ${error?.message || 'Failed to create rule'}`);
+          }
+        }
+
+        if (errorCount > 0) {
+          toast({
+            title: 'Partial Success',
+            description: `Created ${successCount} rules, ${errorCount} failed. ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`,
+            variant: errorCount === skus.length ? 'destructive' : 'default',
+          });
+        } else {
+          toast({
+            title: 'Success',
+            description: `Created ${successCount} discount rules successfully`,
+          });
+        }
+
+        closeDialog();
+        loadRules();
         return;
       }
 
+      // Single rule mode
       const payload = {
         discount_rule_id: editingRule?.discount_rule_id,
         rule_name: formData.rule_name,
@@ -545,13 +702,60 @@ export function DiscountRulesManager({
             )}
 
             {formData.scope_type === 'sku' && (
-              <div className="space-y-2">
-                <Label>Supplier SKU *</Label>
-                <Input
-                  value={formData.supplier_sku}
-                  onChange={(e) => setFormData({ ...formData, supplier_sku: e.target.value })}
-                  placeholder="Enter supplier SKU"
-                />
+              <div className="space-y-3">
+                {!editingRule && (
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="bulk-mode" className="cursor-pointer">
+                        Bulk Add SKUs
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Add multiple SKUs at once (one per line or comma-separated)
+                      </p>
+                    </div>
+                    <Switch
+                      id="bulk-mode"
+                      checked={bulkMode}
+                      onCheckedChange={(checked) => {
+                        setBulkMode(checked);
+                        if (!checked) {
+                          setFormData({ ...formData, bulk_skus: '' });
+                        } else {
+                          setFormData({ ...formData, supplier_sku: '' });
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {bulkMode && !editingRule ? (
+                  <div className="space-y-2">
+                    <Label>Supplier SKUs *</Label>
+                    <Textarea
+                      value={formData.bulk_skus}
+                      onChange={(e) => setFormData({ ...formData, bulk_skus: e.target.value })}
+                      placeholder="Enter SKUs, one per line or separated by commas&#10;Example:&#10;SKU-001&#10;SKU-002, SKU-003&#10;SKU-004"
+                      className="min-h-[120px] font-mono text-sm"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      {(() => {
+                        const skuCount = parseSkus(formData.bulk_skus).length;
+                        return skuCount > 0
+                          ? `${skuCount} SKU${skuCount !== 1 ? 's' : ''} detected`
+                          : 'Enter SKUs separated by commas or new lines';
+                      })()}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Supplier SKU *</Label>
+                    <Input
+                      value={formData.supplier_sku}
+                      onChange={(e) => setFormData({ ...formData, supplier_sku: e.target.value })}
+                      placeholder="Enter supplier SKU"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -577,10 +781,14 @@ export function DiscountRulesManager({
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {bulkMode && formData.scope_type === 'sku' && !editingRule
+                    ? `Creating ${parseSkus(formData.bulk_skus).length} rules...`
+                    : 'Saving...'}
                 </>
               ) : editingRule ? (
                 'Update Rule'
+              ) : bulkMode && formData.scope_type === 'sku' ? (
+                `Create ${parseSkus(formData.bulk_skus).length || 0} Rules`
               ) : (
                 'Create Rule'
               )}

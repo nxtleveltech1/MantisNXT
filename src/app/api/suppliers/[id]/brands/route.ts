@@ -24,12 +24,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get brands from supplier products via brand_from_supplier field
     // and also from core.product if linked
     const sql = `
-      SELECT DISTINCT
-        COALESCE(b.id, gen_random_uuid()) as brand_id,
-        COALESCE(b.name, sp.brand_from_supplier) as brand_name,
-        b.description,
-        b.logo_url,
-        b.website,
+      SELECT 
+        MAX(b.id) as brand_id,
+        COALESCE(MAX(b.name), MAX(sp.brand_from_supplier)) as brand_name,
+        MAX(b.description) as description,
+        MAX(b.logo_url) as logo_url,
+        MAX(b.website) as website,
         COUNT(DISTINCT sp.supplier_product_id) as product_count
       FROM core.supplier_product sp
       LEFT JOIN core.product p ON p.product_id = sp.product_id
@@ -43,11 +43,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         AND TRIM(sp.brand_from_supplier) != ''
         ${search ? `AND (COALESCE(b.name, sp.brand_from_supplier) ILIKE $2)` : ''}
       GROUP BY 
-        COALESCE(b.id, gen_random_uuid()),
-        COALESCE(b.name, sp.brand_from_supplier),
-        b.description,
-        b.logo_url,
-        b.website
+        LOWER(TRIM(COALESCE(b.name, sp.brand_from_supplier)))
       ORDER BY brand_name ASC
     `;
 

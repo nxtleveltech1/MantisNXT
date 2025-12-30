@@ -554,7 +554,11 @@ export default function ProductProfileDialog({
                       <div>
                         <p className="text-muted-foreground text-sm font-medium">Base Discount</p>
                         <p className="mt-1 text-xl font-semibold">
-                          {(product.base_discount ?? product.attrs_json?.base_discount ?? 0).toFixed(2)}%
+                          {(() => {
+                            const discount = product.base_discount ?? product.attrs_json?.base_discount ?? 0;
+                            const numDiscount = typeof discount === 'string' ? parseFloat(discount) || 0 : Number(discount) || 0;
+                            return numDiscount.toFixed(2);
+                          })()}%
                         </p>
                       </div>
                       <div>
@@ -565,7 +569,8 @@ export default function ProductProfileDialog({
                             (() => {
                               const costExVat = product.cost_ex_vat ?? product.attrs_json?.cost_excluding ?? product.current_price ?? 0;
                               const discount = product.base_discount ?? product.attrs_json?.base_discount ?? 0;
-                              return discount > 0 ? costExVat - (costExVat * discount / 100) : costExVat;
+                              const numDiscount = typeof discount === 'string' ? parseFloat(discount) || 0 : Number(discount) || 0;
+                              return numDiscount > 0 ? costExVat - (costExVat * numDiscount / 100) : costExVat;
                             })()
                           )}
                         </p>
