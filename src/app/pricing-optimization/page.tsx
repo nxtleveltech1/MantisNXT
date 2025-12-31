@@ -205,7 +205,21 @@ export default function PricingDashboardPage() {
             ) : metrics?.recent_changes_list && metrics.recent_changes_list.length > 0 ? (
               <div className="space-y-4">
                 {metrics.recent_changes_list.map((change: unknown, index: number) => {
-                  const priceChangePercent = change.price_change_percent || 0;
+                  const oldPrice = typeof change.old_price === 'number' 
+                    ? change.old_price 
+                    : typeof change.old_price === 'string' 
+                      ? parseFloat(change.old_price) || 0 
+                      : 0;
+                  const newPrice = typeof change.new_price === 'number' 
+                    ? change.new_price 
+                    : typeof change.new_price === 'string' 
+                      ? parseFloat(change.new_price) || 0 
+                      : 0;
+                  const priceChangePercent = typeof change.price_change_percent === 'number'
+                    ? change.price_change_percent
+                    : typeof change.price_change_percent === 'string'
+                      ? parseFloat(change.price_change_percent) || 0
+                      : 0;
                   const isDecrease = priceChangePercent < 0;
                   const daysAgo = Math.floor(
                     (new Date().getTime() - new Date(change.changed_at).getTime()) /
@@ -224,9 +238,9 @@ export default function PricingDashboardPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-muted-foreground text-sm line-through">
-                            ${change.old_price?.toFixed(2) || '0.00'}
+                            ${oldPrice.toFixed(2)}
                           </p>
-                          <p className="font-medium">${change.new_price?.toFixed(2) || '0.00'}</p>
+                          <p className="font-medium">${newPrice.toFixed(2)}</p>
                         </div>
                         <Badge variant={isDecrease ? 'default' : 'secondary'}>
                           {isDecrease ? (
