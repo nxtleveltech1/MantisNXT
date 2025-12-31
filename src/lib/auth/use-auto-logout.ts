@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { toast } from 'sonner';
 
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 const WARNING_TIME = 2 * 60 * 1000; // 2 minutes before logout to show warning
 
 /**
