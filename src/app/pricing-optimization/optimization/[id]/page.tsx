@@ -36,7 +36,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
 import { RecommendationStatus } from '@/lib/db/pricing-schema';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 import {
   Select,
   SelectContent,
@@ -255,13 +255,13 @@ export default function OptimizationRunDetailsPage({
                 <div>
                   <p className="text-sm text-muted-foreground">Revenue Impact</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(run.estimated_revenue_impact || 0)}
+                    {formatCurrency(run.estimated_revenue_impact || 0, run.currency || 'ZAR')}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Profit Impact</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(run.estimated_profit_impact || 0)}
+                    {formatCurrency(run.estimated_profit_impact || 0, run.currency || 'ZAR')}
                   </p>
                 </div>
               </div>
@@ -391,9 +391,9 @@ export default function OptimizationRunDetailsPage({
                           <TableCell className="font-medium">
                             {rec.product_id.slice(0, 8)}...
                           </TableCell>
-                          <TableCell>{formatCurrency(rec.current_price)}</TableCell>
+                          <TableCell>{formatCurrency(rec.current_price, rec.currency || run?.currency || 'ZAR')}</TableCell>
                           <TableCell className="font-semibold">
-                            {formatCurrency(rec.recommended_price)}
+                            {formatCurrency(rec.recommended_price, rec.currency || run?.currency || 'ZAR')}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
@@ -420,7 +420,7 @@ export default function OptimizationRunDetailsPage({
                               <div className="text-sm">
                                 <div className="flex items-center gap-1">
                                   <DollarSign className="h-3 w-3" />
-                                  {formatCurrency(rec.projected_revenue_impact)}
+                                  {formatCurrency(rec.projected_revenue_impact, rec.currency || run?.currency || 'ZAR')}
                                 </div>
                               </div>
                             )}

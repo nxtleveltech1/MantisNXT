@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * @deprecated Use formatCurrency from '@/lib/utils/currency-formatter' instead.
+ * This implementation has bugs (uses USD formatter then replaces $ symbol).
+ * Will be removed in a future version.
+ */
 export function formatCurrency(
   amount: number,
   currency: string = 'ZAR',

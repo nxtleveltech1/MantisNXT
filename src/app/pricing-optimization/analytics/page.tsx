@@ -31,6 +31,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 import {
   Select,
   SelectContent,
@@ -236,7 +237,7 @@ export default function PricingAnalyticsPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-medium">${(99.99 + i * 10).toFixed(2)}</p>
+                          <p className="font-medium">{formatCurrency(99.99 + i * 10, 'ZAR')}</p>
                           <p className="text-muted-foreground text-sm">{25 + i * 5}% margin</p>
                         </div>
                         <Badge variant="default">

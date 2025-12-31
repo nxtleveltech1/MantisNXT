@@ -333,6 +333,7 @@ export class PriceAnalyticsService {
       old_price: number;
       new_price: number;
       price_change_percent: number;
+      currency: string;
       changed_at: Date;
     }>;
   }> {
@@ -385,6 +386,7 @@ export class PriceAnalyticsService {
         ph1.price as old_price,
         ph2.price as new_price,
         ((ph2.price - ph1.price) / NULLIF(ph1.price, 0) * 100) as price_change_percent,
+        COALESCE(ph2.currency, 'ZAR') as currency,
         ph2.created_at as changed_at
       FROM core.price_history ph2
       JOIN core.price_history ph1 ON ph1.supplier_product_id = ph2.supplier_product_id

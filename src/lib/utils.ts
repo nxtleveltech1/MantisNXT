@@ -5,34 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(
-  value: number | string | null | undefined,
-  currency: string = 'ZAR'
-): string {
-  if (value === null || value === undefined || value === '') {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(0);
-  }
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(numValue)) {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(0);
-  }
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numValue);
-}
+// Re-export unified currency formatter for backward compatibility
+export { formatCurrency } from '@/lib/utils/currency-formatter';
 
 export function formatCostAmount(value: number | string | null | undefined): string {
   // Alias for formatCurrency for consistency

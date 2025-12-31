@@ -26,6 +26,7 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, Loader2, BarChart3, Activity } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 interface TrendData {
   historical: Array<{
@@ -276,11 +277,11 @@ export default function TrendsPage() {
                       />
                       <YAxis
                         tick={{ fontSize: 12 }}
-                        tickFormatter={value => `$${value.toFixed(2)}`}
+                        tickFormatter={value => formatCurrency(value, trendData?.currency || 'ZAR')}
                       />
                       <Tooltip
                         formatter={(value: number, name: string) => [
-                          `$${value?.toFixed(2) || 'N/A'}`,
+                          formatCurrency(value || 0, trendData?.currency || 'ZAR'),
                           name,
                         ]}
                         labelFormatter={label => format(new Date(label), 'PPP')}
@@ -400,7 +401,7 @@ export default function TrendsPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold">
-                            ${forecast.predictedPrice.toFixed(2)}
+                            {formatCurrency(forecast.predictedPrice, trendData?.currency || 'ZAR')}
                           </div>
                         </div>
                       </div>

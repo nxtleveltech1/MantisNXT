@@ -83,7 +83,7 @@ export default function CompetitorsPage() {
       company_name: '',
       website_url: '',
       notes: '',
-      default_currency: 'USD',
+      default_currency: 'ZAR',
     },
   });
 
@@ -93,14 +93,14 @@ export default function CompetitorsPage() {
         company_name: editingCompetitor.company_name || '',
         website_url: editingCompetitor.website_url || '',
         notes: editingCompetitor.notes || '',
-        default_currency: editingCompetitor.default_currency || 'USD',
+        default_currency: editingCompetitor.default_currency || 'ZAR',
       });
     } else {
       form.reset({
         company_name: '',
         website_url: '',
         notes: '',
-        default_currency: 'USD',
+        default_currency: 'ZAR',
       });
     }
   }, [editingCompetitor, form]);
@@ -219,7 +219,7 @@ export default function CompetitorsPage() {
           return {
             company_name: String(r['Company Name'] || r['company_name'] || ''),
             website_url: String(r['Website URL'] || r['website_url'] || ''),
-            default_currency: String(r['Currency'] || r['default_currency'] || 'USD'),
+            default_currency: String(r['Currency'] || r['default_currency'] || 'ZAR'),
             notes: String(r['Notes'] || r['notes'] || ''),
           };
         })
@@ -334,7 +334,7 @@ export default function CompetitorsPage() {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>{competitor.default_currency || 'USD'}</TableCell>
+                      <TableCell>{competitor.default_currency || 'ZAR'}</TableCell>
                       <TableCell>
                         <Badge variant={competitor.is_active !== false ? 'default' : 'secondary'}>
                           {competitor.is_active !== false ? 'Active' : 'Inactive'}

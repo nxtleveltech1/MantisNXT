@@ -34,6 +34,7 @@ const StartOptimizationSchema = z.object({
     supplier_ids: z.array(z.string()).optional(),
     product_ids: z.array(z.string()).optional(),
   }),
+  currency: z.string().optional(),
   created_by: z.string().optional(),
 });
 

@@ -20,6 +20,7 @@ import type { OptimizationRun } from '@/lib/db/pricing-schema';
 import { OptimizationStatus, PricingStrategy } from '@/lib/db/pricing-schema';
 import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 interface OptimizationProgress {
   progress_percent: number;
@@ -238,13 +239,13 @@ export default function OptimizationPage() {
                       <div>
                         <p className="text-muted-foreground">Revenue Impact</p>
                         <p className="text-2xl font-bold text-green-600">
-                          ${run.estimated_revenue_impact?.toFixed(0) || 0}
+                          {formatCurrency(run.estimated_revenue_impact || 0, run.currency || 'ZAR')}
                         </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Profit Impact</p>
                         <p className="text-2xl font-bold text-green-600">
-                          ${run.estimated_profit_impact?.toFixed(0) || 0}
+                          {formatCurrency(run.estimated_profit_impact || 0, run.currency || 'ZAR')}
                         </p>
                       </div>
                     </div>

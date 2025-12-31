@@ -233,6 +233,11 @@ export const sanitizeSupplierData = (data: Partial<SupplierFormData>) => {
   };
 };
 
+/**
+ * @deprecated Use formatCurrency from '@/lib/utils/currency-formatter' instead.
+ * This implementation has bugs (uses USD formatter then replaces $ symbol).
+ * Will be removed in a future version.
+ */
 export const formatCurrency = (amount: number, currency: string = 'ZAR'): string => {
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',

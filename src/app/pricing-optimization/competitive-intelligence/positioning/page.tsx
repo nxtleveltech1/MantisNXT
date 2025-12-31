@@ -34,8 +34,10 @@ import {
   BarChart3,
   Loader2,
 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 interface PricePositioning {
+  currency?: string;
   internalPrice: number;
   competitorPrices: Array<{
     competitorId: string;
@@ -201,7 +203,7 @@ export default function PricePositioningPage() {
                   <DollarSign className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${positioning.internalPrice.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(positioning.internalPrice, positioning.currency || 'ZAR')}</div>
                   <div className="mt-2 flex items-center gap-2">{getPositionBadge()}</div>
                 </CardContent>
               </Card>
@@ -227,9 +229,9 @@ export default function PricePositioningPage() {
                   <BarChart3 className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${positioning.marketMedian.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(positioning.marketMedian, positioning.currency || 'ZAR')}</div>
                   <p className="text-muted-foreground text-xs">
-                    ${positioning.marketAverage.toFixed(2)} average
+                    {formatCurrency(positioning.marketAverage, positioning.currency || 'ZAR')} average
                   </p>
                 </CardContent>
               </Card>
@@ -240,7 +242,7 @@ export default function PricePositioningPage() {
                   <TrendingUp className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${positioning.spread.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(positioning.spread, positioning.currency || 'ZAR')}</div>
                   <p className="text-muted-foreground text-xs">Range</p>
                 </CardContent>
               </Card>
@@ -261,7 +263,7 @@ export default function PricePositioningPage() {
                     <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
                     <YAxis />
                     <Tooltip
-                      formatter={(value: number) => `$${value.toFixed(2)}`}
+                      formatter={(value: number) => formatCurrency(value, positioning?.currency || 'ZAR')}
                       labelStyle={{ color: '#000' }}
                     />
                     <Legend />
@@ -316,7 +318,7 @@ export default function PricePositioningPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold">${cp.price.toFixed(2)}</div>
+                          <div className="text-lg font-bold">{formatCurrency(cp.price, cp.currency || positioning?.currency || 'ZAR')}</div>
                           {diff !== 0 && (
                             <div
                               className={`text-sm ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}

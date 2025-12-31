@@ -38,6 +38,7 @@ export interface StartOptimizationInput {
   strategy: PricingStrategy;
   config: OptimizationRun['config'];
   scope: OptimizationRun['scope'];
+  currency?: string; // Currency code (defaults to 'ZAR')
   created_by?: string;
 }
 
@@ -64,10 +65,11 @@ export class PricingOptimizationService {
     const runId = uuidv4();
 
     // Create optimization run record
+    const currency = input.currency || 'ZAR';
     const sql = `
       INSERT INTO ${PRICING_TABLES.OPTIMIZATION_RUNS} (
-        run_id, run_name, strategy, status, config, scope, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        run_id, run_name, strategy, status, config, scope, currency, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
 
@@ -78,6 +80,7 @@ export class PricingOptimizationService {
       OptimizationStatus.PENDING,
       JSON.stringify(input.config),
       JSON.stringify(input.scope),
+      currency,
       input.created_by || null,
     ]);
 
@@ -342,12 +345,13 @@ export class PricingOptimizationService {
 
         // Create price change log
         const logId = uuidv4();
+        const currency = recommendation.currency || 'ZAR';
         const logSql = `
           INSERT INTO ${PRICING_TABLES.PRICE_CHANGE_LOG} (
             log_id, product_id, supplier_product_id, old_price, new_price,
-            price_change_percent, price_change_amount, change_reason,
+            price_change_percent, price_change_amount, currency, change_reason,
             recommendation_id, changed_by, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING *
         `;
 
@@ -359,6 +363,7 @@ export class PricingOptimizationService {
           recommendation.recommended_price,
           recommendation.price_change_percent,
           recommendation.price_change_amount,
+          currency,
           'optimization',
           recommendation.recommendation_id,
           input.applied_by || null,
@@ -552,6 +557,10 @@ export class PricingOptimizationService {
   ): Promise<void> {
     if (recommendations.length === 0) return;
 
+    // Get run currency for recommendations
+    const run = await this.getRunById(runId);
+    const defaultCurrency = run?.currency || 'ZAR';
+
     const values: string[] = [];
     const params: unknown[] = [];
     let paramCount = 1;
@@ -562,7 +571,7 @@ export class PricingOptimizationService {
         $${paramCount++}, $${paramCount++}, $${paramCount++}, $${paramCount++},
         $${paramCount++}, $${paramCount++}, $${paramCount++}, $${paramCount++},
         $${paramCount++}, $${paramCount++}, $${paramCount++}, $${paramCount++},
-        $${paramCount++}
+        $${paramCount++}, $${paramCount++}
       )`);
 
       params.push(
@@ -577,6 +586,7 @@ export class PricingOptimizationService {
         rec.recommended_margin_percent || null,
         rec.price_change_percent,
         rec.price_change_amount,
+        rec.currency || defaultCurrency,
         rec.confidence_score,
         rec.reasoning,
         rec.algorithm_used,
@@ -591,7 +601,7 @@ export class PricingOptimizationService {
         recommendation_id, run_id, product_id, supplier_product_id,
         current_price, current_cost, current_margin_percent,
         recommended_price, recommended_margin_percent,
-        price_change_percent, price_change_amount,
+        price_change_percent, price_change_amount, currency,
         confidence_score, reasoning, algorithm_used,
         projected_demand_change_percent, projected_revenue_impact, projected_profit_impact
       ) VALUES ${values.join(', ')}
@@ -714,6 +724,7 @@ export class PricingOptimizationService {
       ...row,
       config: typeof row.config === 'string' ? JSON.parse(row.config) : row.config,
       scope: typeof row.scope === 'string' ? JSON.parse(row.scope) : row.scope,
+      currency: row.currency || 'ZAR',
       created_at: new Date(row.created_at),
       started_at: row.started_at ? new Date(row.started_at) : undefined,
       completed_at: row.completed_at ? new Date(row.completed_at) : undefined,

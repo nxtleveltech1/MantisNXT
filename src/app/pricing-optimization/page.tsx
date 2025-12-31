@@ -26,6 +26,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 export default function PricingDashboardPage() {
   const [metrics, setMetrics] = useState<unknown>(null);
@@ -220,6 +221,7 @@ export default function PricingDashboardPage() {
                     : typeof change.price_change_percent === 'string'
                       ? parseFloat(change.price_change_percent) || 0
                       : 0;
+                  const currency = change.currency || 'ZAR';
                   const isDecrease = priceChangePercent < 0;
                   const daysAgo = Math.floor(
                     (new Date().getTime() - new Date(change.changed_at).getTime()) /
@@ -238,9 +240,9 @@ export default function PricingDashboardPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-muted-foreground text-sm line-through">
-                            ${oldPrice.toFixed(2)}
+                            {formatCurrency(oldPrice, currency)}
                           </p>
-                          <p className="font-medium">${newPrice.toFixed(2)}</p>
+                          <p className="font-medium">{formatCurrency(newPrice, currency)}</p>
                         </div>
                         <Badge variant={isDecrease ? 'default' : 'secondary'}>
                           {isDecrease ? (

@@ -42,7 +42,7 @@ import {
   Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 interface PricingRecommendation {
   recommendation_id: string;
@@ -67,6 +67,7 @@ interface PricingRecommendation {
   recommendation_created_at: string;
   priority: 'high' | 'medium' | 'low';
   eligible_for_auto_apply: boolean;
+  currency?: string;
 }
 
 interface ReviewQueueResponse {
@@ -319,13 +320,13 @@ export default function PricingReviewQueue() {
                       </TableCell>
                       <TableCell className="text-sm">{rec.supplier_name}</TableCell>
                       <TableCell className="text-right font-mono">
-                        {formatCurrency(rec.unit_cost)}
+                        {formatCurrency(rec.unit_cost, rec.currency || 'ZAR')}
                       </TableCell>
                       <TableCell className="text-right font-mono">
-                        {formatCurrency(rec.rule_based_price)}
+                        {formatCurrency(rec.rule_based_price, rec.currency || 'ZAR')}
                       </TableCell>
                       <TableCell className="text-right font-mono font-semibold">
-                        {formatCurrency(rec.ai_recommended_price)}
+                        {formatCurrency(rec.ai_recommended_price, rec.currency || 'ZAR')}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -439,7 +440,7 @@ export default function PricingReviewQueue() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Unit Cost:</span>{' '}
-                    {formatCurrency(selectedRecommendation.unit_cost)}
+                    {formatCurrency(selectedRecommendation.unit_cost, selectedRecommendation.currency || 'ZAR')}
                   </div>
                   <div>
                     <span className="text-muted-foreground">Confidence:</span>{' '}
@@ -455,13 +456,13 @@ export default function PricingReviewQueue() {
                 <div className="rounded-lg border p-4">
                   <p className="text-muted-foreground text-xs">Rule-Based Price</p>
                   <p className="text-xl font-semibold">
-                    {formatCurrency(selectedRecommendation.rule_based_price)}
+                    {formatCurrency(selectedRecommendation.rule_based_price, selectedRecommendation.currency || 'ZAR')}
                   </p>
                 </div>
                 <div className="border-primary bg-primary/5 rounded-lg border p-4">
                   <p className="text-muted-foreground text-xs">AI Recommended</p>
                   <p className="text-xl font-semibold">
-                    {formatCurrency(selectedRecommendation.ai_recommended_price)}
+                    {formatCurrency(selectedRecommendation.ai_recommended_price, selectedRecommendation.currency || 'ZAR')}
                   </p>
                 </div>
                 <div className="rounded-lg border p-4">

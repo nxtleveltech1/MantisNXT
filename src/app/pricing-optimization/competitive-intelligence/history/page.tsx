@@ -25,8 +25,10 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Loader2, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils/currency-formatter';
 
 interface PriceHistoryData {
+  currency?: string;
   internalPriceHistory: Array<{
     date: string;
     price: number;
@@ -310,11 +312,11 @@ export default function PriceHistoryPage() {
                     />
                     <YAxis
                       tick={{ fontSize: 12 }}
-                      tickFormatter={value => `$${value.toFixed(2)}`}
+                      tickFormatter={value => formatCurrency(value, history?.currency || 'ZAR')}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => [
-                        `$${value?.toFixed(2) || 'N/A'}`,
+                        formatCurrency(value || 0, history?.currency || 'ZAR'),
                         name === 'ourPrice' ? 'Our Price' : name,
                       ]}
                       labelFormatter={label => format(new Date(label), 'PPP')}
@@ -424,12 +426,12 @@ export default function PriceHistoryPage() {
                             </div>
                             <div className="text-muted-foreground text-sm">
                               {change.previousPrice
-                                ? `From $${change.previousPrice.toFixed(2)}`
+                                ? `From ${formatCurrency(change.previousPrice, history?.currency || 'ZAR')}`
                                 : 'Initial price'}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold">${change.price.toFixed(2)}</div>
+                            <div className="text-lg font-bold">{formatCurrency(change.price, history?.currency || 'ZAR')}</div>
                             {change.change !== 0 && (
                               <Badge
                                 variant={change.change > 0 ? 'destructive' : 'default'}

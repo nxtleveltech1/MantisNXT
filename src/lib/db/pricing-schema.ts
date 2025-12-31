@@ -183,6 +183,9 @@ export interface OptimizationRun {
   estimated_revenue_impact?: number;
   estimated_profit_impact?: number;
 
+  // Currency
+  currency: string; // Currency code (e.g., 'ZAR', 'USD')
+
   // Execution details
   started_at?: Date;
   completed_at?: Date;
@@ -213,6 +216,9 @@ export interface OptimizationRecommendation {
   price_change_percent: number;
   price_change_amount: number;
 
+  // Currency
+  currency: string; // Currency code (e.g., 'ZAR', 'USD')
+
   // Analysis
   confidence_score: number; // 0-100
   reasoning: string;
@@ -227,6 +233,7 @@ export interface OptimizationRecommendation {
   competitor_prices?: Array<{
     competitor: string;
     price: number;
+    currency?: string;
     last_checked: Date;
   }>;
   elasticity_estimate?: number;
@@ -256,6 +263,9 @@ export interface PriceChangeLog {
   new_price: number;
   price_change_percent: number;
   price_change_amount: number;
+
+  // Currency
+  currency: string; // Currency code (e.g., 'ZAR', 'USD')
 
   // Context
   change_reason:
@@ -318,6 +328,9 @@ export interface PriceElasticity {
   optimal_price?: number;
   optimal_price_confidence?: number;
 
+  // Currency
+  currency: string; // Currency code (e.g., 'ZAR', 'USD')
+
   // Historical data used
   price_range_analyzed: {
     min_price: number;
@@ -354,6 +367,9 @@ export interface PricePerformanceMetrics {
   min_price: number;
   max_price: number;
   price_volatility: number;
+
+  // Currency
+  currency: string; // Currency code (e.g., 'ZAR', 'USD')
 
   // Competitive position
   market_position: 'premium' | 'mid_market' | 'value' | 'unknown';
