@@ -13,9 +13,8 @@
  *   --remove: Actually remove mismatched products (requires confirmation)
  */
 
+import { readdirSync, readFileSync } from 'fs';
 import { query as dbQuery, withTransaction } from '../src/lib/database/unified-connection';
-import { readFileSync } from 'fs';
-import { readdirSync } from 'fs';
 
 const SUPPLIER_NAME = 'Stage One';
 

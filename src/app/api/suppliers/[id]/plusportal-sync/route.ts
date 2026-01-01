@@ -187,15 +187,28 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const { username, password, enabled, intervalMinutes } = body;
 
+    if (!username) {
+      return NextResponse.json(
+        { error: 'Username is required' },
+        { status: 400 }
+      );
+    }
+
     const service = getPlusPortalSyncService(supplierId);
 
-    // Update configuration
-    await service.updateConfig({
+    // Update configuration - only include password if provided
+    const configUpdate: any = {
       username,
-      password, // TODO: Encrypt password before storing
       enabled,
       intervalMinutes,
-    });
+    };
+    
+    // Only update password if provided (allows updating other fields without password)
+    if (password !== undefined && password !== null && password !== '') {
+      configUpdate.password = password; // TODO: Encrypt password before storing
+    }
+
+    await service.updateConfig(configUpdate);
 
     // Get updated status
     const status = await service.getStatus();

@@ -165,10 +165,16 @@ function SupplierProfileContent() {
   const search = useSearchParams();
   const supplierId = String(params?.id || '');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
-  const initialTab = search?.get('tab') || 'overview';
-  // Redirect old tab names to new merged tab
-  const normalizedTab = initialTab === 'rules' || initialTab === 'discounts' ? 'pricing-discounts' : initialTab;
-  const [activeTab, setActiveTab] = useState<string>(normalizedTab);
+  
+  // Get initial tab from search params - use useEffect to avoid hook order issues
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  
+  useEffect(() => {
+    const initialTab = search?.get('tab') || 'overview';
+    // Redirect old tab names to new merged tab
+    const normalizedTab = initialTab === 'rules' || initialTab === 'discounts' ? 'pricing-discounts' : initialTab;
+    setActiveTab(normalizedTab);
+  }, [search]);
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [uploads, setUploads] = useState<UploadRow[]>([]);
@@ -408,6 +414,13 @@ function SupplierProfileContent() {
               setPlusPortalPassword(''); // Don't load password for security
               setPlusPortalEnabled(config.enabled || false);
               setPlusPortalInterval(config.intervalMinutes || 1440);
+            } else {
+              // If no config, set defaults but don't clear username if it was set
+              if (!plusPortalUsername) {
+                setPlusPortalUsername('');
+              }
+              setPlusPortalEnabled(false);
+              setPlusPortalInterval(1440);
             }
             if (recentLogs) {
               setPlusPortalSyncLogs(recentLogs);
@@ -2060,20 +2073,43 @@ function SupplierProfileContent() {
                         onClick={async () => {
                           try {
                             setError(null);
+                            if (!plusPortalUsername) {
+                              setError('Username is required');
+                              return;
+                            }
+                            
                             const res = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
                                 username: plusPortalUsername,
-                                password: plusPortalPassword,
+                                password: plusPortalPassword || undefined, // Only send if provided
                                 enabled: plusPortalEnabled,
                                 intervalMinutes: plusPortalInterval,
                               }),
                             });
-                            if (!res.ok) throw new Error('Failed to save configuration');
+                            
+                            if (!res.ok) {
+                              const errorData = await res.json().catch(() => ({ error: 'Failed to save configuration' }));
+                              throw new Error(errorData.error || `Failed to save: ${res.status} ${res.statusText}`);
+                            }
+                            
                             const data = await res.json();
                             if (data.success) {
-                              // Success notification could be added here
+                              // Reload status to get updated config
+                              const statusRes = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
+                              const statusData = await statusRes.json();
+                              if (statusData.success && statusData.data?.config) {
+                                const config = statusData.data.config;
+                                setPlusPortalUsername(config.username || '');
+                                // Don't reload password for security
+                                setPlusPortalEnabled(config.enabled || false);
+                                setPlusPortalInterval(config.intervalMinutes || 1440);
+                              }
+                              // Show success (you can add a toast notification here)
+                              console.log('Configuration saved successfully');
+                            } else {
+                              throw new Error(data.error || 'Failed to save configuration');
                             }
                           } catch (e: any) {
                             setError(e?.message || 'Failed to save configuration');

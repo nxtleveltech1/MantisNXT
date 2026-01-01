@@ -3,14 +3,12 @@
  * Automated browser-based extraction and sync from PlusPortal
  */
 
+import { query } from '@/lib/database';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import type { Browser, Page } from 'puppeteer';
 import puppeteer from 'puppeteer';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { query, withTransaction } from '@/lib/database';
-import { findSupplierByName } from '@/lib/utils/supplier-matcher';
-import { shouldCreateProductForStageAudioWorks } from './SKUDeduplicationService';
 
 const PLUSPORTAL_BASE_URL = 'https://my.plusportal.africa';
 const PLUSPORTAL_LOGIN_URL = `${PLUSPORTAL_BASE_URL}/apps/authentication/external-login`;
@@ -151,33 +149,63 @@ export class PlusPortalSyncService {
 
       await passwordInput.type(credentials.password, { delay: 100 });
 
-      // Find and click submit button
-      const submitSelectors = [
-        'button[type="submit"]',
-        'input[type="submit"]',
-        'button:has-text("Login")',
-        'button:has-text("Sign In")',
-        '.btn-primary',
-        '#login-button',
-      ];
-
-      let submitButton = null;
-      for (const selector of submitSelectors) {
-        try {
-          submitButton = await page.$(selector);
-          if (submitButton) break;
-        } catch {
-          // Continue to next selector
+      // Find and click submit button - look for "Sign In" text specifically
+      // First try to find by text content (most reliable)
+      const signInButtonFound = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
+        for (const btn of buttons) {
+          const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
+          if (text === 'sign in' || text.includes('sign in')) {
+            return true;
+          }
         }
+        return false;
+      });
+
+      if (signInButtonFound) {
+        // Click button by text content
+        await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
+          for (const btn of buttons) {
+            const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
+            if (text === 'sign in' || text.includes('sign in')) {
+              (btn as HTMLElement).click();
+              return;
+            }
+          }
+        });
+      } else {
+        // Fallback to selector-based approach
+        const submitSelectors = [
+          'button[type="submit"]',
+          'input[type="submit"]',
+          '.btn-primary',
+          '#login-button',
+          'button',
+        ];
+
+        let submitButton = null;
+        for (const selector of submitSelectors) {
+          try {
+            submitButton = await page.$(selector);
+            if (submitButton) break;
+          } catch {
+            // Continue to next selector
+          }
+        }
+
+        if (!submitButton) {
+          throw new Error('Submit button not found');
+        }
+
+        await submitButton.click();
       }
 
-      if (!submitButton) {
-        throw new Error('Submit button not found');
-      }
-
+      // Wait for navigation
       await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }),
-        submitButton.click(),
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
+          // Navigation might not happen if already on target page
+        }),
       ]);
 
       // Check if login was successful (URL should change or error message should not appear)
@@ -717,6 +745,7 @@ export class PlusPortalSyncService {
     }
 
     if (updates.length > 0) {
+      // Add supplier ID as the last parameter
       params.push(this.supplierId);
       await query(
         `UPDATE core.supplier 
