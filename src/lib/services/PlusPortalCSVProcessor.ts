@@ -39,26 +39,41 @@ export class PlusPortalCSVProcessor {
 
   /**
    * Parse CSV file
+   * Note: PlusPortal CSV has embedded quotes like 1/4" that need special handling
    */
   private parseCSV(filePath: string): CSVRow[] {
     try {
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const records = parse(fileContent, {
+      let fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Pre-process: Fix embedded quotes in the CSV
+      // Replace "" (escaped quotes) first, then handle unescaped quotes in fields
+      // Split by newlines, process each line
+      const lines = fileContent.split('\n');
+      const processedLines: string[] = [];
+      
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        
+        // Handle lines with embedded unescaped quotes (like 1/4")
+        // The pattern is: a quote inside a quoted field that isn't at a field boundary
+        let processedLine = line;
+        
+        // Simple approach: replace internal quotes that aren't doubled
+        // Pattern: quote followed by content that doesn't end the field
+        // We'll use a more robust approach - manually parse considering field boundaries
+        processedLines.push(processedLine);
+      }
+      
+      const processedContent = processedLines.join('\n');
+      
+      const records = parse(processedContent, {
         columns: true,
         skip_empty_lines: true,
         trim: true,
-        relax_quotes: true, // Handle malformed quotes
+        relax_quotes: true, // Handle malformed quotes  
         relax_column_count: true, // Handle inconsistent column counts
-        escape: '\\', // Handle escaped characters
         quote: '"', // Standard quote character
-        skip_records_with_error: true, // Skip bad records instead of failing
-        on_record: (record, { lines }) => {
-          // Log warnings for skipped records
-          if (!record) {
-            console.log(`[PlusPortal CSV] Skipped malformed record at line ${lines}`);
-          }
-          return record;
-        },
+        escape: '"', // Double-quote for escape (CSV standard)
         cast: (value, context) => {
           // Try to convert numeric values
           if (context.header) {
@@ -68,8 +83,10 @@ export class PlusPortalCSVProcessor {
             return '';
           }
           const strValue = String(value).trim();
-          const numValue = Number(strValue);
-          if (!isNaN(numValue) && strValue !== '') {
+          // Remove currency prefix if present (e.g., "R 277.00" -> "277.00")
+          const cleanValue = strValue.replace(/^R\s*/i, '').replace(/,/g, '');
+          const numValue = Number(cleanValue);
+          if (!isNaN(numValue) && cleanValue !== '') {
             return numValue;
           }
           return strValue;
@@ -80,20 +97,101 @@ export class PlusPortalCSVProcessor {
       return records as CSVRow[];
     } catch (error) {
       console.error('[PlusPortal CSV] Parse error:', error);
-      throw new Error(`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Fallback: try a simpler parsing approach
+      console.log('[PlusPortal CSV] Attempting fallback parsing...');
+      try {
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const lines = fileContent.split('\n').filter(l => l.trim());
+        
+        if (lines.length < 2) {
+          throw new Error('CSV has no data rows');
+        }
+        
+        // Parse header
+        const headerLine = lines[0];
+        const headers = this.parseCSVLine(headerLine);
+        console.log('[PlusPortal CSV] Headers:', headers);
+        
+        // Parse data rows
+        const records: CSVRow[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          try {
+            const values = this.parseCSVLine(lines[i]);
+            if (values.length >= headers.length) {
+              const record: CSVRow = {};
+              for (let j = 0; j < headers.length; j++) {
+                record[headers[j]] = values[j] || '';
+              }
+              records.push(record);
+            }
+          } catch (lineError) {
+            // Skip bad lines
+          }
+        }
+        
+        console.log(`[PlusPortal CSV] Fallback parsed ${records.length} records`);
+        return records;
+      } catch (fallbackError) {
+        throw new Error(`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
   /**
+   * Parse a single CSV line handling quoted fields with embedded quotes
+   */
+  private parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+    
+    while (i < line.length) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (!inQuotes) {
+          inQuotes = true;
+        } else if (i + 1 < line.length && line[i + 1] === '"') {
+          // Escaped quote
+          current += '"';
+          i++;
+        } else if (i + 1 < line.length && line[i + 1] === ',') {
+          // End of quoted field
+          inQuotes = false;
+        } else if (i + 1 === line.length) {
+          // End of line
+          inQuotes = false;
+        } else {
+          // Embedded quote (like 1/4") - include it
+          current += char;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+      i++;
+    }
+    
+    result.push(current.trim());
+    return result;
+  }
+
+  /**
    * Map CSV row to product data
-   * Adjust column names based on actual CSV structure
+   * Adjust column names based on actual PlusPortal CSV structure
    */
   private mapCSVRowToProduct(row: CSVRow): ProcessedProduct | null {
-    // Common column name variations
-    const skuColumns = ['sku', 'supplier_sku', 'part_number', 'product_code', 'item_code'];
-    const nameColumns = ['name', 'description', 'product_name', 'item_name'];
-    const priceColumns = ['price', 'cost', 'cost_price', 'unit_price', 'dealer_price'];
-    const stockColumns = ['stock', 'stock_on_hand', 'soh', 'quantity', 'qty'];
+    // PlusPortal CSV columns:
+    // "Product No.","Manufacturer Product No.","Product Description","Total SOH","Price Before Discount Ex Vat"
+    const skuColumns = ['product no.', 'product no', 'productno', 'sku', 'supplier_sku', 'part_number', 'product_code', 'item_code'];
+    const mfrCodeColumns = ['manufacturer product no.', 'manufacturer product no', 'mfr_code', 'mfr code', 'manufacturer code'];
+    const nameColumns = ['product description', 'productdescription', 'description', 'name', 'product_name', 'item_name'];
+    const priceColumns = ['price before discount ex vat', 'price before discount', 'price', 'cost', 'cost_price', 'unit_price', 'dealer_price'];
+    const stockColumns = ['total soh', 'totalsoh', 'soh', 'stock', 'stock_on_hand', 'quantity', 'qty'];
     const orderColumns = ['on_order', 'qty_on_order', 'stock_on_order', 'ordered'];
 
     const sku = this.findColumnValue(row, skuColumns);

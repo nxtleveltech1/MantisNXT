@@ -399,133 +399,116 @@ export class PlusPortalSyncService {
         console.log('[PlusPortal] Step 6: SOH INFO tab not found, continuing...');
       }
 
-      await this.delay(3000);
-      console.log('[PlusPortal] Current URL after SOH tab:', page.url());
-
-      // STEP 7: SELECT CSV DOWNLOAD TAB
-      // Look for tabs within the SOH page
-      const pageTabsInfo = await page.evaluate(() => {
-        const tabs = Array.from(document.querySelectorAll('.ant-tabs-tab, [role="tab"], .tab, .nav-tab, button, a'));
-        return tabs.slice(0, 20).map(el => ({
-          text: el.textContent?.trim().slice(0, 50),
-          tag: el.tagName,
-          className: el.className?.slice(0, 50),
-        }));
-      });
-      console.log('[PlusPortal] Page tabs/buttons:', JSON.stringify(pageTabsInfo.slice(0, 10), null, 2));
-
-      const csvTabClicked = await page.evaluate(() => {
-        // Look for tabs or buttons with CSV text
-        const elements = Array.from(document.querySelectorAll('.ant-tabs-tab, [role="tab"], a, button, span, div'));
-        for (const el of elements) {
-          const text = el.textContent?.trim().toLowerCase() || '';
-          // Look for "CSV Download" or "CSV" tab
-          if (text === 'csv download' || text === 'csv' || text === 'download csv') {
-            (el as HTMLElement).click();
-            return { found: true, text: el.textContent?.trim() };
-          }
-        }
-        return { found: false, text: null };
-      });
-
-      if (csvTabClicked.found) {
-        console.log(`[PlusPortal] Step 7: Clicked CSV Download tab: "${csvTabClicked.text}"`);
-      } else {
-        console.log('[PlusPortal] Step 7: CSV Download tab not found, continuing...');
+      // STEP 4: Wait for the SOH table to fully load
+      console.log('[PlusPortal] Step 4: Waiting for SOH table to load...');
+      await this.delay(5000);
+      
+      // Wait for table data to appear
+      try {
+        await page.waitForSelector('table, .ant-table, nz-table', { timeout: 15000 });
+        console.log('[PlusPortal] Table found, waiting for data...');
+        await this.delay(3000);
+      } catch {
+        console.log('[PlusPortal] Table selector not found, continuing...');
       }
 
-      await this.delay(2000);
-
-      // Set up download listener BEFORE clicking export
+      // Set up download listener BEFORE clicking CSV
       const client = await page.target().createCDPSession();
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: this.downloadPath,
       });
 
-      // Log available buttons for debugging
-      const buttonsInfo = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        return buttons.slice(0, 20).map(b => ({
-          text: b.textContent?.trim().slice(0, 30),
-          className: b.className?.slice(0, 50),
-          disabled: b.disabled,
-        }));
-      });
-      console.log('[PlusPortal] Available buttons:', JSON.stringify(buttonsInfo, null, 2));
-
-      // STEP 7b: Click "Get Report" button first to generate the report data
-      const getReportClicked = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim().toLowerCase() || '';
-          if (text === 'get report' || text.includes('get report')) {
-            (btn as HTMLElement).click();
-            return { found: true, text: btn.textContent?.trim() };
-          }
-        }
-        return { found: false };
-      });
-
-      if (getReportClicked.found) {
-        console.log(`[PlusPortal] Clicked "Get Report": "${getReportClicked.text}"`);
-        // Wait for report to load
-        await this.delay(5000);
-      } else {
-        console.log('[PlusPortal] "Get Report" button not found, continuing...');
-      }
-
-      // STEP 8: Click the CSV button to open export dialog
+      // STEP 5: Click CSV button
+      console.log('[PlusPortal] Step 5: Looking for CSV button...');
+      
       const csvButtonClicked = await page.evaluate(() => {
         const buttons = Array.from(document.querySelectorAll('button'));
         for (const btn of buttons) {
-          const text = btn.textContent?.trim().toLowerCase() || '';
-          if (text === 'csv') {
+          const text = btn.textContent?.trim() || '';
+          // Look for button with exactly "CSV" text
+          if (text === 'CSV' || text.toLowerCase() === 'csv') {
             (btn as HTMLElement).click();
-            return { found: true, text: btn.textContent?.trim() };
+            return { found: true, text };
           }
         }
         return { found: false };
       });
 
       if (csvButtonClicked.found) {
-        console.log(`[PlusPortal] Step 8: Clicked CSV button: "${csvButtonClicked.text}"`);
+        console.log(`[PlusPortal] Step 5: Clicked CSV button: "${csvButtonClicked.text}"`);
       } else {
-        console.log('[PlusPortal] Step 8: CSV button not found');
         throw new Error('CSV button not found on the page');
       }
 
-      // Wait for export dialog to appear
+      // Wait for the export dialog to appear
       await this.delay(2000);
 
-      // STEP 9: Click the Export button in the dialog to confirm and download
-      const exportConfirmClicked = await page.evaluate(() => {
+      // STEP 6: Select comma delimiter (click the "," button)
+      console.log('[PlusPortal] Step 6: Looking for comma delimiter button...');
+      
+      const commaClicked = await page.evaluate(() => {
+        // The delimiter is shown as buttons with "," or ";" or "Tab"
         const buttons = Array.from(document.querySelectorAll('button'));
-        // Look for Export button (usually in a modal/drawer)
         for (const btn of buttons) {
-          const text = btn.textContent?.trim().toLowerCase() || '';
-          const className = btn.className || '';
-          // Prefer primary export button
-          if (text === 'export' && className.includes('primary')) {
+          const text = btn.textContent?.trim() || '';
+          // Look for button with comma symbol
+          if (text === ',' || text === ',') {
             (btn as HTMLElement).click();
-            return { found: true, text: btn.textContent?.trim(), type: 'primary' };
+            return { found: true, text: 'comma button' };
           }
         }
-        // Try any Export button
+        
+        // Also try looking for spans or divs that might be clickable delimiter options
+        const elements = Array.from(document.querySelectorAll('span, div, label'));
+        for (const el of elements) {
+          const text = el.textContent?.trim() || '';
+          if (text === ',' || text === ',') {
+            (el as HTMLElement).click();
+            return { found: true, text: 'comma element' };
+          }
+        }
+        
+        // Try input/radio for comma
+        const inputs = Array.from(document.querySelectorAll('input'));
+        for (const input of inputs) {
+          const value = (input as HTMLInputElement).value || '';
+          if (value === ',' || value === 'comma') {
+            (input as HTMLInputElement).click();
+            return { found: true, text: 'comma input' };
+          }
+        }
+        
+        return { found: false };
+      });
+
+      if (commaClicked.found) {
+        console.log(`[PlusPortal] Step 6: Selected comma delimiter: "${commaClicked.text}"`);
+      } else {
+        console.log('[PlusPortal] Step 6: Comma delimiter button not found, may already be selected');
+      }
+
+      await this.delay(1000);
+
+      // STEP 7: Click Export button
+      console.log('[PlusPortal] Step 7: Looking for Export button...');
+      
+      const exportClicked = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
         for (const btn of buttons) {
           const text = btn.textContent?.trim().toLowerCase() || '';
           if (text === 'export') {
             (btn as HTMLElement).click();
-            return { found: true, text: btn.textContent?.trim(), type: 'any' };
+            return { found: true, text: btn.textContent?.trim() };
           }
         }
         return { found: false };
       });
 
-      if (exportConfirmClicked.found) {
-        console.log(`[PlusPortal] Step 9: Clicked Export confirm: "${exportConfirmClicked.text}" (${exportConfirmClicked.type})`);
+      if (exportClicked.found) {
+        console.log(`[PlusPortal] Step 7: Clicked Export: "${exportClicked.text}"`);
       } else {
-        console.log('[PlusPortal] Step 9: Export confirm button not found, download may have started directly');
+        throw new Error('Export button not found');
       }
 
       // Wait for download to complete (check for new files in download directory)
