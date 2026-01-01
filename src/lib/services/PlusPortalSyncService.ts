@@ -4,14 +4,18 @@
  */
 
 import { query } from '@/lib/database';
+import chromium from '@sparticuz/chromium';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { Browser, Page } from 'puppeteer';
-import puppeteer from 'puppeteer';
+import type { Browser, Page } from 'puppeteer-core';
+import puppeteer from 'puppeteer-core';
 
 const PLUSPORTAL_BASE_URL = 'https://my.plusportal.africa';
 const PLUSPORTAL_LOGIN_URL = `${PLUSPORTAL_BASE_URL}/apps/authentication/external-login`;
+
+// Check if running in serverless environment (Vercel, AWS Lambda, etc.)
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
 
 export interface PlusPortalCredentials {
   username: string;
@@ -67,23 +71,75 @@ export class PlusPortalSyncService {
 
   /**
    * Initialize browser instance
+   * Uses @sparticuz/chromium for serverless environments (Vercel, AWS Lambda)
+   * Falls back to system Chrome for local development
    */
   private async initializeBrowser(): Promise<Browser> {
     if (this.browser) {
       return this.browser;
     }
 
-    this.browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--window-size=1920x1080',
-      ],
-    });
+    const launchArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--window-size=1920x1080',
+      '--single-process',
+      '--no-zygote',
+    ];
+
+    if (isServerless) {
+      // Serverless environment - use @sparticuz/chromium
+      console.log('[PlusPortal] Running in serverless mode, using @sparticuz/chromium');
+      
+      // Set font configuration for serverless
+      chromium.setHeadlessMode = 'shell';
+      chromium.setGraphicsMode = false;
+      
+      const executablePath = await chromium.executablePath();
+      console.log('[PlusPortal] Chromium executable path:', executablePath);
+      
+      this.browser = await puppeteer.launch({
+        args: [...chromium.args, ...launchArgs],
+        defaultViewport: chromium.defaultViewport,
+        executablePath,
+        headless: true,
+      });
+    } else {
+      // Local development - try to find system Chrome
+      console.log('[PlusPortal] Running in local mode, looking for system Chrome');
+      
+      // Common Chrome paths
+      const chromePaths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ];
+      
+      let executablePath: string | undefined;
+      for (const chromePath of chromePaths) {
+        if (fs.existsSync(chromePath)) {
+          executablePath = chromePath;
+          break;
+        }
+      }
+      
+      if (!executablePath) {
+        throw new Error('Chrome not found. Please install Chrome or set CHROME_PATH environment variable.');
+      }
+      
+      console.log('[PlusPortal] Using Chrome at:', executablePath);
+      
+      this.browser = await puppeteer.launch({
+        headless: true,
+        executablePath,
+        args: launchArgs,
+      });
+    }
 
     return this.browser;
   }
