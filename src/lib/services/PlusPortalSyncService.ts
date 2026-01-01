@@ -100,118 +100,211 @@ export class PlusPortalSyncService {
 
   /**
    * Login to PlusPortal
+   * Process Steps:
+   * 1. OPEN URL: https://my.plusportal.africa/apps/authentication/external-login
+   * 2. LOGIN EMAIL
+   * 3. PASSWORD
+   * 4. CHECK BOX: Accept terms and conditions
+   * 5. CLICK: SIGN IN
    */
   private async login(page: Page, credentials: PlusPortalCredentials): Promise<boolean> {
     try {
+      // Set a realistic user agent
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      console.log('[PlusPortal] Step 1: Opening login URL...');
       await page.goto(PLUSPORTAL_LOGIN_URL, {
         waitUntil: 'networkidle2',
         timeout: 30000,
       });
+      console.log('[PlusPortal] Page loaded, current URL:', page.url());
 
       // Wait for login form to be visible
       await page.waitForSelector('input[type="email"], input[type="text"], input[type="password"]', {
-        timeout: 10000,
+        timeout: 15000,
       });
+      console.log('[PlusPortal] Login form found');
 
-      await this.delay(1000);
+      await this.delay(2000);
 
-      // Fill email field using Puppeteer's type method
+      // Log all input fields found
+      const inputInfo = await page.evaluate(() => {
+        const inputs = Array.from(document.querySelectorAll('input'));
+        return inputs.map(input => ({
+          type: input.type,
+          name: input.name,
+          id: input.id,
+          placeholder: input.placeholder,
+        }));
+      });
+      console.log('[PlusPortal] Found inputs:', JSON.stringify(inputInfo, null, 2));
+
+      // Step 2: Fill email field
+      console.log('[PlusPortal] Step 2: Filling email field...');
       const emailInput = await page.$('input[type="email"], input[type="text"]');
       if (!emailInput) {
         throw new Error('Email input field not found');
       }
-      await emailInput.click({ clickCount: 3 }); // Select all existing text
-      await emailInput.type(credentials.username, { delay: 50 });
+      await emailInput.click({ clickCount: 3 });
+      await emailInput.type(credentials.username, { delay: 30 });
+      console.log('[PlusPortal] Email entered');
 
       await this.delay(500);
 
-      // Fill password field using Puppeteer's type method
+      // Step 3: Fill password field
+      console.log('[PlusPortal] Step 3: Filling password field...');
       const passwordInput = await page.$('input[type="password"]');
       if (!passwordInput) {
         throw new Error('Password input field not found');
       }
-      await passwordInput.click({ clickCount: 3 }); // Select all existing text
-      await passwordInput.type(credentials.password, { delay: 50 });
+      await passwordInput.click({ clickCount: 3 });
+      await passwordInput.type(credentials.password, { delay: 30 });
+      console.log('[PlusPortal] Password entered');
 
       await this.delay(500);
 
-      // Find and check "Accept terms and Conditions" checkbox
-      const checkboxHandle = await page.evaluateHandle(() => {
+      // Step 4: Check terms checkbox
+      console.log('[PlusPortal] Step 4: Looking for terms checkbox...');
+      const checkboxInfo = await page.evaluate(() => {
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+        return checkboxes.map(cb => ({
+          id: cb.id,
+          name: cb.name,
+          checked: (cb as HTMLInputElement).checked,
+          parentText: cb.parentElement?.textContent?.trim().slice(0, 100),
+        }));
+      });
+      console.log('[PlusPortal] Found checkboxes:', JSON.stringify(checkboxInfo, null, 2));
+
+      // Click the checkbox
+      const checkboxClicked = await page.evaluate(() => {
         const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
         for (const checkbox of checkboxes) {
-          const parent = checkbox.parentElement;
-          const sibling = checkbox.nextElementSibling;
-          const nearbyText = (parent?.textContent || sibling?.textContent || '').toLowerCase();
-          
-          if (nearbyText.includes('terms') || nearbyText.includes('accept')) {
-            return checkbox;
+          if (!(checkbox as HTMLInputElement).checked) {
+            (checkbox as HTMLInputElement).click();
+            return { clicked: true, id: checkbox.id };
           }
         }
-        // Fallback: return first checkbox
-        return document.querySelector('input[type="checkbox"]');
+        return { clicked: false, reason: 'No unchecked checkbox found or already checked' };
       });
-
-      const checkboxElement = await checkboxHandle.asElement();
-      if (checkboxElement) {
-        const isChecked = await page.evaluate((el) => (el as HTMLInputElement).checked, checkboxElement);
-        if (!isChecked) {
-          await checkboxElement.click();
-        }
-      }
+      console.log('[PlusPortal] Checkbox click result:', JSON.stringify(checkboxClicked));
 
       await this.delay(1000);
 
-      // Find and click "Sign in" button using Puppeteer's click method
-      const signInButton = await page.evaluateHandle(() => {
+      // Step 5: Click Sign In button
+      console.log('[PlusPortal] Step 5: Looking for Sign In button...');
+      const buttonInfo = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
+        return buttons.map(btn => ({
+          text: btn.textContent?.trim(),
+          type: btn.getAttribute('type'),
+          id: btn.id,
+          className: btn.className,
+        }));
+      });
+      console.log('[PlusPortal] Found buttons:', JSON.stringify(buttonInfo, null, 2));
+
+      // Click the Sign In button
+      const buttonClicked = await page.evaluate(() => {
         const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
         for (const btn of buttons) {
-          const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
+          const text = (btn.textContent || (btn as HTMLInputElement).value || '').toLowerCase().trim();
           if (text === 'sign in' || text.includes('sign in')) {
-            return btn;
+            (btn as HTMLElement).click();
+            return { clicked: true, text: btn.textContent?.trim() };
           }
         }
-        return null;
+        // Try finding by submit type
+        const submitBtn = document.querySelector('button[type="submit"], input[type="submit"]');
+        if (submitBtn) {
+          (submitBtn as HTMLElement).click();
+          return { clicked: true, text: 'submit button', type: 'submit' };
+        }
+        return { clicked: false, reason: 'No sign in button found' };
       });
+      console.log('[PlusPortal] Button click result:', JSON.stringify(buttonClicked));
 
-      if (!signInButton) {
-        throw new Error('Sign in button not found');
+      if (!buttonClicked.clicked) {
+        // Take screenshot for debugging
+        const screenshotPath = path.join(this.downloadPath, 'login-debug.png');
+        await page.screenshot({ path: screenshotPath, fullPage: true });
+        console.log('[PlusPortal] Debug screenshot saved:', screenshotPath);
+        throw new Error('Sign in button not found or could not be clicked');
       }
 
-      const buttonElement = await signInButton.asElement();
-      if (!buttonElement) {
-        throw new Error('Sign in button element not found');
-      }
-
-      // Wait for navigation promise BEFORE clicking
-      const navigationPromise = page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
-        // Navigation might not happen, we'll check URL later
-        return null;
-      });
-
-      await buttonElement.click();
-
-      // Wait for navigation or timeout
-      await navigationPromise;
-      
-      // Give it a moment for any async navigation
-      await this.delay(3000);
+      // Wait for page changes (this is an Angular SPA, URL might not change)
+      console.log('[PlusPortal] Waiting for page update...');
+      await this.delay(5000);
 
       // Check current URL
       const currentUrl = page.url();
+      console.log('[PlusPortal] Current URL after login attempt:', currentUrl);
       
       // Check for error messages first
       const errorText = await page.evaluate(() => {
-        const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], .text-red-500, .text-red-600, [class*="error"], [class*="danger"]');
-        return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
+        const errorSelectors = [
+          '.error', '.alert-danger', '[role="alert"]', 
+          '.text-red-500', '.text-red-600', 
+          '[class*="error"]', '[class*="danger"]',
+          '.validation-message', '.field-validation-error'
+        ];
+        const errorElements = document.querySelectorAll(errorSelectors.join(', '));
+        return Array.from(errorElements)
+          .map(el => el.textContent?.trim())
+          .filter(text => text && text.length > 0)
+          .join(' | ');
       });
       
       if (errorText) {
+        console.log('[PlusPortal] Error messages found:', errorText);
         throw new Error(`Login failed: ${errorText}`);
       }
 
-      // Verify login was successful - check if we're still on login page
-      if (currentUrl.includes('login') || currentUrl.includes('authentication')) {
-        // Still on login page - check checkbox status
+      // Check if we're on the company selection page (login was successful!)
+      // After login, PlusPortal shows a list of companies to select
+      const companyListFound = await page.evaluate(() => {
+        // Look for the company list (nz-list-item elements with company names)
+        const listItems = document.querySelectorAll('nz-list-item, .ant-list-item');
+        return listItems.length > 0;
+      });
+
+      if (companyListFound) {
+        console.log('[PlusPortal] Login successful - company selection page detected');
+        
+        // Click on the first company in the list to proceed
+        const companyClicked = await page.evaluate(() => {
+          const listItems = Array.from(document.querySelectorAll('nz-list-item, .ant-list-item'));
+          if (listItems.length > 0) {
+            // Click the first available company
+            (listItems[0] as HTMLElement).click();
+            const companyName = listItems[0].textContent?.trim().slice(0, 100);
+            return { clicked: true, company: companyName };
+          }
+          return { clicked: false };
+        });
+        
+        console.log('[PlusPortal] Company selection result:', JSON.stringify(companyClicked));
+        
+        if (companyClicked.clicked) {
+          // Wait for navigation after selecting company
+          await this.delay(5000);
+          const newUrl = page.url();
+          console.log('[PlusPortal] After company selection, URL:', newUrl);
+          return true;
+        }
+      }
+
+      // Check if login form is still visible (login failed)
+      const loginFormStillVisible = await page.evaluate(() => {
+        const passwordInput = document.querySelector('input[type="password"]');
+        const signInButton = Array.from(document.querySelectorAll('button')).find(
+          btn => btn.textContent?.toLowerCase().includes('sign in')
+        );
+        return passwordInput !== null && signInButton !== null;
+      });
+
+      if (loginFormStillVisible) {
+        // Check checkbox status
         const checkboxChecked = await page.evaluate(() => {
           const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
           return checkbox ? checkbox.checked : true;
@@ -246,35 +339,88 @@ export class PlusPortalSyncService {
       await this.delay(3000);
       console.log('[PlusPortal] Page loaded, looking for SOH INFO tab...');
 
+      // Log available menu items for debugging
+      const menuItems = await page.evaluate(() => {
+        // Look for menu links - typically anchor tags in navigation
+        const links = Array.from(document.querySelectorAll('a, nz-menu-item, .ant-menu-item, [role="menuitem"]'));
+        return links.slice(0, 30).map(el => ({
+          tag: el.tagName,
+          text: el.textContent?.trim().slice(0, 50),
+          href: el.getAttribute('href'),
+          className: el.className?.slice(0, 50),
+        }));
+      });
+      console.log('[PlusPortal] Available menu items:', JSON.stringify(menuItems.slice(0, 15), null, 2));
+
       // STEP 6: SELECT THE SOH INFO TAB
+      // Need to find and click the specific link/menu item, not a parent container
       const sohTabClicked = await page.evaluate(() => {
-        const elements = Array.from(document.querySelectorAll('a, button, .tab, [role="tab"], li, span, div'));
-        for (const el of elements) {
-          const text = el.textContent?.trim().toLowerCase() || '';
-          // Look for "SOH INFO" or "SOH" tab
-          if (text === 'soh info' || text === 'soh' || text.includes('soh info')) {
-            (el as HTMLElement).click();
-            return { found: true, text: el.textContent?.trim() };
+        // First try anchor tags with exact or near-exact text
+        const anchors = Array.from(document.querySelectorAll('a'));
+        for (const a of anchors) {
+          const text = a.textContent?.trim().toLowerCase() || '';
+          if (text === 'soh info' || text === 'soh') {
+            a.click();
+            return { found: true, text: a.textContent?.trim(), type: 'anchor' };
           }
         }
+
+        // Try menu items
+        const menuItems = Array.from(document.querySelectorAll('nz-menu-item, .ant-menu-item, [role="menuitem"], li'));
+        for (const item of menuItems) {
+          const text = item.textContent?.trim().toLowerCase() || '';
+          if (text === 'soh info' || text === 'soh') {
+            (item as HTMLElement).click();
+            return { found: true, text: item.textContent?.trim(), type: 'menu-item' };
+          }
+        }
+
+        // Try spans or divs with exact text
+        const elements = Array.from(document.querySelectorAll('span, div'));
+        for (const el of elements) {
+          // Check direct text content, not children
+          const directText = Array.from(el.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent?.trim())
+            .join('').toLowerCase();
+          
+          if (directText === 'soh info' || directText === 'soh') {
+            (el as HTMLElement).click();
+            return { found: true, text: directText, type: 'span/div' };
+          }
+        }
+
         return { found: false, text: null };
       });
 
       if (sohTabClicked.found) {
-        console.log(`[PlusPortal] Step 6: Clicked SOH INFO tab: "${sohTabClicked.text}"`);
+        console.log(`[PlusPortal] Step 6: Clicked SOH INFO tab: "${sohTabClicked.text}" (${sohTabClicked.type})`);
       } else {
         console.log('[PlusPortal] Step 6: SOH INFO tab not found, continuing...');
       }
 
-      await this.delay(2000);
+      await this.delay(3000);
+      console.log('[PlusPortal] Current URL after SOH tab:', page.url());
 
       // STEP 7: SELECT CSV DOWNLOAD TAB
+      // Look for tabs within the SOH page
+      const pageTabsInfo = await page.evaluate(() => {
+        const tabs = Array.from(document.querySelectorAll('.ant-tabs-tab, [role="tab"], .tab, .nav-tab, button, a'));
+        return tabs.slice(0, 20).map(el => ({
+          text: el.textContent?.trim().slice(0, 50),
+          tag: el.tagName,
+          className: el.className?.slice(0, 50),
+        }));
+      });
+      console.log('[PlusPortal] Page tabs/buttons:', JSON.stringify(pageTabsInfo.slice(0, 10), null, 2));
+
       const csvTabClicked = await page.evaluate(() => {
-        const elements = Array.from(document.querySelectorAll('a, button, .tab, [role="tab"], li, span, div'));
+        // Look for tabs or buttons with CSV text
+        const elements = Array.from(document.querySelectorAll('.ant-tabs-tab, [role="tab"], a, button, span, div'));
         for (const el of elements) {
           const text = el.textContent?.trim().toLowerCase() || '';
-          // Look for "CSV Download" or similar tab
-          if (text === 'csv download' || text === 'csv' || text.includes('csv download') || text.includes('download csv')) {
+          // Look for "CSV Download" or "CSV" tab
+          if (text === 'csv download' || text === 'csv' || text === 'download csv') {
             (el as HTMLElement).click();
             return { found: true, text: el.textContent?.trim() };
           }
@@ -297,73 +443,89 @@ export class PlusPortalSyncService {
         downloadPath: this.downloadPath,
       });
 
-      // STEP 8: SELECT COMMA DELIMITED
-      const commaDelimitedClicked = await page.evaluate(() => {
-        // Look for radio buttons, checkboxes, or clickable elements with "Comma" text
-        const radioInputs = Array.from(document.querySelectorAll('input[type="radio"]'));
-        for (const input of radioInputs) {
-          const label = input.parentElement?.textContent?.toLowerCase() || '';
-          const nextSibling = input.nextElementSibling?.textContent?.toLowerCase() || '';
-          const value = (input as HTMLInputElement).value?.toLowerCase() || '';
-          
-          if (label.includes('comma') || nextSibling.includes('comma') || value.includes('comma')) {
-            (input as HTMLInputElement).click();
-            return { found: true, type: 'radio', text: label || nextSibling || value };
+      // Log available buttons for debugging
+      const buttonsInfo = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        return buttons.slice(0, 20).map(b => ({
+          text: b.textContent?.trim().slice(0, 30),
+          className: b.className?.slice(0, 50),
+          disabled: b.disabled,
+        }));
+      });
+      console.log('[PlusPortal] Available buttons:', JSON.stringify(buttonsInfo, null, 2));
+
+      // STEP 7b: Click "Get Report" button first to generate the report data
+      const getReportClicked = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim().toLowerCase() || '';
+          if (text === 'get report' || text.includes('get report')) {
+            (btn as HTMLElement).click();
+            return { found: true, text: btn.textContent?.trim() };
           }
         }
-
-        // Try regular buttons/links with "Comma Delimited" text
-        const elements = Array.from(document.querySelectorAll('a, button, label, span, div, option'));
-        for (const el of elements) {
-          const text = el.textContent?.trim().toLowerCase() || '';
-          if (text.includes('comma delimited') || text === 'comma') {
-            (el as HTMLElement).click();
-            return { found: true, type: 'element', text: el.textContent?.trim() };
-          }
-        }
-
-        // Try select dropdown
-        const selects = Array.from(document.querySelectorAll('select'));
-        for (const select of selects) {
-          const options = Array.from(select.options);
-          for (const option of options) {
-            if (option.text.toLowerCase().includes('comma')) {
-              select.value = option.value;
-              select.dispatchEvent(new Event('change', { bubbles: true }));
-              return { found: true, type: 'select', text: option.text };
-            }
-          }
-        }
-
-        return { found: false, text: null };
+        return { found: false };
       });
 
-      if (commaDelimitedClicked.found) {
-        console.log(`[PlusPortal] Step 8: Selected Comma Delimited: "${commaDelimitedClicked.text}" (${commaDelimitedClicked.type})`);
+      if (getReportClicked.found) {
+        console.log(`[PlusPortal] Clicked "Get Report": "${getReportClicked.text}"`);
+        // Wait for report to load
+        await this.delay(5000);
       } else {
-        console.log('[PlusPortal] Step 8: Comma Delimited option not found, continuing...');
+        console.log('[PlusPortal] "Get Report" button not found, continuing...');
       }
 
-      await this.delay(1000);
-
-      // STEP 9: EXPORT
-      const exportClicked = await page.evaluate(() => {
-        const elements = Array.from(document.querySelectorAll('button, a, input[type="submit"], input[type="button"]'));
-        for (const el of elements) {
-          const text = (el.textContent || (el as HTMLInputElement).value || '').trim().toLowerCase();
-          if (text === 'export' || text.includes('export')) {
-            (el as HTMLElement).click();
-            return { found: true, text: el.textContent?.trim() || (el as HTMLInputElement).value };
+      // STEP 8: Click the CSV button to open export dialog
+      const csvButtonClicked = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim().toLowerCase() || '';
+          if (text === 'csv') {
+            (btn as HTMLElement).click();
+            return { found: true, text: btn.textContent?.trim() };
           }
         }
-        return { found: false, text: null };
+        return { found: false };
       });
 
-      if (exportClicked.found) {
-        console.log(`[PlusPortal] Step 9: Clicked Export: "${exportClicked.text}"`);
+      if (csvButtonClicked.found) {
+        console.log(`[PlusPortal] Step 8: Clicked CSV button: "${csvButtonClicked.text}"`);
       } else {
-        console.log('[PlusPortal] Step 9: Export button not found');
-        throw new Error('Export button not found on the page');
+        console.log('[PlusPortal] Step 8: CSV button not found');
+        throw new Error('CSV button not found on the page');
+      }
+
+      // Wait for export dialog to appear
+      await this.delay(2000);
+
+      // STEP 9: Click the Export button in the dialog to confirm and download
+      const exportConfirmClicked = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        // Look for Export button (usually in a modal/drawer)
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim().toLowerCase() || '';
+          const className = btn.className || '';
+          // Prefer primary export button
+          if (text === 'export' && className.includes('primary')) {
+            (btn as HTMLElement).click();
+            return { found: true, text: btn.textContent?.trim(), type: 'primary' };
+          }
+        }
+        // Try any Export button
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim().toLowerCase() || '';
+          if (text === 'export') {
+            (btn as HTMLElement).click();
+            return { found: true, text: btn.textContent?.trim(), type: 'any' };
+          }
+        }
+        return { found: false };
+      });
+
+      if (exportConfirmClicked.found) {
+        console.log(`[PlusPortal] Step 9: Clicked Export confirm: "${exportConfirmClicked.text}" (${exportConfirmClicked.type})`);
+      } else {
+        console.log('[PlusPortal] Step 9: Export confirm button not found, download may have started directly');
       }
 
       // Wait for download to complete (check for new files in download directory)
@@ -748,4 +910,5 @@ export class PlusPortalSyncService {
 export function getPlusPortalSyncService(supplierId: string): PlusPortalSyncService {
   return new PlusPortalSyncService(supplierId);
 }
+
 

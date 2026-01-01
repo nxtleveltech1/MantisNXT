@@ -47,21 +47,39 @@ export class PlusPortalCSVProcessor {
         columns: true,
         skip_empty_lines: true,
         trim: true,
+        relax_quotes: true, // Handle malformed quotes
+        relax_column_count: true, // Handle inconsistent column counts
+        escape: '\\', // Handle escaped characters
+        quote: '"', // Standard quote character
+        skip_records_with_error: true, // Skip bad records instead of failing
+        on_record: (record, { lines }) => {
+          // Log warnings for skipped records
+          if (!record) {
+            console.log(`[PlusPortal CSV] Skipped malformed record at line ${lines}`);
+          }
+          return record;
+        },
         cast: (value, context) => {
           // Try to convert numeric values
           if (context.header) {
             return value;
           }
-          const numValue = Number(value);
-          if (!isNaN(numValue) && value.trim() !== '') {
+          if (value === null || value === undefined) {
+            return '';
+          }
+          const strValue = String(value).trim();
+          const numValue = Number(strValue);
+          if (!isNaN(numValue) && strValue !== '') {
             return numValue;
           }
-          return value;
+          return strValue;
         },
       });
 
+      console.log(`[PlusPortal CSV] Parsed ${records.length} records from CSV`);
       return records as CSVRow[];
     } catch (error) {
+      console.error('[PlusPortal CSV] Parse error:', error);
       throw new Error(`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
