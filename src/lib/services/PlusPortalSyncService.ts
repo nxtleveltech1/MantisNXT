@@ -149,6 +149,56 @@ export class PlusPortalSyncService {
 
       await passwordInput.type(credentials.password, { delay: 100 });
 
+      // Find and check "Accept terms and Conditions" checkbox
+      const termsCheckboxSelectors = [
+        'input[type="checkbox"][name*="terms"]',
+        'input[type="checkbox"][name*="accept"]',
+        'input[type="checkbox"][id*="terms"]',
+        'input[type="checkbox"][id*="accept"]',
+        'input[type="checkbox"]',
+      ];
+
+      let termsCheckbox = null;
+      for (const selector of termsCheckboxSelectors) {
+        try {
+          termsCheckbox = await page.$(selector);
+          if (termsCheckbox) {
+            // Check if it's already checked
+            const isChecked = await page.evaluate((el) => (el as HTMLInputElement).checked, termsCheckbox);
+            if (!isChecked) {
+              await termsCheckbox.click();
+              await page.waitForTimeout(500);
+            }
+            break;
+          }
+        } catch {
+          // Continue to next selector
+        }
+      }
+
+      // If not found by selector, try finding by label text
+      if (!termsCheckbox) {
+        const checkboxFound = await page.evaluate(() => {
+          const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+          for (const checkbox of checkboxes) {
+            const label = checkbox.closest('label')?.textContent?.toLowerCase() || '';
+            const nearbyText = checkbox.parentElement?.textContent?.toLowerCase() || '';
+            if (label.includes('terms') || label.includes('accept') || nearbyText.includes('terms') || nearbyText.includes('accept')) {
+              if (!(checkbox as HTMLInputElement).checked) {
+                (checkbox as HTMLInputElement).click();
+                return true;
+              }
+              return true; // Already checked
+            }
+          }
+          return false;
+        });
+
+        if (!checkboxFound) {
+          console.warn('[PlusPortal] Terms checkbox not found - continuing anyway');
+        }
+      }
+
       // Find and click submit button - look for "Sign In" text specifically
       // First try to find by text content (most reliable)
       const signInButtonFound = await page.evaluate(() => {
