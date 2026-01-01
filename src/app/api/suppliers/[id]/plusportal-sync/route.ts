@@ -201,7 +201,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const service = getPlusPortalSyncService(supplierId);
 
     // Update configuration - only include password if provided
-    const configUpdate: unknown = {
+    const configUpdate: {
+      username: string;
+      enabled: boolean;
+      intervalMinutes: number;
+      password?: string;
+    } = {
       username,
       enabled,
       intervalMinutes,

@@ -233,260 +233,164 @@ export class PlusPortalSyncService {
   }
 
   /**
-   * Select supplier from dropdown/list
-   */
-  private async selectSupplier(page: Page, supplierName: string): Promise<boolean> {
-    try {
-      // Wait for supplier selection UI to appear
-      await this.delay(2000);
-
-      // Try to find supplier dropdown or list
-      const supplierSelectors = [
-        'select[name*="supplier"]',
-        'select[id*="supplier"]',
-        '.supplier-select',
-        '[data-supplier]',
-      ];
-
-      let supplierElement = null;
-      for (const selector of supplierSelectors) {
-        try {
-          supplierElement = await page.$(selector);
-          if (supplierElement) break;
-        } catch {
-          // Continue
-        }
-      }
-
-      if (supplierElement) {
-        // It's a select dropdown
-        const selectorUsed = supplierSelectors.find(s => {
-          try {
-            return page.$(s) === supplierElement;
-          } catch {
-            return false;
-          }
-        }) || supplierSelectors[0];
-
-        const options = await page.evaluate((sel) => {
-          const select = document.querySelector(sel) as HTMLSelectElement;
-          if (!select) return [];
-          return Array.from(select.options).map(opt => ({
-            value: opt.value,
-            text: opt.text.trim(),
-          }));
-        }, selectorUsed);
-
-        // Find matching option (fuzzy match)
-        const normalizedTarget = supplierName.toLowerCase().trim();
-        const matchingOption = options.find(opt =>
-          opt.text.toLowerCase().includes(normalizedTarget) ||
-          normalizedTarget.includes(opt.text.toLowerCase())
-        );
-
-        if (matchingOption) {
-          await page.select(selectorUsed, matchingOption.value);
-          await this.delay(1000);
-          return true;
-        }
-      } else {
-        // Try to find clickable supplier items
-        const supplierItems = await page.evaluate((name) => {
-          const items = Array.from(document.querySelectorAll('a, button, [role="button"], .supplier-item, [data-name]'));
-          return items
-            .map(item => ({
-              element: item,
-              text: item.textContent?.trim() || '',
-            }))
-            .filter(item => item.text.toLowerCase().includes(name.toLowerCase()));
-        }, supplierName);
-
-        if (supplierItems.length > 0) {
-          // Click the first matching item
-          await page.evaluate((name) => {
-            const items = Array.from(document.querySelectorAll('a, button, [role="button"], .supplier-item, [data-name]'));
-            const matching = items.filter(item =>
-              item.textContent?.toLowerCase().includes(name.toLowerCase())
-            );
-            if (matching[0]) {
-              (matching[0] as HTMLElement).click();
-            }
-          }, supplierName);
-
-          await this.delay(2000);
-          return true;
-        }
-      }
-
-      throw new Error(`Supplier "${supplierName}" not found in selection UI`);
-    } catch (error) {
-      console.error('[PlusPortal] Supplier selection error:', error);
-      throw new Error(`Failed to select supplier: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
    * Navigate to SOH INFO tab and download CSV
+   * Process Steps:
+   * 6. SELECT THE SOH INFO TAB
+   * 7. SELECT CSV DOWNLOAD TAB
+   * 8. SELECT COMMA DELIMITED
+   * 9. EXPORT
    */
   private async downloadSOHCSV(page: Page): Promise<string> {
     try {
-      // Wait for page to load
+      // Wait for page to load after login
+      await this.delay(3000);
+      console.log('[PlusPortal] Page loaded, looking for SOH INFO tab...');
+
+      // STEP 6: SELECT THE SOH INFO TAB
+      const sohTabClicked = await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll('a, button, .tab, [role="tab"], li, span, div'));
+        for (const el of elements) {
+          const text = el.textContent?.trim().toLowerCase() || '';
+          // Look for "SOH INFO" or "SOH" tab
+          if (text === 'soh info' || text === 'soh' || text.includes('soh info')) {
+            (el as HTMLElement).click();
+            return { found: true, text: el.textContent?.trim() };
+          }
+        }
+        return { found: false, text: null };
+      });
+
+      if (sohTabClicked.found) {
+        console.log(`[PlusPortal] Step 6: Clicked SOH INFO tab: "${sohTabClicked.text}"`);
+      } else {
+        console.log('[PlusPortal] Step 6: SOH INFO tab not found, continuing...');
+      }
+
       await this.delay(2000);
 
-      // Find and click SOH INFO tab
-      const tabSelectors = [
-        'a[href*="soh"]',
-        'button:has-text("SOH INFO")',
-        '.tab:has-text("SOH")',
-        '[data-tab="soh"]',
-        'a:has-text("SOH INFO")',
-      ];
-
-      let tabFound = false;
-      for (const selector of tabSelectors) {
-        try {
-          const tab = await page.$(selector);
-          if (tab) {
-            await tab.click();
-            await this.delay(2000);
-            tabFound = true;
-            break;
+      // STEP 7: SELECT CSV DOWNLOAD TAB
+      const csvTabClicked = await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll('a, button, .tab, [role="tab"], li, span, div'));
+        for (const el of elements) {
+          const text = el.textContent?.trim().toLowerCase() || '';
+          // Look for "CSV Download" or similar tab
+          if (text === 'csv download' || text === 'csv' || text.includes('csv download') || text.includes('download csv')) {
+            (el as HTMLElement).click();
+            return { found: true, text: el.textContent?.trim() };
           }
-        } catch {
-          // Continue
         }
+        return { found: false, text: null };
+      });
+
+      if (csvTabClicked.found) {
+        console.log(`[PlusPortal] Step 7: Clicked CSV Download tab: "${csvTabClicked.text}"`);
+      } else {
+        console.log('[PlusPortal] Step 7: CSV Download tab not found, continuing...');
       }
 
-      if (!tabFound) {
-        // Try finding by text content
-        await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll('a, button, .tab, [role="tab"]'));
-          const sohTab = elements.find(el =>
-            el.textContent?.toLowerCase().includes('soh') ||
-            el.textContent?.toLowerCase().includes('stock')
-          );
-          if (sohTab) {
-            (sohTab as HTMLElement).click();
-          }
-        });
-        await this.delay(2000);
-      }
+      await this.delay(2000);
 
-      // Set up download listener
+      // Set up download listener BEFORE clicking export
       const client = await page.target().createCDPSession();
       await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: this.downloadPath,
       });
 
-      // Find CSV Download button/link
-      const csvSelectors = [
-        'button:has-text("CSV Download")',
-        'a:has-text("CSV Download")',
-        'button:has-text("Download CSV")',
-        '[data-action="csv-download"]',
-        '.csv-download',
-      ];
-
-      let csvButton = null;
-      for (const selector of csvSelectors) {
-        try {
-          csvButton = await page.$(selector);
-          if (csvButton) break;
-        } catch {
-          // Continue
-        }
-      }
-
-      if (!csvButton) {
-        // Try finding by text
-        await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll('a, button'));
-          const csvBtn = elements.find(el =>
-            el.textContent?.toLowerCase().includes('csv') &&
-            el.textContent?.toLowerCase().includes('download')
-          );
-          if (csvBtn) {
-            (csvBtn as HTMLElement).click();
+      // STEP 8: SELECT COMMA DELIMITED
+      const commaDelimitedClicked = await page.evaluate(() => {
+        // Look for radio buttons, checkboxes, or clickable elements with "Comma" text
+        const radioInputs = Array.from(document.querySelectorAll('input[type="radio"]'));
+        for (const input of radioInputs) {
+          const label = input.parentElement?.textContent?.toLowerCase() || '';
+          const nextSibling = input.nextElementSibling?.textContent?.toLowerCase() || '';
+          const value = (input as HTMLInputElement).value?.toLowerCase() || '';
+          
+          if (label.includes('comma') || nextSibling.includes('comma') || value.includes('comma')) {
+            (input as HTMLInputElement).click();
+            return { found: true, type: 'radio', text: label || nextSibling || value };
           }
-        });
+        }
+
+        // Try regular buttons/links with "Comma Delimited" text
+        const elements = Array.from(document.querySelectorAll('a, button, label, span, div, option'));
+        for (const el of elements) {
+          const text = el.textContent?.trim().toLowerCase() || '';
+          if (text.includes('comma delimited') || text === 'comma') {
+            (el as HTMLElement).click();
+            return { found: true, type: 'element', text: el.textContent?.trim() };
+          }
+        }
+
+        // Try select dropdown
+        const selects = Array.from(document.querySelectorAll('select'));
+        for (const select of selects) {
+          const options = Array.from(select.options);
+          for (const option of options) {
+            if (option.text.toLowerCase().includes('comma')) {
+              select.value = option.value;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+              return { found: true, type: 'select', text: option.text };
+            }
+          }
+        }
+
+        return { found: false, text: null };
+      });
+
+      if (commaDelimitedClicked.found) {
+        console.log(`[PlusPortal] Step 8: Selected Comma Delimited: "${commaDelimitedClicked.text}" (${commaDelimitedClicked.type})`);
       } else {
-        await csvButton.click();
+        console.log('[PlusPortal] Step 8: Comma Delimited option not found, continuing...');
       }
 
-      await this.delay(2000);
+      await this.delay(1000);
 
-      // Select "Comma Delimited" option if it's a modal/dropdown
-      const delimiterSelectors = [
-        'input[value="comma"]',
-        'input[value="csv"]',
-        'option:has-text("Comma")',
-        'button:has-text("Comma Delimited")',
-      ];
-
-      for (const selector of delimiterSelectors) {
-        try {
-          const delimiter = await page.$(selector);
-          if (delimiter) {
-            await delimiter.click();
-            await this.delay(1000);
-            break;
+      // STEP 9: EXPORT
+      const exportClicked = await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll('button, a, input[type="submit"], input[type="button"]'));
+        for (const el of elements) {
+          const text = (el.textContent || (el as HTMLInputElement).value || '').trim().toLowerCase();
+          if (text === 'export' || text.includes('export')) {
+            (el as HTMLElement).click();
+            return { found: true, text: el.textContent?.trim() || (el as HTMLInputElement).value };
           }
-        } catch {
-          // Continue
         }
-      }
+        return { found: false, text: null };
+      });
 
-      // Click Export button
-      const exportSelectors = [
-        'button:has-text("Export")',
-        'button:has-text("Download")',
-        '.export-button',
-        '[data-action="export"]',
-      ];
-
-      let exportButton = null;
-      for (const selector of exportSelectors) {
-        try {
-          exportButton = await page.$(selector);
-          if (exportButton) break;
-        } catch {
-          // Continue
-        }
-      }
-
-      if (exportButton) {
-        await exportButton.click();
+      if (exportClicked.found) {
+        console.log(`[PlusPortal] Step 9: Clicked Export: "${exportClicked.text}"`);
       } else {
-        // Try finding by text
-        await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll('button, a'));
-          const exportBtn = elements.find(el =>
-            el.textContent?.toLowerCase().includes('export')
-          );
-          if (exportBtn) {
-            (exportBtn as HTMLElement).click();
-          }
-        });
+        console.log('[PlusPortal] Step 9: Export button not found');
+        throw new Error('Export button not found on the page');
       }
 
       // Wait for download to complete (check for new files in download directory)
+      console.log('[PlusPortal] Waiting for CSV download...');
       let downloadedFile: string | null = null;
-      const maxWaitTime = 30000; // 30 seconds
+      const maxWaitTime = 60000; // 60 seconds
       const startTime = Date.now();
 
       while (Date.now() - startTime < maxWaitTime) {
-        const files = fs.readdirSync(this.downloadPath);
-        const csvFiles = files.filter(f => f.endsWith('.csv'));
-        if (csvFiles.length > 0) {
-          downloadedFile = path.join(this.downloadPath, csvFiles[0]);
-          break;
+        try {
+          if (fs.existsSync(this.downloadPath)) {
+            const files = fs.readdirSync(this.downloadPath);
+            const csvFiles = files.filter(f => f.endsWith('.csv') && !f.endsWith('.crdownload'));
+            if (csvFiles.length > 0) {
+              downloadedFile = path.join(this.downloadPath, csvFiles[0]);
+              console.log(`[PlusPortal] CSV downloaded: ${downloadedFile}`);
+              break;
+            }
+          }
+        } catch (err) {
+          // Directory might not exist yet
         }
         await this.delay(1000);
       }
 
       if (!downloadedFile) {
-        throw new Error('CSV file download timeout - file not found');
+        throw new Error('CSV file download timeout - file not found after 60 seconds');
       }
 
       return downloadedFile;
@@ -494,22 +398,6 @@ export class PlusPortalSyncService {
       console.error('[PlusPortal] CSV download error:', error);
       throw new Error(`Failed to download CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  /**
-   * Get supplier name from database
-   */
-  private async getSupplierName(): Promise<string> {
-    const result = await query<{ name: string }>(
-      `SELECT name FROM core.supplier WHERE supplier_id = $1 LIMIT 1`,
-      [this.supplierId]
-    );
-
-    if (result.rows.length === 0) {
-      throw new Error(`Supplier ${this.supplierId} not found`);
-    }
-
-    return result.rows[0].name;
   }
 
   /**
@@ -617,16 +505,10 @@ export class PlusPortalSyncService {
       const page = await browser.newPage();
 
       try {
-        // Login
+        // Step 1-5: Login (includes URL, email, password, checkbox, sign in)
         await this.login(page, credentials);
 
-        // Get supplier name
-        const supplierName = await this.getSupplierName();
-
-        // Select supplier
-        await this.selectSupplier(page, supplierName);
-
-        // Download CSV
+        // Steps 6-9: Navigate to SOH INFO tab, CSV Download, select Comma Delimited, Export
         csvFilePath = await this.downloadSOHCSV(page);
         csvDownloaded = true;
 
