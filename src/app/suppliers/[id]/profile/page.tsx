@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -41,22 +42,16 @@ import {
   Globe,
   Briefcase,
   Users,
-  DollarSign,
-  Calendar,
   Tag,
   Award,
   Package,
-  CreditCard,
   Clock,
   FileText,
   Loader2,
-  AlertCircle,
-  Plus,
   ArrowRight,
   Database,
   BarChart3,
   RefreshCw,
-  Percent,
   Link2,
   Play,
   CheckCircle,
@@ -163,6 +158,7 @@ function SupplierProfileContent() {
   const params = useParams();
   const router = useRouter();
   const search = useSearchParams();
+  const { toast } = useToast();
   const supplierId = String(params?.id || '');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   
@@ -192,7 +188,7 @@ function SupplierProfileContent() {
       id: number;
       action: string;
       status: string;
-      details: any;
+      details: unknown;
       started_at: string;
       finished_at: string;
       upload_id: string;
@@ -233,6 +229,7 @@ function SupplierProfileContent() {
   const [plusPortalEnabled, setPlusPortalEnabled] = useState(false);
   const [plusPortalInterval, setPlusPortalInterval] = useState(1440);
   const [plusPortalSyncing, setPlusPortalSyncing] = useState(false);
+  const [plusPortalCredentialsConfigured, setPlusPortalCredentialsConfigured] = useState(false);
   const [plusPortalSyncLogs, setPlusPortalSyncLogs] = useState<Array<{
     logId: string;
     status: string;
@@ -414,6 +411,8 @@ function SupplierProfileContent() {
               setPlusPortalPassword(''); // Don't load password for security
               setPlusPortalEnabled(config.enabled || false);
               setPlusPortalInterval(config.intervalMinutes || 1440);
+              // Check if credentials are fully configured (username AND password exist on server)
+              setPlusPortalCredentialsConfigured(!!(config.username && config.password));
             } else {
               // If no config, set defaults but don't clear username if it was set
               if (!plusPortalUsername) {
@@ -421,6 +420,7 @@ function SupplierProfileContent() {
               }
               setPlusPortalEnabled(false);
               setPlusPortalInterval(1440);
+              setPlusPortalCredentialsConfigured(false);
             }
             if (recentLogs) {
               setPlusPortalSyncLogs(recentLogs);
@@ -462,7 +462,7 @@ function SupplierProfileContent() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Failed to synthesize rule');
       setRuleJson(JSON.stringify(data.data, null, 2));
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e?.message || 'Failed to synthesize rule');
     }
   };
@@ -522,7 +522,7 @@ function SupplierProfileContent() {
       setRuleJson('{}');
       setNlInstruction('');
       setEditingRule(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e?.message || 'Failed to save rule');
     }
   };
@@ -558,7 +558,7 @@ function SupplierProfileContent() {
         setNlInstruction('');
         setEditingRule(null);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e?.message || 'Failed to delete rule');
     }
   };
@@ -1640,7 +1640,7 @@ function SupplierProfileContent() {
                       setSupplier(supplierData.data);
                       setBaseDiscount(supplierData.data.baseDiscountPercent || 0);
                     }
-                  } catch (e: any) {
+                  } catch (e: unknown) {
                     setError(e?.message || 'Failed to save discount');
                   } finally {
                     setDiscountSaving(false);
@@ -1871,7 +1871,7 @@ function SupplierProfileContent() {
                             if (data.success) {
                               // Success notification could be added here
                             }
-                          } catch (e: any) {
+                          } catch (e: unknown) {
                             setError(e?.message || 'Failed to save configuration');
                           }
                         }}
@@ -1925,7 +1925,7 @@ function SupplierProfileContent() {
                             // Refresh recent uploads and activity after sync completes
                             await Promise.all([loadUploads(), loadAudit()]);
                             
-                          } catch (e: any) {
+                          } catch (e: unknown) {
                             if (e.name === 'AbortError') {
                               setError('Sync is taking longer than expected. The sync may still be processing in the background. Please check sync history for status.');
                             } else {
@@ -2023,9 +2023,15 @@ function SupplierProfileContent() {
                         type="password"
                         value={plusPortalPassword}
                         onChange={(e) => setPlusPortalPassword(e.target.value)}
-                        placeholder="Enter PlusPortal password"
+                        placeholder={plusPortalCredentialsConfigured ? '••••••••' : 'Enter PlusPortal password'}
                         className="font-mono text-sm"
                       />
+                      {plusPortalCredentialsConfigured && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Credentials configured - leave blank to keep existing
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -2074,7 +2080,21 @@ function SupplierProfileContent() {
                           try {
                             setError(null);
                             if (!plusPortalUsername) {
-                              setError('Username is required');
+                              toast({
+                                title: 'Validation Error',
+                                description: 'Username is required',
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+                            
+                            // Require password on first configuration
+                            if (!plusPortalCredentialsConfigured && !plusPortalPassword) {
+                              toast({
+                                title: 'Validation Error',
+                                description: 'Password is required for initial configuration',
+                                variant: 'destructive',
+                              });
                               return;
                             }
                             
@@ -2102,17 +2122,26 @@ function SupplierProfileContent() {
                               if (statusData.success && statusData.data?.config) {
                                 const config = statusData.data.config;
                                 setPlusPortalUsername(config.username || '');
-                                // Don't reload password for security
+                                // Don't reload password for security - but clear local field after save
+                                setPlusPortalPassword('');
                                 setPlusPortalEnabled(config.enabled || false);
                                 setPlusPortalInterval(config.intervalMinutes || 1440);
+                                // Update credentials configured state
+                                setPlusPortalCredentialsConfigured(!!(config.username && config.password));
                               }
-                              // Show success (you can add a toast notification here)
-                              console.log('Configuration saved successfully');
+                              toast({
+                                title: 'Success',
+                                description: 'PlusPortal configuration saved',
+                              });
                             } else {
                               throw new Error(data.error || 'Failed to save configuration');
                             }
-                          } catch (e: any) {
-                            setError(e?.message || 'Failed to save configuration');
+                          } catch (e: unknown) {
+                            toast({
+                              title: 'Error',
+                              description: e?.message || 'Failed to save configuration',
+                              variant: 'destructive',
+                            });
                           }
                         }}
                       >
@@ -2156,17 +2185,32 @@ function SupplierProfileContent() {
                             // Refresh recent uploads and activity after sync completes
                             await Promise.all([loadUploads(), loadAudit()]);
                             
-                          } catch (e: any) {
+                            // Show success toast
+                            toast({
+                              title: 'Sync Complete',
+                              description: `Processed ${data.data?.productsProcessed || 0} products, created ${data.data?.productsCreated || 0}, updated ${data.data?.productsUpdated || 0}`,
+                            });
+                            
+                          } catch (e: unknown) {
                             if (e.name === 'AbortError') {
-                              setError('Sync is taking longer than expected. The sync may still be processing in the background. Please check sync history for status.');
+                              toast({
+                                title: 'Sync Timeout',
+                                description: 'Sync is taking longer than expected. Check sync history for status.',
+                                variant: 'destructive',
+                              });
                             } else {
-                              setError(e?.message || 'Sync failed');
+                              toast({
+                                title: 'Sync Failed',
+                                description: e?.message || 'Sync failed',
+                                variant: 'destructive',
+                              });
                             }
                           } finally {
                             setPlusPortalSyncing(false);
                           }
                         }}
-                        disabled={!plusPortalUsername || !plusPortalPassword || plusPortalSyncing}
+                        disabled={!plusPortalCredentialsConfigured || plusPortalSyncing}
+                        title={!plusPortalCredentialsConfigured ? 'Save credentials first to enable sync' : undefined}
                       >
                         {plusPortalSyncing ? (
                           <>

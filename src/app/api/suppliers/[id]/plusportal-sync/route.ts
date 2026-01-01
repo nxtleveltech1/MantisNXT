@@ -9,7 +9,7 @@
 import { query } from '@/lib/database';
 import { getPlusPortalCSVProcessor } from '@/lib/services/PlusPortalCSVProcessor';
 import {
-  getPlusPortalSyncService,
+    getPlusPortalSyncService,
 } from '@/lib/services/PlusPortalSyncService';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -199,6 +199,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const service = getPlusPortalSyncService(supplierId);
+    
+    // Check if credentials are already configured
+    const existingConfig = await service.getConfig();
+    const isFirstTimeSetup = !existingConfig || !existingConfig.password;
+    
+    // Require password on first-time setup
+    if (isFirstTimeSetup && (!password || password === '')) {
+      return NextResponse.json(
+        { error: 'Password is required for initial configuration' },
+        { status: 400 }
+      );
+    }
 
     // Update configuration - only include password if provided
     const configUpdate: {

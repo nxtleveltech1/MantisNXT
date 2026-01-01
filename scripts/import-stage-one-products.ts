@@ -25,7 +25,7 @@ import type { PricelistRow } from '../src/types/nxt-spp';
 
 const API_BASE_URL = 'https://stage-one.co.za/wp-json/s1-api/v1/products';
 const PER_PAGE = 100;
-const SUPPLIER_NAME = 'Stage_1';
+const SUPPLIER_NAME = 'Stage One';
 const NEON_PROJECT_ID = 'proud-mud-50346856'; // NXT-SPP-Supplier Inventory Portfolio
 const NEON_BRANCH_ID = 'br-spring-field-a9v3cjvz'; // production branch
 

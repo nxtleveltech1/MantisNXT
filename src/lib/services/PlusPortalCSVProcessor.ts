@@ -3,10 +3,11 @@
  * Processes downloaded CSV files from PlusPortal and imports products
  */
 
-import * as fs from 'fs';
-import { parse } from 'csv-parse/sync';
 import { query, withTransaction } from '@/lib/database';
-import { shouldCreateProductForStageAudioWorks } from './SKUDeduplicationService';
+import { findSupplierByName } from '@/lib/utils/supplier-matcher';
+import { parse } from 'csv-parse/sync';
+import * as fs from 'fs';
+import { batchCheckSKUs } from './SKUDeduplicationService';
 
 export interface CSVRow {
   [key: string]: string | number;
@@ -43,7 +44,7 @@ export class PlusPortalCSVProcessor {
    */
   private parseCSV(filePath: string): CSVRow[] {
     try {
-      let fileContent = fs.readFileSync(filePath, 'utf-8');
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       
       // Pre-process: Fix embedded quotes in the CSV
       // Replace "" (escaped quotes) first, then handle unescaped quotes in fields
@@ -56,7 +57,7 @@ export class PlusPortalCSVProcessor {
         
         // Handle lines with embedded unescaped quotes (like 1/4")
         // The pattern is: a quote inside a quoted field that isn't at a field boundary
-        let processedLine = line;
+        const processedLine = line;
         
         // Simple approach: replace internal quotes that aren't doubled
         // Pattern: quote followed by content that doesn't end the field
@@ -258,6 +259,7 @@ export class PlusPortalCSVProcessor {
 
   /**
    * Process CSV file and import products
+   * Uses batch SKU checking for performance (avoids per-product queries)
    */
   async processCSV(filePath: string, logId?: string): Promise<ProcessingResult> {
     const result: ProcessingResult = {
@@ -272,49 +274,99 @@ export class PlusPortalCSVProcessor {
       // Parse CSV
       const rows = this.parseCSV(filePath);
       result.productsProcessed = rows.length;
+      console.log(`[PlusPortal CSV] Processing ${rows.length} products...`);
 
-      // Process each row
+      // Map all rows to products first
+      const products: ProcessedProduct[] = [];
       for (const row of rows) {
-        try {
-          const product = this.mapCSVRowToProduct(row);
-          if (!product) {
-            result.productsSkipped++;
-            continue;
-          }
-
-          // Check if product should be created (SKU deduplication)
-          const shouldCreate = await shouldCreateProductForStageAudioWorks(
-            product.supplierSku,
-            this.supplierId
-          );
-
-          if (!shouldCreate.shouldCreate) {
-            result.productsSkipped++;
-            if (shouldCreate.reason) {
-              result.errors.push(`SKU ${product.supplierSku}: ${shouldCreate.reason}`);
-            }
-            continue;
-          }
-
-          // Upsert product
-          const upsertResult = await this.upsertProduct(product);
-          if (upsertResult.created) {
-            result.productsCreated++;
-          } else if (upsertResult.updated) {
-            result.productsUpdated++;
-          } else {
-            result.productsSkipped++;
-            if (upsertResult.error) {
-              result.errors.push(`SKU ${product.supplierSku}: ${upsertResult.error}`);
-            }
-          }
-        } catch (error) {
+        const product = this.mapCSVRowToProduct(row);
+        if (product) {
+          products.push(product);
+        } else {
           result.productsSkipped++;
-          result.errors.push(
-            `Row processing error: ${error instanceof Error ? error.message : 'Unknown error'}`
-          );
         }
       }
+      console.log(`[PlusPortal CSV] Mapped ${products.length} valid products`);
+
+      // Check if this is Stage Audio Works (only apply SKU deduplication for SAW)
+      const currentSupplierResult = await query<{ name: string }>(
+        `SELECT name FROM core.supplier WHERE supplier_id = $1 LIMIT 1`,
+        [this.supplierId]
+      );
+      const isStageAudioWorks = currentSupplierResult.rows.length > 0 && 
+        currentSupplierResult.rows[0].name.toLowerCase().includes('stage audio works');
+
+      // Build set of SKUs to exclude (batch check)
+      const skusToExclude = new Set<string>();
+      if (isStageAudioWorks) {
+        console.log(`[PlusPortal CSV] Stage Audio Works detected - performing batch SKU deduplication...`);
+        
+        // Get excluded supplier IDs
+        const excludedSupplierIds = await this.getExcludedSupplierIds();
+        
+        if (excludedSupplierIds.length > 0) {
+          // Get all SKUs from products
+          const allSkus = products.map(p => p.supplierSku);
+          
+          // Batch check in chunks of 1000 for efficiency
+          const chunkSize = 1000;
+          for (let i = 0; i < allSkus.length; i += chunkSize) {
+            const chunk = allSkus.slice(i, i + chunkSize);
+            const skuCheckResult = await batchCheckSKUs(chunk, excludedSupplierIds);
+            
+            for (const [sku, check] of skuCheckResult) {
+              if (check.exists) {
+                skusToExclude.add(sku);
+              }
+            }
+          }
+          
+          console.log(`[PlusPortal CSV] Found ${skusToExclude.size} SKUs to exclude (exist in other suppliers)`);
+        }
+      }
+
+      // Process products in batches
+      const batchSize = 50;
+      let processedCount = 0;
+      
+      for (let i = 0; i < products.length; i += batchSize) {
+        const batch = products.slice(i, i + batchSize);
+        
+        for (const product of batch) {
+          try {
+            // Skip if SKU exists in excluded suppliers
+            if (skusToExclude.has(product.supplierSku)) {
+              result.productsSkipped++;
+              continue;
+            }
+
+            // Upsert product
+            const upsertResult = await this.upsertProduct(product);
+            if (upsertResult.created) {
+              result.productsCreated++;
+            } else if (upsertResult.updated) {
+              result.productsUpdated++;
+            } else {
+              result.productsSkipped++;
+              if (upsertResult.error) {
+                result.errors.push(`SKU ${product.supplierSku}: ${upsertResult.error}`);
+              }
+            }
+          } catch (error) {
+            result.productsSkipped++;
+            result.errors.push(
+              `SKU ${product.supplierSku}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+          }
+        }
+        
+        processedCount += batch.length;
+        if (processedCount % 500 === 0) {
+          console.log(`[PlusPortal CSV] Progress: ${processedCount}/${products.length} products processed`);
+        }
+      }
+
+      console.log(`[PlusPortal CSV] Complete: ${result.productsCreated} created, ${result.productsUpdated} updated, ${result.productsSkipped} skipped`);
 
       // Update sync log if provided
       if (logId) {
@@ -331,7 +383,7 @@ export class PlusPortalCSVProcessor {
             result.productsCreated,
             result.productsUpdated,
             result.productsSkipped,
-            JSON.stringify(result.errors),
+            JSON.stringify(result.errors.slice(0, 100)), // Limit errors to first 100
             logId,
           ]
         );
@@ -342,6 +394,23 @@ export class PlusPortalCSVProcessor {
       result.errors.push(`CSV processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
+  }
+
+  /**
+   * Get excluded supplier IDs for SKU deduplication
+   */
+  private async getExcludedSupplierIds(): Promise<string[]> {
+    const excludedNames = ['Sennheiser', 'Active Music Distribution', 'AV Distribution'];
+    const supplierIds: string[] = [];
+    
+    for (const name of excludedNames) {
+      const supplierId = await findSupplierByName(name);
+      if (supplierId) {
+        supplierIds.push(supplierId);
+      }
+    }
+    
+    return supplierIds;
   }
 
   /**
@@ -427,7 +496,7 @@ export class PlusPortalCSVProcessor {
    * Update price history
    */
   private async updatePriceHistory(
-    client: any,
+    client: unknown,
     supplierProductId: string,
     newPrice: number
   ): Promise<void> {
@@ -467,7 +536,7 @@ export class PlusPortalCSVProcessor {
    * Create initial price history entry
    */
   private async createPriceHistory(
-    client: any,
+    client: unknown,
     supplierProductId: string,
     price: number
   ): Promise<void> {
