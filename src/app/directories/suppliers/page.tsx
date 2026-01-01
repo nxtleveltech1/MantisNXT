@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -87,6 +88,7 @@ const contactFormSchema = z.object({
 type ContactFormData = z.infer<typeof contactFormSchema>;
 
 export default function SupplierContactsDirectoryPage() {
+  const router = useRouter();
   const [contacts, setContacts] = useState<ContactWithSupplier[]>([]);
   const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string; code: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +101,7 @@ export default function SupplierContactsDirectoryPage() {
   const [editingContact, setEditingContact] = useState<ContactWithSupplier | null>(null);
   const [deletingContact, setDeletingContact] = useState<ContactWithSupplier | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fetchingRef = useRef(false);
 
   const form = useForm<
     ContactFormData & { supplierId: string },
@@ -128,54 +131,12 @@ export default function SupplierContactsDirectoryPage() {
     },
   });
 
-  useEffect(() => {
-    fetchData();
-
-    // Set up real-time refresh: poll every 5 seconds
-    const refreshInterval = setInterval(() => {
-      fetchData();
-    }, 5000);
-
-    // Refresh on window focus (when user returns to tab)
-    const handleFocus = () => {
-      fetchData();
-    };
-    window.addEventListener('focus', handleFocus);
-
-    // Listen for supplier deletion/update events from other parts of the app
-    const handleSupplierChange = () => {
-      fetchData();
-    };
-    window.addEventListener('supplier:updated', handleSupplierChange);
-    window.addEventListener('supplier:deleted', handleSupplierChange);
-
-    return () => {
-      clearInterval(refreshInterval);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('supplier:updated', handleSupplierChange);
-      window.removeEventListener('supplier:deleted', handleSupplierChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (editingContact && isEditDialogOpen) {
-      form.reset({
-        name: editingContact.name,
-        email: editingContact.email || '',
-        phone: editingContact.phone || '',
-        mobile: editingContact.mobile || '',
-        title: editingContact.title || '',
-        department: editingContact.department || '',
-        type: editingContact.type || 'primary',
-        isPrimary: editingContact.isPrimary,
-        isActive: editingContact.isActive,
-        supplierId: editingContact.supplierId,
-      });
-    }
-  }, [editingContact, isEditDialogOpen]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (fetchingRef.current) return;
+    
     try {
+      fetchingRef.current = true;
       setLoading(true);
 
       // Fetch suppliers for dropdown
@@ -209,8 +170,60 @@ export default function SupplierContactsDirectoryPage() {
       console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+
+    // Set up real-time refresh: poll every 30 seconds (reduced from 5 seconds)
+    const refreshInterval = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    // Refresh on window focus (when user returns to tab) - debounced
+    let focusTimeout: NodeJS.Timeout;
+    const handleFocus = () => {
+      clearTimeout(focusTimeout);
+      focusTimeout = setTimeout(() => {
+        fetchData();
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Listen for supplier deletion/update events from other parts of the app
+    const handleSupplierChange = () => {
+      fetchData();
+    };
+    window.addEventListener('supplier:updated', handleSupplierChange);
+    window.addEventListener('supplier:deleted', handleSupplierChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      clearTimeout(focusTimeout);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('supplier:updated', handleSupplierChange);
+      window.removeEventListener('supplier:deleted', handleSupplierChange);
+    };
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (editingContact && isEditDialogOpen) {
+      form.reset({
+        name: editingContact.name,
+        email: editingContact.email || '',
+        phone: editingContact.phone || '',
+        mobile: editingContact.mobile || '',
+        title: editingContact.title || '',
+        department: editingContact.department || '',
+        type: editingContact.type || 'primary',
+        isPrimary: editingContact.isPrimary,
+        isActive: editingContact.isActive,
+        supplierId: editingContact.supplierId,
+      });
+    }
+  }, [editingContact, isEditDialogOpen, form]);
 
   const handleAdd = async (data: ContactFormData & { supplierId: string }) => {
     try {
@@ -620,7 +633,7 @@ export default function SupplierContactsDirectoryPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
-                                window.location.href = `/suppliers/${contact.supplierId}/profile`;
+                                router.push(`/suppliers/${contact.supplierId}/profile`);
                               }}
                             >
                               <Building2 className="mr-2 h-4 w-4" />

@@ -221,6 +221,24 @@ function SupplierProfileContent() {
     errorMessage?: string;
   }>>([]);
 
+  // PlusPortal state
+  const [plusPortalUsername, setPlusPortalUsername] = useState('');
+  const [plusPortalPassword, setPlusPortalPassword] = useState('');
+  const [plusPortalEnabled, setPlusPortalEnabled] = useState(false);
+  const [plusPortalInterval, setPlusPortalInterval] = useState(1440);
+  const [plusPortalSyncing, setPlusPortalSyncing] = useState(false);
+  const [plusPortalSyncLogs, setPlusPortalSyncLogs] = useState<Array<{
+    logId: string;
+    status: string;
+    csvDownloaded: boolean;
+    productsProcessed: number;
+    productsCreated: number;
+    productsSkipped: number;
+    syncStartedAt: Date;
+    syncCompletedAt: Date | null;
+    errors: string[];
+  }>>([]);
+
   // Discount state
   const [baseDiscount, setBaseDiscount] = useState(0);
   const [discountSaving, setDiscountSaving] = useState(false);
@@ -377,7 +395,32 @@ function SupplierProfileContent() {
       }
     };
 
+    // Load PlusPortal sync status
+    const loadPlusPortalSyncStatus = async () => {
+      try {
+        const res = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            const { config, recentLogs } = data.data;
+            if (config) {
+              setPlusPortalUsername(config.username || '');
+              setPlusPortalPassword(''); // Don't load password for security
+              setPlusPortalEnabled(config.enabled || false);
+              setPlusPortalInterval(config.intervalMinutes || 1440);
+            }
+            if (recentLogs) {
+              setPlusPortalSyncLogs(recentLogs);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading PlusPortal sync status:', error);
+      }
+    };
+
     loadSyncStatus();
+    loadPlusPortalSyncStatus();
   }, [supplierId]);
 
   // Sync state from supplier when loaded
@@ -1922,6 +1965,215 @@ function SupplierProfileContent() {
                             <p className="text-muted-foreground mt-1 text-xs">
                               {supplier.jsonFeedLastStatus.productsUpdated} products updated
                             </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm">
+                          No sync history yet
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* PlusPortal Sync Configuration */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <Database className="text-primary h-5 w-5" />
+                  PlusPortal Automation
+                </CardTitle>
+                <CardDescription>
+                  Automatically extract pricing data from PlusPortal by logging in, selecting the supplier,
+                  and downloading CSV files from the SOH INFO tab.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Username</Label>
+                      <Input
+                        type="text"
+                        value={plusPortalUsername}
+                        onChange={(e) => setPlusPortalUsername(e.target.value)}
+                        placeholder="charles@nxtleveltech.co.za"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Password</Label>
+                      <Input
+                        type="password"
+                        value={plusPortalPassword}
+                        onChange={(e) => setPlusPortalPassword(e.target.value)}
+                        placeholder="Enter PlusPortal password"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Sync Interval</Label>
+                      <Select
+                        value={String(plusPortalInterval)}
+                        onValueChange={(v) => setPlusPortalInterval(parseInt(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">Every 15 minutes</SelectItem>
+                          <SelectItem value="30">Every 30 minutes</SelectItem>
+                          <SelectItem value="60">Every hour</SelectItem>
+                          <SelectItem value="240">Every 4 hours</SelectItem>
+                          <SelectItem value="1440">Daily</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant={plusPortalEnabled ? 'default' : 'outline'}
+                        onClick={() => setPlusPortalEnabled(!plusPortalEnabled)}
+                        className="flex-1"
+                      >
+                        {plusPortalEnabled ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Auto-Sync Enabled
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Auto-Sync Disabled
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            setError(null);
+                            const res = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                username: plusPortalUsername,
+                                password: plusPortalPassword,
+                                enabled: plusPortalEnabled,
+                                intervalMinutes: plusPortalInterval,
+                              }),
+                            });
+                            if (!res.ok) throw new Error('Failed to save configuration');
+                            const data = await res.json();
+                            if (data.success) {
+                              // Success notification could be added here
+                            }
+                          } catch (e: any) {
+                            setError(e?.message || 'Failed to save configuration');
+                          }
+                        }}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Save Configuration
+                      </Button>
+
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setPlusPortalSyncing(true);
+                            setError(null);
+                            
+                            // Start sync with extended timeout (5 minutes)
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 300000);
+                            
+                            const res = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`, {
+                              method: 'POST',
+                              signal: controller.signal,
+                            });
+                            clearTimeout(timeoutId);
+                            
+                            if (!res.ok) {
+                              const errorData = await res.json().catch(() => ({ error: 'Sync request failed' }));
+                              throw new Error(errorData.error || `Sync failed: ${res.status} ${res.statusText}`);
+                            }
+                            
+                            const data = await res.json();
+                            if (!data.success) {
+                              throw new Error(data.error || 'Sync failed');
+                            }
+                            
+                            // Reload sync status
+                            const statusRes = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
+                            const statusData = await statusRes.json();
+                            if (statusData.success && statusData.data?.recentLogs) {
+                              setPlusPortalSyncLogs(statusData.data.recentLogs);
+                            }
+                            
+                            // Refresh recent uploads and activity after sync completes
+                            await Promise.all([loadUploads(), loadAudit()]);
+                            
+                          } catch (e: any) {
+                            if (e.name === 'AbortError') {
+                              setError('Sync is taking longer than expected. The sync may still be processing in the background. Please check sync history for status.');
+                            } else {
+                              setError(e?.message || 'Sync failed');
+                            }
+                          } finally {
+                            setPlusPortalSyncing(false);
+                          }
+                        }}
+                        disabled={!plusPortalUsername || !plusPortalPassword || plusPortalSyncing}
+                      >
+                        {plusPortalSyncing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Sync Now
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Last Sync Status</Label>
+                      {plusPortalSyncLogs.length > 0 ? (
+                        <div className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {new Date(plusPortalSyncLogs[0].syncStartedAt).toLocaleString()}
+                            </span>
+                            <Badge
+                              variant={
+                                plusPortalSyncLogs[0].status === 'completed' ? 'default' : 'destructive'
+                              }
+                            >
+                              {plusPortalSyncLogs[0].status}
+                            </Badge>
+                          </div>
+                          <div className="text-muted-foreground mt-1 text-xs">
+                            {plusPortalSyncLogs[0].productsProcessed} processed,{' '}
+                            {plusPortalSyncLogs[0].productsCreated} created,{' '}
+                            {plusPortalSyncLogs[0].productsSkipped} skipped
+                          </div>
+                          {plusPortalSyncLogs[0].errors.length > 0 && (
+                            <div className="mt-2 text-xs text-red-500">
+                              {plusPortalSyncLogs[0].errors.slice(0, 3).join(', ')}
+                              {plusPortalSyncLogs[0].errors.length > 3 && '...'}
+                            </div>
                           )}
                         </div>
                       ) : (
