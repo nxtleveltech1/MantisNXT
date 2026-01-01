@@ -6,13 +6,13 @@
  * PUT /api/suppliers/[id]/plusportal-sync - Configure PlusPortal credentials
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/database';
+import { getPlusPortalCSVProcessor } from '@/lib/services/PlusPortalCSVProcessor';
 import {
-  PlusPortalSyncService,
   getPlusPortalSyncService,
 } from '@/lib/services/PlusPortalSyncService';
-import { getPlusPortalCSVProcessor } from '@/lib/services/PlusPortalCSVProcessor';
-import { query } from '@/lib/database';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -42,10 +42,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     console.error('[PlusPortal Sync API] GET error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[PlusPortal Sync API] Error stack:', errorStack);
     return NextResponse.json(
       {
         error: 'Failed to get sync status',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
       { status: 500 }
     );
@@ -197,7 +201,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const service = getPlusPortalSyncService(supplierId);
 
     // Update configuration - only include password if provided
-    const configUpdate: any = {
+    const configUpdate: unknown = {
       username,
       enabled,
       intervalMinutes,

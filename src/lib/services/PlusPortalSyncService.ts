@@ -46,9 +46,15 @@ export class PlusPortalSyncService {
   constructor(supplierId: string) {
     this.supplierId = supplierId;
     // Create temporary download directory
-    this.downloadPath = path.join(os.tmpdir(), `plusportal-downloads-${Date.now()}`);
-    if (!fs.existsSync(this.downloadPath)) {
-      fs.mkdirSync(this.downloadPath, { recursive: true });
+    try {
+      this.downloadPath = path.join(os.tmpdir(), `plusportal-downloads-${Date.now()}`);
+      if (!fs.existsSync(this.downloadPath)) {
+        fs.mkdirSync(this.downloadPath, { recursive: true });
+      }
+    } catch (error) {
+      console.error('[PlusPortal] Failed to create download directory:', error);
+      // Fallback to a simple path - will be created when needed
+      this.downloadPath = path.join(os.tmpdir(), `plusportal-downloads-${Date.now()}`);
     }
   }
 
@@ -109,130 +115,116 @@ export class PlusPortalSyncService {
 
       await this.delay(1000);
 
-      // Fill email field - find by looking for input near "Email" text
-      await page.evaluate((username) => {
-        // Find all text inputs
-        const inputs = Array.from(document.querySelectorAll('input[type="email"], input[type="text"]'));
-        // Find the one that's likely the email (usually first or near "Email" label)
-        const emailInput = inputs[0] as HTMLInputElement;
-        if (emailInput) {
-          emailInput.focus();
-          emailInput.value = username;
-          emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-          emailInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      }, credentials.username);
+      // Fill email field using Puppeteer's type method
+      const emailInput = await page.$('input[type="email"], input[type="text"]');
+      if (!emailInput) {
+        throw new Error('Email input field not found');
+      }
+      await emailInput.click({ clickCount: 3 }); // Select all existing text
+      await emailInput.type(credentials.username, { delay: 50 });
 
       await this.delay(500);
 
-      // Fill password field
-      await page.evaluate((password) => {
-        const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
-        if (passwordInput) {
-          passwordInput.focus();
-          passwordInput.value = password;
-          passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-          passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      }, credentials.password);
+      // Fill password field using Puppeteer's type method
+      const passwordInput = await page.$('input[type="password"]');
+      if (!passwordInput) {
+        throw new Error('Password input field not found');
+      }
+      await passwordInput.click({ clickCount: 3 }); // Select all existing text
+      await passwordInput.type(credentials.password, { delay: 50 });
 
       await this.delay(500);
 
       // Find and check "Accept terms and Conditions" checkbox
-      // The checkbox appears before the "Accept terms and conditions" link text
-      await page.evaluate(() => {
+      const checkboxHandle = await page.evaluateHandle(() => {
         const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
         for (const checkbox of checkboxes) {
-          // Check if nearby text contains "terms" or "accept"
           const parent = checkbox.parentElement;
           const sibling = checkbox.nextElementSibling;
           const nearbyText = (parent?.textContent || sibling?.textContent || '').toLowerCase();
           
           if (nearbyText.includes('terms') || nearbyText.includes('accept')) {
-            if (!(checkbox as HTMLInputElement).checked) {
-              (checkbox as HTMLInputElement).click();
-              return true;
-            }
-            return true; // Already checked
+            return checkbox;
           }
         }
-        // Fallback: check the first checkbox if found
-        const firstCheckbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
-        if (firstCheckbox && !firstCheckbox.checked) {
-          firstCheckbox.click();
-          return true;
-        }
-        return false;
+        // Fallback: return first checkbox
+        return document.querySelector('input[type="checkbox"]');
       });
+
+      const checkboxElement = await checkboxHandle.asElement();
+      if (checkboxElement) {
+        const isChecked = await page.evaluate((el) => (el as HTMLInputElement).checked, checkboxElement);
+        if (!isChecked) {
+          await checkboxElement.click();
+        }
+      }
 
       await this.delay(1000);
 
-      // Find and click "Sign in" button - PlusPortal uses button with "Sign in" text
-      const buttonClicked = await page.evaluate(() => {
+      // Find and click "Sign in" button using Puppeteer's click method
+      const signInButton = await page.evaluateHandle(() => {
         const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
         for (const btn of buttons) {
           const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
           if (text === 'sign in' || text.includes('sign in')) {
-            (btn as HTMLElement).click();
-            return true;
+            return btn;
           }
         }
-        return false;
+        return null;
       });
 
-      if (!buttonClicked) {
+      if (!signInButton) {
         throw new Error('Sign in button not found');
       }
 
-      // Wait for navigation after clicking Sign in
-      try {
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
-      } catch (error) {
-        // If navigation doesn't happen immediately, wait a bit and check URL
-        await this.delay(5000);
-        const currentUrl = page.url();
-        if (currentUrl.includes('login') || currentUrl.includes('authentication')) {
-          // Still on login page - check for errors
-          const errorText = await page.evaluate(() => {
-            const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], .text-red-500, .text-red-600, [class*="error"]');
-            return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
-          });
-          
-          if (errorText) {
-            throw new Error(`Login failed: ${errorText}`);
-          }
-          
-          // Check if checkbox might be required
-          const checkboxChecked = await page.evaluate(() => {
-            const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
-            return checkbox ? checkbox.checked : true;
-          });
-          
-          if (!checkboxChecked) {
-            throw new Error('Login failed: Terms and conditions checkbox must be checked');
-          }
-          
-          throw new Error('Login failed: Still on login page after clicking Sign in');
-        }
+      const buttonElement = await signInButton.asElement();
+      if (!buttonElement) {
+        throw new Error('Sign in button element not found');
       }
 
-      // Verify login was successful - check final URL
-      const finalUrl = page.url();
-      if (finalUrl.includes('login') || finalUrl.includes('authentication')) {
-        // Still on login page - check for specific error messages
-        const errorText = await page.evaluate(() => {
-          const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], [class*="error"], [class*="danger"]');
-          return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
+      // Wait for navigation promise BEFORE clicking
+      const navigationPromise = page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
+        // Navigation might not happen, we'll check URL later
+        return null;
+      });
+
+      await buttonElement.click();
+
+      // Wait for navigation or timeout
+      await navigationPromise;
+      
+      // Give it a moment for any async navigation
+      await this.delay(3000);
+
+      // Check current URL
+      const currentUrl = page.url();
+      
+      // Check for error messages first
+      const errorText = await page.evaluate(() => {
+        const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], .text-red-500, .text-red-600, [class*="error"], [class*="danger"]');
+        return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
+      });
+      
+      if (errorText) {
+        throw new Error(`Login failed: ${errorText}`);
+      }
+
+      // Verify login was successful - check if we're still on login page
+      if (currentUrl.includes('login') || currentUrl.includes('authentication')) {
+        // Still on login page - check checkbox status
+        const checkboxChecked = await page.evaluate(() => {
+          const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+          return checkbox ? checkbox.checked : true;
         });
         
-        if (errorText) {
-          throw new Error(`Login failed: ${errorText}`);
+        if (!checkboxChecked) {
+          throw new Error('Login failed: Terms and conditions checkbox must be checked');
         }
         
-        throw new Error('Login failed: Still on login page after sign in attempt');
+        throw new Error('Login failed: Still on login page after clicking Sign in');
       }
 
-      console.log('[PlusPortal] Login successful, navigated to:', finalUrl);
+      console.log('[PlusPortal] Login successful, navigated to:', currentUrl);
       return true;
     } catch (error) {
       console.error('[PlusPortal] Login error:', error);
@@ -778,7 +770,13 @@ export class PlusPortalSyncService {
       errors: string[];
     }>;
   }> {
-    const config = await this.getConfig();
+    let config: PlusPortalSyncConfig | null = null;
+    try {
+      config = await this.getConfig();
+    } catch (error) {
+      console.error('[PlusPortal] Failed to get config:', error);
+      // Continue without config - this is not critical for status retrieval
+    }
 
     const logsResult = await query<{
       log_id: string;
@@ -816,17 +814,35 @@ export class PlusPortalSyncService {
     return {
       config,
       lastSync: supplierResult.rows[0]?.plusportal_last_sync || null,
-      recentLogs: logsResult.rows.map(row => ({
-        logId: row.log_id,
-        status: row.status,
-        csvDownloaded: row.csv_downloaded,
-        productsProcessed: row.products_processed,
-        productsCreated: row.products_created,
-        productsSkipped: row.products_skipped,
-        syncStartedAt: row.sync_started_at,
-        syncCompletedAt: row.sync_completed_at,
-        errors: row.errors ? JSON.parse(row.errors) : [],
-      })),
+      recentLogs: logsResult.rows.map(row => {
+        let errors: string[] = [];
+        if (row.errors) {
+          try {
+            // Handle both string and already-parsed JSON
+            if (typeof row.errors === 'string') {
+              errors = JSON.parse(row.errors);
+            } else if (Array.isArray(row.errors)) {
+              errors = row.errors;
+            } else {
+              errors = [String(row.errors)];
+            }
+          } catch (parseError) {
+            console.error('[PlusPortal] Failed to parse errors JSON:', parseError);
+            errors = [String(row.errors)];
+          }
+        }
+        return {
+          logId: row.log_id,
+          status: row.status,
+          csvDownloaded: row.csv_downloaded,
+          productsProcessed: row.products_processed,
+          productsCreated: row.products_created,
+          productsSkipped: row.products_skipped,
+          syncStartedAt: row.sync_started_at,
+          syncCompletedAt: row.sync_completed_at,
+          errors,
+        };
+      }),
     };
   }
 
