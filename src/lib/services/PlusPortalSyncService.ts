@@ -53,6 +53,13 @@ export class PlusPortalSyncService {
   }
 
   /**
+   * Delay helper (replacement for deprecated page.waitForTimeout)
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
    * Initialize browser instance
    */
   private async initializeBrowser(): Promise<Browser> {
@@ -96,189 +103,136 @@ export class PlusPortalSyncService {
       });
 
       // Wait for login form to be visible
-      await page.waitForSelector('input[type="text"], input[type="email"], input[name*="username"], input[name*="email"]', {
+      await page.waitForSelector('input[type="email"], input[type="text"], input[type="password"]', {
         timeout: 10000,
       });
 
-      // Find username input (try multiple selectors)
-      const usernameSelectors = [
-        'input[name="username"]',
-        'input[name="email"]',
-        'input[type="email"]',
-        'input[type="text"]',
-        '#username',
-        '#email',
-      ];
+      await this.delay(1000);
 
-      let usernameInput = null;
-      for (const selector of usernameSelectors) {
-        try {
-          usernameInput = await page.$(selector);
-          if (usernameInput) break;
-        } catch {
-          // Continue to next selector
+      // Fill email field - find by looking for input near "Email" text
+      await page.evaluate((username) => {
+        // Find all text inputs
+        const inputs = Array.from(document.querySelectorAll('input[type="email"], input[type="text"]'));
+        // Find the one that's likely the email (usually first or near "Email" label)
+        const emailInput = inputs[0] as HTMLInputElement;
+        if (emailInput) {
+          emailInput.focus();
+          emailInput.value = username;
+          emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+          emailInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
-      }
+      }, credentials.username);
 
-      if (!usernameInput) {
-        throw new Error('Username input field not found');
-      }
+      await this.delay(500);
 
-      await usernameInput.type(credentials.username, { delay: 100 });
-
-      // Find password input
-      const passwordSelectors = [
-        'input[name="password"]',
-        'input[type="password"]',
-        '#password',
-      ];
-
-      let passwordInput = null;
-      for (const selector of passwordSelectors) {
-        try {
-          passwordInput = await page.$(selector);
-          if (passwordInput) break;
-        } catch {
-          // Continue to next selector
+      // Fill password field
+      await page.evaluate((password) => {
+        const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+        if (passwordInput) {
+          passwordInput.focus();
+          passwordInput.value = password;
+          passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+          passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
-      }
+      }, credentials.password);
 
-      if (!passwordInput) {
-        throw new Error('Password input field not found');
-      }
-
-      await passwordInput.type(credentials.password, { delay: 100 });
+      await this.delay(500);
 
       // Find and check "Accept terms and Conditions" checkbox
-      const termsCheckboxSelectors = [
-        'input[type="checkbox"][name*="terms"]',
-        'input[type="checkbox"][name*="accept"]',
-        'input[type="checkbox"][id*="terms"]',
-        'input[type="checkbox"][id*="accept"]',
-        'input[type="checkbox"]',
-      ];
-
-      let termsCheckbox = null;
-      for (const selector of termsCheckboxSelectors) {
-        try {
-          termsCheckbox = await page.$(selector);
-          if (termsCheckbox) {
-            // Check if it's already checked
-            const isChecked = await page.evaluate((el) => (el as HTMLInputElement).checked, termsCheckbox);
-            if (!isChecked) {
-              await termsCheckbox.click();
-              await page.waitForTimeout(500);
+      // The checkbox appears before the "Accept terms and conditions" link text
+      await page.evaluate(() => {
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+        for (const checkbox of checkboxes) {
+          // Check if nearby text contains "terms" or "accept"
+          const parent = checkbox.parentElement;
+          const sibling = checkbox.nextElementSibling;
+          const nearbyText = (parent?.textContent || sibling?.textContent || '').toLowerCase();
+          
+          if (nearbyText.includes('terms') || nearbyText.includes('accept')) {
+            if (!(checkbox as HTMLInputElement).checked) {
+              (checkbox as HTMLInputElement).click();
+              return true;
             }
-            break;
+            return true; // Already checked
           }
-        } catch {
-          // Continue to next selector
         }
-      }
-
-      // If not found by selector, try finding by label text
-      if (!termsCheckbox) {
-        const checkboxFound = await page.evaluate(() => {
-          const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
-          for (const checkbox of checkboxes) {
-            const label = checkbox.closest('label')?.textContent?.toLowerCase() || '';
-            const nearbyText = checkbox.parentElement?.textContent?.toLowerCase() || '';
-            if (label.includes('terms') || label.includes('accept') || nearbyText.includes('terms') || nearbyText.includes('accept')) {
-              if (!(checkbox as HTMLInputElement).checked) {
-                (checkbox as HTMLInputElement).click();
-                return true;
-              }
-              return true; // Already checked
-            }
-          }
-          return false;
-        });
-
-        if (!checkboxFound) {
-          console.warn('[PlusPortal] Terms checkbox not found - continuing anyway');
+        // Fallback: check the first checkbox if found
+        const firstCheckbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+        if (firstCheckbox && !firstCheckbox.checked) {
+          firstCheckbox.click();
+          return true;
         }
-      }
+        return false;
+      });
 
-      // Find and click submit button - look for "Sign In" text specifically
-      // First try to find by text content (most reliable)
-      const signInButtonFound = await page.evaluate(() => {
+      await this.delay(1000);
+
+      // Find and click "Sign in" button - PlusPortal uses button with "Sign in" text
+      const buttonClicked = await page.evaluate(() => {
         const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
         for (const btn of buttons) {
           const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
           if (text === 'sign in' || text.includes('sign in')) {
+            (btn as HTMLElement).click();
             return true;
           }
         }
         return false;
       });
 
-      if (signInButtonFound) {
-        // Click button by text content
-        await page.evaluate(() => {
-          const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
-          for (const btn of buttons) {
-            const text = (btn.textContent || btn.getAttribute('value') || '').toLowerCase().trim();
-            if (text === 'sign in' || text.includes('sign in')) {
-              (btn as HTMLElement).click();
-              return;
-            }
-          }
-        });
-      } else {
-        // Fallback to selector-based approach
-        const submitSelectors = [
-          'button[type="submit"]',
-          'input[type="submit"]',
-          '.btn-primary',
-          '#login-button',
-          'button',
-        ];
-
-        let submitButton = null;
-        for (const selector of submitSelectors) {
-          try {
-            submitButton = await page.$(selector);
-            if (submitButton) break;
-          } catch {
-            // Continue to next selector
-          }
-        }
-
-        if (!submitButton) {
-          throw new Error('Submit button not found');
-        }
-
-        await submitButton.click();
+      if (!buttonClicked) {
+        throw new Error('Sign in button not found');
       }
 
-      // Wait for navigation
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
-          // Navigation might not happen if already on target page
-        }),
-      ]);
+      // Wait for navigation after clicking Sign in
+      try {
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
+      } catch (error) {
+        // If navigation doesn't happen immediately, wait a bit and check URL
+        await this.delay(5000);
+        const currentUrl = page.url();
+        if (currentUrl.includes('login') || currentUrl.includes('authentication')) {
+          // Still on login page - check for errors
+          const errorText = await page.evaluate(() => {
+            const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], .text-red-500, .text-red-600, [class*="error"]');
+            return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
+          });
+          
+          if (errorText) {
+            throw new Error(`Login failed: ${errorText}`);
+          }
+          
+          // Check if checkbox might be required
+          const checkboxChecked = await page.evaluate(() => {
+            const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+            return checkbox ? checkbox.checked : true;
+          });
+          
+          if (!checkboxChecked) {
+            throw new Error('Login failed: Terms and conditions checkbox must be checked');
+          }
+          
+          throw new Error('Login failed: Still on login page after clicking Sign in');
+        }
+      }
 
-      // Check if login was successful (URL should change or error message should not appear)
-      const currentUrl = page.url();
-      if (currentUrl.includes('login') || currentUrl.includes('authentication')) {
-        // Check for error messages
+      // Verify login was successful - check final URL
+      const finalUrl = page.url();
+      if (finalUrl.includes('login') || finalUrl.includes('authentication')) {
+        // Still on login page - check for specific error messages
         const errorText = await page.evaluate(() => {
-          const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"]');
-          return Array.from(errorElements).map(el => el.textContent).join(' ');
+          const errorElements = document.querySelectorAll('.error, .alert-danger, [role="alert"], [class*="error"], [class*="danger"]');
+          return Array.from(errorElements).map(el => el.textContent?.trim()).filter(Boolean).join(' ');
         });
-
+        
         if (errorText) {
           throw new Error(`Login failed: ${errorText}`);
         }
-
-        // Wait a bit more in case of redirect delay
-        await page.waitForTimeout(2000);
-        const finalUrl = page.url();
-        if (finalUrl.includes('login') || finalUrl.includes('authentication')) {
-          throw new Error('Login failed: Still on login page');
-        }
+        
+        throw new Error('Login failed: Still on login page after sign in attempt');
       }
 
+      console.log('[PlusPortal] Login successful, navigated to:', finalUrl);
       return true;
     } catch (error) {
       console.error('[PlusPortal] Login error:', error);
@@ -292,7 +246,7 @@ export class PlusPortalSyncService {
   private async selectSupplier(page: Page, supplierName: string): Promise<boolean> {
     try {
       // Wait for supplier selection UI to appear
-      await page.waitForTimeout(2000);
+      await this.delay(2000);
 
       // Try to find supplier dropdown or list
       const supplierSelectors = [
@@ -340,7 +294,7 @@ export class PlusPortalSyncService {
 
         if (matchingOption) {
           await page.select(selectorUsed, matchingOption.value);
-          await page.waitForTimeout(1000);
+          await this.delay(1000);
           return true;
         }
       } else {
@@ -367,7 +321,7 @@ export class PlusPortalSyncService {
             }
           }, supplierName);
 
-          await page.waitForTimeout(2000);
+          await this.delay(2000);
           return true;
         }
       }
@@ -385,7 +339,7 @@ export class PlusPortalSyncService {
   private async downloadSOHCSV(page: Page): Promise<string> {
     try {
       // Wait for page to load
-      await page.waitForTimeout(2000);
+      await this.delay(2000);
 
       // Find and click SOH INFO tab
       const tabSelectors = [
@@ -402,7 +356,7 @@ export class PlusPortalSyncService {
           const tab = await page.$(selector);
           if (tab) {
             await tab.click();
-            await page.waitForTimeout(2000);
+            await this.delay(2000);
             tabFound = true;
             break;
           }
@@ -423,7 +377,7 @@ export class PlusPortalSyncService {
             (sohTab as HTMLElement).click();
           }
         });
-        await page.waitForTimeout(2000);
+        await this.delay(2000);
       }
 
       // Set up download listener
@@ -468,7 +422,7 @@ export class PlusPortalSyncService {
         await csvButton.click();
       }
 
-      await page.waitForTimeout(2000);
+      await this.delay(2000);
 
       // Select "Comma Delimited" option if it's a modal/dropdown
       const delimiterSelectors = [
@@ -483,7 +437,7 @@ export class PlusPortalSyncService {
           const delimiter = await page.$(selector);
           if (delimiter) {
             await delimiter.click();
-            await page.waitForTimeout(1000);
+            await this.delay(1000);
             break;
           }
         } catch {
@@ -536,7 +490,7 @@ export class PlusPortalSyncService {
           downloadedFile = path.join(this.downloadPath, csvFiles[0]);
           break;
         }
-        await page.waitForTimeout(1000);
+        await this.delay(1000);
       }
 
       if (!downloadedFile) {
