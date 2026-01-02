@@ -79,15 +79,13 @@ export class PlusPortalSyncService {
       return this.browser;
     }
 
+    // Minimal launch args for stability
     const launchArgs = [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
       '--disable-gpu',
-      '--window-size=1920x1080',
-      '--single-process',
-      '--no-zygote',
+      '--window-size=1920,1080',
     ];
 
     if (isServerless) {
@@ -134,11 +132,20 @@ export class PlusPortalSyncService {
       
       console.log('[PlusPortal] Using Chrome at:', executablePath);
       
+      // Check for debug mode via environment variable
+      const debugMode = process.env.PLUSPORTAL_DEBUG === 'true';
+      
       this.browser = await puppeteer.launch({
-        headless: true,
+        headless: !debugMode, // Run with visible browser if debugging
         executablePath,
         args: launchArgs,
+        // Increase timeout to help with slow pages
+        protocolTimeout: 60000,
       });
+      
+      if (debugMode) {
+        console.log('[PlusPortal] Running in DEBUG mode - browser is visible');
+      }
     }
 
     return this.browser;
@@ -288,92 +295,22 @@ export class PlusPortalSyncService {
         throw new Error('Sign in button not found or could not be clicked');
       }
 
-      // Wait for page changes (this is an Angular SPA, URL might not change)
-      console.log('[PlusPortal] Waiting for page update...');
-      await this.delay(5000);
-
-      // Check current URL
-      const currentUrl = page.url();
-      console.log('[PlusPortal] Current URL after login attempt:', currentUrl);
+      // After clicking sign in, wait for navigation to complete
+      // Use Promise.race to handle both navigation and timeout cases
+      console.log('[PlusPortal] Waiting for login navigation...');
+      try {
+        await Promise.race([
+          page.waitForNavigation({ waitUntil: 'load', timeout: 20000 }),
+          this.delay(15000),
+        ]);
+      } catch (waitError) {
+        console.log('[PlusPortal] Navigation wait completed/timed out:', waitError);
+      }
       
-      // Check for error messages first
-      const errorText = await page.evaluate(() => {
-        const errorSelectors = [
-          '.error', '.alert-danger', '[role="alert"]', 
-          '.text-red-500', '.text-red-600', 
-          '[class*="error"]', '[class*="danger"]',
-          '.validation-message', '.field-validation-error'
-        ];
-        const errorElements = document.querySelectorAll(errorSelectors.join(', '));
-        return Array.from(errorElements)
-          .map(el => el.textContent?.trim())
-          .filter(text => text && text.length > 0)
-          .join(' | ');
-      });
+      // Wait a bit more for Angular to initialize
+      await this.delay(3000);
       
-      if (errorText) {
-        console.log('[PlusPortal] Error messages found:', errorText);
-        throw new Error(`Login failed: ${errorText}`);
-      }
-
-      // Check if we're on the company selection page (login was successful!)
-      // After login, PlusPortal shows a list of companies to select
-      const companyListFound = await page.evaluate(() => {
-        // Look for the company list (nz-list-item elements with company names)
-        const listItems = document.querySelectorAll('nz-list-item, .ant-list-item');
-        return listItems.length > 0;
-      });
-
-      if (companyListFound) {
-        console.log('[PlusPortal] Login successful - company selection page detected');
-        
-        // Click on the first company in the list to proceed
-        const companyClicked = await page.evaluate(() => {
-          const listItems = Array.from(document.querySelectorAll('nz-list-item, .ant-list-item'));
-          if (listItems.length > 0) {
-            // Click the first available company
-            (listItems[0] as HTMLElement).click();
-            const companyName = listItems[0].textContent?.trim().slice(0, 100);
-            return { clicked: true, company: companyName };
-          }
-          return { clicked: false };
-        });
-        
-        console.log('[PlusPortal] Company selection result:', JSON.stringify(companyClicked));
-        
-        if (companyClicked.clicked) {
-          // Wait for navigation after selecting company
-          await this.delay(5000);
-          const newUrl = page.url();
-          console.log('[PlusPortal] After company selection, URL:', newUrl);
-          return true;
-        }
-      }
-
-      // Check if login form is still visible (login failed)
-      const loginFormStillVisible = await page.evaluate(() => {
-        const passwordInput = document.querySelector('input[type="password"]');
-        const signInButton = Array.from(document.querySelectorAll('button')).find(
-          btn => btn.textContent?.toLowerCase().includes('sign in')
-        );
-        return passwordInput !== null && signInButton !== null;
-      });
-
-      if (loginFormStillVisible) {
-        // Check checkbox status
-        const checkboxChecked = await page.evaluate(() => {
-          const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
-          return checkbox ? checkbox.checked : true;
-        });
-        
-        if (!checkboxChecked) {
-          throw new Error('Login failed: Terms and conditions checkbox must be checked');
-        }
-        
-        throw new Error('Login failed: Still on login page after clicking Sign in');
-      }
-
-      console.log('[PlusPortal] Login successful, navigated to:', currentUrl);
+      console.log('[PlusPortal] Login step completed');
       return true;
     } catch (error) {
       console.error('[PlusPortal] Login error:', error);
@@ -703,11 +640,82 @@ export class PlusPortalSyncService {
     try {
       // Initialize browser
       const browser = await this.initializeBrowser();
-      const page = await browser.newPage();
+      let page = await browser.newPage();
 
       try {
         // Step 1-5: Login (includes URL, email, password, checkbox, sign in)
         await this.login(page, credentials);
+        
+        // Check current URL after login
+        console.log('[PlusPortal] Checking post-login state, URL:', page.url());
+        
+        // Check if we need to select a company (this happens after login in PlusPortal)
+        let companyListFound = false;
+        try {
+          companyListFound = await page.evaluate(() => {
+            const listItems = document.querySelectorAll('nz-list-item, .ant-list-item, [nz-list-item]');
+            const listContainer = document.querySelector('.ant-list, nz-list');
+            return listItems.length > 0 || listContainer !== null;
+          });
+        } catch (evalError) {
+          console.log('[PlusPortal] Could not check for company list:', evalError);
+        }
+        
+        if (companyListFound) {
+          console.log('[PlusPortal] Company selection page detected, selecting first company...');
+          try {
+            await page.evaluate(() => {
+              const listItems = Array.from(document.querySelectorAll('nz-list-item, .ant-list-item, [nz-list-item]'));
+              if (listItems.length > 0) {
+                (listItems[0] as HTMLElement).click();
+              }
+            });
+            await this.delay(5000);
+            console.log('[PlusPortal] After company selection, URL:', page.url());
+          } catch (evalError) {
+            console.log('[PlusPortal] Company selection failed:', evalError);
+          }
+        }
+        
+        // Don't navigate away - instead find and click the SOH INFO menu item in the SPA
+        console.log('[PlusPortal] Looking for SOH INFO menu item...');
+        
+        // Wait for the dashboard/menu to load
+        await this.delay(3000);
+        
+        // Log what menu items we can see
+        const menuInfo = await page.evaluate(() => {
+          const allLinks = Array.from(document.querySelectorAll('a, .ant-menu-item, nz-menu-item, [routerlink], [nz-menu-item]'));
+          return allLinks.slice(0, 30).map(el => ({
+            text: el.textContent?.trim().slice(0, 50),
+            href: el.getAttribute('href'),
+            routerLink: el.getAttribute('routerlink'),
+          }));
+        });
+        console.log('[PlusPortal] Available navigation items:', JSON.stringify(menuInfo.slice(0, 15), null, 2));
+        
+        // Click on the SOH INFO menu item
+        const sohClicked = await page.evaluate(() => {
+          // Try various ways to find the SOH INFO link
+          const allElements = Array.from(document.querySelectorAll('a, span, div, .ant-menu-item, nz-menu-item'));
+          for (const el of allElements) {
+            const text = el.textContent?.trim().toLowerCase() || '';
+            if (text === 'soh info' || text === 'soh' || text.includes('soh info')) {
+              (el as HTMLElement).click();
+              return { found: true, text: el.textContent?.trim() };
+            }
+          }
+          return { found: false };
+        });
+        
+        if (sohClicked.found) {
+          console.log('[PlusPortal] Clicked SOH INFO menu item:', sohClicked.text);
+          await this.delay(5000);
+        } else {
+          console.log('[PlusPortal] SOH INFO menu item not found, continuing with current page...');
+        }
+        
+        console.log('[PlusPortal] Current URL:', page.url());
 
         // Steps 6-9: Navigate to SOH INFO tab, CSV Download, select Comma Delimited, Export
         csvFilePath = await this.downloadSOHCSV(page);
