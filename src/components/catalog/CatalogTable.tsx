@@ -29,8 +29,19 @@ import { ColumnManagementDialog, type ColumnDef } from './ColumnManagementDialog
 import ProductProfileDialog from '@/components/products/ProductProfileDialog';
 import { SKUComparisonPanel } from '@/components/products/SKUComparisonPanel';
 
-function formatCost(value: number | undefined | null): string {
-  const n = Number(value ?? 0);
+function formatCost(value: number | undefined | null | string): string {
+  // Handle null, undefined, empty string, or invalid values
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+  
+  const n = typeof value === 'string' ? parseFloat(value) : value;
+  
+  // Handle NaN or Infinity
+  if (!Number.isFinite(n)) {
+    return '-';
+  }
+  
   const fixed = n.toFixed(2);
   const [intPart, decPart] = fixed.split('.');
   const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');

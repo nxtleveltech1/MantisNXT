@@ -19,10 +19,14 @@ const envSchema = z.object({
   APP_PORT: z.string().default('3000'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
-  // Database - Primary Neon connection
+  // Database - Unified Neon connection
+  // All modules (main app, SPP, SOH) use the same database
   DATABASE_URL: z.string().url(),
-  NEON_SPP_DATABASE_URL: z.string().url().optional(),
   ENTERPRISE_DATABASE_URL: z.string().url().optional(),
+  // DEPRECATED: These are kept for backwards compatibility only
+  // New deployments should use DATABASE_URL for everything
+  NEON_SPP_DATABASE_URL: z.string().url().optional(),
+  SUPPLIER_DATABASE_URL: z.string().url().optional(),
 
   // Database connection pool
   DB_POOL_MIN: z.string().regex(/^\d+$/).default('5'),

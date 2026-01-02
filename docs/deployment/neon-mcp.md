@@ -1,12 +1,33 @@
 # Neon MCP (Managed Connection Pooler) — Database Setup
 
 ## Overview
+- **UNIFIED DATABASE**: All modules (main app, SPP, SOH) use the same Neon database.
 - Primary DB is Neon with Managed Connection Pooler (MCP).
 - Connection string must use the Neon pooler endpoint and `sslmode=require`.
 - The app uses a production-grade Pg pool with circuit breaker, slow-query logging, and transaction helpers.
 
+## Unified Database Architecture
+
+As of January 2026, all data lives in a single Neon project:
+- **Project**: NXT-SPP-Supplier Inventory Portfolio (`proud-mud-50346856`)
+- **Schemas**: `public`, `core`, `spp`
+- **All modules**: Main app, SPP (Supplier Product Portfolio), SOH (Stock on Hand)
+
+This eliminates data fragmentation and enables proper referential integrity.
+
 ## Environment Variables
-- `DATABASE_URL` or `ENTERPRISE_DATABASE_URL`: `postgresql://<user>:<password>@<neon-host>-pooler.<region>.neon.tech/<db>?sslmode=require`
+
+### Required
+- `DATABASE_URL`: `postgresql://<user>:<password>@<neon-host>-pooler.<region>.neon.tech/<db>?sslmode=require`
+
+### Optional (fallback)
+- `ENTERPRISE_DATABASE_URL`: Alternative connection string (uses same DB)
+
+### Deprecated (backwards compatibility only)
+- ~~`NEON_SPP_DATABASE_URL`~~: No longer needed - use `DATABASE_URL`
+- ~~`SUPPLIER_DATABASE_URL`~~: No longer needed - use `DATABASE_URL`
+
+### Pool Configuration
 - `DB_POOL_MIN`/`DB_POOL_MAX`: base pool sizing (default `5`/`20`).
 - `DB_POOL_IDLE_TIMEOUT`/`DB_POOL_CONNECTION_TIMEOUT`: ms (defaults `30000`/`120000`).
 - Optional enterprise overrides (preferred for MCP tuning):

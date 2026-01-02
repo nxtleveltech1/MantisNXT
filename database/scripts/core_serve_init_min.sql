@@ -15,6 +15,13 @@ CREATE TABLE IF NOT EXISTS core.supplier (
     payment_terms VARCHAR(100),
     contact_info JSONB,
     tax_number VARCHAR(50),
+    -- Extended supplier attributes
+    tier VARCHAR(20) CHECK (tier IN ('strategic', 'preferred', 'approved', 'conditional')),
+    lead_time INTEGER DEFAULT 0,
+    minimum_order_value NUMERIC(15,2),
+    preferred_supplier BOOLEAN DEFAULT false,
+    base_discount_percent NUMERIC(5,2) DEFAULT 0,
+    -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

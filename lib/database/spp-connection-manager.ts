@@ -1,3 +1,13 @@
+/**
+ * SPP Connection Manager
+ *
+ * UNIFIED DATABASE: This module now uses the same database as the main app.
+ * Previously SPP operations used a separate NEON_SPP_DATABASE_URL which caused
+ * data fragmentation. All supplier/product/pricing data now lives in one DB.
+ *
+ * Connection priority: DATABASE_URL (unified) → ENTERPRISE_DATABASE_URL (fallback)
+ */
+
 import type { PoolClient, PoolConfig, QueryResultRow } from 'pg';
 import { Pool } from 'pg';
 
@@ -30,14 +40,26 @@ function shouldUseSsl(dsn: string): boolean {
 }
 
 function buildSppPoolConfig(): PoolConfig {
+  // UNIFIED: Use the same database as the main application
+  // Priority: DATABASE_URL → ENTERPRISE_DATABASE_URL
+  // Legacy SPP-specific URLs are deprecated but still supported for migration
   const connectionString =
-    process.env.NEON_SPP_DATABASE_URL ||
-    process.env.SUPPLIER_DATABASE_URL ||
-    process.env.DATABASE_URL;
+    process.env.DATABASE_URL ||
+    process.env.ENTERPRISE_DATABASE_URL ||
+    process.env.NEON_SPP_DATABASE_URL || // Deprecated: kept for backwards compatibility
+    process.env.SUPPLIER_DATABASE_URL;   // Deprecated: kept for backwards compatibility
 
   if (!connectionString) {
     throw new Error(
-      'NEON_SPP_DATABASE_URL (or SUPPLIER_DATABASE_URL) must be set for SPP operations'
+      'DATABASE_URL must be set. SPP now uses the unified database.'
+    );
+  }
+
+  // Log deprecation warning if using legacy SPP-specific URLs
+  if (!process.env.DATABASE_URL && !process.env.ENTERPRISE_DATABASE_URL) {
+    console.warn(
+      '⚠️  DEPRECATED: Using NEON_SPP_DATABASE_URL or SUPPLIER_DATABASE_URL. ' +
+      'Please migrate to unified DATABASE_URL.'
     );
   }
 

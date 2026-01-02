@@ -498,6 +498,7 @@ async function importProducts(
           }
 
           // ========== UPDATE STOCK ON HAND ==========
+          // Valid source values: 'manual', 'import', 'system'
           await client.query(
             `INSERT INTO core.stock_on_hand (
               soh_id,
@@ -509,7 +510,7 @@ async function importProducts(
               source,
               created_at
             )
-            VALUES ($1, $2, $3, $4, $5, NOW(), 'soh_csv_import', NOW())
+            VALUES ($1, $2, $3, $4, $5, NOW(), 'import', NOW())
             ON CONFLICT (location_id, supplier_product_id) DO UPDATE SET
               qty = EXCLUDED.qty,
               unit_cost = COALESCE(EXCLUDED.unit_cost, core.stock_on_hand.unit_cost),

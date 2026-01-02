@@ -158,19 +158,7 @@ export async function GET(request: NextRequest) {
       supplier_discounts AS (
         SELECT 
           sp.supplier_product_id,
-          COALESCE(
-            (SELECT dr.discount_percent 
-             FROM core.supplier_discount_rules dr
-             WHERE dr.supplier_id = sp.supplier_id
-               AND dr.scope_type = 'supplier'
-               AND dr.is_active = true
-               AND dr.valid_from <= NOW()
-               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
-             ORDER BY dr.priority DESC
-             LIMIT 1),
-            s.base_discount_percent,
-            0
-          ) AS base_discount
+          COALESCE(s.base_discount_percent, 0) AS base_discount
         FROM core.supplier_product sp
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       )
@@ -212,35 +200,45 @@ export async function GET(request: NextRequest) {
     const result = await dbQuery<SupplierOfferRow>(sql, queryParams);
 
     // Transform rows to SupplierOffer objects
-    const offers: SupplierOffer[] = result.rows.map(row => ({
-      supplier_product_id: row.supplier_product_id,
-      supplier_id: row.supplier_id,
-      supplier_name: row.supplier_name,
-      supplier_code: row.supplier_code ?? undefined,
-      supplier_tier: row.supplier_tier as SupplierOffer['supplier_tier'],
-      supplier_sku: row.supplier_sku,
-      name_from_supplier: row.name_from_supplier,
-      brand: row.brand ?? undefined,
-      barcode: row.barcode ?? undefined,
-      uom: row.uom ?? undefined,
-      pack_size: row.pack_size ?? undefined,
-      current_price: row.current_price ? parseFloat(row.current_price) : null,
-      currency: row.currency || 'ZAR',
-      base_discount: row.base_discount ? parseFloat(row.base_discount) : undefined,
-      cost_after_discount:
-        row.current_price && row.base_discount
-          ? parseFloat(row.current_price) * (1 - parseFloat(row.base_discount) / 100)
-          : row.current_price
-            ? parseFloat(row.current_price)
-            : undefined,
-      stock_on_hand: row.stock_on_hand ? parseInt(row.stock_on_hand) : null,
-      lead_time_days: row.lead_time_days ?? undefined,
-      minimum_order_qty: row.minimum_order_qty ?? undefined,
-      first_seen_at: new Date(row.first_seen_at),
-      last_seen_at: row.last_seen_at ? new Date(row.last_seen_at) : null,
-      is_preferred_supplier: row.is_preferred_supplier,
-      is_in_stock: row.stock_on_hand ? parseInt(row.stock_on_hand) > 0 : false,
-    }));
+    const offers: SupplierOffer[] = result.rows.map(row => {
+      const offer: SupplierOffer = {
+        supplier_product_id: row.supplier_product_id,
+        supplier_id: row.supplier_id,
+        supplier_name: row.supplier_name,
+        supplier_sku: row.supplier_sku,
+        name_from_supplier: row.name_from_supplier,
+        current_price: row.current_price ? parseFloat(row.current_price) : null,
+        currency: row.currency || 'ZAR',
+        stock_on_hand: row.stock_on_hand ? parseInt(row.stock_on_hand) : null,
+        first_seen_at: new Date(row.first_seen_at),
+        last_seen_at: row.last_seen_at ? new Date(row.last_seen_at) : null,
+        is_preferred_supplier: row.is_preferred_supplier,
+        is_in_stock: row.stock_on_hand ? parseInt(row.stock_on_hand) > 0 : false,
+      };
+
+      // Only set optional properties if they have values
+      if (row.supplier_code) offer.supplier_code = row.supplier_code;
+      const validTiers = ['strategic', 'preferred', 'approved', 'conditional'] as const;
+      if (row.supplier_tier && validTiers.includes(row.supplier_tier as typeof validTiers[number])) {
+        offer.supplier_tier = row.supplier_tier as typeof validTiers[number];
+      }
+      if (row.brand) offer.brand = row.brand;
+      if (row.barcode) offer.barcode = row.barcode;
+      if (row.uom) offer.uom = row.uom;
+      if (row.pack_size) offer.pack_size = row.pack_size;
+      if (row.base_discount) offer.base_discount = parseFloat(row.base_discount);
+      if (row.lead_time_days !== null) offer.lead_time_days = row.lead_time_days;
+      if (row.minimum_order_qty !== null) offer.minimum_order_qty = row.minimum_order_qty;
+
+      // Calculate cost after discount
+      if (row.current_price && row.base_discount) {
+        offer.cost_after_discount = parseFloat(row.current_price) * (1 - parseFloat(row.base_discount) / 100);
+      } else if (row.current_price) {
+        offer.cost_after_discount = parseFloat(row.current_price);
+      }
+
+      return offer;
+    });
 
     // Group offers by SKU for comparison view
     const skuMap = new Map<string, SupplierOffer[]>();
@@ -268,11 +266,9 @@ export async function GET(request: NextRequest) {
         offer.is_best_price = effectivePrice === lowestPrice;
       });
 
-      comparisons.push({
+      const comparison: SKUComparison = {
         sku,
         product_name: skuOffers[0].name_from_supplier,
-        brand: skuOffers[0].brand,
-        category_name: undefined, // Could be enhanced to include category
         offers: skuOffers,
         lowest_price: lowestPrice,
         highest_price: highestPrice,
@@ -282,7 +278,12 @@ export async function GET(request: NextRequest) {
             : null,
         total_suppliers: skuOffers.length,
         suppliers_in_stock: skuOffers.filter(o => o.is_in_stock).length,
-      });
+      };
+
+      // Only set optional properties if they have values
+      if (skuOffers[0].brand) comparison.brand = skuOffers[0].brand;
+
+      comparisons.push(comparison);
     }
 
     const response: CompareSupplierResponse = {
