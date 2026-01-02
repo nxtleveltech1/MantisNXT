@@ -526,8 +526,8 @@ export class PlusPortalCSVProcessor {
     // Create new price history entry
     await client.query(
       `INSERT INTO core.price_history (
-         supplier_product_id, price, valid_from, is_current
-       ) VALUES ($1, $2, NOW(), true)`,
+         supplier_product_id, price, currency, valid_from, is_current
+       ) VALUES ($1, $2, 'ZAR', NOW(), true)`,
       [supplierProductId, newPrice]
     );
   }
@@ -542,8 +542,8 @@ export class PlusPortalCSVProcessor {
   ): Promise<void> {
     await client.query(
       `INSERT INTO core.price_history (
-         supplier_product_id, price, valid_from, is_current
-       ) VALUES ($1, $2, NOW(), true)`,
+         supplier_product_id, price, currency, valid_from, is_current
+       ) VALUES ($1, $2, 'ZAR', NOW(), true)`,
       [supplierProductId, price]
     );
   }
