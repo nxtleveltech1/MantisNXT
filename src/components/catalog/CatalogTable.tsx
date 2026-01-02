@@ -19,13 +19,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2, ExternalLink } from 'lucide-react';
+import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2, ExternalLink, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ColumnManagementDialog, type ColumnDef } from './ColumnManagementDialog';
 import ProductProfileDialog from '@/components/products/ProductProfileDialog';
+import { SKUComparisonPanel } from '@/components/products/SKUComparisonPanel';
 
 function formatCost(value: number | undefined | null): string {
   const n = Number(value ?? 0);
@@ -161,6 +163,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     sortable: true,
   },
   { key: 'active', label: 'Active', visible: false, order: 26, align: 'left', sortable: false },
+  { key: 'actions', label: 'Actions', visible: true, order: 27, align: 'center', sortable: false },
 ];
 
 // Load columns from localStorage or return defaults
@@ -296,6 +299,10 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detail, setDetail] = useState<unknown>(null);
+  
+  // Supplier comparison panel state
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [comparisonSku, setComparisonSku] = useState('');
   const [history, setHistory] = useState<unknown[]>([]);
   const [metrics, setMetrics] = useState({
     totalSupplierProducts: 0,
@@ -744,6 +751,32 @@ export function CatalogTable(props: CatalogTableProps = {}) {
             {row.is_active ? 'Yes' : 'No'}
           </TableCell>
         );
+      case 'actions':
+        return (
+          <TableCell key={column.key} className={className}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setComparisonSku(row.supplier_sku);
+                      setComparisonOpen(true);
+                    }}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Compare prices across suppliers</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </TableCell>
+        );
       default:
         return (
           <TableCell key={column.key} className={className}>
@@ -1031,6 +1064,13 @@ export function CatalogTable(props: CatalogTableProps = {}) {
           }}
         />
       )}
+
+      {/* Supplier Comparison Panel */}
+      <SKUComparisonPanel
+        open={comparisonOpen}
+        onOpenChange={setComparisonOpen}
+        initialQuery={comparisonSku}
+      />
     </Card>
   );
 }

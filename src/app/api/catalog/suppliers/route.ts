@@ -3,8 +3,9 @@ import { query as dbQuery } from '@/lib/database/unified-connection';
 
 export async function GET() {
   try {
+    // CRITICAL: Only return ACTIVE suppliers - deactivated suppliers should not appear in dropdowns
     const res = await dbQuery<{ supplier_id: string; name: string; code: string | null }>(
-      'SELECT supplier_id, name, code FROM core.supplier ORDER BY name'
+      'SELECT supplier_id, name, code FROM core.supplier WHERE active = true ORDER BY name'
     );
     return NextResponse.json({ success: true, data: res.rows });
   } catch (error) {

@@ -32,9 +32,14 @@ import {
   CheckCircle,
   AlertTriangle,
   X,
+  Package,
+  ArrowRight,
+  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn, formatCurrency } from '@/lib/utils';
+import { MultiSupplierProductPicker } from './MultiSupplierProductPicker';
+import type { MultiSupplierCart, SelectedSupplierOffer } from '@/types/supplier-comparison';
 
 interface POCreationWizardProps {
   open: boolean;
@@ -78,7 +83,15 @@ const mockSuppliers: Supplier[] = [
   },
 ];
 
+// Flow mode type
+type FlowMode = 'select' | 'supplier-first' | 'product-first';
+
 const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) => {
+  // Flow selection state
+  const [flowMode, setFlowMode] = useState<FlowMode>('select');
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [importedCart, setImportedCart] = useState<MultiSupplierCart | null>(null);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     supplierId: '',
@@ -110,6 +123,59 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
     available: number;
     requested: number;
   } | null>(null);
+
+  // Handle product picker completion
+  const handleProductPickerComplete = (cart: MultiSupplierCart) => {
+    setImportedCart(cart);
+    setShowProductPicker(false);
+
+    // Convert cart items to line items
+    if (cart.groups.length === 1) {
+      // Single supplier - set supplier and convert items
+      const group = cart.groups[0];
+      handleInputChange('supplierId', group.supplier_id);
+
+      const newLineItems: LineItem[] = group.items.map((item, index) => ({
+        id: `imported-${index}`,
+        productCode: item.supplier_sku,
+        description: item.product_name,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        totalPrice: item.total_price,
+        category: '',
+      }));
+
+      setLineItems(newLineItems);
+      setCurrentStep(2); // Go to line items step
+    } else if (cart.groups.length > 1) {
+      // Multiple suppliers - show summary and offer to create multiple POs
+      // For now, just use the first supplier's items
+      const group = cart.groups[0];
+      handleInputChange('supplierId', group.supplier_id);
+
+      const newLineItems: LineItem[] = group.items.map((item, index) => ({
+        id: `imported-${index}`,
+        productCode: item.supplier_sku,
+        description: item.product_name,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        totalPrice: item.total_price,
+        category: '',
+      }));
+
+      setLineItems(newLineItems);
+      setCurrentStep(2);
+    }
+  };
+
+  // Reset flow mode when dialog closes
+  const handleClose = () => {
+    setFlowMode('select');
+    setShowProductPicker(false);
+    setImportedCart(null);
+    setCurrentStep(1);
+    onClose();
+  };
 
   const totalAmount = lineItems.reduce((sum, item) => sum + item.totalPrice, 0);
   const taxAmount = totalAmount * 0.1; // 10% tax
@@ -234,7 +300,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
   const handleSubmit = () => {
     if (validateStep(4)) {
       // Mock submission
-      onClose();
+      handleClose();
     }
   };
 
@@ -244,44 +310,133 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
       supplier.code.toLowerCase().includes(supplierSearch.toLowerCase())
   );
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create Purchase Order</DialogTitle>
-          <DialogDescription>
-            Follow the steps below to create a new purchase order
-          </DialogDescription>
-        </DialogHeader>
+  // Start product-first flow
+  const startProductFirstFlow = () => {
+    setFlowMode('product-first');
+    setShowProductPicker(true);
+  };
 
-        {/* Progress Steps */}
-        <div className="mb-6 flex items-center justify-between">
-          {steps.map(step => (
-            <div key={step.number} className="flex items-center">
-              <div
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                  step.number <= currentStep
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                )}
-              >
-                {step.number < currentStep ? <CheckCircle className="h-4 w-4" /> : step.number}
+  // Start supplier-first flow
+  const startSupplierFirstFlow = () => {
+    setFlowMode('supplier-first');
+    setCurrentStep(1);
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+            <DialogDescription>
+              {flowMode === 'select'
+                ? 'Choose how you want to create your purchase order'
+                : 'Follow the steps below to create a new purchase order'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Flow Selection Screen */}
+          {flowMode === 'select' && (
+            <div className="py-8">
+              <h3 className="mb-6 text-center text-lg font-semibold">
+                How would you like to start?
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Supplier First Option */}
+                <Card
+                  className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
+                  onClick={startSupplierFirstFlow}
+                >
+                  <CardContent className="flex flex-col items-center p-6 text-center">
+                    <div className="mb-4 rounded-full bg-primary/10 p-4">
+                      <Building2 className="h-8 w-8 text-primary" />
+                    </div>
+                    <h4 className="mb-2 font-semibold">Start with Supplier</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Select a supplier first, then add products from their catalog
+                    </p>
+                    <Button className="mt-4" variant="outline">
+                      Select Supplier
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Product First Option */}
+                <Card
+                  className="cursor-pointer border-primary/50 bg-primary/5 transition-all hover:border-primary hover:shadow-md"
+                  onClick={startProductFirstFlow}
+                >
+                  <CardContent className="flex flex-col items-center p-6 text-center">
+                    <div className="mb-4 rounded-full bg-primary/10 p-4">
+                      <Package className="h-8 w-8 text-primary" />
+                    </div>
+                    <h4 className="mb-2 font-semibold">Start with Products</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Search products and compare prices across all suppliers
+                    </p>
+                    <Badge variant="secondary" className="mb-2 mt-1">
+                      <BarChart3 className="mr-1 h-3 w-3" />
+                      Compare Prices
+                    </Badge>
+                    <Button className="mt-2">
+                      Find Products
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
-              {step.number < steps.length && (
-                <div
-                  className={cn(
-                    'mx-2 h-0.5 w-16',
-                    step.number < currentStep ? 'bg-primary' : 'bg-muted'
-                  )}
-                />
+
+              {/* Imported cart summary */}
+              {importedCart && importedCart.items.length > 0 && (
+                <div className="mt-6 rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Products Selected</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {importedCart.total_items} items from {importedCart.supplier_count} supplier(s)
+                      </p>
+                    </div>
+                    <Button onClick={startSupplierFirstFlow}>
+                      Continue with Selection
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Step Content */}
-        <div className="min-h-[400px]">
+          {/* Standard Wizard Flow (supplier-first or after product selection) */}
+          {flowMode !== 'select' && (
+            <>
+              {/* Progress Steps */}
+              <div className="mb-6 flex items-center justify-between">
+                {steps.map(step => (
+                  <div key={step.number} className="flex items-center">
+                    <div
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                        step.number <= currentStep
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      {step.number < currentStep ? <CheckCircle className="h-4 w-4" /> : step.number}
+                    </div>
+                    {step.number < steps.length && (
+                      <div
+                        className={cn(
+                          'mx-2 h-0.5 w-16',
+                          step.number < currentStep ? 'bg-primary' : 'bg-muted'
+                        )}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Step Content */}
+              <div className="min-h-[400px]">
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
@@ -771,26 +926,45 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
           </Card>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between border-t pt-4">
-          <Button variant="outline" onClick={previousStep} disabled={currentStep === 1}>
-            Previous
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            {currentStep < 4 ? (
-              <Button onClick={nextStep}>Next</Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={budgetValidation?.status === 'error'}>
-                Create Purchase Order
-              </Button>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+              {/* Navigation */}
+              <div className="flex justify-between border-t pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (currentStep === 1) {
+                      setFlowMode('select');
+                    } else {
+                      previousStep();
+                    }
+                  }}
+                >
+                  {currentStep === 1 ? 'Back to Start' : 'Previous'}
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleClose}>
+                    Cancel
+                  </Button>
+                  {currentStep < 4 ? (
+                    <Button onClick={nextStep}>Next</Button>
+                  ) : (
+                    <Button onClick={handleSubmit} disabled={budgetValidation?.status === 'error'}>
+                      Create Purchase Order
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Multi-Supplier Product Picker */}
+      <MultiSupplierProductPicker
+        open={showProductPicker}
+        onOpenChange={setShowProductPicker}
+        onComplete={handleProductPickerComplete}
+      />
+    </>
   );
 };
 

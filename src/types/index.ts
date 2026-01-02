@@ -2,6 +2,7 @@
 export * from './globals';
 export * from './supplier';
 export * from './ai';
+export * from './supplier-comparison';
 
 // Additional types for analytics and performance tracking
 export interface SupplierPerformance {
