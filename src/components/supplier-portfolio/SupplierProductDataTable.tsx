@@ -130,6 +130,8 @@ type ColumnId =
   | 'price_change'
   | 'status'
   | 'stock'
+  | 'stock_status'
+  | 'new_stock_eta'
   | 'first_seen'
   | 'cost_inc_vat'
   | 'actions';
@@ -164,6 +166,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
   { id: 'stock', label: 'Sup SOH', visible: false, sortable: true, width: 'w-24' },
+  { id: 'stock_status', label: 'Stock Status', visible: true, sortable: true, width: 'w-32' },
+  { id: 'new_stock_eta', label: 'New Stock ETA', visible: true, sortable: true, width: 'w-32' },
   { id: 'first_seen', label: 'First Seen', visible: false, sortable: true, width: 'w-32' },
   { id: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, sortable: true, width: 'w-32' },
   { id: 'actions', label: '', visible: true, sortable: false, width: 'w-16' },

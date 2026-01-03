@@ -136,7 +136,11 @@ export async function GET(request: NextRequest) {
                 ? 'sp.first_seen_at'
                 : sortBy === 'last_seen_at'
                   ? 'sp.last_seen_at'
-                  : 's.name';
+                  : sortBy === 'stock_status'
+                    ? 'sp.stock_status'
+                    : sortBy === 'new_stock_eta'
+                      ? 'sp.new_stock_eta'
+                      : 's.name';
 
     const dataSql = `
       WITH current_prices AS (
@@ -311,7 +315,19 @@ export async function GET(request: NextRequest) {
           ELSE NULL
         END AS cost_diff,
         sr.series_range,
-        COALESCE(pt.tags, '[]'::jsonb) AS tags
+        COALESCE(pt.tags, '[]'::jsonb) AS tags,
+        -- Stock Status: prefer direct column, then attrs_json, then pricelist_row
+        COALESCE(
+          sp.stock_status,
+          sp.attrs_json->>'stock_status',
+          pls.stock_status
+        ) AS stock_status,
+        -- New Stock ETA: prefer direct column, then attrs_json, then pricelist_row
+        COALESCE(
+          sp.new_stock_eta,
+          (sp.attrs_json->>'new_stock_eta')::date,
+          pls.eta
+        ) AS new_stock_eta
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
@@ -363,6 +379,15 @@ export async function GET(request: NextRequest) {
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) sr ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT r.stock_status, r.eta
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku
+          AND (r.stock_status IS NOT NULL OR r.eta IS NOT NULL)
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) pls ON TRUE
       WHERE ${whereSql}
       ORDER BY ${sortColumn} ${sortDir}
       LIMIT $${idx++} OFFSET $${idx}
@@ -414,7 +439,9 @@ export async function GET(request: NextRequest) {
           NULL::text AS currency,
           NULL::int AS qty_on_hand,
           NULL::int AS sup_soh,
-          qty.qty_on_order
+          qty.qty_on_order,
+          sp.stock_status,
+          sp.new_stock_eta
         FROM core.supplier_product sp
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
         LEFT JOIN core.category c ON c.category_id = sp.category_id

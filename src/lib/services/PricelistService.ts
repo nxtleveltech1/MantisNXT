@@ -124,10 +124,24 @@ export class PricelistService {
           placeholders.push(
             `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
               `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-              `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
+              `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
+              `$${paramIndex++}, $${paramIndex++})`
           );
           // Ensure price is never null - use cost_price_ex_vat as fallback, default to 0
           const price = row.price ?? row.cost_price_ex_vat ?? 0;
+          // Parse ETA date if provided
+          let etaDate: Date | null = null;
+          if (row.eta) {
+            if (typeof row.eta === 'string') {
+              // Try parsing various date formats
+              const parsed = new Date(row.eta);
+              if (!isNaN(parsed.getTime())) {
+                etaDate = parsed;
+              }
+            } else if (row.eta instanceof Date) {
+              etaDate = row.eta;
+            }
+          }
           values.push(
             uploadId,
             rowNum,
@@ -141,6 +155,8 @@ export class PricelistService {
             row.category_raw || null,
             row.vat_code || null,
             row.barcode || null,
+            (row as unknown).stock_status || null,
+            etaDate,
             (row as unknown).attrs_json || null
           );
         });
@@ -148,7 +164,7 @@ export class PricelistService {
         const query = `
           INSERT INTO spp.pricelist_row (
             upload_id, row_num, supplier_sku, name, brand, uom, pack_size,
-            price, currency, category_raw, vat_code, barcode, attrs_json
+            price, currency, category_raw, vat_code, barcode, stock_status, eta, attrs_json
           ) VALUES ${placeholders.join(', ')}
         `;
 
@@ -445,8 +461,8 @@ export class PricelistService {
       )`;
       // Step 1: Upsert supplier products
       const upsertColumns = hasBrandColumn
-        ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
-        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`;
+        ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, stock_status, new_stock_eta, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
+        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, stock_status, new_stock_eta, attrs_json, is_new, is_active, first_seen_at, last_seen_at`;
 
       const upsertSelect = hasBrandColumn
         ? `
@@ -457,6 +473,8 @@ export class PricelistService {
           r.uom,
           r.pack_size,
           r.barcode,
+          r.stock_status,
+          r.eta as new_stock_eta,
           r.attrs_json,
           true as is_new,
           true as is_active,
@@ -470,6 +488,8 @@ export class PricelistService {
           r.uom,
           r.pack_size,
           r.barcode,
+          r.stock_status,
+          r.eta as new_stock_eta,
           r.attrs_json,
           true as is_new,
           true as is_active,
@@ -490,13 +510,15 @@ export class PricelistService {
         FROM spp.pricelist_row r
         WHERE r.upload_id = $2
         ${filterValidOnly ? `AND ${validRowCondition}` : ''}
-        ON CONFLICT (supplier_id, supplier_sku) DO UPDATE
+        ON CONFLICT ON CONSTRAINT supplier_product_supplier_id_supplier_sku_key DO UPDATE
         SET
           name_from_supplier = EXCLUDED.name_from_supplier
           ${upsertBrandUpdate},
           uom = EXCLUDED.uom,
           pack_size = EXCLUDED.pack_size,
           barcode = EXCLUDED.barcode,
+          stock_status = COALESCE(EXCLUDED.stock_status, core.supplier_product.stock_status),
+          new_stock_eta = COALESCE(EXCLUDED.new_stock_eta, core.supplier_product.new_stock_eta),
           attrs_json = EXCLUDED.attrs_json,
           last_seen_at = NOW(),
           is_active = true,
@@ -554,10 +576,6 @@ export class PricelistService {
           ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
           WHERE r.upload_id = $2
           ${filterValidOnly ? `AND ${validRowCondition}` : ''}
-        ON CONFLICT (supplier_product_id, valid_from) WHERE (is_current = true)
-        DO UPDATE SET
-          price = EXCLUDED.price,
-          currency = EXCLUDED.currency
         RETURNING price_history_id
       `;
 
@@ -582,59 +600,6 @@ export class PricelistService {
       pricesUpdated = priceResult.rowCount || 0;
 
       // Step 4: Update stock on hand (SUP SOH) from attrs_json.stock or attrs_json.stock_qty
-      // First, get or create a default location for this supplier
-      const locationResult = await client.query(
-        `SELECT location_id FROM core.stock_location 
-         WHERE supplier_id = $1 OR type = 'internal' 
-         ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
-        [upload.supplier_id]
-      );
-      
-      const defaultLocationId = locationResult.rows[0]?.location_id;
-      
-      if (defaultLocationId) {
-        const stockUpdateQuery = `
-          INSERT INTO core.stock_on_hand (
-            location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
-          )
-          SELECT DISTINCT ON (sp.supplier_product_id)
-            $3::uuid as location_id,
-            sp.supplier_product_id,
-            COALESCE(
-              (r.attrs_json->>'stock')::int,
-              (r.attrs_json->>'stock_qty')::int,
-              (r.attrs_json->>'qty_on_hand')::int,
-              0
-            ) as qty,
-            NULL as unit_cost,
-            NOW() as as_of_ts,
-            'import' as source
-          FROM spp.pricelist_row r
-          JOIN core.supplier_product sp
-            ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
-          WHERE r.upload_id = $2
-            AND (
-              (r.attrs_json->>'stock')::int IS NOT NULL OR
-              (r.attrs_json->>'stock_qty')::int IS NOT NULL OR
-              (r.attrs_json->>'qty_on_hand')::int IS NOT NULL
-            )
-            ${filterValidOnly ? `AND ${validRowCondition}` : ''}
-          ON CONFLICT (location_id, supplier_product_id)
-          DO UPDATE SET
-            qty = EXCLUDED.qty,
-            as_of_ts = NOW(),
-            source = 'import'
-        `;
-        
-        try {
-          await client.query(stockUpdateQuery, [upload.supplier_id, uploadId, defaultLocationId]);
-        } catch (stockError) {
-          // Log but don't fail the merge if stock update fails
-          console.warn('[PricelistService] Stock update failed:', stockError);
-          errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
-        }
-      }
-
       // Only update stock if core.stock_on_hand table exists
       const stockTableCheck = await client.query(
         'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)',
@@ -642,12 +607,57 @@ export class PricelistService {
       );
 
       if (stockTableCheck.rows[0]?.exists) {
-        try {
-          await client.query(stockUpdateQuery, [upload.supplier_id, uploadId]);
-        } catch (stockError) {
-          // Log but don't fail the merge if stock update fails
-          console.warn('[PricelistService] Stock update failed:', stockError);
-          errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        // First, get or create a default location for this supplier
+        const locationResult = await client.query(
+          `SELECT location_id FROM core.stock_location 
+           WHERE supplier_id = $1 OR type = 'internal' 
+           ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
+          [upload.supplier_id]
+        );
+        
+        const defaultLocationId = locationResult.rows[0]?.location_id;
+        
+        if (defaultLocationId) {
+          const stockUpdateQuery = `
+            INSERT INTO core.stock_on_hand (
+              location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
+            )
+            SELECT DISTINCT ON (sp.supplier_product_id)
+              $3::uuid as location_id,
+              sp.supplier_product_id,
+              COALESCE(
+                (r.attrs_json->>'stock')::int,
+                (r.attrs_json->>'stock_qty')::int,
+                (r.attrs_json->>'qty_on_hand')::int,
+                0
+              ) as qty,
+              NULL as unit_cost,
+              NOW() as as_of_ts,
+              'import' as source
+            FROM spp.pricelist_row r
+            JOIN core.supplier_product sp
+              ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
+            WHERE r.upload_id = $2
+              AND (
+                (r.attrs_json->>'stock')::int IS NOT NULL OR
+                (r.attrs_json->>'stock_qty')::int IS NOT NULL OR
+                (r.attrs_json->>'qty_on_hand')::int IS NOT NULL
+              )
+              ${filterValidOnly ? `AND ${validRowCondition}` : ''}
+            ON CONFLICT ON CONSTRAINT stock_on_hand_location_id_supplier_product_id_key
+            DO UPDATE SET
+              qty = EXCLUDED.qty,
+              as_of_ts = NOW(),
+              source = 'import'
+          `;
+          
+          try {
+            await client.query(stockUpdateQuery, [upload.supplier_id, uploadId, defaultLocationId]);
+          } catch (stockError) {
+            // Log but don't fail the merge if stock update fails
+            console.warn('[PricelistService] Stock update failed:', stockError);
+            errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+          }
         }
       }
 

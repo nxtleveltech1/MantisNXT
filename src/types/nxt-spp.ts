@@ -67,6 +67,8 @@ export interface PricelistRow {
   category_raw?: string;
   vat_code?: string;
   barcode?: string;
+  stock_status?: string;
+  eta?: Date | string;
   attrs_json?: Record<string, unknown>;
   validation_errors?: string[];
 }

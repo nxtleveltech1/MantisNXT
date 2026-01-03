@@ -92,10 +92,26 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'tags', label: 'Tags', visible: true, order: 12, align: 'left', sortable: false },
   { key: 'soh', label: 'Sup SOH', visible: true, order: 13, align: 'right', sortable: false },
   {
+    key: 'stock_status',
+    label: 'Stock Status',
+    visible: true,
+    order: 14,
+    align: 'left',
+    sortable: true,
+  },
+  {
+    key: 'new_stock_eta',
+    label: 'New Stock ETA',
+    visible: true,
+    order: 15,
+    align: 'left',
+    sortable: true,
+  },
+  {
     key: 'on_order',
     label: 'Stock on Order',
     visible: true,
-    order: 14,
+    order: 16,
     align: 'right',
     sortable: false,
   },
@@ -103,16 +119,16 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'cost_ex_vat',
     label: 'Cost ExVAT',
     visible: true,
-    order: 15,
+    order: 17,
     align: 'right',
     sortable: false,
   },
-  { key: 'vat', label: 'VAT (15%)', visible: true, order: 16, align: 'right', sortable: false },
+  { key: 'vat', label: 'VAT (15%)', visible: true, order: 18, align: 'right', sortable: false },
   {
     key: 'cost_diff',
     label: 'Cost Diff',
     visible: true,
-    order: 17,
+    order: 19,
     align: 'right',
     sortable: false,
   },
@@ -120,7 +136,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'previous_cost',
     label: 'Previous Cost',
     visible: true,
-    order: 18,
+    order: 20,
     align: 'right',
     sortable: false,
   },
@@ -128,7 +144,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'base_discount',
     label: 'Base Discount',
     visible: true,
-    order: 19,
+    order: 21,
     align: 'right',
     sortable: false,
   },
@@ -136,16 +152,16 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'cost_after_discount',
     label: 'Cost After Discount',
     visible: true,
-    order: 20,
+    order: 22,
     align: 'right',
     sortable: false,
   },
-  { key: 'rsp', label: 'RSP', visible: true, order: 21, align: 'right', sortable: false },
+  { key: 'rsp', label: 'RSP', visible: true, order: 23, align: 'right', sortable: false },
   {
     key: 'cost_inc_vat',
     label: 'Cost IncVAT',
     visible: true,
-    order: 22,
+    order: 24,
     align: 'right',
     sortable: false,
   },
@@ -153,7 +169,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'currency',
     label: 'Currency',
     visible: false,
-    order: 23,
+    order: 25,
     align: 'right',
     sortable: false,
   },
@@ -161,7 +177,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'first_seen',
     label: 'First Seen',
     visible: false,
-    order: 24,
+    order: 26,
     align: 'left',
     sortable: true,
   },
@@ -169,12 +185,12 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     key: 'last_seen',
     label: 'Last Seen',
     visible: false,
-    order: 25,
+    order: 27,
     align: 'left',
     sortable: true,
   },
-  { key: 'active', label: 'Active', visible: false, order: 26, align: 'left', sortable: false },
-  { key: 'actions', label: 'Actions', visible: true, order: 27, align: 'center', sortable: false },
+  { key: 'active', label: 'Active', visible: false, order: 28, align: 'left', sortable: false },
+  { key: 'actions', label: 'Actions', visible: true, order: 29, align: 'center', sortable: false },
 ];
 
 // Load columns from localStorage or return defaults
@@ -243,6 +259,8 @@ type CatalogRow = {
   series_range?: string;
   previous_cost?: number;
   cost_diff?: number;
+  stock_status?: string;
+  new_stock_eta?: string;
   attrs_json?: {
     description?: string;
     cost_including?: number;
@@ -250,6 +268,8 @@ type CatalogRow = {
     rsp?: number;
     base_discount?: number;
     brand?: string;
+    stock_status?: string;
+    new_stock_eta?: string;
     [key: string]: unknown;
   };
 };
@@ -495,6 +515,8 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       category: 'category_name',
       first_seen: 'first_seen_at',
       last_seen: 'last_seen_at',
+      stock_status: 'stock_status',
+      new_stock_eta: 'new_stock_eta',
     };
     return sortMap[columnKey] || columnKey;
   };
@@ -646,6 +668,44 @@ export function CatalogTable(props: CatalogTableProps = {}) {
             {row.sup_soh ?? (row as unknown).qty_on_hand ?? 0}
           </TableCell>
         );
+      case 'stock_status': {
+        const stockStatus = row.stock_status || row.attrs_json?.stock_status;
+        const getStockStatusVariant = (status: string | undefined): 'default' | 'secondary' | 'destructive' | 'outline' => {
+          if (!status) return 'outline';
+          const lower = status.toLowerCase();
+          if (lower.includes('in stock') || lower === 'in stock') return 'default';
+          if (lower.includes('low') || lower === 'low stock') return 'secondary';
+          if (lower.includes('out') || lower === 'out of stock') return 'destructive';
+          return 'outline';
+        };
+        const getStockStatusColor = (status: string | undefined): string => {
+          if (!status) return '';
+          const lower = status.toLowerCase();
+          if (lower.includes('in stock') || lower === 'in stock') return 'bg-green-500/10 text-green-700 border-green-500/20';
+          if (lower.includes('low') || lower === 'low stock') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+          if (lower.includes('out') || lower === 'out of stock') return 'bg-red-500/10 text-red-700 border-red-500/20';
+          return '';
+        };
+        return (
+          <TableCell key={column.key} className={className}>
+            {stockStatus ? (
+              <Badge variant={getStockStatusVariant(stockStatus)} className={getStockStatusColor(stockStatus)}>
+                {stockStatus}
+              </Badge>
+            ) : (
+              <span className="text-muted-foreground text-sm">-</span>
+            )}
+          </TableCell>
+        );
+      }
+      case 'new_stock_eta': {
+        const etaDate = row.new_stock_eta || row.attrs_json?.new_stock_eta;
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {etaDate ? new Date(etaDate).toLocaleDateString() : '-'}
+          </TableCell>
+        );
+      }
       case 'on_order':
         return (
           <TableCell key={column.key} className={className}>

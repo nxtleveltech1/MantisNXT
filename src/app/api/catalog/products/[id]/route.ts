@@ -168,7 +168,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         COALESCE(
           CASE WHEN pt.tags IS NOT NULL AND jsonb_array_length(pt.tags) > 0 THEN pt.tags ELSE at.attrs_tags END,
           '[]'::jsonb
-        ) AS tags
+        ) AS tags,
+        -- Stock Status: prefer direct column, then attrs_json, then pricelist_row
+        COALESCE(
+          sp.stock_status,
+          sp.attrs_json->>'stock_status',
+          pls.stock_status
+        ) AS stock_status,
+        -- New Stock ETA: prefer direct column, then attrs_json, then pricelist_row
+        COALESCE(
+          sp.new_stock_eta,
+          (sp.attrs_json->>'new_stock_eta')::date,
+          pls.eta
+        ) AS new_stock_eta
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
@@ -180,6 +192,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) cat ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT r.stock_status, r.eta
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku
+          AND (r.stock_status IS NOT NULL OR r.eta IS NOT NULL)
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) pls ON TRUE
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id

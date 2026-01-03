@@ -34,6 +34,8 @@ interface ProductRow {
   totalSOH: number; // Stock on Hand
   priceBeforeDiscountExVat: number; // Price in ZAR
   rowNumber: number;
+  stockStatus?: string; // Stock Status (In Stock, Out of Stock, Low Stock)
+  newStockEta?: string; // New Stock ETA date
 }
 
 interface ImportStats {
@@ -120,9 +122,15 @@ function parseCSV(filePath: string): ProductRow[] {
   const priceIdx = headers.findIndex(
     h => h.toLowerCase().includes('price before discount') || h.toLowerCase().includes('price')
   );
+  const stockStatusIdx = headers.findIndex(
+    h => h.toLowerCase().includes('stock status') || h.toLowerCase() === 'stockstatus'
+  );
+  const etaIdx = headers.findIndex(
+    h => h.toLowerCase() === 'eta' || h.toLowerCase().includes('new stock eta') || h.toLowerCase().includes('stock eta')
+  );
 
   console.log(
-    `   Column indices: productNo=${productNoIdx}, manufacturerNo=${manufacturerNoIdx}, desc=${descriptionIdx}, soh=${sohIdx}, price=${priceIdx}`
+    `   Column indices: productNo=${productNoIdx}, manufacturerNo=${manufacturerNoIdx}, desc=${descriptionIdx}, soh=${sohIdx}, price=${priceIdx}, stockStatus=${stockStatusIdx}, eta=${etaIdx}`
   );
 
   if (productNoIdx === -1 || descriptionIdx === -1 || priceIdx === -1) {
@@ -163,6 +171,24 @@ function parseCSV(filePath: string): ProductRow[] {
       .trim();
     const priceBeforeDiscountExVat = parseFloat(priceCleaned) || 0;
 
+    // Parse stock status
+    const stockStatus = stockStatusIdx >= 0
+      ? (values[stockStatusIdx] || '').trim().replace(/^"|"$/g, '')
+      : undefined;
+
+    // Parse ETA date
+    const etaRaw = etaIdx >= 0
+      ? (values[etaIdx] || '').trim().replace(/^"|"$/g, '')
+      : undefined;
+    // Try to parse ETA as a date if provided
+    let newStockEta: string | undefined;
+    if (etaRaw) {
+      const parsedDate = new Date(etaRaw);
+      if (!isNaN(parsedDate.getTime())) {
+        newStockEta = parsedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      }
+    }
+
     // Accept products even with 0 price - they may be updated later
     products.push({
       productNo,
@@ -171,6 +197,8 @@ function parseCSV(filePath: string): ProductRow[] {
       totalSOH,
       priceBeforeDiscountExVat,
       rowNumber: i + 1,
+      stockStatus: stockStatus || undefined,
+      newStockEta,
     });
   }
 
@@ -394,6 +422,8 @@ async function importProducts(
                 uom,
                 barcode,
                 attrs_json,
+                stock_status,
+                new_stock_eta,
                 first_seen_at,
                 last_seen_at,
                 is_active,
@@ -401,7 +431,7 @@ async function importProducts(
                 created_at,
                 updated_at
               )
-              VALUES ($1, $2, $3, $4, 'EA', $5, $6::jsonb, NOW(), NOW(), true, true, NOW(), NOW())`,
+              VALUES ($1, $2, $3, $4, 'EA', $5, $6::jsonb, $7, $8::date, NOW(), NOW(), true, true, NOW(), NOW())`,
               [
                 supplierProductId,
                 supplierId,
@@ -409,6 +439,8 @@ async function importProducts(
                 product.productDescription,
                 null, // barcode
                 JSON.stringify(attrsJson),
+                product.stockStatus || null,
+                product.newStockEta || null,
               ]
             );
 
@@ -440,12 +472,20 @@ async function importProducts(
               `UPDATE core.supplier_product SET
                 name_from_supplier = $1,
                 attrs_json = attrs_json || $2::jsonb,
+                stock_status = COALESCE($3, stock_status),
+                new_stock_eta = COALESCE($4::date, new_stock_eta),
                 last_seen_at = NOW(),
                 is_active = true,
                 is_new = false,
                 updated_at = NOW()
-              WHERE supplier_product_id = $3`,
-              [product.productDescription, JSON.stringify(attrsJson), supplierProductId]
+              WHERE supplier_product_id = $5`,
+              [
+                product.productDescription,
+                JSON.stringify(attrsJson),
+                product.stockStatus || null,
+                product.newStockEta || null,
+                supplierProductId,
+              ]
             );
 
             // Check if price changed
@@ -506,14 +546,16 @@ async function importProducts(
               supplier_product_id,
               qty,
               unit_cost,
+              stock_status,
               as_of_ts,
               source,
               created_at
             )
-            VALUES ($1, $2, $3, $4, $5, NOW(), 'import', NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), 'import', NOW())
             ON CONFLICT (location_id, supplier_product_id) DO UPDATE SET
               qty = EXCLUDED.qty,
               unit_cost = COALESCE(EXCLUDED.unit_cost, core.stock_on_hand.unit_cost),
+              stock_status = COALESCE(EXCLUDED.stock_status, core.stock_on_hand.stock_status),
               as_of_ts = NOW()`,
             [
               randomUUID(),
@@ -521,6 +563,7 @@ async function importProducts(
               supplierProductId,
               product.totalSOH,
               product.priceBeforeDiscountExVat > 0 ? product.priceBeforeDiscountExVat : null,
+              product.stockStatus || null,
             ]
           );
 
@@ -530,9 +573,10 @@ async function importProducts(
           await client.query(
             `INSERT INTO spp.pricelist_row (
               upload_id, row_num, supplier_sku, name, brand, uom, pack_size,
-              price, currency, category_raw, vat_code, barcode, attrs_json
+              price, currency, category_raw, vat_code, barcode, attrs_json,
+              stock_status, eta
             )
-            VALUES ($1, $2, $3, $4, NULL, 'EA', NULL, $5, 'ZAR', NULL, 'S', NULL, $6::jsonb)`,
+            VALUES ($1, $2, $3, $4, NULL, 'EA', NULL, $5, 'ZAR', NULL, 'S', NULL, $6::jsonb, $7, $8::date)`,
             [
               uploadId,
               product.rowNumber,
@@ -543,6 +587,8 @@ async function importProducts(
                 manufacturer_sku: product.manufacturerProductNo || null,
                 stock_on_hand: product.totalSOH,
               }),
+              product.stockStatus || null,
+              product.newStockEta || null,
             ]
           );
         } catch (error) {

@@ -61,6 +61,8 @@ interface ProductData {
     cost_excluding?: number;
     rsp?: number;
     base_discount?: number;
+    stock_status?: string;
+    new_stock_eta?: string;
     [key: string]: unknown;
   };
   base_discount?: number;
@@ -78,6 +80,8 @@ interface ProductData {
   previous_price_valid_to?: string;
   qty_on_hand?: number;
   stock_as_of_ts?: string;
+  stock_status?: string;
+  new_stock_eta?: string;
   barcode?: string;
   uom?: string;
   pack_size?: string;
@@ -647,6 +651,33 @@ export default function ProductProfileDialog({
                             As of: {formatDate(product.stock_as_of_ts)}
                           </p>
                         )}
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">Stock Status</p>
+                        {(() => {
+                          const stockStatus = product.stock_status || product.attrs_json?.stock_status;
+                          if (!stockStatus) return <p className="text-muted-foreground mt-1 text-xl">-</p>;
+                          const lower = stockStatus.toLowerCase();
+                          const colorClass = lower.includes('in stock') || lower === 'in stock'
+                            ? 'text-green-600'
+                            : lower.includes('low') || lower === 'low stock'
+                              ? 'text-amber-600'
+                              : lower.includes('out') || lower === 'out of stock'
+                                ? 'text-red-600'
+                                : '';
+                          return <p className={`mt-1 text-xl font-semibold ${colorClass}`}>{stockStatus}</p>;
+                        })()}
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">New Stock ETA</p>
+                        {(() => {
+                          const eta = product.new_stock_eta || product.attrs_json?.new_stock_eta;
+                          return eta ? (
+                            <p className="mt-1 text-xl font-semibold">{formatDate(eta)}</p>
+                          ) : (
+                            <p className="text-muted-foreground mt-1 text-xl">-</p>
+                          );
+                        })()}
                       </div>
                       {product.pack_size && (
                         <div>
