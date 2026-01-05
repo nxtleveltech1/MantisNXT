@@ -14,14 +14,14 @@
  *   - CSV files must be in C:\00Project\NXT_OCR\Downloads\AUTO and HOME folders
  */
 
-import { pricelistService } from '../src/lib/services/PricelistService';
-import { query } from '../src/lib/database';
-import type { PricelistRow } from '../src/types/nxt-spp';
+import { pricelistService } from '../../src/lib/services/PricelistService';
+import { query } from '../../src/lib/database';
+import type { PricelistRow } from '../../src/types/nxt-spp';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const DOWNLOADS_PATH = 'C:\\00Project\\NXT_OCR\\Downloads';
+const DOWNLOADS_PATH = 'D:\\00Project\\NXT_OCR\\Downloads';
 const SUPPLIER_NAMES = ['PLANET WORLD SA', 'PLANETWORLD SA', 'Planet World SA'];
 const VAT_RATE = 0.15;
 

@@ -310,8 +310,9 @@ export async function GET(request: NextRequest) {
         ) AS qty_on_order,
         pp.previous_price AS previous_cost,
         CASE
-          WHEN pp.previous_price IS NOT NULL AND cp.price IS NOT NULL
-          THEN cp.price - pp.previous_price
+          WHEN pp.previous_price IS NOT NULL 
+            AND COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price) IS NOT NULL
+          THEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price) - pp.previous_price
           ELSE NULL
         END AS cost_diff,
         sr.series_range,
