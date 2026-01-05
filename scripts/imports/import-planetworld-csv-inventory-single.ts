@@ -210,8 +210,8 @@ function transformRowToPricelistRow(
       priceSource = 'rsp';
     }
 
-    // Need at least one price - but allow 0 for now (will be validated later)
-    if (price === undefined || price <= 0) {
+    // Need at least one price - use RSP even if 0 (will be validated later)
+    if (price === undefined) {
       // Debug: log why row was skipped
       if (rowNum <= 5) {
         console.log(`   🔍 Debug skip row ${rowNum}: costExVAT=${costExVAT}, promoPrice=${promoPrice}, rsp=${rsp}, RSP raw="${row.RSP}"`);

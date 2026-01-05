@@ -86,22 +86,64 @@ If you were using the previous inventory system:
 
 ## Integration Scripts
 
-The system includes comprehensive integration scripts for data management:
+The system includes comprehensive integration scripts organized by function:
 
 ```bash
-# Database operations
+# Database operations (scripts/database/)
 npm run db:purge              # Purge all inventory data
 npm run db:verify-schema      # Verify database schema
 npm run db:create-schemas     # Create missing schemas
 
-# Data import
+# Migrations (scripts/migrations/)
+npm run db:migrate            # Run database migrations
+npm run db:migrate:verify     # Verify migrations
+
+# Data imports (scripts/imports/)
 npm run import:master         # Import master dataset
 npm run import:create-selection # Create default selection
 npm run import:seed-stock     # Seed stock on hand
 
+# Deployment (scripts/deployment/)
+npm run deploy:checklist      # Pre-deployment checklist
+npm run deploy:rollback       # Emergency rollback
+
 # Full integration
 npm run integration:full     # Run complete integration
 npm run integration:verify   # Verify integration success
+```
+
+## Project Structure
+
+```
+MantisNXT/
+├── data/                    # Data files and templates
+│   ├── templates/           # CSV templates for imports
+│   └── temp/                # Temporary data files
+├── database/                # Database schemas and migrations
+│   ├── migrations/          # All database migration files
+│   ├── scripts/             # Database utility scripts
+│   ├── schema/              # Schema definitions
+│   ├── indexes/             # Index definitions
+│   └── ...                  # Other database subdirectories
+├── docs/                    # Documentation
+│   ├── imports/             # Import documentation
+│   └── ...                  # Other documentation
+├── scripts/                 # Utility scripts
+│   ├── database/            # Database operation scripts
+│   ├── migrations/          # Migration execution scripts
+│   ├── imports/             # Data import scripts
+│   ├── deployment/          # Deployment scripts
+│   ├── utils/               # Utility scripts
+│   └── tests/               # Test scripts
+├── src/                     # Application source code
+├── tests/                   # All test files (consolidated)
+│   ├── auth/                # Authentication tests
+│   ├── e2e/                 # End-to-end tests
+│   ├── fixtures/            # Test fixtures
+│   ├── helpers/             # Test helpers
+│   ├── integration/        # Integration tests
+│   └── services/            # Service tests
+└── ...                      # Other directories
 ```
 
 ## Architecture

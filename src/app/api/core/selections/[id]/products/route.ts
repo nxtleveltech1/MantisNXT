@@ -149,6 +149,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         END AS cost_after_discount,
         ls.qty_on_hand,
         ls.qty_on_hand AS sup_soh,
+        sp.stock_status,
+        sp.new_stock_eta,
         sp.first_seen_at,
         sp.last_seen_at,
         (COALESCE(ls.qty_on_hand, 0) > 0) AS is_in_stock,

@@ -97,6 +97,8 @@ export async function GET(request: NextRequest) {
         sp.is_active,
         sp.is_new,
         sp.category_id,
+        sp.stock_status,
+        sp.new_stock_eta,
         sp.attrs_json as attributes,
         s.name as supplier_name,
         s.code as supplier_code,

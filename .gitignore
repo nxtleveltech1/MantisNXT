@@ -171,40 +171,19 @@ database/FULLFINAL_*.csv
 database/Uploads/
 database/deduplication/
 
+# Data files (templates and temporary data)
+data/temp/*.csv
+data/temp/*.json
+data/temp/*.xlsx
+
 # SQL scripts (keep schema but exclude data)
-sql/
-scripts/add_missing_*.js
-scripts/agent*.js
-scripts/analyze_*.py
-scripts/analyze_*.js
-scripts/batch*_processor.py
-scripts/check_*.js
-scripts/comprehensive_*.py
-scripts/create_*.sql
-scripts/data_cleanup/
-scripts/fix_*.js
-scripts/fix_*.py
-scripts/fix_*.sql
-scripts/generate_*.js
-scripts/generate_*.sql
-scripts/get_*.js
-scripts/insert_*.js
-scripts/insert_*.sql
-scripts/list_*.js
-scripts/migrate_*.js
-scripts/process_*.py
-scripts/process_*.js
-scripts/process_*.ps1
-scripts/populate_*.js
-scripts/purge_*.js
-scripts/run_*.js
-scripts/test_*.js
-scripts/validate_*.js
-scripts/validate_*.py
-scripts/verify_*.js
+# Note: sql/ directory has been consolidated into database/scripts/
 scripts/*_report_*.json
 scripts/optimized_report_*.json
 scripts/processing_report_*.json
+scripts/utils/*.log
+scripts/utils/tmp_*.js
+scripts/utils/tmp_*.ts
 
 # Monitoring
 monitoring/
@@ -222,13 +201,9 @@ production-secrets.json
 nginx/
 
 # Migration files
-migrations/0200_*.sql
-migrations/0201_*.sql
-migrations/0202_*.sql
-migrations/0204_*.sql
-migrations/0205_*.sql
-migrations/data/
-migrations/neon/
+# Note: migrations/ directory has been consolidated into database/migrations/
+database/migrations/data/
+database/migrations/neon/
 
 # Database files
 database/migrations/data/

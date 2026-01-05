@@ -261,6 +261,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
         is_in_stock: !!p.is_in_stock,
         selected_at: p.selected_at,
         is_selected: true,
+        stock_status: p.stock_status,
+        new_stock_eta: p.new_stock_eta,
         attrs_json: p.attrs_json || {},
         base_discount: p.base_discount,
         cost_after_discount: p.cost_after_discount,
@@ -1080,6 +1082,43 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                               <div className="text-sm">{product.qty_on_hand}</div>
                             ) : (
                               '-'
+                            )}
+                          </TableCell>
+                        );
+                      }
+
+                      if (col.id === 'stock_status') {
+                        const stockStatus = product.stock_status || product.attrs_json?.stock_status;
+                        return (
+                          <TableCell key={col.id}>
+                            {stockStatus ? (
+                              <Badge 
+                                variant={stockStatus.toLowerCase().includes('stock') ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {String(stockStatus)}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      }
+
+                      if (col.id === 'new_stock_eta') {
+                        const eta = product.new_stock_eta || product.attrs_json?.new_stock_eta;
+                        return (
+                          <TableCell key={col.id}>
+                            {eta ? (
+                              <div className="text-sm">
+                                {eta instanceof Date 
+                                  ? eta.toLocaleDateString()
+                                  : typeof eta === 'string'
+                                    ? new Date(eta).toLocaleDateString()
+                                    : String(eta)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
                             )}
                           </TableCell>
                         );

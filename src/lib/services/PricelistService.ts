@@ -505,11 +505,12 @@ export class PricelistService {
         INSERT INTO core.supplier_product (
           ${upsertColumns}
         )
-        SELECT DISTINCT
+        SELECT DISTINCT ON (r.supplier_sku)
           ${upsertSelect}
         FROM spp.pricelist_row r
         WHERE r.upload_id = $2
         ${filterValidOnly ? `AND ${validRowCondition}` : ''}
+        ORDER BY r.supplier_sku, r.row_num ASC
         ON CONFLICT ON CONSTRAINT supplier_product_supplier_id_supplier_sku_key DO UPDATE
         SET
           name_from_supplier = EXCLUDED.name_from_supplier
