@@ -66,6 +66,103 @@ const ALL_SUPPLIERS_VALUE = '__all-suppliers__';
 const ALL_CATEGORIES_VALUE = '__all-categories__';
 const ALL_BRANDS_VALUE = '__all-brands__';
 
+// Stock status thresholds
+const LOW_STOCK_THRESHOLD = 10; // 1-10 = Low Stock, >10 = In Stock
+
+/**
+ * Calculate stock status from SOH numbers
+ * Returns: 'out_of_stock' | 'low_stock' | 'in_stock'
+ */
+function calculateStockStatusFromSoh(soh: number | null | undefined): 'out_of_stock' | 'low_stock' | 'in_stock' | null {
+  if (soh === null || soh === undefined) return null;
+  if (soh === 0) return 'out_of_stock';
+  if (soh <= LOW_STOCK_THRESHOLD) return 'low_stock';
+  return 'in_stock';
+}
+
+/**
+ * Normalize supplier-provided stock status string to standard status
+ * Handles various formats: 'instock', 'in stock', 'outofstock', 'out of stock', 'low stock', etc.
+ */
+function normalizeSupplierStockStatus(status: string | null | undefined): 'out_of_stock' | 'low_stock' | 'in_stock' | null {
+  if (!status) return null;
+  const normalized = status.toLowerCase().trim();
+  
+  // Out of stock variations
+  if (normalized.includes('out') || normalized === 'outofstock' || normalized === 'oos') {
+    return 'out_of_stock';
+  }
+  
+  // Low stock variations
+  if (normalized.includes('low') || normalized === 'lowstock') {
+    return 'low_stock';
+  }
+  
+  // In stock variations (default if contains 'stock' or 'in')
+  if (normalized.includes('in') || normalized.includes('stock') || normalized === 'instock' || normalized === 'available') {
+    return 'in_stock';
+  }
+  
+  // Default to null if unrecognized
+  return null;
+}
+
+/**
+ * Get stock status for a product, considering both supplier-provided status and SOH numbers
+ * Priority: Supplier-provided status > Calculated from SOH
+ */
+function getProductStockStatus(
+  supplierStatus: string | null | undefined,
+  supSoh: number | null | undefined,
+  qtyOnHand: number | null | undefined
+): {
+  status: 'out_of_stock' | 'low_stock' | 'in_stock';
+  label: string;
+  colorClass: string;
+  variant: 'default' | 'secondary' | 'destructive';
+} {
+  // Try to normalize supplier-provided status first
+  const normalizedSupplierStatus = normalizeSupplierStockStatus(supplierStatus);
+  
+  // Use supplier status if available, otherwise calculate from SOH
+  const soh = supSoh ?? qtyOnHand ?? null;
+  const calculatedStatus = calculateStockStatusFromSoh(soh);
+  
+  const finalStatus = normalizedSupplierStatus ?? calculatedStatus ?? 'out_of_stock';
+  
+  // Return status with label and styling
+  switch (finalStatus) {
+    case 'out_of_stock':
+      return {
+        status: 'out_of_stock',
+        label: 'Out of Stock',
+        colorClass: 'bg-red-500/10 text-red-700 border-red-500/20',
+        variant: 'destructive',
+      };
+    case 'low_stock':
+      return {
+        status: 'low_stock',
+        label: 'Low Stock',
+        colorClass: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+        variant: 'secondary',
+      };
+    case 'in_stock':
+      return {
+        status: 'in_stock',
+        label: 'In Stock',
+        colorClass: 'bg-green-500/10 text-green-700 border-green-500/20',
+        variant: 'default',
+      };
+    default:
+      return {
+        status: 'out_of_stock',
+        label: 'Out of Stock',
+        colorClass: 'bg-red-500/10 text-red-700 border-red-500/20',
+        variant: 'destructive',
+      };
+  }
+}
+
 // Enhanced Product Type with Complete Selection Data
 interface SelectionProduct {
   supplier_product_id: string;
@@ -95,6 +192,8 @@ interface SelectionProduct {
   pack_size?: string;
   qty_on_hand?: number;
   sup_soh?: number;
+  stock_status?: string;
+  new_stock_eta?: string | Date;
   is_in_stock: boolean;
   selected_at: string;
   first_seen_at?: string;
@@ -1088,19 +1187,21 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                       }
 
                       if (col.id === 'stock_status') {
-                        const stockStatus = product.stock_status || product.attrs_json?.stock_status;
+                        const supplierStatus = product.stock_status || product.attrs_json?.stock_status;
+                        const stockInfo = getProductStockStatus(
+                          supplierStatus,
+                          product.sup_soh,
+                          product.qty_on_hand
+                        );
+                        
                         return (
                           <TableCell key={col.id}>
-                            {stockStatus ? (
-                              <Badge 
-                                variant={stockStatus.toLowerCase().includes('stock') ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {String(stockStatus)}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
+                            <Badge 
+                              variant={stockInfo.variant}
+                              className={cn('text-xs font-medium', stockInfo.colorClass)}
+                            >
+                              {stockInfo.label}
+                            </Badge>
                           </TableCell>
                         );
                       }
