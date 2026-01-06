@@ -138,23 +138,13 @@ export default function PortalPage() {
           {/* Spacer to push content below the background logo */}
           <div className="flex-1 min-h-[45vh]" />
           
-          {/* Branding Section - Text only, no logo (background has it) */}
+          {/* Branding Section - Tagline only, logo is in background */}
           <div 
             className="flex flex-col items-center mb-10"
             style={{
               animation: 'fadeSlideUp 0.6s ease-out forwards',
             }}
           >
-            {/* Title */}
-            <h1 className="text-5xl md:text-6xl font-bold text-white tracking-wide mb-4"
-              style={{
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                textShadow: '0 4px 30px rgba(0,0,0,0.5)',
-              }}
-            >
-              NXT DOT-X
-            </h1>
-            
             {/* Subtitle */}
             <p className="text-lg text-white/80 tracking-[0.3em] uppercase mb-2">
               NXT Level Tech

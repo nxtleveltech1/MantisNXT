@@ -2,12 +2,95 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, ArrowLeft, Construction } from 'lucide-react';
+import { 
+  Users, 
+  Shield, 
+  Settings, 
+  Activity, 
+  Database, 
+  Bell,
+  Building2,
+  Key,
+  FileText,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Server,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
-import { Button } from '@/components/ui/button';
+import { AdminSidebar } from '@/components/admin-sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
+  icon: React.ReactNode;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+}
+
+function StatCard({ title, value, description, icon, trend }: StatCardProps) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="text-muted-foreground">{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+        {trend && (
+          <div className={`flex items-center text-xs mt-1 ${trend.isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            <TrendingUp className={`h-3 w-3 mr-1 ${!trend.isPositive && 'rotate-180'}`} />
+            {trend.value}% from last month
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ActivityItemProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  time: string;
+  status?: 'success' | 'warning' | 'error';
+}
+
+function ActivityItem({ icon, title, description, time, status }: ActivityItemProps) {
+  const statusColors = {
+    success: 'text-green-500',
+    warning: 'text-amber-500',
+    error: 'text-red-500',
+  };
+  
+  return (
+    <div className="flex items-start gap-4 py-3 border-b border-border last:border-0">
+      <div className={`mt-0.5 ${status ? statusColors[status] : 'text-muted-foreground'}`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground truncate">{description}</p>
+      </div>
+      <div className="text-xs text-muted-foreground whitespace-nowrap">
+        {time}
+      </div>
+    </div>
+  );
+}
 
 export default function SystemAdminPage() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, hasRole } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -16,90 +99,208 @@ export default function SystemAdminPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-600"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-900"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-900"></div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background Image - Same as portal */}
-      <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'url(/images/portal-background.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
-        {/* Darker overlay for placeholder state */}
-        <div className="absolute inset-0 bg-black/60" />
-      </div>
-
-      {/* Content - positioned in lower half below background logo */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-16">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/portal')}
-          className="absolute top-6 left-6 text-white/70 hover:text-white hover:bg-white/10"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Portal
-        </Button>
-
-        {/* Spacer to push content below the background logo */}
-        <div className="flex-1 min-h-[40vh]" />
-
-        {/* Placeholder Content */}
-        <div className="flex flex-col items-center text-center max-w-lg">
-          {/* Icon */}
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full" />
-            <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
-              <Shield className="h-16 w-16 text-white" strokeWidth={1.5} />
-            </div>
+    <SidebarProvider defaultOpen>
+      <AdminSidebar />
+      <SidebarInset>
+        <AppHeader title="System Administration" subtitle="Platform Management & Configuration" />
+        <div className="flex flex-1 flex-col gap-6 p-6">
+          {/* Stats Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Users"
+              value="2,847"
+              description="Active platform users"
+              icon={<Users className="h-4 w-4" />}
+              trend={{ value: 12, isPositive: true }}
+            />
+            <StatCard
+              title="Active Sessions"
+              value="342"
+              description="Currently online"
+              icon={<Activity className="h-4 w-4" />}
+            />
+            <StatCard
+              title="System Health"
+              value="99.8%"
+              description="Uptime this month"
+              icon={<Server className="h-4 w-4" />}
+            />
+            <StatCard
+              title="Security Alerts"
+              value="3"
+              description="Pending review"
+              icon={<Shield className="h-4 w-4" />}
+            />
           </div>
 
-          {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-wide">
-            System Administration
-          </h1>
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Latest system events and user actions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-0">
+                  <ActivityItem
+                    icon={<Users className="h-4 w-4" />}
+                    title="New user registered"
+                    description="john.smith@company.com joined the platform"
+                    time="2 min ago"
+                    status="success"
+                  />
+                  <ActivityItem
+                    icon={<Key className="h-4 w-4" />}
+                    title="Role permission updated"
+                    description="Manager role granted export permissions"
+                    time="15 min ago"
+                  />
+                  <ActivityItem
+                    icon={<AlertTriangle className="h-4 w-4" />}
+                    title="Failed login attempt"
+                    description="Multiple attempts from IP 192.168.1.45"
+                    time="1 hour ago"
+                    status="warning"
+                  />
+                  <ActivityItem
+                    icon={<Database className="h-4 w-4" />}
+                    title="Database backup completed"
+                    description="Full backup saved to cloud storage"
+                    time="3 hours ago"
+                    status="success"
+                  />
+                  <ActivityItem
+                    icon={<Settings className="h-4 w-4" />}
+                    title="System settings updated"
+                    description="Currency format changed to ZAR"
+                    time="5 hours ago"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Coming Soon Badge */}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30 mb-6">
-            <Construction className="h-4 w-4 text-amber-400" />
-            <span className="text-sm font-medium text-amber-400 uppercase tracking-wider">
-              Coming Soon
-            </span>
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common administrative tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3">
+                  <button 
+                    onClick={() => router.push('/admin/users')}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-left"
+                  >
+                    <Users className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Manage Users</p>
+                      <p className="text-xs text-muted-foreground">Add, edit, or remove users</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => router.push('/admin/roles')}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-left"
+                  >
+                    <Key className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Roles & Permissions</p>
+                      <p className="text-xs text-muted-foreground">Configure access controls</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => router.push('/admin/security')}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-left"
+                  >
+                    <Shield className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Security Settings</p>
+                      <p className="text-xs text-muted-foreground">Review security configurations</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => router.push('/admin/settings/general')}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-left"
+                  >
+                    <Settings className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">System Settings</p>
+                      <p className="text-xs text-muted-foreground">General platform configuration</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => router.push('/admin/settings/backup')}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-left"
+                  >
+                    <Database className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Backup & Recovery</p>
+                      <p className="text-xs text-muted-foreground">Manage data backups</p>
+                    </div>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Description */}
-          <p className="text-white/60 text-lg leading-relaxed mb-8">
-            The NXT DOT-X System Administration panel provides centralized control 
-            over platform settings, user management, security policies, and 
-            system-wide configurations for enterprise deployments.
-          </p>
-
-          {/* Feature Preview */}
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            {['User Management', 'Security Policies', 'System Config', 'Audit Logs'].map((feature) => (
-              <div 
-                key={feature}
-                className="px-4 py-3 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm"
-              >
-                <span className="text-sm text-white/70">{feature}</span>
+          {/* System Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Status</CardTitle>
+              <CardDescription>Current health of platform services</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">API Services</p>
+                    <p className="text-xs text-muted-foreground">Operational</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">Database</p>
+                    <p className="text-xs text-muted-foreground">Healthy</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">AI Engine</p>
+                    <p className="text-xs text-muted-foreground">Running</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <Clock className="h-5 w-5 text-amber-500" />
+                  <div>
+                    <p className="text-sm font-medium">Background Jobs</p>
+                    <p className="text-xs text-muted-foreground">3 queued</p>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
-
