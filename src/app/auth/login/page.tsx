@@ -177,7 +177,7 @@ export default function LoginPage() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'url(/images/login-background.jpg)',
+              backgroundImage: 'url(/images/portal-background.jpg)',
               backgroundSize: 'cover',
               backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
@@ -254,7 +254,7 @@ export default function LoginPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'url(/images/login-background.jpg)',
+            backgroundImage: 'url(/images/portal-background.jpg)',
             backgroundSize: 'cover',
             backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
