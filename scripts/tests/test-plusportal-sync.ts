@@ -3,9 +3,9 @@
  * Runs end-to-end sync for Sennheiser, Active Music Distribution, AV Distribution, and Stage Audio Works
  */
 
-import { query } from '../src/lib/database';
-import { getPlusPortalCSVProcessor } from '../src/lib/services/PlusPortalCSVProcessor';
-import { getPlusPortalSyncService } from '../src/lib/services/PlusPortalSyncService';
+import { query } from '../../src/lib/database/unified-connection';
+import { getPlusPortalCSVProcessor } from '../../src/lib/services/PlusPortalCSVProcessor';
+import { getPlusPortalSyncService } from '../../src/lib/services/PlusPortalSyncService';
 
 const CREDENTIALS = {
   username: 'charles@nxtleveltech.co.za',
