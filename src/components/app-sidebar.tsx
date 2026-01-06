@@ -6,26 +6,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Activity,
-  Bot,
   Building2,
   DollarSign,
   FileText,
-  Gift,
   LayoutDashboard,
   MessageSquare,
   Package,
-  Plug,
-  Receipt,
   ShoppingBag,
   Tag,
   TrendingUp,
   Users,
-  Settings as SettingsIcon,
   Archive,
   CheckSquare,
   Truck,
-  MapPin,
-  Route,
   Store,
   Wrench,
   Calendar,
@@ -46,8 +39,6 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useModuleVisibility } from '@/hooks/useModuleVisibility';
-import { useAuth } from '@/lib/auth/auth-context';
-import { isAdmin } from '@/lib/auth/auth-helper';
 
 export const sidebarData = {
   user: {
@@ -409,41 +400,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'AI Services',
-      url: '/admin/ai/config',
-      icon: Bot,
-      items: [
-        {
-          title: 'Configuration',
-          url: '/admin/ai/config',
-        },
-        {
-          title: 'Assistant',
-          url: '/admin/ai/assistant',
-        },
-        {
-          title: 'Predictions',
-          url: '/admin/ai/predictions',
-        },
-        {
-          title: 'Forecasts',
-          url: '/admin/ai/forecasts',
-        },
-        {
-          title: 'Alerts',
-          url: '/admin/ai/alerts',
-        },
-        {
-          title: 'Dashboards',
-          url: '/admin/ai/dashboards',
-        },
-        {
-          title: 'Health Monitor',
-          url: '/admin/ai/health',
-        },
-      ],
-    },
-    {
       title: 'Financial',
       url: '/financial',
       icon: DollarSign,
@@ -639,75 +595,12 @@ export const sidebarData = {
   ],
   navSecondary: [
     {
-      title: 'System Integration',
-      url: '/system/integrations',
-      icon: Plug,
-      items: [
-        {
-          title: 'Integrations',
-          url: '/system/integrations',
-        },
-        {
-          title: 'API Settings',
-          url: '/system/api',
-        },
-      ],
-    },
-    {
-      title: 'Administration',
-      url: '/admin/settings/general',
-      icon: SettingsIcon,
-      items: [
-        {
-          title: 'Users & Accounts',
-          url: '/admin/users',
-        },
-        {
-          title: 'Roles & Permissions',
-          url: '/admin/roles',
-        },
-        {
-          title: 'General Settings',
-          url: '/admin/settings/general',
-        },
-        {
-          title: 'Currency & Tax',
-          url: '/admin/settings/currency',
-        },
-        {
-          title: 'Regional Settings',
-          url: '/admin/settings/regional',
-        },
-        {
-          title: 'Email & Notifications',
-          url: '/admin/settings/email',
-        },
-        {
-          title: 'Backup & Recovery',
-          url: '/admin/settings/backup',
-        },
-        {
-          title: 'Integrations',
-          url: '/admin/settings/integrations',
-        },
-        {
-          title: 'Module Visibility',
-          url: '/admin/settings/module-visibility',
-        },
-      ],
-    },
-    {
       title: 'Support',
       url: '/support',
       icon: MessageSquare,
     },
   ],
   projects: [
-    {
-      name: 'Loyalty',
-      url: '/admin/loyalty/programs',
-      icon: Gift,
-    },
     {
       name: 'Communication',
       url: '/communication/messages',
@@ -731,53 +624,35 @@ const MODULE_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibili
   'Rentals': 'rentals',
   'Repairs Workshop': 'repairsWorkshop',
   'DocuStore': 'docustore',
-  'AI Services': 'aiServices',
   'Financial': 'financial',
-  'System Integration': 'systemIntegration',
-  'Administration': 'administration',
   'Support': 'support',
 };
 
 const PROJECT_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibilityService').ModuleVisibilitySettings> = {
-  'Loyalty': 'loyalty',
   'Communication': 'communication',
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [logoError, setLogoError] = useState(false);
   const { settings } = useModuleVisibility();
-  const { user, hasRole } = useAuth();
-  const userIsAdmin = hasRole('admin') || hasRole('super_admin');
 
   // Filter navMain items based on visibility settings
   const filteredNavMain = React.useMemo(() => {
     return sidebarData.navMain.filter(item => {
       const moduleKey = MODULE_KEY_MAP[item.title];
       if (!moduleKey) return true; // Show items without mapping (fallback)
-      
-      // Administration is always visible to admins
-      if (moduleKey === 'administration' && userIsAdmin) {
-        return true;
-      }
-      
       return settings[moduleKey] !== false;
     });
-  }, [settings, userIsAdmin]);
+  }, [settings]);
 
   // Filter navSecondary items based on visibility settings
   const filteredNavSecondary = React.useMemo(() => {
     return sidebarData.navSecondary.filter(item => {
       const moduleKey = MODULE_KEY_MAP[item.title];
       if (!moduleKey) return true; // Show items without mapping (fallback)
-      
-      // Administration is always visible to admins
-      if (moduleKey === 'administration' && userIsAdmin) {
-        return true;
-      }
-      
       return settings[moduleKey] !== false;
     });
-  }, [settings, userIsAdmin]);
+  }, [settings]);
 
   // Filter projects based on visibility settings
   const filteredProjects = React.useMemo(() => {
