@@ -16,7 +16,6 @@ import {
   Tag,
   TrendingUp,
   Users,
-  Archive,
   CheckSquare,
   Truck,
   Store,
@@ -385,21 +384,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'DocuStore',
-      url: '/docustore',
-      icon: Archive,
-      items: [
-        {
-          title: 'All Documents',
-          url: '/docustore',
-        },
-        {
-          title: 'Upload Document',
-          url: '/docustore/new',
-        },
-      ],
-    },
-    {
       title: 'Financial',
       url: '/financial',
       icon: DollarSign,
@@ -623,7 +607,6 @@ const MODULE_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibili
   'Courier Logistics': 'courierLogistics',
   'Rentals': 'rentals',
   'Repairs Workshop': 'repairsWorkshop',
-  'DocuStore': 'docustore',
   'Financial': 'financial',
   'Support': 'support',
 };

@@ -1,4 +1,5 @@
 // UPDATE: [2025-12-25] Complete DocuStore interface with real API integration and document generation
+// UPDATE: [2026-01-07] Restructured to use SidebarProvider pattern with DocustoreSidebar hub
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,26 +8,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Search,
-  Bell,
   ChevronDown,
-  Globe,
   RefreshCw,
   FileText,
+  FolderOpen,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -36,7 +29,9 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 
-import { DocuStoreSidebar } from '@/components/docustore/DocuStoreSidebar';
+import { DocustoreSidebar } from '@/components/docustore-sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { DocumentRow, FolderRow, DocumentTableHeader } from '@/components/docustore/DocumentRow';
 import { AdvancedSearchDialog } from '@/components/docustore/AdvancedSearchDialog';
 import { BulkActionsBar } from '@/components/docustore/BulkActionsBar';
@@ -45,6 +40,7 @@ import { ShareDialog } from '@/components/docustore/ShareDialog';
 import { PermissionsDialog } from '@/components/docustore/PermissionsDialog';
 import { DocumentPreview } from '@/components/docustore/DocumentPreview';
 import { SigningWorkflowDialog } from '@/components/docustore/SigningWorkflowDialog';
+import { useAuth } from '@/lib/auth/auth-context';
 import type {
   SigningDocument,
   DocuStoreFolder,
@@ -209,6 +205,7 @@ function calculateFolderCounts(documents: SigningDocument[], folders: DocuStoreF
 
 export default function DocuStorePage() {
   const router = useRouter();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -250,6 +247,13 @@ export default function DocuStorePage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Auth redirect
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Load folders from API
   const loadFolders = useCallback(async () => {
@@ -341,8 +345,10 @@ export default function DocuStorePage() {
   }, [searchTerm, selectedStatus, folders, loadFolders]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [loadData, isAuthenticated]);
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -530,7 +536,7 @@ export default function DocuStorePage() {
 
       return true;
     });
-  }, [documents, searchTerm, selectedFolderId, selectedStatus]);
+  }, [documents, searchTerm, selectedFolderId, selectedStatus, folders]);
 
   // Group documents by folder for display
   const rowItems = useMemo((): DocuStoreRowItem[] => {
@@ -676,254 +682,303 @@ export default function DocuStorePage() {
     return count;
   }, [advancedFilters]);
 
-  return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <DocuStoreSidebar
-        folders={folders}
-        folderCounts={folderCounts}
-        statusCounts={statusCounts}
-        selectedFolderId={selectedFolderId}
-        selectedStatus={selectedStatus}
-        onFolderSelect={setSelectedFolderId}
-        onStatusSelect={setSelectedStatus}
-        onCreateFolder={() => setFolderDialogOpen(true)}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="flex items-center justify-between px-6 py-4 border-b bg-background">
-          <div className="flex items-center gap-4">
-            {/* User Avatar with notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="relative">
-                  <Avatar className="h-10 w-10 bg-violet-600">
-                    <AvatarFallback className="text-sm font-bold text-white bg-transparent">
-                      MA
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Notifications */}
-            <button className="relative p-2 rounded-full hover:bg-muted transition-colors">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
-                4
-              </span>
-            </button>
-          </div>
-
-          {/* Language Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 text-sm">
-                <Globe className="h-4 w-4" />
-                En
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>English</DropdownMenuItem>
-              <DropdownMenuItem>العربية</DropdownMenuItem>
-              <DropdownMenuItem>Français</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
-            {/* Page Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
-                <Badge variant="secondary" className="h-6 px-2.5 text-xs font-medium">
-                  All
-                </Badge>
-              </div>
-              <Button
-                onClick={() => router.push('/docustore/new')}
-                size="icon"
-                className="h-10 w-10 rounded-full bg-primary shadow-lg hover:bg-primary/90"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="docustore-search"
-                  name="docustore-search"
-                  placeholder="Search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-11 h-11 bg-muted/30 border-0 focus-visible:ring-1"
-                />
-              </div>
-              <AdvancedSearchDialog
-                onSearch={handleAdvancedSearch}
-                onReset={() => {
-                  setAdvancedFilters({});
-                  setSearchTerm('');
-                  setSelectedStatus('all');
-                }}
-                activeFiltersCount={activeFiltersCount}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="h-11 w-11"
-              >
-                <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-              </Button>
-            </div>
-
-            {/* Bulk Actions Bar */}
-            {selectedDocumentIds.size > 0 && (
-              <BulkActionsBar
-                selectedIds={Array.from(selectedDocumentIds)}
-                onClearSelection={() => setSelectedDocumentIds(new Set())}
-              />
-            )}
-
-            {/* Documents Table */}
-            <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-              <DocumentTableHeader
-                onSelectAll={handleSelectAll}
-                allSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size === filteredDocuments.length}
-                someSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size < filteredDocuments.length}
-              />
-
-              {loading ? (
-                <div className="p-6 space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <Skeleton className="h-10 w-10 rounded-lg" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-48" />
-                        <Skeleton className="h-3 w-32" />
-                      </div>
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-8 w-20" />
-                    </div>
-                  ))}
-                </div>
-              ) : rowItems.length === 0 ? (
-                <div className="text-center py-20 px-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <FileText className="h-8 w-8 text-muted-foreground opacity-50" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">No documents found</h3>
-                  <p className="text-muted-foreground max-w-xs mx-auto mb-6">
-                    {searchTerm || selectedStatus !== 'all'
-                      ? "Try adjusting your filters to find what you're looking for."
-                      : 'Your document repository is empty. Start by uploading your first document.'}
-                  </p>
-                  <Button variant="outline" onClick={() => router.push('/docustore/new')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Upload Document
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  <AnimatePresence mode="popLayout">
-                    {paginatedItems.map((item, index) => (
-                      <motion.div
-                        key={item.type === 'folder' ? `folder-${item.data.id}` : `doc-${item.data.id}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ delay: index * 0.03 }}
-                      >
-                        {item.type === 'folder' ? (
-                          <FolderRow folder={item.data} onAction={handleAction} />
-                        ) : (
-                          <DocumentRow
-                            document={item.data}
-                            onAction={handleAction}
-                            selected={selectedDocumentIds.has(item.data.id)}
-                            onSelect={(selected) => handleRowSelect(item.data.id, selected)}
-                          />
-                        )}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {!loading && rowItems.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    >
-                      <ChevronDown className="h-4 w-4 rotate-90" />
-                    </Button>
-                    <Button variant="default" size="sm" className="h-8 w-8 p-0">
-                      {currentPage}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      <ChevronDown className="h-4 w-4 -rotate-90" />
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>
-                      {(currentPage - 1) * rowsPerPage + 1}-
-                      {Math.min(currentPage * rowsPerPage, rowItems.length)} of {rowItems.length}
-                    </span>
-                    <Select
-                      value={String(rowsPerPage)}
-                      onValueChange={(v) => {
-                        setRowsPerPage(Number(v));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="w-24 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10 rows</SelectItem>
-                        <SelectItem value="25">25 rows</SelectItem>
-                        <SelectItem value="50">50 rows</SelectItem>
-                        <SelectItem value="100">100 rows</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-violet-600"></div>
       </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-violet-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider defaultOpen>
+      <DocustoreSidebar />
+      <SidebarInset>
+        <AppHeader title="DocuStore" subtitle="Document Management & Digital Signing" />
+        <div className="flex flex-1 flex-col gap-6 p-6">
+          {/* Dashboard Stats */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{statusCounts.all}</div>
+                <p className="text-xs text-muted-foreground">
+                  {statusCounts.draft} drafts
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Your Signature</CardTitle>
+                <div className="h-4 w-4 rounded-full bg-amber-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">{statusCounts.pendingYourSignature}</div>
+                <p className="text-xs text-muted-foreground">
+                  Requires your action
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Waiting for Others</CardTitle>
+                <div className="h-4 w-4 rounded-full bg-orange-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{statusCounts.pendingOtherSignatures}</div>
+                <p className="text-xs text-muted-foreground">
+                  Pending signatures
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                <div className="h-4 w-4 rounded-full bg-emerald-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-emerald-600">{statusCounts.completed}</div>
+                <p className="text-xs text-muted-foreground">
+                  Fully signed
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Document List Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Documents</CardTitle>
+                  <CardDescription>Manage your documents and signing workflows</CardDescription>
+                </div>
+                <Button onClick={() => router.push('/docustore/new')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Document
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Filters Bar */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="docustore-search"
+                    name="docustore-search"
+                    placeholder="Search documents..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-11 h-10"
+                  />
+                </div>
+                
+                {/* Status Filter */}
+                <Select
+                  value={selectedStatus}
+                  onValueChange={(v) => setSelectedStatus(v as DocumentSigningStatus | 'all')}
+                >
+                  <SelectTrigger className="w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="pending_your_signature">Pending Your Signature</SelectItem>
+                    <SelectItem value="pending_other_signatures">Pending Others</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="voided">Voided</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Folder Filter */}
+                <Select
+                  value={selectedFolderId || 'all'}
+                  onValueChange={(v) => setSelectedFolderId(v === 'all' ? null : v)}
+                >
+                  <SelectTrigger className="w-48">
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Folders</SelectItem>
+                    {folders.map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name} ({folder.documentCount})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <AdvancedSearchDialog
+                  onSearch={handleAdvancedSearch}
+                  onReset={() => {
+                    setAdvancedFilters({});
+                    setSearchTerm('');
+                    setSelectedStatus('all');
+                  }}
+                  activeFiltersCount={activeFiltersCount}
+                />
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="h-10 w-10"
+                >
+                  <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+                </Button>
+              </div>
+
+              {/* Bulk Actions Bar */}
+              {selectedDocumentIds.size > 0 && (
+                <BulkActionsBar
+                  selectedIds={Array.from(selectedDocumentIds)}
+                  onClearSelection={() => setSelectedDocumentIds(new Set())}
+                />
+              )}
+
+              {/* Documents Table */}
+              <div className="rounded-lg border overflow-hidden">
+                <DocumentTableHeader
+                  onSelectAll={handleSelectAll}
+                  allSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size === filteredDocuments.length}
+                  someSelected={selectedDocumentIds.size > 0 && selectedDocumentIds.size < filteredDocuments.length}
+                />
+
+                {loading ? (
+                  <div className="p-6 space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-48" />
+                          <Skeleton className="h-3 w-32" />
+                        </div>
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                ) : rowItems.length === 0 ? (
+                  <div className="text-center py-20 px-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                      <FileText className="h-8 w-8 text-muted-foreground opacity-50" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-1">No documents found</h3>
+                    <p className="text-muted-foreground max-w-xs mx-auto mb-6">
+                      {searchTerm || selectedStatus !== 'all'
+                        ? "Try adjusting your filters to find what you're looking for."
+                        : 'Your document repository is empty. Start by uploading your first document.'}
+                    </p>
+                    <Button variant="outline" onClick={() => router.push('/docustore/new')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Upload Document
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <AnimatePresence mode="popLayout">
+                      {paginatedItems.map((item, index) => (
+                        <motion.div
+                          key={item.type === 'folder' ? `folder-${item.data.id}` : `doc-${item.data.id}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ delay: index * 0.03 }}
+                        >
+                          {item.type === 'folder' ? (
+                            <FolderRow folder={item.data} onAction={handleAction} />
+                          ) : (
+                            <DocumentRow
+                              document={item.data}
+                              onAction={handleAction}
+                              selected={selectedDocumentIds.has(item.data.id)}
+                              onSelect={(selected) => handleRowSelect(item.data.id, selected)}
+                            />
+                          )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {!loading && rowItems.length > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      >
+                        <ChevronDown className="h-4 w-4 rotate-90" />
+                      </Button>
+                      <Button variant="default" size="sm" className="h-8 w-8 p-0">
+                        {currentPage}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      >
+                        <ChevronDown className="h-4 w-4 -rotate-90" />
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>
+                        {(currentPage - 1) * rowsPerPage + 1}-
+                        {Math.min(currentPage * rowsPerPage, rowItems.length)} of {rowItems.length}
+                      </span>
+                      <Select
+                        value={String(rowsPerPage)}
+                        onValueChange={(v) => {
+                          setRowsPerPage(Number(v));
+                          setCurrentPage(1);
+                        }}
+                      >
+                        <SelectTrigger className="w-24 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10 rows</SelectItem>
+                          <SelectItem value="25">25 rows</SelectItem>
+                          <SelectItem value="50">50 rows</SelectItem>
+                          <SelectItem value="100">100 rows</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </SidebarInset>
 
       {/* Dialogs */}
       <FolderDialog
@@ -971,6 +1026,6 @@ export default function DocuStorePage() {
           />
         </>
       )}
-    </div>
+    </SidebarProvider>
   );
 }

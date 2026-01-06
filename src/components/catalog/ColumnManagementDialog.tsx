@@ -38,7 +38,17 @@ export type ColumnDef = {
   order: number;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
+  // Column sizing
+  width?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  // Sticky columns (frozen)
+  sticky?: 'left' | 'right';
+  // Column grouping
+  group?: 'identity' | 'classification' | 'stock' | 'pricing' | 'meta';
 };
+
+export type TableDensity = 'normal' | 'compact' | 'dense';
 
 interface SortableColumnItemProps {
   column: ColumnDef;

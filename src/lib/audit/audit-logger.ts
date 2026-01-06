@@ -1,7 +1,9 @@
-// @ts-nocheck
 /**
  * Audit logging system for tracking user actions and system events
+ * Enhanced with database persistence and security alert integration
  */
+
+import { db } from '@/lib/database';
 
 export interface AuditLogEntry {
   id: string;
@@ -35,6 +37,7 @@ export interface AuditLogQuery {
 class AuditLogger {
   private logs: AuditLogEntry[] = [];
   private maxLogs = 10000; // Maximum number of logs to keep in memory
+  private dbEnabled = true;
 
   /**
    * Log an audit event
@@ -54,8 +57,15 @@ class AuditLogger {
       this.logs = this.logs.slice(0, this.maxLogs);
     }
 
-    // In production, this would also save to database
-    console.log('Audit Log:', auditEntry);
+    // Persist to database
+    if (this.dbEnabled) {
+      try {
+        await this.persistToDatabase(auditEntry);
+      } catch (error) {
+        console.error('Failed to persist audit log to database:', error);
+        // Don't throw - audit logging should not break the application
+      }
+    }
 
     // Send to external logging service if configured
     if (process.env.AUDIT_LOG_ENDPOINT) {
@@ -64,6 +74,56 @@ class AuditLogger {
       } catch (error) {
         console.error('Failed to send audit log to external service:', error);
       }
+    }
+  }
+
+  /**
+   * Persist audit log to database
+   */
+  private async persistToDatabase(entry: AuditLogEntry): Promise<void> {
+    try {
+      await db.query(`
+        INSERT INTO auth.audit_events (
+          id,
+          event_type,
+          action,
+          resource,
+          resource_id,
+          user_id,
+          details,
+          severity,
+          status,
+          ip_address,
+          user_agent,
+          org_id,
+          session_id,
+          created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+        )
+      `, [
+        entry.id,
+        entry.action.split('.')[0], // event_type from action prefix
+        entry.action,
+        entry.resource,
+        entry.resourceId || null,
+        entry.userId || null,
+        JSON.stringify(entry.details),
+        entry.severity,
+        entry.status,
+        entry.ipAddress || null,
+        entry.userAgent || null,
+        entry.organizationId || null,
+        entry.sessionId || null,
+        entry.timestamp,
+      ]);
+    } catch (error) {
+      // If table doesn't exist, disable DB logging to avoid repeated errors
+      if (error instanceof Error && error.message.includes('does not exist')) {
+        console.warn('Audit events table does not exist, using in-memory only');
+        this.dbEnabled = false;
+      }
+      throw error;
     }
   }
 
@@ -95,6 +155,68 @@ class AuditLogger {
       status: details.success ? 'success' : 'failure',
       severity: action === 'login_failed' ? 'medium' : 'low',
     });
+
+    // Create security alert for failed logins
+    if (action === 'login_failed' && details.ipAddress) {
+      await this.createSecurityAlert({
+        alertType: 'failed_login',
+        userEmail: details.userEmail,
+        ipAddress: details.ipAddress,
+        userAgent: details.userAgent,
+        userId: details.userId,
+      });
+    }
+  }
+
+  /**
+   * Create a security alert
+   */
+  private async createSecurityAlert(params: {
+    alertType: string;
+    userEmail?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    userId?: string;
+  }): Promise<void> {
+    try {
+      // Use the database function if it exists
+      await db.query(`
+        SELECT auth.create_failed_login_alert($1, $2::inet, $3, $4)
+      `, [
+        params.userEmail || 'unknown',
+        params.ipAddress || '0.0.0.0',
+        params.userAgent || null,
+        params.userId || null,
+      ]);
+    } catch (error) {
+      // If function doesn't exist, try direct insert
+      try {
+        await db.query(`
+          INSERT INTO auth.security_alerts (
+            alert_type,
+            severity,
+            ip_address,
+            user_agent,
+            user_id,
+            user_email,
+            title,
+            description
+          ) VALUES ($1, $2, $3::inet, $4, $5, $6, $7, $8)
+        `, [
+          params.alertType,
+          'low',
+          params.ipAddress || null,
+          params.userAgent || null,
+          params.userId || null,
+          params.userEmail || null,
+          'Failed login attempt',
+          `Failed login attempt for ${params.userEmail || 'unknown user'}`,
+        ]);
+      } catch {
+        // Security alerts table might not exist yet
+        console.warn('Could not create security alert - table may not exist');
+      }
+    }
   }
 
   /**
@@ -182,12 +304,134 @@ class AuditLogger {
       status: 'success',
       severity: details.severity,
     });
+
+    // Create security alert for high/critical events
+    if (details.severity === 'high' || details.severity === 'critical') {
+      try {
+        await db.query(`
+          INSERT INTO auth.security_alerts (
+            alert_type,
+            severity,
+            ip_address,
+            user_agent,
+            user_id,
+            user_email,
+            title,
+            description,
+            details
+          ) VALUES ($1, $2, $3::inet, $4, $5, $6, $7, $8, $9)
+        `, [
+          'suspicious_activity',
+          details.severity,
+          details.ipAddress || null,
+          details.userAgent || null,
+          details.userId || null,
+          details.userEmail || null,
+          `Security: ${event}`,
+          details.message,
+          JSON.stringify(details.data || {}),
+        ]);
+      } catch {
+        // Security alerts table might not exist
+      }
+    }
   }
 
   /**
-   * Query audit logs
+   * Query audit logs - from database first, fallback to in-memory
    */
   async queryLogs(query: AuditLogQuery): Promise<AuditLogEntry[]> {
+    // Try database first
+    try {
+      const params: unknown[] = [];
+      let paramIndex = 1;
+      let sql = `
+        SELECT 
+          id,
+          action,
+          resource,
+          resource_id,
+          user_id,
+          details,
+          severity,
+          status,
+          ip_address,
+          user_agent,
+          org_id,
+          session_id,
+          created_at
+        FROM auth.audit_events
+        WHERE 1=1
+      `;
+
+      if (query.userId) {
+        sql += ` AND user_id = $${paramIndex}`;
+        params.push(query.userId);
+        paramIndex++;
+      }
+
+      if (query.action) {
+        sql += ` AND action ILIKE $${paramIndex}`;
+        params.push(`%${query.action}%`);
+        paramIndex++;
+      }
+
+      if (query.resource) {
+        sql += ` AND resource = $${paramIndex}`;
+        params.push(query.resource);
+        paramIndex++;
+      }
+
+      if (query.status) {
+        sql += ` AND status = $${paramIndex}`;
+        params.push(query.status);
+        paramIndex++;
+      }
+
+      if (query.severity) {
+        sql += ` AND severity = $${paramIndex}`;
+        params.push(query.severity);
+        paramIndex++;
+      }
+
+      if (query.startDate) {
+        sql += ` AND created_at >= $${paramIndex}`;
+        params.push(query.startDate);
+        paramIndex++;
+      }
+
+      if (query.endDate) {
+        sql += ` AND created_at <= $${paramIndex}`;
+        params.push(query.endDate);
+        paramIndex++;
+      }
+
+      sql += ` ORDER BY created_at DESC`;
+      sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      params.push(query.limit || 100, query.offset || 0);
+
+      const result = await db.query(sql, params);
+
+      return result.rows.map(row => ({
+        id: row.id,
+        timestamp: row.created_at,
+        action: row.action,
+        resource: row.resource,
+        resourceId: row.resource_id,
+        userId: row.user_id,
+        details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
+        severity: row.severity,
+        status: row.status,
+        ipAddress: row.ip_address,
+        userAgent: row.user_agent,
+        organizationId: row.org_id,
+        sessionId: row.session_id,
+      }));
+    } catch {
+      // Fallback to in-memory
+    }
+
+    // In-memory fallback
     let filteredLogs = this.logs;
 
     if (query.userId) {
@@ -195,7 +439,7 @@ class AuditLogger {
     }
 
     if (query.action) {
-      filteredLogs = filteredLogs.filter(log => log.action.includes(query.action));
+      filteredLogs = filteredLogs.filter(log => log.action.includes(query.action!));
     }
 
     if (query.resource) {
@@ -238,6 +482,53 @@ class AuditLogger {
     logsByAction: Record<string, number>;
     recentActivity: number;
   }> {
+    // Try database first
+    try {
+      const result = await db.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour') as recent
+        FROM auth.audit_events
+      `);
+
+      const statusResult = await db.query(`
+        SELECT status, COUNT(*) as count
+        FROM auth.audit_events
+        GROUP BY status
+      `);
+
+      const severityResult = await db.query(`
+        SELECT severity, COUNT(*) as count
+        FROM auth.audit_events
+        GROUP BY severity
+      `);
+
+      const actionResult = await db.query(`
+        SELECT SPLIT_PART(action, '.', 1) as action_type, COUNT(*) as count
+        FROM auth.audit_events
+        GROUP BY SPLIT_PART(action, '.', 1)
+      `);
+
+      return {
+        totalLogs: parseInt(result.rows[0]?.total || '0'),
+        logsByStatus: statusResult.rows.reduce((acc, row) => {
+          acc[row.status] = parseInt(row.count);
+          return acc;
+        }, {} as Record<string, number>),
+        logsBySeverity: severityResult.rows.reduce((acc, row) => {
+          acc[row.severity] = parseInt(row.count);
+          return acc;
+        }, {} as Record<string, number>),
+        logsByAction: actionResult.rows.reduce((acc, row) => {
+          acc[row.action_type] = parseInt(row.count);
+          return acc;
+        }, {} as Record<string, number>),
+        recentActivity: parseInt(result.rows[0]?.recent || '0'),
+      };
+    } catch {
+      // Fallback to in-memory
+    }
+
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
@@ -285,6 +576,16 @@ class AuditLogger {
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
     this.logs = this.logs.filter(log => log.timestamp >= cutoffDate);
+
+    // Also clean database
+    try {
+      await db.query(`
+        DELETE FROM auth.audit_events
+        WHERE created_at < $1
+      `, [cutoffDate]);
+    } catch {
+      // Table might not exist
+    }
   }
 
   /**

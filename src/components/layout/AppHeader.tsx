@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 interface AppHeaderProps {
   title?: string;
   subtitle?: string;
+  children?: React.ReactNode;
 }
 
 // Universal Search Component
@@ -350,7 +351,7 @@ function UserAccount() {
 }
 
 // Main Header Component
-export function AppHeader({ title, subtitle }: AppHeaderProps) {
+export function AppHeader({ title, subtitle, children }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-40 relative flex h-16 shrink-0 items-center gap-3 border-b bg-background px-4">
       {/* Left: Sidebar & Title Section */}
@@ -374,6 +375,13 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
           </>
         )}
       </div>
+
+      {/* Custom Actions */}
+      {children && (
+        <div className="flex items-center gap-2">
+          {children}
+        </div>
+      )}
 
 
 

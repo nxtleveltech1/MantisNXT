@@ -8,21 +8,29 @@ import {
   Settings, 
   Activity, 
   Database, 
-  Bell,
-  Building2,
   Key,
-  FileText,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
   Clock,
   Server,
+  RefreshCw,
+  LogIn,
+  LogOut,
+  UserPlus,
+  Lock,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAdminDashboard, formatRelativeTime } from '@/hooks/useAdminDashboard';
+import type { ActivityEvent } from '@/app/api/admin/dashboard/activity/route';
+import type { ServiceStatus } from '@/app/api/admin/dashboard/status/route';
 
 interface StatCardProps {
   title: string;
@@ -33,9 +41,25 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
+  isLoading?: boolean;
 }
 
-function StatCard({ title, value, description, icon, trend }: StatCardProps) {
+function StatCard({ title, value, description, icon, trend, isLoading }: StatCardProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-4" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-16 mb-1" />
+          <Skeleton className="h-3 w-32" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -59,47 +83,125 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 }
 
 interface ActivityItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  time: string;
-  status?: 'success' | 'warning' | 'error';
+  event: ActivityEvent;
 }
 
-function ActivityItem({ icon, title, description, time, status }: ActivityItemProps) {
+function ActivityItem({ event }: ActivityItemProps) {
   const statusColors = {
     success: 'text-green-500',
     warning: 'text-amber-500',
     error: 'text-red-500',
   };
+
+  const getIcon = () => {
+    switch (event.type) {
+      case 'user':
+        return <UserPlus className="h-4 w-4" />;
+      case 'auth':
+        if (event.title.toLowerCase().includes('logout')) {
+          return <LogOut className="h-4 w-4" />;
+        }
+        return <LogIn className="h-4 w-4" />;
+      case 'security':
+        return <Shield className="h-4 w-4" />;
+      case 'data':
+        return <Database className="h-4 w-4" />;
+      case 'system':
+        return <Settings className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
+    }
+  };
   
   return (
     <div className="flex items-start gap-4 py-3 border-b border-border last:border-0">
-      <div className={`mt-0.5 ${status ? statusColors[status] : 'text-muted-foreground'}`}>
-        {icon}
+      <div className={`mt-0.5 ${event.status ? statusColors[event.status] : 'text-muted-foreground'}`}>
+        {getIcon()}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground truncate">{description}</p>
+        <p className="text-sm font-medium">{event.title}</p>
+        <p className="text-xs text-muted-foreground truncate">{event.description}</p>
       </div>
       <div className="text-xs text-muted-foreground whitespace-nowrap">
-        {time}
+        {formatRelativeTime(event.timestamp)}
+      </div>
+    </div>
+  );
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="flex items-start gap-4 py-3 border-b border-border last:border-0">
+      <Skeleton className="h-4 w-4 mt-0.5" />
+      <div className="flex-1">
+        <Skeleton className="h-4 w-32 mb-1" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+      <Skeleton className="h-3 w-16" />
+    </div>
+  );
+}
+
+interface ServiceStatusCardProps {
+  service: ServiceStatus;
+}
+
+function ServiceStatusCard({ service }: ServiceStatusCardProps) {
+  const statusConfig = {
+    operational: {
+      bg: 'bg-green-500/10',
+      border: 'border-green-500/20',
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+      label: service.message || 'Operational',
+    },
+    degraded: {
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      icon: <Clock className="h-5 w-5 text-amber-500" />,
+      label: service.message || 'Degraded',
+    },
+    down: {
+      bg: 'bg-red-500/10',
+      border: 'border-red-500/20',
+      icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+      label: service.message || 'Down',
+    },
+  };
+
+  const config = statusConfig[service.status];
+
+  return (
+    <div className={`flex items-center gap-3 p-3 rounded-lg ${config.bg} border ${config.border}`}>
+      {config.icon}
+      <div>
+        <p className="text-sm font-medium">{service.name}</p>
+        <p className="text-xs text-muted-foreground">{config.label}</p>
       </div>
     </div>
   );
 }
 
 export default function SystemAdminPage() {
-  const { isLoading, isAuthenticated, hasRole } = useAuth();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { 
+    stats, 
+    activity, 
+    status,
+    isLoading,
+    isStatsLoading,
+    isActivityLoading,
+    isStatusLoading,
+    refetch,
+  } = useAdminDashboard(10);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/auth/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-900"></div>
@@ -119,34 +221,49 @@ export default function SystemAdminPage() {
     <SidebarProvider defaultOpen>
       <AdminSidebar />
       <SidebarInset>
-        <AppHeader title="System Administration" subtitle="Platform Management & Configuration" />
+        <AppHeader title="System Administration" subtitle="Platform Management & Configuration">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </AppHeader>
         <div className="flex flex-1 flex-col gap-6 p-6">
           {/* Stats Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Users"
-              value="2,847"
-              description="Active platform users"
+              value={stats?.totalUsers?.toLocaleString() || '0'}
+              description={`${stats?.activeUsers?.toLocaleString() || '0'} active`}
               icon={<Users className="h-4 w-4" />}
-              trend={{ value: 12, isPositive: true }}
+              trend={stats?.usersTrend}
+              isLoading={isStatsLoading}
             />
             <StatCard
               title="Active Sessions"
-              value="342"
+              value={stats?.activeSessionsCount?.toLocaleString() || '0'}
               description="Currently online"
               icon={<Activity className="h-4 w-4" />}
+              isLoading={isStatsLoading}
             />
             <StatCard
               title="System Health"
-              value="99.8%"
-              description="Uptime this month"
+              value={stats?.systemHealth?.uptimePercentage ? `${stats.systemHealth.uptimePercentage}%` : 'N/A'}
+              description={stats?.systemHealth?.status === 'healthy' ? 'All systems operational' : 'Issues detected'}
               icon={<Server className="h-4 w-4" />}
+              isLoading={isStatsLoading}
             />
             <StatCard
               title="Security Alerts"
-              value="3"
-              description="Pending review"
+              value={stats?.securityAlerts?.pending?.toString() || '0'}
+              description={`${stats?.securityAlerts?.total || 0} total this month`}
               icon={<Shield className="h-4 w-4" />}
+              isLoading={isStatsLoading}
             />
           </div>
 
@@ -160,39 +277,24 @@ export default function SystemAdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-0">
-                  <ActivityItem
-                    icon={<Users className="h-4 w-4" />}
-                    title="New user registered"
-                    description="john.smith@company.com joined the platform"
-                    time="2 min ago"
-                    status="success"
-                  />
-                  <ActivityItem
-                    icon={<Key className="h-4 w-4" />}
-                    title="Role permission updated"
-                    description="Manager role granted export permissions"
-                    time="15 min ago"
-                  />
-                  <ActivityItem
-                    icon={<AlertTriangle className="h-4 w-4" />}
-                    title="Failed login attempt"
-                    description="Multiple attempts from IP 192.168.1.45"
-                    time="1 hour ago"
-                    status="warning"
-                  />
-                  <ActivityItem
-                    icon={<Database className="h-4 w-4" />}
-                    title="Database backup completed"
-                    description="Full backup saved to cloud storage"
-                    time="3 hours ago"
-                    status="success"
-                  />
-                  <ActivityItem
-                    icon={<Settings className="h-4 w-4" />}
-                    title="System settings updated"
-                    description="Currency format changed to ZAR"
-                    time="5 hours ago"
-                  />
+                  {isActivityLoading ? (
+                    <>
+                      <ActivitySkeleton />
+                      <ActivitySkeleton />
+                      <ActivitySkeleton />
+                      <ActivitySkeleton />
+                      <ActivitySkeleton />
+                    </>
+                  ) : activity && activity.length > 0 ? (
+                    activity.slice(0, 5).map((event) => (
+                      <ActivityItem key={event.id} event={event} />
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-muted-foreground">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No recent activity</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -268,34 +370,49 @@ export default function SystemAdminPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium">API Services</p>
-                    <p className="text-xs text-muted-foreground">Operational</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium">Database</p>
-                    <p className="text-xs text-muted-foreground">Healthy</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium">AI Engine</p>
-                    <p className="text-xs text-muted-foreground">Running</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <Clock className="h-5 w-5 text-amber-500" />
-                  <div>
-                    <p className="text-sm font-medium">Background Jobs</p>
-                    <p className="text-xs text-muted-foreground">3 queued</p>
-                  </div>
-                </div>
+                {isStatusLoading ? (
+                  <>
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </>
+                ) : status?.services && status.services.length > 0 ? (
+                  status.services.map((service) => (
+                    <ServiceStatusCard key={service.name} service={service} />
+                  ))
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">API Services</p>
+                        <p className="text-xs text-muted-foreground">Operational</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">Database</p>
+                        <p className="text-xs text-muted-foreground">Healthy</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">AI Engine</p>
+                        <p className="text-xs text-muted-foreground">Running</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium">Background Jobs</p>
+                        <p className="text-xs text-muted-foreground">0 queued</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

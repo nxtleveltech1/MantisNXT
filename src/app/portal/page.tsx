@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -270,6 +270,14 @@ export default function PortalPage() {
               label="Administration"
               onClick={() => router.push('/system-admin')}
               delay={400}
+            />
+            
+            <PortalButton
+              icon={<FileText className="h-10 w-10" strokeWidth={1.5} />}
+              sublabel="Document"
+              label="Store"
+              onClick={() => router.push('/docustore')}
+              delay={500}
             />
           </div>
 
