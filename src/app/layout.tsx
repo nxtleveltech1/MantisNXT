@@ -23,11 +23,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   // Redirect URLs are configured via environment variables to avoid deprecation warnings.
   // Set these in your .env.local or Vercel environment variables:
-  // - CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
-  // - CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/ (defaults to / if not set)
+  // - CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/portal (defaults to /portal if not set)
+  // - CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/portal (defaults to /portal if not set)
   // See: https://clerk.com/docs/guides/custom-redirects#redirect-url-props
-  const signInFallbackRedirectUrl = process.env.CLERK_SIGN_IN_FALLBACK_REDIRECT_URL || '/';
-  const signUpFallbackRedirectUrl = process.env.CLERK_SIGN_UP_FALLBACK_REDIRECT_URL || '/';
+  const signInFallbackRedirectUrl = process.env.CLERK_SIGN_IN_FALLBACK_REDIRECT_URL || '/portal';
+  const signUpFallbackRedirectUrl = process.env.CLERK_SIGN_UP_FALLBACK_REDIRECT_URL || '/portal';
   
   return (
     <ClerkProvider 
