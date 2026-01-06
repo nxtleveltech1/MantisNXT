@@ -415,6 +415,10 @@ export class PlusPortalCSVProcessor {
 
   /**
    * Upsert product in database
+   * Stores stock and price data in:
+   * - attrs_json (for quick access: stock_quantity, cost_excluding)
+   * - core.price_history (for price tracking)
+   * - core.stock_on_hand (for stock tracking)
    */
   private async upsertProduct(product: ProcessedProduct): Promise<{
     created: boolean;
@@ -434,15 +438,24 @@ export class PlusPortalCSVProcessor {
           [this.supplierId, product.supplierSku]
         );
 
+        let productId: string;
+        let isNew = false;
+
         if (existing.rows.length > 0) {
           // Update existing product
-          const productId = existing.rows[0].supplier_product_id;
+          productId = existing.rows[0].supplier_product_id;
           const existingAttrs = existing.rows[0].attrs_json || {};
 
+          // Merge attrs with standardized field names
           const mergedAttrs = {
             ...existingAttrs,
             ...product.attrs,
+            // Standardized fields for stock and price
+            stock_quantity: product.stockOnHand ?? existingAttrs.stock_quantity,
+            stock_on_hand: product.stockOnHand ?? existingAttrs.stock_on_hand,
             cost_excluding: product.costExVat ?? existingAttrs.cost_excluding,
+            quantity_on_order: product.quantityOnOrder ?? existingAttrs.quantity_on_order,
+            last_sync_at: new Date().toISOString(),
           };
 
           await client.query(
@@ -456,32 +469,45 @@ export class PlusPortalCSVProcessor {
              WHERE supplier_product_id = $3`,
             [product.name, JSON.stringify(mergedAttrs), productId]
           );
-
-          // Update price history if cost changed
-          if (product.costExVat !== null) {
-            await this.updatePriceHistory(client, productId, product.costExVat);
-          }
-
-          return { created: false, updated: true };
         } else {
-          // Create new product
+          // Create new product with standardized attrs
+          const attrs = {
+            ...product.attrs,
+            stock_quantity: product.stockOnHand,
+            stock_on_hand: product.stockOnHand,
+            cost_excluding: product.costExVat,
+            quantity_on_order: product.quantityOnOrder,
+            last_sync_at: new Date().toISOString(),
+          };
+
           const insertResult = await client.query<{ supplier_product_id: string }>(
             `INSERT INTO core.supplier_product (
                supplier_id, supplier_sku, name_from_supplier, uom, attrs_json,
                first_seen_at, last_seen_at, is_active, is_new
              ) VALUES ($1, $2, $3, 'EA', $4, NOW(), NOW(), true, true)
              RETURNING supplier_product_id`,
-            [this.supplierId, product.supplierSku, product.name, JSON.stringify(product.attrs)]
+            [this.supplierId, product.supplierSku, product.name, JSON.stringify(attrs)]
           );
 
-          // Create initial price history entry
-          if (product.costExVat !== null && insertResult.rows.length > 0) {
-            const productId = insertResult.rows[0].supplier_product_id;
-            await this.createPriceHistory(client, productId, product.costExVat);
-          }
-
-          return { created: true, updated: false };
+          productId = insertResult.rows[0].supplier_product_id;
+          isNew = true;
         }
+
+        // Update price history if cost changed
+        if (product.costExVat !== null) {
+          if (isNew) {
+            await this.createPriceHistory(client, productId, product.costExVat);
+          } else {
+            await this.updatePriceHistory(client, productId, product.costExVat);
+          }
+        }
+
+        // Upsert stock_on_hand record
+        if (product.stockOnHand !== null) {
+          await this.upsertStockOnHand(client, productId, product.stockOnHand, product.costExVat);
+        }
+
+        return { created: isNew, updated: !isNew };
       });
     } catch (error) {
       return {
@@ -490,6 +516,50 @@ export class PlusPortalCSVProcessor {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  /**
+   * Upsert stock_on_hand record
+   */
+  private async upsertStockOnHand(
+    client: unknown,
+    supplierProductId: string,
+    qty: number,
+    unitCost: number | null
+  ): Promise<void> {
+    // Get or create default supplier location
+    const locationResult = await client.query<{ location_id: string }>(
+      `SELECT location_id FROM core.stock_location 
+       WHERE supplier_id = $1 AND type = 'supplier' 
+       LIMIT 1`,
+      [this.supplierId]
+    );
+
+    let locationId: string;
+    if (locationResult.rows.length > 0) {
+      locationId = locationResult.rows[0].location_id;
+    } else {
+      // Create supplier location
+      const newLocation = await client.query<{ location_id: string }>(
+        `INSERT INTO core.stock_location (name, type, supplier_id, is_active)
+         VALUES ($1, 'supplier', $2, true)
+         RETURNING location_id`,
+        [`Supplier Stock`, this.supplierId]
+      );
+      locationId = newLocation.rows[0].location_id;
+    }
+
+    // Upsert stock_on_hand
+    await client.query(
+      `INSERT INTO core.stock_on_hand (location_id, supplier_product_id, qty, unit_cost, source, as_of_ts)
+       VALUES ($1, $2, $3, $4, 'import', NOW())
+       ON CONFLICT (location_id, supplier_product_id) 
+       DO UPDATE SET 
+         qty = EXCLUDED.qty,
+         unit_cost = COALESCE(EXCLUDED.unit_cost, core.stock_on_hand.unit_cost),
+         as_of_ts = NOW()`,
+      [locationId, supplierProductId, qty, unitCost]
+    );
   }
 
   /**

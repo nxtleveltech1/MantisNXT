@@ -27,10 +27,12 @@ function generateCSVReport(data: TestCaseRow[]): string {
   for (const row of data) {
     const sku = `"${(row.sku || '').replace(/"/g, '""')}"`;
     const productName = `"${(row.product_name || '').replace(/"/g, '""')}"`;
-    const supSoh = row.sup_soh !== null ? String(row.sup_soh) : '';
-    const syncPrice = row.online_sync_price !== null ? Number(row.online_sync_price).toFixed(2) : '';
-    const nxtSoh = row.nxt_soh !== null ? String(row.nxt_soh) : '';
-    const nxtPrice = row.nxt_price !== null ? Number(row.nxt_price).toFixed(2) : '';
+    const supSoh = row.sup_soh !== null && !isNaN(Number(row.sup_soh)) ? String(row.sup_soh) : '';
+    const syncPriceNum = Number(row.online_sync_price);
+    const syncPrice = row.online_sync_price !== null && !isNaN(syncPriceNum) && isFinite(syncPriceNum) ? syncPriceNum.toFixed(2) : '';
+    const nxtSoh = row.nxt_soh !== null && !isNaN(Number(row.nxt_soh)) ? String(row.nxt_soh) : '';
+    const nxtPriceNum = Number(row.nxt_price);
+    const nxtPrice = row.nxt_price !== null && !isNaN(nxtPriceNum) && isFinite(nxtPriceNum) ? nxtPriceNum.toFixed(2) : '';
 
     rows.push([sku, productName, supSoh, syncPrice, nxtSoh, nxtPrice].join(','));
   }
@@ -68,6 +70,12 @@ async function findSupplier(name: string): Promise<{ supplier_id: string; name: 
 
 /**
  * Get supplier test case data
+ * 
+ * Data Sources:
+ * - SUP SOH: From attrs_json (stock_quantity, stock_on_hand, stock, Total SOH) OR stock_on_hand table
+ * - Online Sync Price: From attrs_json (cost_excluding, price_before_discount_ex_vat) OR price_history
+ * - NXT SOH: Same as SUP SOH (what platform shows)
+ * - NXT PRICE: From price_history (current price in platform)
  */
 async function getSupplierTestData(supplierId: string, limit?: number): Promise<TestCaseRow[]> {
   const sql = `
@@ -90,44 +98,46 @@ async function getSupplierTestData(supplierId: string, limit?: number): Promise<
         as_of_ts
       FROM core.stock_on_hand
       ORDER BY supplier_product_id, as_of_ts DESC
-    ),
-    sync_prices AS (
-      SELECT DISTINCT ON (ph.supplier_product_id)
-        ph.supplier_product_id,
-        ph.price AS sync_price,
-        ph.change_reason
-      FROM core.price_history ph
-      WHERE ph.change_reason = 'JSON feed sync'
-        OR ph.change_reason LIKE '%sync%'
-        OR ph.change_reason LIKE '%PlusPortal%'
-      ORDER BY ph.supplier_product_id, ph.valid_from DESC
     )
     SELECT 
       sp.supplier_sku AS sku,
       sp.name_from_supplier AS product_name,
-      -- SUP SOH: Direct value from online sync (attrs_json->>'stock_quantity' or sup_soh)
+      -- SUP SOH: From attrs_json OR stock_on_hand table
+      -- Priority: attrs_json stock fields -> stock_on_hand table qty
       COALESCE(
         (sp.attrs_json->>'stock_quantity')::int,
+        (sp.attrs_json->>'stock_on_hand')::int,
         (sp.attrs_json->>'stock')::int,
+        (sp.attrs_json->>'Total SOH')::int,
         (sp.attrs_json->>'sup_soh')::int,
+        ls.qty_on_hand,
         NULL
       ) AS sup_soh,
-      -- Online Sync Price: from price_history with sync reason, or from attrs_json cost_excluding
+      -- Online Sync Price: From attrs_json OR price_history
+      -- Priority: attrs_json price fields -> price_history current price
+      -- Note: handles malformed keys from CSV parsing (trailing quotes, R prefix)
       COALESCE(
-        (SELECT sync_price FROM sync_prices WHERE sync_prices.supplier_product_id = sp.supplier_product_id),
         (sp.attrs_json->>'cost_excluding')::numeric,
+        (sp.attrs_json->>'price_before_discount_ex_vat')::numeric,
+        (sp.attrs_json->>'Price Before Discount Ex Vat')::numeric,
+        -- Handle malformed key with trailing quote from bad CSV parse
+        NULLIF(REGEXP_REPLACE(sp.attrs_json->>'Price Before Discount Ex Vat"', '[^0-9.]', '', 'g'), '')::numeric,
+        (sp.attrs_json->>'cost_ex_vat')::numeric,
+        (sp.attrs_json->>'price')::numeric,
         cp.price,
         NULL
       ) AS online_sync_price,
-      -- NXT SOH: What our platform shows for SUP SOH (same logic as /api/catalog/products)
+      -- NXT SOH: What our platform shows (same sources as SUP SOH)
       COALESCE(
         (sp.attrs_json->>'stock_quantity')::int,
+        (sp.attrs_json->>'stock_on_hand')::int,
         (sp.attrs_json->>'stock')::int,
+        (sp.attrs_json->>'Total SOH')::int,
         (sp.attrs_json->>'sup_soh')::int,
         ls.qty_on_hand,
         NULL
       ) AS nxt_soh,
-      -- NXT PRICE: from price_history (our internal price - what platform shows)
+      -- NXT PRICE: From price_history (current price in platform)
       cp.price AS nxt_price
     FROM core.supplier_product sp
     LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id

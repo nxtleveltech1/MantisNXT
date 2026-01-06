@@ -26,8 +26,6 @@ import {
   Barcode,
   Building2,
   FileText,
-  ExternalLink,
-  Globe,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -55,17 +53,7 @@ interface ProductData {
   supplier_code?: string;
   supplier_sku: string;
   name_from_supplier: string;
-  brand?: {
-    brand_id?: string;
-    name?: string;
-    code?: string;
-    description?: string;
-    website?: string;
-    logo_url?: string;
-    country_of_origin?: string;
-    is_active?: boolean;
-  };
-  brand_name?: string; // Fallback string for backward compatibility
+  brand_name?: string;
   manufacturer?: string;
   model?: string;
   series_range?: string;
@@ -309,75 +297,11 @@ export default function ProductProfileDialog({
                           <p className="text-muted-foreground text-sm font-medium">Supplier</p>
                           <p className="mt-1 text-base">{product.supplier_name}</p>
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <p className="text-muted-foreground text-sm font-medium">Brand</p>
-                          {product.brand?.name || product.brand_name ? (
-                            <div className="mt-1 space-y-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {product.brand?.logo_url && (
-                                  <img
-                                    src={product.brand.logo_url}
-                                    alt={product.brand.name || product.brand_name || 'Brand logo'}
-                                    className="h-5 w-5 object-contain rounded"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                  />
-                                )}
-                                <span className="text-base font-semibold">
-                                  {product.brand?.name || product.brand_name}
-                                </span>
-                                {product.brand?.brand_id && (
-                                  <Badge variant="outline" className="text-xs font-mono">
-                                    {product.brand.brand_id.slice(0, 8)}...
-                                  </Badge>
-                                )}
-                                {product.brand?.is_active === false && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Inactive
-                                  </Badge>
-                                )}
-                                {product.brand?.is_active !== false && product.brand?.brand_id && (
-                                  <Badge variant="default" className="text-xs">
-                                    Active
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-4 text-xs">
-                                {product.brand?.code && (
-                                  <div>
-                                    <span className="text-muted-foreground">Code: </span>
-                                    <span className="font-mono">{product.brand.code}</span>
-                                  </div>
-                                )}
-                                {product.brand?.country_of_origin && (
-                                  <div>
-                                    <span className="text-muted-foreground">Origin: </span>
-                                    <span>{product.brand.country_of_origin}</span>
-                                  </div>
-                                )}
-                              </div>
-                              {product.brand?.description && (
-                                <p className="text-muted-foreground text-xs italic">
-                                  {product.brand.description}
-                                </p>
-                              )}
-                              {product.brand?.website && (
-                                <a
-                                  href={product.brand.website}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline inline-flex items-center gap-1.5 text-xs font-medium"
-                                >
-                                  <Globe className="h-3.5 w-3.5" />
-                                  Visit Brand Website
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="mt-1 text-base text-muted-foreground">-</p>
-                          )}
+                          <p className="mt-1 text-base font-semibold">
+                            {product.brand_name || '-'}
+                          </p>
                         </div>
                         {product.barcode && (
                           <div>

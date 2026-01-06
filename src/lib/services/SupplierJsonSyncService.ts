@@ -589,12 +589,14 @@ export class SupplierJsonSyncService {
         const productId = existing.rows[0].supplier_product_id;
         const existingAttrs = existing.rows[0].attrs_json || {};
 
-        // Merge attrs, preserving existing data
+        // Merge attrs, preserving existing data with standardized field names
         const mergedAttrs = {
           ...existingAttrs,
           ...mapped.attrs,
-          // Preserve cost_excluding if we have a new value
+          // Standardized fields
           cost_excluding: mapped.costExVat ?? existingAttrs.cost_excluding,
+          stock_quantity: mapped.supSoh ?? existingAttrs.stock_quantity,
+          stock_on_hand: mapped.supSoh ?? existingAttrs.stock_on_hand,
         };
 
         await query(
@@ -614,22 +616,40 @@ export class SupplierJsonSyncService {
           await this.updatePriceHistory(productId, mapped.costExVat);
         }
 
+        // Update stock_on_hand if we have stock data
+        if (mapped.supSoh !== null) {
+          await this.upsertStockOnHand(productId, mapped.supSoh, mapped.costExVat);
+        }
+
         return { action: 'updated' };
       } else {
-        // Create new product
+        // Create new product with standardized attrs
+        const enrichedAttrs = {
+          ...mapped.attrs,
+          cost_excluding: mapped.costExVat,
+          stock_quantity: mapped.supSoh,
+          stock_on_hand: mapped.supSoh,
+        };
+
         const insertResult = await query<{ supplier_product_id: string }>(
           `INSERT INTO core.supplier_product (
              supplier_id, supplier_sku, name_from_supplier, uom, attrs_json,
              first_seen_at, last_seen_at, is_active, is_new
            ) VALUES ($1, $2, $3, 'EA', $4, NOW(), NOW(), true, true)
            RETURNING supplier_product_id`,
-          [this.supplierId, mapped.supplierSku, mapped.name, JSON.stringify(mapped.attrs)]
+          [this.supplierId, mapped.supplierSku, mapped.name, JSON.stringify(enrichedAttrs)]
         );
 
         // Create initial price history entry
         if (mapped.costExVat !== null && insertResult.rows.length > 0) {
           const productId = insertResult.rows[0].supplier_product_id;
           await this.createPriceHistory(productId, mapped.costExVat);
+        }
+
+        // Create stock_on_hand entry
+        if (mapped.supSoh !== null && insertResult.rows.length > 0) {
+          const productId = insertResult.rows[0].supplier_product_id;
+          await this.upsertStockOnHand(productId, mapped.supSoh, mapped.costExVat);
         }
 
         return { action: 'created' };
@@ -681,6 +701,54 @@ export class SupplierJsonSyncService {
        ) VALUES ($1, $2, 'ZAR', NOW(), true, 'JSON feed sync')`,
       [supplierProductId, price]
     );
+  }
+
+  /**
+   * Upsert stock_on_hand record for a product
+   */
+  private async upsertStockOnHand(
+    supplierProductId: string,
+    qty: number,
+    unitCost: number | null
+  ): Promise<void> {
+    try {
+      // Get or create default supplier location
+      const locationResult = await query<{ location_id: string }>(
+        `SELECT location_id FROM core.stock_location 
+         WHERE supplier_id = $1 AND type = 'supplier' 
+         LIMIT 1`,
+        [this.supplierId]
+      );
+
+      let locationId: string;
+      if (locationResult.rows.length > 0) {
+        locationId = locationResult.rows[0].location_id;
+      } else {
+        // Create supplier location
+        const newLocation = await query<{ location_id: string }>(
+          `INSERT INTO core.stock_location (name, type, supplier_id, is_active)
+           VALUES ($1, 'supplier', $2, true)
+           RETURNING location_id`,
+          [`Supplier Stock`, this.supplierId]
+        );
+        locationId = newLocation.rows[0].location_id;
+      }
+
+      // Upsert stock_on_hand
+      await query(
+        `INSERT INTO core.stock_on_hand (location_id, supplier_product_id, qty, unit_cost, source, as_of_ts)
+         VALUES ($1, $2, $3, $4, 'import', NOW())
+         ON CONFLICT (location_id, supplier_product_id) 
+         DO UPDATE SET 
+           qty = EXCLUDED.qty,
+           unit_cost = COALESCE(EXCLUDED.unit_cost, core.stock_on_hand.unit_cost),
+           as_of_ts = NOW()`,
+        [locationId, supplierProductId, qty, unitCost]
+      );
+    } catch (error) {
+      console.error(`[JsonSync] Failed to update stock_on_hand for product ${supplierProductId}:`, error);
+      // Don't throw - this is not critical
+    }
   }
 
   /**

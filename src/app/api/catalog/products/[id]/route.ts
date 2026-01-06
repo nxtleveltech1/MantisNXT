@@ -181,35 +181,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           (sp.attrs_json->>'new_stock_eta')::date,
           pls.eta
         ) AS new_stock_eta,
-        -- Brand information: prefer core.brand, then attrs_json, then pricelist_row
-        CASE 
-          WHEN b.id IS NOT NULL THEN
-            jsonb_build_object(
-              'brand_id', b.id::text,
-              'name', b.name,
-              'code', b.code,
-              'description', b.description,
-              'website', b.website,
-              'logo_url', b.logo_url,
-              'country_of_origin', b.country_of_origin,
-              'is_active', b.is_active
-            )
-          ELSE NULL
-        END AS brand,
-        -- Brand name fallback (string for backward compatibility)
+        -- Brand name: prefer attrs_json, then pricelist_row
         COALESCE(
-          b.name,
           sp.attrs_json->>'brand',
           pls.brand
         ) AS brand_name,
-        -- Manufacturer: prefer pricelist_row, then attrs_json
+        -- Manufacturer: prefer pricelist_row attrs_json, then supplier_product attrs_json
         COALESCE(
-          pls.manufacturer,
+          pr_attrs.manufacturer,
           sp.attrs_json->>'manufacturer'
         ) AS manufacturer,
-        -- Model: prefer pricelist_row, then attrs_json
+        -- Model: prefer pricelist_row attrs_json, then supplier_product attrs_json
         COALESCE(
-          pls.model,
+          pr_attrs.model,
           sp.attrs_json->>'model'
         ) AS model,
         -- Series Range: prefer pricelist_row attrs_json, then supplier_product attrs_json
@@ -239,11 +223,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         LIMIT 1
       ) cat ON TRUE
       LEFT JOIN LATERAL (
-        SELECT r.stock_status, r.eta, r.brand, r.manufacturer, r.model
+        SELECT r.stock_status, r.eta, r.brand
         FROM spp.pricelist_row r
         JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
         WHERE r.supplier_sku = sp.supplier_sku
-          AND (r.stock_status IS NOT NULL OR r.eta IS NOT NULL OR r.brand IS NOT NULL OR r.manufacturer IS NOT NULL OR r.model IS NOT NULL)
+          AND (r.stock_status IS NOT NULL OR r.eta IS NOT NULL OR r.brand IS NOT NULL)
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) pls ON TRUE
@@ -259,24 +243,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             r.attrs_json->>'mpn',
             r.attrs_json->>'manufacturer_part_number',
             r.attrs_json->>'MPN'
-          ) AS mpn
+          ) AS mpn,
+          r.attrs_json->>'manufacturer' AS manufacturer,
+          r.attrs_json->>'model' AS model
         FROM spp.pricelist_row r
         JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
         WHERE r.supplier_sku = sp.supplier_sku
-          AND (
-            r.attrs_json->>'seriesRange' IS NOT NULL OR
-            r.attrs_json->>'series_range' IS NOT NULL OR
-            r.attrs_json->>'series' IS NOT NULL OR
-            r.attrs_json->>'range' IS NOT NULL OR
-            r.attrs_json->>'mpn' IS NOT NULL OR
-            r.attrs_json->>'manufacturer_part_number' IS NOT NULL OR
-            r.attrs_json->>'MPN' IS NOT NULL
-          )
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) pr_attrs ON TRUE
-      LEFT JOIN core.product p ON p.product_id = sp.product_id
-      LEFT JOIN core.brand b ON b.id = p.brand_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id
