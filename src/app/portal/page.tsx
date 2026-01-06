@@ -1,0 +1,220 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Settings, ShoppingCart, Handshake } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
+
+interface PortalButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  onClick: () => void;
+  delay?: number;
+}
+
+function PortalButton({ icon, label, sublabel, onClick, delay = 0 }: PortalButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative flex flex-col items-center justify-center gap-3 p-8 min-w-[180px] min-h-[160px]
+        rounded-2xl border border-white/10 
+        bg-gradient-to-b from-white/10 to-white/5
+        backdrop-blur-xl shadow-2xl
+        transition-all duration-500 ease-out
+        hover:scale-105 hover:border-white/25 hover:from-white/15 hover:to-white/10
+        hover:shadow-[0_0_40px_rgba(255,255,255,0.1)]
+        active:scale-95"
+      style={{
+        animationDelay: `${delay}ms`,
+        animation: 'fadeSlideUp 0.8s ease-out forwards',
+        opacity: 0,
+      }}
+    >
+      {/* Glow effect on hover */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-red-500/0 to-red-500/0 
+        group-hover:from-red-500/10 group-hover:to-transparent transition-all duration-500" />
+      
+      {/* Reflection line at top */}
+      <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      
+      {/* Icon */}
+      <div className="relative z-10 text-white/90 group-hover:text-white transition-colors duration-300">
+        {icon}
+      </div>
+      
+      {/* Label */}
+      <div className="relative z-10 flex flex-col items-center gap-0.5">
+        {sublabel && (
+          <span className="text-xs text-white/60 uppercase tracking-wider font-medium">
+            {sublabel}
+          </span>
+        )}
+        <span className="text-sm font-semibold text-white uppercase tracking-widest">
+          {label}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+export default function PortalPage() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <style jsx global>{`
+        @keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% {
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.4));
+          }
+          50% {
+            filter: drop-shadow(0 0 40px rgba(239, 68, 68, 0.6));
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+      `}</style>
+      
+      <div className="relative min-h-screen overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'url(/images/portal-background.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+          {/* Subtle vignette overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+        </div>
+
+        {/* Content Container */}
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+          {/* Logo and Branding Section */}
+          <div 
+            className="flex flex-col items-center mb-16"
+            style={{
+              animation: 'fadeSlideUp 0.6s ease-out forwards',
+            }}
+          >
+            {/* NXT Logo */}
+            <div 
+              className="mb-6"
+              style={{
+                animation: 'float 6s ease-in-out infinite, pulse-glow 4s ease-in-out infinite',
+              }}
+            >
+              <img 
+                src="/images/nxt-logo.svg" 
+                alt="NXT Level Tech" 
+                className="h-24 w-auto"
+              />
+            </div>
+            
+            {/* Title */}
+            <h1 className="text-5xl md:text-6xl font-bold text-white tracking-wide mb-4"
+              style={{
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                textShadow: '0 4px 30px rgba(0,0,0,0.5)',
+              }}
+            >
+              NXT DOT-X
+            </h1>
+            
+            {/* Subtitle */}
+            <p className="text-lg text-white/80 tracking-[0.3em] uppercase mb-2">
+              NXT Level Tech
+            </p>
+            
+            {/* Tagline */}
+            <p className="text-sm text-white/60 tracking-[0.2em] uppercase text-center max-w-md">
+              AI Driven Supplier Business Management Platform
+            </p>
+          </div>
+
+          {/* Portal Buttons */}
+          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+            <PortalButton
+              icon={<Settings className="h-10 w-10" strokeWidth={1.5} />}
+              sublabel="ERP System"
+              label="Access"
+              onClick={() => router.push('/')}
+              delay={100}
+            />
+            
+            <PortalButton
+              icon={<ShoppingCart className="h-10 w-10" strokeWidth={1.5} />}
+              label="POS"
+              onClick={() => router.push('/pos')}
+              delay={200}
+            />
+            
+            <PortalButton
+              icon={<Handshake className="h-10 w-10" strokeWidth={1.5} />}
+              label="Marketplace"
+              onClick={() => router.push('/marketplace')}
+              delay={300}
+            />
+          </div>
+
+          {/* Subtle footer sparkle */}
+          <div className="absolute bottom-8 right-8">
+            <svg 
+              className="w-6 h-6 text-white/40"
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <path d="M12 2L13.09 8.26L19 7L14.14 11.14L20 16L13.09 14.09L12 22L10.91 14.09L4 16L9.86 11.14L5 7L10.91 8.26L12 2Z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+

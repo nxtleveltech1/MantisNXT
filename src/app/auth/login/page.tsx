@@ -48,7 +48,7 @@ export default function LoginPage() {
         searchParams.get('redirectUrl') ??
         searchParams.get('returnUrl') ??
         searchParams.get('next')
-    ) ?? '/';
+    ) ?? '/portal';
 
   // Redirect if already authenticated
   useEffect(() => {
