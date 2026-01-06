@@ -41,8 +41,8 @@ export default function POSPage() {
         <div className="absolute inset-0 bg-black/60" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+      {/* Content - positioned in lower half below background logo */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-16">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -52,6 +52,9 @@ export default function POSPage() {
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Portal
         </Button>
+
+        {/* Spacer to push content below the background logo */}
+        <div className="flex-1 min-h-[40vh]" />
 
         {/* Placeholder Content */}
         <div className="flex flex-col items-center text-center max-w-lg">

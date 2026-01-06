@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 
 interface PortalButtonProps {
@@ -133,29 +133,18 @@ export default function PortalPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
-          {/* Logo and Branding Section */}
+        {/* Content Container - positioned in lower half below background logo */}
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-16">
+          {/* Spacer to push content below the background logo */}
+          <div className="flex-1 min-h-[45vh]" />
+          
+          {/* Branding Section - Text only, no logo (background has it) */}
           <div 
-            className="flex flex-col items-center mb-16"
+            className="flex flex-col items-center mb-10"
             style={{
               animation: 'fadeSlideUp 0.6s ease-out forwards',
             }}
           >
-            {/* NXT Logo */}
-            <div 
-              className="mb-6"
-              style={{
-                animation: 'float 6s ease-in-out infinite, pulse-glow 4s ease-in-out infinite',
-              }}
-            >
-              <img 
-                src="/images/nxt-logo.svg" 
-                alt="NXT Level Tech" 
-                className="h-24 w-auto"
-              />
-            </div>
-            
             {/* Title */}
             <h1 className="text-5xl md:text-6xl font-bold text-white tracking-wide mb-4"
               style={{
@@ -199,6 +188,14 @@ export default function PortalPage() {
               label="Marketplace"
               onClick={() => router.push('/marketplace')}
               delay={300}
+            />
+            
+            <PortalButton
+              icon={<Shield className="h-10 w-10" strokeWidth={1.5} />}
+              sublabel="System"
+              label="Administration"
+              onClick={() => router.push('/system-admin')}
+              delay={400}
             />
           </div>
 

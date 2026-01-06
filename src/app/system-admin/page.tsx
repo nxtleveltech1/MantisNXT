@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Handshake, ArrowLeft, Construction } from 'lucide-react';
+import { Shield, ArrowLeft, Construction } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 
-export default function MarketplacePage() {
+export default function SystemAdminPage() {
   const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -62,13 +62,13 @@ export default function MarketplacePage() {
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full" />
             <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
-              <Handshake className="h-16 w-16 text-white" strokeWidth={1.5} />
+              <Shield className="h-16 w-16 text-white" strokeWidth={1.5} />
             </div>
           </div>
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-wide">
-            Marketplace
+            System Administration
           </h1>
 
           {/* Coming Soon Badge */}
@@ -81,14 +81,14 @@ export default function MarketplacePage() {
 
           {/* Description */}
           <p className="text-white/60 text-lg leading-relaxed mb-8">
-            The NXT DOT-X Marketplace connects suppliers and buyers in a unified ecosystem. 
-            Discover new products, manage partnerships, and expand your business network 
-            through our AI-powered matching system.
+            The NXT DOT-X System Administration panel provides centralized control 
+            over platform settings, user management, security policies, and 
+            system-wide configurations for enterprise deployments.
           </p>
 
           {/* Feature Preview */}
           <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            {['Supplier Network', 'Product Discovery', 'AI Matching', 'Secure Deals'].map((feature, i) => (
+            {['User Management', 'Security Policies', 'System Config', 'Audit Logs'].map((feature) => (
               <div 
                 key={feature}
                 className="px-4 py-3 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm"
