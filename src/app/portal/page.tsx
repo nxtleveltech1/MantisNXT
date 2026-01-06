@@ -2,8 +2,18 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface PortalButtonProps {
   icon: React.ReactNode;
@@ -59,8 +69,26 @@ function PortalButton({ icon, label, sublabel, onClick, delay = 0 }: PortalButto
 }
 
 export default function PortalPage() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, user, signOut } = useAuth();
   const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -131,6 +159,62 @@ export default function PortalPage() {
           />
           {/* Subtle vignette overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+        </div>
+
+        {/* Top Header Bar - User Account & Logout */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-4 md:p-6">
+          <div className="flex items-center justify-end gap-3">
+            {/* User Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/60 transition-all">
+                  <Avatar className="h-9 w-9 border border-white/20">
+                    <AvatarImage src={user?.profile_image} alt={user?.name || 'User'} />
+                    <AvatarFallback className="bg-red-900/50 text-white text-sm">
+                      {user?.name ? getInitials(user.name) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden md:flex flex-col items-start">
+                    <span className="text-sm font-medium text-white">{user?.name || 'User'}</span>
+                    <span className="text-xs text-white/60">{user?.email}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-white/60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{user?.name || 'User'}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{user?.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/account/profile')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/account/settings')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-red-900/50 hover:border-red-800/50 text-white transition-all"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              <span className="hidden md:inline">Log Out</span>
+            </Button>
+          </div>
         </div>
 
         {/* Content Container - positioned in lower half below background logo */}
