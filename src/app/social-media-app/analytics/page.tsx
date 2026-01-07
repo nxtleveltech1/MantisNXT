@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BarChart3,
   TrendingUp,
@@ -8,10 +10,11 @@ import {
   Facebook,
   Instagram,
   Video,
-  MessageSquare
+  MessageSquare,
+  ArrowLeft
 } from "lucide-react";
-
-export const dynamic = "force-dynamic";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const platformIcons = {
   Facebook: { icon: Facebook, color: 'text-blue-600' },
@@ -21,6 +24,8 @@ const platformIcons = {
 };
 
 export default function SocialMediaAnalyticsPage() {
+  const router = useRouter();
+
   // Mock data for now - will be replaced with actual database queries
   const channels = [
     { id: 1, name: 'Facebook | NXT Level Tech SA', platform: 'Facebook' },
@@ -80,12 +85,10 @@ export default function SocialMediaAnalyticsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => window.history.back()}
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-              >
-                ← Back to Dashboard
-              </button>
+              <Button variant="outline" onClick={() => router.push("/social-media-app")}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-sm font-bold">📊</span>

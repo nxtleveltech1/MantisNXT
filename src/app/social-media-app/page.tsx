@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Users,
   TrendingUp,
@@ -14,8 +16,6 @@ import {
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-
-export const dynamic = "force-dynamic";
 
 const platformIcons = {
   Facebook: { icon: Facebook, color: 'bg-blue-600' },

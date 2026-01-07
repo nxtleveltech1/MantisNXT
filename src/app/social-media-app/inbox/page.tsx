@@ -1,9 +1,14 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ResponseCommandCenter from "@/components/social-media/inbox/ResponseCommandCenter";
 import UnifiedInbox from "@/components/social-media/inbox/UnifiedInbox";
 
-export const dynamic = "force-dynamic";
+export default function SocialMediaInboxPage() {
+  const router = useRouter();
 
-export default async function SocialMediaInboxPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Header */}
@@ -11,12 +16,10 @@ export default async function SocialMediaInboxPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => window.history.back()}
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-              >
-                ← Back to Dashboard
-              </button>
+              <Button variant="outline" onClick={() => router.push("/social-media-app")}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-sm font-bold">📨</span>

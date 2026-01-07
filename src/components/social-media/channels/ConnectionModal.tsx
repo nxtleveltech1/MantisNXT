@@ -9,9 +9,7 @@ import {
   Video,
   MessageSquare,
   User,
-  Key,
-  Shield,
-  AlertTriangle
+  Shield
 } from "lucide-react";
 import {
   Dialog,
