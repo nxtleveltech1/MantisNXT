@@ -98,65 +98,7 @@ export class POSSalesService {
 
     // Use transaction to ensure atomicity
     return await withTransaction(async (client: PoolClient) => {
-      // 1. Create Sales Order (status: completed for POS)
-      const salesOrderNumber = await DocumentNumberingService.generateDocumentNumber(
-        input.org_id,
-        'SO'
-      );
-
-      const salesOrderResult = await client.query(
-        `INSERT INTO sales_orders (
-          org_id, customer_id, document_number, status_enum, currency, total, total_tax,
-          payment_method, notes, metadata, created_by, created_at, modified_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-        RETURNING *`,
-        [
-          input.org_id,
-          input.customer_id,
-          salesOrderNumber,
-          'completed', // POS sales are immediately completed
-          'ZAR',
-          total,
-          taxAmount,
-          input.payment_method,
-          input.notes || null,
-          JSON.stringify({
-            pos_transaction: true,
-            transaction_id: transactionId,
-            store_id: input.store_id || null,
-            payment_reference: input.payment_reference || null,
-          }),
-          input.created_by || null,
-        ]
-      );
-
-      const salesOrder = salesOrderResult.rows[0];
-
-      // 2. Insert Sales Order Items
-      for (const item of itemsWithTotals) {
-        await client.query(
-          `INSERT INTO sales_order_items (
-            sales_order_id, product_id, sku, name, quantity, price, subtotal, total, tax, metadata
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-          [
-            salesOrder.id,
-            item.product_id,
-            item.sku,
-            item.name,
-            item.quantity,
-            item.sale_price,
-            item.subtotal,
-            item.total,
-            item.tax_amount,
-            JSON.stringify({
-              cost_price: item.cost_price,
-              markup_percent: item.markup_percent || DEFAULT_MARKUP * 100,
-            }),
-          ]
-        );
-      }
-
-      // 3. Create Invoice (status: paid for POS cash sales)
+      // 1. Create Invoice directly for POS (skip sales orders for simplicity)
       const invoiceNumber = await DocumentNumberingService.generateDocumentNumber(
         input.org_id,
         'INV'
@@ -164,15 +106,14 @@ export class POSSalesService {
 
       const invoiceResult = await client.query(
         `INSERT INTO invoices (
-          org_id, customer_id, sales_order_id, document_number, status, currency,
+          org_id, customer_id, document_number, status, currency,
           subtotal, total_tax, total, amount_paid, amount_due, paid_at,
           reference_number, notes, metadata, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *`,
         [
           input.org_id,
           input.customer_id,
-          salesOrder.id,
           invoiceNumber,
           'paid', // POS sales are immediately paid
           'ZAR',
@@ -188,6 +129,7 @@ export class POSSalesService {
             pos_transaction: true,
             transaction_id: transactionId,
             payment_method: input.payment_method,
+            store_id: input.store_id || null,
           }),
           input.created_by || null,
         ]
@@ -195,7 +137,7 @@ export class POSSalesService {
 
       const invoice = invoiceResult.rows[0];
 
-      // 4. Insert Invoice Items
+      // 2. Insert Invoice Items
       for (let i = 0; i < itemsWithTotals.length; i++) {
         const item = itemsWithTotals[i];
         await client.query(
@@ -215,16 +157,19 @@ export class POSSalesService {
             item.subtotal,
             item.total,
             i + 1,
-            JSON.stringify({ cost_price: item.cost_price }),
+            JSON.stringify({
+              cost_price: item.cost_price,
+              markup_percent: item.markup_percent || DEFAULT_MARKUP * 100,
+            }),
           ]
         );
       }
 
-      // 5. Decrement Inventory
+      // 3. Decrement Inventory
       for (const item of input.items) {
         // Update inventory_items stock
         await client.query(
-          `UPDATE inventory_items 
+          `UPDATE public.inventory_items
            SET stock_qty = COALESCE(stock_qty, 0) - $1,
                updated_at = NOW()
            WHERE id = $2`,
@@ -233,7 +178,7 @@ export class POSSalesService {
 
         // Record stock movement
         await client.query(
-          `INSERT INTO stock_movements (
+          `INSERT INTO public.stock_movements (
             inventory_item_id, movement_type, quantity, reference_type, reference_id,
             notes, created_by, created_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
@@ -242,14 +187,14 @@ export class POSSalesService {
             'OUT',
             item.quantity,
             'POS_SALE',
-            salesOrder.id,
+            invoice.id, // Use invoice ID as reference
             `POS Sale - Invoice ${invoiceNumber}`,
             input.created_by || null,
           ]
         );
       }
 
-      // 6. Get customer details
+      // 4. Get customer details
       const customerResult = await client.query(
         `SELECT id, name, email FROM customer WHERE id = $1`,
         [input.customer_id]
@@ -260,8 +205,8 @@ export class POSSalesService {
       return {
         success: true,
         transaction_id: transactionId,
-        sales_order_id: salesOrder.id,
-        sales_order_number: salesOrderNumber,
+        sales_order_id: invoice.id, // Use invoice ID as sales order ID for compatibility
+        sales_order_number: invoiceNumber,
         invoice_id: invoice.id,
         invoice_number: invoiceNumber,
         subtotal,
@@ -293,7 +238,7 @@ export class POSSalesService {
   }
 
   /**
-   * Get recent POS transactions for a store
+   * Get recent POS transactions for a store (directly from invoices)
    */
   static async getRecentTransactions(
     orgId: string,
@@ -301,51 +246,48 @@ export class POSSalesService {
     storeId?: string
   ): Promise<Array<POSSaleResult>> {
     let sql = `
-      SELECT 
-        so.id as sales_order_id,
-        so.document_number as sales_order_number,
-        so.customer_id,
-        so.total,
-        so.total_tax,
-        so.payment_method,
-        so.metadata,
-        so.created_at,
+      SELECT
         i.id as invoice_id,
         i.document_number as invoice_number,
+        i.customer_id,
+        i.subtotal,
+        i.total_tax,
+        i.total,
+        i.metadata,
+        i.created_at,
         c.name as customer_name,
         c.email as customer_email
-      FROM sales_orders so
-      LEFT JOIN invoices i ON i.sales_order_id = so.id
-      LEFT JOIN customer c ON c.id = so.customer_id
-      WHERE so.org_id = $1
-        AND so.metadata->>'pos_transaction' = 'true'
+      FROM invoices i
+      LEFT JOIN customer c ON c.id = i.customer_id
+      WHERE i.org_id = $1
+        AND i.metadata->>'pos_transaction' = 'true'
     `;
 
     const params: unknown[] = [orgId];
     let paramIndex = 2;
 
     if (storeId) {
-      sql += ` AND so.metadata->>'store_id' = $${paramIndex}`;
+      sql += ` AND i.metadata->>'store_id' = $${paramIndex}`;
       params.push(storeId);
       paramIndex++;
     }
 
-    sql += ` ORDER BY so.created_at DESC LIMIT $${paramIndex}`;
+    sql += ` ORDER BY i.created_at DESC LIMIT $${paramIndex}`;
     params.push(limit);
 
     const result = await query(sql, params);
 
     return result.rows.map((row: Record<string, unknown>) => ({
       success: true,
-      transaction_id: (row.metadata as Record<string, string>)?.transaction_id || row.sales_order_id as string,
-      sales_order_id: row.sales_order_id as string,
-      sales_order_number: row.sales_order_number as string,
+      transaction_id: (row.metadata as Record<string, string>)?.transaction_id || row.invoice_id as string,
+      sales_order_id: row.invoice_id as string, // Use invoice ID as sales order ID
+      sales_order_number: row.invoice_number as string,
       invoice_id: row.invoice_id as string,
       invoice_number: row.invoice_number as string,
-      subtotal: Number(row.total) - Number(row.total_tax),
+      subtotal: Number(row.subtotal),
       tax_amount: Number(row.total_tax),
       total: Number(row.total),
-      payment_method: row.payment_method as string,
+      payment_method: (row.metadata as Record<string, string>)?.payment_method || 'cash',
       documents: {},
       customer: {
         id: row.customer_id as string,
@@ -362,30 +304,30 @@ export class POSSalesService {
    */
   static async voidTransaction(
     orgId: string,
-    salesOrderId: string,
+    invoiceId: string,
     reason: string,
     voidedBy?: string
   ): Promise<{ success: boolean; message: string }> {
     return await withTransaction(async (client: PoolClient) => {
       // Verify the transaction exists and is a POS sale
-      const orderResult = await client.query(
-        `SELECT * FROM sales_orders 
+      const invoiceResult = await client.query(
+        `SELECT * FROM invoices
          WHERE id = $1 AND org_id = $2 AND metadata->>'pos_transaction' = 'true'`,
-        [salesOrderId, orgId]
+        [invoiceId, orgId]
       );
 
-      if (orderResult.rows.length === 0) {
+      if (invoiceResult.rows.length === 0) {
         throw new Error('POS transaction not found');
       }
 
-      const order = orderResult.rows[0];
+      const invoice = invoiceResult.rows[0];
 
-      // Update sales order status
+      // Update invoice status to refunded
       await client.query(
-        `UPDATE sales_orders 
-         SET status_enum = 'cancelled', 
+        `UPDATE invoices
+         SET status = 'refunded',
              metadata = metadata || $1::jsonb,
-             modified_at = NOW()
+             updated_at = NOW()
          WHERE id = $2`,
         [
           JSON.stringify({
@@ -394,28 +336,19 @@ export class POSSalesService {
             voided_by: voidedBy,
             voided_at: new Date().toISOString(),
           }),
-          salesOrderId,
+          invoiceId,
         ]
       );
 
-      // Update invoice status
-      await client.query(
-        `UPDATE invoices 
-         SET status = 'refunded',
-             updated_at = NOW()
-         WHERE sales_order_id = $1`,
-        [salesOrderId]
-      );
-
-      // Restore inventory
+      // Restore inventory from invoice items
       const itemsResult = await client.query(
-        `SELECT product_id, quantity FROM sales_order_items WHERE sales_order_id = $1`,
-        [salesOrderId]
+        `SELECT product_id, quantity FROM invoice_items WHERE invoice_id = $1`,
+        [invoiceId]
       );
 
       for (const item of itemsResult.rows) {
         await client.query(
-          `UPDATE inventory_items 
+          `UPDATE public.inventory_items
            SET stock_qty = COALESCE(stock_qty, 0) + $1,
                updated_at = NOW()
            WHERE id = $2`,
@@ -424,7 +357,7 @@ export class POSSalesService {
 
         // Record stock movement
         await client.query(
-          `INSERT INTO stock_movements (
+          `INSERT INTO public.stock_movements (
             inventory_item_id, movement_type, quantity, reference_type, reference_id,
             notes, created_by, created_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
@@ -433,7 +366,7 @@ export class POSSalesService {
             'IN',
             item.quantity,
             'POS_VOID',
-            salesOrderId,
+            invoiceId,
             `POS Void - ${reason}`,
             voidedBy || null,
           ]
@@ -442,7 +375,7 @@ export class POSSalesService {
 
       return {
         success: true,
-        message: `Transaction ${order.document_number} voided successfully`,
+        message: `Transaction ${invoice.document_number} voided successfully`,
       };
     });
   }
