@@ -14,7 +14,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { POSSalesService } from '@/lib/services/pos/POSSalesService';
+import { POSSalesService } from '@/lib/services/pos';
 import { DocumentGenerationHooks } from '@/lib/services/docustore';
 
 // Validation schema for POS sale
@@ -149,16 +149,16 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const { org_id, invoice_id, reason, voided_by } = body;
+    const { org_id, sales_order_id, reason, voided_by } = body;
 
-    if (!org_id || !invoice_id || !reason) {
+    if (!org_id || !sales_order_id || !reason) {
       return NextResponse.json(
-        { success: false, error: 'org_id, invoice_id, and reason are required' },
+        { success: false, error: 'org_id, sales_order_id, and reason are required' },
         { status: 400 }
       );
     }
 
-    const result = await POSSalesService.voidTransaction(org_id, invoice_id, reason, voided_by);
+    const result = await POSSalesService.voidTransaction(org_id, sales_order_id, reason, voided_by);
 
     return NextResponse.json(result);
   } catch (error) {

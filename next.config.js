@@ -14,11 +14,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'localhost',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
+        protocol: 'https',
+        hostname: 'cdn.mantisnxt.com',
       },
     ],
     formats: ['image/avif', 'image/webp'],
