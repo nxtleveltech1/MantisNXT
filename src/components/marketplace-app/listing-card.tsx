@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,19 @@ type ListingCardProps = {
   };
 };
 
+/**
+ * Validates if a string is a valid image URL (absolute http/https URL)
+ */
+function isValidImageUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function ListingCard({ listing }: ListingCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -38,7 +51,9 @@ export function ListingCard({ listing }: ListingCardProps) {
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
 
-  const imageUrl = listing.images?.[0];
+  const rawImageUrl = listing.images?.[0];
+  // Only treat as valid if it's an absolute URL (not a bare filename)
+  const imageUrl = useMemo(() => isValidImageUrl(rawImageUrl) ? rawImageUrl : null, [rawImageUrl]);
   const hasValidImage = imageUrl && !imageError;
 
   const formatLocation = (location: string | null | undefined) => {

@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         sp.supplier_sku as sku,
         COALESCE(p.name, sp.name_from_supplier) as name,
         sp.attrs_json->>'description' as description,
-        COALESCE(sp.attrs_json->>'brand', sp.brand_from_supplier) as brand,
+        sp.attrs_json->>'brand' as brand,
         sp.attrs_json->>'category' as category,
         sp.barcode,
         sp.is_active,
@@ -182,6 +182,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in GET /api/v1/products/pos:', error);
+    // Include more details for debugging production issues
+    const errorDetails = error instanceof Error 
+      ? { message: error.message, stack: error.stack?.split('\n').slice(0, 5).join('\n') }
+      : { message: 'Failed to fetch products' };
+    console.error('POS API Error Details:', JSON.stringify(errorDetails));
+    
     return NextResponse.json(
       {
         success: false,
