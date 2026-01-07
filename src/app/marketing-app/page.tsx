@@ -238,6 +238,7 @@ export default function MarketingApp() {
   }
 
   return (
+    <>
     <SidebarProvider defaultOpen>
       <AppSidebar />
       <SidebarInset>
@@ -395,8 +396,11 @@ export default function MarketingApp() {
             </Card>
           ))}
         </div>
+        </div>
+        </div>
+      </SidebarInset>
 
-        {/* Product Details Modal */}
+      {/* Product Details Modal */}
       <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedProduct && (
@@ -489,21 +493,19 @@ export default function MarketingApp() {
           )}
         </DialogContent>
       </Dialog>
-
-          {/* Footer */}
-          <div className="bg-gray-900 text-white py-8 mt-12 rounded-lg">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">{storeName} - Your Electronics Store</h3>
-              <p className="text-gray-400 mb-4">Quality products with fast delivery</p>
-              <div className="flex justify-center items-center space-x-2">
-                <MessageCircle className="h-5 w-5 text-green-500" />
-                <span>Contact us via WhatsApp for inquiries</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-      </SidebarInset>
     </SidebarProvider>
+
+    {/* Footer */}
+    <div className="bg-gray-900 text-white py-8 mt-12 rounded-lg">
+      <div className="text-center">
+        <h3 className="text-lg font-semibold mb-2">{storeName} - Your Electronics Store</h3>
+        <p className="text-gray-400 mb-4">Quality products with fast delivery</p>
+        <div className="flex justify-center items-center space-x-2">
+          <MessageCircle className="h-5 w-5 text-green-500" />
+          <span>Contact us via WhatsApp for inquiries</span>
+        </div>
+      </div>
+    </div>
+    </>
   )
 }

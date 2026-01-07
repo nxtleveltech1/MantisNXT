@@ -14,11 +14,16 @@ import { toast } from "sonner"
 export default function StoriesPage() {
   const [showInstructions, setShowInstructions] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [origin, setOrigin] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/marketing-app`)
+      await navigator.clipboard.writeText(`${origin}/marketing-app`)
       setCopied(true)
       toast.success("Link copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
@@ -100,7 +105,7 @@ export default function StoriesPage() {
                       </p>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-gray-100 p-2 rounded text-xs font-mono">
-                          {window.location.origin}/marketing-app
+                          {origin}/marketing-app
                         </code>
                         <Button
                           variant="outline"
