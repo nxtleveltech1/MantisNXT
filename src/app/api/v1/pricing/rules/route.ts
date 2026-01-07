@@ -10,7 +10,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { PricingRuleService } from '@/lib/services/PricingRuleService';
+import { PricingRuleService, type PricingRuleFilter } from '@/lib/services/PricingRuleService';
 import { PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 import { z } from 'zod';
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const filter: unknown = {};
+    const filter: PricingRuleFilter = {};
 
     if (searchParams.has('rule_type')) {
       filter.rule_type = searchParams.get('rule_type') as PricingRuleType;
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (searchParams.has('search')) {
-      filter.search = searchParams.get('search');
+      filter.search = searchParams.get('search') ?? undefined;
     }
 
     const rules = await PricingRuleService.getAllRules(filter);
@@ -74,11 +74,13 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Error fetching pricing rules:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch pricing rules',
         details: message,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined,
       },
       { status: 500 }
     );
@@ -122,11 +124,13 @@ export async function POST(request: NextRequest) {
 
     console.error('Error creating pricing rule:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create pricing rule',
         details: message,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined,
       },
       { status: 500 }
     );
