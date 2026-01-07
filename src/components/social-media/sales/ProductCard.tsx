@@ -30,7 +30,7 @@ export default function ProductCard({ product, onAddToCart, onViewDetails }: Pro
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const formatPrice = (price: number) => {
-    return `R$ ${price.toFixed(2)}`
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price)
   }
 
   const handleViewDetails = () => {

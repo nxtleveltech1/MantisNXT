@@ -350,7 +350,7 @@ export default function UnifiedInbox() {
                     {showDate && (
                       <div className="flex justify-center my-4">
                         <span className="px-3 py-1 bg-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase">
-                          {new Date(msg.timestamp).toLocaleDateString("en-US", {
+                          {new Date(msg.timestamp).toLocaleDateString("en-ZA", {
                             weekday: "long",
                             month: "short",
                             day: "numeric",

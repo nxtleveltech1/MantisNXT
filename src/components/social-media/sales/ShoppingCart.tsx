@@ -38,7 +38,7 @@ export default function ShoppingCart({
   const [orderPhoneNumber, setOrderPhoneNumber] = useState(phoneNumber || "")
 
   const formatPrice = (price: number) => {
-    return `R$ ${price.toFixed(2)}`
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price)
   }
 
   const getTotalPrice = () => {
@@ -137,7 +137,7 @@ export default function ShoppingCart({
                     </label>
                     <input
                       type="tel"
-                      placeholder="+1 555 123-4567"
+                      placeholder="+27 82 123 4567"
                       value={orderPhoneNumber}
                       onChange={(e) => setOrderPhoneNumber(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"

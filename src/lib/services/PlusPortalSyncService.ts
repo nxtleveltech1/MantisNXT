@@ -4,7 +4,6 @@
  */
 
 import { query } from '@/lib/database';
-import chromium from '@sparticuz/chromium';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -16,6 +15,16 @@ const PLUSPORTAL_LOGIN_URL = `${PLUSPORTAL_BASE_URL}/apps/authentication/externa
 
 // Check if running in serverless environment (Vercel, AWS Lambda, etc.)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
+
+// Dynamic import for chromium (only needed in serverless)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let chromium: any = null;
+async function getChromium() {
+  if (!chromium && isServerless) {
+    chromium = (await import('@sparticuz/chromium')).default;
+  }
+  return chromium;
+}
 
 export interface PlusPortalCredentials {
   username: string;
@@ -92,16 +101,21 @@ export class PlusPortalSyncService {
       // Serverless environment - use @sparticuz/chromium
       console.log('[PlusPortal] Running in serverless mode, using @sparticuz/chromium');
       
-      // Set font configuration for serverless
-      chromium.setHeadlessMode = 'shell';
-      chromium.setGraphicsMode = false;
+      const chromiumModule = await getChromium();
+      if (!chromiumModule) {
+        throw new Error('Failed to load @sparticuz/chromium in serverless mode');
+      }
       
-      const executablePath = await chromium.executablePath();
+      // Set font configuration for serverless
+      chromiumModule.setHeadlessMode = 'shell';
+      chromiumModule.setGraphicsMode = false;
+      
+      const executablePath = await chromiumModule.executablePath();
       console.log('[PlusPortal] Chromium executable path:', executablePath);
       
       this.browser = await puppeteer.launch({
-        args: [...chromium.args, ...launchArgs],
-        defaultViewport: chromium.defaultViewport,
+        args: [...chromiumModule.args, ...launchArgs],
+        defaultViewport: chromiumModule.defaultViewport,
         executablePath,
         headless: true,
       });
@@ -450,7 +464,7 @@ export class PlusPortalSyncService {
       console.log('[PlusPortal] Available buttons:', JSON.stringify(allButtons, null, 2));
       
       const csvButtonClicked = await page.evaluate(() => {
-        // Try multiple selectors for CSV button
+        // Try multiple selectors for Export/CSV button
         const selectors = [
           'button',
           '.btn',
@@ -465,8 +479,9 @@ export class PlusPortalSyncService {
           const elements = Array.from(document.querySelectorAll(selector));
           for (const el of elements) {
             const text = el.textContent?.trim().toLowerCase() || '';
-            // Look for button containing "csv" or "export" or "download"
-            if (text === 'csv' || text.includes('csv') || text === 'export csv' || text === 'download csv') {
+            // Look for "export" button FIRST (this is the actual button name)
+            // Then fall back to CSV variations
+            if (text === 'export' || text === 'csv' || text.includes('csv') || text === 'export csv' || text === 'download') {
               (el as HTMLElement).click();
               return { found: true, text: el.textContent?.trim(), selector };
             }
@@ -722,14 +737,69 @@ export class PlusPortalSyncService {
         }
         
         if (companyListFound) {
-          console.log('[PlusPortal] Company selection page detected, selecting first company...');
+          console.log('[PlusPortal] Company selection page detected, finding matching company...');
+          
+          // Get the supplier name to match against companies
+          const supplierResult = await query<{ name: string }>(
+            `SELECT name FROM core.supplier WHERE supplier_id = $1`,
+            [this.supplierId]
+          );
+          const supplierName = supplierResult.rows[0]?.name?.toUpperCase() || '';
+          console.log('[PlusPortal] Looking for company matching supplier:', supplierName);
+          
           try {
-            await page.evaluate(() => {
+            // Get all available companies and their text content
+            const companies = await page.evaluate(() => {
               const listItems = Array.from(document.querySelectorAll('nz-list-item, .ant-list-item, [nz-list-item]'));
-              if (listItems.length > 0) {
-                (listItems[0] as HTMLElement).click();
-              }
+              return listItems.map((el, idx) => ({
+                index: idx,
+                text: el.textContent?.trim().toUpperCase() || '',
+              }));
             });
+            
+            console.log('[PlusPortal] Available companies:', companies.map((c: { index: number; text: string }) => c.text));
+            
+            // Find the best matching company
+            let matchIndex = -1;
+            
+            // Try exact match first
+            for (const company of companies) {
+              if (company.text.includes(supplierName) || supplierName.includes(company.text)) {
+                matchIndex = company.index;
+                console.log('[PlusPortal] Found matching company at index', matchIndex, ':', company.text);
+                break;
+              }
+            }
+            
+            // Try partial match on key words
+            if (matchIndex === -1) {
+              const supplierWords = supplierName.split(/\s+/).filter(w => w.length > 3);
+              for (const company of companies) {
+                for (const word of supplierWords) {
+                  if (company.text.includes(word)) {
+                    matchIndex = company.index;
+                    console.log('[PlusPortal] Found partial match at index', matchIndex, ':', company.text, '(matched:', word, ')');
+                    break;
+                  }
+                }
+                if (matchIndex !== -1) break;
+              }
+            }
+            
+            // Fallback to first company if no match found
+            if (matchIndex === -1) {
+              console.log('[PlusPortal] WARNING: No matching company found, using first company');
+              matchIndex = 0;
+            }
+            
+            // Click the matched company
+            await page.evaluate((idx: number) => {
+              const listItems = Array.from(document.querySelectorAll('nz-list-item, .ant-list-item, [nz-list-item]'));
+              if (listItems[idx]) {
+                (listItems[idx] as HTMLElement).click();
+              }
+            }, matchIndex);
+            
             await this.delay(5000);
             console.log('[PlusPortal] After company selection, URL:', page.url());
           } catch (evalError) {
