@@ -14,8 +14,78 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { query } from '@/lib/database';
 import { POSSalesService } from '@/lib/services/pos';
 import { DocumentGenerationHooks } from '@/lib/services/docustore';
+
+/**
+ * Get a valid organization ID - either the provided one or the first available
+ */
+async function resolveOrgId(providedOrgId?: string): Promise<string> {
+  // If provided, verify it exists
+  if (providedOrgId) {
+    const check = await query<{ id: string }>(
+      'SELECT id FROM organization WHERE id = $1 LIMIT 1',
+      [providedOrgId]
+    );
+    if (check.rows.length > 0) {
+      return check.rows[0].id;
+    }
+  }
+
+  // Get the first available organization
+  const result = await query<{ id: string }>(
+    'SELECT id FROM organization ORDER BY created_at ASC LIMIT 1'
+  );
+
+  if (result.rows.length > 0) {
+    return result.rows[0].id;
+  }
+
+  // Create a default organization if none exists
+  const createResult = await query<{ id: string }>(
+    `INSERT INTO organization (name, slug, plan_type, settings)
+     VALUES ('Default Organization', 'default', 'starter', '{}')
+     RETURNING id`
+  );
+
+  return createResult.rows[0].id;
+}
+
+/**
+ * Resolve customer ID - verify it exists or get/create a walk-in customer
+ */
+async function resolveCustomerId(providedCustomerId: string, orgId: string): Promise<string> {
+  // If provided, verify it exists
+  const check = await query<{ id: string }>(
+    'SELECT id FROM customer WHERE id = $1 LIMIT 1',
+    [providedCustomerId]
+  );
+  if (check.rows.length > 0) {
+    return check.rows[0].id;
+  }
+
+  // Look for an existing walk-in customer
+  const walkIn = await query<{ id: string }>(
+    `SELECT id FROM customer 
+     WHERE (name ILIKE '%walk%in%' OR name ILIKE '%walkin%' OR name = 'Walk-in Customer')
+     ORDER BY created_at ASC LIMIT 1`
+  );
+
+  if (walkIn.rows.length > 0) {
+    return walkIn.rows[0].id;
+  }
+
+  // Create a walk-in customer
+  const createResult = await query<{ id: string }>(
+    `INSERT INTO customer (org_id, name, email, segment, status)
+     VALUES ($1, 'Walk-in Customer', 'walkin@pos.local', 'individual', 'active')
+     RETURNING id`,
+    [orgId]
+  );
+
+  return createResult.rows[0].id;
+}
 
 // Validation schema for POS sale
 const posSaleItemSchema = z.object({
@@ -48,8 +118,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = posSaleSchema.parse(body);
 
+    // Resolve valid org_id and customer_id
+    const resolvedOrgId = await resolveOrgId(validated.org_id);
+    const resolvedCustomerId = await resolveCustomerId(validated.customer_id, resolvedOrgId);
+    const saleInput = { 
+      ...validated, 
+      org_id: resolvedOrgId,
+      customer_id: resolvedCustomerId,
+    };
+
     // Process the sale
-    const result = await POSSalesService.processSale(validated);
+    const result = await POSSalesService.processSale(saleInput);
 
     // Trigger async document generation
     // This runs in the background and won't block the response
@@ -58,15 +137,15 @@ export async function POST(request: NextRequest) {
         // Generate sales order PDF
         DocumentGenerationHooks.onSalesOrderCreated(
           result.sales_order_id,
-          validated.org_id,
-          validated.created_by || undefined
+          resolvedOrgId,
+          saleInput.created_by || undefined
         ).catch((err) => console.error('Failed to generate sales order PDF:', err)),
 
         // Generate invoice PDF
         DocumentGenerationHooks.onInvoiceCreated(
           result.invoice_id,
-          validated.org_id,
-          validated.created_by || undefined
+          resolvedOrgId,
+          saleInput.created_by || undefined
         ).catch((err) => console.error('Failed to generate invoice PDF:', err)),
 
         // Generate POS receipt (if hook exists)
@@ -74,8 +153,8 @@ export async function POST(request: NextRequest) {
           result.transaction_id,
           result.sales_order_id,
           result.invoice_id,
-          validated.org_id,
-          validated.created_by || undefined
+          resolvedOrgId,
+          saleInput.created_by || undefined
         )?.catch((err) => console.error('Failed to generate POS receipt:', err)),
       ]).catch((err) => console.error('Document generation failed:', err));
     }
@@ -111,16 +190,12 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const orgId = searchParams.get('org_id');
+    const providedOrgId = searchParams.get('org_id');
     const storeId = searchParams.get('store_id') || undefined;
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200);
 
-    if (!orgId) {
-      return NextResponse.json(
-        { success: false, error: 'org_id is required' },
-        { status: 400 }
-      );
-    }
+    // Resolve org_id - use provided or get default
+    const orgId = await resolveOrgId(providedOrgId || undefined);
 
     const transactions = await POSSalesService.getRecentTransactions(orgId, limit, storeId);
 

@@ -165,29 +165,27 @@ export class POSSalesService {
         );
       }
 
-      // 3. Decrement Inventory
+      // 3. Decrement Inventory (update core.stock_on_hand)
       for (const item of input.items) {
-        // Update inventory_items stock
+        // Update stock_on_hand for the supplier_product
         await client.query(
-          `UPDATE public.inventory_items
-           SET stock_qty = COALESCE(stock_qty, 0) - $1,
-               updated_at = NOW()
-           WHERE id = $2`,
+          `UPDATE core.stock_on_hand
+           SET qty = GREATEST(COALESCE(qty, 0) - $1, 0),
+               as_of_ts = NOW()
+           WHERE supplier_product_id = $2`,
           [item.quantity, item.product_id]
         );
 
-        // Record stock movement
+        // Record stock movement in core.stock_movement
         await client.query(
-          `INSERT INTO public.stock_movements (
-            inventory_item_id, movement_type, quantity, reference_type, reference_id,
-            notes, created_by, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+          `INSERT INTO core.stock_movement (
+            supplier_product_id, movement_type, qty, reference_doc, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             item.product_id,
-            'OUT',
-            item.quantity,
-            'POS_SALE',
-            invoice.id, // Use invoice ID as reference
+            'sale',
+            -item.quantity, // Negative for outgoing
+            `INV:${invoice.id}`,
             `POS Sale - Invoice ${invoiceNumber}`,
             input.created_by || null,
           ]
@@ -347,26 +345,25 @@ export class POSSalesService {
       );
 
       for (const item of itemsResult.rows) {
+        // Restore stock in core.stock_on_hand
         await client.query(
-          `UPDATE public.inventory_items
-           SET stock_qty = COALESCE(stock_qty, 0) + $1,
-               updated_at = NOW()
-           WHERE id = $2`,
+          `UPDATE core.stock_on_hand
+           SET qty = COALESCE(qty, 0) + $1,
+               as_of_ts = NOW()
+           WHERE supplier_product_id = $2`,
           [item.quantity, item.product_id]
         );
 
-        // Record stock movement
+        // Record stock movement reversal
         await client.query(
-          `INSERT INTO public.stock_movements (
-            inventory_item_id, movement_type, quantity, reference_type, reference_id,
-            notes, created_by, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+          `INSERT INTO core.stock_movement (
+            supplier_product_id, movement_type, qty, reference_doc, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             item.product_id,
-            'IN',
-            item.quantity,
-            'POS_VOID',
-            invoiceId,
+            'void_reversal',
+            item.quantity, // Positive for incoming
+            `VOID:${invoiceId}`,
             `POS Void - ${reason}`,
             voidedBy || null,
           ]

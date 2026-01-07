@@ -65,10 +65,10 @@ export default function DownloadGenerator() {
         ctx.fillText("Available Products:", width / 2, 600)
 
         const products = [
-          "🎧 Bluetooth Headphones - R$ 299.99",
-          "🔌 Chargers - R$ 89.99",
-          "🔗 USB-C Cables - R$ 49.99",
-          "🔋 Power Banks - R$ 159.99",
+          "🎧 Bluetooth Headphones - R 2,999.99",
+          "🔌 Chargers - R 899.99",
+          "🔗 USB-C Cables - R 499.99",
+          "🔋 Power Banks - R 1,599.99",
         ]
 
         ctx.font = "35px Arial"
@@ -104,10 +104,10 @@ export default function DownloadGenerator() {
 
         // Grid of products
         const productGrid = [
-          ["🎧 Headphones", "R$ 299.99"],
-          ["🔌 Chargers", "R$ 89.99"],
-          ["🔗 Cables", "R$ 49.99"],
-          ["🔋 Power Banks", "R$ 159.99"],
+          ["🎧 Headphones", "R 2,999.99"],
+          ["🔌 Chargers", "R 899.99"],
+          ["🔗 Cables", "R 499.99"],
+          ["🔋 Power Banks", "R 1,599.99"],
         ]
 
         ctx.font = "30px Arial"
@@ -184,12 +184,12 @@ Electronics and Accessories
 ${baseUrl}
 
 🎯 AVAILABLE PRODUCTS:
-• 🎧 Bluetooth Headphones Premium - R$ 299.99
-• 🔌 Fast Charger USB-C 65W - R$ 89.99
-• 🔗 USB-C Cable Original 2m - R$ 49.99
-• 📱 Wireless Charging Base 15W - R$ 129.99
-• 🎮 Gaming Headset RGB - R$ 199.99
-• 🔋 Portable Charger 20000mAh - R$ 159.99
+• 🎧 Premium Bluetooth Headphones - R 2,999.99
+• 🔌 USB-C Fast Charger 65W - R 899.99
+• 🔗 Original USB-C Cable 2m - R 499.99
+• 📱 Wireless Charging Pad 15W - R 1,299.99
+• 🎮 RGB Gaming Headset - R 1,999.99
+• 🔋 Power Bank 20000mAh - R 1,599.99
 
 📞 HOW TO PLACE ORDERS:
 1. Access our online store

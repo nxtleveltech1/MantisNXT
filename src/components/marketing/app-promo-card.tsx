@@ -52,19 +52,19 @@ export default function AppPromoCard() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="bg-white/20 rounded p-2 text-center">
               <div>🎧 Bluetooth Headphones</div>
-              <div className="text-green-200">R$ 299.99</div>
+              <div className="text-green-200">R 2,999.99</div>
             </div>
             <div className="bg-white/20 rounded p-2 text-center">
               <div>🔌 Chargers</div>
-              <div className="text-green-200">R$ 89.99</div>
+              <div className="text-green-200">R 899.99</div>
             </div>
             <div className="bg-white/20 rounded p-2 text-center">
               <div>🔗 USB-C Cables</div>
-              <div className="text-green-200">R$ 49.99</div>
+              <div className="text-green-200">R 499.99</div>
             </div>
             <div className="bg-white/20 rounded p-2 text-center">
               <div>🔋 Power Banks</div>
-              <div className="text-green-200">R$ 159.99</div>
+              <div className="text-green-200">R 1,599.99</div>
             </div>
           </div>
         </div>

@@ -26,107 +26,110 @@ interface CartItem extends Product {
   quantity: number
 }
 
+// South African ZAR pricing - English
+const formatZAR = (price: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price)
+
 const originalProducts: Product[] = [
   {
     id: 1,
-    name: "Fone de Ouvido Bluetooth Premium",
-    price: 299.99,
-    image: "/marketing/fone-bluetooth-premium.jpg",
+    name: "Premium Bluetooth Headphones",
+    price: 2999.99,
+    image: "/marketing/bluetooth-headphones.jpg",
     description:
-      "Fone de ouvido sem fio com cancelamento de ruído ativo e bateria de longa duração. Ideal para música, chamadas e trabalho.",
-    category: "Áudio",
-    features: ["Bluetooth 5.0", "Cancelamento de ruído", "30h de bateria", "Resistente à água IPX4"],
+      "Wireless headphones with active noise cancellation and long-lasting battery. Perfect for music, calls, and work.",
+    category: "Audio",
+    features: ["Bluetooth 5.0", "Noise Cancellation", "30h Battery", "IPX4 Water Resistant"],
     specifications: {
-      Conectividade: "Bluetooth 5.0",
-      Bateria: "30 horas",
-      Resistência: "IPX4",
-      Peso: "250g",
-      Garantia: "1 ano",
+      Connectivity: "Bluetooth 5.0",
+      Battery: "30 hours",
+      Resistance: "IPX4",
+      Weight: "250g",
+      Warranty: "1 year",
     },
   },
   {
     id: 2,
-    name: "Carregador Rápido USB-C 65W",
-    price: 89.99,
-    image: "/marketing/carregador-usb-c.jpg",
+    name: "USB-C Fast Charger 65W",
+    price: 899.99,
+    image: "/marketing/usb-c-charger.jpg",
     description:
-      "Carregador rápido universal compatível com smartphones, tablets e notebooks. Tecnologia de carregamento inteligente.",
-    category: "Carregadores",
-    features: ["Carregamento rápido 65W", "USB-C PD", "Proteção contra sobrecarga", "Compacto e portátil"],
+      "Universal fast charger compatible with smartphones, tablets, and laptops. Smart charging technology.",
+    category: "Chargers",
+    features: ["65W Fast Charging", "USB-C PD", "Overcharge Protection", "Compact & Portable"],
     specifications: {
-      Potência: "65W",
-      Entrada: "100-240V",
-      Saída: "USB-C PD",
-      Dimensões: "6x6x3cm",
-      Garantia: "2 anos",
+      Power: "65W",
+      Input: "100-240V",
+      Output: "USB-C PD",
+      Dimensions: "6x6x3cm",
+      Warranty: "2 years",
     },
   },
   {
     id: 3,
-    name: "Cabo USB-C Original 2m",
-    price: 49.99,
-    image: "/marketing/cabo-usb-c.jpg",
+    name: "Original USB-C Cable 2m",
+    price: 499.99,
+    image: "/marketing/usb-c-cable.jpg",
     description:
-      "Cabo USB-C original de alta qualidade para carregamento e transferência de dados. Material premium e durável.",
-    category: "Cabos",
-    features: ["2 metros de comprimento", "USB-C para USB-C", "Transferência rápida", "Material durável"],
+      "High-quality original USB-C cable for charging and data transfer. Premium and durable materials.",
+    category: "Cables",
+    features: ["2 Metre Length", "USB-C to USB-C", "Fast Transfer", "Durable Build"],
     specifications: {
-      Comprimento: "2 metros",
-      Tipo: "USB-C para USB-C",
-      Velocidade: "480 Mbps",
-      Material: "Nylon trançado",
-      Garantia: "1 ano",
+      Length: "2 metres",
+      Type: "USB-C to USB-C",
+      Speed: "480 Mbps",
+      Material: "Braided Nylon",
+      Warranty: "1 year",
     },
   },
   {
     id: 4,
-    name: "Carregador de Indução Wireless 15W",
-    price: 129.99,
-    image: "/marketing/carregador-wireless.jpg",
+    name: "Wireless Charging Pad 15W",
+    price: 1299.99,
+    image: "/marketing/wireless-charger.jpg",
     description:
-      "Base de carregamento sem fio compatível com todos os dispositivos Qi. Design elegante e carregamento eficiente.",
-    category: "Carregadores",
-    features: ["Carregamento 15W", "Compatível Qi", "LED indicador", "Design elegante"],
+      "Wireless charging base compatible with all Qi devices. Elegant design with efficient charging.",
+    category: "Chargers",
+    features: ["15W Charging", "Qi Compatible", "LED Indicator", "Elegant Design"],
     specifications: {
-      Potência: "15W máximo",
-      Compatibilidade: "Qi universal",
-      Dimensões: "10x10x1cm",
-      Material: "Alumínio premium",
-      Garantia: "2 anos",
+      Power: "15W maximum",
+      Compatibility: "Qi universal",
+      Dimensions: "10x10x1cm",
+      Material: "Premium Aluminium",
+      Warranty: "2 years",
     },
   },
   {
     id: 5,
-    name: "Fone de Ouvido Gaming RGB",
-    price: 199.99,
-    image: "/marketing/fone-gaming.jpg",
+    name: "RGB Gaming Headset",
+    price: 1999.99,
+    image: "/marketing/gaming-headset.jpg",
     description:
-      "Headset gamer com iluminação RGB e microfone destacável. Som surround para a melhor experiência gaming.",
-    category: "Áudio",
-    features: ["Som surround 7.1", "Microfone destacável", "Iluminação RGB", "Almofadas confortáveis"],
+      "Gaming headset with RGB lighting and detachable microphone. Surround sound for the ultimate gaming experience.",
+    category: "Audio",
+    features: ["7.1 Surround Sound", "Detachable Mic", "RGB Lighting", "Comfortable Cushions"],
     specifications: {
-      Conectividade: "USB + P2",
+      Connectivity: "USB + 3.5mm",
       Drivers: "50mm",
-      Frequência: "20Hz-20kHz",
-      Peso: "320g",
-      Garantia: "1 ano",
+      Frequency: "20Hz-20kHz",
+      Weight: "320g",
+      Warranty: "1 year",
     },
   },
   {
     id: 6,
-    name: "Carregador Portátil 20000mAh",
-    price: 159.99,
+    name: "Power Bank 20000mAh",
+    price: 1599.99,
     image: "/marketing/power-bank.jpg",
     description:
-      "Power bank de alta capacidade com carregamento rápido e múltiplas portas. Ideal para viagens e uso diário.",
-    category: "Carregadores",
-    features: ["20000mAh", "Carregamento rápido", "3 portas USB", "Display digital"],
+      "High-capacity power bank with fast charging and multiple ports. Perfect for travel and everyday use.",
+    category: "Chargers",
+    features: ["20000mAh", "Fast Charging", "3 USB Ports", "Digital Display"],
     specifications: {
-      Capacidade: "20000mAh",
-      Portas: "2x USB-A + 1x USB-C",
-      Entrada: "USB-C 18W",
-      Saída: "22.5W máximo",
-      Garantia: "1 ano",
+      Capacity: "20000mAh",
+      Ports: "2x USB-A + 1x USB-C",
+      Input: "USB-C 18W",
+      Output: "22.5W maximum",
+      Warranty: "1 year",
     },
   },
 ]
@@ -209,17 +212,17 @@ export default function MarketingApp() {
   const generateWhatsAppMessage = () => {
     if (cart.length === 0) return ""
 
-    let message = "🛒 *Olá! Gostaria de fazer um pedido:*\n\n"
+    let message = "🛒 *Hi! I'd like to place an order:*\n\n"
 
     cart.forEach((item, index) => {
       message += `${index + 1}. *${item.name}*\n`
-      message += `   Quantidade: ${item.quantity}\n`
-      message += `   Preço unitário: R$ ${item.price.toFixed(2)}\n`
-      message += `   Subtotal: R$ ${(item.price * item.quantity).toFixed(2)}\n\n`
+      message += `   Quantity: ${item.quantity}\n`
+      message += `   Unit price: ${formatZAR(item.price)}\n`
+      message += `   Subtotal: ${formatZAR(item.price * item.quantity)}\n\n`
     })
 
-    message += `💰 *Total: R$ ${getTotalPrice().toFixed(2)}*\n\n`
-    message += "Aguardo confirmação e informações sobre entrega! 😊"
+    message += `💰 *Total: ${formatZAR(getTotalPrice())}*\n\n`
+    message += "Awaiting confirmation and delivery details! 😊"
 
     return encodeURIComponent(message)
   }
@@ -293,7 +296,7 @@ export default function MarketingApp() {
                         />
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{item.name}</h4>
-                          <p className="text-sm text-gray-600">R$ {item.price.toFixed(2)}</p>
+                          <p className="text-sm text-gray-600">{formatZAR(item.price)}</p>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Button
@@ -318,7 +321,7 @@ export default function MarketingApp() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-center font-bold text-lg">
                             <span>Total:</span>
-                            <span>R$ {getTotalPrice().toFixed(2)}</span>
+                            <span>{formatZAR(getTotalPrice())}</span>
                           </div>
                           <Button
                             onClick={sendWhatsAppMessage}
@@ -381,7 +384,7 @@ export default function MarketingApp() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-green-600">R$ {product.price.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-green-600">{formatZAR(product.price)}</span>
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openProductModal(product)}>
                         <Eye className="h-4 w-4 mr-1" />
@@ -456,7 +459,7 @@ export default function MarketingApp() {
 
                   {/* Price and Quantity */}
                   <div className="space-y-4">
-                    <div className="text-3xl font-bold text-green-600">R$ {selectedProduct.price.toFixed(2)}</div>
+                    <div className="text-3xl font-bold text-green-600">{formatZAR(selectedProduct.price)}</div>
 
                     <div className="flex items-center space-x-4">
                       <span className="font-medium">Quantity:</span>
@@ -478,7 +481,7 @@ export default function MarketingApp() {
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <span className="font-medium">Subtotal:</span>
                       <span className="text-xl font-bold text-green-600">
-                        R$ {(selectedProduct.price * productQuantity).toFixed(2)}
+                        {formatZAR(selectedProduct.price * productQuantity)}
                       </span>
                     </div>
 

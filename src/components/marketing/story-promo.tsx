@@ -81,22 +81,22 @@ export default function StoryPromo() {
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🎧</div>
               <div className="text-white font-medium">Bluetooth Headphones</div>
-              <div className="text-green-100 font-bold">R$ 299.99</div>
+              <div className="text-green-100 font-bold">R 2,999.99</div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🔌</div>
               <div className="text-white font-medium">Chargers</div>
-              <div className="text-green-100 font-bold">R$ 89.99</div>
+              <div className="text-green-100 font-bold">R 899.99</div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🔗</div>
               <div className="text-white font-medium">USB-C Cables</div>
-              <div className="text-green-100 font-bold">R$ 49.99</div>
+              <div className="text-green-100 font-bold">R 499.99</div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
               <div className="text-4xl mb-2">🔋</div>
               <div className="text-white font-medium">Power Banks</div>
-              <div className="text-green-100 font-bold">R$ 159.99</div>
+              <div className="text-green-100 font-bold">R 1,599.99</div>
             </div>
           </div>
         </div>
