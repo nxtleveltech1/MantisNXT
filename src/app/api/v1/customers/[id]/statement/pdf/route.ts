@@ -46,7 +46,7 @@ export async function GET(
     // Fetch customer details
     const customerResult = await query<CustomerRow>(
       `SELECT id, name, company, email, phone, address, account_number
-       FROM customers.customers 
+       FROM customer 
        WHERE id = $1 AND org_id = $2`,
       [customerId, orgId]
     );

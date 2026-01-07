@@ -251,7 +251,7 @@ export class POSSalesService {
 
       // 6. Get customer details
       const customerResult = await client.query(
-        `SELECT id, name, email FROM customers.customers WHERE id = $1`,
+        `SELECT id, name, email FROM customer WHERE id = $1`,
         [input.customer_id]
       );
       const customer = customerResult.rows[0] || { id: input.customer_id };

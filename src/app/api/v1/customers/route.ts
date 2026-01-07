@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { CustomerService } from '@/lib/services/CustomerService';
+import { getOrgId } from '../sales/_helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,17 +9,18 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const search = searchParams.get('search');
+    const orgId = await getOrgId(request);
 
     let data: unknown[];
     let count: number;
 
     if (search) {
       // Use search method for filtered results
-      data = await CustomerService.searchCustomers(search, limit);
+      data = await CustomerService.searchCustomers(search, limit, orgId);
       count = data.length; // Search doesn't return count, approximate
     } else {
       // Use regular getCustomers for pagination
-      const result = await CustomerService.getCustomers(limit, offset);
+      const result = await CustomerService.getCustomers(limit, offset, orgId);
       data = result.data;
       count = result.count;
     }
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const orgId = await getOrgId(request, body);
 
     // Basic validation
     if (!body.name) {
@@ -72,6 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     const customer = await CustomerService.createCustomer({
+      org_id: orgId,
       name: body.name,
       email: email,
       phone: body.phone || null,
@@ -99,7 +103,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to create customer',
+        error: error instanceof Error ? error.message : 'Failed to create customer',
       },
       { status: 500 }
     );

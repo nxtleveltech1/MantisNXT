@@ -73,19 +73,29 @@ export interface CustomerUpdate {
 }
 
 export class CustomerService {
-  static async getCustomers(limit = 50, offset = 0): Promise<{ data: Customer[]; count: number }> {
+  static async getCustomers(limit = 50, offset = 0, orgId?: string): Promise<{ data: Customer[]; count: number }> {
     try {
       // Get total count
-      const countResult = await query<{ count: string }>('SELECT COUNT(*) as count FROM customers.customers');
+      const countResult = orgId 
+        ? await query<{ count: string }>('SELECT COUNT(*) as count FROM customer WHERE org_id = $1', [orgId])
+        : await query<{ count: string }>('SELECT COUNT(*) as count FROM customer');
       const count = parseInt(countResult.rows[0]?.count || '0', 10);
 
       // Get customers
-      const result = await query<Customer>(
-        `SELECT * FROM customers.customers
-         ORDER BY created_at DESC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
-      );
+      const result = orgId
+        ? await query<Customer>(
+            `SELECT * FROM customer
+             WHERE org_id = $1
+             ORDER BY created_at DESC
+             LIMIT $2 OFFSET $3`,
+            [orgId, limit, offset]
+          )
+        : await query<Customer>(
+            `SELECT * FROM customer
+             ORDER BY created_at DESC
+             LIMIT $1 OFFSET $2`,
+            [limit, offset]
+          );
 
       return { data: result.rows, count };
     } catch (error) {
@@ -96,7 +106,7 @@ export class CustomerService {
 
   static async getCustomerById(id: string): Promise<Customer | null> {
     try {
-      const result = await query<Customer>('SELECT * FROM customers.customers WHERE id = $1', [id]);
+      const result = await query<Customer>('SELECT * FROM customer WHERE id = $1', [id]);
 
       return result.rows[0] || null;
     } catch (error) {
@@ -107,11 +117,16 @@ export class CustomerService {
 
   static async createCustomer(customer: CustomerInsert): Promise<Customer> {
     try {
+      if (!customer.org_id) {
+        throw new Error('org_id is required to create a customer');
+      }
+      
       const result = await query<Customer>(
-        `INSERT INTO customers.customers (name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, notes, tags, metadata)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `INSERT INTO customer (org_id, name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, notes, tags, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING *`,
         [
+          customer.org_id,
           customer.name,
           customer.email || null,
           customer.phone || null,
@@ -155,7 +170,7 @@ export class CustomerService {
       values.push(id);
 
       const result = await query<Customer>(
-        `UPDATE customers.customers
+        `UPDATE customer
          SET ${setClauses.join(', ')}
          WHERE id = $${paramIndex}
          RETURNING *`,
@@ -171,25 +186,37 @@ export class CustomerService {
 
   static async deleteCustomer(id: string): Promise<void> {
     try {
-      await query('DELETE FROM customers.customers WHERE id = $1', [id]);
+      await query('DELETE FROM customer WHERE id = $1', [id]);
     } catch (error) {
       console.error('Error deleting customer:', error);
       throw error;
     }
   }
 
-  static async searchCustomers(searchTerm: string, limit = 50): Promise<Customer[]> {
+  static async searchCustomers(searchTerm: string, limit = 50, orgId?: string): Promise<Customer[]> {
     try {
-      const result = await query<Customer>(
-        `SELECT * FROM customers.customers
-         WHERE name ILIKE $1
-            OR email ILIKE $1
-            OR company ILIKE $1
-            OR phone ILIKE $1
-         ORDER BY created_at DESC
-         LIMIT $2`,
-        [`%${searchTerm}%`, limit]
-      );
+      const result = orgId
+        ? await query<Customer>(
+            `SELECT * FROM customer
+             WHERE org_id = $1
+               AND (name ILIKE $2
+                    OR email ILIKE $2
+                    OR company ILIKE $2
+                    OR phone ILIKE $2)
+             ORDER BY created_at DESC
+             LIMIT $3`,
+            [orgId, `%${searchTerm}%`, limit]
+          )
+        : await query<Customer>(
+            `SELECT * FROM customer
+             WHERE name ILIKE $1
+                OR email ILIKE $1
+                OR company ILIKE $1
+                OR phone ILIKE $1
+             ORDER BY created_at DESC
+             LIMIT $2`,
+            [`%${searchTerm}%`, limit]
+          );
 
       return result.rows;
     } catch (error) {
@@ -201,7 +228,7 @@ export class CustomerService {
   static async getCustomersBySegment(segment: string, limit = 50): Promise<Customer[]> {
     try {
       const result = await query<Customer>(
-        `SELECT * FROM customers.customers
+        `SELECT * FROM customer
          WHERE segment = $1
          ORDER BY created_at DESC
          LIMIT $2`,
@@ -218,7 +245,7 @@ export class CustomerService {
   static async getCustomersByStatus(status: string, limit = 50): Promise<Customer[]> {
     try {
       const result = await query<Customer>(
-        `SELECT * FROM customers.customers
+        `SELECT * FROM customer
          WHERE status = $1
          ORDER BY created_at DESC
          LIMIT $2`,

@@ -162,7 +162,7 @@ export async function generateRepairInvoicePDF(
  */
 export async function getCustomerForRepair(customerId: string): Promise<CustomerInfo | null> {
   const result = await query<CustomerInfo>(
-    `SELECT id, name, company, email, phone FROM customers.customers WHERE id = $1`,
+    `SELECT id, name, company, email, phone FROM customer WHERE id = $1`,
     [customerId]
   );
   return result.rows[0] || null;
