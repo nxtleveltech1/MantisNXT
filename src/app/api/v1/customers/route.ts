@@ -57,7 +57,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!body.email) {
+    // Email is optional for walk-in/POS customers
+    // For POS walk-in, use a generated local email
+    const email = body.email || (body.is_walk_in ? `walkin-${Date.now()}@pos.local` : null);
+    
+    if (!email && !body.is_walk_in) {
       return NextResponse.json(
         {
           success: false,
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const customer = await CustomerService.createCustomer({
       name: body.name,
-      email: body.email,
+      email: email,
       phone: body.phone || null,
       company: body.company || null,
       segment: body.segment || 'individual',
@@ -79,7 +83,7 @@ export async function POST(request: NextRequest) {
       last_interaction_date: body.last_interaction_date || null,
       address: body.address || null,
       tags: body.tags || null,
-      metadata: body.metadata || null,
+      metadata: body.metadata || { is_walk_in: body.is_walk_in || false },
       notes: body.notes || null,
     });
 

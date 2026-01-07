@@ -7,6 +7,7 @@
 import { DocumentGenerator } from './document-generator';
 import { DOCUMENT_TYPES } from './document-types';
 import type { DocumentGenerationInput } from './document-generator';
+import { generatePOSReceiptHtml, type POSReceiptData } from './templates/pos-receipt';
 
 /**
  * Event listener for entity creation events
@@ -236,6 +237,64 @@ export class DocumentGenerationHooks {
       });
     } catch (error) {
       console.error('Error auto-generating stock adjustment PDF:', error);
+    }
+  }
+
+  /**
+   * Handle POS sale completed event
+   * Generates receipt for the POS transaction
+   */
+  static async onPOSSaleCompleted(
+    transactionId: string,
+    salesOrderId: string,
+    invoiceId: string,
+    orgId: string,
+    userId?: string
+  ): Promise<{ receiptHtml?: string; receiptUrl?: string } | void> {
+    try {
+      // Generate the POS receipt as HTML
+      // Note: The actual receipt data would need to be fetched from the database
+      // For now, we generate the sales order and invoice PDFs
+      // The receipt HTML can be used for thermal printing on the POS terminal
+      
+      // Generate sales order PDF
+      await DocumentGenerator.generate({
+        documentType: DOCUMENT_TYPES.SALES_ORDER,
+        entityType: 'sales_order',
+        entityId: salesOrderId,
+        orgId,
+        userId,
+        metadata: {
+          auto_generated: true,
+          source: 'pos_sale_completed_event',
+          pos_transaction: true,
+          transaction_id: transactionId,
+        },
+      });
+
+      // Generate invoice PDF  
+      await DocumentGenerator.generate({
+        documentType: DOCUMENT_TYPES.SALES_INVOICE,
+        entityType: 'invoice',
+        entityId: invoiceId,
+        orgId,
+        userId,
+        metadata: {
+          auto_generated: true,
+          source: 'pos_sale_completed_event',
+          pos_transaction: true,
+          transaction_id: transactionId,
+        },
+      });
+
+      // Note: POS receipt HTML is generated separately and returned to the POS terminal
+      // for thermal printing. The generatePOSReceiptHtml function can be called
+      // directly with the transaction data.
+      
+      console.log(`POS documents generated for transaction ${transactionId}`);
+    } catch (error) {
+      console.error('Error generating POS documents:', error);
+      // Don't throw - document generation failures shouldn't block the sale
     }
   }
 }
