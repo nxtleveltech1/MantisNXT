@@ -287,7 +287,7 @@ export class SalesPDFService {
       address: Record<string, string> | null;
     }>(
       `SELECT id, name, company, email, phone, address
-       FROM customer
+       FROM customers.customers
        WHERE id = $1 AND org_id = $2`,
       [customerId, orgId]
     );

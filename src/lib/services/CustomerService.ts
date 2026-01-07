@@ -76,12 +76,12 @@ export class CustomerService {
   static async getCustomers(limit = 50, offset = 0): Promise<{ data: Customer[]; count: number }> {
     try {
       // Get total count
-      const countResult = await query<{ count: string }>('SELECT COUNT(*) as count FROM customer');
+      const countResult = await query<{ count: string }>('SELECT COUNT(*) as count FROM customers.customers');
       const count = parseInt(countResult.rows[0]?.count || '0', 10);
 
       // Get customers
       const result = await query<Customer>(
-        `SELECT * FROM customer
+        `SELECT * FROM customers.customers
          ORDER BY created_at DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
@@ -96,7 +96,7 @@ export class CustomerService {
 
   static async getCustomerById(id: string): Promise<Customer | null> {
     try {
-      const result = await query<Customer>('SELECT * FROM customer WHERE id = $1', [id]);
+      const result = await query<Customer>('SELECT * FROM customers.customers WHERE id = $1', [id]);
 
       return result.rows[0] || null;
     } catch (error) {
@@ -108,7 +108,7 @@ export class CustomerService {
   static async createCustomer(customer: CustomerInsert): Promise<Customer> {
     try {
       const result = await query<Customer>(
-        `INSERT INTO customer (name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, notes, tags, metadata)
+        `INSERT INTO customers.customers (name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, notes, tags, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *`,
         [
@@ -155,7 +155,7 @@ export class CustomerService {
       values.push(id);
 
       const result = await query<Customer>(
-        `UPDATE customer
+        `UPDATE customers.customers
          SET ${setClauses.join(', ')}
          WHERE id = $${paramIndex}
          RETURNING *`,
@@ -171,7 +171,7 @@ export class CustomerService {
 
   static async deleteCustomer(id: string): Promise<void> {
     try {
-      await query('DELETE FROM customer WHERE id = $1', [id]);
+      await query('DELETE FROM customers.customers WHERE id = $1', [id]);
     } catch (error) {
       console.error('Error deleting customer:', error);
       throw error;
@@ -181,7 +181,7 @@ export class CustomerService {
   static async searchCustomers(searchTerm: string, limit = 50): Promise<Customer[]> {
     try {
       const result = await query<Customer>(
-        `SELECT * FROM customer
+        `SELECT * FROM customers.customers
          WHERE name ILIKE $1
             OR email ILIKE $1
             OR company ILIKE $1
@@ -201,7 +201,7 @@ export class CustomerService {
   static async getCustomersBySegment(segment: string, limit = 50): Promise<Customer[]> {
     try {
       const result = await query<Customer>(
-        `SELECT * FROM customer
+        `SELECT * FROM customers.customers
          WHERE segment = $1
          ORDER BY created_at DESC
          LIMIT $2`,
@@ -218,7 +218,7 @@ export class CustomerService {
   static async getCustomersByStatus(status: string, limit = 50): Promise<Customer[]> {
     try {
       const result = await query<Customer>(
-        `SELECT * FROM customer
+        `SELECT * FROM customers.customers
          WHERE status = $1
          ORDER BY created_at DESC
          LIMIT $2`,

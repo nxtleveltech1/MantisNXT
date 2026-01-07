@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
             updated++;
           } else {
             const ins = await query<{ id: string }>(
-              `INSERT INTO customer (id, org_id, name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, metadata, tags, created_at, updated_at)
+              `INSERT INTO customers.customers (id, org_id, name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, metadata, tags, created_at, updated_at)
                VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, 'smb', 'active', 0, NOW(), NOW(), '{}'::jsonb, '{}'::jsonb, ARRAY['woocommerce'], NOW(), NOW())
                RETURNING id`,
               [
