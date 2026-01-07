@@ -253,14 +253,14 @@ export default function PortalPage() {
             <PortalButton
               icon={<ShoppingCart className="h-10 w-10" strokeWidth={1.5} />}
               label="POS"
-              onClick={() => router.push('/pos')}
+              onClick={() => router.push('/pos-app')}
               delay={200}
             />
             
             <PortalButton
               icon={<Handshake className="h-10 w-10" strokeWidth={1.5} />}
               label="Marketplace"
-              onClick={() => router.push('/marketplace')}
+              onClick={() => router.push('/marketplace-app')}
               delay={300}
             />
             

@@ -388,8 +388,31 @@ export class PlusPortalSyncService {
 
       if (sohTabClicked.found) {
         console.log(`[PlusPortal] Step 6: Clicked SOH INFO tab: "${sohTabClicked.text}" (${sohTabClicked.type})`);
+        // Wait for tab content to load
+        await this.delay(3000);
       } else {
-        console.log('[PlusPortal] Step 6: SOH INFO tab not found, continuing...');
+        console.log('[PlusPortal] Step 6: SOH INFO tab not found, trying alternative navigation...');
+        
+        // Try clicking directly on SOH INFO URL if available
+        const navigatedToSoh = await page.evaluate(() => {
+          // Look for any link containing 'soh' in href
+          const links = Array.from(document.querySelectorAll('a[href*="soh"], a[href*="stock"]'));
+          if (links.length > 0) {
+            (links[0] as HTMLElement).click();
+            return { found: true, href: (links[0] as HTMLAnchorElement).href };
+          }
+          return { found: false };
+        });
+        
+        if (navigatedToSoh.found) {
+          console.log(`[PlusPortal] Navigated via href: ${navigatedToSoh.href}`);
+          await this.delay(3000);
+        } else {
+          // Log page content for debugging
+          const pageTitle = await page.title();
+          const pageUrl = page.url();
+          console.log(`[PlusPortal] Current page: ${pageTitle} (${pageUrl})`);
+        }
       }
 
       // STEP 4: Wait for the SOH table to fully load
@@ -415,23 +438,60 @@ export class PlusPortalSyncService {
       // STEP 5: Click CSV button
       console.log('[PlusPortal] Step 5: Looking for CSV button...');
       
+      // Log all buttons for debugging
+      const allButtons = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button, .btn, [role="button"], a.btn'));
+        return buttons.slice(0, 20).map(btn => ({
+          text: btn.textContent?.trim().slice(0, 30),
+          className: btn.className?.slice(0, 50),
+          id: btn.id,
+        }));
+      });
+      console.log('[PlusPortal] Available buttons:', JSON.stringify(allButtons, null, 2));
+      
       const csvButtonClicked = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim() || '';
-          // Look for button with exactly "CSV" text
-          if (text === 'CSV' || text.toLowerCase() === 'csv') {
-            (btn as HTMLElement).click();
-            return { found: true, text };
+        // Try multiple selectors for CSV button
+        const selectors = [
+          'button',
+          '.btn',
+          '[role="button"]',
+          'a.btn',
+          'span.ant-btn',
+          '.ant-btn',
+          'nz-button',
+        ];
+        
+        for (const selector of selectors) {
+          const elements = Array.from(document.querySelectorAll(selector));
+          for (const el of elements) {
+            const text = el.textContent?.trim().toLowerCase() || '';
+            // Look for button containing "csv" or "export" or "download"
+            if (text === 'csv' || text.includes('csv') || text === 'export csv' || text === 'download csv') {
+              (el as HTMLElement).click();
+              return { found: true, text: el.textContent?.trim(), selector };
+            }
           }
         }
-        return { found: false };
+        
+        // Also try looking for icons with download/export functionality
+        const icons = Array.from(document.querySelectorAll('[class*="download"], [class*="export"], [class*="csv"]'));
+        for (const icon of icons) {
+          const parent = icon.closest('button, a, [role="button"]');
+          if (parent) {
+            (parent as HTMLElement).click();
+            return { found: true, text: 'icon-based', selector: 'icon' };
+          }
+        }
+        
+        return { found: false, availableButtons: [] };
       });
 
       if (csvButtonClicked.found) {
-        console.log(`[PlusPortal] Step 5: Clicked CSV button: "${csvButtonClicked.text}"`);
+        console.log(`[PlusPortal] Step 5: Clicked CSV button: "${csvButtonClicked.text}" (${csvButtonClicked.selector})`);
       } else {
-        throw new Error('CSV button not found on the page');
+        // Take a screenshot for debugging
+        console.log('[PlusPortal] CSV button not found. Page might have different structure.');
+        throw new Error('CSV button not found on the page. Check if the SOH INFO tab loaded correctly.');
       }
 
       // Wait for the export dialog to appear
