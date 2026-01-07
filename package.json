@@ -147,6 +147,7 @@
     "csv-parse": "^5.6.0",
     "dart-tools": "^0.4.6",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.45.1",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.23.24",
     "jsonrepair": "^3.13.1",
