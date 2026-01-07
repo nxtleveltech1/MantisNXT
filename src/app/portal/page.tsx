@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -263,7 +263,15 @@ export default function PortalPage() {
               onClick={() => router.push('/marketplace-app')}
               delay={300}
             />
-            
+
+            <PortalButton
+              icon={<MessageSquare className="h-10 w-10" strokeWidth={1.5} />}
+              sublabel="Social Media"
+              label="Marketing"
+              onClick={() => router.push('/marketing-app')}
+              delay={350}
+            />
+
             <PortalButton
               icon={<Shield className="h-10 w-10" strokeWidth={1.5} />}
               sublabel="System"
