@@ -97,7 +97,8 @@ export class PlusPortalCSVProcessor {
       console.log(`[PlusPortal CSV] Parsed ${records.length} records from CSV`);
       return records as CSVRow[];
     } catch (error) {
-      console.error('[PlusPortal CSV] Parse error:', error);
+      // Log error message only (not full stack) to avoid Bun stderr issues
+      console.log('[PlusPortal CSV] Parse error:', error instanceof Error ? error.message : String(error));
       
       // Fallback: try a simpler parsing approach
       console.log('[PlusPortal CSV] Attempting fallback parsing...');

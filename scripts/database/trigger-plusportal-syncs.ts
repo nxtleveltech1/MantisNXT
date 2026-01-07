@@ -26,10 +26,14 @@ async function main() {
     console.log(`📦 ${supplierName}`);
     console.log('─'.repeat(70));
 
-    // Get supplier ID
+    // Get supplier ID - use exact match on the full name pattern
     const supplierResult = await query<{ supplier_id: string; name: string }>(
-      `SELECT supplier_id, name FROM core.supplier WHERE LOWER(name) LIKE $1`,
-      [`%${supplierName.toLowerCase().split(' ')[0]}%`]
+      `SELECT supplier_id, name FROM core.supplier 
+       WHERE UPPER(name) LIKE $1
+       AND plusportal_username IS NOT NULL
+       ORDER BY name
+       LIMIT 1`,
+      [`%${supplierName.toUpperCase()}%`]
     );
 
     if (supplierResult.rows.length === 0) {

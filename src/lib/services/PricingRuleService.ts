@@ -20,6 +20,7 @@ type DbPricingRuleRow = {
   strategy: string;
   priority: number | null;
   is_active: boolean;
+  is_global: boolean | null;
   markup_percentage: number | string | null;
   fixed_margin: number | string | null;
   min_price: number | string | null;
@@ -102,6 +103,13 @@ export class PricingRuleService {
       applies_to_products: input.applies_to_products,
     });
 
+    // Determine if this is a global rule (no specific entity targeting)
+    const isGlobal =
+      !input.applies_to_products?.length &&
+      !input.applies_to_categories?.length &&
+      !input.applies_to_suppliers?.length &&
+      !input.applies_to_brands?.length;
+
     const result = await query<DbPricingRuleRow>(
       `
         INSERT INTO ${PRICING_TABLES.PRICING_RULES} (
@@ -119,13 +127,14 @@ export class PricingRuleService {
           max_price,
           conditions,
           is_active,
+          is_global,
           priority,
           valid_from,
           valid_until
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
-          $9, $10, $11, $12, $13, $14, $15, $16, $17
+          $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
         )
         RETURNING *
       `,
@@ -144,6 +153,7 @@ export class PricingRuleService {
         input.config?.max_price ?? null,
         JSON.stringify(conditions),
         true,
+        isGlobal,
         input.priority,
         new Date(),
         null,
@@ -166,6 +176,7 @@ export class PricingRuleService {
         strategy,
         priority,
         is_active,
+        is_global,
         markup_percentage,
         fixed_margin,
         min_price,
@@ -236,6 +247,7 @@ export class PricingRuleService {
           strategy,
           priority,
           is_active,
+          is_global,
           markup_percentage,
           fixed_margin,
           min_price,
