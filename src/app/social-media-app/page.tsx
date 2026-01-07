@@ -1,5 +1,8 @@
 "use client";
 
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AppHeader } from "@/components/layout/AppHeader";
 import {
   Users,
   TrendingUp,
@@ -43,44 +46,31 @@ export default function SocialMediaDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => router.push("/portal")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Portal
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Users className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-blue-600">Social Media & Marketing</h1>
-                  <p className="text-sm text-gray-500">Unified Social Platform Management</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/inbox")}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Inbox
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/channels")}>
-                <Users className="h-4 w-4 mr-2" />
-                Channels
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/analytics")}>
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-            </div>
+    <SidebarProvider defaultOpen>
+      <AppSidebar />
+      <SidebarInset>
+        <AppHeader title="Social Media & Marketing" subtitle="Unified Social Platform Management" />
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="outline" onClick={() => router.push("/portal")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Portal
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/inbox")}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Inbox
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/channels")}>
+              <Users className="h-4 w-4 mr-2" />
+              Channels
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/social-media-app/analytics")}>
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto">
         <div className="space-y-8">
           {/* Header */}
           <div>
@@ -169,7 +159,7 @@ export default function SocialMediaDashboard() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, Plus, Minus, MessageCircle, Phone, Eye, ArrowLeft } from "lucide-react"
+import { ShoppingCart, Plus, Minus, MessageCircle, Phone, Eye, ArrowLeft, Settings } from "lucide-react"
 import { useAuth } from '@/lib/auth/auth-context'
 
 interface Product {
@@ -235,34 +238,28 @@ export default function MarketingApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => router.push("/portal")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Portal
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-8 w-8 text-green-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-green-600">{storeName} - Social Media Marketing</h1>
-                  <p className="text-sm text-gray-500">WhatsApp Sales Platform</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => router.push("/marketing-app/promo")}>
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Promo
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push("/marketing-app/stories")}>
-                <Eye className="h-4 w-4 mr-2" />
-                Stories
-              </Button>
+    <SidebarProvider defaultOpen>
+      <AppSidebar />
+      <SidebarInset>
+        <AppHeader title={`${storeName} - Social Media Marketing`} subtitle="WhatsApp Sales Platform" />
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="outline" onClick={() => router.push("/portal")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Portal
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/marketing-app/promo")}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Promo
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/marketing-app/stories")}>
+              <Eye className="h-4 w-4 mr-2" />
+              Stories
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/marketing-app/download")}>
+              <Settings className="h-4 w-4 mr-2" />
+              Downloads
+            </Button>
 
               <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
                 <SheetTrigger asChild>
@@ -339,11 +336,9 @@ export default function MarketingApp() {
               </Sheet>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Main Content */}
+          <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
           <p className="text-lg text-gray-600">Find the best electronic accessories with guaranteed quality</p>
@@ -497,19 +492,19 @@ export default function MarketingApp() {
         </DialogContent>
       </Dialog>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">{storeName} - Your Electronics Store</h3>
-            <p className="text-gray-400 mb-4">Quality products with fast delivery</p>
-            <div className="flex justify-center items-center space-x-2">
-              <MessageCircle className="h-5 w-5 text-green-500" />
-              <span>Contact us via WhatsApp for inquiries</span>
+          {/* Footer */}
+          <div className="bg-gray-900 text-white py-8 mt-12 rounded-lg">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2">{storeName} - Your Electronics Store</h3>
+              <p className="text-gray-400 mb-4">Quality products with fast delivery</p>
+              <div className="flex justify-center items-center space-x-2">
+                <MessageCircle className="h-5 w-5 text-green-500" />
+                <span>Contact us via WhatsApp for inquiries</span>
+              </div>
             </div>
           </div>
         </div>
-      </footer>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

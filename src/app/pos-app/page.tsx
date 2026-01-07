@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -47,42 +50,32 @@ export default function POSHome() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
+    <SidebarProvider defaultOpen>
+      <AppSidebar />
+      <SidebarInset>
+        <AppHeader title="POS System" subtitle="Point of Sale Dashboard" />
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex items-center gap-4 mb-4">
             <Button variant="outline" onClick={() => router.push("/portal")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Portal
             </Button>
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Store className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">POS System</h1>
-              <p className="text-sm text-gray-500">Dashboard Overview</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => router.push("/pos-app/settings")}>
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
           </div>
-        </div>
-      </header>
 
-      <main className="p-6 space-y-8 max-w-7xl mx-auto">
-        {/* Welcome Section */}
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome back!</h2>
-          <p className="text-gray-600">Here's what's happening with your business today</p>
-        </div>
+          <div className="space-y-8 max-w-7xl mx-auto">
+            {/* Welcome Section */}
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-bold text-gray-900">Welcome back!</h2>
+              <p className="text-gray-600">Here's what's happening with your business today</p>
+            </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Total Sales (30d)</CardTitle>
               <DollarSign className="h-5 w-5 opacity-80" />
@@ -148,127 +141,127 @@ export default function POSHome() {
               <p className="text-xs opacity-80 mt-1">In your inventory</p>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button
-                size="lg"
-                className="h-24 flex-col gap-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
-                onClick={() => router.push("/pos-app/pos")}
-              >
-                <ShoppingCart className="h-8 w-8" />
-                <span className="font-semibold">Start Selling</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
-                onClick={() => router.push("/pos-app/products")}
-              >
-                <Package className="h-8 w-8 text-gray-600" />
-                <span className="font-semibold text-gray-700">Manage Products</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
-                onClick={() => router.push("/pos-app/orders")}
-              >
-                <Receipt className="h-8 w-8 text-gray-600" />
-                <span className="font-semibold text-gray-700">View Orders</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
-                onClick={() => router.push("/pos-app/settings")}
-              >
-                <Settings className="h-8 w-8 text-gray-600" />
-                <span className="font-semibold text-gray-700">Settings</span>
-              </Button>
             </div>
-          </CardContent>
+
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Button
+                    size="lg"
+                    className="h-24 flex-col gap-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                    onClick={() => router.push("/pos-app/pos")}
+                  >
+                    <ShoppingCart className="h-8 w-8" />
+                    <span className="font-semibold">Start Selling</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
+                    onClick={() => router.push("/pos-app/products")}
+                  >
+                    <Package className="h-8 w-8 text-gray-600" />
+                    <span className="font-semibold text-gray-700">Manage Products</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
+                    onClick={() => router.push("/pos-app/orders")}
+                  >
+                    <Receipt className="h-8 w-8 text-gray-600" />
+                    <span className="font-semibold text-gray-700">View Orders</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-24 flex-col gap-3 border-2 hover:bg-gray-50 shadow-sm bg-transparent"
+                    onClick={() => router.push("/pos-app/settings")}
+                  >
+                    <Settings className="h-8 w-8 text-gray-600" />
+                    <span className="font-semibold text-gray-700">Settings</span>
+                  </Button>
+                </div>
+              </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>System Status</span>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  All Systems Operational
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Database Connection</span>
-                </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  Online
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Payment Processing</span>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  Ready
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Inventory Sync</span>
-                </div>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                  Active
-                </Badge>
-              </div>
-            </CardContent>
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>System Status</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      All Systems Operational
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium">Database Connection</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Online
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm font-medium">Payment Processing</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      Ready
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm font-medium">Inventory Sync</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                      Active
+                    </Badge>
+                  </div>
+                </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Quick Links</span>
-                <ArrowRight className="h-4 w-4 text-gray-400" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/products")}>
-                <Package className="h-4 w-4 mr-3" />
-                Add New Product
-              </Button>
-              <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/orders")}>
-                <Receipt className="h-4 w-4 mr-3" />
-                View Recent Orders
-              </Button>
-              <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/settings")}>
-                <Settings className="h-4 w-4 mr-3" />
-                System Diagnostics
-              </Button>
-            </CardContent>
-          </Card>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Quick Links</span>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/products")}>
+                    <Package className="h-4 w-4 mr-3" />
+                    Add New Product
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/orders")}>
+                    <Receipt className="h-4 w-4 mr-3" />
+                    View Recent Orders
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-12" onClick={() => router.push("/pos-app/settings")}>
+                    <Settings className="h-4 w-4 mr-3" />
+                    System Diagnostics
+                  </Button>
+                </CardContent>
+              </Card>
         </div>
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 
