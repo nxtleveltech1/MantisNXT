@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare, Globe } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -218,13 +218,13 @@ export default function PortalPage() {
         </div>
 
         {/* Content Container - positioned in lower half below background logo */}
-        <div className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-16">
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-12">
           {/* Spacer to push content below the background logo */}
-          <div className="flex-1 min-h-[45vh]" />
+          <div className="flex-1 min-h-[40vh]" />
           
           {/* Branding Section - Tagline only, logo is in background */}
           <div 
-            className="flex flex-col items-center mb-10"
+            className="flex flex-col items-center mb-4"
             style={{
               animation: 'fadeSlideUp 0.6s ease-out forwards',
             }}
@@ -266,10 +266,18 @@ export default function PortalPage() {
 
             <PortalButton
               icon={<MessageSquare className="h-10 w-10" strokeWidth={1.5} />}
-              sublabel="Social Media"
-              label="Marketing"
+              sublabel="WhatsApp"
+              label="Sales Channel"
               onClick={() => router.push('/marketing-app')}
               delay={350}
+            />
+
+            <PortalButton
+              icon={<Globe className="h-10 w-10" strokeWidth={1.5} />}
+              sublabel="Social Media"
+              label="Marketing"
+              onClick={() => router.push('/social-media-app')}
+              delay={375}
             />
 
             <PortalButton
