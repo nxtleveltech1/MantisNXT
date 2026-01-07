@@ -34,7 +34,7 @@ const originalProducts: Product[] = [
     id: 1,
     name: "Premium Bluetooth Headphones",
     price: 2999.99,
-    image: "/marketing/bluetooth-headphones.jpg",
+    image: "/marketing/fone-bluetooth-premium.jpg",
     description:
       "Wireless headphones with active noise cancellation and long-lasting battery. Perfect for music, calls, and work.",
     category: "Audio",
@@ -51,7 +51,7 @@ const originalProducts: Product[] = [
     id: 2,
     name: "USB-C Fast Charger 65W",
     price: 899.99,
-    image: "/marketing/usb-c-charger.jpg",
+    image: "/marketing/carregador-usb-c.jpg",
     description:
       "Universal fast charger compatible with smartphones, tablets, and laptops. Smart charging technology.",
     category: "Chargers",
@@ -68,7 +68,7 @@ const originalProducts: Product[] = [
     id: 3,
     name: "Original USB-C Cable 2m",
     price: 499.99,
-    image: "/marketing/usb-c-cable.jpg",
+    image: "/marketing/cabo-usb-c.jpg",
     description:
       "High-quality original USB-C cable for charging and data transfer. Premium and durable materials.",
     category: "Cables",
@@ -85,7 +85,7 @@ const originalProducts: Product[] = [
     id: 4,
     name: "Wireless Charging Pad 15W",
     price: 1299.99,
-    image: "/marketing/wireless-charger.jpg",
+    image: "/marketing/carregador-wireless.jpg",
     description:
       "Wireless charging base compatible with all Qi devices. Elegant design with efficient charging.",
     category: "Chargers",
@@ -102,7 +102,7 @@ const originalProducts: Product[] = [
     id: 5,
     name: "RGB Gaming Headset",
     price: 1999.99,
-    image: "/marketing/gaming-headset.jpg",
+    image: "/marketing/fone-gaming.jpg",
     description:
       "Gaming headset with RGB lighting and detachable microphone. Surround sound for the ultimate gaming experience.",
     category: "Audio",

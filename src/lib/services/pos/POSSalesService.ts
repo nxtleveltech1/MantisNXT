@@ -187,7 +187,7 @@ export class POSSalesService {
             -item.quantity, // Negative for outgoing
             `INV:${invoice.id}`,
             `POS Sale - Invoice ${invoiceNumber}`,
-            input.created_by || null,
+            input.created_by || 'pos_system',
           ]
         );
       }
@@ -365,7 +365,7 @@ export class POSSalesService {
             item.quantity, // Positive for incoming
             `VOID:${invoiceId}`,
             `POS Void - ${reason}`,
-            voidedBy || null,
+            voidedBy || 'pos_system',
           ]
         );
       }
