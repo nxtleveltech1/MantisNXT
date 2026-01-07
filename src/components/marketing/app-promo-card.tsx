@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 export default function AppPromoCard() {
-  const appUrl = "/marketing-app"
+  const appUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "/marketing-app"
+  const storeName = process.env.NEXT_PUBLIC_MARKETING_STORE_NAME || "Luizinho"
+  const storeTagline = process.env.NEXT_PUBLIC_MARKETING_STORE_TAGLINE || "Electronics Store"
 
   const openApp = () => {
     window.open(appUrl, "_blank")
@@ -17,11 +19,11 @@ export default function AppPromoCard() {
       <div className="bg-white/10 backdrop-blur-sm p-6 text-center">
         <div className="flex items-center justify-center space-x-3 mb-4">
           <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-            <div className="text-green-600 font-bold text-xl">L</div>
+            <div className="text-green-600 font-bold text-xl">{storeName.charAt(0).toUpperCase()}</div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Luizinho</h1>
-            <p className="text-green-100 text-sm">Electronics Store</p>
+            <h1 className="text-2xl font-bold text-white">{storeName}</h1>
+            <p className="text-green-100 text-sm">{storeTagline}</p>
           </div>
         </div>
         <Badge className="bg-yellow-400 text-green-800 font-semibold">🔥 Featured Products</Badge>

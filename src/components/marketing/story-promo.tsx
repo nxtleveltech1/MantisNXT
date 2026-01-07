@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { MessageCircle, ShoppingCart, QrCode, ArrowRight } from "lucide-react"
 
 export default function StoryPromo() {
-  const appUrl = "/marketing-app"
+  const appUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || "/marketing-app"
+  const storeName = process.env.NEXT_PUBLIC_MARKETING_STORE_NAME || "Luizinho"
+  const storeTagline = process.env.NEXT_PUBLIC_MARKETING_STORE_TAGLINE || "Electronics"
   const [currentSlide, setCurrentSlide] = useState(0)
 
   // Auto-rotate slides like Instagram Stories
@@ -39,11 +41,11 @@ export default function StoryPromo() {
       <div className="absolute top-8 left-0 right-0 flex flex-col items-center">
         <div className="flex items-center space-x-3">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-            <div className="text-green-600 font-bold text-3xl">L</div>
+            <div className="text-green-600 font-bold text-3xl">{storeName.charAt(0).toUpperCase()}</div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Luizinho</h1>
-            <p className="text-green-100">Electronics</p>
+            <h1 className="text-3xl font-bold text-white">{storeName}</h1>
+            <p className="text-green-100">{storeTagline}</p>
           </div>
         </div>
       </div>

@@ -133,6 +133,7 @@ const originalProducts: Product[] = [
 
 export default function MarketingApp() {
   const [products, setProducts] = useState<Product[]>(originalProducts)
+  const storeName = process.env.NEXT_PUBLIC_MARKETING_STORE_NAME || "Luizinho"
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -224,7 +225,7 @@ export default function MarketingApp() {
   }
 
   const sendWhatsAppMessage = () => {
-    const phoneNumber = "5511932162209" // Número do vendedor
+    const phoneNumber = process.env.NEXT_PUBLIC_MARKETING_WHATSAPP_NUMBER || "5511932162209"
     const message = generateWhatsAppMessage()
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`
     window.open(whatsappUrl, "_blank")
@@ -244,7 +245,7 @@ export default function MarketingApp() {
               <div className="flex items-center space-x-2">
                 <Phone className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-2xl font-bold text-green-600">Social Media Marketing</h1>
+                  <h1 className="text-2xl font-bold text-green-600">{storeName} - Social Media Marketing</h1>
                   <p className="text-sm text-gray-500">WhatsApp Sales Platform</p>
                 </div>
               </div>
@@ -497,7 +498,7 @@ export default function MarketingApp() {
       <footer className="bg-gray-900 text-white py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">TechStore - Your Electronics Store</h3>
+            <h3 className="text-lg font-semibold mb-2">{storeName} - Your Electronics Store</h3>
             <p className="text-gray-400 mb-4">Quality products with fast delivery</p>
             <div className="flex justify-center items-center space-x-2">
               <MessageCircle className="h-5 w-5 text-green-500" />

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 
 export default function DownloadGenerator() {
   const [isGenerating, setIsGenerating] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_MARKETING_APP_URL || `${window.location.origin}/marketing-app`
+  const storeName = process.env.NEXT_PUBLIC_MARKETING_STORE_NAME || "Luizinho"
 
   // Function to generate and download promotional image
   const generatePromoImage = async (format: "square" | "story" | "banner") => {
@@ -175,11 +177,11 @@ export default function DownloadGenerator() {
   // Function to generate text file with information
   const generateTextFile = () => {
     const content = `
-🛒 LUIZINHO'S ONLINE STORE
+🛒 ${storeName.toUpperCase()}'S ONLINE STORE
 Electronics and Accessories
 
 📱 ACCESS OUR STORE:
-${window.location.origin}/marketing-app
+${baseUrl}
 
 🎯 AVAILABLE PRODUCTS:
 • 🎧 Bluetooth Headphones Premium - R$ 299.99
@@ -203,11 +205,11 @@ ${window.location.origin}/marketing-app
 • Guaranteed quality
 
 📲 CONTACT:
-WhatsApp: (11) 93216-2209
+WhatsApp: ${process.env.NEXT_PUBLIC_MARKETING_WHATSAPP_NUMBER || "(11) 93216-2209"}
 
 🌐 SHARE:
 Send this link to your friends:
-${window.location.origin}/marketing-app
+${baseUrl}
 
 ---
 Luizinho - Your trusted electronics store
