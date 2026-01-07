@@ -335,7 +335,6 @@ export default function MarketingApp() {
                 </SheetContent>
               </Sheet>
             </div>
-          </div>
 
           {/* Main Content */}
           <div className="max-w-7xl mx-auto">
@@ -396,9 +395,8 @@ export default function MarketingApp() {
             </Card>
           ))}
         </div>
-      </main>
 
-      {/* Product Details Modal */}
+        {/* Product Details Modal */}
       <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedProduct && (
@@ -503,6 +501,7 @@ export default function MarketingApp() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

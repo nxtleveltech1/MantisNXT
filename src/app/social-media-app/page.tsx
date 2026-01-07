@@ -159,6 +159,8 @@ export default function SocialMediaDashboard() {
             </div>
           </div>
         </div>
+        </div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

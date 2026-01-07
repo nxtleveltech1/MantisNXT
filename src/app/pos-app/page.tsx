@@ -259,6 +259,8 @@ export default function POSHome() {
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
