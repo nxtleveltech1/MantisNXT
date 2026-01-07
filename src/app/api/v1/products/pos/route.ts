@@ -3,7 +3,7 @@
  * GET /api/v1/products/pos - List products with calculated sale prices for POS
  * 
  * Returns products with:
- * - Base cost from inventory
+ * - Base cost from core.stock_on_hand
  * - Calculated sale price (cost + 35% markup)
  * - Real-time stock availability
  */
@@ -36,39 +36,42 @@ export interface POSProduct {
   image_url: string | null;
   barcode: string | null;
   is_active: boolean;
+  supplier_name: string | null;
 }
 
 /**
  * GET /api/v1/products/pos
  * List products for POS with pricing and stock
+ * Uses core.supplier_product and core.stock_on_hand tables
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
-    const category = searchParams.get('category');
+    const supplierId = searchParams.get('supplier_id');
     const inStockOnly = searchParams.get('in_stock_only') === 'true';
     const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 500);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // Query products with inventory data
-    // Note: This queries inventory_items which contains cost data
-    // In a production system, this would also join with pricing tiers
+    // Query supplier_product with stock_on_hand for cost and quantity
     let sql = `
       SELECT
-        ii.id,
-        ii.sku,
-        ii.name,
-        ii.description,
-        ii.category,
-        ii.brand,
-        COALESCE(ii.cost_price, 0) as base_cost,
-        COALESCE(ii.stock_qty, 0) as available_quantity,
-        ii.image_url,
-        ii.barcode,
-        COALESCE(ii.is_active, true) as is_active
-      FROM inventory_items ii
-      WHERE ii.is_active = true
+        sp.supplier_product_id as id,
+        sp.supplier_sku as sku,
+        COALESCE(p.name, sp.name_from_supplier) as name,
+        sp.attrs_json->>'description' as description,
+        COALESCE(sp.attrs_json->>'brand', sp.brand_from_supplier) as brand,
+        sp.attrs_json->>'category' as category,
+        sp.barcode,
+        sp.is_active,
+        s.name as supplier_name,
+        COALESCE(soh.unit_cost, 0) as base_cost,
+        COALESCE(soh.qty, 0) as available_quantity
+      FROM core.supplier_product sp
+      LEFT JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+      LEFT JOIN core.product p ON p.product_id = sp.product_id
+      LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = sp.supplier_product_id
+      WHERE sp.is_active = true
     `;
 
     const params: unknown[] = [];
@@ -77,29 +80,29 @@ export async function GET(request: NextRequest) {
     // Add search filter
     if (search) {
       sql += ` AND (
-        ii.name ILIKE $${paramIndex} 
-        OR ii.sku ILIKE $${paramIndex} 
-        OR ii.barcode ILIKE $${paramIndex}
-        OR ii.category ILIKE $${paramIndex}
+        sp.name_from_supplier ILIKE $${paramIndex} 
+        OR sp.supplier_sku ILIKE $${paramIndex} 
+        OR sp.barcode ILIKE $${paramIndex}
+        OR COALESCE(p.name, '') ILIKE $${paramIndex}
       )`;
       params.push(`%${search}%`);
       paramIndex++;
     }
 
-    // Add category filter
-    if (category) {
-      sql += ` AND ii.category = $${paramIndex}`;
-      params.push(category);
+    // Add supplier filter
+    if (supplierId) {
+      sql += ` AND sp.supplier_id = $${paramIndex}::uuid`;
+      params.push(supplierId);
       paramIndex++;
     }
 
     // Filter to only in-stock items
     if (inStockOnly) {
-      sql += ` AND COALESCE(ii.stock_qty, 0) > 0`;
+      sql += ` AND COALESCE(soh.qty, 0) > 0`;
     }
 
     // Add ordering and pagination
-    sql += ` ORDER BY ii.name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    sql += ` ORDER BY sp.name_from_supplier ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
 
     const result = await query<{
@@ -111,35 +114,41 @@ export async function GET(request: NextRequest) {
       brand: string | null;
       base_cost: number;
       available_quantity: number;
-      image_url: string | null;
       barcode: string | null;
       is_active: boolean;
+      supplier_name: string | null;
     }>(sql, params);
 
     // Get total count for pagination
-    let countSql = `SELECT COUNT(*) as count FROM inventory_items ii WHERE ii.is_active = true`;
+    let countSql = `
+      SELECT COUNT(*) as count 
+      FROM core.supplier_product sp
+      LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN core.product p ON p.product_id = sp.product_id
+      WHERE sp.is_active = true
+    `;
     const countParams: unknown[] = [];
     let countParamIndex = 1;
 
     if (search) {
       countSql += ` AND (
-        ii.name ILIKE $${countParamIndex} 
-        OR ii.sku ILIKE $${countParamIndex} 
-        OR ii.barcode ILIKE $${countParamIndex}
-        OR ii.category ILIKE $${countParamIndex}
+        sp.name_from_supplier ILIKE $${countParamIndex} 
+        OR sp.supplier_sku ILIKE $${countParamIndex} 
+        OR sp.barcode ILIKE $${countParamIndex}
+        OR COALESCE(p.name, '') ILIKE $${countParamIndex}
       )`;
       countParams.push(`%${search}%`);
       countParamIndex++;
     }
 
-    if (category) {
-      countSql += ` AND ii.category = $${countParamIndex}`;
-      countParams.push(category);
+    if (supplierId) {
+      countSql += ` AND sp.supplier_id = $${countParamIndex}::uuid`;
+      countParams.push(supplierId);
       countParamIndex++;
     }
 
     if (inStockOnly) {
-      countSql += ` AND COALESCE(ii.stock_qty, 0) > 0`;
+      countSql += ` AND COALESCE(soh.qty, 0) > 0`;
     }
 
     const countResult = await query<{ count: string }>(countSql, countParams);
@@ -157,9 +166,10 @@ export async function GET(request: NextRequest) {
       sale_price: calculateSalePrice(Number(row.base_cost) || 0),
       markup_percent: DEFAULT_MARKUP * 100,
       available_quantity: Number(row.available_quantity) || 0,
-      image_url: row.image_url,
+      image_url: null, // Not in current schema
       barcode: row.barcode,
       is_active: row.is_active,
+      supplier_name: row.supplier_name,
     }));
 
     return NextResponse.json({
@@ -184,7 +194,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/v1/products/pos/check-stock
- * Batch check stock for multiple products
+ * Batch check stock for multiple products (supplier_product_id)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -198,16 +208,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Batch query stock for multiple products
+    // Batch query stock for multiple products from core.supplier_product + core.stock_on_hand
     const placeholders = product_ids.map((_, i) => `$${i + 1}`).join(', ');
     const sql = `
       SELECT 
-        id,
-        sku,
-        name,
-        COALESCE(stock_qty, 0) as available_quantity
-      FROM inventory_items
-      WHERE id IN (${placeholders})
+        sp.supplier_product_id as id,
+        sp.supplier_sku as sku,
+        COALESCE(p.name, sp.name_from_supplier) as name,
+        COALESCE(soh.qty, 0) as available_quantity,
+        COALESCE(soh.unit_cost, 0) as unit_cost
+      FROM core.supplier_product sp
+      LEFT JOIN core.product p ON p.product_id = sp.product_id
+      LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = sp.supplier_product_id
+      WHERE sp.supplier_product_id IN (${placeholders})
     `;
 
     const result = await query<{
@@ -215,15 +228,17 @@ export async function POST(request: NextRequest) {
       sku: string;
       name: string;
       available_quantity: number;
+      unit_cost: number;
     }>(sql, product_ids);
 
     // Create a map for easy lookup
-    const stockMap: Record<string, { sku: string; name: string; available_quantity: number }> = {};
+    const stockMap: Record<string, { sku: string; name: string; available_quantity: number; unit_cost: number }> = {};
     result.rows.forEach((row) => {
       stockMap[row.id] = {
         sku: row.sku,
         name: row.name,
         available_quantity: Number(row.available_quantity) || 0,
+        unit_cost: Number(row.unit_cost) || 0,
       };
     });
 
