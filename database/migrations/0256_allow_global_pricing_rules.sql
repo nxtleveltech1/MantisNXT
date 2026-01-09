@@ -51,3 +51,6 @@ ALTER TABLE pricing_rule DROP COLUMN IF EXISTS is_global;
 --     supplier_id IS NOT NULL
 -- );
 
+
+
+
