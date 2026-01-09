@@ -377,6 +377,8 @@ export async function GET(request: NextRequest) {
 
     const dataRes = await dbQuery<ExportRow>(dataSql, params);
     const rows = dataRes.rows;
+    
+    console.log(`[API] /api/catalog/products/export - Exporting ${rows.length} rows`);
 
     // Build CSV content
     const headers = [
@@ -437,12 +439,19 @@ export async function GET(request: NextRequest) {
       : 'all-suppliers';
     const filename = `supplier-inventory-${supplierName}-${date}.csv`;
 
-    // Return CSV file
-    return new NextResponse(csvContent, {
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+
+    // Return CSV file with proper headers to force download
+    return new NextResponse(csvWithBOM, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (error) {

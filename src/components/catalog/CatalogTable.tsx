@@ -330,6 +330,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   // Function to export current filtered data as CSV
   const handleExportCSV = useCallback(async () => {
     setExporting(true);
+    
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
@@ -348,34 +349,42 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       params.set('sort_by', sortBy);
       params.set('sort_dir', sortDir);
       
-      const response = await fetch(`/api/catalog/products/export?${params.toString()}`);
+      const exportUrl = `/api/catalog/products/export?${params.toString()}`;
       
+      // Fetch the CSV and trigger download via blob URL
+      const response = await fetch(exportUrl);
       if (!response.ok) {
-        throw new Error('Failed to export');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Export failed');
       }
       
-      // Get the filename from Content-Disposition header or use default
+      const blob = await response.blob();
+      
+      // Extract filename from Content-Disposition header
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = 'supplier-inventory-export.csv';
       if (contentDisposition) {
-        const match = contentDisposition.match(/filename="(.+)"/);
+        const match = contentDisposition.match(/filename="?([^";\n]+)"?/);
         if (match) {
           filename = match[1];
         }
       }
       
-      // Create blob and download
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Create object URL and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
     } finally {
       setExporting(false);
     }
