@@ -35,9 +35,11 @@ function escapeCSV(value: unknown): string {
   return str;
 }
 
-function formatNumber(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  return value.toFixed(2);
+function formatNumber(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  const num = typeof value === 'number' ? value : parseFloat(String(value));
+  if (isNaN(num)) return '';
+  return num.toFixed(2);
 }
 
 function formatTags(tags: unknown): string {
@@ -488,7 +490,7 @@ export async function GET(request: NextRequest) {
       escapeCSV(row.new_stock_eta ? new Date(row.new_stock_eta).toLocaleDateString() : ''),
       escapeCSV(row.qty_on_order ?? ''),
       escapeCSV(formatNumber(row.cost_ex_vat)),
-      escapeCSV(row.base_discount ? `${Number(row.base_discount).toFixed(1)}%` : ''),
+      escapeCSV(row.base_discount != null && row.base_discount !== '' ? `${parseFloat(String(row.base_discount)).toFixed(1)}%` : ''),
       escapeCSV(formatNumber(row.cost_after_discount)),
       escapeCSV(formatNumber(row.rsp)),
       escapeCSV(formatNumber(row.cost_inc_vat)),
