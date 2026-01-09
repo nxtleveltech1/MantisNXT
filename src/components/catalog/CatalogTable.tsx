@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2, ExternalLink, BarChart3, Rows3, Rows2, AlignJustify } from 'lucide-react';
+import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2, ExternalLink, BarChart3, Rows3, Rows2, AlignJustify, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchableSupplierSelect } from '@/components/shared/SearchableSupplierSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -280,6 +280,9 @@ export function CatalogTable(props: CatalogTableProps = {}) {
   // Supplier comparison panel state
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [comparisonSku, setComparisonSku] = useState('');
+  
+  // Export state
+  const [exporting, setExporting] = useState(false);
   const [history, setHistory] = useState<unknown[]>([]);
   const [metrics, setMetrics] = useState({
     totalSupplierProducts: 0,
@@ -323,6 +326,60 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no`
     );
   }, [search, supplierId, categoryId, brandFilter, isActive, priceMin, priceMax, sortBy, sortDir, page, limit]);
+
+  // Function to export current filtered data as CSV
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (supplierId && supplierId !== 'all') params.append('supplier_id', supplierId);
+      if (categoryId && categoryId !== 'all') {
+        if (categoryId.startsWith('raw:')) {
+          params.append('category_raw', categoryId.slice(4));
+        } else {
+          params.append('category_id', categoryId);
+        }
+      }
+      if (brandFilter && brandFilter !== 'all') params.append('brand', brandFilter);
+      if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
+      if (priceMin) params.set('price_min', priceMin);
+      if (priceMax) params.set('price_max', priceMax);
+      params.set('sort_by', sortBy);
+      params.set('sort_dir', sortDir);
+      
+      const response = await fetch(`/api/catalog/products/export?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to export');
+      }
+      
+      // Get the filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'supplier-inventory-export.csv';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+      
+      // Create blob and download
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExporting(false);
+    }
+  }, [search, supplierId, categoryId, brandFilter, isActive, priceMin, priceMax, sortBy, sortDir]);
 
   // Save columns to localStorage whenever they change
   useEffect(() => {
@@ -1190,6 +1247,10 @@ export function CatalogTable(props: CatalogTableProps = {}) {
           <Button variant="outline" onClick={() => fetchData()} disabled={loading}>
             <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
             Refresh
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV} disabled={loading || exporting}>
+            <Download className={cn('mr-2 h-4 w-4', exporting && 'animate-pulse')} />
+            {exporting ? 'Exporting...' : 'Export CSV'}
           </Button>
           <div className="text-muted-foreground ml-auto text-sm">
             {total.toLocaleString()} items
