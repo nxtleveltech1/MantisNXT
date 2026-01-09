@@ -375,8 +375,79 @@ export async function GET(request: NextRequest) {
       ORDER BY ${sortColumn} ${sortDir}
     `;
 
-    const dataRes = await dbQuery<ExportRow>(dataSql, params);
-    const rows = dataRes.rows;
+    let rows: ExportRow[] = [];
+    
+    try {
+      const dataRes = await dbQuery<ExportRow>(dataSql, params);
+      rows = dataRes.rows;
+    } catch (primaryErr) {
+      console.warn(
+        '[API] /api/catalog/products/export primary query failed, attempting fallback:',
+        primaryErr
+      );
+
+      // Fallback query without price_history and stock_on_hand CTEs
+      const sortColumnFallback =
+        sortBy === 'supplier_sku'
+          ? 'sp.supplier_sku'
+          : sortBy === 'product_name'
+            ? 'sp.name_from_supplier'
+            : sortBy === 'category_name'
+              ? 'c.name'
+              : sortBy === 'first_seen_at'
+                ? 'sp.first_seen_at'
+                : sortBy === 'last_seen_at'
+                  ? 'sp.last_seen_at'
+                  : 's.name';
+
+      const fallbackSql = `
+        SELECT
+          s.name AS supplier_name,
+          sp.supplier_sku,
+          sp.name_from_supplier AS product_name,
+          COALESCE(br.brand, sp.attrs_json->>'brand') AS brand,
+          NULL::text AS series_range,
+          CASE WHEN c.name IS NOT NULL AND c.name <> '' THEN c.name ELSE cat.category_raw END AS category_name,
+          '[]'::jsonb AS tags,
+          COALESCE((sp.attrs_json->>'stock_quantity')::int, NULL) AS sup_soh,
+          COALESCE(sp.stock_status, sp.attrs_json->>'stock_status') AS stock_status,
+          COALESCE(sp.new_stock_eta, (sp.attrs_json->>'new_stock_eta')::date) AS new_stock_eta,
+          COALESCE((sp.attrs_json->>'qty_on_order')::int, NULL) AS qty_on_order,
+          COALESCE((sp.attrs_json->>'cost_excluding')::numeric, NULL) AS cost_ex_vat,
+          COALESCE((sp.attrs_json->>'base_discount')::numeric, 0) AS base_discount,
+          COALESCE((sp.attrs_json->>'cost_excluding')::numeric, NULL) AS cost_after_discount,
+          COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
+          COALESCE((sp.attrs_json->>'cost_including')::numeric, NULL) AS cost_inc_vat,
+          'ZAR'::text AS currency,
+          NULL::numeric AS previous_cost,
+          NULL::numeric AS cost_diff,
+          sp.is_active
+        FROM core.supplier_product sp
+        JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+        LEFT JOIN core.category c ON c.category_id = sp.category_id
+        LEFT JOIN LATERAL (
+          SELECT r.brand
+          FROM spp.pricelist_row r
+          JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+          WHERE r.supplier_sku = sp.supplier_sku AND r.brand IS NOT NULL AND r.brand <> ''
+          ORDER BY u.received_at DESC, r.row_num DESC
+          LIMIT 1
+        ) br ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT r.category_raw
+          FROM spp.pricelist_row r
+          JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+          WHERE r.supplier_sku = sp.supplier_sku AND r.category_raw IS NOT NULL AND r.category_raw <> ''
+          ORDER BY u.received_at DESC, r.row_num DESC
+          LIMIT 1
+        ) cat ON TRUE
+        WHERE ${whereSql}
+        ORDER BY ${sortColumnFallback} ${sortDir}
+      `;
+      
+      const fallbackRes = await dbQuery<ExportRow>(fallbackSql, params);
+      rows = fallbackRes.rows;
+    }
     
     console.log(`[API] /api/catalog/products/export - Exporting ${rows.length} rows`);
 
@@ -455,9 +526,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API] /api/catalog/products/export error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('[API] /api/catalog/products/export error:', errorMessage, errorStack);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to export catalog' },
+      { success: false, error: `Export failed: ${errorMessage}` },
       { status: 500 }
     );
   }

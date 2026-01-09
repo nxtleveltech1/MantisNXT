@@ -354,8 +354,14 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       // Fetch the CSV and trigger download via blob URL
       const response = await fetch(exportUrl);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Export failed');
+        let errorMsg = 'Export failed';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch {
+          errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
       }
       
       const blob = await response.blob();
@@ -384,7 +390,8 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Export failed: ${errorMsg}`);
     } finally {
       setExporting(false);
     }
