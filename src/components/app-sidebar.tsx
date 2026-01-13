@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Package,
+  Plug,
   ShoppingBag,
   Tag,
   TrendingUp,
@@ -573,6 +574,29 @@ export const sidebarData = {
               url: '/financial/cost/projects',
             },
           ],
+        },
+      ],
+    },
+    {
+      title: 'Integrations',
+      url: '/integrations',
+      icon: Plug,
+      items: [
+        {
+          title: 'Overview',
+          url: '/integrations',
+        },
+        {
+          title: 'Xero Accounting',
+          url: '/integrations/xero',
+        },
+        {
+          title: 'WooCommerce',
+          url: '/integrations/woocommerce',
+        },
+        {
+          title: 'Odoo ERP',
+          url: '/integrations/odoo',
         },
       ],
     },
