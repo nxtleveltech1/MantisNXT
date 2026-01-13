@@ -1,7 +1,7 @@
 /**
  * Xero Reports Integration
- * 
- * Fetch financial reports from Xero.
+ *
+ * Fetch and parse financial reports from Xero.
  */
 
 import { getXeroClient } from '../client';
@@ -10,6 +10,13 @@ import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { parseXeroApiError } from '../errors';
 import type { SyncResult } from '../types';
+
+// Export parsing functions
+export {
+  parseProfitLossReport,
+  parseBalanceSheetReport,
+  parseAgedReceivablesReport
+} from './report-parsers';
 
 // ============================================================================
 // TYPES

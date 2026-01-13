@@ -208,11 +208,12 @@ export async function getValidTokenSet(orgId: string): Promise<{
     token_type: 'Bearer',
   });
 
-  // Check if token is expired or will expire in next 5 minutes
+  // Check if token is expired or will expire in next 10 minutes
+  // Xero access tokens are valid for 30 minutes, so refresh at 20 minutes used
   const expiresAt = connection.tokenExpiresAt.getTime();
-  const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
+  const tenMinutesFromNow = Date.now() + 10 * 60 * 1000;
 
-  if (expiresAt <= fiveMinutesFromNow) {
+  if (expiresAt <= tenMinutesFromNow) {
     // Token is expired or expiring soon - refresh it
     try {
       const client = getXeroClient();

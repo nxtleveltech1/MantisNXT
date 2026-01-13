@@ -1,19 +1,21 @@
 /**
- * Xero Balance Sheet Report
- * 
- * GET /api/xero/reports/balance-sheet
+ * Xero Aged Payables Report
+ *
+ * GET /api/xero/reports/aged-payables
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { fetchBalanceSheetReport, parseBalanceSheetReport } from '@/lib/xero/sync/reports';
+import { fetchAgedPayablesReport } from '@/lib/xero/sync/reports';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
 import { handleApiError } from '@/lib/xero/errors';
+
+// TODO: Add parsing for Aged Payables report when needed
 
 export async function GET(request: NextRequest) {
   try {
     const { userId, orgId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
@@ -38,29 +40,18 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const date = searchParams.get('date') || undefined;
-    const periods = searchParams.get('periods') ? parseInt(searchParams.get('periods')!, 10) : undefined;
-    const timeframe = searchParams.get('timeframe') as 'MONTH' | 'QUARTER' | 'YEAR' | undefined;
-    const parsed = searchParams.get('parsed') === 'true';
+    const fromDate = searchParams.get('fromDate') || undefined;
+    const toDate = searchParams.get('toDate') || undefined;
 
-    const result = await fetchBalanceSheetReport(orgId, {
+    const result = await fetchAgedPayablesReport(orgId, {
       date,
-      periods,
-      timeframe,
+      fromDate,
+      toDate,
     });
-
-    // Return parsed data if requested and successful
-    if (parsed && result.success && result.data) {
-      const parsedData = parseBalanceSheetReport(result.data);
-      return NextResponse.json({
-        success: true,
-        data: parsedData,
-        rawReport: result.data,
-      });
-    }
 
     return NextResponse.json(result);
 
   } catch (error) {
-    return handleApiError(error, 'Xero Report Balance Sheet');
+    return handleApiError(error, 'Xero Report Aged Payables');
   }
 }

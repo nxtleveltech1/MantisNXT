@@ -1,11 +1,12 @@
 /**
  * Xero API Rate Limiter
- * 
- * Implements rate limiting for Xero API calls to comply with:
- * - 60 calls per minute per tenant
- * - 5000 calls per day per tenant
- * 
+ *
+ * Implements rate limiting for Xero API calls to comply with official limits:
+ * - 60 calls per minute per tenant (confirmed via Xero developer docs)
+ * - 5000 calls per day per tenant (confirmed via Xero developer docs)
+ *
  * Uses a token bucket algorithm with automatic retry on 429 errors.
+ * Applies conservative headroom to avoid hitting limits due to burst traffic.
  */
 
 import { XeroRateLimitError } from './errors';

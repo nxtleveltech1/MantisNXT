@@ -102,7 +102,11 @@ export type XeroEntityType =
   | 'purchase_order'
   | 'quote'
   | 'credit_note'
-  | 'bank_transaction';
+  | 'bank_transaction'
+  | 'manual_journal'
+  | 'tracking_category'
+  | 'contact_group'
+  | 'branding_theme';
 
 export type XeroSyncStatus = 
   | 'synced'

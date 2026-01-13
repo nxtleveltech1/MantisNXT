@@ -1,29 +1,26 @@
 /**
- * Xero Invoices Sync API
- * 
- * POST /api/xero/sync/invoices
- * 
- * Sync sales invoices and supplier bills to Xero.
+ * Xero Bank Transactions Sync API
+ *
+ * POST /api/xero/sync/bank-transactions
+ *
+ * Sync bank transactions (spend/receive, overpayments, prepayments) to Xero.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  syncSalesInvoiceToXero,
-  syncSupplierInvoiceToXero,
-  fetchInvoicesFromXero,
-} from '@/lib/xero/sync/invoices';
+  syncBankTransactionToXero,
+  fetchBankTransactionsFromXero,
+} from '@/lib/xero/sync/bank-transactions';
 import { validateXeroRequest, validateSyncParams, successResponse } from '@/lib/xero/validation';
 import { handleApiError } from '@/lib/xero/errors';
 
 export async function POST(request: NextRequest) {
   try {
-    // Validate request
     const validation = await validateXeroRequest(request, true);
     if (validation.error) return validation.error;
 
     const { orgId } = validation;
 
-    // Parse and validate request body
     let body: unknown;
     try {
       body = await request.json();
@@ -40,44 +37,38 @@ export async function POST(request: NextRequest) {
     const { type, data } = params;
 
     switch (type) {
-      case 'sales': {
-        const result = await syncSalesInvoiceToXero(
+      case 'create': {
+        const result = await syncBankTransactionToXero(
           orgId,
-          data as Parameters<typeof syncSalesInvoiceToXero>[1]
-        );
-        return successResponse(result);
-      }
-
-      case 'supplier': {
-        const result = await syncSupplierInvoiceToXero(
-          orgId,
-          data as Parameters<typeof syncSupplierInvoiceToXero>[1]
+          data as Parameters<typeof syncBankTransactionToXero>[1]
         );
         return successResponse(result);
       }
 
       case 'fetch': {
         const options = data as {
-          type?: 'ACCREC' | 'ACCPAY';
-          status?: string;
-          modifiedAfter?: string;
+          bankAccountId?: string;
+          fromDate?: string;
+          toDate?: string;
+          status?: 'AUTHORISED' | 'DELETED';
         };
-        const result = await fetchInvoicesFromXero(orgId, {
-          type: options?.type,
+        const result = await fetchBankTransactionsFromXero(orgId, {
+          bankAccountId: options?.bankAccountId,
+          fromDate: options?.fromDate ? new Date(options.fromDate) : undefined,
+          toDate: options?.toDate ? new Date(options.toDate) : undefined,
           status: options?.status,
-          modifiedAfter: options?.modifiedAfter ? new Date(options.modifiedAfter) : undefined,
         });
         return successResponse(result);
       }
 
       default:
         return NextResponse.json(
-          { error: 'Invalid sync type. Expected: sales, supplier, or fetch' },
+          { error: 'Invalid sync type. Expected: create or fetch' },
           { status: 400 }
         );
     }
 
   } catch (error) {
-    return handleApiError(error, 'Xero Sync Invoices');
+    return handleApiError(error, 'Xero Sync Bank Transactions');
   }
 }

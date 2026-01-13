@@ -87,3 +87,52 @@ export {
 export {
   syncReservationInvoiceToXero,
 } from './rentals-invoicing';
+
+// Bank Transactions
+export {
+  syncBankTransactionToXero,
+  fetchBankTransactionsFromXero,
+} from './bank-transactions';
+
+// Budgets
+export {
+  fetchBudgetsFromXero,
+} from './budgets';
+
+// Manual Journals
+export {
+  syncManualJournalToXero,
+  fetchManualJournalsFromXero,
+} from './manual-journals';
+
+// Tracking Categories
+export {
+  syncTrackingCategoryToXero,
+  fetchTrackingCategoriesFromXero,
+} from './tracking-categories';
+
+// Branding Themes
+export {
+  fetchBrandingThemesFromXero,
+  fetchPaymentServicesFromXero,
+} from './branding-themes';
+
+// Contact Groups
+export {
+  syncContactGroupToXero,
+  fetchContactGroupsFromXero,
+  addContactsToGroup as addContactsToContactGroup,
+} from './contact-groups';
+
+// History and Notes
+export {
+  addHistoryNoteToXero,
+  fetchHistoryRecordsFromXero,
+} from './history-notes';
+
+// Attachments
+export {
+  uploadAttachmentToXero,
+  fetchAttachmentsFromXero,
+  downloadAttachmentFromXero,
+} from './attachments';

@@ -20,17 +20,45 @@ function parseState(state: string): { orgId: string; nonce: string; timestamp: n
   try {
     const decoded = Buffer.from(state, 'base64url').toString('utf8');
     const payload = JSON.parse(decoded);
-    
+
+    // Validate payload structure
+    if (!payload || typeof payload !== 'object') {
+      console.error('[Xero Callback] Invalid state payload structure');
+      return null;
+    }
+
+    // Validate required fields
+    if (!payload.orgId || typeof payload.orgId !== 'string') {
+      console.error('[Xero Callback] Missing or invalid orgId in state');
+      return null;
+    }
+
+    if (!payload.nonce || typeof payload.nonce !== 'string' || payload.nonce.length < 16) {
+      console.error('[Xero Callback] Missing or invalid nonce in state');
+      return null;
+    }
+
+    if (!payload.timestamp || typeof payload.timestamp !== 'number') {
+      console.error('[Xero Callback] Missing or invalid timestamp in state');
+      return null;
+    }
+
     // Validate timestamp (state valid for 10 minutes)
     const tenMinutes = 10 * 60 * 1000;
     if (Date.now() - payload.timestamp > tenMinutes) {
       console.warn('[Xero Callback] State expired');
       return null;
     }
-    
+
+    // Validate timestamp is not in the future (with 5 second tolerance)
+    if (payload.timestamp > Date.now() + 5000) {
+      console.warn('[Xero Callback] State timestamp is in the future');
+      return null;
+    }
+
     return payload;
-  } catch {
-    console.error('[Xero Callback] Failed to parse state');
+  } catch (error) {
+    console.error('[Xero Callback] Failed to parse state:', error);
     return null;
   }
 }

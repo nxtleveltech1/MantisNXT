@@ -68,46 +68,27 @@ export function validateWebhookSignature(
     // Trim signature to handle any whitespace issues
     const receivedSignature = signature.trim();
 
-    // Both are base64-encoded strings
-    // For timing-safe comparison, we need to compare them as binary data
-    // Decode both base64 strings to binary buffers
-    let expectedBuffer: Buffer;
-    let actualBuffer: Buffer;
-    
-    try {
-      expectedBuffer = Buffer.from(expectedHash, 'base64');
-      actualBuffer = Buffer.from(receivedSignature, 'base64');
-    } catch (decodeError) {
-      // If base64 decode fails, try direct string comparison as fallback
-      // (less secure but may work if encoding is consistent)
-      console.warn('[Xero Webhook] Base64 decode failed, using string comparison:', decodeError);
-      return expectedHash === receivedSignature;
-    }
-    
+    // Decode both base64 strings to binary buffers for timing-safe comparison
+    const expectedBuffer = Buffer.from(expectedHash, 'base64');
+    const actualBuffer = Buffer.from(receivedSignature, 'base64');
+
+    // Verify buffer lengths match before comparison
     if (expectedBuffer.length !== actualBuffer.length) {
-      console.warn('[Xero Webhook] Signature length mismatch', {
+      console.warn('[Xero Webhook] Signature length mismatch - potential attack attempt', {
         expectedLength: expectedBuffer.length,
         actualLength: actualBuffer.length,
-        expectedHashLength: expectedHash.length,
-        receivedSignatureLength: receivedSignature.length,
         payloadLength: payload.length,
-        expectedHashPreview: expectedHash.substring(0, 20),
-        receivedSignaturePreview: receivedSignature.substring(0, 20),
       });
       return false;
     }
-    
+
+    // Use timing-safe comparison to prevent timing attacks
     const isValid = crypto.timingSafeEqual(expectedBuffer, actualBuffer);
-    
+
     if (!isValid) {
-      console.warn('[Xero Webhook] Signature mismatch', {
-        payloadLength: payload.length,
-        payloadPreview: payload.substring(0, 100),
-        expectedHashPreview: expectedHash.substring(0, 20),
-        receivedSignaturePreview: receivedSignature.substring(0, 20),
-      });
+      console.warn('[Xero Webhook] Invalid webhook signature - rejecting request');
     }
-    
+
     return isValid;
   } catch (error) {
     console.error('[Xero Webhook] Signature validation error:', error);

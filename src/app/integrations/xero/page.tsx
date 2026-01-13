@@ -86,36 +86,17 @@ export default function XeroIntegrationPage() {
   async function fetchSyncLogs() {
     setLoadingLogs(true);
     try {
-      // TODO: Create sync logs API endpoint
-      // For now, use mock data
-      setSyncLogs([
-        {
-          id: '1',
-          entityType: 'contact',
-          action: 'create',
-          direction: 'to_xero',
-          status: 'success',
-          recordsProcessed: 5,
-          recordsSucceeded: 5,
-          recordsFailed: 0,
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          errorMessage: null,
-        },
-        {
-          id: '2',
-          entityType: 'invoice',
-          action: 'fetch',
-          direction: 'from_xero',
-          status: 'success',
-          recordsProcessed: 12,
-          recordsSucceeded: 12,
-          recordsFailed: 0,
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          errorMessage: null,
-        },
-      ]);
+      const response = await fetch('/api/xero/sync-logs');
+      if (response.ok) {
+        const data = await response.json();
+        setSyncLogs(data.logs || []);
+      } else {
+        console.error('Failed to fetch sync logs:', response.statusText);
+        setSyncLogs([]);
+      }
     } catch (error) {
       console.error('Failed to fetch sync logs:', error);
+      setSyncLogs([]);
     } finally {
       setLoadingLogs(false);
     }
@@ -127,7 +108,7 @@ export default function XeroIntegrationPage() {
       const response = await fetch(`/api/xero/sync/${entityType}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'fetch' }),
+        body: JSON.stringify({ type: 'fetch' }),
       });
 
       const data = await response.json();
