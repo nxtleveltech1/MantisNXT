@@ -1,8 +1,7 @@
 /**
- * Xero Sync Helpers
+ * Xero Sync Shared Helpers
  * 
- * Shared utility functions for entity mapping and account configuration
- * used across all sync modules.
+ * Common database operations for entity mapping and account configuration.
  */
 
 import { query } from '@/lib/database';
@@ -14,11 +13,6 @@ import type { XeroAccountMappingConfig } from '../types';
 
 /**
  * Get Xero entity ID for an NXT entity
- * 
- * @param orgId - Organization ID
- * @param entityType - Type of entity (contact, invoice, item, payment, purchase_order)
- * @param nxtEntityId - NXT entity ID
- * @returns Xero entity ID or null if not found
  */
 export async function getXeroEntityId(
   orgId: string,
@@ -36,11 +30,6 @@ export async function getXeroEntityId(
 
 /**
  * Get NXT entity ID for a Xero entity
- * 
- * @param orgId - Organization ID
- * @param entityType - Type of entity
- * @param xeroEntityId - Xero entity ID
- * @returns NXT entity ID or null if not found
  */
 export async function getNxtEntityId(
   orgId: string,
@@ -57,13 +46,7 @@ export async function getNxtEntityId(
 }
 
 /**
- * Save entity mapping between NXT and Xero
- * 
- * @param orgId - Organization ID
- * @param entityType - Type of entity
- * @param nxtEntityId - NXT entity ID
- * @param xeroEntityId - Xero entity ID
- * @param syncHash - Optional hash for change detection
+ * Save entity mapping
  */
 export async function saveEntityMapping(
   orgId: string,
@@ -91,11 +74,6 @@ export async function saveEntityMapping(
 
 /**
  * Mark entity mapping as error
- * 
- * @param orgId - Organization ID
- * @param entityType - Type of entity
- * @param nxtEntityId - NXT entity ID
- * @param errorMessage - Error message to store
  */
 export async function markMappingError(
   orgId: string,
@@ -113,10 +91,6 @@ export async function markMappingError(
 
 /**
  * Mark entity mapping as deleted
- * 
- * @param orgId - Organization ID
- * @param entityType - Type of entity
- * @param nxtEntityId - NXT entity ID
  */
 export async function markMappingDeleted(
   orgId: string,
@@ -136,21 +110,11 @@ export async function markMappingDeleted(
 // ============================================================================
 
 /**
- * Get account mappings for an organization
- * 
- * @param orgId - Organization ID
- * @returns Partial account mapping configuration
+ * Get account mappings (codes only)
  */
-export async function getAccountMappings(
-  orgId: string
-): Promise<Partial<XeroAccountMappingConfig>> {
-  const result = await query<{ 
-    mapping_key: string; 
-    xero_account_code: string;
-    xero_account_id: string;
-  }>(
-    `SELECT mapping_key, xero_account_code, xero_account_id 
-     FROM xero_account_mappings WHERE org_id = $1`,
+export async function getAccountMappings(orgId: string): Promise<Partial<XeroAccountMappingConfig>> {
+  const result = await query<{ mapping_key: string; xero_account_code: string }>(
+    `SELECT mapping_key, xero_account_code FROM xero_account_mappings WHERE org_id = $1`,
     [orgId]
   );
   
@@ -162,41 +126,35 @@ export async function getAccountMappings(
 }
 
 /**
- * Get account mappings with IDs for an organization
- * Returns both account codes and IDs
- * 
- * @param orgId - Organization ID
- * @returns Map of mapping key to { code, id }
+ * Get account mappings with IDs (for payment accounts)
  */
 export async function getAccountMappingsWithIds(
   orgId: string
-): Promise<Record<string, { code: string; id: string }>> {
+): Promise<Record<string, { id: string; code: string; name: string | null }>> {
   const result = await query<{ 
     mapping_key: string; 
+    xero_account_id: string; 
     xero_account_code: string;
-    xero_account_id: string;
+    xero_account_name: string | null;
   }>(
-    `SELECT mapping_key, xero_account_code, xero_account_id 
+    `SELECT mapping_key, xero_account_id, xero_account_code, xero_account_name 
      FROM xero_account_mappings WHERE org_id = $1`,
     [orgId]
   );
   
-  const mappings: Record<string, { code: string; id: string }> = {};
+  const mappings: Record<string, { id: string; code: string; name: string | null }> = {};
   for (const row of result.rows) {
     mappings[row.mapping_key] = {
-      code: row.xero_account_code,
       id: row.xero_account_id,
+      code: row.xero_account_code,
+      name: row.xero_account_name,
     };
   }
   return mappings;
 }
 
 /**
- * Get a specific account mapping
- * 
- * @param orgId - Organization ID
- * @param mappingKey - The mapping key (e.g., 'sales_revenue', 'bank_account')
- * @returns Account ID or null
+ * Get a specific account ID by mapping key
  */
 export async function getAccountId(
   orgId: string,
@@ -208,4 +166,72 @@ export async function getAccountId(
     [orgId, mappingKey]
   );
   return result.rows[0]?.xero_account_id || null;
+}
+
+// ============================================================================
+// BATCH OPERATIONS
+// ============================================================================
+
+/**
+ * Get all pending entity mappings for sync
+ */
+export async function getPendingMappings(
+  orgId: string,
+  entityType?: string,
+  limit: number = 100
+): Promise<Array<{
+  nxtEntityId: string;
+  xeroEntityId: string;
+  entityType: string;
+}>> {
+  const conditions = ['org_id = $1', "sync_status = 'pending'"];
+  const params: unknown[] = [orgId];
+  
+  if (entityType) {
+    conditions.push('entity_type = $2');
+    params.push(entityType);
+  }
+
+  const result = await query<{
+    nxt_entity_id: string;
+    xero_entity_id: string;
+    entity_type: string;
+  }>(
+    `SELECT nxt_entity_id, xero_entity_id, entity_type 
+     FROM xero_entity_mappings
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY updated_at ASC
+     LIMIT ${limit}`,
+    params
+  );
+
+  return result.rows.map(row => ({
+    nxtEntityId: row.nxt_entity_id,
+    xeroEntityId: row.xero_entity_id,
+    entityType: row.entity_type,
+  }));
+}
+
+/**
+ * Bulk update sync status
+ */
+export async function bulkUpdateSyncStatus(
+  orgId: string,
+  entityType: string,
+  nxtEntityIds: string[],
+  status: 'synced' | 'pending' | 'error' | 'deleted',
+  errorMessage?: string
+): Promise<void> {
+  if (nxtEntityIds.length === 0) return;
+
+  await query(
+    `UPDATE xero_entity_mappings
+     SET sync_status = $3, 
+         error_message = $4,
+         updated_at = NOW()
+     WHERE org_id = $1 
+       AND entity_type = $2 
+       AND nxt_entity_id = ANY($5::uuid[])`,
+    [orgId, entityType, status, errorMessage || null, nxtEntityIds]
+  );
 }
