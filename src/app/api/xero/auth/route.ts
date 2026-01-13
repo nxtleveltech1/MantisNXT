@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { buildConsentUrl, isXeroConfigured } from '@/lib/xero/client';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
+import { handleApiError } from '@/lib/xero/errors';
 import crypto from 'crypto';
 
 /**
@@ -77,14 +78,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[Xero Auth] Error initiating OAuth:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to initiate Xero authorization',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Auth');
   }
 }

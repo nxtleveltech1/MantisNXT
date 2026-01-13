@@ -11,7 +11,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getXeroClient } from '@/lib/xero/client';
 import { getValidTokenSet } from '@/lib/xero/token-manager';
 import { callXeroApi } from '@/lib/xero/rate-limiter';
-import { parseXeroApiError, getUserFriendlyMessage } from '@/lib/xero/errors';
+import { handleApiError } from '@/lib/xero/errors';
 import type { XeroAccount } from '@/lib/xero/types';
 
 export async function GET() {
@@ -91,17 +91,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[Xero Accounts] Error:', error);
-    
-    const parsedError = parseXeroApiError(error);
-    const message = getUserFriendlyMessage(parsedError);
-
-    return NextResponse.json(
-      { 
-        error: message,
-        code: parsedError.code,
-      },
-      { status: parsedError.code === 'AUTH_ERROR' ? 401 : 500 }
-    );
+    return handleApiError(error, 'Xero Accounts');
   }
 }

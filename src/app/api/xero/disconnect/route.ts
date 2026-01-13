@@ -11,6 +11,7 @@ import { auth } from '@clerk/nextjs/server';
 import { revokeConnection, hasActiveConnection, getXeroConnection } from '@/lib/xero/token-manager';
 import { getXeroClient } from '@/lib/xero/client';
 import { decryptPII } from '@/lib/security/encryption';
+import { handleApiError } from '@/lib/xero/errors';
 
 export async function POST() {
   try {
@@ -48,7 +49,16 @@ export async function POST() {
     if (connection) {
       try {
         const xero = getXeroClient();
-        const refreshToken = decryptPII(connection.refreshToken);
+        let refreshToken: string;
+        
+        try {
+          refreshToken = decryptPII(connection.refreshToken);
+        } catch (decryptError) {
+          // Token decryption failed - likely encryption key changed
+          // Continue with disconnect anyway
+          console.warn('[Xero Disconnect] Failed to decrypt token, continuing with local disconnect:', decryptError);
+          refreshToken = '';
+        }
         
         // Xero doesn't have a direct revoke endpoint, but we can 
         // disconnect the app from the user's side by invalidating our stored tokens
@@ -70,14 +80,6 @@ export async function POST() {
     });
 
   } catch (error) {
-    console.error('[Xero Disconnect] Error:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to disconnect Xero',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Disconnect');
   }
 }

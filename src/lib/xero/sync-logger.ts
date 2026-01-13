@@ -5,6 +5,7 @@
  * Logs to xero_sync_log table for auditing and debugging.
  */
 
+import { randomUUID } from 'crypto';
 import { query } from '@/lib/database';
 import type { 
   XeroSyncAction, 
@@ -12,6 +13,27 @@ import type {
   XeroSyncLogStatus,
   XeroEntityType,
 } from './types';
+
+// ============================================================================
+// CORRELATION ID UTILITIES
+// ============================================================================
+
+/**
+ * Generate a correlation ID for request tracking
+ */
+export function generateCorrelationId(): string {
+  return randomUUID();
+}
+
+/**
+ * Get correlation ID from context or generate new one
+ * In a real implementation, this would extract from request headers
+ */
+export function getCorrelationId(): string {
+  // In Next.js App Router, we could use headers() from 'next/headers'
+  // For now, generate a new one per operation
+  return generateCorrelationId();
+}
 
 // ============================================================================
 // TYPES
@@ -34,6 +56,7 @@ export interface SyncLogEntry {
   recordsFailed?: number;
   durationMs?: number;
   createdBy?: string;
+  correlationId?: string;
 }
 
 // ============================================================================
@@ -44,6 +67,30 @@ export interface SyncLogEntry {
  * Log a sync operation
  */
 export async function logSyncOperation(entry: SyncLogEntry): Promise<string> {
+  const correlationId = entry.correlationId || generateCorrelationId();
+  
+  // Enhanced logging with correlation ID
+  const logContext = {
+    correlationId,
+    orgId: entry.orgId,
+    entityType: entry.entityType,
+    action: entry.action,
+    direction: entry.direction,
+    status: entry.status,
+  };
+  
+  if (entry.status === 'error') {
+    console.error(`[Xero Sync] ${entry.action} ${entry.entityType} failed`, {
+      ...logContext,
+      error: entry.errorMessage,
+      errorCode: entry.errorCode,
+      nxtEntityId: entry.nxtEntityId,
+      xeroEntityId: entry.xeroEntityId,
+    });
+  } else {
+    console.log(`[Xero Sync] ${entry.action} ${entry.entityType} ${entry.status}`, logContext);
+  }
+  
   const result = await query<{ id: string }>(
     `INSERT INTO xero_sync_log (
       org_id, entity_type, nxt_entity_id, xero_entity_id,
@@ -90,6 +137,7 @@ export async function logSyncSuccess(
     durationMs?: number;
     recordsProcessed?: number;
     responsePayload?: unknown;
+    correlationId?: string;
   } = {}
 ): Promise<void> {
   await logSyncOperation({
@@ -117,6 +165,7 @@ export async function logSyncError(
     xeroEntityId?: string;
     durationMs?: number;
     requestPayload?: unknown;
+    correlationId?: string;
   } = {}
 ): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : String(error);

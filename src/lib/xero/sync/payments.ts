@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapPaymentToXero } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { 
   getXeroEntityId, 
   saveEntityMapping, 
@@ -50,14 +50,24 @@ export async function syncPaymentToXero(
     // Get Xero invoice ID
     const xeroInvoiceId = await getXeroEntityId(orgId, 'invoice', payment.invoiceId);
     if (!xeroInvoiceId) {
-      throw new Error('Invoice not synced to Xero. Sync invoice first.');
+      throw new XeroSyncError(
+        'Invoice not synced to Xero. Sync invoice first.',
+        'payment',
+        payment.id,
+        'INVOICE_NOT_SYNCED'
+      );
     }
 
     // Get bank account mapping
     const mappings = await getAccountMappingsWithIds(orgId);
     const bankAccountId = mappings.bank_account?.id;
     if (!bankAccountId) {
-      throw new Error('Bank account not configured. Set up account mappings first.');
+      throw new XeroSyncError(
+        'Bank account not configured. Set up account mappings first.',
+        'payment',
+        payment.id,
+        'BANK_ACCOUNT_NOT_CONFIGURED'
+      );
     }
 
     // Check if already synced
@@ -81,7 +91,12 @@ export async function syncPaymentToXero(
     const result = response.body.payments?.[0] as XeroPayment;
 
     if (!result?.PaymentID) {
-      throw new Error('No PaymentID returned from Xero');
+      throw new XeroSyncError(
+        'No PaymentID returned from Xero',
+        'payment',
+        payment.id,
+        'NO_PAYMENT_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'payment', payment.id, result.PaymentID);

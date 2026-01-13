@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { formatDateForXero, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { query } from '@/lib/database';
 import type { XeroInvoice, SyncResult, XeroAccountMappingConfig, XeroLineItem } from '../types';
 import type { Reservation, ReservationItem } from '@/types/rentals';
@@ -187,7 +187,12 @@ export async function syncReservationInvoiceToXero(
     // Get Xero contact ID for customer
     const xeroContactId = await getXeroEntityId(orgId, 'contact', reservation.customer_id);
     if (!xeroContactId) {
-      throw new Error('Customer not synced to Xero. Sync customer first.');
+      throw new XeroSyncError(
+        'Customer not synced to Xero. Sync customer first.',
+        'invoice',
+        reservation.reservation_id,
+        'CUSTOMER_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -223,7 +228,12 @@ export async function syncReservationInvoiceToXero(
     }
 
     if (!result?.InvoiceID) {
-      throw new Error('No InvoiceID returned from Xero');
+      throw new XeroSyncError(
+        'No InvoiceID returned from Xero',
+        'invoice',
+        reservation.reservation_id,
+        'NO_INVOICE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'invoice', reservation.reservation_id, result.InvoiceID, syncHash);

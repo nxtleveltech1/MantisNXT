@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/database';
+import { handleApiError } from '@/lib/xero/errors';
 import type { XeroAccountMappingKey } from '@/lib/xero/types';
 
 interface AccountMapping {
@@ -84,12 +85,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[Xero Mappings] GET Error:', error);
-    
-    return NextResponse.json(
-      { error: 'Failed to fetch account mappings' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Mappings GET');
   }
 }
 
@@ -177,11 +173,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[Xero Mappings] POST Error:', error);
-    
-    return NextResponse.json(
-      { error: 'Failed to save account mappings' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Mappings POST');
   }
 }

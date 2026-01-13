@@ -14,7 +14,7 @@ import {
   fetchItemsFromXero,
 } from '@/lib/xero/sync/items';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
-import { parseXeroApiError, getUserFriendlyMessage } from '@/lib/xero/errors';
+import { handleApiError } from '@/lib/xero/errors';
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,14 +79,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[Xero Sync Items] Error:', error);
-    
-    const parsedError = parseXeroApiError(error);
-    const message = getUserFriendlyMessage(parsedError);
-
-    return NextResponse.json(
-      { success: false, error: message, code: parsedError.code },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Sync Items');
   }
 }

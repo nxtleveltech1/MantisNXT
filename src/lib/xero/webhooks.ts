@@ -68,15 +68,28 @@ export function validateWebhookSignature(
     // Trim signature to handle any whitespace issues
     const receivedSignature = signature.trim();
 
-    // Both are base64 strings - compare using timing-safe comparison
-    // Convert to buffers for timing-safe comparison
-    const expected = Buffer.from(expectedHash, 'utf8');
-    const actual = Buffer.from(receivedSignature, 'utf8');
+    // Both are base64-encoded strings
+    // For timing-safe comparison, we need to compare them as binary data
+    // Decode both base64 strings to binary buffers
+    let expectedBuffer: Buffer;
+    let actualBuffer: Buffer;
     
-    if (expected.length !== actual.length) {
+    try {
+      expectedBuffer = Buffer.from(expectedHash, 'base64');
+      actualBuffer = Buffer.from(receivedSignature, 'base64');
+    } catch (decodeError) {
+      // If base64 decode fails, try direct string comparison as fallback
+      // (less secure but may work if encoding is consistent)
+      console.warn('[Xero Webhook] Base64 decode failed, using string comparison:', decodeError);
+      return expectedHash === receivedSignature;
+    }
+    
+    if (expectedBuffer.length !== actualBuffer.length) {
       console.warn('[Xero Webhook] Signature length mismatch', {
-        expectedLength: expected.length,
-        actualLength: actual.length,
+        expectedLength: expectedBuffer.length,
+        actualLength: actualBuffer.length,
+        expectedHashLength: expectedHash.length,
+        receivedSignatureLength: receivedSignature.length,
         payloadLength: payload.length,
         expectedHashPreview: expectedHash.substring(0, 20),
         receivedSignaturePreview: receivedSignature.substring(0, 20),
@@ -84,7 +97,7 @@ export function validateWebhookSignature(
       return false;
     }
     
-    const isValid = crypto.timingSafeEqual(expected, actual);
+    const isValid = crypto.timingSafeEqual(expectedBuffer, actualBuffer);
     
     if (!isValid) {
       console.warn('[Xero Webhook] Signature mismatch', {

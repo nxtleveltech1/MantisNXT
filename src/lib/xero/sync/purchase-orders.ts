@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapPurchaseOrderToXero, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { 
   getXeroEntityId, 
   saveEntityMapping, 
@@ -93,7 +93,12 @@ export async function syncPurchaseOrderToXero(
     }
 
     if (!result?.PurchaseOrderID) {
-      throw new Error('No PurchaseOrderID returned from Xero');
+      throw new XeroSyncError(
+        'No PurchaseOrderID returned from Xero',
+        'purchase_order',
+        po.id,
+        'NO_PURCHASE_ORDER_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'purchase_order', po.id, result.PurchaseOrderID, syncHash);

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   // Handle OAuth errors from Xero
   if (error) {
     console.error('[Xero Callback] OAuth error:', error, errorDescription);
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', error);
     errorUrl.searchParams.set('xero_error_description', errorDescription || 'Authorization failed');
     return NextResponse.redirect(errorUrl);
@@ -57,14 +57,14 @@ export async function GET(request: NextRequest) {
   // Validate required parameters
   if (!code) {
     console.error('[Xero Callback] Missing authorization code');
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'missing_code');
     return NextResponse.redirect(errorUrl);
   }
 
   if (!state) {
     console.error('[Xero Callback] Missing state parameter');
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'missing_state');
     return NextResponse.redirect(errorUrl);
   }
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   // Parse and validate state
   const statePayload = parseState(state);
   if (!statePayload) {
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'invalid_state');
     return NextResponse.redirect(errorUrl);
   }
@@ -82,13 +82,13 @@ export async function GET(request: NextRequest) {
   
   if (!userId) {
     const errorUrl = new URL('/sign-in', appUrl);
-    errorUrl.searchParams.set('redirect_url', '/settings/integrations');
+    errorUrl.searchParams.set('redirect_url', '/integrations/xero');
     return NextResponse.redirect(errorUrl);
   }
 
   if (!orgId || orgId !== statePayload.orgId) {
     console.error('[Xero Callback] Organization mismatch');
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'org_mismatch');
     return NextResponse.redirect(errorUrl);
   }
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
 
     if (!tenants || tenants.length === 0) {
       console.error('[Xero Callback] No tenants available');
-      const errorUrl = new URL('/settings/integrations', appUrl);
+      const errorUrl = new URL('/integrations/xero', appUrl);
       errorUrl.searchParams.set('xero_error', 'no_tenants');
       return NextResponse.redirect(errorUrl);
     }
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     console.log('[Xero Callback] Successfully connected to Xero tenant:', tenant.tenantName);
 
     // Redirect to success page
-    const successUrl = new URL('/settings/integrations', appUrl);
+    const successUrl = new URL('/integrations/xero', appUrl);
     successUrl.searchParams.set('xero_connected', 'true');
     successUrl.searchParams.set('xero_tenant', tenant.tenantName || '');
     return NextResponse.redirect(successUrl);
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[Xero Callback] Error exchanging code for tokens:', err);
     
-    const errorUrl = new URL('/settings/integrations', appUrl);
+    const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'token_exchange_failed');
     errorUrl.searchParams.set(
       'xero_error_description', 

@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { formatDateForXero, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { query } from '@/lib/database';
 import type { XeroInvoice, SyncResult, XeroAccountMappingConfig, XeroLineItem } from '../types';
 import type { RepairOrder, RepairOrderItem } from '@/types/repairs';
@@ -175,12 +175,22 @@ export async function syncRepairOrderInvoiceToXero(
 
     // Get Xero contact ID for customer
     if (!repairOrder.customer_id) {
-      throw new Error('Repair order has no customer. Cannot create invoice.');
+      throw new XeroSyncError(
+        'Repair order has no customer. Cannot create invoice.',
+        'invoice',
+        repairOrder.repair_order_id,
+        'NO_CUSTOMER'
+      );
     }
     
     const xeroContactId = await getXeroEntityId(orgId, 'contact', repairOrder.customer_id);
     if (!xeroContactId) {
-      throw new Error('Customer not synced to Xero. Sync customer first.');
+      throw new XeroSyncError(
+        'Customer not synced to Xero. Sync customer first.',
+        'invoice',
+        repairOrder.repair_order_id,
+        'CUSTOMER_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -222,7 +232,12 @@ export async function syncRepairOrderInvoiceToXero(
     }
 
     if (!result?.InvoiceID) {
-      throw new Error('No InvoiceID returned from Xero');
+      throw new XeroSyncError(
+        'No InvoiceID returned from Xero',
+        'invoice',
+        repairOrder.repair_order_id,
+        'NO_INVOICE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'invoice', repairOrder.repair_order_id, result.InvoiceID, syncHash);

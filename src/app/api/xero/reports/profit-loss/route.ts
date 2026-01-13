@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { fetchProfitAndLossReport } from '@/lib/xero/sync/reports';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
-import { parseXeroApiError, getUserFriendlyMessage } from '@/lib/xero/errors';
+import { handleApiError } from '@/lib/xero/errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,14 +52,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('[Xero Report P&L] Error:', error);
-    
-    const parsedError = parseXeroApiError(error);
-    const message = getUserFriendlyMessage(parsedError);
-
-    return NextResponse.json(
-      { success: false, error: message, code: parsedError.code },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Report P&L');
   }
 }

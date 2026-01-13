@@ -4,6 +4,8 @@
  * Custom error types for Xero API operations
  */
 
+import { NextResponse } from 'next/server';
+
 /**
  * Base error class for Xero integration errors
  */
@@ -258,4 +260,73 @@ export function getUserFriendlyMessage(error: unknown): string {
   }
   
   return 'An unexpected error occurred while communicating with Xero.';
+}
+
+/**
+ * Handle API errors and return appropriate NextResponse
+ * 
+ * This helper function standardizes error responses across all Xero API routes.
+ * It maps Xero error types to appropriate HTTP status codes and formats.
+ * 
+ * @param error - The error to handle
+ * @param logContext - Optional context for logging (e.g., operation name)
+ * @returns NextResponse with appropriate status code and error message
+ */
+export function handleApiError(
+  error: unknown,
+  logContext?: string
+): import('next/server').NextResponse {
+  const context = logContext ? `[${logContext}] ` : '';
+  
+  // Parse the error to get a XeroError instance
+  const xeroError = error instanceof XeroError 
+    ? error 
+    : parseXeroApiError(error);
+  
+  // Log the error with context
+  console.error(`${context}Error:`, {
+    name: xeroError.name,
+    code: xeroError.code,
+    message: xeroError.message,
+    originalError: xeroError.originalError,
+  });
+  
+  // Map error types to HTTP status codes
+  let statusCode = 500;
+  let errorMessage = getUserFriendlyMessage(xeroError);
+  
+  if (xeroError instanceof XeroAuthError) {
+    if (xeroError.code === 'NO_CONNECTION') {
+      statusCode = 404; // Not found - connection doesn't exist
+    } else if (xeroError.code === 'UNAUTHORIZED' || xeroError.code === 'FORBIDDEN') {
+      statusCode = 401; // Unauthorized
+    } else {
+      statusCode = 401; // Default auth errors to 401
+    }
+  } else if (xeroError instanceof XeroRateLimitError) {
+    statusCode = 429; // Too Many Requests
+    errorMessage = `Rate limit exceeded. Retry after ${xeroError.retryAfterSeconds} seconds.`;
+  } else if (xeroError instanceof XeroValidationError) {
+    statusCode = 400; // Bad Request
+  } else if (xeroError instanceof XeroNotFoundError) {
+    statusCode = 404; // Not Found
+  } else if (xeroError instanceof XeroConfigError) {
+    statusCode = 500; // Internal Server Error
+  } else if (xeroError instanceof XeroWebhookError) {
+    statusCode = 401; // Unauthorized (for signature validation)
+  } else if (xeroError instanceof XeroSyncError) {
+    statusCode = 500; // Internal Server Error
+  }
+  
+  // Return JSON response with error details
+  return NextResponse.json(
+    {
+      error: errorMessage,
+      code: xeroError.code,
+      type: xeroError.name,
+    },
+    {
+      status: statusCode,
+    }
+  );
 }

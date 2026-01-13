@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapCreditNoteToXero, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { query } from '@/lib/database';
 import type { XeroCreditNote, SyncResult, XeroAccountMappingConfig } from '../types';
 
@@ -107,7 +107,12 @@ export async function syncCreditNoteToXero(
     // Get Xero contact ID
     const xeroContactId = await getXeroEntityId(orgId, 'contact', creditNote.contactId);
     if (!xeroContactId) {
-      throw new Error('Contact not synced to Xero. Sync contact first.');
+      throw new XeroSyncError(
+        'Contact not synced to Xero. Sync contact first.',
+        'credit_note',
+        creditNote.id,
+        'CONTACT_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -142,7 +147,12 @@ export async function syncCreditNoteToXero(
     }
 
     if (!result?.CreditNoteID) {
-      throw new Error('No CreditNoteID returned from Xero');
+      throw new XeroSyncError(
+        'No CreditNoteID returned from Xero',
+        'credit_note',
+        creditNote.id,
+        'NO_CREDIT_NOTE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'credit_note', creditNote.id, result.CreditNoteID, syncHash);

@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError, logBatchSync } from '../sync-logger';
 import { mapProductToXeroItem, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { 
   getXeroEntityId, 
   saveEntityMapping, 
@@ -77,7 +77,12 @@ export async function syncProductToXero(
     }
 
     if (!result?.ItemID) {
-      throw new Error('No ItemID returned from Xero');
+      throw new XeroSyncError(
+        'No ItemID returned from Xero',
+        'item',
+        product.id,
+        'NO_ITEM_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'item', product.id, result.ItemID, syncHash);

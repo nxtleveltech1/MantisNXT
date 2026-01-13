@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError, logBatchSync } from '../sync-logger';
 import { mapSupplierToXeroContact, mapCustomerToXeroContact, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { 
   getXeroEntityId, 
   saveEntityMapping, 
@@ -63,7 +63,12 @@ export async function syncSupplierToXero(
     }
 
     if (!result?.ContactID) {
-      throw new Error('No ContactID returned from Xero');
+      throw new XeroSyncError(
+        'No ContactID returned from Xero',
+        'contact',
+        supplier.id,
+        'NO_CONTACT_ID'
+      );
     }
 
     // Save mapping
@@ -198,7 +203,12 @@ export async function syncCustomerToXero(
     }
 
     if (!result?.ContactID) {
-      throw new Error('No ContactID returned from Xero');
+      throw new XeroSyncError(
+        'No ContactID returned from Xero',
+        'contact',
+        customer.id,
+        'NO_CONTACT_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'contact', customer.id, result.ContactID, syncHash);

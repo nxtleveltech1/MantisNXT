@@ -184,9 +184,21 @@ export async function getValidTokenSet(orgId: string): Promise<{
     );
   }
 
-  // Decrypt tokens
-  const accessToken = decryptPII(connection.accessToken);
-  const refreshToken = decryptPII(connection.refreshToken);
+  // Decrypt tokens with error handling
+  let accessToken: string;
+  let refreshToken: string;
+  
+  try {
+    accessToken = decryptPII(connection.accessToken);
+    refreshToken = decryptPII(connection.refreshToken);
+  } catch (error) {
+    // Encryption key may have changed or data is corrupted
+    throw new XeroAuthError(
+      'Failed to decrypt stored tokens. The encryption key may have changed. Please reconnect to Xero.',
+      'DECRYPTION_FAILED',
+      error
+    );
+  }
 
   // Create token set
   const tokenSet = new TokenSet({

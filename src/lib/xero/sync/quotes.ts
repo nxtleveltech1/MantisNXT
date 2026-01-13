@@ -9,7 +9,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapQuotationToXero, generateSyncHash } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { query } from '@/lib/database';
 import type { XeroQuote, SyncResult, XeroAccountMappingConfig } from '../types';
 
@@ -109,7 +109,12 @@ export async function syncQuoteToXero(
     // Get Xero contact ID for customer
     const xeroContactId = await getXeroEntityId(orgId, 'contact', quote.customerId);
     if (!xeroContactId) {
-      throw new Error('Customer not synced to Xero. Sync customer first.');
+      throw new XeroSyncError(
+        'Customer not synced to Xero. Sync customer first.',
+        'quote',
+        quote.id,
+        'CUSTOMER_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -144,7 +149,12 @@ export async function syncQuoteToXero(
     }
 
     if (!result?.QuoteID) {
-      throw new Error('No QuoteID returned from Xero');
+      throw new XeroSyncError(
+        'No QuoteID returned from Xero',
+        'quote',
+        quote.id,
+        'NO_QUOTE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'quote', quote.id, result.QuoteID, syncHash);

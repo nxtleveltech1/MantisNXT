@@ -10,7 +10,7 @@ import { getValidTokenSet } from '../token-manager';
 import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapSupplierInvoiceToXero, generateSyncHash, formatDateForXero } from '../mappers';
-import { parseXeroApiError } from '../errors';
+import { parseXeroApiError, XeroSyncError } from '../errors';
 import { 
   getXeroEntityId, 
   saveEntityMapping, 
@@ -124,7 +124,12 @@ export async function syncSalesInvoiceToXero(
     // Get Xero contact ID for customer
     const xeroContactId = await getXeroEntityId(orgId, 'contact', invoice.customerId);
     if (!xeroContactId) {
-      throw new Error(`Customer ${invoice.customerName || invoice.customerId} not synced to Xero. Sync customer first.`);
+      throw new XeroSyncError(
+        `Customer ${invoice.customerName || invoice.customerId} not synced to Xero. Sync customer first.`,
+        'invoice',
+        invoice.id,
+        'CUSTOMER_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -159,7 +164,12 @@ export async function syncSalesInvoiceToXero(
     }
 
     if (!result?.InvoiceID) {
-      throw new Error('No InvoiceID returned from Xero');
+      throw new XeroSyncError(
+        'No InvoiceID returned from Xero',
+        'invoice',
+        invoice.id,
+        'NO_INVOICE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'invoice', invoice.id, result.InvoiceID, syncHash);
@@ -228,7 +238,12 @@ export async function syncSupplierInvoiceToXero(
     // Get Xero contact ID for supplier
     const xeroContactId = await getXeroEntityId(orgId, 'contact', bill.supplierId);
     if (!xeroContactId) {
-      throw new Error(`Supplier not synced to Xero. Sync supplier first.`);
+      throw new XeroSyncError(
+        `Supplier not synced to Xero. Sync supplier first.`,
+        'invoice',
+        bill.id,
+        'SUPPLIER_NOT_SYNCED'
+      );
     }
 
     // Get account mappings
@@ -263,7 +278,12 @@ export async function syncSupplierInvoiceToXero(
     }
 
     if (!result?.InvoiceID) {
-      throw new Error('No InvoiceID returned from Xero');
+      throw new XeroSyncError(
+        'No InvoiceID returned from Xero',
+        'invoice',
+        bill.id,
+        'NO_INVOICE_ID'
+      );
     }
 
     await saveEntityMapping(orgId, 'invoice', bill.id, result.InvoiceID, syncHash);

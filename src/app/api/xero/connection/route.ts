@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getXeroConnection, hasActiveConnection } from '@/lib/xero/token-manager';
 import { isXeroConfigured } from '@/lib/xero/client';
+import { handleApiError } from '@/lib/xero/errors';
 
 export async function GET() {
   try {
@@ -90,14 +91,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[Xero Connection] Error checking status:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to check Xero connection status',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Xero Connection');
   }
 }
