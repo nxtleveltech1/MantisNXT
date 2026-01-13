@@ -22,22 +22,35 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const SALT_LENGTH = 64;
 
-// Get encryption key from environment or generate (should be in secrets manager)
-const ENCRYPTION_KEY = process.env.PII_ENCRYPTION_KEY;
+// Master key is lazily initialized to avoid build-time errors
+let _masterKey: Buffer | null = null;
 
-if (!ENCRYPTION_KEY) {
-  console.error('CRITICAL: PII_ENCRYPTION_KEY not set in environment variables');
-  throw new Error('PII encryption key not configured - cannot process sensitive data');
+/**
+ * Get the master encryption key, initializing it on first use.
+ * This defers key validation to runtime rather than module load time,
+ * allowing builds to complete without the encryption key present.
+ */
+function getMasterKey(): Buffer {
+  if (_masterKey) return _masterKey;
+
+  const encryptionKey = process.env.PII_ENCRYPTION_KEY;
+  
+  if (!encryptionKey) {
+    console.error('CRITICAL: PII_ENCRYPTION_KEY not set in environment variables');
+    throw new Error('PII encryption key not configured - cannot process sensitive data');
+  }
+
+  // Derive a 256-bit key from the environment key using PBKDF2
+  _masterKey = crypto.pbkdf2Sync(
+    encryptionKey,
+    process.env.PII_ENCRYPTION_SALT || 'mantis-nxt-salt-v1',
+    100000,
+    KEY_LENGTH,
+    'sha256'
+  );
+
+  return _masterKey;
 }
-
-// Derive a 256-bit key from the environment key using PBKDF2
-const MASTER_KEY = crypto.pbkdf2Sync(
-  ENCRYPTION_KEY,
-  process.env.PII_ENCRYPTION_SALT || 'mantis-nxt-salt-v1',
-  100000,
-  KEY_LENGTH,
-  'sha256'
-);
 
 // ============================================================================
 // ENCRYPTION FUNCTIONS
@@ -55,7 +68,7 @@ export function encryptPII(plaintext: string): string {
     const iv = crypto.randomBytes(IV_LENGTH);
 
     // Create cipher
-    const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, getMasterKey(), iv);
 
     // Encrypt
     let encrypted = cipher.update(plaintext, 'utf8', 'base64');
@@ -90,7 +103,7 @@ export function decryptPII(encryptedData: string): string {
     const encrypted = combined.slice(IV_LENGTH + AUTH_TAG_LENGTH);
 
     // Create decipher
-    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, getMasterKey(), iv);
     decipher.setAuthTag(authTag);
 
     // Decrypt
@@ -111,7 +124,7 @@ export function decryptPII(encryptedData: string): string {
 export function hashPII(data: string): string {
   if (!data) return '';
 
-  return crypto.createHmac('sha256', MASTER_KEY).update(data).digest('hex');
+  return crypto.createHmac('sha256', getMasterKey()).update(data).digest('hex');
 }
 
 /**
