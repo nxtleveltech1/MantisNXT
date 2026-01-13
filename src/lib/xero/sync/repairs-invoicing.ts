@@ -1,0 +1,262 @@
+/**
+ * Xero Repairs Invoicing
+ * 
+ * Generate Xero invoices from NXT Repair Orders.
+ */
+
+import { getXeroClient } from '../client';
+import { getValidTokenSet } from '../token-manager';
+import { callXeroApi } from '../rate-limiter';
+import { logSyncSuccess, logSyncError } from '../sync-logger';
+import { formatDateForXero, generateSyncHash } from '../mappers';
+import { parseXeroApiError } from '../errors';
+import { query } from '@/lib/database';
+import type { XeroInvoice, SyncResult, XeroAccountMappingConfig, XeroLineItem } from '../types';
+import type { RepairOrder, RepairOrderItem } from '@/types/repairs';
+
+// ============================================================================
+// ENTITY MAPPING HELPERS
+// ============================================================================
+
+async function getXeroEntityId(
+  orgId: string,
+  entityType: string,
+  nxtEntityId: string
+): Promise<string | null> {
+  const result = await query<{ xero_entity_id: string }>(
+    `SELECT xero_entity_id FROM xero_entity_mappings
+     WHERE org_id = $1 AND entity_type = $2 AND nxt_entity_id = $3
+     AND sync_status != 'deleted'`,
+    [orgId, entityType, nxtEntityId]
+  );
+  return result.rows[0]?.xero_entity_id || null;
+}
+
+async function saveEntityMapping(
+  orgId: string,
+  entityType: string,
+  nxtEntityId: string,
+  xeroEntityId: string,
+  syncHash?: string
+): Promise<void> {
+  await query(
+    `INSERT INTO xero_entity_mappings (
+      org_id, entity_type, nxt_entity_id, xero_entity_id, 
+      sync_status, last_synced_at, sync_hash
+    ) VALUES ($1, $2, $3, $4, 'synced', NOW(), $5)
+    ON CONFLICT (org_id, entity_type, nxt_entity_id)
+    DO UPDATE SET
+      xero_entity_id = EXCLUDED.xero_entity_id,
+      sync_status = 'synced',
+      last_synced_at = NOW(),
+      sync_hash = EXCLUDED.sync_hash,
+      error_message = NULL,
+      updated_at = NOW()`,
+    [orgId, entityType, nxtEntityId, xeroEntityId, syncHash || null]
+  );
+}
+
+async function getAccountMappings(orgId: string): Promise<Partial<XeroAccountMappingConfig>> {
+  const result = await query<{ mapping_key: string; xero_account_code: string }>(
+    `SELECT mapping_key, xero_account_code FROM xero_account_mappings WHERE org_id = $1`,
+    [orgId]
+  );
+  
+  const mappings: Partial<XeroAccountMappingConfig> = {};
+  for (const row of result.rows) {
+    (mappings as Record<string, string>)[row.mapping_key] = row.xero_account_code;
+  }
+  return mappings;
+}
+
+// ============================================================================
+// MAP REPAIR ORDER TO XERO INVOICE
+// ============================================================================
+
+function mapRepairOrderToXeroInvoice(
+  repairOrder: RepairOrder,
+  items: RepairOrderItem[],
+  xeroContactId: string,
+  accountMappings: Partial<XeroAccountMappingConfig>,
+  laborRate: number = 500 // Default hourly rate in ZAR
+): XeroInvoice {
+  const serviceAccountCode = accountMappings.serviceRevenue || accountMappings.salesRevenue || '200';
+  
+  const lineItems: XeroLineItem[] = [];
+
+  // Add labor line item
+  if (repairOrder.labor_hours > 0) {
+    lineItems.push({
+      Description: `Labor: ${repairOrder.diagnosis || repairOrder.reported_issue}`.substring(0, 500),
+      Quantity: repairOrder.labor_hours,
+      UnitAmount: laborRate,
+      AccountCode: serviceAccountCode,
+      TaxType: 'OUTPUT',
+    });
+  }
+
+  // Add diagnostic fee if applicable
+  if (repairOrder.diagnostic_fee > 0) {
+    lineItems.push({
+      Description: 'Diagnostic Fee',
+      Quantity: 1,
+      UnitAmount: repairOrder.diagnostic_fee,
+      AccountCode: serviceAccountCode,
+      TaxType: 'OUTPUT',
+    });
+  }
+
+  // Add rush fee if applicable
+  if (repairOrder.rush_fee > 0) {
+    lineItems.push({
+      Description: 'Rush/Priority Service Fee',
+      Quantity: 1,
+      UnitAmount: repairOrder.rush_fee,
+      AccountCode: serviceAccountCode,
+      TaxType: 'OUTPUT',
+    });
+  }
+
+  // Add parts
+  for (const item of items) {
+    lineItems.push({
+      Description: `Parts: ${item.part_name || 'Replacement Part'}`,
+      Quantity: item.quantity,
+      UnitAmount: item.unit_cost || 0,
+      AccountCode: accountMappings.salesRevenue || '200',
+      TaxType: 'OUTPUT',
+    });
+  }
+
+  // Add other charges
+  if (repairOrder.other_charges > 0) {
+    lineItems.push({
+      Description: repairOrder.other_charges_description || 'Additional Charges',
+      Quantity: 1,
+      UnitAmount: repairOrder.other_charges,
+      AccountCode: serviceAccountCode,
+      TaxType: 'OUTPUT',
+    });
+  }
+
+  return {
+    Type: 'ACCREC',
+    Contact: { ContactID: xeroContactId },
+    InvoiceNumber: `RPR-${repairOrder.repair_order_number}`,
+    Reference: repairOrder.repair_order_number,
+    Date: formatDateForXero(repairOrder.actual_completion_date || repairOrder.created_at),
+    DueDate: formatDateForXero(repairOrder.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+    LineAmountTypes: 'Exclusive',
+    Status: repairOrder.payment_status === 'paid' ? 'PAID' : 'AUTHORISED',
+    CurrencyCode: repairOrder.currency || 'ZAR',
+    LineItems: lineItems,
+  };
+}
+
+// ============================================================================
+// SYNC REPAIR ORDER INVOICE TO XERO
+// ============================================================================
+
+/**
+ * Create a Xero invoice from a repair order
+ */
+export async function syncRepairOrderInvoiceToXero(
+  orgId: string,
+  repairOrder: RepairOrder,
+  items: RepairOrderItem[],
+  laborRate?: number
+): Promise<SyncResult<XeroInvoice>> {
+  const startTime = Date.now();
+  
+  try {
+    const { tokenSet, tenantId } = await getValidTokenSet(orgId);
+    const xero = getXeroClient();
+    xero.setTokenSet(tokenSet);
+
+    // Get Xero contact ID for customer
+    if (!repairOrder.customer_id) {
+      throw new Error('Repair order has no customer. Cannot create invoice.');
+    }
+    
+    const xeroContactId = await getXeroEntityId(orgId, 'contact', repairOrder.customer_id);
+    if (!xeroContactId) {
+      throw new Error('Customer not synced to Xero. Sync customer first.');
+    }
+
+    // Get account mappings
+    const accountMappings = await getAccountMappings(orgId);
+
+    // Check if already synced
+    const existingXeroId = await getXeroEntityId(orgId, 'invoice', repairOrder.repair_order_id);
+    
+    // Map to Xero format
+    const xeroInvoice = mapRepairOrderToXeroInvoice(
+      repairOrder, 
+      items, 
+      xeroContactId, 
+      accountMappings, 
+      laborRate
+    );
+    
+    if (existingXeroId) {
+      xeroInvoice.InvoiceID = existingXeroId;
+    }
+    
+    const syncHash = generateSyncHash(xeroInvoice);
+
+    let result: XeroInvoice;
+    let action: 'create' | 'update';
+
+    if (existingXeroId) {
+      action = 'update';
+      const response = await callXeroApi(tenantId, async () => {
+        return xero.accountingApi.updateInvoice(tenantId, existingXeroId, { invoices: [xeroInvoice] });
+      });
+      result = response.body.invoices?.[0] as XeroInvoice;
+    } else {
+      action = 'create';
+      const response = await callXeroApi(tenantId, async () => {
+        return xero.accountingApi.createInvoices(tenantId, { invoices: [xeroInvoice] });
+      });
+      result = response.body.invoices?.[0] as XeroInvoice;
+    }
+
+    if (!result?.InvoiceID) {
+      throw new Error('No InvoiceID returned from Xero');
+    }
+
+    await saveEntityMapping(orgId, 'invoice', repairOrder.repair_order_id, result.InvoiceID, syncHash);
+
+    // Also link back to the repair order
+    await query(
+      `UPDATE repair_orders SET ar_invoice_id = $1 WHERE repair_order_id = $2`,
+      [result.InvoiceID, repairOrder.repair_order_id]
+    );
+
+    await logSyncSuccess(orgId, 'invoice', action, 'to_xero', {
+      nxtEntityId: repairOrder.repair_order_id,
+      xeroEntityId: result.InvoiceID,
+      durationMs: Date.now() - startTime,
+    });
+
+    return {
+      success: true,
+      data: result,
+      xeroEntityId: result.InvoiceID,
+    };
+
+  } catch (error) {
+    const parsedError = parseXeroApiError(error);
+    
+    await logSyncError(orgId, 'invoice', 'create', 'to_xero', parsedError, {
+      nxtEntityId: repairOrder.repair_order_id,
+      durationMs: Date.now() - startTime,
+    });
+
+    return {
+      success: false,
+      error: parsedError.message,
+      errorCode: parsedError.code,
+    };
+  }
+}
