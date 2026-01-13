@@ -25,20 +25,47 @@ export async function POST(request: NextRequest) {
     const payload = await request.text();
     const signature = request.headers.get('x-xero-signature');
 
+    // Log request details for debugging
+    console.log('[Xero Webhook] Received request', {
+      payloadLength: payload.length,
+      hasSignature: !!signature,
+      signatureLength: signature?.length,
+      payloadPreview: payload.substring(0, 200),
+    });
+
     // Validate signature
-    if (!signature || !validateWebhookSignature(payload, signature)) {
-      console.warn('[Xero Webhook] Invalid signature');
+    if (!signature) {
+      console.warn('[Xero Webhook] Missing x-xero-signature header');
+      return new NextResponse('Missing signature', { status: 401 });
+    }
+
+    const isValidSignature = validateWebhookSignature(payload, signature);
+    if (!isValidSignature) {
+      console.warn('[Xero Webhook] Invalid signature', {
+        payloadLength: payload.length,
+        signaturePreview: signature.substring(0, 20),
+      });
       return new NextResponse('Invalid signature', { status: 401 });
     }
 
     // Parse the payload
-    const webhookPayload: XeroWebhookPayload = JSON.parse(payload);
+    let webhookPayload: XeroWebhookPayload;
+    try {
+      webhookPayload = JSON.parse(payload);
+    } catch (parseError) {
+      console.error('[Xero Webhook] Failed to parse payload:', parseError);
+      return new NextResponse('Invalid JSON', { status: 400 });
+    }
 
     // Check if this is an intent-to-receive validation (empty events array)
     if (!webhookPayload.events || webhookPayload.events.length === 0) {
       // This is Xero checking we can receive webhooks
       // We must respond with 200 OK immediately
-      console.log('[Xero Webhook] Intent-to-receive validation successful');
+      console.log('[Xero Webhook] Intent-to-receive validation successful', {
+        firstEventSequence: webhookPayload.firstEventSequence,
+        lastEventSequence: webhookPayload.lastEventSequence,
+        entropy: webhookPayload.entropy,
+      });
       return new NextResponse('OK', { status: 200 });
     }
 

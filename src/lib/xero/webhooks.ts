@@ -46,28 +46,56 @@ export function validateWebhookSignature(
   payload: string,
   signature: string
 ): boolean {
-  const webhookKey = process.env.XERO_WEBHOOK_KEY;
+  const webhookKey = process.env.XERO_WEBHOOK_KEY?.trim();
   
   if (!webhookKey) {
     console.error('[Xero Webhook] XERO_WEBHOOK_KEY not configured');
     return false;
   }
 
+  if (!signature) {
+    console.warn('[Xero Webhook] Missing x-xero-signature header');
+    return false;
+  }
+
   try {
-    const hash = crypto
+    // Generate HMAC-SHA256 hash of payload
+    const expectedHash = crypto
       .createHmac('sha256', webhookKey)
       .update(payload)
       .digest('base64');
 
-    // Use timing-safe comparison to prevent timing attacks
-    const expected = Buffer.from(hash);
-    const actual = Buffer.from(signature);
+    // Trim signature to handle any whitespace issues
+    const receivedSignature = signature.trim();
+
+    // Both are base64 strings - compare using timing-safe comparison
+    // Convert to buffers for timing-safe comparison
+    const expected = Buffer.from(expectedHash, 'utf8');
+    const actual = Buffer.from(receivedSignature, 'utf8');
     
     if (expected.length !== actual.length) {
+      console.warn('[Xero Webhook] Signature length mismatch', {
+        expectedLength: expected.length,
+        actualLength: actual.length,
+        payloadLength: payload.length,
+        expectedHashPreview: expectedHash.substring(0, 20),
+        receivedSignaturePreview: receivedSignature.substring(0, 20),
+      });
       return false;
     }
     
-    return crypto.timingSafeEqual(expected, actual);
+    const isValid = crypto.timingSafeEqual(expected, actual);
+    
+    if (!isValid) {
+      console.warn('[Xero Webhook] Signature mismatch', {
+        payloadLength: payload.length,
+        payloadPreview: payload.substring(0, 100),
+        expectedHashPreview: expectedHash.substring(0, 20),
+        receivedSignaturePreview: receivedSignature.substring(0, 20),
+      });
+    }
+    
+    return isValid;
   } catch (error) {
     console.error('[Xero Webhook] Signature validation error:', error);
     return false;
