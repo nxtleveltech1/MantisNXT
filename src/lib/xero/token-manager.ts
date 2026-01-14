@@ -166,7 +166,7 @@ export async function hasActiveConnection(orgId: string): Promise<boolean> {
 
 /**
  * Get a valid token set, refreshing if necessary
- * 
+ *
  * @param orgId - Organization ID
  * @returns Valid TokenSet ready for API calls
  * @throws XeroAuthError if no connection or refresh fails
@@ -175,23 +175,31 @@ export async function getValidTokenSet(orgId: string): Promise<{
   tokenSet: TokenSet;
   tenantId: string;
 }> {
+  console.log('[Xero Token] Getting valid token set for org:', orgId);
+
   const connection = await getXeroConnection(orgId);
 
   if (!connection) {
+    console.error('[Xero Token] No Xero connection found for org:', orgId);
     throw new XeroAuthError(
       'No Xero connection found. Please connect to Xero first.',
       'NO_CONNECTION'
     );
   }
 
+  console.log('[Xero Token] Found connection, tenant:', connection.xeroTenantId);
+  console.log('[Xero Token] Token expires at:', connection.tokenExpiresAt.toISOString());
+
   // Decrypt tokens with error handling
   let accessToken: string;
   let refreshToken: string;
-  
+
   try {
     accessToken = decryptPII(connection.accessToken);
     refreshToken = decryptPII(connection.refreshToken);
+    console.log('[Xero Token] Tokens decrypted successfully');
   } catch (error) {
+    console.error('[Xero Token] Failed to decrypt tokens:', error);
     // Encryption key may have changed or data is corrupted
     throw new XeroAuthError(
       'Failed to decrypt stored tokens. The encryption key may have changed. Please reconnect to Xero.',
@@ -208,14 +216,25 @@ export async function getValidTokenSet(orgId: string): Promise<{
     token_type: 'Bearer',
   });
 
+  console.log('[Xero Token] TokenSet created');
+
   // Check if token is expired or will expire in next 10 minutes
   // Xero access tokens are valid for 30 minutes, so refresh at 20 minutes used
   const expiresAt = connection.tokenExpiresAt.getTime();
   const tenMinutesFromNow = Date.now() + 10 * 60 * 1000;
+  const needsRefresh = expiresAt <= tenMinutesFromNow;
 
-  if (expiresAt <= tenMinutesFromNow) {
+  console.log('[Xero Token] Token expiry check:', {
+    expiresAt: new Date(expiresAt).toISOString(),
+    tenMinutesFromNow: new Date(tenMinutesFromNow).toISOString(),
+    needsRefresh
+  });
+
+  if (needsRefresh) {
+    console.log('[Xero Token] Token needs refresh, attempting refresh');
     // Token is expired or expiring soon - refresh it
     try {
+      console.log('[Xero Token] Calling refreshWithRefreshToken');
       const client = getXeroClient();
       const newTokenSet = await client.refreshWithRefreshToken(
         process.env.XERO_CLIENT_ID!,
@@ -223,14 +242,16 @@ export async function getValidTokenSet(orgId: string): Promise<{
         refreshToken
       );
 
-      // Save the new tokens
+      console.log('[Xero Token] Refresh successful, saving new tokens');
       await updateTokenSet(orgId, newTokenSet);
 
+      console.log('[Xero Token] Returning refreshed token set');
       return {
         tokenSet: newTokenSet,
         tenantId: connection.xeroTenantId,
       };
     } catch (error) {
+      console.error('[Xero Token] Token refresh failed:', error);
       // Refresh failed - connection may need to be re-established
       throw new XeroAuthError(
         'Failed to refresh Xero token. Please reconnect to Xero.',
@@ -240,6 +261,7 @@ export async function getValidTokenSet(orgId: string): Promise<{
     }
   }
 
+  console.log('[Xero Token] Token is still valid, returning existing token set');
   return {
     tokenSet,
     tenantId: connection.xeroTenantId,

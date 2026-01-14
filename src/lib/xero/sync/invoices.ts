@@ -154,13 +154,31 @@ export async function syncSalesInvoiceToXero(
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.updateInvoice(tenantId, existingXeroId, { invoices: [xeroInvoice] });
       });
-      result = response.body.invoices?.[0] as XeroInvoice;
+      const invoices = response.body?.invoices;
+      if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+        throw new XeroSyncError(
+          'No invoices returned from Xero API',
+          'invoice',
+          invoice.id,
+          'NO_INVOICES_RETURNED'
+        );
+      }
+      result = invoices[0] as XeroInvoice;
     } else {
       action = 'create';
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.createInvoices(tenantId, { invoices: [xeroInvoice] });
       });
-      result = response.body.invoices?.[0] as XeroInvoice;
+      const invoices = response.body?.invoices;
+      if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+        throw new XeroSyncError(
+          'No invoices returned from Xero API',
+          'invoice',
+          invoice.id,
+          'NO_INVOICES_RETURNED'
+        );
+      }
+      result = invoices[0] as XeroInvoice;
     }
 
     if (!result?.InvoiceID) {
@@ -268,13 +286,31 @@ export async function syncSupplierInvoiceToXero(
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.updateInvoice(tenantId, existingXeroId, { invoices: [xeroInvoice] });
       });
-      result = response.body.invoices?.[0] as XeroInvoice;
+      const invoices = response.body?.invoices;
+      if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+        throw new XeroSyncError(
+          'No invoices returned from Xero API',
+          'invoice',
+          invoice.id,
+          'NO_INVOICES_RETURNED'
+        );
+      }
+      result = invoices[0] as XeroInvoice;
     } else {
       action = 'create';
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.createInvoices(tenantId, { invoices: [xeroInvoice] });
       });
-      result = response.body.invoices?.[0] as XeroInvoice;
+      const invoices = response.body?.invoices;
+      if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+        throw new XeroSyncError(
+          'No invoices returned from Xero API',
+          'invoice',
+          invoice.id,
+          'NO_INVOICES_RETURNED'
+        );
+      }
+      result = invoices[0] as XeroInvoice;
     }
 
     if (!result?.InvoiceID) {
@@ -364,7 +400,7 @@ export async function fetchInvoicesFromXero(
       );
     });
 
-    const invoices = (response.body.invoices || []) as XeroInvoice[];
+    const invoices = (response.body?.invoices || []) as XeroInvoice[];
 
     await logSyncSuccess(orgId, 'invoice', 'fetch', 'from_xero', {
       durationMs: Date.now() - startTime,

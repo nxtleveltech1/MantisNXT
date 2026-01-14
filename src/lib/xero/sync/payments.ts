@@ -88,7 +88,17 @@ export async function syncPaymentToXero(
       return xero.accountingApi.createPayment(tenantId, { payments: [xeroPayment] });
     });
 
-    const result = response.body.payments?.[0] as XeroPayment;
+    const payments = response.body?.payments;
+    if (!payments || !Array.isArray(payments) || payments.length === 0) {
+      throw new XeroSyncError(
+        'No payments returned from Xero API',
+        'payment',
+        payment.id,
+        'NO_PAYMENTS_RETURNED'
+      );
+    }
+
+    const result = payments[0] as XeroPayment;
 
     if (!result?.PaymentID) {
       throw new XeroSyncError(
@@ -158,7 +168,7 @@ export async function fetchPaymentsFromXero(
       );
     });
 
-    const payments = (response.body.payments || []) as XeroPayment[];
+    const payments = (response.body?.payments || []) as XeroPayment[];
 
     await logSyncSuccess(orgId, 'payment', 'fetch', 'from_xero', {
       durationMs: Date.now() - startTime,

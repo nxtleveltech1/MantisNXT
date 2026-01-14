@@ -168,7 +168,7 @@ const rateLimiter = new XeroRateLimiter();
 
 /**
  * Execute a Xero API call with rate limiting and retry logic
- * 
+ *
  * @param tenantId - Xero tenant ID
  * @param apiCall - Async function that makes the API call
  * @param maxRetries - Maximum number of retries on rate limit
@@ -179,45 +179,60 @@ export async function callXeroApi<T>(
   apiCall: () => Promise<T>,
   maxRetries: number = 3
 ): Promise<T> {
+  console.log(`[Xero API] Starting API call for tenant ${tenantId}`);
   let lastError: unknown;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`[Xero API] Attempt ${attempt + 1}/${maxRetries + 1} for tenant ${tenantId}`);
+
       // Acquire rate limit token
+      console.log(`[Xero API] Acquiring rate limit token for tenant ${tenantId}`);
       await rateLimiter.acquire(tenantId);
-      
+
       // Make the API call
+      console.log(`[Xero API] Executing API call for tenant ${tenantId}`);
+      const startTime = Date.now();
       const result = await apiCall();
+      const duration = Date.now() - startTime;
+
+      console.log(`[Xero API] API call successful for tenant ${tenantId} (${duration}ms)`);
+
       return result;
-      
+
     } catch (error) {
+      console.error(`[Xero API] API call failed for tenant ${tenantId}, attempt ${attempt + 1}:`, error);
       lastError = error;
-      
+
       // Check if it's a rate limit error
       if (isRateLimitResponse(error)) {
         const retryAfter = getRetryAfterSeconds(error);
-        
+
         console.warn(
           `[Xero Rate Limit] Hit rate limit for tenant ${tenantId}. ` +
           `Retry after ${retryAfter}s. Attempt ${attempt + 1}/${maxRetries + 1}`
         );
-        
+
         rateLimiter.recordRateLimitHit(tenantId, retryAfter);
-        
+
         if (attempt < maxRetries) {
           // Wait and retry
+          console.log(`[Xero API] Waiting ${retryAfter}s before retry for tenant ${tenantId}`);
           await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
           continue;
         }
-        
+
+        console.error(`[Xero API] Max retries exceeded for rate limit on tenant ${tenantId}`);
         throw new XeroRateLimitError(retryAfter, error);
       }
-      
+
       // Not a rate limit error - rethrow immediately
+      console.error(`[Xero API] Non-rate-limit error for tenant ${tenantId}, not retrying:`, error);
       throw error;
     }
   }
-  
+
+  console.error(`[Xero API] All attempts failed for tenant ${tenantId}`);
   throw lastError;
 }
 

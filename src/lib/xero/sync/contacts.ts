@@ -49,17 +49,41 @@ export async function syncSupplierToXero(
     if (existingXeroId) {
       // Update existing contact
       action = 'update';
+      console.log(`[Xero Sync] Updating contact ${existingXeroId} for org ${orgId}`);
+      console.log(`[Xero Sync] Update payload:`, JSON.stringify(xeroContact, null, 2));
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.updateContact(tenantId, existingXeroId, { contacts: [xeroContact] });
       });
-      result = response.body.contacts?.[0] as XeroContact;
+      console.log(`[Xero Sync] Update response:`, JSON.stringify(response.body, null, 2));
+      const contacts = response.body?.contacts;
+      if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+        throw new XeroSyncError(
+          'No contacts returned from Xero API',
+          'contact',
+          supplier.id,
+          'NO_CONTACTS_RETURNED'
+        );
+      }
+      result = contacts[0] as XeroContact;
     } else {
       // Create new contact
       action = 'create';
+      console.log(`[Xero Sync] Creating new contact for org ${orgId}`);
+      console.log(`[Xero Sync] Create payload:`, JSON.stringify(xeroContact, null, 2));
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.createContacts(tenantId, { contacts: [xeroContact] });
       });
-      result = response.body.contacts?.[0] as XeroContact;
+      console.log(`[Xero Sync] Create response:`, JSON.stringify(response.body, null, 2));
+      const contacts = response.body?.contacts;
+      if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+        throw new XeroSyncError(
+          'No contacts returned from Xero API',
+          'contact',
+          supplier.id,
+          'NO_CONTACTS_RETURNED'
+        );
+      }
+      result = contacts[0] as XeroContact;
     }
 
     if (!result?.ContactID) {
@@ -193,13 +217,31 @@ export async function syncCustomerToXero(
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.updateContact(tenantId, existingXeroId, { contacts: [xeroContact] });
       });
-      result = response.body.contacts?.[0] as XeroContact;
+      const contacts = response.body?.contacts;
+      if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+        throw new XeroSyncError(
+          'No contacts returned from Xero API',
+          'contact',
+          supplier.id,
+          'NO_CONTACTS_RETURNED'
+        );
+      }
+      result = contacts[0] as XeroContact;
     } else {
       action = 'create';
       const response = await callXeroApi(tenantId, async () => {
         return xero.accountingApi.createContacts(tenantId, { contacts: [xeroContact] });
       });
-      result = response.body.contacts?.[0] as XeroContact;
+      const contacts = response.body?.contacts;
+      if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+        throw new XeroSyncError(
+          'No contacts returned from Xero API',
+          'contact',
+          supplier.id,
+          'NO_CONTACTS_RETURNED'
+        );
+      }
+      result = contacts[0] as XeroContact;
     }
 
     if (!result?.ContactID) {
@@ -260,6 +302,7 @@ export async function fetchContactsFromXero(
   const startTime = Date.now();
   
   try {
+    console.log(`[Xero Sync] Starting fetch contacts for org ${orgId}`, options);
     const { tokenSet, tenantId } = await getValidTokenSet(orgId);
     const xero = getXeroClient();
     xero.setTokenSet(tokenSet);
@@ -268,10 +311,12 @@ export async function fetchContactsFromXero(
     const whereClauses: string[] = [];
     if (options.isSupplier) whereClauses.push('IsSupplier==true');
     if (options.isCustomer) whereClauses.push('IsCustomer==true');
-    
+
     const where = whereClauses.length > 0 ? whereClauses.join(' AND ') : undefined;
-    
+    console.log(`[Xero Sync] Fetching contacts with where clause: ${where}`);
+
     const response = await callXeroApi(tenantId, async () => {
+      console.log(`[Xero Sync] Calling getContacts API for tenant ${tenantId}`);
       return xero.accountingApi.getContacts(
         tenantId,
         options.modifiedAfter,
@@ -285,7 +330,13 @@ export async function fetchContactsFromXero(
       );
     });
 
-    const contacts = (response.body.contacts || []) as XeroContact[];
+    console.log(`[Xero Sync] API response received:`, {
+      hasContacts: !!response.body.contacts,
+      contactCount: response.body.contacts?.length || 0,
+      responseKeys: Object.keys(response.body)
+    });
+
+    const contacts = (response.body?.contacts || []) as XeroContact[];
 
     await logSyncSuccess(orgId, 'contact', 'fetch', 'from_xero', {
       durationMs: Date.now() - startTime,

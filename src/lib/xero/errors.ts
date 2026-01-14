@@ -158,52 +158,100 @@ export class XeroConfigError extends XeroError {
  * Parse Xero API error response
  */
 export function parseXeroApiError(error: unknown): XeroError {
+  console.error('[Xero Error] Parsing error:', error);
+
+  // Log full error object for debugging
+  if (error && typeof error === 'object') {
+    try {
+      console.error('[Xero Error] Full error object:', JSON.stringify(error, null, 2));
+    } catch (jsonError) {
+      console.error('[Xero Error] Could not stringify error object:', error);
+    }
+  }
+
   // Handle axios/fetch errors with response
   if (error && typeof error === 'object' && 'response' in error) {
-    const response = (error as { response?: { status?: number; data?: unknown; headers?: Record<string, string> } }).response;
-    
+    const response = (error as { response?: { status?: number; data?: unknown; headers?: Record<string, string>; statusText?: string } }).response;
+
+    console.error('[Xero Error] Response details:', {
+      status: response?.status,
+      statusText: response?.statusText,
+      headers: response?.headers,
+    });
+
     if (response?.status === 401) {
+      console.error('[Xero Error] Authentication failed (401)');
       return new XeroAuthError(
         'Xero authentication failed. Please reconnect to Xero.',
         'UNAUTHORIZED',
         error
       );
     }
-    
+
     if (response?.status === 403) {
+      console.error('[Xero Error] Access denied (403)');
       return new XeroAuthError(
         'Access denied. The connected Xero user may not have permission for this operation.',
         'FORBIDDEN',
         error
       );
     }
-    
+
     if (response?.status === 404) {
+      console.error('[Xero Error] Entity not found (404)');
       return new XeroNotFoundError('Entity', 'unknown', error);
     }
-    
+
     if (response?.status === 429) {
       const retryAfter = parseInt(response.headers?.['retry-after'] || '60', 10);
+      console.error(`[Xero Error] Rate limit exceeded (429), retry after ${retryAfter}s`);
       return new XeroRateLimitError(retryAfter, error);
     }
-    
+
     if (response?.status === 400 && response.data) {
+      console.error('[Xero Error] Validation error (400)');
       const data = response.data as { Message?: string; Elements?: Array<{ ValidationErrors?: Array<{ Message: string }> }> };
+
+      console.error('[Xero Error] Validation error data:', data);
+
       const validationErrors = data.Elements?.[0]?.ValidationErrors?.map(ve => ({
         field: 'unknown',
         message: ve.Message,
       })) || [];
-      
+
       return new XeroValidationError(
         data.Message || 'Validation failed',
         validationErrors,
         error
       );
     }
+
+    // Handle other HTTP status codes
+    if (response?.status) {
+      console.error(`[Xero Error] HTTP ${response.status} error:`, response.statusText);
+      return new XeroError(
+        `Xero API error: ${response.status} ${response.statusText}`,
+        `HTTP_${response.status}`,
+        error
+      );
+    }
   }
-  
+
+  // Check for network errors
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code: string }).code;
+    console.error('[Xero Error] Network error with code:', code);
+    if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
+      return new XeroSyncError('Network connectivity error - unable to reach Xero API', 'NETWORK_ERROR', 'unknown', 'NETWORK_ERROR', error);
+    }
+    if (code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT') {
+      return new XeroSyncError('Request timeout - Xero API took too long to respond', 'TIMEOUT_ERROR', 'unknown', 'TIMEOUT_ERROR', error);
+    }
+  }
+
   // Generic error
   if (error instanceof Error) {
+    console.error('[Xero Error] Generic error:', error.message);
     return new XeroError(error.message, 'UNKNOWN_ERROR', error);
   }
   

@@ -66,16 +66,25 @@ function parseState(state: string): { orgId: string; nonce: string; timestamp: n
 export async function GET(request: NextRequest) {
   const appUrl = getAppUrl();
   const searchParams = request.nextUrl.searchParams;
-  
+
+  console.log('[Xero Callback] Starting OAuth callback processing');
+
   // Get OAuth callback parameters
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
   const errorDescription = searchParams.get('error_description');
 
+  console.log('[Xero Callback] Callback parameters:', {
+    hasCode: !!code,
+    hasState: !!state,
+    hasError: !!error,
+    errorDescription
+  });
+
   // Handle OAuth errors from Xero
   if (error) {
-    console.error('[Xero Callback] OAuth error:', error, errorDescription);
+    console.error('[Xero Callback] OAuth error from Xero:', { error, errorDescription });
     const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', error);
     errorUrl.searchParams.set('xero_error_description', errorDescription || 'Authorization failed');
@@ -98,39 +107,51 @@ export async function GET(request: NextRequest) {
   }
 
   // Parse and validate state
+  console.log('[Xero Callback] Parsing state parameter');
   const statePayload = parseState(state);
   if (!statePayload) {
+    console.error('[Xero Callback] Invalid state parameter');
     const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'invalid_state');
     return NextResponse.redirect(errorUrl);
   }
 
+  console.log('[Xero Callback] State validated for org:', statePayload.orgId);
+
   // Verify user is authenticated and matches state org
+  console.log('[Xero Callback] Verifying user authentication');
   const { userId, orgId } = await auth();
-  
+
   if (!userId) {
+    console.log('[Xero Callback] User not authenticated - redirecting to sign-in');
     const errorUrl = new URL('/sign-in', appUrl);
     errorUrl.searchParams.set('redirect_url', '/integrations/xero');
     return NextResponse.redirect(errorUrl);
   }
 
   if (!orgId || orgId !== statePayload.orgId) {
-    console.error('[Xero Callback] Organization mismatch');
+    console.error('[Xero Callback] Organization mismatch:', { authOrgId: orgId, stateOrgId: statePayload.orgId });
     const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'org_mismatch');
     return NextResponse.redirect(errorUrl);
   }
 
+  console.log('[Xero Callback] User authenticated for org:', orgId);
+
   try {
+    console.log('[Xero Callback] Initializing Xero client');
     const xero = getXeroClient();
-    
-    // Exchange authorization code for tokens
+
+    console.log('[Xero Callback] Exchanging authorization code for tokens');
     const fullCallbackUrl = request.url;
     const tokenSet = await xero.apiCallback(fullCallbackUrl);
 
-    // Get connected tenants
+    console.log('[Xero Callback] Token exchange successful');
+    console.log('[Xero Callback] Updating tenants');
     await xero.updateTenants();
     const tenants = xero.tenants;
+
+    console.log('[Xero Callback] Tenants retrieved:', tenants?.length || 0);
 
     if (!tenants || tenants.length === 0) {
       console.error('[Xero Callback] No tenants available');
@@ -142,8 +163,9 @@ export async function GET(request: NextRequest) {
     // Use the first tenant (most common case)
     // For multi-org support, you could present a tenant selection UI
     const tenant = tenants[0] as XeroTenant;
+    console.log('[Xero Callback] Selected tenant:', tenant.tenantName, tenant.tenantId);
 
-    // Save the tokens
+    console.log('[Xero Callback] Saving token set to database');
     await saveTokenSet(orgId, tokenSet, tenant);
 
     console.log('[Xero Callback] Successfully connected to Xero tenant:', tenant.tenantName);
@@ -156,11 +178,11 @@ export async function GET(request: NextRequest) {
 
   } catch (err) {
     console.error('[Xero Callback] Error exchanging code for tokens:', err);
-    
+
     const errorUrl = new URL('/integrations/xero', appUrl);
     errorUrl.searchParams.set('xero_error', 'token_exchange_failed');
     errorUrl.searchParams.set(
-      'xero_error_description', 
+      'xero_error_description',
       err instanceof Error ? err.message : 'Failed to connect to Xero'
     );
     return NextResponse.redirect(errorUrl);
