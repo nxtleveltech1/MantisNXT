@@ -62,15 +62,17 @@ export function XeroConnectionCard() {
       const response = await fetch('/api/xero/auth');
       const data = await response.json();
 
-      if (data.redirectUrl) {
+      if (response.ok && data.redirectUrl) {
         // Redirect to Xero OAuth
         window.location.href = data.redirectUrl;
-      } else if (data.error) {
-        toast.error(data.error);
+      } else {
+        const errorMessage = data.error || data.message || 'Failed to initiate Xero connection';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Failed to initiate Xero connection:', error);
-      toast.error('Failed to connect to Xero');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to connect to Xero';
+      toast.error(errorMessage);
     } finally {
       setConnecting(false);
     }
@@ -86,15 +88,17 @@ export function XeroConnectionCard() {
       const response = await fetch('/api/xero/disconnect', { method: 'POST' });
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         toast.success('Disconnected from Xero');
         await fetchStatus();
       } else {
-        toast.error(data.error || 'Failed to disconnect');
+        const errorMessage = data.error || data.message || 'Failed to disconnect';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Failed to disconnect from Xero:', error);
-      toast.error('Failed to disconnect from Xero');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect from Xero';
+      toast.error(errorMessage);
     } finally {
       setDisconnecting(false);
     }
@@ -106,14 +110,16 @@ export function XeroConnectionCard() {
       const response = await fetch('/api/xero/auth?force=true');
       const data = await response.json();
 
-      if (data.redirectUrl) {
+      if (response.ok && data.redirectUrl) {
         window.location.href = data.redirectUrl;
-      } else if (data.error) {
-        toast.error(data.error);
+      } else {
+        const errorMessage = data.error || data.message || 'Failed to reconnect to Xero';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Failed to reconnect to Xero:', error);
-      toast.error('Failed to reconnect to Xero');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reconnect to Xero';
+      toast.error(errorMessage);
     } finally {
       setConnecting(false);
     }
@@ -145,9 +151,12 @@ export function XeroConnectionCard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             Contact your administrator to set up Xero API credentials.
           </p>
+          {status?.message && (
+            <p className="text-sm text-destructive">{status.message}</p>
+          )}
         </CardContent>
       </Card>
     );

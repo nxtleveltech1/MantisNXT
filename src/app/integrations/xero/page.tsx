@@ -27,7 +27,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -45,12 +44,21 @@ interface SyncLog {
 }
 
 interface XeroConnectionStatus {
-  isConfigured: boolean;
-  isConnected: boolean;
-  tenantName: string | null;
-  connectedAt: string | null;
-  tokenExpiresAt: string | null;
-  lastSyncAt: string | null;
+  configured: boolean;
+  connected: boolean;
+  message?: string;
+  connection?: {
+    tenantId: string;
+    tenantName: string;
+    connectedAt: string;
+    lastSyncAt: string | null;
+    scopes: string[];
+    tokenStatus: {
+      isExpired: boolean;
+      expiresInMinutes: number;
+      expiresAt: string;
+    };
+  };
 }
 
 interface SyncSummary {
@@ -86,17 +94,17 @@ export default function XeroIntegrationPage() {
 
   // Fetch sync logs when on activity tab
   useEffect(() => {
-    if (activeTab === 'activity' && connectionStatus?.isConnected) {
+    if (activeTab === 'activity' && connectionStatus?.connected) {
       fetchSyncLogs();
     }
-  }, [activeTab, connectionStatus?.isConnected]);
+  }, [activeTab, connectionStatus?.connected]);
 
   // Fetch sync summary when connected
   useEffect(() => {
-    if (connectionStatus?.isConnected) {
+    if (connectionStatus?.connected) {
       fetchSyncSummary();
     }
-  }, [connectionStatus?.isConnected]);
+  }, [connectionStatus?.connected]);
 
   async function fetchSyncSummary() {
     setLoadingSummary(true);
@@ -143,21 +151,24 @@ export default function XeroIntegrationPage() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && (data.success !== false)) {
         toast.success(`${entityType} sync completed`);
         fetchSyncLogs();
+        fetchSyncSummary(); // Refresh sync summary after successful sync
       } else {
-        toast.error(data.error || `Failed to sync ${entityType}`);
+        const errorMessage = data.error || data.message || `Failed to sync ${entityType}`;
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error(`Failed to sync ${entityType}:`, error);
-      toast.error(`Failed to sync ${entityType}`);
+      const errorMessage = error instanceof Error ? error.message : `Failed to sync ${entityType}`;
+      toast.error(errorMessage);
     } finally {
       setSyncing(null);
     }
   }
 
-  const isConnected = connectionStatus?.isConnected;
+  const isConnected = connectionStatus?.connected && connectionStatus?.connection;
 
   const breadcrumbs = [
     { label: 'Integrations', href: '/integrations' },
@@ -437,6 +448,34 @@ export default function XeroIntegrationPage() {
                   </Button>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Quotes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Fetch quotations from Xero and sync status updates.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleSync('quotes')}
+                    disabled={syncing !== null}
+                  >
+                    {syncing === 'quotes' ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Fetch Quotes
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -451,8 +490,17 @@ export default function XeroIntegrationPage() {
                       Recent synchronization operations
                     </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={fetchSyncLogs}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchSyncLogs}
+                    disabled={loadingLogs}
+                  >
+                    {loadingLogs ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
                     Refresh
                   </Button>
                 </div>

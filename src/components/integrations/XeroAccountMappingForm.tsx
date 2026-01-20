@@ -57,11 +57,13 @@ export function XeroAccountMappingForm() {
       const mappingsData = await mappingsRes.json();
 
       if (!accountsRes.ok) {
-        throw new Error(accountsData.error || 'Failed to fetch accounts');
+        const errorMessage = accountsData.error || accountsData.message || 'Failed to fetch accounts';
+        throw new Error(errorMessage);
       }
 
       if (!mappingsRes.ok) {
-        throw new Error(mappingsData.error || 'Failed to fetch mappings');
+        const errorMessage = mappingsData.error || mappingsData.message || 'Failed to fetch mappings';
+        throw new Error(errorMessage);
       }
 
       setAccounts(accountsData.accounts || []);
@@ -127,13 +129,17 @@ export function XeroAccountMappingForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save mappings');
+        const errorMessage = data.error || data.message || 'Failed to save mappings';
+        throw new Error(errorMessage);
       }
 
       toast.success('Account mappings saved successfully');
+      // Refresh mappings to show updated state
+      await fetchData();
     } catch (err) {
       console.error('Failed to save mappings:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to save mappings');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save mappings';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
