@@ -51,6 +51,7 @@ export async function POST(
       summary: quotation.notes || undefined,
       terms: undefined,
       status: quotation.status,
+      currency: quotation.currency,
       lineItems: items.map(item => ({
         description: item.description || item.name,
         quantity: item.quantity,

@@ -11,7 +11,6 @@ import type {
   XeroContactPerson,
   XeroPhone,
   XeroInvoice, 
-  XeroLineItem, 
   XeroItem,
   XeroPurchaseOrder,
   XeroQuote,
@@ -21,8 +20,8 @@ import type {
   XeroTaxType,
   XeroAddressType,
   XeroAccountMappingConfig,
-  DEFAULT_ACCOUNT_MAPPING,
 } from './types';
+import { DEFAULT_ACCOUNT_MAPPING } from './types';
 
 // ============================================================================
 // CONTACT MAPPERS (Suppliers & Customers)
@@ -76,12 +75,11 @@ export function mapSupplierToXeroContact(
     }
   }
 
-  // Discount (if available in financial or capabilities)
-  if (supplier.financial?.discount !== undefined) {
-    contact.Discount = supplier.financial.discount;
-  } else if (supplier.capabilities?.discount !== undefined) {
-    contact.Discount = supplier.capabilities.discount;
-  }
+  // Discount (if available - check metadata or other fields)
+  // Note: Discount field may not exist in Supplier type, skip for now
+  // if (supplier.financial?.discount !== undefined) {
+  //   contact.Discount = supplier.financial.discount;
+  // }
 
   // Primary email
   if (primaryContact?.email) {
@@ -201,25 +199,28 @@ export function mapCustomerToXeroContact(
 
   // Address
   if (customer.address) {
-    contact.Addresses = [{
+    const address: XeroAddress = {
       AddressType: 'POBOX',
-      AddressLine1: customer.address.street,
-      City: customer.address.city,
-      Region: customer.address.state,
-      PostalCode: customer.address.postalCode,
-      Country: customer.address.country,
-    }];
+    };
+    if (customer.address.street) address.AddressLine1 = customer.address.street;
+    if (customer.address.city) address.City = customer.address.city;
+    if (customer.address.state) address.Region = customer.address.state;
+    if (customer.address.postalCode) address.PostalCode = customer.address.postalCode;
+    if (customer.address.country) address.Country = customer.address.country;
+    contact.Addresses = [address];
   }
 
   // Contact person from customer name
   if (customer.name && customer.name !== customer.company) {
     const nameParts = customer.name.split(' ');
-    contact.ContactPersons = [{
+    const contactPerson: XeroContactPerson = {
       FirstName: nameParts[0],
-      LastName: nameParts.slice(1).join(' ') || undefined,
-      EmailAddress: customer.email,
       IncludeInEmails: true,
-    }];
+    };
+    const lastName = nameParts.slice(1).join(' ');
+    if (lastName) contactPerson.LastName = lastName;
+    if (customer.email) contactPerson.EmailAddress = customer.email;
+    contact.ContactPersons = [contactPerson];
   }
 
   return contact;
@@ -274,29 +275,32 @@ function mapAddressToXero(
   address: SupplierAddress,
   type: XeroAddressType
 ): XeroAddress {
-  return {
+  const xeroAddress: XeroAddress = {
     AddressType: type,
     AddressLine1: address.addressLine1,
-    AddressLine2: address.addressLine2,
     City: address.city,
     Region: address.state,
     PostalCode: address.postalCode,
     Country: address.country,
-    AttentionTo: address.name,
   };
+  if (address.addressLine2) xeroAddress.AddressLine2 = address.addressLine2;
+  if (address.name) xeroAddress.AttentionTo = address.name;
+  return xeroAddress;
 }
 
 function mapContactToXeroPerson(contact: SupplierContact): XeroContactPerson {
   const nameParts = contact.name.split(' ');
-  return {
+  const person: XeroContactPerson = {
     FirstName: nameParts[0],
-    LastName: nameParts.slice(1).join(' ') || undefined,
-    EmailAddress: contact.email,
     IncludeInEmails: contact.isPrimary,
   };
+  const lastName = nameParts.slice(1).join(' ');
+  if (lastName) person.LastName = lastName;
+  if (contact.email) person.EmailAddress = contact.email;
+  return person;
 }
 
-function mapPaymentTermsToXero(terms: string): { Day?: number; Type?: string } {
+function mapPaymentTermsToXero(terms: string): { Day?: number; Type?: 'DAYSAFTERBILLDATE' | 'DAYSAFTERBILLMONTH' | 'OFCURRENTMONTH' | 'OFFOLLOWINGMONTH' } {
   // Parse common payment terms formats
   const match = terms.match(/(\d+)/);
   const days = match ? parseInt(match[1], 10) : 30;
@@ -335,13 +339,10 @@ export function mapSupplierInvoiceToXero(
 ): XeroInvoice {
   const mapping = { ...DEFAULT_ACCOUNT_MAPPING, ...accountMapping };
 
-  return {
+  const invoice: XeroInvoice = {
     Type: 'ACCPAY',
     Contact: { ContactID: xeroContactId },
     InvoiceNumber: bill.invoiceNumber,
-    Reference: bill.reference,
-    Date: formatDateForXero(bill.invoiceDate),
-    DueDate: formatDateForXero(bill.dueDate),
     LineAmountTypes: 'Exclusive',
     Status: 'AUTHORISED',
     CurrencyCode: bill.currency || 'ZAR',
@@ -353,6 +354,12 @@ export function mapSupplierInvoiceToXero(
       TaxType: 'INPUT' as XeroTaxType,
     })),
   };
+  if (bill.reference) invoice.Reference = bill.reference;
+  const invoiceDate = formatDateForXero(bill.invoiceDate);
+  if (invoiceDate) invoice.Date = invoiceDate;
+  const dueDate = formatDateForXero(bill.dueDate);
+  if (dueDate) invoice.DueDate = dueDate;
+  return invoice;
 }
 
 
@@ -380,10 +387,12 @@ export function mapProductToXeroItem(
   const item: XeroItem = {
     Code: product.sku.substring(0, 30), // Xero limit: 30 chars
     Name: product.name.substring(0, 50), // Xero limit: 50 chars
-    Description: product.description?.substring(0, 4000),
     IsSold: true,
     IsPurchased: true,
   };
+  if (product.description) {
+    item.Description = product.description.substring(0, 4000);
+  }
 
   if (existingItemId) {
     item.ItemID = existingItemId;
@@ -422,19 +431,27 @@ export function mapProductToXeroItem(
 export function mapXeroItemToProduct(item: XeroItem): {
   sku: string;
   name: string;
-  description?: string;
-  baseCost?: number;
-  salePrice?: number;
+  description?: string | undefined;
+  baseCost?: number | undefined;
+  salePrice?: number | undefined;
   isTracked: boolean;
 } {
-  return {
+  const product: {
+    sku: string;
+    name: string;
+    description?: string | undefined;
+    baseCost?: number | undefined;
+    salePrice?: number | undefined;
+    isTracked: boolean;
+  } = {
     sku: item.Code,
     name: item.Name || item.Code,
-    description: item.Description,
-    baseCost: item.PurchaseDetails?.UnitPrice,
-    salePrice: item.SalesDetails?.UnitPrice,
     isTracked: item.IsTrackedAsInventory || false,
   };
+  if (item.Description) product.description = item.Description;
+  if (item.PurchaseDetails?.UnitPrice !== undefined) product.baseCost = item.PurchaseDetails.UnitPrice;
+  if (item.SalesDetails?.UnitPrice !== undefined) product.salePrice = item.SalesDetails.UnitPrice;
+  return product;
 }
 
 // ============================================================================
@@ -463,13 +480,9 @@ export function mapPurchaseOrderToXero(
 ): XeroPurchaseOrder {
   const mapping = { ...DEFAULT_ACCOUNT_MAPPING, ...accountMapping };
 
-  return {
+  const purchaseOrder: XeroPurchaseOrder = {
     Contact: { ContactID: xeroContactId },
     PurchaseOrderNumber: po.poNumber,
-    Date: formatDateForXero(po.createdDate),
-    DeliveryDate: po.requestedDeliveryDate ? formatDateForXero(po.requestedDeliveryDate) : undefined,
-    DeliveryAddress: po.deliveryAddress,
-    DeliveryInstructions: po.notes,
     LineAmountTypes: 'Exclusive',
     Status: 'AUTHORISED',
     LineItems: po.items.map(item => ({
@@ -481,6 +494,15 @@ export function mapPurchaseOrderToXero(
       TaxType: 'INPUT' as XeroTaxType,
     })),
   };
+  const date = formatDateForXero(po.createdDate);
+  if (date) purchaseOrder.Date = date;
+  if (po.requestedDeliveryDate) {
+    const deliveryDate = formatDateForXero(po.requestedDeliveryDate);
+    if (deliveryDate) purchaseOrder.DeliveryDate = deliveryDate;
+  }
+  if (po.deliveryAddress) purchaseOrder.DeliveryAddress = po.deliveryAddress;
+  if (po.notes) purchaseOrder.DeliveryInstructions = po.notes;
+  return purchaseOrder;
 }
 
 // ============================================================================
@@ -499,13 +521,15 @@ export function mapPaymentToXero(
   xeroInvoiceId: string,
   xeroAccountId: string
 ): XeroPayment {
-  return {
+  const xeroPayment: XeroPayment = {
     Invoice: { InvoiceID: xeroInvoiceId },
     Account: { AccountID: xeroAccountId },
     Amount: payment.amount,
-    Date: formatDateForXero(payment.date),
-    Reference: payment.reference,
   };
+  const date = formatDateForXero(payment.date);
+  if (date) xeroPayment.Date = date;
+  if (payment.reference) xeroPayment.Reference = payment.reference;
+  return xeroPayment;
 }
 
 // ============================================================================
@@ -546,6 +570,7 @@ export function mapQuotationToXero(
     summary?: string;
     terms?: string;
     status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
+    currency?: string;
     lineItems: Array<{
       description: string;
       quantity: number;
@@ -557,16 +582,12 @@ export function mapQuotationToXero(
 ): XeroQuote {
   const mapping = { ...DEFAULT_ACCOUNT_MAPPING, ...accountMapping };
 
-  return {
+  const xeroQuote: XeroQuote = {
     Contact: { ContactID: xeroContactId },
     QuoteNumber: quote.quoteNumber,
-    Date: formatDateForXero(quote.date),
-    ExpiryDate: quote.expiryDate ? formatDateForXero(quote.expiryDate) : undefined,
-    Title: quote.title,
-    Summary: quote.summary,
-    Terms: quote.terms,
     LineAmountTypes: 'Exclusive',
     Status: mapQuoteStatusToXero(quote.status),
+    CurrencyCode: quote.currency || 'ZAR',
     LineItems: quote.lineItems.map(item => ({
       Description: item.description,
       Quantity: item.quantity,
@@ -575,6 +596,16 @@ export function mapQuotationToXero(
       TaxType: 'OUTPUT' as XeroTaxType,
     })),
   };
+  const date = formatDateForXero(quote.date);
+  if (date) xeroQuote.Date = date;
+  if (quote.expiryDate) {
+    const expiryDate = formatDateForXero(quote.expiryDate);
+    if (expiryDate) xeroQuote.ExpiryDate = expiryDate;
+  }
+  if (quote.title) xeroQuote.Title = quote.title;
+  if (quote.summary) xeroQuote.Summary = quote.summary;
+  if (quote.terms) xeroQuote.Terms = quote.terms;
+  return xeroQuote;
 }
 
 // ============================================================================
@@ -602,12 +633,10 @@ export function mapCreditNoteToXero(
   const mapping = { ...DEFAULT_ACCOUNT_MAPPING, ...accountMapping };
   const isSales = creditNote.type === 'sales';
 
-  return {
+  const xeroCreditNote: XeroCreditNote = {
     Type: isSales ? 'ACCRECCREDIT' : 'ACCPAYCREDIT',
     Contact: { ContactID: xeroContactId },
     CreditNoteNumber: creditNote.creditNoteNumber,
-    Reference: creditNote.reference,
-    Date: formatDateForXero(creditNote.date),
     Status: 'AUTHORISED',
     LineItems: creditNote.lineItems.map(item => ({
       Description: item.description,
@@ -617,6 +646,10 @@ export function mapCreditNoteToXero(
       TaxType: (isSales ? 'OUTPUT' : 'INPUT') as XeroTaxType,
     })),
   };
+  if (creditNote.reference) xeroCreditNote.Reference = creditNote.reference;
+  const date = formatDateForXero(creditNote.date);
+  if (date) xeroCreditNote.Date = date;
+  return xeroCreditNote;
 }
 
 // ============================================================================

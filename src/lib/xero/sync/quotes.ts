@@ -27,6 +27,7 @@ interface NxtQuotation {
   summary?: string;
   terms?: string;
   status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
+  currency?: string;
   lineItems: Array<{
     description: string;
     quantity: number;
@@ -103,12 +104,14 @@ export async function syncQuoteToXero(
   const startTime = Date.now();
   
   try {
+    console.log(`[Xero Quote Sync] Starting sync for quote ${quote.id} (${quote.quoteNumber})`);
     const { tokenSet, tenantId } = await getValidTokenSet(orgId);
     const xero = getXeroClient();
     xero.setTokenSet(tokenSet);
 
     // Get Xero contact ID for customer
     const xeroContactId = await getXeroEntityId(orgId, 'contact', quote.customerId);
+    console.log(`[Xero Quote Sync] Xero contact ID: ${xeroContactId || 'NOT FOUND'}`);
     if (!xeroContactId) {
       throw new XeroSyncError(
         'Customer not synced to Xero. Sync customer first.',
@@ -123,6 +126,7 @@ export async function syncQuoteToXero(
 
     // Check if already synced
     const existingXeroId = await getXeroEntityId(orgId, 'quote', quote.id);
+    console.log(`[Xero Quote Sync] Existing Xero ID: ${existingXeroId || 'NONE'}`);
     
     // Map to Xero format
     const xeroQuote = mapQuotationToXero(quote, xeroContactId, accountMappings);
@@ -130,6 +134,7 @@ export async function syncQuoteToXero(
       xeroQuote.QuoteID = existingXeroId;
     }
     
+    console.log(`[Xero Quote Sync] Mapped quote payload:`, JSON.stringify(xeroQuote, null, 2));
     const syncHash = generateSyncHash(xeroQuote);
 
     let result: XeroQuote;
@@ -137,19 +142,42 @@ export async function syncQuoteToXero(
 
     if (existingXeroId) {
       action = 'update';
+      console.log(`[Xero Quote Sync] Updating existing quote ${existingXeroId}`);
       const response = await callXeroApi(tenantId, async () => {
-        return xero.accountingApi.updateQuote(tenantId, existingXeroId, { quotes: [xeroQuote] });
+        return xero.accountingApi.updateQuote(tenantId, existingXeroId, { quotes: [xeroQuote as unknown as any] });
       });
-      result = response.body.quotes?.[0] as XeroQuote;
+      console.log(`[Xero Quote Sync] Update response:`, JSON.stringify(response.body, null, 2));
+      const quotes = response.body?.quotes;
+      if (!quotes || !Array.isArray(quotes) || quotes.length === 0) {
+        throw new XeroSyncError(
+          'No quotes returned from Xero API',
+          'quote',
+          quote.id,
+          'NO_QUOTES_RETURNED'
+        );
+      }
+      result = quotes[0] as XeroQuote;
     } else {
       action = 'create';
+      console.log(`[Xero Quote Sync] Creating new quote`);
       const response = await callXeroApi(tenantId, async () => {
-        return xero.accountingApi.createQuotes(tenantId, { quotes: [xeroQuote] });
+        return xero.accountingApi.createQuotes(tenantId, { quotes: [xeroQuote as unknown as any] });
       });
-      result = response.body.quotes?.[0] as XeroQuote;
+      console.log(`[Xero Quote Sync] Create response:`, JSON.stringify(response.body, null, 2));
+      const quotes = response.body?.quotes;
+      if (!quotes || !Array.isArray(quotes) || quotes.length === 0) {
+        throw new XeroSyncError(
+          'No quotes returned from Xero API',
+          'quote',
+          quote.id,
+          'NO_QUOTES_RETURNED'
+        );
+      }
+      result = quotes[0] as unknown as XeroQuote;
     }
 
     if (!result?.QuoteID) {
+      console.error(`[Xero Quote Sync] No QuoteID in result:`, result);
       throw new XeroSyncError(
         'No QuoteID returned from Xero',
         'quote',
@@ -158,6 +186,7 @@ export async function syncQuoteToXero(
       );
     }
 
+    console.log(`[Xero Quote Sync] Success! Quote synced with Xero ID: ${result.QuoteID}`);
     await saveEntityMapping(orgId, 'quote', quote.id, result.QuoteID, syncHash);
 
     await logSyncSuccess(orgId, 'quote', action, 'to_xero', {
@@ -173,6 +202,7 @@ export async function syncQuoteToXero(
     };
 
   } catch (error) {
+    console.error(`[Xero Quote Sync] Error syncing quote ${quote.id}:`, error);
     const parsedError = parseXeroApiError(error);
     
     await logSyncError(orgId, 'quote', 'create', 'to_xero', parsedError, {
@@ -224,7 +254,7 @@ export async function fetchQuotesFromXero(
       );
     });
 
-    const quotes = (response.body.quotes || []) as XeroQuote[];
+    const quotes = (response.body?.quotes || []) as XeroQuote[];
 
     await logSyncSuccess(orgId, 'quote', 'fetch', 'from_xero', {
       durationMs: Date.now() - startTime,

@@ -328,6 +328,7 @@ export class QuotationService {
             summary: finalQuotation.notes || undefined,
             terms: undefined,
             status: finalQuotation.status,
+            currency: finalQuotation.currency,
             lineItems: items.map(item => ({
               description: item.description || item.name,
               quantity: item.quantity,

@@ -63,7 +63,7 @@ export function XeroEntityLink({
       case 'invoice':
         return `${baseUrl}/AccountsReceivable/View.aspx?InvoiceID=${xeroEntityId}`;
       case 'quote':
-        return `${baseUrl}/Sales/Edit.aspx?InvoiceID=${xeroEntityId}`;
+        return `${baseUrl}/Accounts/Receivable/Quotes/View/${xeroEntityId}`;
       case 'contact':
         return `${baseUrl}/Contacts/View.aspx?contactID=${xeroEntityId}`;
       case 'payment':
