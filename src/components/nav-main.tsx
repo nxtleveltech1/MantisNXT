@@ -2,7 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Circle, type LucideIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -37,6 +38,44 @@ export function NavMain({
   label?: string | null;
 }) {
   const pathname = usePathname();
+  
+  // Xero Status Indicator Component
+  function XeroStatusIndicator() {
+    const [status, setStatus] = useState<{ connected: boolean; tokenExpiring?: boolean } | null>(null);
+
+    useEffect(() => {
+      async function fetchStatus() {
+        try {
+          const response = await fetch('/api/xero/connection');
+          if (response.ok) {
+            const data = await response.json();
+            setStatus({
+              connected: data.connected || false,
+              tokenExpiring: data.connection?.tokenStatus?.isExpired || false,
+            });
+          }
+        } catch (error) {
+          // Silent fail - don't show indicator if can't fetch
+        }
+      }
+      fetchStatus();
+      // Refresh every 5 minutes
+      const interval = setInterval(fetchStatus, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }, []);
+
+    if (!status) return null;
+
+    const getStatusColor = () => {
+      if (status.tokenExpiring) return 'text-yellow-500';
+      if (status.connected) return 'text-green-500';
+      return 'text-red-500';
+    };
+
+    return (
+      <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />
+    );
+  }
 
   return (
     <SidebarGroup>
@@ -109,8 +148,11 @@ export function NavMain({
                             </Collapsible>
                           ) : (
                             <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url}>
+                              <Link href={subItem.url} className="flex items-center gap-2">
                                 <span>{subItem.title}</span>
+                                {subItem.title === 'Xero Accounting' && (
+                                  <XeroStatusIndicator />
+                                )}
                               </Link>
                             </SidebarMenuSubButton>
                           )}

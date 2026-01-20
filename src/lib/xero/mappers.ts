@@ -15,6 +15,7 @@ import type {
   XeroItem,
   XeroPurchaseOrder,
   XeroQuote,
+  XeroQuoteStatus,
   XeroPayment,
   XeroCreditNote,
   XeroTaxType,
@@ -59,6 +60,27 @@ export function mapSupplierToXeroContact(
     if (supplier.businessInfo.website) {
       contact.Website = supplier.businessInfo.website;
     }
+    if (supplier.businessInfo.registrationNumber) {
+      contact.CompanyNumber = supplier.businessInfo.registrationNumber;
+    }
+  }
+
+  // Bank account details
+  if (supplier.financial?.bankDetails) {
+    const bankDetails = supplier.financial.bankDetails;
+    // Format bank account details string (Xero format: "01-0123-0123456-00" or account number)
+    // Use accountNumber primarily, add routingNumber if available
+    const bankAccountString = bankDetails.accountNumber || bankDetails.routingNumber || '';
+    if (bankAccountString) {
+      contact.BankAccountDetails = bankAccountString;
+    }
+  }
+
+  // Discount (if available in financial or capabilities)
+  if (supplier.financial?.discount !== undefined) {
+    contact.Discount = supplier.financial.discount;
+  } else if (supplier.capabilities?.discount !== undefined) {
+    contact.Discount = supplier.capabilities.discount;
   }
 
   // Primary email
@@ -125,6 +147,9 @@ export function mapCustomerToXeroContact(
     phone?: string;
     company?: string;
     taxNumber?: string;
+    registrationNumber?: string;
+    bankAccountDetails?: string;
+    discount?: number;
     address?: {
       street?: string;
       city?: string;
@@ -152,6 +177,18 @@ export function mapCustomerToXeroContact(
 
   if (customer.taxNumber) {
     contact.TaxNumber = customer.taxNumber;
+  }
+
+  if (customer.registrationNumber) {
+    contact.CompanyNumber = customer.registrationNumber;
+  }
+
+  if (customer.bankAccountDetails) {
+    contact.BankAccountDetails = customer.bankAccountDetails;
+  }
+
+  if (customer.discount !== undefined) {
+    contact.Discount = customer.discount;
   }
 
   // Tax type for sales
@@ -476,6 +513,28 @@ export function mapPaymentToXero(
 // ============================================================================
 
 /**
+ * Map quote status from NXT to Xero
+ */
+function mapQuoteStatusToXero(status?: string): XeroQuoteStatus {
+  switch (status) {
+    case 'draft':
+      return 'DRAFT';
+    case 'sent':
+      return 'SENT';
+    case 'accepted':
+      return 'ACCEPTED';
+    case 'rejected':
+      return 'DECLINED';
+    case 'expired':
+      return 'DELETED'; // Xero doesn't have expired, use deleted
+    case 'converted':
+      return 'INVOICED';
+    default:
+      return 'DRAFT';
+  }
+}
+
+/**
  * Map NXT Quotation to Xero Quote
  */
 export function mapQuotationToXero(
@@ -486,6 +545,7 @@ export function mapQuotationToXero(
     title?: string;
     summary?: string;
     terms?: string;
+    status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
     lineItems: Array<{
       description: string;
       quantity: number;
@@ -506,7 +566,7 @@ export function mapQuotationToXero(
     Summary: quote.summary,
     Terms: quote.terms,
     LineAmountTypes: 'Exclusive',
-    Status: 'DRAFT',
+    Status: mapQuoteStatusToXero(quote.status),
     LineItems: quote.lineItems.map(item => ({
       Description: item.description,
       Quantity: item.quantity,

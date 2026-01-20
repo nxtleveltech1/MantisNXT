@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { ARService, type ARCustomerInvoice } from '@/lib/services/financial';
+import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 export default function ARInvoicesPage() {
   const [invoices, setInvoices] = useState<ARCustomerInvoice[]>([]);
@@ -78,28 +79,35 @@ export default function ARInvoicesPage() {
             <div className="space-y-2">
               {invoices.map((invoice) => (
                 <div key={invoice.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <div className="font-medium">
+                  <div className="flex-1">
+                    <div className="font-medium flex items-center gap-2">
                       {invoice.invoice_number}
                       {invoice.source_type === 'sales_invoice' && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                           Sales Invoice
                         </span>
                       )}
+                      <XeroSyncStatus entityType="invoice" entityId={invoice.id} />
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Customer: {invoice.customer_id} | Status: {invoice.status}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {new Intl.NumberFormat('en-ZA', {
-                        style: 'currency',
-                        currency: invoice.currency || 'ZAR',
-                      }).format(invoice.total_amount)}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {new Intl.NumberFormat('en-ZA', {
+                          style: 'currency',
+                          currency: invoice.currency || 'ZAR',
+                        }).format(invoice.total_amount)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Due: {new Date(invoice.due_date).toLocaleDateString()}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Due: {new Date(invoice.due_date).toLocaleDateString()}
+                    <div className="flex items-center gap-2">
+                      <XeroSyncButton entityType="invoice" entityId={invoice.id} size="sm" />
+                      <XeroEntityLink entityType="invoice" entityId={invoice.id} size="sm" />
                     </div>
                   </div>
                 </div>

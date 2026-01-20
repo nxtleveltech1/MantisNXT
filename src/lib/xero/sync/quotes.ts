@@ -26,6 +26,7 @@ interface NxtQuotation {
   title?: string;
   summary?: string;
   terms?: string;
+  status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
   lineItems: Array<{
     description: string;
     quantity: number;

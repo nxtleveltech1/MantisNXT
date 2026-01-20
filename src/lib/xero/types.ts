@@ -255,6 +255,7 @@ export interface XeroContact {
   PaymentTerms?: XeroPaymentTerms;
   Website?: string;
   Discount?: number;
+  CompanyNumber?: string;
 }
 
 export interface XeroAddress {

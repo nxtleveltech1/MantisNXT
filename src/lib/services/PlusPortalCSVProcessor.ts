@@ -206,9 +206,14 @@ export class PlusPortalCSVProcessor {
       return null;
     }
 
-    const costExVat = price ? parseFloat(String(price)) : null;
-    const stockOnHand = stock ? parseInt(String(stock), 10) : null;
-    const quantityOnOrder = onOrder ? parseInt(String(onOrder), 10) : null;
+    const costExVatRaw = price ? parseFloat(String(price)) : null;
+    const stockOnHandRaw = stock ? parseInt(String(stock), 10) : null;
+    const quantityOnOrderRaw = onOrder ? parseInt(String(onOrder), 10) : null;
+
+    // Properly handle NaN values - Number.isNaN checks if the value itself is NaN
+    const costExVat = costExVatRaw !== null && !Number.isNaN(costExVatRaw) ? costExVatRaw : null;
+    const stockOnHand = stockOnHandRaw !== null && !Number.isNaN(stockOnHandRaw) ? stockOnHandRaw : null;
+    const quantityOnOrder = quantityOnOrderRaw !== null && !Number.isNaN(quantityOnOrderRaw) ? quantityOnOrderRaw : null;
 
     // Determine stock status
     let stockStatus = 'outofstock';
@@ -221,9 +226,9 @@ export class PlusPortalCSVProcessor {
     return {
       supplierSku: String(sku).trim(),
       name: String(name).trim(),
-      costExVat: isNaN(costExVat || 0) ? null : costExVat,
-      stockOnHand: isNaN(stockOnHand || 0) ? null : stockOnHand,
-      quantityOnOrder: isNaN(quantityOnOrder || 0) ? null : quantityOnOrder,
+      costExVat,
+      stockOnHand,
+      quantityOnOrder,
       stockStatus,
       attrs: {
         ...row,

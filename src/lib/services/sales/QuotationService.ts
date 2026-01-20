@@ -307,6 +307,45 @@ export class QuotationService {
 
       console.log('Quotation created successfully:', updatedResult.rows[0].id);
 
+      const finalQuotation = updatedResult.rows[0];
+
+      // Sync to Xero if connected (fire and forget - don't block quotation creation)
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncQuoteToXero } = await import('@/lib/xero/sync/quotes');
+        
+        const isConnected = await hasActiveConnection(data.org_id);
+        if (isConnected) {
+          const items = await this.getQuotationItems(finalQuotation.id);
+          
+          const nxtQuote = {
+            id: finalQuotation.id,
+            customerId: finalQuotation.customer_id,
+            quoteNumber: finalQuotation.document_number,
+            date: finalQuotation.created_at,
+            expiryDate: finalQuotation.valid_until || undefined,
+            title: finalQuotation.reference_number || undefined,
+            summary: finalQuotation.notes || undefined,
+            terms: undefined,
+            status: finalQuotation.status,
+            lineItems: items.map(item => ({
+              description: item.description || item.name,
+              quantity: item.quantity,
+              unitPrice: item.unit_price,
+            })),
+          };
+
+          // Sync asynchronously - don't await to avoid blocking
+          syncQuoteToXero(data.org_id, nxtQuote).catch((syncError) => {
+            console.error('[Xero Sync] Failed to sync quotation after creation:', syncError);
+            // Log error but don't throw - quotation creation succeeded
+          });
+        }
+      } catch (xeroError) {
+        // Xero sync failure should not block quotation creation
+        console.error('[Xero Sync] Error checking Xero connection:', xeroError);
+      }
+
       // Handle delivery options if provided
       if (data.delivery_options) {
         try {

@@ -222,7 +222,7 @@ export async function syncCustomerToXero(
         throw new XeroSyncError(
           'No contacts returned from Xero API',
           'contact',
-          supplier.id,
+          customer.id,
           'NO_CONTACTS_RETURNED'
         );
       }
@@ -237,7 +237,7 @@ export async function syncCustomerToXero(
         throw new XeroSyncError(
           'No contacts returned from Xero API',
           'contact',
-          supplier.id,
+          customer.id,
           'NO_CONTACTS_RETURNED'
         );
       }

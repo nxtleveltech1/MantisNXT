@@ -53,12 +53,20 @@ interface XeroConnectionStatus {
   lastSyncAt: string | null;
 }
 
+interface SyncSummary {
+  entityType: string;
+  totalSynced: number;
+  lastSyncedAt: string | null;
+}
+
 export default function XeroIntegrationPage() {
   const [activeTab, setActiveTab] = useState('connection');
   const [connectionStatus, setConnectionStatus] = useState<XeroConnectionStatus | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncSummary, setSyncSummary] = useState<SyncSummary[]>([]);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   // Fetch connection status
   useEffect(() => {
@@ -82,6 +90,28 @@ export default function XeroIntegrationPage() {
       fetchSyncLogs();
     }
   }, [activeTab, connectionStatus?.isConnected]);
+
+  // Fetch sync summary when connected
+  useEffect(() => {
+    if (connectionStatus?.isConnected) {
+      fetchSyncSummary();
+    }
+  }, [connectionStatus?.isConnected]);
+
+  async function fetchSyncSummary() {
+    setLoadingSummary(true);
+    try {
+      const response = await fetch('/api/xero/sync-summary');
+      if (response.ok) {
+        const data = await response.json();
+        setSyncSummary(data.summary || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sync summary:', error);
+    } finally {
+      setLoadingSummary(false);
+    }
+  }
 
   async function fetchSyncLogs() {
     setLoadingLogs(true);
@@ -170,6 +200,43 @@ export default function XeroIntegrationPage() {
           <TabsContent value="connection" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <XeroConnectionCard />
+              
+              {/* Sync Summary Cards */}
+              {isConnected && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sync Summary</CardTitle>
+                    <CardDescription>
+                      Entities synced with Xero
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingSummary ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : syncSummary.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No sync data available</p>
+                    ) : (
+                      <div className="grid gap-3">
+                        {syncSummary.map((summary) => (
+                          <div key={summary.entityType} className="flex items-center justify-between border-b pb-2 last:border-0">
+                            <span className="text-sm font-medium capitalize">{summary.entityType}</span>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold">{summary.totalSynced}</div>
+                              {summary.lastSyncedAt && (
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(summary.lastSyncedAt).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Quick Info Card */}
               <Card>

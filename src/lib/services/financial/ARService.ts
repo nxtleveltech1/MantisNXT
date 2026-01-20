@@ -222,6 +222,62 @@ export class ARService {
         );
       }
 
+      // Sync to Xero if connected (fire and forget - don't block invoice creation)
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncSalesInvoiceToXero } = await import('@/lib/xero/sync/invoices');
+        
+        const isConnected = await hasActiveConnection(data.org_id);
+        if (isConnected) {
+          // Get line items for sync
+          const lineItemsResult = await query<{
+            description: string;
+            quantity: number;
+            unit_price: number;
+            tax_rate: number;
+            tax_amount: number;
+            line_total: number;
+            account_id: string | null;
+          }>(
+            'SELECT description, quantity, unit_price, tax_rate, tax_amount, line_total, account_id FROM ar_invoice_line_items WHERE ar_invoice_id = $1 ORDER BY line_number',
+            [invoice.id]
+          );
+
+          const nxtInvoice = {
+            id: invoice.id,
+            customerId: invoice.customer_id,
+            customerName: undefined,
+            invoiceNumber: invoice.invoice_number,
+            invoiceDate: invoice.invoice_date,
+            dueDate: invoice.due_date,
+            currency: invoice.currency,
+            reference: invoice.notes || undefined,
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.tax_amount,
+            totalAmount: invoice.total_amount,
+            status: invoice.status,
+            lineItems: lineItemsResult.rows.map(item => ({
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unit_price,
+              taxRate: item.tax_rate,
+              taxAmount: item.tax_amount,
+              lineTotal: item.line_total,
+              accountCode: item.account_id || undefined,
+            })),
+          };
+
+          // Sync asynchronously - don't await to avoid blocking
+          syncSalesInvoiceToXero(data.org_id, nxtInvoice).catch((syncError) => {
+            console.error('[Xero Sync] Failed to sync invoice after creation:', syncError);
+            // Log error but don't throw - invoice creation succeeded
+          });
+        }
+      } catch (xeroError) {
+        // Xero sync failure should not block invoice creation
+        console.error('[Xero Sync] Error checking Xero connection:', xeroError);
+      }
+
       return invoice;
     } catch (error) {
       console.error('Error creating customer invoice:', error);
