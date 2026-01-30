@@ -1,0 +1,706 @@
+﻿SKU;BRAND;MODEL SEIRES;DESCRIPTION;RSP;2025-05-07 00:00:00.1;COST INC VAT
+ACCHYB005;HYBRID;TOPHAT-M20;Metal top hat with M20 thread for sub-bass poles;199;1+;165
+ACCHYB007;HYBRID;GC01;Guitar capo- zinc / stainless steel with silicone teeth;90;1+;75
+ACCHYB008;HYBRID;SML01;Sheet music LED clip-on light;215;1+;179
+ACCHYB009;HYBRID;HMW5 CHARCOAL;5 pc microphone windshields- carcoal in colour;76;1+;63
+ACCHYB010;HYBRID;HMW5 RASTAFARI;5 pc microphone windshields- 5 different colours;76;1+;63
+ACCHYB011;HYBRID;MH01;"Shock mount microphone holder Application: suitable for most studio condenser mics Clamping diameter: 43mm - 49mm Coupling thread: 5/8"" with a 3/8"" adapter Material: Aliuminium- moulded ABS- durable elastic cord";209;1+;174
+ACCHYB013;HYBRID;TP260;Musicians Shelve (Clip-on to sheet music / mic stand);162;1+;135
+ACTHYB001;HYBRID;CX223;2 way stereo- 3 way mono analogue active crossover with mono sub-bass output;1481;<1;1234
+ACTHYB002;HYBRID;CX234;3 way stereo- 4 way mono analogue active crossover;1837;1+;1530
+ADACEL001;HYBRID;"SCREW(HF)-BOLT(FL)-1""";"1"" screw-in HF driver to bolt-on flare adaptor";35;1+;29
+ADAHYB001;HYBRID;"BOLT(HF)-SCREW(FL)-1""";"1"" bolt-on HF driver to screw-in flare adaptor";327;1+;272
+AMPAUD027;AUDIOCENTER;PD1000;"Quad channel power amplifier 4 x 1200W /8Ω - 4 x 1850W /4Ω- Class H circuitry with LPF/HPF crossover switching DC- short circuit- soft start- limiter overload- thermal overload protection 19"" / 2U rack mount- forced air cooling- 27kg";14307;<1;11922
+AMPAUD028;AUDIOCENTER;CT1200;Stereo power amplifier- 2 x 600W / 4Ω- with selectable LPF / HPF switch- 2U;5971;1+;4975
+AMPAUD029;AUDIOCENTER;CT2400;Stereo power amplifier- 2 x 1200W / 4Ω- with selectable LPF / HPF switch- 2U;7608;1+;6340
+AMPAUD030;AUDIOCENTER;CT3600;Stereo power amplifier- 2 x 1800W / 4Ω- with selectable LPF / HPF switch- 2U;9660;1+;8050
+AMPHYB001;HYBRID;B8000;Stereo power amplifier- 2 x 4000W/2Ω- XLR inputs / link thru- speakon outputs- 3U;13674;1+;11395
+AMPHYB024;HYBRID;PA30DC;Public add amp- in:(mic- line & MP3/Bluetooth)- out: 8Ω / 100V- 20W- 12V battery;1064;1+;886
+AMPHYB025;HYBRID;PA30M;Public add amp- inputs:(mic- line & MP3/Bluetooth)- outputs: 8Ω / 100V- 20W;791;<1;659
+AMPHYB026;HYBRID;PA100M;Public add amp- in:(2x mic-line & MP3/Bluetooth)- out: 8Ω/70V/100V- 2 zone- 100W;1937;<1;1614
+AMPHYB027;HYBRID;PA150M;Public add amp- in:(2x mic-line & MP3/Bluetooth)- out: 8Ω/70V/100V- 2 zone- 150W;2117;<1;1764
+AMPHYB028;HYBRID;IA200;Installation stereo ch amplifier- 2 x 250W/4Ω- 3 x Inputs- media player- bass & treble;3122;0;2601
+AMPHYB029;HYBRID;IA400;Installation stereo ch amplifier- 2 x 550W/4Ω- 3 x Inputs- media player- bass & treble;4230;1+;3525
+AMPHYB030;HYBRID;PA280DC;Public add amp- in:(2x mic-line & MP3/Bluetooth)- out: 8Ω/100V- 2 x 65W-12V batt;1947;<1;1622
+AMPHYB043;HYBRID;A1800MK6;Stereo power amplifier- 2 x 900W/4Ω with DSP- XLR inputs / link thru- speakon outs;7935;1+;6612
+AMPHYB044;HYBRID;A2400MK6;Stereo power amplifier- 2 x 1200W/4Ω with DSP- XLR inputs / link thru- speakon outs;8323;1+;6935
+AMPHYB045;HYBRID;A4000MK6;Stereo power amplifier- 2 x 2000W/4Ω with DSP- XLR inputs / link thru- speakon outs;11234;1+;9361
+AMPHYB051;HYBRID;B1200 MK6;Stereo power amplifier- 2 x 600W/4Ω- XLR inputs / link thru- speakon outputs- 2U;5686;1+;4738
+AMPHYB052;HYBRID;B1800 MK6;Stereo power amplifier- 2 x 90W/4Ω- XLR inputs / link thru- speakon outputs- 2U;6969;1+;5807
+AMPHYB053;HYBRID;B2400 MK6;Stereo power amplifier- 2 x 1200W/4Ω- XLR inputs / link thru- speakon outputs- 2U;7342;1+;6118
+AMPHYB054;HYBRID;B4000 MK6;Stereo power amplifier- 2 x 2000W/4Ω- XLR inputs / link thru- speakon outputs- 2U;10156;1+;8463
+AMPHYB055;HYBRID;PA80DC;Public add amp- in:(2 x mic- line & MP3/Bluetooth)- out: 8Ω / 100V- 65W- 12V battery;1390;1+;1158
+AMPHYB056;HYBRID;PA240MKII;Public add amp- in:4xmic-2 xline & MP3/Bluetooth- out: 8Ω/70V/100V- 4 zone- 240W;3231;<1;2692
+AMPHYB057;HYBRID;PA360MKII;Public add amp- in:4xmic-2 xline & MP3/Bluetooth- out: 8Ω/70V/100V- 4 zone- 360W;3500;1+;2916
+AMPHYB058;HYBRID;PA500MKII;Public add amp- in:4xmic-2 xline & MP3/Bluetooth- out: 8Ω/70V/100V- 4 zone- 500W;4259;1+;3549
+AMPHYB059;HYBRID;PA600MKII;Public add amp- in:4xmic-2 xline & MP3/Bluetooth- out: 8Ω/70V/100V- 4 zone- 600W;4526;1+;3771
+BATHYB001;HYBRID;U-SV/U-DV MK3 BATT;Replacement lithium battery for all handhelds of U-SV MK3 & U-DV MK3 variations;76;1+;63
+BATHYB002;HYBRID;U-DV FE BATT;Replacement lithium battery for all handhelds of U-DV FE variations;63;1+;52
+BOOHYB001;HYBRID;MB40;Sheet music book- 40 page;137;1+;114
+CABHYB002;HYBRID;SPE-J(M)-J(M)-10M;Jack 6.5mm - Jack 6.5mm- 2 x 2mm core- 10M speaker cable. Suitable for pegboard;263;1+;219
+CABHYB003;HYBRID;SPE-SPK-J(M)-10M;Speakon - Jack 6.5mm- 2 x 2mm core- 10M speaker cable. Suitable for pegboard;296;1+;246
+CABHYB004;HYBRID;SPE-SPK-J(M)-15M;Speakon - Jack 6.5mm- 2 x 2mm core- 15M speaker cable. Suitable for pegboard;410;1+;341
+CABHYB005;HYBRID;SPE-SPK-J(M)-20M;Speakon - Jack 6.5mm- 2 x 2mm core- 20M speaker cable. Suitable for pegboard;508;1+;423
+CABHYB006;HYBRID;SPE-SPK-SPK-15M;Speakon - Speakon- 2 x 2mm core- 15M speaker cable. Suitable for pegboard display;348;1+;290
+CABHYB007;HYBRID;SPE-SPK-SPK-20M;Speakon - Speakon- 2 x 2mm core- 20M speaker cable. Suitable for pegboard display;444;1+;370
+CABHYB008;HYBRID;SPE-SPK-SPK-10M;Speakon - Speakon- 2 x 2mm core- 10M speaker cable. Suitable for pegboard display;238;1+;198
+CABHYB010;HYBRID;POW-IEC-SA3P-1.8M;IEC - SA 3Pin 15A mains cable- 1.8M;124;1+;103
+CABHYB011;HYBRID;SPE-SPK-SPK-5M;Speakon - Speakon- 2 x 2mm core- 5M speaker cable. Suitable for pegboard display;160;1+;133
+CABHYB012;HYBRID;SPE-SPK-J(M)-5M;Speakon - Jack 6.5mm- 2 x 2mm core- 5M speaker cable. Suitable for pegboard;210;1+;175
+CABHYB013;HYBRID;SPE-J(M)-J(M)-5M;Jack 6.5mm - Jack 6.5mm- 2 x 2mm core- 5M speaker cable. Suitable for pegboard;181;1+;150
+CABHYB014-1;HYBRID;MIC-BAL-100M-BLACK;2+Ground core- 100M microphone cable roll. (Black);977;1+;814
+CABHYB015-1;HYBRID;MIC-BAL-100M-BLUE;2+Ground core- 100M microphone cable roll. (Blue);977;1+;814
+CABHYB016-1;HYBRID;MIC-BAL-100M-RED;2+Ground core- 100M microphone cable roll. (Red);977;1+;814
+CABHYB017-1;HYBRID;MIC-BAL-100M-GREEN;2+Ground core- 100M microphone cable roll. (Green);977;1+;814
+CABHYB018-1;HYBRID;SPE-2X2.0MM-100M;2 x 2.0mm core- 100M speaker cable roll. (Black);1592;1+;1326
+CABHYB019-1;HYBRID;SPE-2X2.5MM-100M;2 x 2.5mm core- 100M speaker cable roll. (Black);1971;1+;1642
+CABHYB020-5;HYBRID;SPE-4X2.5MM-50M;4 x 2.5mm core- 50M speaker cable roll. (Black);1949;1+;1624
+CABHYB021-3;HYBRID;SPE-4X2.5MM-30M;8 x 2.5mm core- 30M speaker cable roll. (Black);2279;1+;1899
+CABHYB023;HYBRID;SIG-BAL-X(F)-X(M)-0.3M;XLR(Female) - XLR(Male)- Balanced Line- 0.3M. Suitable for pegboard display;59;<1;49
+CABHYB024;HYBRID;SIG-BAL-X(F)-X(M)-0.5M;XLR(Female) - XLR(Male)- Balanced Line- 0.5M. Suitable for pegboard display;63;1+;52
+CABHYB025;HYBRID;SIG-BAL-X(F)-X(M)-1M;XLR(Female) - XLR(Male)- Balanced Line- 1M. Suitable for pegboard display;72;1+;60
+CABHYB029;HYBRID;SIG-BAL-X(F)-J(S)-5M;XLR(Female) - Jack 6.5mm stereo- balanced line- 5M. Suitable for pegboard display;117;1+;97
+CABHYB030;HYBRID;SIG-BAL-X(F)-J(S)-10M;XLR(Female) - Jack 6.5mm stereo- balanced line- 10M. Suitable for pegboard display;166;1+;138
+CABHYB032;HYBRID;SIG-BAL-X(M)-J(S)-0.8M;XLR(Male) - Jack 6.5mm stereo- balanced line- 0.8M. Suitable for pegboard display;70;1+;58
+CABHYB033;HYBRID;SIG-BAL-X(M)-J(S)-1.8M;XLR(Male) - Jack 6.5mm stereo- balanced line- 1.8M. Suitable for pegboard display;84;1+;70
+CABHYB034;HYBRID;SIG-BAL-X(M)-J(S)-3M;XLR(Male) - Jack 6.5mm stereo- balanced line- 3M. Suitable for pegboard display;98;1+;81
+CABHYB035;HYBRID;GUI-UB-J(M)-J(M)-3M;Jack 6.5mm mono - Jack 6.5mm mono 90°- unbalanced- 3M guitar cable;93;1+;77
+CABHYB036;HYBRID;GUI-UB-J(M)-J(M)-6M;Jack 6.5mm mono - Jack 6.5mm mono 90°- unbalanced- 6M guitar cable;125;1+;104
+CABHYB037;HYBRID;GUI-UB-J(M)-J(M)-10M;Jack 6.5mm mono - Jack 6.5mm mono 90°- unbalanced- 10M guitar cable;168;1+;140
+CABHYB038;HYBRID;SIG-UB-X(M)-RCA-0.8M;XLR(Male) - RCA- unbalanced- 0.8M. Suitable for pegboard display;63;1+;52
+CABHYB039;HYBRID;SIG-UB-X(M)-RCA-1.8M;XLR(Male) - RCA- unbalanced- 1.8M. Suitable for pegboard display;77;1+;64
+CABHYB040;HYBRID;SIG-UB-X(M)-RCA-3M;XLR(Male) - RCA- unbalanced- 3M. Suitable for pegboard display;92;1+;76
+CABHYB041;HYBRID;SIG-UB-2J(M)-2RCA-1.8M;2 x Jack 6.5mm mono - 2 x RCA- unbalanced- 1.8M. Suitable for pegboard display;119;1+;99
+CABHYB042-1;HYBRID;MIC-BAL-100M-YELLOW;2+Ground core- 100M microphone cable roll. (Yellow);977;1+;814
+CABHYB043;HYBRID;SIG-UB-MINIJ-2J(M)-1.8M;Minijack 3.5mm stereo -2 x Jack 6.5mm mono- unbalanced- 1.8M;88;1+;73
+CABHYB044;HYBRID;SIG-BAL-X(M)-J(S)-0.3M;XLR(Male) - Jack 6.5mm stereo- balanced line- 0.3M. Suitable for pegboard display;63;1+;52
+CABHYB045;HYBRID;SIG-UB-MINIJ-2RCA-1.8M;Minijack 3.5mm stereo -2 x RCA- unbalanced- 1.8M. Suitable for pegboard display;62;1+;51
+CABHYB049;HYBRID;CT02;"Cable tester- XLR- NL4- 1/4"" jack- RCA- powercon";685;1+;570
+CABHYB050;HYBRID;SPE-SPK-SPK-2M;Speakon - Speakon- 2 x 2mm core- 2M speaker cable. Suitable for pegboard display;104;1+;86
+CABHYB051;HYBRID;SIG-UB-J(M)-J(M)-1M/6P;Jack - Jack 6.5mm- mono- unbal- 1M- 6 colour pack;348;1+;290
+CABHYB052;HYBRID;SIG-BAL-X(F)-X(M)-1M/6P;XLR(Female) - XLR(Male)- balanced- 1M- 6 colour pack;365;1+;304
+CABHYB053;HYBRID;SIG-BAL-2X(M)-X(F)-0.3M;XLR(Female) - 2 x XLR(Male)- balanced- 0.3M. Suitable for pegboard display;80;1+;66
+CABHYB054;HYBRID;SIG-UB-2X(M)-2RCA-1.8M;2 x RCA - 2 x XLR(Male)- unbalanced- 1.8M. Suitable for pegboard display;127;1+;105
+CABHYB059;HYBRID;SIG-BAL-J(S)-J(S)-1M/6P;Jack-Jack 6.5mm- stereo- balanced- 1M- 6 colour pack;360;1+;300
+CABHYB060;HYBRID;SIG-BAL-X(F)-X(M)-2M;XLR(Female) - XLR(Male)- Balanced Line- 2M. Suitable for pegboard display;82;1+;68
+CABHYB064;HYBRID;SIG-UB-MINIJ-2X(M)-1.8M;Minijack 3.5mm stereo -2 x XLR(Male)- unbalanced- 1.8M. Suitable for pegboard;92;1+;76
+CABHYB065;HYBRID;CPT2;2-Track cable protector- 990mm- (W)29mm x (H)35mm channels- 6000kg load cap;825;1+;687
+CABHYB066;HYBRID;CPT3;3-Track cable protector- 990mm- (W)34mm x (H)32mm channels- 6000kg load cap;807;1+;672
+CABHYB071;HYBRID;CTIE-150MM-BLK-10PC;Cable straps- 150mm long- 10Pcs blister pack. Suitable for pegboard display. (Black);35;1+;29
+CABHYB072;HYBRID;CTIE-150MM-RED-10PC;Cable straps- 150mm long- 10Pcs blister pack. Suitable for pegboard display. (Red);35;1+;29
+CABHYB073;HYBRID;CTIE-150MM-BLU-10PC;Cable straps- 150mm long- 10Pcs blister pack. Suitable for pegboard display. (Blue);35;1+;29
+CABHYB074;HYBRID;CTIE-150MM-GR-10PC;Cable straps- 150mm long- 10Pcs blister pack.Suitable for pegboard display.(Green);35;1+;29
+CABHYB075;HYBRID;CTIE-250MM-BLK-10PC;Cable straps- 250mm long- 10Pcs blister pack. Suitable for pegboard display. (Black);43;1+;35
+CABHYB076;HYBRID;CTIE-250MM-RED-10PC;Cable straps- 250mm long- 10Pcs blister pack. Suitable for pegboard display. (Red);43;1+;35
+CABHYB077;HYBRID;CTIE-250MM-BLU-10PC;Cable straps- 250mm long- 10Pcs blister pack. Suitable for pegboard display. (Blue);43;1+;35
+CABHYB078;HYBRID;CTIE-250MM-GR-10PC;Cable straps- 250mm long- 10Pcs blister pack.Suitable for pegboard display.(Green);43;1+;35
+CABHYB079;HYBRID;CTIE-340MM-BLK-10PC;Cable straps- 340mm long- 10Pcs blister pack. Suitable for pegboard display. (Black);49;1+;40
+CABHYB080;HYBRID;CTIE-340MM-RED-10PC;Cable straps- 340mm long- 10Pcs blister pack. Suitable for pegboard display. (Red);49;1+;40
+CABHYB081;HYBRID;CTIE-340MM-BLU-10PC;Cable straps- 340mm long- 10Pcs blister pack. Suitable for pegboard display. (Blue);49;1+;40
+CABHYB082;HYBRID;CTIE-340MM-GR-10PC;Cable straps- 340mm long- 10Pcs blister pack.Suitable for pegboard display.(Green);49;1+;40
+CABHYB083;HYBRID;POW-PCON-SA3P-2M;Powercon - SA 3Pin 15A mains cable- 2.0M;175;1+;145
+CABHYB084;HYBRID;POW-PWB005;Power-in (Blue) - Power-out (White)- 0.5M- mains link;107;1+;89
+CABHYB085;HYBRID;POW-PW015;Power-in (Blue) - Power-out (White)- 1.5M- mains link;150;1+;125
+CABHYB086;HYBRID;POW-PW025;Power-in (Blue) - Power-out (White)- 2.5M- mains link;191;1+;159
+CABHYB087;HYBRID;SIG-UB-2RCA-2RCA-0.8M;2 x RCA - 2 x RCA- gold plated- unbalanced- 0.8M. Suitable for pegboard display;119;1+;99
+CABHYB088-1;HYBRID;SPE-2X0.5MM-100M/WH;2 x 0.5mm core- 100M rip-cord roll. (White);311;1+;259
+CABHYB089-1;HYBRID;SPE-2X0.75MM-100M/WH;2 x 0.75mm core- 100M rip-cord roll. (White);436;1+;363
+CABHYB090-1;HYBRID;SPE-2X1.0MM-100M/WH;2 x 1.0mm core- 100M rip-cord roll. (White);580;1+;483
+CABHYB091;HYBRID;SIG-UB-2X(M)-2J(M)-1.8M;2 x XLR(Male) - 2 x Jack 6.5mm mono- unbalanced- 1.8M. Suitable for pegboard;125;1+;104
+CABHYB092;HYBRID;CT20;Cable tester- CT02 + HDMI- RJ45- USB A&B;885;1+;737
+CABHYB093;HYBRID;POW-EXT-1.5MM-10M;Mains extension cable- 1.5mm- 10M w LED indicator;504;1+;420
+CABHYB095;HYBRID;POW-EXT-1.5MM-5M;Mains extension cable- 1.5mm-5M with LED indicator;332;1+;276
+CABHYB099;HYBRID;POW-EXT-2.5MM-5M;Mains extension cable- 2.5mm- 5M with LED indicator;389;1+;324
+CABHYB100;HYBRID;POW-EXT-2.5MM-10M;Mains extension cable- 2.5mm- 10M w LED indicator;667;1+;555
+CABHYB101;HYBRID;POW-EXT-2.5MM-15M;Mains extension cable- 2.5mm- 15M w LED indicator;1044;1+;870
+CABHYB109;HYBRID+;FP-18;"18"" bass- flat-pack- unassembled- with hardware";3244;1+;2703
+CABHYB111;HYBRID;INS-J(M)-J(M)-3M-RED;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 3M- woven instrument cable- Red;134;1+;111
+CABHYB112;HYBRID;INS-J(M)-J(M)-6M-RED;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 6M- woven instrument cable- Red;185;1+;154
+CABHYB113;HYBRID;INS-J(M)-J(M)-10M-RED;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 10M- woven instrument cable- Red;240;1+;200
+CABHYB114;HYBRID;INS-J(M)-J(M)-3M-BLK;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 3M- woven instrument cable- Black;134;1+;111
+CABHYB115;HYBRID;INS-J(M)-J(M)-6M-BLK;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 6M- woven instrument cable- Black;185;1+;154
+CABHYB116;HYBRID;INS-J(M)-J(M)-10M-BLK;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 10M- woven instrument cable- Black;240;1+;200
+CABHYB117;HYBRID;INS-J(M)-J(M)-3M-BLUE;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 3M- woven instrument cable- Blue;134;1+;111
+CABHYB118;HYBRID;INS-J(M)-J(M)-6M-BLUE;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 6M- woven instrument cable- Blue;185;1+;154
+CABHYB119;HYBRID;INS-J(M)-J(M)-10M-BLUE;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 10M- woven instrument cable- Blue;254;1+;211
+CABHYB120;HYBRID;INS-J(M)-J(M)-3M-GR;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 3M- woven instrument cable- Green;134;1+;111
+CABHYB121;HYBRID;INS-J(M)-J(M)-6M-GR;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 6M- woven instrument cable- Green;185;1+;154
+CABHYB122;HYBRID;INS-J(M)-J(M)-10M-GR;Jack 6.5mm -Jack 6.5mm mono- unbalanced- 10M- woven instrument cable- Green;254;1+;211
+CABHYB123;HYBRID;CT88;Cable tester- CT02 features w tansmitter & receiver;1380;1+;1150
+CABHYB124;HYBRID;SIG-BAL-X(F)-X(M)-5M;XLR(Female) - XLR(Male)- Balanced Line- 5M. Waterproof connectors;122;1+;101
+CABHYB125;HYBRID;SIG-BAL-X(F)-X(M)-10M;XLR(Female) - XLR(Male)- Balanced Line- 10M. Waterproof connectors;156;1+;130
+CABHYB126;HYBRID;SIG-BAL-X(F)-X(M)-15M;XLR(Female) - XLR(Male)- Balanced Line- 15M. Waterproof connectors;212;1+;176
+CABHYB127;HYBRID;SIG-BAL-X(F)-X(M)-20M;XLR(Female) - XLR(Male)- Balanced Line- 20M. Waterproof connectors;274;1+;228
+CABHYB128;HYBRID;DMX-3P-X(F)-X(M)-1M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 1M;99;1+;82
+CABHYB129;HYBRID;DMX-3P-X(F)-X(M)-5M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 5M;156;<1;130
+CABHYB130;HYBRID;DMX-3P-X(F)-X(M)-10M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 10M;228;1+;190
+CABHYB131;HYBRID;DMX-3P-X(F)-X(M)-2M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 2M;112;0;93
+CABHYB132;HYBRID;DMX-3P-X(F)-X(M)-3M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 3M;125;<1;104
+CABHYB133;HYBRID;DMX-3P-X(F)-X(M)-1.5M;DMX 3-Pin- XLR(Female) - XLR(Male)- waterproof connectors- 1.5M;106;1+;88
+CLAHYB001;HYBRID;HC200;Heavy-duty half coupler clamp- 200 kg load;152;<1;126
+CLAHYB002;HYBRID;HC30;Light-duty half coupler clamp- 30 kg load- ABS;104;0;86
+CLAHYB003;HYBRID;HC100;Heavy-duty C-clamp for lighting- 100 kg load;306;1+;255
+COMAUD001;AUDIOCENTER;T2 COMBO;"9600W RMS- 3-way active line array combo Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 1500 people 4 x Audiocenter T45-DSP line array 1000W 2 x Audiocenter K-LA218-DSP- dual 18""- 2000W bass Cabling & poles incl";163021;1+;135850
+COMAUD003;AUDIOCENTER;X2 COMBO;"12000W RMS- 3-way active line array combo Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 1500 people 4 x Audiocenter XLA102 line array 1600W 2 x Audiocenter K-LA218-DSP- dual 18""- 2800W bass Cabling & poles incl";188400;1+;157000
+COMAUD004;AUDIOCENTER;MA PACK 1;"2100W RMS- 3-way active combo system Easy set-up & strike-down Compact- ideal for all mobile applications Indoor audience of 250 people 2 x Audiocenter MA12 full-range 350W 2 x Audiocenter MA118- single 18""- 700W sub-bass Cabling & poles included";40998;1+;34165
+COMAUD005;AUDIOCENTER;MA PACK 2;"2300W RMS- 3-way active combo system Easy set-up & strike-down Compact - ideal for all mobile applications Indoor audience of 300 people 2 x Audiocenter MA15 full-range 450W 2 x Audiocenter MA118- single 18""- 700W sub-bass Cabling & poles included";43488;1+;36240
+COMAUD008;AUDIOCENTER;ST2 COMBO;"8000W RMS- 3-way active line array combo Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 1000 people 4 x Audiocenter T45-DSP line array 1000W 2 x Audiocenter SA3218A- dual 18""- 2000W bass Cabling & poles included";123600;1+;103000
+COMAUD009;AUDIOCENTER;SX2 COMBO;"10400W RMS- 3-way active line array combo Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 1500 people 4 x Audiocenter XLA102 line array 1600W 2 x Audiocenter SA3218A- dual 18""- 2000W bass Cabling & poles included";152401;1+;127000
+COMAUD010;AUDIOCENTER;ASTRA 210A COMBO;"10400W RMS- 3-way active line array combo Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 1500 people 4 x Audiocenter Astra210A line array 1600W 2 x Audiocenter SA3218A- dual 18""- 2000W bass Cabling & poles incl";144001;1+;120000
+COMAUD011;AUDIOCENTER;GIG RIG 1;"2100W RMS- 3-way active combo system Easy set-up & strike-down Compact- ideal for all mobile applications Indoor audience of 250 people 2 x Audiocenter SA312+ full-range 350W 2 x Audiocenter MA118- single 18""- 700W sub-bass Cabling & poles included";43758;1+;36465
+COMAUD012;AUDIOCENTER;GIG RIG 2;"2300W RMS- 3-way active combo system Easy set-up & strike-down Compact- ideal for all mobile applications Indoor audience of 300 people 2 x Audiocenter SA315+ full-range 450W 2 x Audiocenter MA118- single 18""- 700W sub-bass Cabling & poles included";45811;1+;38175
+COMAUD013;AUDIOCENTER;GIG RIG 3;"4700W RMS- 3-way active combo system Easy set-up & strike-down Portable- ideal for all mobile applications Indoor audience of 500 people 2 x Audiocenter SA312+ full-range 350W 2 x Audiocenter SA3218A- dual 18""- 2000W bass Cabling & poles included";68299;1+;56915
+COMAUD014;AUDIOCENTER;GIG RIG 4;"4900W RMS- 3-way active combo system Easy set-up & strike-down Portable ideal for all mobile applications Indoor audience of 600 people 2 x Audiocenter SA315+ full-range 450W 2 x Audiocenter SA3218A- dual 18""- 2000W bass Cabling & poles included";70351;1+;58625
+COMHYB001;HYBRID;PARTY BOX12;"2 x 12"" active speakers- stands- mic & cables pack";7257;1+;6047
+COMHYB002;HYBRID;PARTY BOX15;"2 x 15"" active speakers- stands- mic & cables pack";8137;1+;6780
+COMHYB004;HYBRID;PARTY SUB18;"18"" Active- sub-bass speaker Developed to pair w the Party in a Box & Party Starter when low-bass is required Wooden w carpet finish Input Conn: XLR Female panel mount input with XLR Male panel mount loop-thru LF: 18""- 4Ohm- 300W RMS- 3Ω VC";6240;1+;5200
+COMHYB005;HYBRID;PARTY STARTER15;"1x15"" active/1x15""passive-stands-mic & cables pack";7101;1+;5917
+COMHYB006;HYBRID;LS18A COMBO;"18"" (LS18A) with line array (L6A/L6P) combo 2 x LS18A- 18"" active bass- 1000W each w DSP 2 x L6A- dual 6"" active line array- 240W each w DSP 2 x L6P- dual 6"" passive line array- 240W each 2 x L6 fly-fames 2 x poles Cables included Sys pow: 5000W prog";32160;1+;26800
+COMHYB007;HYBRID;LS218A COMBO;"(LS218A) with line array (L6A/L6P) combo 2 x LS218A- dual 18"" active bass- 2000W w DSP 2 x L6A- dual 6"" active line array- 240W each w DSP 4 x L6P- dual 6"" passive line array- 240W each 2 x L6 fly-fames 2 x poles Cables included Sys pow: 9500W prog";47995;1+;39995
+COMHYB008;HYBRID+;PK218UE/PLA10 COMBO;"5600W RMS system Easy set-up & strike-down. Accommodates an indoor audience of 1500 people. 2 x Hybrid+ PK218UE- Dual 18""- 2000W sub-bass 4 x Hybrid+ PLA10- 10"" - 400W line-array cabinets 1 x A4000 & 1 x A2400 DSP amps Flightcase & cabling incl";107401;SS;89500
+COMHYB011;HYBRID;LS18A/PA12DSP COMBO;2 x PA12DSP- 2 x LS18A Active combo- 3000W;28800;1+;24000
+COMHYB012;HYBRID;LS218A/PA12DSP COMBO;2 x PA12DSP- 2 x LS218A Active combo- 5000W;40201;1+;33500
+COMHYB013;HYBRID;LS18A/PA15DSP COMBO;2 x PA15DSP- 2 x LS18A Active combo- 3000W;29400;1+;24500
+COMHYB014;HYBRID;LS218A/PA15DSP COMBO;2 x PA15DSP- 2 x LS218A Active combo- 5000W;41400;1+;34500
+CONHYB001;HYBRID;CONN-SPK(BAR)-4P-2PC;Speakon 4 pole barrel connectors. 2Pcs blister pack / Suitable for pegboard display;76;<1;63
+CONHYB003;HYBRID;CONN-X(M)-X(F)-WP;One XLR Male & one XLR Female waterproof inline connectors in a blister pack;72;1+;60
+CONHYB004;HYBRID;CONN-POW(B)-2PC;Power-in (Blue) inline connectors. 2Pcs blister pack / Suitable for pegboard display;76;<1;63
+CONHYB005;HYBRID;CONN-POW(W)-2PC;Power-out (White) inline connectors. 2Pcs blister pack / Suitable for pegboard;76;<1;63
+CONHYB006;HYBRID;CONN-SPK(CHA)-4P-2PC;Speakon 4 pole panel mount connectors. 2Pcs blister pack / Suitable for pegboard;35;1+;29
+CONHYB007;HYBRID;CONN-SPK(IL)-4P-2PC;Speakon 4 pole inline connectors. 2Pcs blister pack / Suitable for pegboard display;62;1+;51
+CONHYB008;HYBRID;CONN-XLR(M)-2PC;XLR Male inline connectors. 2 Pcs blister pack / Suitable for pegboard display;52;1+;43
+CONHYB009;HYBRID;CONN-XLR(F)-2PC;XLR Female inline connectors. 2 Pcs blister pack / Suitable for pegboard display;56;1+;46
+CONHYB010;HYBRID;CONN-JACK(M)-90D-2PC;Jack mono 6.5mm inline connectors. 90° angled. 2 Pcs blister pack;49;1+;40
+CONHYB011;HYBRID;CONN-JACK(S)-2PC;Jack stereo 6.5mm inline connectors. 2 Pcs blister pack / Suitable for pegboard;58;1+;48
+CONHYB012;HYBRID;CONN-JACK(M)-2PC;Jack mono 6.5mm inline connectors. 2 Pcs blister pack / Suitable for pegboard;53;1+;44
+CONHYB014;HYBRID;CONN-SPK(IL)-8P-1PC;Speakon 8 pole inline connector. 1Pc blister pack / Suitable for pegboard display;58;1+;48
+CONHYB015;HYBRID DJ;HMC2;2 ch DJ controller- virtual DJ (DJ8 - home edd) incl;3721;1+;3100
+CONHYB016;HYBRID DJ;HMC4;4 ch DJ controller- virtual DJ (DJ8 - home edd) incl;4080;1+;3400
+DIABEY001;BEYMA;CP750/TI-DK;Diaphragm kit for Beyma CP750/TI- 8Ω;1570;1+;1308
+DIABEY006;BEYMA;T2010-DK;Diaphragm kit for Beyma T2010- 8Ω;828;1+;690
+DIABEY008;BEYMA;SMC280ST-DK;Diaphragm kit for Beyma SMC280ST- 8Ω;875;1+;729
+DIABEY011;BEYMA;CP650/TI-DK;Diaphragm kit for Beyma CP650/TI- 8Ω;2448;1+;2040
+DIABEY014;BEYMA;SMC60/65/ND-DK;Diaphragm kit for Beyma SMC-60- SMC-65Nd- SMC-65- 8Ω;1027;1+;855
+DIACEL001;CELTO;FCD440-8-DK;Diaphragm kit for FCD440-8 (iFIX8- FT12- FT15- A8- A10- A12);291;1+;242
+DIACEL005;CELTO;HFDN72-16-DK;Dia kit for HFDN72-16 (VT12/15/152- XL12/15- IWAC210/212- LA212SE- WM12);1958;1+;1631
+DIACEL008;CELTO;HFD51-8-DK;Diaphragm kit for HFD51-8 (BT152 MK2/3);1017;1+;847
+DIACEL011;CELTO;FCD44-8-DK;Diaphragm kit for FCD44-8 (PK15- PK152- AK15- FT15SE- FT152SE);339;0;282
+DIACEL016;CELTO;ACD40-8-DK;Diaphragm kit for ACD40-8 (PM10G2- PM12G2- CT12G2- CT12V- CT15V- CMP10);926;1+;771
+DIACEL017;CELTO;ACD45-8-DK;Diaphragm kit for ACD45-8;650;1+;541
+DIACEL020;CELTO;PCD440-8-DK;Diaphragm kit for PCD440-8 (ALTIUM12- ALTIUM15- PK15UE);291;1+;242
+DIACEL021;CELTO;ACD 45-16-DK;Diaphragm kit for ACD 45-16 (PLA10);966;1+;805
+DIACEL022;CELTO;ACD44-8-DK;Diaphragm kit for ACD44-8 (CT12G3- CT15G2/G3- PM12G3- PM15G2/G3);926;1+;771
+DIACEL023;CELTO;ACDN44-12-DK;Diaphragm kit for ACDN44-12 (IsoRay10- AEGIUM- CMP12);966;0;805
+DIACEL025;CELTO;HF280-8-DK;Diaphragm kit for HF280-8;376;1+;313
+DIACEL026;CELTO;FCD440P-8-DK;Diaphragm kit for FCD440P-8;586;0;488
+DIACEL028;CELTO;NCD44-8-DK;Diaphragm kit for NCD44-8;1034;1+;861
+DIAHYB001;HYBRID;HT20D;Replacement diaphragm for HT20- 34mm Voice coil- 8Ω- titanium dome;76;0;63
+DIAHYB002;HYBRID;HT80D;Replacement diaphragm for HT80- 75mm Voice coil- 8Ω- titanium dome;230;1+;191
+DIAHYB003;HYBRID;HT40D;Replacement diaphragm for HT40- 45mm Voice coil- 8Ω- titanium dome;100;0;83
+DIAHYB008;HYBRID;HT60D;Replacement diaphragm for HT60- 50mm Voice coil- 8Ω- titanium dome;121;1+;100
+DIBHYB001;HYBRID;DB01;Single channel passive DI box;181;1+;150
+DIBHYB002;HYBRID;DB02;Dual channel passive DI box;299;<1;249
+DIBHYB003;HYBRID;DA10;Single channel active DI box;461;1+;384
+DIYHYB001;HYBRID+;FP-18-1000;"18"" bass-flat-pack-unassembled w 1200W woofer";6601;1+;5500
+DIYHYB002;HYBRID+;FP-18-1200;"18"" bass-flat-pack-unassembled w 1000W woofer";7252;1+;6043
+DRIBEY001;BEYMA;CP750/TI;"2""- 70W >0.8KHz- 110dB- 0.6-20KHz- 8Ω- Titanium";4232;1+;3526
+DRIBEY002;BEYMA;CP755/TI;"1.4""- 70W >0.8KHz- 110dB- 0.6-20KHz- 8Ω- Titanium";3361;1+;2800
+DRIBEY004;BEYMA;CP380/M;"1""- 70W >1.5KHz- 107dB- 0.8-20KHz- 8Ω- Polyester";2210;1+;1841
+DRIBEY013;BEYMA;SMC60;"2""- 80W >1KHz- 109dB- 0.5-18KHz- 8Ω- Titanium";3290;1+;2741
+DRIBEY018;BEYMA;CD151FE/PT;"1""- 70W >1.8KHz- 110dB- 0.9-20KHz- 8Ω- Polyester";1921;1+;1600
+DRIBEY019;BEYMA;CD151FE/PK;"1""- 70W >1.8KHz- 110dB- 0.9-20KHz- 8Ω- Polymer";1921;1+;1600
+DRIBEY020;BEYMA;CD171FE/PT;"1""- 80W >1.2KHz- 108dB- 0.8-20KHz- 8Ω- Polyester";2257;1+;1880
+DRIBEY021;BEYMA;CD171FE/PK;"1""- 80W >1.4KHz- 109dB- 0.8-20KHz- 8Ω- Polymer";2257;1+;1880
+DRIBEY022;BEYMA;CD-2514FE;"1.4""- 100W >1.2KHz- 1098.5dB- 0.6-20KHz- 8Ω";3361;1+;2800
+DRICEL001;CELTO;FCD440-8;"1"" exit- 1.7"" VC- 40W- 8Ω (FT12/FT15/A8/A10/A12)";682;1+;568
+DRICEL003;CELTO;HFD72-8;"1.4"" exit- 2.8"" VC- 100W- 8Ω (EX12 & EX152)";2760;1+;2300
+DRICEL004;CELTO;HFD44A-8;"1"" exit- 1.7"" VC- 60W- 8Ω (BT8- BT8SE- BT10- BT12- BT12SE- BT15)";765;1+;637
+DRICEL006;CELTO;FCD510-8;"1"" exit- 2"" VC- 80W- 8Ω- (FT152)";1286;0;1071
+DRICEL008;CELTO;FCDX440-8;"1"" exit- 1.7"" VC- 60W- 8Ω (HP12- HP12MK2)";891;1+;742
+DRICEL009;CELTO;FCD44-8;"1"" exit- 1.7"" VC- 50W- 8Ω (PK15/PK152/AK15/FT15SE/FT152SE)";951;1+;792
+DRICEL011;CELTO;FCD738TI-8;"1.4"" exit- 2.8"" VC- 100W (LA10 / HP15/ HP152)";1810;1+;1508
+DRICEL012;CELTO;HFDN72-8;"1.5"" exit- 2.8"" VC- 110W- 8Ω- neodynium magnet (VT153- VCM12- EX153)";2395;1+;1995
+DRICEL014;CELTO;ACD40-8;"1""- 1.7"" VC- 80W- 8Ω (PM10/12 G2- CT8G2- CT12G2- CMP10- iFIX10+- iFIX10 G2)";2125;1+;1770
+DRICEL015;CELTO;ACD45-8;"1.5"" exit- 80W- 8Ω";1019;1+;849
+DRICEL017;CELTO;PCD440B;"1"" exit. 1.7"" VC- 50W- 8Ω (ALTIUM 12- ALTIUM 15- PK15UE)";717;1+;597
+DRICEL018;CELTO;PCD440S;"1"" exit. 1.7"" VC- 50W- 8Ω- screw-on mounting (HP8MK2)";718;1+;598
+DRICEL020;CELTO;HFD72X-8;"1.4"" exit. 2.8"" VC- 100W- 8Ω";2032;<1;1693
+DRIHYB001;HYBRID;HT40;"1"" HF driver- 40W- 8Ω- 45mm VC- titanium- screw-in";292;1+;243
+DRIHYB003;HYBRID;HT20;"1"" HF driver- 20W- 8Ω- 34mm VC- titanium- screw-in";219;1+;182
+DRIHYB004;HYBRID;HT80;"2"" HF driver- 80W- 8Ω- 75mm VC- titanium- bolt-on";1147;1+;955
+DRIHYB005;HYBRID;HT60;"1"" HF driver- 60W- 8Ω- 50mm VC- titanium- screw-in";488;1+;406
+DRIHYB007;HYBRID;PARTY IN BOX-HF;"1"" HF driver for party in box. 15W- 8Ω- screw-in";101;1+;84
+DRIHYB009;CELTO;HFDN72-16;"1.4"" exit- 2.8"" VC- 110W- 16Ω- neodynium (VT12/15/152- IWAC210- LA212 - EX15)";3192;1+;2660
+EQUHYB001;HYBRID;S-EQ215A;Dual 15 band graphic equaliser with mono sub-bass output;1824;1+;1520
+EQUHYB002;HYBRID;S-EQ231A;Dual 31 band graphic equaliser with mono sub-bass output;2545;1+;2120
+FRAAUD001;AUDIOCENTER;T45-DSP-FF;Fly-frame for T45-DSP line array cabinets- 16pc/max;5929;1+;4940
+FRAAUD011;AUDIOCENTER;XLA102-FF;Fly-frame for XLA102-DSP line array cabinets- 16pc/max;5305;0;4420
+FRAAUD012;AUDIOCENTER;AVANDA212A-FF;Fly-frame for Avanda212A line array cabinets 16pc/max;7905;1+;6587
+FRAAUD013;AUDIOCENTER;ASTRA210A-FF;Fly-frame for Astra 210A line array cabinets- 8pc/max;4235;1+;3529
+FRAHYB005;HYBRID+;PLA10-FF;Fly-frame for PLA10 line-array cabinet;8144;1+;6786
+FRAHYB006;HYBRID;L6-FF;Fly-frame for L6A & L6P line array cabinets;764;1+;636
+FUSHYB001;HYBRID;12V-20W-FUSE;Replacement HF fuse for X1-2000-100. 12V/20W;16;1+;13
+FUSHYB002;HYBRID;12V-25W-FUSE;Replacement HF fuse for X2-3500-300. 12V/25W;17;1+;14
+FUSHYB003;HYBRID;24V-25W-FUSE;Replacement HF fuse for X2-1800-400. 24V/25W;16;1+;13
+HEAHYB001;HYBRID DJ;HH101;DJ H/phones- 40mm drivers- detachable cable;237;1+;197
+HEAHYB002;HYBRID DJ;HH101B;DJ H/phones w Bluetooth-40mm drivers-detach cable;326;1+;271
+HEAHYB003;HYBRID DJ;HH201;DJ H/phones- 40mm drivers- foldable- detach cable;346;1+;288
+HEAHYB004;HYBRID;HGH01;Gaming heaphones & mic for console gamers;234;1+;195
+HEAHYB005;HYBRID;HGH02;Gaming heaphones & mic for PC gamers;234;1+;195
+HEAHYB006;HYBRID+;HH202;DJ H/phones- 40mm drivers- foldable- detach cable;420;1+;350
+HEAHYB007;HYBRID+;HH202B;DJ H/phones w Bluetooth & wireless in-ear buds;667;1+;555
+HORBEY003;BEYMA;TD164P;"1"" Poly-C- 60x40°(HxV)- 160x160x100mm(WxHxD)";347;1+;289
+HORBEY004;BEYMA;TD196P;"1"" Poly-C- 90x60°(HxV)- 160x160x100mm(WxHxD)";351;1+;292
+HORBEY005;BEYMA;TD385 HORN;"1.4"" Alum- 80x50°(HxV)-235x235x120mm(WxHxD)";1260;1+;1050
+HORBEY006;BEYMA;TD164 HORN;"1"" Alum- 60x40°(HxV)- 202x202x145mm(WxHxD)";562;1+;468
+HORCEL006;CELTO;H215PO-1B;"1"" polymer horn- 80 x 50°- bolt-on mount. Size: 215 x 215 x 130mm (L x W x D)";152;1+;126
+HORHYB001;HYBRID;H001;"Horn flare- 1"" throat- (width x heigth) 296mm x 105mm- plastic screw-in";62;1+;51
+HORHYB002;HYBRID;H002;"Horn flare- 1"" throat- (width x heigth) 386mm x 130mm- plastic screw-in";83;1+;69
+HORHYB004;HYBRID;H100A;100W-100V horn- tapp:100/5 W-Aluminium- IP66;2942;1+;2451
+HORHYB006;HYBRID;H15;15W- 100V horn- 8Ω- tappings:15/7.5/3.8/1.9 W;700;1+;583
+HORHYB007;HYBRID;H30;30W- 100V horn- 8Ω- tappings:30/15/7.5/3.8 W;926;1+;771
+HORHYB009;HYBRID;H50A;50W-100V horn-8Ω-tapp:50/25/12/6 W-Aluminium;1298;1+;1081
+HORHYB010;HYBRID;H30A;30W-100V horn-8Ω-tapp:30/15/7.5/3.8W-Aluminium;998;1+;831
+LASHYB012;HYBRID;I-SHOW VER3;Laser show software ILDA+RJ45 USB interface;5328;1+;4440
+LASHYB023;HYBRID;L2000RGB MK2;2W laser- RGB- 20KPPS scan rate- ILDA;8111;1+;6759
+LASHYB024;HYBRID;L2000RGB IP65;2W laser- RGB- 20KPPS scan rate- IP65 rating;14697;1+;12247
+LASHYB025;HYBRID;L5000RGB MK2;5W laser- RGB- 40KPPS scan rate- ILDA;32440;1+;27033
+LASHYB026;HYBRID;L250RGB MK2;250mW laser- RGB- DMX + auto/sound to light;2606;1+;2171
+LASHYB027;HYBRID;L210RG/D MK2;210mW laser- RGB- DMX + auto/sound to light;2213;1+;1844
+LASHYB028;HYBRID;L480RGB/D MK2;480mW laser- RGB- DMX + auto/sound to light;4572;1+;3810
+LASHYB029;HYBRID;L640RGB/D MK2;4 Head-160mW laser - RGBP- auto + DMX;4817;1+;4014
+LASHYB030;HYBRID;L700RGB/F MK2;700mW laser- RGB- 20KPPS scan rate- ILDA;9439;1+;7865
+LASHYB031;HYBRID;L1500RGB/F MK2;1.5W laser- RGB- 20KPPS scan rate- ILDA;12239;1+;10199
+LASHYB032;HYBRID;L2700RGB/F MK2;2.7W laser- RGB- 25KPPS scan rate- ILDA;20890;1+;17408
+LIGHYB010;HYBRID;HMH4.1;Dual source head- unlimited tilt effects light;3119;1+;2599
+LIGHYB012;HYBRID;HMH GOBO;Spot light with gobo effects. 30W;3223;1+;2685
+LIGHYB023;HYBRID;HS8;Strobe light with 8×25W LEDs- DMX 512- adjustable flash speed and brightness;2665;1+;2220
+LIGHYB026;HYBRID;HSS 12.4;Slim par can- 12×8W RGBW LEDs- Metal housing;2369;1+;1974
+LIGHYB027;HYBRID;HSS 12.6;Slim par can- 12×10W RGBWA UV LED- metal housing;3448;1+;2873
+LIGHYB032;HYBRID;HU9;UV light bar with 9×3W LEDs- 120° beam angle.;1476;1+;1230
+LIGHYB049;HYBRID;DMX384;384CH DMX controller w 12 fixture controls;2389;1+;1990
+LIGHYB056;HYBRID;HMH GOBO II;Spot light with gobo effects. 60W;4039;1+;3365
+LIGHYB070;HYBRID;HMH 100W FX;4 x Effects w 3×40W RGBW LED- w/flight case;26640;1+;22200
+LIGHYB071;HYBRID+;MINI1024;DMX Lighting Controller 1024 DMX channels 7Ω TFT-LCD touchscreen Backlit keys + 4 optical backlit encoders 1000 playbacks 400 Groups-400 Presets- 400 Macros 400 user-defined shape effects;26833;1+;22360
+LIGHYB072;HYBRID+;MASTER 4096;DMX Lighting Controller 4096 DMX channels 10-4Ω TFT-LCD touchscreen 1120 playbacks 400 Groups- 400 Presets- 400 Macros 400 user-defined shape effects;42375;1+;35312
+LIGHYB073;HYBRID;MUSHROOM NO DMX;DJ effect- dome-style light- 6×3W RGB LEDs;383;1+;319
+LIGHYB078;HYBRID;HMH230 V2;2 x Beam- 230W bulb w/flight case;26423;1+;22019
+LIGHYB079;HYBRID;HMH250;2 x Beam- 250W bulb w/flight case;28283;1+;23569
+LIGHYB080;HYBRID;MP20WW;Mini LED profile light with 20W WW COB LED;4584;1+;3820
+LIGHYB081;HYBRID;HMH150;2 x Spot light- 150W LED w/flight case;36515;1+;30429
+LIGHYB082;HYBRID;ART-NET NODE1;1-universe Art-Net to DMX512 network converter;3480;1+;2900
+LIGHYB083;HYBRID;ART-NET NODE4;4-universe Art-Net to DMX512 network converter;6726;1+;5605
+LIGHYB084;HYBRID;ART-NET NODE8;8-universe Art-Net to DMX512 network converter;10020;1+;8350
+LIGHYB085;HYBRID;DMX-ELF;DMX Lighting Test Tool;4980;1+;4150
+LIGHYB086;HYBRID;HSS 7.4 MKII;Slim par can- 7×10W RGBW LEDs- ABS housing;1104;1+;920
+LIGHYB087;HYBRID;HSS 12.4 MKII;Slim par can- 12×10W RGBW LEDs- metal housing;2619;1+;2182
+LIGHYB088;HYBRID;HSS 12.6 MKII;Slim par can- 12×18W RGBWA UV LED- metal housing;3631;<1;3025
+LIGHYB089;HYBRID;HSS COB-C MKII;Theatre par can- 150W RGBW LED COB;2936;1+;2446
+LIGHYB090;HYBRID;HSS CW MKII;Theatre par can- 200W WW+CW COB;3923;1+;3269
+LIGHYB091;HYBRID;HSS COB2B MKII;Crowd Blinder- 2 x 90W WW+CW COB LEDs;5161;1+;4300
+LIGHYB092;HYBRID;HMH7 MKII;7x8W RGBW moving head wash light;1533;<1;1277
+LIGHYB093;HYBRID;HMH4.1 MKII;Dual source head- unlimited tilt effects light;4104;1+;3420
+LIGHYB094;HYBRID;HMH6 MKII;Effects light with 6×12W RGBW LEDs;3390;1+;2825
+LIGHYB095;HYBRID;HMH100B MKII;4 x Beam 100W LED w/flight case;23156;1+;19296
+LIGHYB096;HYBRID;HMH100SFX MKII;4 x Spot 100W LED w/flight case;25007;1+;20839
+LIGHYB097;HYBRID;HSF 5.4 MKII;Moving head light bar with 5×40W RGBW LEDs- 10×20W white LEDs;9552;1+;7960
+LIGHYB098;HYBRID;HSF12.4 MKII;Stage light bar with 12×4W RGBW LEDs;2492;1+;2076
+LIGHYB099;HYBRID;TRIPLE DERBY TITAN;DJ effect light- 3 lenses- RGB LEDs- DMX control;1182;1+;985
+LIGHYB100;HYBRID;SIX BEAM MKII;DJ Effects light with six RGBW LEDs + strobe- DMX;7346;1+;6121
+LIGHYB101;HYBRID;EIGHT BEAM MKII;DJ effect light with eight RGB LEDs with DMX;2869;1+;2390
+LIGHYB102;HYBRID;HS1500;Strobe light with 864 5050RGB LEDs and 96 white LEDs;3025;1+;2520
+LIGHYB104;HYBRID;DMX192;192CH DMX controller w 12 fixture controls;1778;1+;1481
+LIGHYB105;HYBRID;DMX384 MKII;384CH DMX controller w 12 fixture controls (MKII);2292;1+;1910
+LIGHYB106;HYBRID;MUSHROOM MKII;DJ effect- dome-style light- 6×3W RGB w/DMX;491;1+;409
+LIGHYB107;HYBRID;HMH285;2 x Wash- 19 x 15 RGBWLED w/flight case;22467;1+;18722
+LIGHYB108;HYBRID;HMH250 MKII;2 x Beam- 250W bulb w/flight case (MKII);30110;<1;25091
+LIGHYB109;HYBRID;HMH GOBO 60;60W LED with static gobos and split-color wheel;3266;1+;2721
+LIGHYB110;HYBRID;HMH GOBO 80;Spot light with gobo effects. 80W;4097;1+;3414
+LIGHYB111;HYBRID;HSS 18.1 MKII;Slim par can- 18×3W RGB LEDs- ABS housing;661;0;550
+LIGHYB112;HYBRID;HMH180;2 x Spot light- 180W LED w/flight case;35644;1+;29703
+MEDHYB001;HYBRID;MEDIA-P;Media player / Bluetooth interface USB stick-SD card-bluetooth-FM tuner Aux input: 3.5mm jack Outputs: Stereo- unbal- RCA Large LCD display- mode selection- 6 preset EQ’s- Play/pause- prev/next track- prev/next Folder Const: moulded ABS- external PSU;380;1+;316
+MEGHYB001;HYBRID;HMP-1;Handheld megaphone Power: 50W peak Microphone: detachable handset with volume control Push to talk or continously on microphone option MP3 player: USB- SD card- volume- next / prev track Rechargable lithium battery included(3H charge time);1456;1+;1213
+MICHYB001;HYBRID;C2-USB;Condenser USB mic- volume control-w desktop stand;348;1+;290
+MICHYB004;HYBRID;C2;Condenser aluminium pencil mic with mic holder;537;1+;447
+MICHYB005;HYBRID;C2-3PK;3-pack condenser aluminium pencil mics w holders;1441;1+;1200
+MICHYB006;HYBRID;D2;Dynamic metal mic w switch- 4.5m cable included;133;1+;110
+MICHYB007;HYBRID;U-AV;UHF aerobics instructor headset microphone Specifically designed for aerobic instructors Transmitter: headset with integrated transmitter- infra- red sync Receiver: integrated with 1/4Ω Jack- 16 selectable freq- volume control- infra-red sync- RF LED;1541;1+;1284
+MICHYB009;HYBRID;LSM-1;Livestreaming microphone with onboard DSP and LCD screen;673;1+;560
+MICHYB010;HYBRID;U-SC;UHF camera microphone Range: 30 meter 15 variable selectable frequencies Audio outputs: 3.5mm jack & USB Rechargable lithium batteries included All cables & mounting accessories included;949;1+;790
+MICHYB013;HYBRID;MINI U-SF HAND;Single UHF mic- fixed frequency- hand-held;900;1+;750
+MICHYB014;HYBRID;MINI U-SF LAP/HEAD;Single UHF mic- fixed frequency- Lapel & headset;955;1+;795
+MICHYB015;HYBRID;MINI U-DF HAND;Dual UHF mics- fixed frequencies- 2 x hand-helds;1272;1+;1060
+MICHYB016;HYBRID;MINI U-DF LAP/HEAD;Dual UHF mics- fixed freq- hand held & lapel/headset;1380;0;1150
+MICHYB020;HYBRID;C3;Condenser aluminium vocal mic with shock mount;701;1+;584
+MICHYB021;HYBRID;C4;Condenser aluminium vocal mic with shock mount;1009;1+;840
+MICHYB029;HYBRID;DK5;5Pc drum mic kit. 1 x kick drum- 2 x toms- 2 x cymbals;3242;1+;2701
+MICHYB030;HYBRID;DK7A;7Pc drum mic kit. 1 x kick drum- 4 x toms- 2 x cymbals;3847;1+;3205
+MICHYB031;HYBRID;DK7B;7Pc drum mic kit. 1 x kick drum- 4 x toms- 2 x cymbals;4104;1+;3420
+MICHYB032;HYBRID;D1;Dynamic metal mic with switch- 5m cable included;225;1+;187
+MICHYB033;HYBRID;D1-3PK;3-pack dynamic metal mics w switch- 5m cables incl.;645;1+;537
+MICHYB034;HYBRID;HD004-CREAM/WHITE;Slimline headset dynamic mic- mini-XLR- cream;200;1+;166
+MICHYB036;HYBRID;C1;Condenser zinc alloy microphone with shock mount;733;1+;610
+MICHYB037;HYBRID;HD004-DARK BROWN;Slimline headset dynamic mic- mini-XLR- brown;200;1+;166
+MICHYB042;HYBRID+;R8;"UHF- 8 channel receiver- 62 freqs/ ch- supports TH1 & TB1 transmitters. 19""- 2U";9261;1+;7717
+MICHYB043;HYBRID+;R4;"UHF- 4 channel receiver- 62 freqs/ ch- supports TH1 & TB1 transmitters. 19""- 1U";4594;<1;3828
+MICHYB044;HYBRID+;TH1;UHF handheld- 62 frequency- supports R4 & R8 receivers;1242;0;1035
+MICHYB046;HYBRID+;TB1;UHF beltpack with lapel & headset- 62 frequency- supports R4 & R8 receivers;1633;<1;1360
+MICHYB053;HYBRID;U-SV MK3 HAND;Single UHF mic- 16 freqs- hand-held. Li-battery;1762;1+;1468
+MICHYB059;HYBRID;P1;"Paging desk-top microphone Capsule: Dynamic- cardioid Detachable gooseneck Push to talk switch Output: XLR male 7m XLR female - 1/4"" jack cable included Construction: Gun metal grey ABS base with black detachable gooseneck microphone";624;<1;520
+MICHYB067;HYBRID;U-SF/B HAND;Single UHF mic- fixed frequency- hand-held;881;<1;734
+MICHYB068;HYBRID;U-SF/B LAP;Single UHF mic- fixed frequency- Lapel;881;1+;734
+MICHYB069;HYBRID;U-SF/B HEAD;Single UHF mic- fixed frequency- headset;939;1+;782
+MICHYB070;HYBRID;U-DF/B HAND;Dual UHF mics- fixed frequencies- 2 x hand-helds;1204;1+;1003
+MICHYB071;HYBRID;U-DF/B LAP;Dual UHF mics- fixed frequencies- hand-held & lapel;1204;1+;1003
+MICHYB072;HYBRID;U-DF/B HEAD;Dual UHF mics- fixed freq- hand-held & headset;1330;1+;1108
+MICHYB073;HYBRID;U-SV/B HAND;Single UHF mic- 16 frequencies- hand-held;1257;1+;1047
+MICHYB074;HYBRID;U-SV/B LAP;Single UHF mic- 16 frequencies- lapel;1193;<1;994
+MICHYB075;HYBRID;U-SV/B HEAD;Single UHF mic- 16 frequencies- headset;1253;1+;1044
+MICHYB076;HYBRID;U-DV/B HAND;Dual UHF mics- 16 frequencies- 2 x hand-helds;1610;1+;1341
+MICHYB077;HYBRID;U-DV/B LAP;Dual UHF mics- 16 frequencies- hand-held & lapel;1528;1+;1273
+MICHYB078;HYBRID;U-DV/B HEAD;Dual UHF mics- 16 frequencies- hand-held & headset;1646;<1;1371
+MICHYB081;HYBRID;U-DV/HH;Dual UHF mic- 100 frequenciess- hand-held;1449;1+;1207
+MICHYB082;HYBRID;U-SV/HH;Single UHF mic- 100 frequenciess- hand-held;1160;1+;966
+MICHYB083;HYBRID;MM1;Camera microphone- cardioid- 3.5mm jack. Microphone clip included;269;1+;224
+MICHYB084;HYBRID;U-DV FE HAND;UHF mics- 100 freqs- 2 x hand-helds- feedback elim.;2514;1+;2095
+MICHYB085;HYBRID;U-DV FE LAP;UHF mics-100 freqs-hand-held &lapel-feedback elim.;2514;1+;2095
+MICHYB086;HYBRID;U-DV FE HEAD;UHF mics- 100 freqs- hand & headset- feedback elim.;2580;1+;2150
+MICHYB087;HYBRID;U-DF LITE;"Compact UHF Dual hand-held Microphone Handheld: Ch & Freq display- Mute Receiver LCD Dis: Ch & Freq Receiver LEDs: RF (radio freq) & AF (audio freq) sync Volume: Dual rotatry on receiver- A&B Range: >30 meters Outputs: XLR bal / ch & mix 1/4"" jack";1021;1+;850
+MICHYB088;HYBRID;U-SV MK3/V2 HAND;Single UHF mic- 100 freqs- hand-held. Li-batt;1763;1+;1469
+MICHYB089;HYBRID;U-SV MK3/V2 LAP;Single UHF mic- 100 freqs- lapel. Li-batt;1763;1+;1469
+MICHYB090;HYBRID;U-SV MK3/V2 HEAD;Single UHF mic- 100 freqs- headset. Li-batt;1823;1+;1519
+MICHYB091;HYBRID;U-DV MK3/V2 HAND;Dual UHF mics- 100 freqs- 2 x hand-helds. Li-battery;2172;1+;1810
+MICHYB092;HYBRID;U-DV MK3/V2 LAP;Dual UHF mics- 100 freqs- hand-held & Lapel. Li-batt;2172;1+;1810
+MICHYB093;HYBRID;U-DV MK3/V2 HEAD;Dual UHF mics-100 freqs-hand-held &headset.Li-batt;2235;1+;1862
+MICHYB094;HYBRID;U-DV M HAND;UHF mics- 100 freqs- 2 x hand-helds- true-div;2395;1+;1995
+MICHYB095;HYBRID;U-DV M LAP;UHF mics- 100 freqs- hand-held & lapel- true div;2395;1+;1995
+MICHYB096;HYBRID;U-DV M HEAD;UHF mics- 100 freqs- hand-held & headset- true div;2395;1+;1995
+MICMON002;MONKEY BANAN;HAPA-RED;Studio USB powered condenser mic with shock mount- USB cable and bag. Red;1075;1+;895
+MICMON003;MONKEY BANAN;HAPA-YELLOW;Studio USB powered condenser mic with shock mount- USB cable and bag. Yellow;1075;1+;895
+MICMON004;MONKEY BANAN;HAPA-WHITE;Studio USB powered condenser mic with shock mount- USB cable and bag. White;1075;1+;895
+MIXHYB001;HYBRID;ML802DUSBX;Desk top analogue mixer. 4 mono- 2 Stereo channel. 3 band eq/ch. DSP effect- MP3;2749;1+;2290
+MIXHYB002;HYBRID;ML1202DUSBX;Desk top analogue mixer. 8 mono- 2 Stereo channel. 3 band eq/ch. DSP effect- MP3;3456;1+;2880
+MIXHYB005;HYBRID;M602UBTX;Desk top analogue mixer. 6 mono ch. 60mm faders- 3 band eq/ch. DSP effect- MP3;3368;0;2806
+MIXHYB006;HYBRID;M802UBTX;Desk top analogue mixer. 8 mono ch. 60mm faders- 3 band eq/ch. DSP effect- MP3;3583;1+;2985
+MIXHYB007;HYBRID;M1202UBTX;Desk top analogue mixer. 12 mono ch. 60mm faders- 3 band eq/ch.DSP effect-MP3;4339;1+;3615
+MIXHYB013;HYBRID;MC6002S;"Desk top analogue mixer. 2 mono- 2 Stereo channel. 3 band eq/ch. 1/4"" jack outputs";1589;1+;1324
+MIXHYB014;HYBRID;SM802MS;Desk top analogue mixer. 4 mono- 2 Stereo channel. 3 band eq/ch. DSP effect;1548;1+;1290
+MIXHYB015;HYBRID;M10800PUX;10 channel- analogue powered mixer- 2 x 400W / 4Ω 6 x mic & 2 x stereo channels- 3 band eq- gain- monitor send- bal/pan- 60mm faders 16-effect DSP w 2 × effect selector sw- 60mm fader- repeat- FX & mon send control;6659;<1;5549
+MIXHYB026;HYBRID;PM6USB;6 channel 200W powered mixer with MP3 / Bluetooth;2729;1+;2274
+MIXHYB027;HYBRID;ML860PDUX;8 ch-rotary- 2X300W mixer w MP3/Bluetooth/DSP FX;4854;1+;4045
+MIXHYB028;HYBRID;ML1260PDUX;12 ch-rotary- 2X300W mixer wMP3/Bluetooth/DSP FX;5459;1+;4549
+MIXHYB029;HYBRID;M8600PLUSB;8 ch- 2x300W power mix with MP3/Bluetooth/DSP FX;4957;1+;4130
+MIXHYB030;HYBRID;M8200PUBTX;8 channel 200W powered mixer with MP3 / Bluetooth;2628;1+;2190
+MIXHYB031;HYBRID;M121200PUX;12 channel- analogue powered mixer- 2 x 600W / 4Ω 8 x mic & 2 x stereo channels- 3 band eq- gain- monitor send- bal/pan- 60mm faders 16-effect DSP w 2 × effect selector sw- 60mm fader- repeat- FX & mon send control;7761;1+;6467
+MIXHYB032;HYBRID;MD1818PUX;16 channel- analogue quad powered mixer- 2 x 600W & 2 x 300W / 4Ω 12 x mic & 2 x stereo ch- 3 band eq- gain- monitor send- bal/pan- 60mm faders 2 x 16-effect DSP- 60mm fader- repeat- FX & mon send control;13606;1+;11338
+MIXHYB034;HYBRID;M1606UBTX;Desk top analogue mixer. 16 mono ch. 60mm faders- 3 band eq/ch. DSP effect-MP3;5432;1+;4526
+MIXHYB035;HYBRID+;HM04;4 ch large format DJ mixer Inputs: 4 Switch ch (Line- Phono- USB)- 2 Mic ch Mic inputs: volume- bass & treble Inputs: rotary gain- 3 band eq- 60mm fad Built-in soundcard- in & out DSP FX & BPM 10 LED bar display- inputs & output Out: XLR bal-RCA booth;5161;1+;4300
+MIXHYB036;HYBRID;ML860PDUU;8 ch- fader- 2X300W mixer w MP3/Bluetooth/DSP FX;4913;1+;4094
+MIXHYB037;HYBRID;ML1260PDUU;12 ch- fader- 2X300W mixer w MP3/Bluetooth/DSP FX;5475;1+;4562
+MIXHYB038;HYBRID;M1680BT;6 channel 180W powered mixer with MP3 / Bluetooth;2310;1+;1925
+MIXHYB039;HYBRID;M12218DBT;12 ch- 2x180W power mix with MP3/Bluetooth/DSP FX;4328;1+;3606
+MIXHYB040;HYBRID;MG2408FX;24 channel analogue mixer. 18 mic + 2 st channels. 2 x DSP effects. 4 sub-group;12957;1+;10797
+MIXHYB041;HYBRID;MG3208FX;32 channel analogue mixer. 26 mic + 4 st channels. 2 x DSP effects. 4 sub-group;16353;1+;13627
+MIXHYB042;HYBRID DJ;DM2P;2 channel DJ mixer with USB MP3 player;1149;1+;957
+MIXHYB043;HYBRID DJ;DM3P;3 channel DJ mixer with USB MP3 player;1645;1+;1370
+MIXHYB044;HYBRID DJ;CM3U;3 channel- 1 mic- DJ mixer;2994;1+;2495
+MIXHYB045;HYBRID DJ;CM3UFX;3 channel- 1 mic- DJ mixer with effects;3203;1+;2669
+MIXHYB046;HYBRID DJ;CM4U;4 channel- 2 mic- DJ mixer;3065;1+;2554
+MIXHYB047;HYBRID DJ;CM4UFX;4 channel- 2 mic- DJ mixer with effects;3525;1+;2937
+MIXHYB048;HYBRID;IM4.0P;4 channel installation mixer w MP3 media player- 2 x volume controlled outputs;3200;1+;2666
+MIXHYB049;HYBRID;IM8.4U;8 channel (2 mic/6 line) installation mixer w USB interface- 4 x zone outputs;5136;1+;4280
+MIXHYB057;HYBRID+;DM1606;"16 channel digital mixer (100mm motorized faders) In's: 4 x PEQ- gate- comp- matrix Main out: 8 x PEQ-delay- comp Outs: 6 bus-8 x PEQ-delay- comp Effects: 2 engines- bus send- pre-delay- dry/wet- reverb- echo- delay- repeat. Gen: 10"" Touch screen";23871;1+;19892
+MIXHYB058;HYBRID+;DM3212;"32 channel digital mixer (100mm motor faders) In's: TFT screen- 4xPEQ- gate- comp- matrix Main out: 8xPEQ-delay- comp Outs: 10 bus-8 x PEQ-delay- comp Effects: 2 engines- bus send- pre-delay- dry/wet- reverb- echo- delay- repeat. Gen: 10"" Touch screen";42304;1+;35253
+MONHYB002;HYBRID;U-MV MKII;UHF complete in-ear monitor system;3559;1+;2965
+MONHYB003;HYBRID;U-MV MKII BELT PACK;UHF in-ear transmitter (belt-pack) & in-ears only;1451;1+;1209
+MONHYB004;HYBRID;U-MV MKII IN EAR;In-ears only;128;1+;106
+PAICEL001;CELTO;PAINT 5KG/BLACK;5Kg black speaker paint for DS flat-packs /re-finish of cabs. Suitable for roller/ spray;541;1+;450
+PAICEL002;CELTO;PAINT 25KG/BLACK;25Kg black speaker paint for DS flat-packs/re-finish of cabs.Suitable for roller/spray;2521;1+;2100
+PASHYB005;HYBRID+;XO2-3500-8;2-way X-over- 3500Hz- 500W- HF att- 8Ω(LF)- 8Ω(HF);457;1+;380
+PASHYB006;HYBRID;PLB-XOVER;2-way crossover used in PLB15- 8Ω(LF)- 8Ω(HF);196;1+;163
+PASHYB016;HYBRID+;XO215-3500-4;2-way X-over- 3500Hz- 1000W- HF att- 4Ω(LF)-8Ω(HF);537;0;447
+PASHYB023;HYBRID;X1-2000-100;High-pass filter- 2000Hz- 100W- 8Ω(HF). Sold as pair;325;0;270
+PASHYB024;HYBRID;X2-1800-400;2-way crossover- 1800Hz- 400W- 8Ω(LF)- 8Ω(HF);359;1+;299
+PASHYB025;HYBRID;X2-3100-400;2-way crossover- 3100Hz- 400W- 8Ω(LF)- 8Ω(HF);294;1+;245
+PASHYB026;HYBRID;X2-3500-300;2-way crossover- 3500Hz- 300W- 8Ω(LF)- 8Ω(HF);210;<1;175
+PASHYB027;HYBRID;XLP-400-1000;Low-pass filter- 400Hz- 1000W- 8Ω(LF);294;1+;245
+PROAUD002;AUDIOCENTER;P48;4in / 8out speaker management system Quick software set up and navigation via usb cable 1U rack space sleek design with well lit LCD and LEDs. 30 save / recall presets 2 Sec ultra long delay. Sampeling rate: 96KHz;15480;1+;12900
+PROHYB002;HYBRID;DSP24;2in / 4out DSP 3 x basic user edit presets-27 Hybrid loaded presets-2 pro-user edit presets LPF & HPF crossover- 8 in & out PEQ- output limiters- time align- in-out gain- on-board & wifi controlled- preset save & recall- password editable & protected;2148;<1;1790
+PSUHYB001;HYBRID;PSU-MIX-L;Replacement external PSU for hybrid med/large format mixers- 20VA- (18.5V x 2);205;<1;170
+PSUHYB002;HYBRID;PSU-MIX-S;Replacement external PSU for hybrid small format mixers- 7.5VA- (18.5V x 2);206;1+;171
+RECBEY001;BEYMA;18P1000FE V2-RK;Recone kit for Beyma 18P1000FEV2- 8Ω;2758;1+;2298
+RECBEY002;BEYMA;SM118/N-RK;Recone kit for Beyma SM118/N- 8Ω;1414;1+;1178
+RECBEY0028;BEYMA;18WRS600-RK;Recone kit for Beyma 18WRS600- 8Ω;2099;1+;1749
+RECBEY003;BEYMA;15P1000FE-RK;Recone kit for Beyma 15P1000FE- 8Ω;1398;1+;1165
+RECBEY004;BEYMA;15P80FE-RK;Recone kit for Beyma 15P80FE- 8Ω;1297;1+;1080
+RECBEY006;BEYMA;12P80FE-RK;Recone kit for Beyma 12P80FE- 8Ω;2145;1+;1787
+RECBEY007;BEYMA;SM112/N-RK;Recone kit for Beyma SM112/N- 8Ω;719;1+;599
+RECBEY012;BEYMA;18P1200ND/N/4OHM-RK;Recone kit for Beyma 18P1200ND/N- 4Ω;2448;1+;2040
+RECBEY014;BEYMA;18G50-RK;Recone kit for Beyma 18G50- 8Ω;3214;1+;2678
+RECBEY017;BEYMA;18LEX1600ND-RK;Recone kit for Beyma 18LEX1600ND- 8Ω;3814;1+;3178
+RECBEY018;BEYMA;18PW1400FE-RK;Recone kit for Beyma 18P1000FEV2- 8Ω;2974;1+;2478
+RECBEY019;BEYMA;15LX60 V2-RK;Recone kit for Beyma 15LX60V2- 8Ω;1547;1+;1289
+RECBEY020;BEYMA;12LX60 V2-RK;Recone kit for Beyma 12LX60 V2- 8Ω;1548;1+;1290
+RECBEY021;BEYMA;12WRS400/WR400-RK;Recone kit for Beyma 12WRS400- 12WR400- 8Ω;1593;1+;1327
+RECBEY022;BEYMA;8MI100-RK;Recone kit for Beyma 8MI100- 8Ω;1081;1+;900
+RECBEY023;BEYMA;15MC500 15MCS-RK;Recone kit for Beyma 15MC500- 15MCS500- 8Ω;1231;1+;1025
+RECBEY024;BEYMA;15MCB700-RK;Recone kit for Beyma 15MCB700- 8Ω;1856;1+;1546
+RECBEY025;BEYMA;12MCB700-RK;Recone kit for Beyma 12MCB700- 8Ω;1503;1+;1252
+RECBEY026;BEYMA;12MC500/12MCS500-RK;Recone kit for Beyma 12MC500- 12MCS500- 8Ω;1662;1+;1385
+RECBEY028;BEYMA;18LEX1000FE/ND-RK;Recone kit for Beyma 18LEX1000ND- 18LEX1000FE- 8Ω;2113;1+;1760
+RECBEY029;BEYMA;15LEX1000FE/ND-RK;Recone kit for Beyma 15LEX1000ND- 15LEX1000FE- 8Ω;1567;1+;1305
+RECBEY030;BEYMA;18LEX1600FE-RK;Recone kit for Beyma 18LEX1600FE- 8Ω;2395;1+;1995
+RECBEY031;BEYMA;15P80ND-RK;Recone kit for Beyma 15P80ND- 8Ω;2102;1+;1751
+RECBEY034;BEYMA;10WR300-RK;Recone kit for Beyma 8MI100- 8Ω;0;1+;0
+RECBEY035;BEYMA;18LEX1200FE-RK;Recone kit for Beyma 18LEX1200FE- 8Ω;1794;1+;1495
+RECCEL001;CELTO;8MB220-8-RK;Recone kit for 8MB220-8 (CT8 LF- BT8MK2- BT8SE);541;1+;450
+RECCEL002;CELTO;10MB320-8-RK;Recone kit for 10MB320-8 (CT10 LF- BT10MK3);444;1+;370
+RECCEL003;CELTO;12MB300-8-RK;Recone kit for 12MB300-8 (BT12MK3);780;1+;650
+RECCEL010;CELTO;15B500A-8-RK;"Recone kit for 15B500A-8 (A152; B15MK3; B215KM3)";982;1+;818
+RECCEL011;CELTO;15B720-8-RK;Recone kit for 15B720-8 (EX15MK2- EX152MK2- EX152MK2);1172;1+;976
+RECCEL012;CELTO;15MB501-8-RK;Recone kit for 15MB501-8 (BT15SE- HP15- HP152);1299;1+;1082
+RECCEL021;CELTO;12MB452-8-RK;Recone kit for 12MB452-8;728;1+;606
+RECCEL023;CELTO;8MB205-8-RK;Recone kit for 8MB205-8 (HP8);614;1+;511
+RECCEL024;CELTO;12CMB500-8-RK;Recone kit for 12CMB500-8 (HP12MK2);1149;1+;957
+RECCEL025;CELTO;15CMB700-8-RK;Recone kit for 15CMB700-8;1670;1+;1391
+RECCEL026;CELTO;18EX900-8-RK;Recone kit for18EX900-8 (PK18MK2- PK218MK2);1461;1+;1217
+RECCEL027;CELTO;18EX1505-8-RK;Recone kit for 18EX1505-8 (SU218TL- HX118S A1- HP18X - HP218X);2817;1+;2347
+RECCEL029;CELTO;12MBN500-16-RK;Recone kit for 12MBN500-16 (IWAC212 LF- LA212SE);1441;1+;1200
+RECCEL031;CELTO;12MBK400-8-RK;Recone kit for 12MBK400-8 (FT12);570;1+;475
+RECCEL032;CELTO;12MBK450-8-RK;Recone kit for 12MBK450-8 (HP12);1392;1+;1160
+RECCEL033;CELTO;15MB403-8-RK;Recone kit for 15MB403-8 (PK15 MAX);718;1+;598
+RECCEL035;CELTO;18EX1000-8-RK;Recone kit for 18EX1000-8 (FT18S MK1- FT218S MK1- CT118S- CT218S);1927;1+;1605
+RECCEL036;CELTO;18EX1400-8-RK;Recone kit for 18EX1400-8 (CSW118 / CSW218);2223;1+;1852
+RECCEL037;CELTO;10CX300-8-RK;Recone kit for 10CX300 and 10CX300ACD (iFIX10 Gen1- iFIX10+ and CMP10 LF);335;1+;279
+RECCEL040;CELTO;21EX1800-8-RK;Recone kit for 21EX1800-8 (HP21S);3421;1+;2850
+RECCEL042;CELTO;12MB450-16-RK;Recone kit for 12MB450-16 (LA212);1441;1+;1200
+RECCEL043;CELTO;15MB354-4-RK;Recone kit for 15MB354-4 (ALTIUM 15);927;1+;772
+RECCEL044;CELTO;10MB300-16-RK;Recone kit for 10MB300-16 (PLA10);969;1+;807
+RECCEL045;CELTO;6CX150-12-RK;Recone kit for 6CX150-12 (iFIX6 LF);819;1+;682
+RECCEL046;CELTO;8CX200-8-RK;Recone kit for 8CX200-8 (iFIX7 LF);964;1+;803
+RECCEL047;CELTO;8CX150-12-RK;Recone kit for 8CX150-8 (iFIX8 LF);679;1+;565
+RECCEL048;CELTO;8MB201-8-RK;Recone kit for 8MB201-8 (CT8 G2 LF- HP8MK2- A8);722;1+;601
+RECCEL049;CELTO;12MB402-8-RK;Recone kit for 12MB402-8 (CT12 and CT12G2 LF);1228;1+;1023
+RECCEL050;CELTO;12MB505-8-RK;Recone kit for 12MB505-8;1303;1+;1085
+RECCEL051;CELTO;13B700-8-RK;Recone kit for 13B700-8 (SU113- CT15G2- PM15G2 and iFIX13s A3 LF);1372;1+;1143
+RECCEL053;CELTO;15BN900-8-RK;Recone kit for 15BN900-8 (VT15- VT152- VT153- XL15 LF);1805;1+;1504
+RECCEL054;CELTO;10CXN400LA-16-RK;Recone kit for 10CXN400LA-16 (IsoRay10+ LF);1617;1+;1347
+RECCEL055;CELTO;10MBN350-16-RK;Recone kit for 10MBN350-16 (IWAC210 G1 & G2 LF);1073;1+;894
+RECCEL058;CELTO;13MB500-6-RK;Recone kit for 13MB500-6 (iFix13S- PM13 LF- A12S);359;1+;299
+RECCEL059;CELTO;15KV500-8-RK;Recone kit for 15KV500-8;359;1+;299
+RECCEL060;CELTO;15MB620-8-RK;Recone kit for 15MB620-8 (CT15 LF);359;1+;299
+RECCEL061;CELTO;18S700-4-RK;Recone kit for 18S700-4 (AS18);478;1+;398
+RECCEL062;CELTO;12MB410-8-RK;Recone kit for 12MB410-8;262;1+;218
+RECCEL066;CELTO;12MB354-4-RK;Recone kit for 12MB354-4 (ALTIUM 12);994;1+;828
+RECCEL067;CELTO;15MB458-8-RK;Recone kit for 15MB458-8 (PK15UE);1239;1+;1032
+RECHYB001;HYBRID;15H600-RK;"Recone kit for 15H600- 8Ω- 4"" voice coil. Recone kit includes glue";322;1+;268
+RECHYB008;HYBRID;18H800-RK;"Recone kit for 18H800- 8Ω- 4"" voice coil. Recone kit includes glue";500;1+;416
+RECHYB009;CELTO;15S600-8 -RK;Recone kit for 15S600-8 (EX15MK1- EX152MK1- EX153MK1);455;1+;379
+RECHYB010;HYBRID;15H250-RK;"Recone kit for 15H250- 8Ω- 2.5"" voice coil. Recone kit includes glue";284;1+;236
+RECHYB011;HYBRID;15H300-RK;"Recone kit for 15H300- 8Ω- 3"" voice coil. Recone kit includes glue";284;<1;236
+RECHYB012;HYBRID;15H350-RK;"Recone kit for 15H350- 8Ω- 3"" voice coil. Recone kit includes glue";310;1+;258
+RECHYB014;HYBRID;18H400-RK;"Recone kit for 18H400- 8Ω- 4"" voice coil. Recone kit includes glue";500;<1;416
+SMOHYB001;HYBRID;HS1200;900W compact smoke machine- 4.5min preheat- 10-000ft³/min output;1533;1+;1277
+SMOHYB002;HYBRID;HS2000;1500W smoke machine- 8 min preheat- 20-000ft³/min output;2461;1+;2050
+SMOHYB007;HYBRID;FLG-5;5L heavy-duty smoke fluid (water-based);265;1+;220
+SMOHYB009;HYBRID;ESS-STRAWBERRY;30ml strawberry essence (concentrate for 5L);78;1+;65
+SMOHYB010;HYBRID;ESS-ROSE;30ml rose essence (concentrate for 5L);78;1+;65
+SMOHYB011;HYBRID;FLG-2;2L heavy-duty smoke fluid (water-based);121;1+;100
+SMOHYB017;HYBRID;HLF1200;1200W Low Fog Machine- 4min preheat- 2.3L tank- 7-9m range;14253;1+;11877
+SMOHYB020;HYBRID;HZL-2;High-density haze fluid 1L (oil-based);360;1+;300
+SMOHYB021;HYBRID;FLY-5;5L low fog fluid;551;1+;459
+SMOHYB022;HYBRID;FLG-25;25L heavy-duty smoke fluid (water-based);1235;1+;1029
+SMOHYB025;HYBRID;ESS-VANILLA;30ml vanilla essence (concentrate for 5L);78;1+;65
+SMOHYB027;HYBRID;HZR900;Hazer Initial Warm-up Time: Approximately 3 minutes Control Protocol: DMX512 and Auto DMX In/Out Connectors: 3 Pin XLR DMX Channels: 2CH Temperature Control: Electronic Thermo-Control Continuous Output: Yes Automatic Cleaning Function;4411;1+;3675
+SMOHYB028;HYBRID;HS1600D;1600W smoke machine- 3 min warm-up- 7-9m range- 2.3L tank- with DMX;3056;1+;2546
+SMOHYB029;HYBRID;HLF1500D;1500W Dual-nozzle Low Fog machine- 3min preheat- 2.3L tank- 7-9m range;20499;1+;17082
+SNAHYB001;HYBRID;SNA1630;12 send + 4 return- 30M snake cable;6315;1+;5262
+SNAHYB002;HYBRID;SNA2030;16 send + 4 return- 30M snake cable;8002;1+;6668
+SNAHYB003;HYBRID;SNA2430;20 send + 4 return- 30M snake cable;9437;1+;7864
+SNAHYB004;HYBRID;SNA2850;24 send + 4 return- 50M snake on drum with castors;19492;0;16243
+SNAHYB005;HYBRID;SNA3250;28 send + 8 return- 50M snake on drum with castors;23007;1+;19172
+SNAHYB006;HYBRID;SNA4050;32 send + 8 return- 50M snake on drum with castors;29118;1+;24265
+SNAHYB007;HYBRID;SNA2830;24 send + 4 return- 30M snake cable;11142;1+;9285
+SOUHYB001;HYBRID;OPAL22;2in / 2out audio interface True 48V Phantom for full dynamic range on mics Direct monitor routes inputs directly to outputs Midi In / Out Interface Completely USB bus-powered A-D conversion via AKM AK5358 w up to 24bit 96kHz;1491;1+;1242
+SOUMON001;MONKEY BANAN;JUNGLEMATE;2 channel audio interface with Bitwig Studio 8-Track DAW software;2160;1+;1800
+SPEAUD038;AUDIOCENTER;K-LA218DSP;"Dual 18"" active sub 2800W rms- 134dB 1W/1m Kevlar 18""- 4""VC Class D amp- DSP LPF: 80Hz- 100Hz- 120Hz Const: Russ birtch- 4 x handles- M20 pole mount Protect: DC- short cct- soft start- limiter- overload- thermal Size & weight:1080x595x760mm (WxHxD)-101kg";48499;<1;40415
+SPEAUD060;AUDIOCENTER;T45-DSP;"Active DSP-controlled line array- 4 x 5"" LF- 2 x 1"" HF";19068;<1;15890
+SPEAUD073;AUDIOCENTER;MA15;"15"" active full-range with TWS Bluetooth class D amp";8737;0;7280
+SPEAUD074;AUDIOCENTER;MA12;"12"" active full-range with TWS Bluetooth- class D amp";7426;1+;6188
+SPEAUD076;AUDIOCENTER;MA118;"18"" active subwoofer 700W- SPL 128dB 1W/1m- class D amplification DSP-controlled- 24 bit sampling rate 3 LPF to choose from: 80Hz 100Hz 120HZ LF: 4""VC Const: Plywood with hard-wearing paint M20 Pole mount Size / weight: 510 x 632 x 695mm (WxHxD)- 45kg";13462;1+;11218
+SPEAUD077;AUDIOCENTER;XLA102;"Dual 10"" Active DSP line array- 2 x 10""LF- 2 x 1.75"" HF(Beyma)- 1600W- FIR";25395;1+;21162
+SPEAUD078;AUDIOCENTER;GT512A;"12"" active full-range- class D amp- tour-grade-1100W";13137;1+;10947
+SPEAUD079;AUDIOCENTER;GT515A;"15"" active full-range- class D amp-tour-grade-1100W";13705;1+;11420
+SPEAUD080;AUDIOCENTER;WM3210A;"Dual 10"" active wedge monitor 1100W- LF:2x10""- HF:1x1.75"" Directivity: 60°x90° (HxV) Pesets: Flat- vocal & drum DSP: 48kHz sig sample FIR filtering Plywood- 19kg- forced air cooling Protections: DC- short cct - soft start- limiter- overload - thermal";11095;1+;9245
+SPEAUD081;AUDIOCENTER;AVANDA212A;"Dual 12""- 3-way line array - Beyma loaded- 2 x 12""LF- 4 x 5""MF- 2x3"" Neo HF- 2600W";55469;1+;46224
+SPEAUD083;AUDIOCENTER;S3218A;"Dual 18"" active subwoofer 2000W- 134dB 1W/1m Class D amplification- DSP: 48kHz signal sampling LPF switch: 80Hz- 100Hz- 120Hz Protections: DC- short cct- soft start- limiter- overload- thermal Construction: Plywood- M20 pole mount- 4 x handles";26215;1+;21845
+SPEAUD088;AUDIOCENTER;SA310+;"10"" active full-range with TWS Bluetooth- class D amp";7718;1+;6431
+SPEAUD089;AUDIOCENTER;SA312+;"12"" active full-range with TWS Bluetooth- class D amp";8881;1+;7400
+SPEAUD090;AUDIOCENTER;SA315+;"15"" active full-range with TWS Bluetooth- class D amp";9960;1+;8300
+SPEAUD091;AUDIOCENTER;AVANDA218A;"""Dual 18""- 4000W RMS active sub BEYMA neo 4""VC- 27-110Hz-138dB 1W/1m Presets: 80Hz-100Hz-Card Class D-DSP 96KHz sampling Protect:DC- short- soft start- limit- overload- thermal Const:Baltic birch-4xhandles-M20 pole mount Dim:1252x556x749mm(WxHxD)-99kg";60530;<1;50441
+SPEAUD092;AUDIOCENTER;ASTRA210A;"Dual 10"" Active DSP line array- 2 x 10""LF- 2 x 1.75""HF- 1600W- FIR- 40Hz-20KHz-30kg";23311;<1;19425
+SPEBEY001;BEYMA;18P1000FE V2;"18""- 1200W- 4""VC- 98dB- 30-2000Hz- 8Ω- cast frame";7433;1+;6194
+SPEBEY003;BEYMA;15P1000FE V2;"15""- 1000W- 4""VC- 98dB- 45-2000Hz- 8Ω- cast frame";5328;1+;4440
+SPEBEY024;BEYMA;15LX60V2;"15""- 700W- 4""VC- 98dB- 30-1500Hz- 8Ω- cast frame";3985;1+;3320
+SPEBEY025;BEYMA;12LX60 V2;"12""- 700W- 4""VC- 96dB- 35-5000Hz- 8Ω-cast frame";3046;1+;2538
+SPEBEY026;BEYMA;12WRS400;"12""- 400W- 3""VC- 97dB-45-5000Hz-8Ω-press frame";2764;1+;2303
+SPEBEY030;BEYMA;15LEX1000FE;"15""- 1000W- 3.5""VC- 97dB-40-1000Hz-8Ω-cast frame";4195;1+;3495
+SPEBEY032;BEYMA;15MCB700;"15""- 700W- 3""VC- 99dB- 45-4000Hz- 8Ω- cast frame";4722;1+;3935
+SPEBEY034;BEYMA;12MCS500;"12""-500W-2.5""VC-98dB-65-5000Hz-8Ω-press frame";3120;1+;2600
+SPEBEY036;BEYMA;8WRS300;"8""- 300W- 2""VC- 95dB- 65-4000Hz- 8Ω- pressed frame";2139;0;1782
+SPEBEY037;BEYMA;18LEX1600FE;"18""- 1600W- 4""VC- 96dB- 30-1200Hz- 8Ω- cast frame";5923;1+;4935
+SPEBEY041;BEYMA;18WRS600;"15""- 600W- 3""VC-97dB-35-1000Hz-8Ω-pressed frame";4898;1+;4081
+SPEBEY043;BEYMA;18LEX1200FE;"18""- 1200W- 4""VC- 97dB- 40-1000Hz- 8Ω- cast frame";5090;1+;4241
+SPEBEY044;BEYMA;12MC500;"12""- 500W- 2.5""VC- 98dB- 65-5000Hz- 8Ω- cast frame";3215;1+;2679
+SPEBEY045;BEYMA;15MC500;"15""- 500W- 2.5""VC- 98dB- 50-4000Hz- 8Ω- cast frame";3580;1+;2983
+SPECEL001;CELTO;18NGW1200-8;"18""- 1200W- 4""VC- 97dB- 8Ω- die-cast aluminium";3552;1+;2960
+SPECEL008;CELTO;18SW1500-8;"18""- 1500W- 4""VC- 97dB- 8Ω- die-cast aluminium";4794;1+;3995
+SPECEL009;CELTO;18SW1000-8;"18""- 1000W- 3.6""VC- 98dB- 8Ω- die-cast aluminium";3373;1+;2810
+SPECEL012;CELTO;12NG500-8;"12""- 500W- 3""VC- 97dB- 8Ω- die-cast aluminium";2004;1+;1670
+SPECEL013;CELTO;12PF600-8;"12""- 600W- 3""VC- 97dB- 8Ω- die-cast aluminium";2766;1+;2305
+SPECEL014;CELTO;15NG500-8;"15""- 500W- 3""VC- 98dB- 8Ω- die-cast aluminium";2228;1+;1856
+SPECEL015;CELTO;15PF800-8;"15""- 800W- 3.6""VC- 98dB- 8Ω- die-cast aluminium";3229;1+;2690
+SPECEL093;CELTO;12MB505-8;"12""- 500W- 3""VC- 8Ω- die-cast aluminium";2927;1+;2439
+SPECEL113;CELTO;21SW1800-8;"21""- 1800W- 4.5""VC- 98dB- 8Ω- die-cast aluminium";5952;1+;4960
+SPECEL118;CELTO;18SW1200-8;"18""- 1200W- 4""VC- 97dB- 8Ω- die-cast aluminium";4123;1+;3435
+SPEHYB001;HYBRID;PB8N;"8"" 2-way full-range passive cabinet- 110W- 93dB w/m";1169;<1;974
+SPEHYB002;HYBRID;PB12N;"12"" 2-way full-range passive cabinet- 220W-95dB w/m";2020;1+;1683
+SPEHYB003;HYBRID;PB15N;"15"" 2-way full-range passive cabinet- 340W-96dB w/m";2652;<1;2210
+SPEHYB004;HYBRID;PB12A;"12"" 2-way full-range active cabinet- 220W- 95dB w/m";3876;1+;3230
+SPEHYB005;HYBRID;PB15A;"15"" 2-way full-range active cabinet- 340W- 96dB w/m";4011;<1;3342
+SPEHYB006;HYBRID+;HP12;"12"" full-range passive speaker- 500W- plywood";9154;1+;7628
+SPEHYB009;HYBRID;15H600;"15"" woofer. 600W-8Ω-4"" VC-120Oz Ferrite-SPL:94dB";1809;<1;1507
+SPEHYB011;HYBRID;15H300;"15"" woofer. 300W-8Ω-3"" VC-90Oz Ferrite-SPL:94dB";1065;<1;887
+SPEHYB012;HYBRID+;HP21S;"21"" sub-bass- 1800W- reinforced ply";15919;1+;13265
+SPEHYB013;HYBRID;18H400;"18"" woofer. 400W-8Ω-4"" VC-120Oz Ferrite-SPL:96dB";1893;<1;1577
+SPEHYB014;HYBRID+;HP15;"15"" full-range passive speaker- 600W- plywood";11247;1+;9372
+SPEHYB015;HYBRID+;HP152;"Dual 15"" full-range passive speaker- 1200W- plywood";15081;1+;12567
+SPEHYB017;HYBRID+;ALTIUM15;"15"" LF + 1"" HF active full-range speaker with DSP";9459;0;7882
+SPEHYB019;HYBRID;15H350;"15"" woofer. 350W-8Ω-3"" VC-100Oz Ferrite-SPL:97dB";1495;1+;1245
+SPEHYB024;HYBRID;PB8N-HF;"1"" HF driver for PB8N. 20W- 8Ω- screw-in";173;1+;144
+SPEHYB025;HYBRID;PB8N-LF;"8"" woofer. 100W-8Ω";262;1+;218
+SPEHYB027;HYBRID;PLB12;"12"" 2-way full-range pass wood cab- 220W- 95dB w/m";2864;1+;2386
+SPEHYB029;HYBRID;12H200S;"12"" woofer. 200W-8Ω-2.5"" VC-50Oz Ferrite-SPL:91dB";648;0;540
+SPEHYB030;HYBRID;PLB15;"15"" 2-way full-range pass wood cab- 340W- 96dB w/m";3583;1+;2985
+SPEHYB031;HYBRID;PLB215;"Dual 15"" 2-way full-range wood cab- 650W- 99dB w/m";5236;1+;4363
+SPEHYB032;HYBRID;LB15;"15"" sub-bass passive wooden cab- 600W- 98dB w/m- 40Hz";4189;1+;3490
+SPEHYB033;HYBRID;LB18;"18"" sub-bass passive wooden cab- 800W- 99dB w/m- 35Hz";5917;1+;4930
+SPEHYB034;HYBRID;15H250;"15"" woofer. 250W-8Ω-2.5"" VC-60Oz Ferrite-SPL:95dB";855;<1;712
+SPEHYB036;HYBRID;LB218;"Dual 18"" sub-bass passive wooden cab- 800W- 101dB w/m- 32Hz";8897;1+;7414
+SPEHYB038;HYBRID;PB215N;"Dual 15"" 2-way full-range pass cab- 650W- 98dB w/m";3732;1+;3110
+SPEHYB039;HYBRID;CL6MKII;"6""- 6W full-range ceiling mount speaker- 100V";202;<1;168
+SPEHYB040;HYBRID;CL8MKII;"8""- 10W full-range ceiling mount speaker- 100V";265;1+;220
+SPEHYB041;HYBRID;CL6S;"6""- 6W full-range surface mount speaker- 100V";484;1+;403
+SPEHYB042;HYBRID;CH6MKII;"6""- 30W coaxial ceiling mount speaker- 100V";624;0;520
+SPEHYB043;HYBRID;CH8MKII;"8""- 40W coaxial ceiling mount speaker- 100V";745;<1;620
+SPEHYB044;HYBRID;HS5;"5"" full-range hanging speaker Power: 10W- tappings: 10W- 5W- 2.5W Input: 100V line Indoor / outdoor- IP55 Sensitivity: 91dB 1W/1m Frequency response: 130Hz - 15KHz Material: ABS moulded- white colour Weight / Size: 1.6kg / 138mm diameter x 205mm";576;1+;480
+SPEHYB045;HYBRID;SP6;"6"" coaxial sound projector Power: 30W- tappings: 8Ω / 30W- 15W- 7.5W- 3.8W Input: 100V line Indoor / outdoor- IP55 Sensitivity: 92dB 1W/1m Frequency response: 110Hz - 15KHz Material: ABS moulded- white colour Weight / Size: 1.7kg / 170mm Dia x 245mm";855;<1;712
+SPEHYB046;HYBRID;C63;"6 x 3"" column speaker- 30W- 100V-IP44- 30/15Wtapp";992;1+;826
+SPEHYB047;HYBRID;C83;"8 x 3"" column speaker- 40W- 100V- IP44-40/20W tapp";1260;1+;1050
+SPEHYB051;HYBRID;12H150;"12"" woofer. 150W-8Ω-2"" VC-40Oz Ferrite-SPL:92dB";570;1+;475
+SPEHYB052;HYBRID;PM12;"12"" 2-way full-range passive cabinet- 170W-94dB w/m";1870;1+;1558
+SPEHYB053;HYBRID;PM15;"15"" 2-way full-range passive cabinet- 220W-95dB w/m";2433;1+;2027
+SPEHYB054;HYBRID;15H200;"15"" woofer. 200W-8Ω-2.5"" VC-50Oz Ferrite-SPL:94dB";799;1+;665
+SPEHYB068;HYBRID+;PLA10;"10""&1.5"" passive line-array cabinet.400W-99dB1w/m";14792;1+;12326
+SPEHYB086;HYBRID;PB15AUB;"15"" 2-way full-range active cab w media play- 340W";4497;<1;3747
+SPEHYB126;HYBRID;W4W WHITE;"4""- 20W wall speaker- 8Ω/100V- 5 tappings- White";786;1+;655
+SPEHYB127;HYBRID;W4B BLACK;"4""- 20W wall speaker- 8Ω/100V- 5 tappings- Black";786;<1;655
+SPEHYB128;HYBRID;W5W WHITE;"5""- 30W wall speaker- 8Ω/100V- 5 tappings- White";893;1+;744
+SPEHYB129;HYBRID;W5B BLACK;"5""- 30W wall speaker- 8Ω/100V- 5 tappings- Black";893;1+;744
+SPEHYB130;HYBRID;W6W WHITE;"6""- 40W wall speaker- 8Ω/100V- 5 tappings- White";1162;<1;968
+SPEHYB131;HYBRID;W6B BLACK;"6""- 40W wall speaker- 8Ω/100V- 5 tappings- Black";1162;1+;968
+SPEHYB132;HYBRID;W8W WHITE;"8""- 60W wall speaker- 8Ω/100V- 5 tappings- White";1903;<1;1585
+SPEHYB133;HYBRID;W8B BLACK;"8""- 60W wall speaker- 8Ω/100V- 5 tappings- Black";1903;1+;1585
+SPEHYB139;HYBRID;PA8B;"12"" active & battery operated- 40W full range cabinet";1990;1+;1658
+SPEHYB140;HYBRID;PA12B;"12"" active & battery operated- 75W full range cabinet";3732;1+;3110
+SPEHYB141;HYBRID;PA15B;"15"" active & battery operated- 75W full range cabinet";4191;1+;3492
+SPEHYB143;HYBRID;HF5;"5"" active / passive personal monitors Power: 50W Inputs: XLR mic- 3.5mm jack line LF: 5""- 25W HF: Silk dome tweeter- 5W Rotary volume control Rotary EQ tone control Bluetooth enabled";2137;1+;1780
+SPEHYB145;HYBRID+;PK15UE;"15"" full-range passive speaker- 500W- plywood";7501;1+;6250
+SPEHYB146;HYBRID+;PK18UE;"Single 18"" sub-bass- 1000W- plywood";9986;1+;8321
+SPEHYB147;HYBRID+;PK152UE;"Dual 15"" full-range passive speaker- 100W- plywood";10164;1+;8470
+SPEHYB148;HYBRID+;PK218UE;"Dual 18"" sub-bass- 2000W- plywood";14508;1+;12090
+SPEHYB153;HYBRID+;HP18X;"18"" bandpass horn sub-bass- 1500W- reinforced ply";13110;1+;10925
+SPEHYB154;HYBRID+;HP218;"Dual 18"" sub-bass- 2400W- reinforced ply";23490;1+;19575
+SPEHYB155;HYBRID+;HP218X;"Dual 18"" bandpass horn sub-3000W-reinforced ply";24797;1+;20664
+SPEHYB163;HYBRID;18H800;"18"" woofer. 800W-8Ω-4"" VC-173Oz Ferrite-SPL:95dB";2639;1+;2199
+SPEHYB164;HYBRID+;HP8;"8"" full-range passive speaker- 250W- plywood";6397;1+;5330
+SPEHYB171;HYBRID+;ALTIUM12;"12"" LF + 1"" HF active full-range speaker with DSP";8146;<1;6788
+SPEHYB172;HYBRID;PC8LB;"8"" sub with column- active & battery operated- 75W";3204;1+;2670
+SPEHYB173;HYBRID;HSB01;Low profile soundbar- 40W- Bluetooth enabled;912;1+;760
+SPEHYB174;HYBRID;HSB-SUB01;Low profile soundbar with sub-bass- 40W + 40W- Bluetooth enabled;1944;1+;1620
+SPEHYB175;HYBRID;L6A;"Dual 6"" LF + dual 1"" HF active line array with DSP- 240W";5040;1+;4200
+SPEHYB176;HYBRID;L6P;"Dual 6"" LF + dual 1"" HF passive line array with DSP- 240W";2953;1+;2460
+SPEHYB177;HYBRID;LS18A;"Single 18"" active sub-bass with DSP- 1000W";9000;1+;7500
+SPEHYB178;HYBRID;LS218A;"Dual 18"" active sub-bass with DSP- 2000W";15048;1+;12540
+SPEHYB179;HYBRID+;FP-18-1000-ASS;"18"" bass-flat-pack-assembled with 1000W woofer";7948;1+;6623
+SPEHYB180;HYBRID+;FP-18-1200-ASS;"18"" bass-flat-pack-assembled with 1200W woofer";8523;1+;7102
+SPEHYB184;HYBRID;PA12DSP;"12"" active full-range with DSP & Bluetooth- 500W";5696;1+;4746
+SPEHYB185;HYBRID;PA15DSP;"15"" active full-range with DSP & Bluetooth- 500W";6043;1+;5035
+SPEHYB186;HYBRID+;ALTIUM18;"Single 18"" active sub-bass Power: 600W- SMPS- class D amplification DSP with 4 user presets / DSP onboard or wifi control Input & link: XLR male & female Peak LED real-time indicator Power in & Power out mains conn Cabinet const: birch-ply M32 Pole Moun";11268;<1;9390
+SPEHYB189;HYBRID;W3WHITE;"3""- 15W wall speaker- 8Ω/100V- 5 tappings- White";708;1+;590
+SPEHYB190;HYBRID;W3BLACK;"3""- 15W wall speaker- 8Ω/100V- 5 tappings- Black";708;1+;590
+SPEHYB191;HYBRID;CL6B-EVAC;"6""-6W evacuation ceiling speaker-100V.EN54-24";413;1+;344
+SPEMON001;MONKEY BANAN;GIBBON 5-BLACK;"Studio active monitor- 5.25""- bi-amp-45W+35W-black";3172;1+;2643
+SPEMON002;MONKEY BANAN;GIBBON 5-RED;"Studio active monitor- 5.25""- bi-amp- 45W+35W- red";3172;1+;2643
+SPEMON017;MONKEY BANAN;GIBBON 8-BLACK;"Studio active monitor- 8""- bi-amp- 80W+30W- black";4406;1+;3671
+SPEMON018;MONKEY BANAN;GIBBON 8-RED;"Studio active monitor- 8""- bi-amp- 80W+30W- red";4406;1+;3671
+SPEMON019;MONKEY BANAN;GIBBON AIR-BLACK;"Studio active/pass monitor- 4""- 30W+30W- black";4264;1+;3553
+SPEMON020;MONKEY BANAN;GIBBON AIR-RED;"Studio active/pass monitor- 4""- 30W+30W- red";4263;1+;3552
+SPEMON021;MONKEY BANAN;GIBBON AIR-WHITE;"Studio active/pass monitor- 4""- 30W+30W- white";4264;1+;3553
+SPEMON025;MONKEY BANAN;GIBBON 5-WHITE;"Studio active monitor- 5.25""-bi-amp-45W+35W-white";3172;1+;2643
+STAHYB001;HYBRID;MS04;Mic stand w 50cm boom- 0.5-0.7M (H)- 2x mic holder;414;1+;345
+STAHYB002;HYBRID;MS01;Mic stand w 76cm boom- 0.9-1.65M (H)-2x mic holder;448;<1;373
+STAHYB003;HYBRID;MS02;Mic stand w 76cm boom-1.0-1.7M (H)-clutch- 2x hold;617;1+;514
+STAHYB004;HYBRID;MS03;Mic stand w round base- 0.8-1.5M (H)- 2x mic holder;533;1+;444
+STAHYB005;HYBRID;KS01;Keyboard double-brace stand- 32-95cm (H)-90Kg load;742;1+;618
+STAHYB006;HYBRID;MUS01;Sheet music stand- 0.9-1.5m (H)- 48x35cm lectern;683;1+;569
+STAHYB007;HYBRID;SS01;Heavy-duty speaker stand- 1.2-2m (Height)- 70kg load;663;0;552
+STAHYB008;HYBRID;LS01;T-bar lighting stand- 1.4-2.5m (Height)- 70kg load;932;0;776
+STAHYB010;HYBRID;GS01;Guitar stand- foldable- 45-67cm (Height adjustable);233;1+;194
+STAHYB011;HYBRID;SP01;Speaker pole- 35-35mm- 0.8-1.4m (H)- 50kg load;228;1+;190
+STAHYB012;HYBRID;SS02;Heav- duty speaker stand-1.1-1.9m(H)-70kg load;574;0;478
+STAHYB013;HYBRID;MS05;Mic stand w round base- clutch-1.1-1.7M (H)-2 holder;686;1+;571
+STAHYB014;HYBRID;MS06;Mic stand-gooseneck w round base-30cm(H)-2 holder;348;1+;290
+STAHYB015;HYBRID;GS02;Dual guitar stand- foldable- 50-78cm (Height adj);518;1+;431
+STAHYB018;HYBRID;FM01;Pop filter- dual layer- diameter: 150mm- gooseneck: 335mm- C-clamp: 30mm;215;1+;179
+STAHYB019;HYBRID;MS07;Mic stand w 76cm boom- 1.0-1.7M (H)- 2x mic holder;300;<1;250
+STAHYB020;HYBRID;MUS02;Sheet music stand- 0.7-1.4m (H)- 41x25cm lectern;459;1+;382
+STAHYB021;HYBRID;SS03;Speaker stand pair in a carry bag- 1-1.75m(H)- 50kg;768;1+;640
+STAHYB022;HYBRID;LS02;3m lighting stands & flat truss-1.4-2.5m (H)- 70kg;3229;1+;2690
+STAHYB023;HYBRID;KS101;Second tier for KS01- 45-80cm (Width)- 28cm (Height);297;1+;247
+STAHYB024;HYBRID;MUS03;Sheet music stand- 1-1.5m (H)- 51x33cm lectern;886;1+;738
+STAHYB028;HYBRID;MB01;Musicians bench- 34-52cm height adjustable- 60mm foam- 43 x 30cm seating size;629;1+;524
+STAHYB029;HYBRID;MB02;Musicians bench- 45-63cm height adjustable- 70mm foam- 60 x 31cm seating size;854;0;711
+STAHYB031;HYBRID;SP02;Speaker pole-M20-35mm-0.8-1.4m(H)-50kg load;372;1+;310
+STAHYB032;HYBRID;GB01;Wall mount guitar bracket- autolock (Black);228;1+;190
+STAHYB033;HYBRID;MS08T;Mic stand w 76cm boom- 1.0-1.7M (H)- 2x mic holder;272;1+;226
+STAHYB034;HYBRID;SS04T;Speaker stand- 1-1.75m (Height)- 50kg load;326;1+;271
+STAHYB035;HYBRID;GS03;Guitar stand- compact A-frame- 34cm height;285;1+;237
+STAHYB036;HYBRID;SMB01;Microphone boom arm- 50 + 50cm- 45mm C-clamp;360;1+;300
+STAHYB037;HYBRID;SMB02;Heavy-duty mic boom arm- 50+50cm-45mm C-clamp;494;1+;411
+STAHYB038;HYBRID;MS09;Mic stand -desk top- 14-19cm (H)- 2 x mic holder;176;1+;146
+STAHYB039;HYBRID;MIS01MKII;Microphone isolation shield- 31 x 21cm- tripod stand;830;1+;691
+STAHYB040;HYBRID;MIS02MKII;Microphone isolation shield- 3 panel- 43 x 31cm;1163;1+;969
+STAHYB041;HYBRID;MIS03MKII;Microphone isolation shield- 5 panel- 59 x 31cm;1627;1+;1355
+STAHYB042;HYBRID;FM02;Pop filter- dual layer- diameter: 150mm- gooseneck: 300mm- C-clamp: 25mm;116;1+;96
+STAHYB043;HYBRID;IS02;Universal tablet / smart device holder- adjustable 95-230mm- with C-clamp;416;1+;346
+STAHYB045;HYBRID;GB02;Wall mount guitar bracket- autolock (Black);129;1+;107
+STAHYB046;HYBRID;SP03;Speaker pole w handle-M20-35mm-.8-1.4m(H)-70kg;955;0;795
+STAHYB047;HYBRID;SS05;Speaker stand with crank handle- 1.2-2m (H)- 70kg;1620;0;1350
+STAHYB048;HYBRID;LTS01;Aluminium laptop stand. Height 15cm- platform: 26 x 24cm- load 4kg;607;1+;505
+STAHYB049;HYBRID;SS06;Monitor stand pair- 0.3-0.5m (Height)- 20kg load;696;1+;580
+STAHYB050;HYBRID;SS07;Monitor stand pair- floor standing- 20kg load;921;1+;767
+STAHYB051;HYBRID;KS02B;Aluminium foldable 2-tier keyboard stand (Black);2395;1+;1995
+STAHYB052;HYBRID;KS02W;Aluminium foldable 2-tier keyboard stand (Silver);2395;1+;1995
+STAHYB053;HYBRID;LS008;3m lighting stands & tri truss- 3m (Height);5704;1+;4753
+STAHYB054;HYBRID;LS008B;1.5m lighting / small line array stand & tri truss- 3m(H);4817;1+;4014
+STAHYB055;HYBRID;DJT001;DJ table w wooden top & metal foldable legs. Height adjustable. Carry bag included;3268;1+;2723
+STAHYB056;HYBRID;MUS004;Sheet music stand- transparent acrylic lectern;887;1+;739
+STAHYB057;HYBRID;MUS066;Sheet music stand- natural wood legs / lectern;1275;1+;1062
+STAHYB058;HYBRID;KS260;Heavy-duty foldable keyboard stand-height&width adj;1144;1+;953
+STAHYB059;HYBRID;KS265;Heavy-duty foldable key stand w 2nd tier- H & W adj;1599;1+;1332
+VOLHYB001;HYBRID;V5;5 Watt- 100V- wall mount 5-position volume attenuator- White colour;83;1+;69
+VOLHYB002;HYBRID;V30;30 Watt- 100V- wall mount 5-position volume attenuator- White colour;127;1+;105
+VOLHYB003;HYBRID;V60;60 Watt- 100V- wall mount 5-position volume attenuator- White colour;171;0;142
+WALHYB005;HYBRID;WB02;Wall mount bracket pair with 35mm pole- pan & tilt- 210mm (depth)- 50kg load;526;1+;438
+WALHYB006;HYBRID;WB01;Wall mount bracket pair with 35mm pole- pan & tilt- 330mm (depth)- 50kg load;761;1+;634

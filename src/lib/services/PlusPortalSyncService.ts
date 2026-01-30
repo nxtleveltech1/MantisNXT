@@ -641,6 +641,8 @@ export class PlusPortalSyncService {
       productsSkipped?: number;
       productsUpdated?: number;
       errors?: string[];
+      currentStage?: string;
+      progressPercent?: number;
     }
   ): Promise<void> {
     const updatesList: string[] = [];
@@ -689,6 +691,27 @@ export class PlusPortalSyncService {
       paramIndex++;
     }
 
+    // Store progress info in details JSONB field
+    const details: Record<string, unknown> = {};
+    if (updates.currentStage) {
+      details.currentStage = updates.currentStage;
+    }
+    if (updates.progressPercent !== undefined) {
+      details.progressPercent = updates.progressPercent;
+    }
+    if (Object.keys(details).length > 0) {
+      // Get existing details and merge
+      const existingResult = await query<{ details: unknown }>(
+        `SELECT details FROM core.plusportal_sync_log WHERE log_id = $1`,
+        [logId]
+      );
+      const existingDetails = existingResult.rows[0]?.details || {};
+      const mergedDetails = { ...(existingDetails as Record<string, unknown>), ...details };
+      updatesList.push(`details = $${paramIndex}::jsonb`);
+      params.push(JSON.stringify(mergedDetails));
+      paramIndex++;
+    }
+
     if (updates.status === 'completed' || updates.status === 'failed') {
       updatesList.push(`sync_completed_at = NOW()`);
     }
@@ -714,11 +737,19 @@ export class PlusPortalSyncService {
 
     try {
       // Initialize browser
+      await this.updateSyncLog(logId, {
+        currentStage: 'Initializing browser...',
+        progressPercent: 5,
+      });
       const browser = await this.initializeBrowser();
       let page = await browser.newPage();
 
       try {
         // Step 1-5: Login (includes URL, email, password, checkbox, sign in)
+        await this.updateSyncLog(logId, {
+          currentStage: 'Logging in to PlusPortal...',
+          progressPercent: 10,
+        });
         await this.login(page, credentials);
         
         // Check current URL after login
@@ -738,6 +769,10 @@ export class PlusPortalSyncService {
         
         if (companyListFound) {
           console.log('[PlusPortal] Company selection page detected, finding matching company...');
+          await this.updateSyncLog(logId, {
+            currentStage: 'Selecting company...',
+            progressPercent: 20,
+          });
           
           // Get the supplier name to match against companies
           const supplierResult = await query<{ name: string }>(
@@ -809,6 +844,10 @@ export class PlusPortalSyncService {
         
         // Don't navigate away - instead find and click the SOH INFO menu item in the SPA
         console.log('[PlusPortal] Looking for SOH INFO menu item...');
+        await this.updateSyncLog(logId, {
+          currentStage: 'Navigating to SOH INFO...',
+          progressPercent: 30,
+        });
         
         // Wait for the dashboard/menu to load
         await this.delay(3000);
@@ -848,11 +887,17 @@ export class PlusPortalSyncService {
         console.log('[PlusPortal] Current URL:', page.url());
 
         // Steps 6-9: Navigate to SOH INFO tab, CSV Download, select Comma Delimited, Export
+        await this.updateSyncLog(logId, {
+          currentStage: 'Downloading CSV file...',
+          progressPercent: 40,
+        });
         csvFilePath = await this.downloadSOHCSV(page);
         csvDownloaded = true;
 
         await this.updateSyncLog(logId, {
           csvDownloaded: true,
+          currentStage: 'CSV downloaded, ready for processing...',
+          progressPercent: 50,
         });
       } finally {
         await page.close();
@@ -876,6 +921,8 @@ export class PlusPortalSyncService {
       await this.updateSyncLog(logId, {
         status: 'failed',
         errors,
+        currentStage: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        progressPercent: 0,
       });
 
       return {
@@ -979,7 +1026,7 @@ export class PlusPortalSyncService {
   async getStatus(): Promise<{
     config: PlusPortalSyncConfig | null;
     lastSync: Date | null;
-    recentLogs: Array<{
+      recentLogs: Array<{
       logId: string;
       status: string;
       csvDownloaded: boolean;
@@ -989,6 +1036,8 @@ export class PlusPortalSyncService {
       syncStartedAt: Date;
       syncCompletedAt: Date | null;
       errors: string[];
+      currentStage?: string;
+      progressPercent?: number;
     }>;
   }> {
     let config: PlusPortalSyncConfig | null = null;
@@ -1009,6 +1058,7 @@ export class PlusPortalSyncService {
       sync_started_at: Date;
       sync_completed_at: Date | null;
       errors: string | null;
+      details: unknown;
     }>(
       `SELECT 
         log_id,
@@ -1019,7 +1069,8 @@ export class PlusPortalSyncService {
         products_skipped,
         sync_started_at,
         sync_completed_at,
-        errors
+        errors,
+        details
       FROM core.plusportal_sync_log
       WHERE supplier_id = $1
       ORDER BY sync_started_at DESC
@@ -1052,6 +1103,21 @@ export class PlusPortalSyncService {
             errors = [String(row.errors)];
           }
         }
+        // Extract progress info from details JSONB
+        let currentStage: string | undefined;
+        let progressPercent: number | undefined;
+        if (row.details) {
+          try {
+            const details = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
+            if (details && typeof details === 'object') {
+              currentStage = details.currentStage as string | undefined;
+              progressPercent = details.progressPercent as number | undefined;
+            }
+          } catch (parseError) {
+            console.error('[PlusPortal] Failed to parse details JSON:', parseError);
+          }
+        }
+
         return {
           logId: row.log_id,
           status: row.status,
@@ -1062,6 +1128,8 @@ export class PlusPortalSyncService {
           syncStartedAt: row.sync_started_at,
           syncCompletedAt: row.sync_completed_at,
           errors,
+          currentStage,
+          progressPercent,
         };
       }),
     };

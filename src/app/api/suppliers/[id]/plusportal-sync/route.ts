@@ -95,10 +95,49 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Execute sync
     console.log(`[PlusPortal Sync API] Starting sync for supplier ${supplierId}`);
-    const syncResult = await service.executeSync({
-      username: config.username,
-      password: config.password,
-    });
+    let syncResult;
+    try {
+      syncResult = await service.executeSync({
+        username: config.username,
+        password: config.password,
+      });
+    } catch (syncError) {
+      console.error('[PlusPortal Sync API] Sync execution error:', syncError);
+      // Try to get the logId from status if available
+      const status = await service.getStatus();
+      const latestLog = status.recentLogs[0];
+      const logId = latestLog?.logId;
+      
+      if (logId) {
+        await query(
+          `UPDATE core.plusportal_sync_log 
+           SET status = 'failed',
+               errors = $1::jsonb,
+               sync_completed_at = NOW(),
+               details = jsonb_set(
+                 COALESCE(details, '{}'::jsonb),
+                 '{currentStage}',
+                 $2::jsonb,
+                 true
+               )
+           WHERE log_id = $3`,
+          [
+            JSON.stringify([`Sync execution failed: ${syncError instanceof Error ? syncError.message : 'Unknown error'}`]),
+            JSON.stringify(`Failed: ${syncError instanceof Error ? syncError.message : 'Unknown error'}`),
+            logId,
+          ]
+        );
+      }
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Sync execution failed',
+          details: syncError instanceof Error ? syncError.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
 
     // If CSV was downloaded, process it
     if (syncResult.csvDownloaded && syncResult.csvFilePath && syncResult.logId) {
@@ -127,9 +166,35 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         await query(
           `UPDATE core.plusportal_sync_log 
            SET status = $1,
-               sync_completed_at = NOW()
-           WHERE log_id = $2`,
-          [syncResult.success ? 'completed' : 'failed', syncResult.logId]
+               sync_completed_at = NOW(),
+               products_processed = $2,
+               products_created = $3,
+               products_updated = $4,
+               products_skipped = $5,
+               errors = $6::jsonb,
+               details = jsonb_set(
+                 jsonb_set(
+                   COALESCE(details, '{}'::jsonb),
+                   '{currentStage}',
+                   $7::jsonb,
+                   true
+                 ),
+                 '{progressPercent}',
+                 $8::jsonb,
+                 true
+               )
+           WHERE log_id = $9`,
+          [
+            syncResult.success ? 'completed' : 'failed',
+            syncResult.productsProcessed || 0,
+            syncResult.productsCreated || 0,
+            syncResult.productsUpdated || 0,
+            syncResult.productsSkipped || 0,
+            JSON.stringify(syncResult.errors || []),
+            JSON.stringify(syncResult.success ? 'Completed' : 'Failed'),
+            syncResult.success ? 100 : 0,
+            syncResult.logId,
+          ]
         );
       } catch (error) {
         console.error('[PlusPortal Sync API] CSV processing error:', error);
@@ -141,12 +206,47 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             `UPDATE core.plusportal_sync_log 
              SET status = 'failed',
                  errors = $1::jsonb,
-                 sync_completed_at = NOW()
-             WHERE log_id = $2`,
-            [JSON.stringify(syncResult.errors), syncResult.logId]
+                 sync_completed_at = NOW(),
+                 details = jsonb_set(
+                   jsonb_set(
+                     COALESCE(details, '{}'::jsonb),
+                     '{currentStage}',
+                     $2::jsonb,
+                     true
+                   ),
+                   '{progressPercent}',
+                   '0',
+                   true
+                 )
+             WHERE log_id = $3`,
+            [
+              JSON.stringify(syncResult.errors),
+              JSON.stringify(`CSV processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`),
+              syncResult.logId,
+            ]
           );
         }
       }
+    } else if (syncResult.logId && !syncResult.csvDownloaded) {
+      // CSV download failed - update log
+      await query(
+        `UPDATE core.plusportal_sync_log 
+         SET status = 'failed',
+             errors = $1::jsonb,
+             sync_completed_at = NOW(),
+             details = jsonb_set(
+               COALESCE(details, '{}'::jsonb),
+               '{currentStage}',
+               $2::jsonb,
+               true
+             )
+         WHERE log_id = $3`,
+        [
+          JSON.stringify(syncResult.errors || ['CSV download failed']),
+          JSON.stringify('CSV download failed'),
+          syncResult.logId,
+        ]
+      );
     }
 
     // Cleanup temporary files

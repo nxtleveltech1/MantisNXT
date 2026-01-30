@@ -240,7 +240,10 @@ function SupplierProfileContent() {
     syncStartedAt: Date;
     syncCompletedAt: Date | null;
     errors: string[];
+    currentStage?: string;
+    progressPercent?: number;
   }>>([]);
+  const [currentSyncLogId, setCurrentSyncLogId] = useState<string | null>(null);
 
   // Discount state
   const [baseDiscount, setBaseDiscount] = useState(0);
@@ -2154,16 +2157,76 @@ function SupplierProfileContent() {
                           try {
                             setPlusPortalSyncing(true);
                             setError(null);
+                            setCurrentSyncLogId(null);
                             
                             // Start sync with extended timeout (5 minutes)
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 300000);
+                            
+                            // Start polling for progress before making the request
+                            let pollInterval: NodeJS.Timeout | null = null;
+                            let currentLogId: string | null = null;
+                            
+                            const startPolling = () => {
+                              pollInterval = setInterval(async () => {
+                                try {
+                                  const statusRes = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
+                                  const statusData = await statusRes.json();
+                                  if (statusData.success && statusData.data?.recentLogs && statusData.data.recentLogs.length > 0) {
+                                    const latestLog = statusData.data.recentLogs[0];
+                                    setPlusPortalSyncLogs(statusData.data.recentLogs);
+                                    
+                                    // Set current log ID if not set
+                                    if (!currentLogId && latestLog.logId) {
+                                      currentLogId = latestLog.logId;
+                                      setCurrentSyncLogId(latestLog.logId);
+                                    }
+                                    
+                                    // Stop polling if sync is complete
+                                    if (latestLog.status === 'completed' || latestLog.status === 'failed') {
+                                      if (pollInterval) {
+                                        clearInterval(pollInterval);
+                                        pollInterval = null;
+                                      }
+                                      setPlusPortalSyncing(false);
+                                      setCurrentSyncLogId(null);
+                                      
+                                      // Refresh recent uploads and activity after sync completes
+                                      await Promise.all([loadUploads(), loadAudit()]);
+                                      
+                                      if (latestLog.status === 'completed') {
+                                        toast({
+                                          title: 'Sync Complete',
+                                          description: `Processed ${latestLog.productsProcessed || 0} products, created ${latestLog.productsCreated || 0}, skipped ${latestLog.productsSkipped || 0}`,
+                                        });
+                                      } else {
+                                        toast({
+                                          title: 'Sync Failed',
+                                          description: latestLog.errors?.[0] || 'Sync failed',
+                                          variant: 'destructive',
+                                        });
+                                      }
+                                    }
+                                  }
+                                } catch (pollError) {
+                                  console.error('Error polling sync status:', pollError);
+                                }
+                              }, 1000); // Poll every second
+                            };
+                            
+                            startPolling();
                             
                             const res = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`, {
                               method: 'POST',
                               signal: controller.signal,
                             });
                             clearTimeout(timeoutId);
+                            
+                            // Stop polling - sync request completed
+                            if (pollInterval) {
+                              clearInterval(pollInterval);
+                              pollInterval = null;
+                            }
                             
                             if (!res.ok) {
                               const errorData = await res.json().catch(() => ({ error: 'Sync request failed' }));
@@ -2175,7 +2238,7 @@ function SupplierProfileContent() {
                               throw new Error(data.error || 'Sync failed');
                             }
                             
-                            // Reload sync status
+                            // Reload sync status one final time
                             const statusRes = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
                             const statusData = await statusRes.json();
                             if (statusData.success && statusData.data?.recentLogs) {
@@ -2207,6 +2270,7 @@ function SupplierProfileContent() {
                             }
                           } finally {
                             setPlusPortalSyncing(false);
+                            setCurrentSyncLogId(null);
                           }
                         }}
                         disabled={!plusPortalCredentialsConfigured || plusPortalSyncing}
@@ -2238,12 +2302,40 @@ function SupplierProfileContent() {
                             </span>
                             <Badge
                               variant={
-                                plusPortalSyncLogs[0].status === 'completed' ? 'default' : 'destructive'
+                                plusPortalSyncLogs[0].status === 'completed' ? 'default' : 
+                                plusPortalSyncLogs[0].status === 'failed' ? 'destructive' :
+                                'secondary'
                               }
                             >
                               {plusPortalSyncLogs[0].status}
                             </Badge>
                           </div>
+                          
+                          {/* Progress indicator */}
+                          {(plusPortalSyncing || plusPortalSyncLogs[0].status === 'in_progress') && (
+                            <div className="mb-3 space-y-2">
+                              {plusPortalSyncLogs[0].currentStage && (
+                                <div className="text-sm text-muted-foreground">
+                                  {plusPortalSyncLogs[0].currentStage}
+                                </div>
+                              )}
+                              {plusPortalSyncLogs[0].progressPercent !== undefined && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Progress</span>
+                                    <span className="text-muted-foreground">{plusPortalSyncLogs[0].progressPercent}%</span>
+                                  </div>
+                                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                    <div
+                                      className="h-full bg-primary transition-all duration-300"
+                                      style={{ width: `${plusPortalSyncLogs[0].progressPercent}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <div className="text-muted-foreground mt-1 text-xs">
                             {plusPortalSyncLogs[0].productsProcessed} processed,{' '}
                             {plusPortalSyncLogs[0].productsCreated} created,{' '}

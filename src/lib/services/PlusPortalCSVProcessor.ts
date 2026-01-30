@@ -39,6 +39,33 @@ export class PlusPortalCSVProcessor {
   }
 
   /**
+   * Update sync log progress
+   */
+  private async updateProgress(logId: string, stage: string, progressPercent: number): Promise<void> {
+    try {
+      await query(
+        `UPDATE core.plusportal_sync_log 
+         SET details = jsonb_set(
+           jsonb_set(
+             COALESCE(details, '{}'::jsonb),
+             '{currentStage}',
+             $1::jsonb,
+             true
+           ),
+           '{progressPercent}',
+           $2::jsonb,
+           true
+         )
+         WHERE log_id = $3`,
+        [JSON.stringify(stage), progressPercent, logId]
+      );
+    } catch (error) {
+      console.error('[PlusPortal CSV] Failed to update progress:', error);
+      // Don't throw - progress updates are not critical
+    }
+  }
+
+  /**
    * Parse CSV file
    * Note: PlusPortal CSV has embedded quotes like 1/4" that need special handling
    */
@@ -278,11 +305,17 @@ export class PlusPortalCSVProcessor {
 
     try {
       // Parse CSV
+      if (logId) {
+        await this.updateProgress(logId, 'Parsing CSV file...', 60);
+      }
       const rows = this.parseCSV(filePath);
       result.productsProcessed = rows.length;
       console.log(`[PlusPortal CSV] Processing ${rows.length} products...`);
 
       // Map all rows to products first
+      if (logId) {
+        await this.updateProgress(logId, 'Mapping products...', 65);
+      }
       const products: ProcessedProduct[] = [];
       for (const row of rows) {
         const product = this.mapCSVRowToProduct(row);
@@ -335,6 +368,10 @@ export class PlusPortalCSVProcessor {
       const batchSize = 50;
       let processedCount = 0;
       
+      if (logId) {
+        await this.updateProgress(logId, 'Processing products...', 70);
+      }
+      
       for (let i = 0; i < products.length; i += batchSize) {
         const batch = products.slice(i, i + batchSize);
         
@@ -367,6 +404,17 @@ export class PlusPortalCSVProcessor {
         }
         
         processedCount += batch.length;
+        
+        // Update progress every batch
+        if (logId && products.length > 0) {
+          const progressPercent = 70 + Math.floor((processedCount / products.length) * 25); // 70-95%
+          await this.updateProgress(
+            logId,
+            `Processing products... (${processedCount}/${products.length})`,
+            progressPercent
+          );
+        }
+        
         if (processedCount % 500 === 0) {
           console.log(`[PlusPortal CSV] Progress: ${processedCount}/${products.length} products processed`);
         }
@@ -376,13 +424,16 @@ export class PlusPortalCSVProcessor {
 
       // Update sync log if provided
       if (logId) {
+        await this.updateProgress(logId, 'Finalizing...', 95);
         await query(
           `UPDATE core.plusportal_sync_log 
            SET products_processed = $1,
                products_created = $2,
                products_updated = $3,
                products_skipped = $4,
-               errors = $5::jsonb
+               errors = $5::jsonb,
+               details = jsonb_set(COALESCE(details, '{}'::jsonb), '{currentStage}', '"Complete"', true),
+               details = jsonb_set(COALESCE(details, '{}'::jsonb), '{progressPercent}', '100', true)
            WHERE log_id = $6`,
           [
             result.productsProcessed,

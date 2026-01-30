@@ -239,7 +239,7 @@ export default function ProductProfileDialog({
         ) : product ? (
           <div className="flex-1 overflow-y-auto">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="overview">
                   <Info className="mr-2 h-4 w-4" />
                   Overview
@@ -251,6 +251,10 @@ export default function ProductProfileDialog({
                 <TabsTrigger value="category">
                   <FolderTree className="mr-2 h-4 w-4" />
                   Category
+                </TabsTrigger>
+                <TabsTrigger value="brand">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Brand
                 </TabsTrigger>
                 <TabsTrigger value="pricing">
                   <DollarSign className="mr-2 h-4 w-4" />
@@ -563,6 +567,59 @@ export default function ProductProfileDialog({
                       <div className="text-muted-foreground py-8 text-center">
                         <FolderTree className="mx-auto mb-2 h-12 w-12 opacity-50" />
                         <p>No category assigned to this product</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Brand Tab */}
+              <TabsContent value="brand" className="mt-4 space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Building2 className="h-5 w-5" />
+                      Brand Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {product.brand_name ? (
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-muted-foreground text-sm font-medium">Brand Name</p>
+                          <Badge variant="default" className="mt-1 px-3 py-1.5 text-base">
+                            {product.brand_name}
+                          </Badge>
+                        </div>
+                        {product.manufacturer && (
+                          <div>
+                            <p className="text-muted-foreground text-sm font-medium">Manufacturer</p>
+                            <p className="mt-1 text-base">{product.manufacturer}</p>
+                          </div>
+                        )}
+                        {product.model && (
+                          <div>
+                            <p className="text-muted-foreground text-sm font-medium">Model</p>
+                            <p className="mt-1 font-mono text-base">{product.model}</p>
+                          </div>
+                        )}
+                        {product.series_range && (
+                          <div>
+                            <p className="text-muted-foreground text-sm font-medium">Series / Range</p>
+                            <p className="mt-1 text-base">{product.series_range}</p>
+                          </div>
+                        )}
+                        {product.mpn && (
+                          <div>
+                            <p className="text-muted-foreground text-sm font-medium">MPN (Manufacturer Part Number)</p>
+                            <p className="mt-1 font-mono text-base">{product.mpn}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground py-8 text-center">
+                        <Building2 className="mx-auto mb-2 h-12 w-12 opacity-50" />
+                        <p>No brand assigned to this product</p>
                       </div>
                     )}
                   </CardContent>
