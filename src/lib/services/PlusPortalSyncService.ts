@@ -1,6 +1,8 @@
 /**
  * PlusPortal Sync Service
  * Automated browser-based extraction and sync from PlusPortal
+ * 
+ * Updated: Scrapes data from Shopping > All Products tab instead of CSV download from SOH Info
  */
 
 import { query } from '@/lib/database';
@@ -9,6 +11,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { Browser, Page } from 'puppeteer-core';
 import puppeteer from 'puppeteer-core';
+import { createPlusPortalTableScraper, type ScrapedProduct, type ScrapeResult } from './PlusPortalTableScraper';
 
 const PLUSPORTAL_BASE_URL = 'https://my.plusportal.africa';
 const PLUSPORTAL_LOGIN_URL = `${PLUSPORTAL_BASE_URL}/apps/authentication/external-login`;
@@ -34,19 +37,25 @@ export interface PlusPortalCredentials {
 export interface PlusPortalSyncResult {
   success: boolean;
   logId?: string;
-  csvDownloaded: boolean;
-  csvFilePath?: string;
+  dataScraped: boolean;
+  scrapedProducts?: ScrapedProduct[];
+  totalPages?: number;
   productsProcessed: number;
   productsCreated: number;
   productsSkipped: number;
   productsUpdated: number;
+  discountRulesCreated: number;
+  discountRulesUpdated: number;
   errors: string[];
 }
+
+// Re-export ScrapedProduct for use by API and processor
+export type { ScrapedProduct, ScrapeResult } from './PlusPortalTableScraper';
 
 export interface PlusPortalSyncConfig {
   supplierId: string;
   username: string;
-  password: string;
+  password: string | null;
   enabled: boolean;
   intervalMinutes: number;
 }
@@ -243,11 +252,11 @@ export class PlusPortalSyncService {
       // Step 4: Check terms checkbox
       console.log('[PlusPortal] Step 4: Looking for terms checkbox...');
       const checkboxInfo = await page.evaluate(() => {
-        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
         return checkboxes.map(cb => ({
           id: cb.id,
           name: cb.name,
-          checked: (cb as HTMLInputElement).checked,
+          checked: cb.checked,
           parentText: cb.parentElement?.textContent?.trim().slice(0, 100),
         }));
       });
@@ -333,283 +342,33 @@ export class PlusPortalSyncService {
   }
 
   /**
-   * Navigate to SOH INFO tab and download CSV
-   * Process Steps:
-   * 6. SELECT THE SOH INFO TAB
-   * 7. SELECT CSV DOWNLOAD TAB
-   * 8. SELECT COMMA DELIMITED
-   * 9. EXPORT
+   * Scrape product data from Shopping > All Products tab
+   * This replaces the old CSV download from SOH INFO tab
    */
-  private async downloadSOHCSV(page: Page): Promise<string> {
+  private async scrapeShoppingData(page: Page, logId: string): Promise<ScrapeResult> {
     try {
-      // Wait for page to load after login
-      await this.delay(3000);
-      console.log('[PlusPortal] Page loaded, looking for SOH INFO tab...');
-
-      // Log available menu items for debugging
-      const menuItems = await page.evaluate(() => {
-        // Look for menu links - typically anchor tags in navigation
-        const links = Array.from(document.querySelectorAll('a, nz-menu-item, .ant-menu-item, [role="menuitem"]'));
-        return links.slice(0, 30).map(el => ({
-          tag: el.tagName,
-          text: el.textContent?.trim().slice(0, 50),
-          href: el.getAttribute('href'),
-          className: el.className?.slice(0, 50),
-        }));
-      });
-      console.log('[PlusPortal] Available menu items:', JSON.stringify(menuItems.slice(0, 15), null, 2));
-
-      // STEP 6: SELECT THE SOH INFO TAB
-      // Need to find and click the specific link/menu item, not a parent container
-      const sohTabClicked = await page.evaluate(() => {
-        // First try anchor tags with exact or near-exact text
-        const anchors = Array.from(document.querySelectorAll('a'));
-        for (const a of anchors) {
-          const text = a.textContent?.trim().toLowerCase() || '';
-          if (text === 'soh info' || text === 'soh') {
-            a.click();
-            return { found: true, text: a.textContent?.trim(), type: 'anchor' };
-          }
-        }
-
-        // Try menu items
-        const menuItems = Array.from(document.querySelectorAll('nz-menu-item, .ant-menu-item, [role="menuitem"], li'));
-        for (const item of menuItems) {
-          const text = item.textContent?.trim().toLowerCase() || '';
-          if (text === 'soh info' || text === 'soh') {
-            (item as HTMLElement).click();
-            return { found: true, text: item.textContent?.trim(), type: 'menu-item' };
-          }
-        }
-
-        // Try spans or divs with exact text
-        const elements = Array.from(document.querySelectorAll('span, div'));
-        for (const el of elements) {
-          // Check direct text content, not children
-          const directText = Array.from(el.childNodes)
-            .filter(node => node.nodeType === Node.TEXT_NODE)
-            .map(node => node.textContent?.trim())
-            .join('').toLowerCase();
-          
-          if (directText === 'soh info' || directText === 'soh') {
-            (el as HTMLElement).click();
-            return { found: true, text: directText, type: 'span/div' };
-          }
-        }
-
-        return { found: false, text: null };
-      });
-
-      if (sohTabClicked.found) {
-        console.log(`[PlusPortal] Step 6: Clicked SOH INFO tab: "${sohTabClicked.text}" (${sohTabClicked.type})`);
-        // Wait for tab content to load
-        await this.delay(3000);
-      } else {
-        console.log('[PlusPortal] Step 6: SOH INFO tab not found, trying alternative navigation...');
-        
-        // Try clicking directly on SOH INFO URL if available
-        const navigatedToSoh = await page.evaluate(() => {
-          // Look for any link containing 'soh' in href
-          const links = Array.from(document.querySelectorAll('a[href*="soh"], a[href*="stock"]'));
-          if (links.length > 0) {
-            (links[0] as HTMLElement).click();
-            return { found: true, href: (links[0] as HTMLAnchorElement).href };
-          }
-          return { found: false };
+      console.log('[PlusPortal] Starting Shopping tab scrape...');
+      
+      // Create progress callback to update sync log
+      const progressCallback = async (stage: string, percent: number) => {
+        await this.updateSyncLog(logId, {
+          currentStage: stage,
+          progressPercent: percent,
         });
-        
-        if (navigatedToSoh.found) {
-          console.log(`[PlusPortal] Navigated via href: ${navigatedToSoh.href}`);
-          await this.delay(3000);
-        } else {
-          // Log page content for debugging
-          const pageTitle = await page.title();
-          const pageUrl = page.url();
-          console.log(`[PlusPortal] Current page: ${pageTitle} (${pageUrl})`);
-        }
-      }
-
-      // STEP 4: Wait for the SOH table to fully load
-      console.log('[PlusPortal] Step 4: Waiting for SOH table to load...');
-      await this.delay(5000);
+      };
       
-      // Wait for table data to appear
-      try {
-        await page.waitForSelector('table, .ant-table, nz-table', { timeout: 15000 });
-        console.log('[PlusPortal] Table found, waiting for data...');
-        await this.delay(3000);
-      } catch {
-        console.log('[PlusPortal] Table selector not found, continuing...');
-      }
-
-      // Set up download listener BEFORE clicking CSV
-      const client = await page.target().createCDPSession();
-      await client.send('Page.setDownloadBehavior', {
-        behavior: 'allow',
-        downloadPath: this.downloadPath,
-      });
-
-      // STEP 5: Click CSV button
-      console.log('[PlusPortal] Step 5: Looking for CSV button...');
+      // Create table scraper instance
+      const scraper = createPlusPortalTableScraper(page, progressCallback);
       
-      // Log all buttons for debugging
-      const allButtons = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button, .btn, [role="button"], a.btn'));
-        return buttons.slice(0, 20).map(btn => ({
-          text: btn.textContent?.trim().slice(0, 30),
-          className: btn.className?.slice(0, 50),
-          id: btn.id,
-        }));
-      });
-      console.log('[PlusPortal] Available buttons:', JSON.stringify(allButtons, null, 2));
+      // Scrape all pages
+      const result = await scraper.scrapeAllPages();
       
-      const csvButtonClicked = await page.evaluate(() => {
-        // Try multiple selectors for Export/CSV button
-        const selectors = [
-          'button',
-          '.btn',
-          '[role="button"]',
-          'a.btn',
-          'span.ant-btn',
-          '.ant-btn',
-          'nz-button',
-        ];
-        
-        for (const selector of selectors) {
-          const elements = Array.from(document.querySelectorAll(selector));
-          for (const el of elements) {
-            const text = el.textContent?.trim().toLowerCase() || '';
-            // Look for "export" button FIRST (this is the actual button name)
-            // Then fall back to CSV variations
-            if (text === 'export' || text === 'csv' || text.includes('csv') || text === 'export csv' || text === 'download') {
-              (el as HTMLElement).click();
-              return { found: true, text: el.textContent?.trim(), selector };
-            }
-          }
-        }
-        
-        // Also try looking for icons with download/export functionality
-        const icons = Array.from(document.querySelectorAll('[class*="download"], [class*="export"], [class*="csv"]'));
-        for (const icon of icons) {
-          const parent = icon.closest('button, a, [role="button"]');
-          if (parent) {
-            (parent as HTMLElement).click();
-            return { found: true, text: 'icon-based', selector: 'icon' };
-          }
-        }
-        
-        return { found: false, availableButtons: [] };
-      });
-
-      if (csvButtonClicked.found) {
-        console.log(`[PlusPortal] Step 5: Clicked CSV button: "${csvButtonClicked.text}" (${csvButtonClicked.selector})`);
-      } else {
-        // Take a screenshot for debugging
-        console.log('[PlusPortal] CSV button not found. Page might have different structure.');
-        throw new Error('CSV button not found on the page. Check if the SOH INFO tab loaded correctly.');
-      }
-
-      // Wait for the export dialog to appear
-      await this.delay(2000);
-
-      // STEP 6: Select comma delimiter (click the "," button)
-      console.log('[PlusPortal] Step 6: Looking for comma delimiter button...');
+      console.log(`[PlusPortal] Scrape completed: ${result.products.length} products from ${result.totalPages} pages`);
       
-      const commaClicked = await page.evaluate(() => {
-        // The delimiter is shown as buttons with "," or ";" or "Tab"
-        const buttons = Array.from(document.querySelectorAll('button'));
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim() || '';
-          // Look for button with comma symbol
-          if (text === ',' || text === ',') {
-            (btn as HTMLElement).click();
-            return { found: true, text: 'comma button' };
-          }
-        }
-        
-        // Also try looking for spans or divs that might be clickable delimiter options
-        const elements = Array.from(document.querySelectorAll('span, div, label'));
-        for (const el of elements) {
-          const text = el.textContent?.trim() || '';
-          if (text === ',' || text === ',') {
-            (el as HTMLElement).click();
-            return { found: true, text: 'comma element' };
-          }
-        }
-        
-        // Try input/radio for comma
-        const inputs = Array.from(document.querySelectorAll('input'));
-        for (const input of inputs) {
-          const value = (input as HTMLInputElement).value || '';
-          if (value === ',' || value === 'comma') {
-            (input as HTMLInputElement).click();
-            return { found: true, text: 'comma input' };
-          }
-        }
-        
-        return { found: false };
-      });
-
-      if (commaClicked.found) {
-        console.log(`[PlusPortal] Step 6: Selected comma delimiter: "${commaClicked.text}"`);
-      } else {
-        console.log('[PlusPortal] Step 6: Comma delimiter button not found, may already be selected');
-      }
-
-      await this.delay(1000);
-
-      // STEP 7: Click Export button
-      console.log('[PlusPortal] Step 7: Looking for Export button...');
-      
-      const exportClicked = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim().toLowerCase() || '';
-          if (text === 'export') {
-            (btn as HTMLElement).click();
-            return { found: true, text: btn.textContent?.trim() };
-          }
-        }
-        return { found: false };
-      });
-
-      if (exportClicked.found) {
-        console.log(`[PlusPortal] Step 7: Clicked Export: "${exportClicked.text}"`);
-      } else {
-        throw new Error('Export button not found');
-      }
-
-      // Wait for download to complete (check for new files in download directory)
-      console.log('[PlusPortal] Waiting for CSV download...');
-      let downloadedFile: string | null = null;
-      const maxWaitTime = 60000; // 60 seconds
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < maxWaitTime) {
-        try {
-          if (fs.existsSync(this.downloadPath)) {
-            const files = fs.readdirSync(this.downloadPath);
-            const csvFiles = files.filter(f => f.endsWith('.csv') && !f.endsWith('.crdownload'));
-            if (csvFiles.length > 0) {
-              downloadedFile = path.join(this.downloadPath, csvFiles[0]);
-              console.log(`[PlusPortal] CSV downloaded: ${downloadedFile}`);
-              break;
-            }
-          }
-        } catch (err) {
-          // Directory might not exist yet
-        }
-        await this.delay(1000);
-      }
-
-      if (!downloadedFile) {
-        throw new Error('CSV file download timeout - file not found after 60 seconds');
-      }
-
-      return downloadedFile;
+      return result;
     } catch (error) {
-      console.error('[PlusPortal] CSV download error:', error);
-      throw new Error(`Failed to download CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[PlusPortal] Scrape error:', error);
+      throw new Error(`Failed to scrape Shopping data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -728,12 +487,14 @@ export class PlusPortalSyncService {
 
   /**
    * Execute full sync process
+   * Updated to scrape from Shopping > All Products tab instead of CSV download
    */
   async executeSync(credentials: PlusPortalCredentials): Promise<PlusPortalSyncResult> {
     const logId = await this.createSyncLog();
     const errors: string[] = [];
-    let csvFilePath: string | null = null;
-    let csvDownloaded = false;
+    let dataScraped = false;
+    let scrapedProducts: ScrapedProduct[] = [];
+    let totalPages = 0;
 
     try {
       // Initialize browser
@@ -742,7 +503,7 @@ export class PlusPortalSyncService {
         progressPercent: 5,
       });
       const browser = await this.initializeBrowser();
-      let page = await browser.newPage();
+      const page = await browser.newPage();
 
       try {
         // Step 1-5: Login (includes URL, email, password, checkbox, sign in)
@@ -771,7 +532,7 @@ export class PlusPortalSyncService {
           console.log('[PlusPortal] Company selection page detected, finding matching company...');
           await this.updateSyncLog(logId, {
             currentStage: 'Selecting company...',
-            progressPercent: 20,
+            progressPercent: 15,
           });
           
           // Get the supplier name to match against companies
@@ -842,13 +603,6 @@ export class PlusPortalSyncService {
           }
         }
         
-        // Don't navigate away - instead find and click the SOH INFO menu item in the SPA
-        console.log('[PlusPortal] Looking for SOH INFO menu item...');
-        await this.updateSyncLog(logId, {
-          currentStage: 'Navigating to SOH INFO...',
-          progressPercent: 30,
-        });
-        
         // Wait for the dashboard/menu to load
         await this.delay(3000);
         
@@ -862,59 +616,56 @@ export class PlusPortalSyncService {
           }));
         });
         console.log('[PlusPortal] Available navigation items:', JSON.stringify(menuInfo.slice(0, 15), null, 2));
+
+        // Scrape product data from Shopping > All Products tab
+        await this.updateSyncLog(logId, {
+          currentStage: 'Navigating to Shopping tab...',
+          progressPercent: 20,
+        });
         
-        // Click on the SOH INFO menu item
-        const sohClicked = await page.evaluate(() => {
-          // Try various ways to find the SOH INFO link
-          const allElements = Array.from(document.querySelectorAll('a, span, div, .ant-menu-item, nz-menu-item'));
-          for (const el of allElements) {
-            const text = el.textContent?.trim().toLowerCase() || '';
-            if (text === 'soh info' || text === 'soh' || text.includes('soh info')) {
-              (el as HTMLElement).click();
-              return { found: true, text: el.textContent?.trim() };
-            }
+        const scrapeResult = await this.scrapeShoppingData(page, logId);
+        
+        if (scrapeResult.success || scrapeResult.products.length > 0) {
+          dataScraped = true;
+          scrapedProducts = scrapeResult.products;
+          totalPages = scrapeResult.totalPages;
+          
+          // Add any scraping errors to our error list
+          if (scrapeResult.errors.length > 0) {
+            errors.push(...scrapeResult.errors);
           }
-          return { found: false };
-        });
-        
-        if (sohClicked.found) {
-          console.log('[PlusPortal] Clicked SOH INFO menu item:', sohClicked.text);
-          await this.delay(5000);
+          
+          console.log(`[PlusPortal] Scrape successful: ${scrapedProducts.length} products from ${totalPages} pages`);
         } else {
-          console.log('[PlusPortal] SOH INFO menu item not found, continuing with current page...');
+          errors.push('Scraping returned no products');
+          if (scrapeResult.errors.length > 0) {
+            errors.push(...scrapeResult.errors);
+          }
         }
-        
-        console.log('[PlusPortal] Current URL:', page.url());
-
-        // Steps 6-9: Navigate to SOH INFO tab, CSV Download, select Comma Delimited, Export
-        await this.updateSyncLog(logId, {
-          currentStage: 'Downloading CSV file...',
-          progressPercent: 40,
-        });
-        csvFilePath = await this.downloadSOHCSV(page);
-        csvDownloaded = true;
 
         await this.updateSyncLog(logId, {
-          csvDownloaded: true,
-          currentStage: 'CSV downloaded, ready for processing...',
-          progressPercent: 50,
+          currentStage: `Scraped ${scrapedProducts.length} products, ready for processing...`,
+          progressPercent: 80,
         });
       } finally {
         await page.close();
         await this.cleanupBrowser();
       }
 
-      // Process CSV (will be handled by CSV processor)
+      // Return scraped data for processing by the processor
       return {
-        success: true,
+        success: dataScraped,
         logId,
-        csvDownloaded: true,
-        csvFilePath: csvFilePath || undefined,
+        dataScraped,
+        scrapedProducts,
+        totalPages,
         productsProcessed: 0,
         productsCreated: 0,
         productsSkipped: 0,
         productsUpdated: 0,
-        errors: [],
+        discountRulesCreated: 0,
+        discountRulesUpdated: 0,
+        errors,
       };
     } catch (error) {
       errors.push(error instanceof Error ? error.message : 'Unknown error');
@@ -928,12 +679,15 @@ export class PlusPortalSyncService {
       return {
         success: false,
         logId,
-        csvDownloaded,
-        csvFilePath: csvFilePath || undefined,
+        dataScraped,
+        scrapedProducts,
+        totalPages,
         productsProcessed: 0,
         productsCreated: 0,
         productsSkipped: 0,
         productsUpdated: 0,
+        discountRulesCreated: 0,
+        discountRulesUpdated: 0,
         errors,
       };
     }
@@ -967,9 +721,10 @@ export class PlusPortalSyncService {
 
     const row = result.rows[0];
     // Return null password as null, not empty string, to properly detect first-time setup
+    // We know username exists because of the check above
     return {
       supplierId: row.supplier_id,
-      username: row.plusportal_username,
+      username: row.plusportal_username!, // Non-null because we checked above
       password: row.plusportal_password_encrypted || null, // Return null if not set
       enabled: row.plusportal_enabled,
       intervalMinutes: row.plusportal_interval_minutes,
@@ -1156,7 +911,19 @@ export class PlusPortalSyncService {
           }
         }
 
-        return {
+        const logEntry: {
+          logId: string;
+          status: string;
+          csvDownloaded: boolean;
+          productsProcessed: number;
+          productsCreated: number;
+          productsSkipped: number;
+          syncStartedAt: Date;
+          syncCompletedAt: Date | null;
+          errors: string[];
+          currentStage?: string;
+          progressPercent?: number;
+        } = {
           logId: row.log_id,
           status: row.status,
           csvDownloaded: row.csv_downloaded,
@@ -1166,9 +933,17 @@ export class PlusPortalSyncService {
           syncStartedAt: row.sync_started_at,
           syncCompletedAt: row.sync_completed_at,
           errors,
-          currentStage,
-          progressPercent,
         };
+        
+        // Only add optional properties if they have values
+        if (currentStage !== undefined) {
+          logEntry.currentStage = currentStage;
+        }
+        if (progressPercent !== undefined) {
+          logEntry.progressPercent = progressPercent;
+        }
+        
+        return logEntry;
       }),
     };
   }

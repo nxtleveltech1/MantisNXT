@@ -26,8 +26,18 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Percent, Plus, Edit3, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Percent, Plus, Edit3, Trash2, Loader2, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface DiscountRule {
   discount_rule_id: string;
@@ -91,6 +101,8 @@ export function DiscountRulesManager({
     is_active: true,
   });
   const [bulkMode, setBulkMode] = useState(false);
+  const [brandSearchOpen, setBrandSearchOpen] = useState(false);
+  const [brandSearchQuery, setBrandSearchQuery] = useState('');
 
   useEffect(() => {
     loadRules();
@@ -723,21 +735,62 @@ export function DiscountRulesManager({
             {formData.scope_type === 'brand' && (
               <div className="space-y-2">
                 <Label>Brand *</Label>
-                <Select
-                  value={formData.brand_id}
-                  onValueChange={(value) => setFormData({ ...formData, brand_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.brand_id} value={brand.brand_id}>
-                        {brand.brand_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={brandSearchOpen} onOpenChange={setBrandSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={brandSearchOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {formData.brand_id
+                        ? brands.find((b) => b.brand_id === formData.brand_id)?.brand_name
+                        : 'Search brands...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search brands..."
+                        value={brandSearchQuery}
+                        onValueChange={setBrandSearchQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No brand found.</CommandEmpty>
+                        <CommandGroup>
+                          {brands
+                            .filter((brand) =>
+                              brand.brand_name
+                                .toLowerCase()
+                                .includes(brandSearchQuery.toLowerCase())
+                            )
+                            .map((brand) => (
+                              <CommandItem
+                                key={brand.brand_id}
+                                value={brand.brand_id}
+                                onSelect={() => {
+                                  setFormData({ ...formData, brand_id: brand.brand_id });
+                                  setBrandSearchOpen(false);
+                                  setBrandSearchQuery('');
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    formData.brand_id === brand.brand_id
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {brand.brand_name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 

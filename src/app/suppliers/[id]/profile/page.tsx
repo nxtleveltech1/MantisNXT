@@ -2005,8 +2005,8 @@ function SupplierProfileContent() {
                   PlusPortal Automation
                 </CardTitle>
                 <CardDescription>
-                  Automatically extract pricing data from PlusPortal by logging in, selecting the supplier,
-                  and downloading CSV files from the SOH INFO tab.
+                  Automatically extract pricing and discount data from PlusPortal by logging in, selecting the supplier,
+                  and scraping product data from the Shopping tab. Per-product discounts are synced as SKU-level discount rules.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

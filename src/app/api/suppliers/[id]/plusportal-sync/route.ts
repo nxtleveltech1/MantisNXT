@@ -4,10 +4,12 @@
  * POST /api/suppliers/[id]/plusportal-sync - Trigger PlusPortal automation sync
  * GET /api/suppliers/[id]/plusportal-sync - Get sync status and logs
  * PUT /api/suppliers/[id]/plusportal-sync - Configure PlusPortal credentials
+ * 
+ * Updated: Scrapes data from Shopping > All Products tab instead of CSV download
  */
 
 import { query } from '@/lib/database';
-import { getPlusPortalCSVProcessor } from '@/lib/services/PlusPortalCSVProcessor';
+import { getPlusPortalDataProcessor } from '@/lib/services/PlusPortalDataProcessor';
 import {
     getPlusPortalSyncService,
 } from '@/lib/services/PlusPortalSyncService';
@@ -25,7 +27,7 @@ export const maxDuration = 300; // 5 minutes
  * GET /api/suppliers/[id]/plusportal-sync
  * Get sync status and recent logs
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const { id: supplierId } = await params;
 
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * POST /api/suppliers/[id]/plusportal-sync
  * Trigger a manual PlusPortal sync
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(_request: NextRequest, { params }: RouteParams) {
   try {
     const { id: supplierId } = await params;
 
@@ -139,17 +141,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // If CSV was downloaded, process it
-    if (syncResult.csvDownloaded && syncResult.csvFilePath && syncResult.logId) {
+    // If data was scraped, process it
+    if (syncResult.dataScraped && syncResult.scrapedProducts && syncResult.scrapedProducts.length > 0 && syncResult.logId) {
       try {
-        const csvProcessor = getPlusPortalCSVProcessor(supplierId);
-        const processingResult = await csvProcessor.processCSV(syncResult.csvFilePath, syncResult.logId);
+        const dataProcessor = getPlusPortalDataProcessor(supplierId);
+        const processingResult = await dataProcessor.processScrapedData(syncResult.scrapedProducts, syncResult.logId);
 
         // Update sync result with processing results
         syncResult.productsProcessed = processingResult.productsProcessed;
         syncResult.productsCreated = processingResult.productsCreated;
         syncResult.productsUpdated = processingResult.productsUpdated;
         syncResult.productsSkipped = processingResult.productsSkipped;
+        syncResult.discountRulesCreated = processingResult.discountRulesCreated;
+        syncResult.discountRulesUpdated = processingResult.discountRulesUpdated;
         syncResult.errors.push(...processingResult.errors);
 
         // Update supplier's last sync timestamp
@@ -167,6 +171,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           `UPDATE core.plusportal_sync_log 
            SET status = $1,
                sync_completed_at = NOW(),
+               csv_downloaded = true,
                products_processed = $2,
                products_created = $3,
                products_updated = $4,
@@ -174,16 +179,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                errors = $6::jsonb,
                details = jsonb_set(
                  jsonb_set(
-                   COALESCE(details, '{}'::jsonb),
-                   '{currentStage}',
-                   $7::jsonb,
+                   jsonb_set(
+                     COALESCE(details, '{}'::jsonb),
+                     '{currentStage}',
+                     $7::jsonb,
+                     true
+                   ),
+                   '{progressPercent}',
+                   $8::jsonb,
                    true
                  ),
-                 '{progressPercent}',
-                 $8::jsonb,
+                 '{discountRules}',
+                 $9::jsonb,
                  true
                )
-           WHERE log_id = $9`,
+           WHERE log_id = $10`,
           [
             syncResult.success ? 'completed' : 'failed',
             syncResult.productsProcessed || 0,
@@ -193,12 +203,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             JSON.stringify(syncResult.errors || []),
             JSON.stringify(syncResult.success ? 'Completed' : 'Failed'),
             syncResult.success ? 100 : 0,
+            JSON.stringify({ created: syncResult.discountRulesCreated, updated: syncResult.discountRulesUpdated }),
             syncResult.logId,
           ]
         );
       } catch (error) {
-        console.error('[PlusPortal Sync API] CSV processing error:', error);
-        syncResult.errors.push(`CSV processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('[PlusPortal Sync API] Data processing error:', error);
+        syncResult.errors.push(`Data processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         syncResult.success = false;
 
         if (syncResult.logId) {
@@ -221,14 +232,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
              WHERE log_id = $3`,
             [
               JSON.stringify(syncResult.errors),
-              JSON.stringify(`CSV processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`),
+              JSON.stringify(`Data processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`),
               syncResult.logId,
             ]
           );
         }
       }
-    } else if (syncResult.logId && !syncResult.csvDownloaded) {
-      // CSV download failed - update log
+    } else if (syncResult.logId && !syncResult.dataScraped) {
+      // Data scraping failed - update log
       await query(
         `UPDATE core.plusportal_sync_log 
          SET status = 'failed',
@@ -242,8 +253,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
              )
          WHERE log_id = $3`,
         [
-          JSON.stringify(syncResult.errors || ['CSV download failed']),
-          JSON.stringify('CSV download failed'),
+          JSON.stringify(syncResult.errors || ['Data scraping failed']),
+          JSON.stringify('Data scraping failed'),
           syncResult.logId,
         ]
       );
@@ -256,11 +267,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       success: syncResult.success,
       data: {
         logId: syncResult.logId,
-        csvDownloaded: syncResult.csvDownloaded,
+        dataScraped: syncResult.dataScraped,
+        totalPages: syncResult.totalPages,
         productsProcessed: syncResult.productsProcessed,
         productsCreated: syncResult.productsCreated,
         productsUpdated: syncResult.productsUpdated,
         productsSkipped: syncResult.productsSkipped,
+        discountRulesCreated: syncResult.discountRulesCreated,
+        discountRulesUpdated: syncResult.discountRulesUpdated,
         errors: syncResult.errors,
       },
     });
