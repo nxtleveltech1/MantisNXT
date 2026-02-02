@@ -750,28 +750,24 @@ export class PlusPortalSyncService {
     let paramIndex = 1;
 
     if (config.enabled !== undefined) {
-      updates.push(`plusportal_enabled = $${paramIndex}`);
+      updates.push(`plusportal_enabled = $${paramIndex++}`);
       params.push(config.enabled);
-      paramIndex++;
     }
 
     if (config.username !== undefined) {
-      updates.push(`plusportal_username = $${paramIndex}`);
+      updates.push(`plusportal_username = $${paramIndex++}`);
       params.push(config.username);
-      paramIndex++;
     }
 
     if (config.password !== undefined) {
       // TODO: Encrypt password before storing
-      updates.push(`plusportal_password_encrypted = $${paramIndex}`);
+      updates.push(`plusportal_password_encrypted = $${paramIndex++}`);
       params.push(config.password); // Should be encrypted
-      paramIndex++;
     }
 
     if (config.intervalMinutes !== undefined) {
-      updates.push(`plusportal_interval_minutes = $${paramIndex}`);
+      updates.push(`plusportal_interval_minutes = $${paramIndex++}`);
       params.push(config.intervalMinutes);
-      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -779,14 +775,15 @@ export class PlusPortalSyncService {
       return;
     }
 
-    // Add supplier ID as the last parameter
+    // Add updated_at and supplier ID
+    updates.push(`updated_at = NOW()`);
     params.push(this.supplierId);
     
     try {
       console.log('[PlusPortal] Attempting to update config:', {
         supplierId: this.supplierId,
         updates: updates,
-        params: params.map((p, i) => i === params.length - 1 ? p : (typeof p === 'string' && p.length > 0 ? '***' : p)),
+        paramCount: params.length,
       });
       
       const result = await query<{ supplier_id: string }>(
