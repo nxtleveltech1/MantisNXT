@@ -783,6 +783,12 @@ export class PlusPortalSyncService {
     params.push(this.supplierId);
     
     try {
+      console.log('[PlusPortal] Attempting to update config:', {
+        supplierId: this.supplierId,
+        updates: updates,
+        params: params.map((p, i) => i === params.length - 1 ? p : (typeof p === 'string' && p.length > 0 ? '***' : p)),
+      });
+      
       const result = await query<{ supplier_id: string }>(
         `UPDATE core.supplier 
          SET ${updates.join(', ')}
@@ -791,8 +797,10 @@ export class PlusPortalSyncService {
         params
       );
       
+      console.log('[PlusPortal] Update result:', { rowCount: result.rows.length, rows: result.rows });
+      
       if (result.rows.length === 0) {
-        throw new Error(`Failed to update supplier ${this.supplierId} - no rows affected`);
+        throw new Error(`Failed to update supplier ${this.supplierId} - no rows affected. Check if supplier exists and columns are writable.`);
       }
       
       console.log('[PlusPortal] Config updated successfully for supplier:', this.supplierId, {
@@ -807,7 +815,8 @@ export class PlusPortalSyncService {
         supplierId: this.supplierId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        updates: updates.length,
+        updates: updates,
+        sql: `UPDATE core.supplier SET ${updates.join(', ')} WHERE supplier_id = $${paramIndex}`,
       });
       throw new Error(`Failed to update PlusPortal configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

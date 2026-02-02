@@ -2116,13 +2116,9 @@ function SupplierProfileContent() {
                               }),
                             });
                             
-                            if (!res.ok) {
-                              const errorData = await res.json().catch(() => ({ error: 'Failed to save configuration' }));
-                              throw new Error(errorData.error || `Failed to save: ${res.status} ${res.statusText}`);
-                            }
-                            
                             const data = await res.json();
-                            if (!res.ok) {
+                            
+                            if (!res.ok || data.success === false) {
                               // Handle error response
                               const errorMsg = data.error || data.details || `Failed to save: ${res.status} ${res.statusText}`;
                               throw new Error(errorMsg);
