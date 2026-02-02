@@ -471,12 +471,16 @@ export class PlusPortalSyncService {
         params.push(JSON.stringify(mergedDetails));
         paramIndex++;
       } catch (error) {
-        // If details column doesn't exist, just set it directly
-        if (error instanceof Error && error.message.includes('does not exist')) {
+        // If details column doesn't exist, just set it directly (don't try to merge)
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (errorMsg.includes('does not exist') || errorMsg.includes('column') && errorMsg.includes('details')) {
+          console.warn('[PlusPortal] Details column not found, setting directly:', errorMsg);
           updatesList.push(`details = $${paramIndex}::jsonb`);
           params.push(JSON.stringify(details));
           paramIndex++;
         } else {
+          // Re-throw if it's a different error
+          console.error('[PlusPortal] Error fetching details:', errorMsg);
           throw error;
         }
       }
