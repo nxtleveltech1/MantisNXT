@@ -865,7 +865,8 @@ export class PlusPortalSyncService {
       // Continue without config - this is not critical for status retrieval
     }
 
-    const logsResult = await query<{
+    // Try to get logs with details, fallback without if column doesn't exist
+    let logsResult: { rows: Array<{
       log_id: string;
       status: string;
       csv_downloaded: boolean;
@@ -875,25 +876,76 @@ export class PlusPortalSyncService {
       sync_started_at: Date;
       sync_completed_at: Date | null;
       errors: string | null;
-      details: unknown;
-    }>(
-      `SELECT 
-        log_id,
-        status,
-        csv_downloaded,
-        products_processed,
-        products_created,
-        products_skipped,
-        sync_started_at,
-        sync_completed_at,
-        errors,
-        details
-      FROM core.plusportal_sync_log
-      WHERE supplier_id = $1
-      ORDER BY sync_started_at DESC
-      LIMIT 10`,
-      [this.supplierId]
-    );
+      details?: unknown;
+    }> };
+    
+    try {
+      logsResult = await query<{
+        log_id: string;
+        status: string;
+        csv_downloaded: boolean;
+        products_processed: number;
+        products_created: number;
+        products_skipped: number;
+        sync_started_at: Date;
+        sync_completed_at: Date | null;
+        errors: string | null;
+        details: unknown;
+      }>(
+        `SELECT 
+          log_id,
+          status,
+          csv_downloaded,
+          products_processed,
+          products_created,
+          products_skipped,
+          sync_started_at,
+          sync_completed_at,
+          errors,
+          details
+        FROM core.plusportal_sync_log
+        WHERE supplier_id = $1
+        ORDER BY sync_started_at DESC
+        LIMIT 10`,
+        [this.supplierId]
+      );
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes('does not exist') && errorMsg.includes('details')) {
+        // Fallback: SELECT without details column
+        logsResult = await query<{
+          log_id: string;
+          status: string;
+          csv_downloaded: boolean;
+          products_processed: number;
+          products_created: number;
+          products_skipped: number;
+          sync_started_at: Date;
+          sync_completed_at: Date | null;
+          errors: string | null;
+        }>(
+          `SELECT 
+            log_id,
+            status,
+            csv_downloaded,
+            products_processed,
+            products_created,
+            products_skipped,
+            sync_started_at,
+            sync_completed_at,
+            errors
+          FROM core.plusportal_sync_log
+          WHERE supplier_id = $1
+          ORDER BY sync_started_at DESC
+          LIMIT 10`,
+          [this.supplierId]
+        );
+        // Add empty details to each row
+        logsResult.rows = logsResult.rows.map(row => ({ ...row, details: {} }));
+      } else {
+        throw error;
+      }
+    }
 
     const supplierResult = await query<{ plusportal_last_sync: Date | null }>(
       `SELECT plusportal_last_sync FROM core.supplier WHERE supplier_id = $1`,
