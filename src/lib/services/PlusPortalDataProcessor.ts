@@ -88,7 +88,13 @@ export class PlusPortalDataProcessor {
         [JSON.stringify(stage), progressPercent, logId]
       );
     } catch (error) {
-      console.error('[PlusPortal Data] Failed to update progress:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      // If details column doesn't exist, skip progress update (not critical)
+      if (errorMsg.includes('does not exist') && errorMsg.includes('details')) {
+        console.warn('[PlusPortal Data] Details column not available, skipping progress update');
+      } else {
+        console.error('[PlusPortal Data] Failed to update progress:', error);
+      }
       // Don't throw - progress updates are not critical
     }
   }
