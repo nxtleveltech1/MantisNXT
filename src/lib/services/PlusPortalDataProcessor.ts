@@ -416,9 +416,16 @@ export class PlusPortalDataProcessor {
    * Since we don't have exact quantities, we use indicators
    */
   private getStockQuantityFromStatus(status: string): number | null {
+    // First try to extract actual quantity from availability string
+    const extractedQuantity = this.extractQuantityFromAvailability(status);
+    if (extractedQuantity !== null) {
+      return extractedQuantity;
+    }
+    
+    // Fallback to indicator values for status-only strings
     switch (status) {
       case 'instock':
-        return 100; // Indicator that there's stock
+        return 100; // Indicator that there's stock if no quantity given
       case 'lowstock':
         return 5; // Low stock indicator
       case 'outofstock':
@@ -429,6 +436,31 @@ export class PlusPortalDataProcessor {
       default:
         return null; // Unknown, don't update
     }
+  }
+
+  /**
+   * Parse portal availability strings to extract actual quantity
+   * Examples:
+   * "33 Available" → 33
+   * "5 Low Stock" → 5
+   * "On Backorder" → 0
+   * "1234 Available" → 1234
+   * "" → null
+   */
+  private extractQuantityFromAvailability(value: string): number | null {
+    if (!value) return null;
+    
+    const cleaned = value.trim();
+    
+    // Extract numbers from text
+    const numberMatch = cleaned.match(/(\d+)/);
+    if (!numberMatch) return null;
+    
+    const num = parseInt(numberMatch[1], 10);
+    
+    // If we extracted a number, it's most likely the actual quantity
+    // Portal phrases like "33 Available", "5 Low Stock" directly give us the count
+    return num;
   }
 
   /**

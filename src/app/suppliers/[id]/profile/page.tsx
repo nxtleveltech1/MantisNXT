@@ -686,7 +686,7 @@ function SupplierProfileContent() {
           }}
           className="space-y-6"
         >
-          <TabsList className="bg-muted/50 grid w-full grid-cols-9 p-1">
+          <TabsList className="bg-muted/50 grid w-full grid-cols-10 p-1">
             <TabsTrigger
               value="overview"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
