@@ -26,11 +26,13 @@ async function runSync(supplierId: string, supplierName: string) {
     
     if (data.success) {
       console.log(`✅ ${supplierName}: Success`);
-      console.log(`   CSV Downloaded: ${data.data.csvDownloaded}`);
-      console.log(`   Products: ${data.data.productsProcessed || 0} processed, ${data.data.productsCreated || 0} created`);
+      console.log(`   Data Scraped: ${data.data.dataScraped}`);
+      console.log(`   Products: ${data.data.productsProcessed || 0} processed, ${data.data.productsCreated || 0} created, ${data.data.productsUpdated || 0} updated`);
+      console.log(`   Discount Rules: ${data.data.discountRulesCreated || 0} created, ${data.data.discountRulesUpdated || 0} updated`);
       return { success: true, supplierName, data: data.data };
     } else {
       console.log(`❌ ${supplierName}: Failed - ${data.error || 'Unknown error'}`);
+      if (data.details) console.log(`   Details: ${data.details}`);
       return { success: false, supplierName, error: data.error };
     }
   } catch (error: any) {

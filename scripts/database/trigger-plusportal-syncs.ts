@@ -7,9 +7,10 @@
 import 'dotenv/config';
 import { query } from '../../src/lib/database/unified-connection';
 import { getPlusPortalSyncService } from '../../src/lib/services/PlusPortalSyncService';
-import { getPlusPortalCSVProcessor } from '../../src/lib/services/PlusPortalCSVProcessor';
+import { getPlusPortalDataProcessor } from '../../src/lib/services/PlusPortalDataProcessor';
 
 const SUPPLIERS_TO_SYNC = [
+  'SENNHEISER ELECTRONICS',
   'AV DISTRIBUTION',
   'STAGE AUDIO WORKS', 
   'ACTIVE MUSIC DISTRIBUTION',
@@ -63,18 +64,21 @@ async function main() {
         password: config.password,
       });
 
-      console.log(`   CSV Downloaded: ${syncResult.csvDownloaded}`);
+      console.log(`   Data Scraped: ${syncResult.dataScraped}`);
+      console.log(`   Products Scraped: ${syncResult.scrapedProducts?.length || 0}`);
 
-      if (syncResult.csvDownloaded && syncResult.csvFilePath && syncResult.logId) {
-        console.log(`   Processing CSV...`);
+      if (syncResult.dataScraped && syncResult.scrapedProducts && syncResult.scrapedProducts.length > 0 && syncResult.logId) {
+        console.log(`   Processing scraped data...`);
         
-        const csvProcessor = getPlusPortalCSVProcessor(supplierId);
-        const processingResult = await csvProcessor.processCSV(syncResult.csvFilePath, syncResult.logId);
+        const dataProcessor = getPlusPortalDataProcessor(supplierId);
+        const processingResult = await dataProcessor.processScrapedData(syncResult.scrapedProducts, syncResult.logId);
 
         console.log(`   ✅ Products Processed: ${processingResult.productsProcessed}`);
         console.log(`   ✅ Products Created: ${processingResult.productsCreated}`);
         console.log(`   ✅ Products Updated: ${processingResult.productsUpdated}`);
         console.log(`   ⏭️  Products Skipped: ${processingResult.productsSkipped}`);
+        console.log(`   💰 Discount Rules Created: ${processingResult.discountRulesCreated}`);
+        console.log(`   💰 Discount Rules Updated: ${processingResult.discountRulesUpdated}`);
 
         if (processingResult.errors.length > 0) {
           console.log(`   ⚠️  Errors: ${processingResult.errors.length}`);
@@ -89,7 +93,7 @@ async function main() {
           [supplierId]
         );
       } else {
-        console.log(`   ❌ CSV download failed`);
+        console.log(`   ❌ Data scraping failed`);
         if (syncResult.errors.length > 0) {
           for (const error of syncResult.errors) {
             console.log(`      - ${error}`);

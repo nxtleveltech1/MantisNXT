@@ -459,16 +459,27 @@ export class PlusPortalSyncService {
       details.progressPercent = updates.progressPercent;
     }
     if (Object.keys(details).length > 0) {
-      // Get existing details and merge
-      const existingResult = await query<{ details: unknown }>(
-        `SELECT details FROM core.plusportal_sync_log WHERE log_id = $1`,
-        [logId]
-      );
-      const existingDetails = existingResult.rows[0]?.details || {};
-      const mergedDetails = { ...(existingDetails as Record<string, unknown>), ...details };
-      updatesList.push(`details = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(mergedDetails));
-      paramIndex++;
+      // Get existing details and merge (handle case where column might not exist yet)
+      try {
+        const existingResult = await query<{ details: unknown }>(
+          `SELECT details FROM core.plusportal_sync_log WHERE log_id = $1`,
+          [logId]
+        );
+        const existingDetails = existingResult.rows[0]?.details || {};
+        const mergedDetails = { ...(existingDetails as Record<string, unknown>), ...details };
+        updatesList.push(`details = $${paramIndex}::jsonb`);
+        params.push(JSON.stringify(mergedDetails));
+        paramIndex++;
+      } catch (error) {
+        // If details column doesn't exist, just set it directly
+        if (error instanceof Error && error.message.includes('does not exist')) {
+          updatesList.push(`details = $${paramIndex}::jsonb`);
+          params.push(JSON.stringify(details));
+          paramIndex++;
+        } else {
+          throw error;
+        }
+      }
     }
 
     if (updates.status === 'completed' || updates.status === 'failed') {
