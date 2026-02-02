@@ -450,53 +450,56 @@ export class PlusPortalSyncService {
       paramIndex++;
     }
 
-    // Store progress info in details JSONB field
-    const details: Record<string, unknown> = {};
-    if (updates.currentStage) {
-      details.currentStage = updates.currentStage;
-    }
-    if (updates.progressPercent !== undefined) {
-      details.progressPercent = updates.progressPercent;
-    }
-    if (Object.keys(details).length > 0) {
-      // Get existing details and merge (handle case where column might not exist yet)
-      try {
-        const existingResult = await query<{ details: unknown }>(
-          `SELECT details FROM core.plusportal_sync_log WHERE log_id = $1`,
-          [logId]
-        );
-        const existingDetails = existingResult.rows[0]?.details || {};
-        const mergedDetails = { ...(existingDetails as Record<string, unknown>), ...details };
-        updatesList.push(`details = $${paramIndex}::jsonb`);
-        params.push(JSON.stringify(mergedDetails));
-        paramIndex++;
-      } catch (error) {
-        // If details column doesn't exist, just set it directly (don't try to merge)
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        if (errorMsg.includes('does not exist') || errorMsg.includes('column') && errorMsg.includes('details')) {
-          console.warn('[PlusPortal] Details column not found, setting directly:', errorMsg);
-          updatesList.push(`details = $${paramIndex}::jsonb`);
-          params.push(JSON.stringify(details));
-          paramIndex++;
-        } else {
-          // Re-throw if it's a different error
-          console.error('[PlusPortal] Error fetching details:', errorMsg);
-          throw error;
-        }
+    // Store progress info in details JSONB field (skip if column doesn't exist)
+    const detailsUpdates: string[] = [];
+    const detailsParams: unknown[] = [];
+    let detailsParamIndex = paramIndex;
+    
+    if (updates.currentStage || updates.progressPercent !== undefined) {
+      const detailsObj: Record<string, unknown> = {};
+      if (updates.currentStage) {
+        detailsObj.currentStage = updates.currentStage;
       }
+      if (updates.progressPercent !== undefined) {
+        detailsObj.progressPercent = updates.progressPercent;
+      }
+      detailsUpdates.push(`details = $${detailsParamIndex}::jsonb`);
+      detailsParams.push(JSON.stringify(detailsObj));
+      detailsParamIndex++;
     }
 
     if (updates.status === 'completed' || updates.status === 'failed') {
       updatesList.push(`sync_completed_at = NOW()`);
     }
 
-    if (updatesList.length > 0) {
-      await query(
-        `UPDATE core.plusportal_sync_log 
-         SET ${updatesList.join(', ')}
-         WHERE log_id = $1`,
-        params
-      );
+    if (updatesList.length > 0 || detailsUpdates.length > 0) {
+      // Try with details first, fallback without if column doesn't exist
+      try {
+        const allUpdates = [...updatesList, ...detailsUpdates];
+        const allParams = [...params, ...detailsParams, logId];
+        await query(
+          `UPDATE core.plusportal_sync_log 
+           SET ${allUpdates.join(', ')}
+           WHERE log_id = $${allParams.length}`,
+          allParams
+        );
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        // If details column doesn't exist, retry without it
+        if (errorMsg.includes('does not exist') && detailsUpdates.length > 0) {
+          console.warn('[PlusPortal] Details column not available, updating without progress info');
+          if (updatesList.length > 0) {
+            await query(
+              `UPDATE core.plusportal_sync_log 
+               SET ${updatesList.join(', ')}
+               WHERE log_id = $${paramIndex}`,
+              [...params, logId]
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
     }
   }
 
