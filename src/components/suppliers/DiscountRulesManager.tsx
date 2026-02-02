@@ -77,6 +77,7 @@ export function DiscountRulesManager({
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [saving, setSaving] = useState(false);
+  const [baseDiscountInput, setBaseDiscountInput] = useState<string>('');
 
   const [formData, setFormData] = useState({
     rule_name: '',
@@ -96,6 +97,14 @@ export function DiscountRulesManager({
     loadCategories();
     loadBrands();
   }, [supplierId]);
+
+  // Sync baseDiscount prop to input string
+  useEffect(() => {
+    if (baseDiscount !== undefined && baseDiscount !== null) {
+      // Format with period as decimal separator for display
+      setBaseDiscountInput(baseDiscount.toString().replace(',', '.'));
+    }
+  }, [baseDiscount]);
 
   const loadRules = async () => {
     try {
@@ -475,12 +484,43 @@ export function DiscountRulesManager({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.5"
-                value={baseDiscount}
-                onChange={(e) => onBaseDiscountChange(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="decimal"
+                value={baseDiscountInput}
+                onChange={(e) => {
+                  const rawValue = e.target.value;
+                  // Allow empty, digits, single comma or period as decimal separator
+                  if (rawValue === '' || /^\d*[,.]?\d*$/.test(rawValue)) {
+                    setBaseDiscountInput(rawValue);
+                    // Parse the value, handling both comma and period as decimal separators
+                    const normalizedValue = rawValue.replace(',', '.');
+                    const parsed = parseFloat(normalizedValue);
+                    if (!isNaN(parsed) && normalizedValue !== '' && normalizedValue !== '.') {
+                      // Clamp to valid range and update parent
+                      const clamped = Math.max(0, Math.min(100, parsed));
+                      onBaseDiscountChange(clamped);
+                    } else if (rawValue === '') {
+                      // Empty input - set to 0
+                      onBaseDiscountChange(0);
+                    }
+                    // For partial inputs like "3," or "3.", don't update parent yet
+                    // Wait for blur or complete number
+                  }
+                }}
+                onBlur={() => {
+                  // On blur, ensure we have a valid formatted value
+                  const normalizedValue = baseDiscountInput.replace(',', '.');
+                  const parsed = parseFloat(normalizedValue);
+                  if (isNaN(parsed) || baseDiscountInput === '' || baseDiscountInput === ',' || baseDiscountInput === '.') {
+                    setBaseDiscountInput('0');
+                    onBaseDiscountChange(0);
+                  } else {
+                    const clamped = Math.max(0, Math.min(100, parsed));
+                    setBaseDiscountInput(clamped.toString());
+                    onBaseDiscountChange(clamped);
+                  }
+                }}
+                placeholder="0.00"
                 className="max-w-[150px]"
               />
               <span className="text-muted-foreground text-lg font-medium">%</span>

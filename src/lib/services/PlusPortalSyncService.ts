@@ -966,10 +966,11 @@ export class PlusPortalSyncService {
     }
 
     const row = result.rows[0];
+    // Return null password as null, not empty string, to properly detect first-time setup
     return {
       supplierId: row.supplier_id,
       username: row.plusportal_username,
-      password: row.plusportal_password_encrypted || '', // Will need decryption
+      password: row.plusportal_password_encrypted || null, // Return null if not set
       enabled: row.plusportal_enabled,
       intervalMinutes: row.plusportal_interval_minutes,
     };
@@ -979,6 +980,16 @@ export class PlusPortalSyncService {
    * Update sync configuration
    */
   async updateConfig(config: Partial<PlusPortalSyncConfig>): Promise<void> {
+    // First, verify supplier exists
+    const supplierCheck = await query<{ supplier_id: string }>(
+      `SELECT supplier_id FROM core.supplier WHERE supplier_id = $1`,
+      [this.supplierId]
+    );
+    
+    if (supplierCheck.rows.length === 0) {
+      throw new Error(`Supplier not found: ${this.supplierId}`);
+    }
+
     const updates: string[] = [];
     const params: unknown[] = [];
     let paramIndex = 1;
@@ -1008,15 +1019,42 @@ export class PlusPortalSyncService {
       paramIndex++;
     }
 
-    if (updates.length > 0) {
-      // Add supplier ID as the last parameter
-      params.push(this.supplierId);
-      await query(
+    if (updates.length === 0) {
+      console.warn('[PlusPortal] updateConfig called with no updates');
+      return;
+    }
+
+    // Add supplier ID as the last parameter
+    params.push(this.supplierId);
+    
+    try {
+      const result = await query<{ supplier_id: string }>(
         `UPDATE core.supplier 
          SET ${updates.join(', ')}
-         WHERE supplier_id = $${paramIndex}`,
+         WHERE supplier_id = $${paramIndex}
+         RETURNING supplier_id`,
         params
       );
+      
+      if (result.rows.length === 0) {
+        throw new Error(`Failed to update supplier ${this.supplierId} - no rows affected`);
+      }
+      
+      console.log('[PlusPortal] Config updated successfully for supplier:', this.supplierId, {
+        updatedFields: updates.length,
+        enabled: config.enabled,
+        username: config.username ? '***' : undefined,
+        passwordUpdated: config.password !== undefined,
+        intervalMinutes: config.intervalMinutes,
+      });
+    } catch (error) {
+      console.error('[PlusPortal] Failed to update config:', {
+        supplierId: this.supplierId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        updates: updates.length,
+      });
+      throw new Error(`Failed to update PlusPortal configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -229,6 +229,7 @@ function SupplierProfileContent() {
   const [plusPortalEnabled, setPlusPortalEnabled] = useState(false);
   const [plusPortalInterval, setPlusPortalInterval] = useState(1440);
   const [plusPortalSyncing, setPlusPortalSyncing] = useState(false);
+  const [plusPortalSaving, setPlusPortalSaving] = useState(false);
   const [plusPortalCredentialsConfigured, setPlusPortalCredentialsConfigured] = useState(false);
   const [plusPortalSyncLogs, setPlusPortalSyncLogs] = useState<Array<{
     logId: string;
@@ -413,9 +414,11 @@ function SupplierProfileContent() {
               setPlusPortalUsername(config.username || '');
               setPlusPortalPassword(''); // Don't load password for security
               setPlusPortalEnabled(config.enabled || false);
-              setPlusPortalInterval(config.intervalMinutes || 1440);
-              // Check if credentials are fully configured (username AND password exist on server)
-              setPlusPortalCredentialsConfigured(!!(config.username && config.password));
+                              setPlusPortalInterval(config.intervalMinutes || 1440);
+                              // Check if credentials are fully configured (username AND password exist on server)
+                              // Password should be truthy and not empty string
+                              const hasPassword = config.password && config.password.trim() !== '';
+                              setPlusPortalCredentialsConfigured(!!(config.username && hasPassword));
             } else {
               // If no config, set defaults but don't clear username if it was set
               if (!plusPortalUsername) {
@@ -2081,6 +2084,7 @@ function SupplierProfileContent() {
                         variant="outline"
                         onClick={async () => {
                           try {
+                            setPlusPortalSaving(true);
                             setError(null);
                             if (!plusPortalUsername) {
                               toast({
@@ -2118,7 +2122,13 @@ function SupplierProfileContent() {
                             }
                             
                             const data = await res.json();
-                            if (data.success) {
+                            if (!res.ok) {
+                              // Handle error response
+                              const errorMsg = data.error || data.details || `Failed to save: ${res.status} ${res.statusText}`;
+                              throw new Error(errorMsg);
+                            }
+                            
+                            if (data.success !== false) {
                               // Reload status to get updated config
                               const statusRes = await fetch(`/api/suppliers/${supplierId}/plusportal-sync`);
                               const statusData = await statusRes.json();
@@ -2130,26 +2140,43 @@ function SupplierProfileContent() {
                                 setPlusPortalEnabled(config.enabled || false);
                                 setPlusPortalInterval(config.intervalMinutes || 1440);
                                 // Update credentials configured state
-                                setPlusPortalCredentialsConfigured(!!(config.username && config.password));
+                                // Password should be truthy and not empty string
+                                const hasPassword = config.password && config.password.trim() !== '';
+                                setPlusPortalCredentialsConfigured(!!(config.username && hasPassword));
                               }
                               toast({
                                 title: 'Success',
                                 description: 'PlusPortal configuration saved',
                               });
                             } else {
-                              throw new Error(data.error || 'Failed to save configuration');
+                              throw new Error(data.error || data.details || 'Failed to save configuration');
                             }
                           } catch (e: unknown) {
+                            const errorMessage = e instanceof Error ? e.message : 'Failed to save configuration';
+                            console.error('Failed to save PlusPortal configuration:', e);
                             toast({
                               title: 'Error',
-                              description: e?.message || 'Failed to save configuration',
+                              description: errorMessage,
                               variant: 'destructive',
                             });
+                            setError(errorMessage);
+                          } finally {
+                            setPlusPortalSaving(false);
                           }
                         }}
+                        disabled={plusPortalSaving}
                       >
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Save Configuration
+                        {plusPortalSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Save Configuration
+                          </>
+                        )}
                       </Button>
 
                       <Button

@@ -291,7 +291,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const { username, password, enabled, intervalMinutes } = body;
 
-    if (!username) {
+    if (!username || username.trim() === '') {
       return NextResponse.json(
         { error: 'Username is required' },
         { status: 400 }
@@ -302,14 +302,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     
     // Check if credentials are already configured
     const existingConfig = await service.getConfig();
-    const isFirstTimeSetup = !existingConfig || !existingConfig.password;
+    // First-time setup means no config exists OR no password is stored (null/empty)
+    const hasExistingPassword = existingConfig?.password && existingConfig.password.trim() !== '';
+    const isFirstTimeSetup = !existingConfig || !hasExistingPassword;
+    
+    console.log('[PlusPortal Sync API] Config update:', {
+      supplierId,
+      isFirstTimeSetup,
+      hasExistingPassword,
+      usernameProvided: !!username,
+      passwordProvided: !!password && password !== '',
+    });
     
     // Require password on first-time setup
-    if (isFirstTimeSetup && (!password || password === '')) {
-      return NextResponse.json(
-        { error: 'Password is required for initial configuration' },
-        { status: 400 }
-      );
+    if (isFirstTimeSetup) {
+      if (!password || password === '' || password === undefined || password.trim() === '') {
+        return NextResponse.json(
+          { error: 'Password is required for initial configuration' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update configuration - only include password if provided
@@ -319,17 +331,50 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       intervalMinutes: number;
       password?: string;
     } = {
-      username,
-      enabled,
-      intervalMinutes,
+      username: username.trim(),
+      enabled: enabled ?? false,
+      intervalMinutes: intervalMinutes ?? 1440,
     };
     
     // Only update password if provided (allows updating other fields without password)
-    if (password !== undefined && password !== null && password !== '') {
-      configUpdate.password = password; // TODO: Encrypt password before storing
+    // On first-time setup, password is required and already validated above
+    // On updates, if password is provided, use it; otherwise keep existing
+    if (password !== undefined && password !== null && password !== '' && password.trim() !== '') {
+      configUpdate.password = password.trim(); // TODO: Encrypt password before storing
+    } else if (isFirstTimeSetup) {
+      // This shouldn't happen due to validation above, but double-check
+      return NextResponse.json(
+        { error: 'Password is required for initial configuration' },
+        { status: 400 }
+      );
     }
+    // If password not provided and not first-time setup, don't include it in update (keeps existing)
 
-    await service.updateConfig(configUpdate);
+    try {
+      await service.updateConfig(configUpdate);
+      console.log('[PlusPortal Sync API] Config updated successfully');
+    } catch (updateError) {
+      console.error('[PlusPortal Sync API] Config update failed:', {
+        error: updateError,
+        supplierId,
+        configUpdate: {
+          ...configUpdate,
+          password: configUpdate.password ? '***' : undefined,
+        },
+      });
+      
+      const errorMessage = updateError instanceof Error ? updateError.message : 'Unknown error';
+      const isClientError = errorMessage.includes('required') || errorMessage.includes('not found');
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: isClientError ? errorMessage : 'Failed to update configuration',
+          details: errorMessage,
+        },
+        { status: isClientError ? 400 : 500 }
+      );
+    }
 
     // Get updated status
     const status = await service.getStatus();
