@@ -485,12 +485,12 @@ export async function GET(request: NextRequest) {
       escapeCSV(row.series_range),
       escapeCSV(row.category_name),
       escapeCSV(formatTags(row.tags)),
-      escapeCSV(row.sup_soh ?? ''),
+      escapeCSV(formatNumber(row.sup_soh)),
       escapeCSV(row.stock_status),
       escapeCSV(row.new_stock_eta ? new Date(row.new_stock_eta).toLocaleDateString() : ''),
-      escapeCSV(row.qty_on_order ?? ''),
+      escapeCSV(formatNumber(row.qty_on_order)),
       escapeCSV(formatNumber(row.cost_ex_vat)),
-      escapeCSV(row.base_discount != null && row.base_discount !== '' ? `${parseFloat(String(row.base_discount)).toFixed(1)}%` : ''),
+      escapeCSV(formatNumber(row.base_discount)),
       escapeCSV(formatNumber(row.cost_after_discount)),
       escapeCSV(formatNumber(row.rsp)),
       escapeCSV(formatNumber(row.cost_inc_vat)),
@@ -503,7 +503,7 @@ export async function GET(request: NextRequest) {
     const csvContent = [
       headers.join(','),
       ...csvRows.map((row) => row.join(',')),
-    ].join('\n');
+    ].join('\r\n');
 
     // Generate filename with date
     const date = new Date().toISOString().split('T')[0];
