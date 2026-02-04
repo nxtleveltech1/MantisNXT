@@ -23,6 +23,55 @@ interface RouteParams {
 // Increase timeout for sync operations (up to 5 minutes for Vercel Pro)
 export const maxDuration = 300; // 5 minutes
 
+const STALE_MINUTES = parseInt(process.env.PLUSPORTAL_STALE_MINUTES || '120', 10);
+
+function isLogStale(syncStartedAt: Date | string | null): boolean {
+  if (!syncStartedAt) return false;
+  const started = syncStartedAt instanceof Date ? syncStartedAt : new Date(syncStartedAt);
+  if (Number.isNaN(started.getTime())) return false;
+  return Date.now() - started.getTime() > STALE_MINUTES * 60 * 1000;
+}
+
+async function markSyncLogFailed(logId: string, reason: string) {
+  await query(
+    `UPDATE core.plusportal_sync_log 
+     SET status = 'failed',
+         errors = $1::jsonb,
+         sync_completed_at = NOW(),
+         details = jsonb_set(
+           COALESCE(details, '{}'::jsonb),
+           '{currentStage}',
+           $2::jsonb,
+           true
+         )
+     WHERE log_id = $3`,
+    [
+      JSON.stringify([reason]),
+      JSON.stringify(reason),
+      logId,
+    ]
+  );
+}
+
+async function auditStart(supplierId: string) {
+  const res = await query(
+    `INSERT INTO public.ai_agent_audit (supplier_id, upload_id, action, status, details)
+     VALUES ($1, $2, $3, 'started', $4::jsonb)
+     RETURNING id`,
+    [supplierId, null, 'PlusPortal Sync', JSON.stringify({ source: 'plusportal' })]
+  );
+  return res.rows[0]?.id as number | undefined;
+}
+
+async function auditFinish(auditId: number, status: 'completed' | 'failed', details: Record<string, unknown>) {
+  await query(
+    `UPDATE public.ai_agent_audit
+     SET status = $1, details = $2::jsonb, finished_at = NOW()
+     WHERE id = $3`,
+    [status, JSON.stringify(details ?? {}), auditId]
+  );
+}
+
 /**
  * GET /api/suppliers/[id]/plusportal-sync
  * Get sync status and recent logs
@@ -36,7 +85,16 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     }
 
     const service = getPlusPortalSyncService(supplierId);
-    const status = await service.getStatus();
+    let status = await service.getStatus();
+
+    const latestLog = status.recentLogs[0];
+    if (latestLog?.status === 'in_progress' && isLogStale(latestLog.syncStartedAt)) {
+      await markSyncLogFailed(
+        latestLog.logId,
+        `Stale sync detected (started at ${new Date(latestLog.syncStartedAt).toISOString()})`
+      );
+      status = await service.getStatus();
+    }
 
     return NextResponse.json({
       success: true,
@@ -63,6 +121,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  * Trigger a manual PlusPortal sync
  */
 export async function POST(_request: NextRequest, { params }: RouteParams) {
+  let auditId: number | undefined;
   try {
     const { id: supplierId } = await params;
 
@@ -81,8 +140,16 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check if a sync is already in progress
-    const status = await service.getStatus();
+    // Check if a sync is already in progress (clear stale runs first)
+    let status = await service.getStatus();
+    const latestLog = status.recentLogs[0];
+    if (latestLog?.status === 'in_progress' && isLogStale(latestLog.syncStartedAt)) {
+      await markSyncLogFailed(
+        latestLog.logId,
+        `Stale sync detected (started at ${new Date(latestLog.syncStartedAt).toISOString()})`
+      );
+      status = await service.getStatus();
+    }
     const inProgress = status.recentLogs.length > 0 && status.recentLogs[0].status === 'in_progress';
 
     if (inProgress) {
@@ -93,6 +160,12 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
           logId: status.recentLogs[0].logId,
         },
       });
+    }
+
+    try {
+      auditId = await auditStart(supplierId);
+    } catch (auditError) {
+      console.error('[PlusPortal Sync API] Failed to start audit log:', auditError);
     }
 
     // Execute sync
@@ -129,6 +202,14 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
             logId,
           ]
         );
+      }
+
+      if (auditId) {
+        await auditFinish(auditId, 'failed', {
+          stage: 'execution',
+          logId,
+          error: syncError instanceof Error ? syncError.message : 'Unknown error',
+        });
       }
       
       return NextResponse.json(
@@ -263,6 +344,20 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     // Cleanup temporary files
     service.cleanup();
 
+    if (auditId) {
+      await auditFinish(auditId, syncResult.success ? 'completed' : 'failed', {
+        logId: syncResult.logId,
+        success: syncResult.success,
+        productsProcessed: syncResult.productsProcessed,
+        productsCreated: syncResult.productsCreated,
+        productsUpdated: syncResult.productsUpdated,
+        productsSkipped: syncResult.productsSkipped,
+        discountRulesCreated: syncResult.discountRulesCreated,
+        discountRulesUpdated: syncResult.discountRulesUpdated,
+        errors: syncResult.errors?.slice(0, 5),
+      });
+    }
+
     return NextResponse.json({
       success: syncResult.success,
       data: {
@@ -280,6 +375,12 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     console.error('[PlusPortal Sync API] POST error:', error);
+    if (auditId) {
+      await auditFinish(auditId, 'failed', {
+        stage: 'unexpected',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
     return NextResponse.json(
       {
         error: 'Sync failed',
@@ -409,4 +510,3 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
-

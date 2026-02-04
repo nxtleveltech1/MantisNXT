@@ -35,6 +35,8 @@ const CELTO_DISCOUNT_PERCENT = 10;
 interface ProductRow {
   sku: string;
   brand: string | null;
+  name: string | null;
+  description: string | null;
   costIncVat: number | null;
   costExVat: number | null;
   baseDiscount: number | null;
@@ -188,6 +190,8 @@ function readExcelFile(filePath: string): ProductRow[] {
 
   const colSku = findCol(['sku', 'code', 'part number', 'item code']);
   const colBrand = findCol(['brand', 'manufacturer', 'make']);
+  const colName = findCol(['product name', 'name', 'description', 'product']);
+  const colDescription = findCol(['description', 'desc', 'product description']);
   const colCostIncVat = findCol(['cost inc vat', 'cost incvat', 'cost including', 'cost incl', 'inc vat', 'incvat', 'cost inc']);
   // Don't use Cost Ex VAT column - we'll calculate it from Cost Inc VAT
   const colBaseDiscount = findCol(['base discount', 'discount', 'discount %', 'discount percent', 'disc', '10%']);
@@ -195,6 +199,8 @@ function readExcelFile(filePath: string): ProductRow[] {
   console.log('\n📊 Column mappings:');
   console.log(`   SKU: ${colSku >= 0 ? headers[colSku] : 'NOT FOUND'}`);
   console.log(`   Brand: ${colBrand >= 0 ? headers[colBrand] : 'NOT FOUND'}`);
+  console.log(`   Name: ${colName >= 0 ? headers[colName] : 'NOT FOUND'}`);
+  console.log(`   Description: ${colDescription >= 0 ? headers[colDescription] : 'NOT FOUND'}`);
   console.log(`   Cost Inc VAT: ${colCostIncVat >= 0 ? headers[colCostIncVat] : 'NOT FOUND'}`);
   console.log(`   Cost Ex VAT: (calculated from Cost Inc VAT)`);
   console.log(`   Base Discount: ${colBaseDiscount >= 0 ? headers[colBaseDiscount] : 'NOT FOUND'}`);
@@ -227,6 +233,14 @@ function readExcelFile(filePath: string): ProductRow[] {
       ? String(row[colBrand] || '').trim() || null
       : null;
 
+    const name = colName >= 0
+      ? String(row[colName] || '').trim() || null
+      : null;
+
+    const description = colDescription >= 0
+      ? String(row[colDescription] || '').trim() || null
+      : null;
+
     // Get Cost Inc VAT - this is the primary source
     const costIncVatValue = colCostIncVat >= 0
       ? (getFormattedCellValue(rowIdx, colCostIncVat) || String(row[colCostIncVat] || ''))
@@ -251,6 +265,8 @@ function readExcelFile(filePath: string): ProductRow[] {
     const product: ProductRow = {
       sku,
       brand: brand ? brand.toUpperCase() : null,
+      name: name || sku, // Use SKU as name if no name provided
+      description: description || null,
       costIncVat,
       costExVat,
       baseDiscount: baseDiscount ? Number(baseDiscount.toFixed(2)) : null,
@@ -265,50 +281,87 @@ function readExcelFile(filePath: string): ProductRow[] {
 }
 
 /**
- * Update product pricing and brand in database
+ * Update or create product pricing and brand in database
  */
-async function updateProduct(
+async function updateOrCreateProduct(
   client: Client,
   supplierId: string,
   product: ProductRow
-): Promise<{ updated: boolean; error?: string }> {
+): Promise<{ updated: boolean; created: boolean; error?: string }> {
   try {
     // Find product by supplier SKU
     const findResult = await client.query(
-      `SELECT supplier_product_id, attrs_json, supplier_sku
+      `SELECT supplier_product_id, attrs_json, supplier_sku, name_from_supplier
        FROM core.supplier_product
        WHERE supplier_id = $1 AND supplier_sku = $2
        LIMIT 1`,
       [supplierId, product.sku]
     );
 
+    let productId: string;
+    let wasCreated = false;
+
     if (findResult.rows.length === 0) {
-      return { updated: false, error: 'Product not found' };
+      // CREATE new product
+      const insertResult = await client.query<{ supplier_product_id: string }>(
+        `INSERT INTO core.supplier_product (
+           supplier_id,
+           supplier_sku,
+           name_from_supplier,
+           uom,
+           attrs_json,
+           is_active,
+           is_new,
+           first_seen_at,
+           last_seen_at,
+           created_at,
+           updated_at
+         ) VALUES ($1, $2, $3, 'EA', $4, true, true, NOW(), NOW(), NOW(), NOW())
+         RETURNING supplier_product_id`,
+        [
+          supplierId,
+          product.sku,
+          product.name || product.sku, // Use provided name or SKU as fallback
+          JSON.stringify({
+            cost_excluding: product.costExVat,
+            cost_including: product.costIncVat,
+            brand: product.brand,
+            description: product.description,
+            ...(product.baseDiscount !== null && { base_discount: product.baseDiscount }),
+          }),
+        ]
+      );
+
+      productId = insertResult.rows[0].supplier_product_id;
+      wasCreated = true;
+    } else {
+      // UPDATE existing product
+      productId = findResult.rows[0].supplier_product_id;
+      const existingAttrs = findResult.rows[0].attrs_json || {};
+
+      // Update attrs_json
+      const updatedAttrs = {
+        ...existingAttrs,
+        cost_excluding: product.costExVat,
+        cost_including: product.costIncVat,
+        brand: product.brand,
+        description: product.description || existingAttrs.description,
+        // Store base discount if provided
+        ...(product.baseDiscount !== null && { base_discount: product.baseDiscount }),
+      };
+
+      // Update supplier_product
+      await client.query(
+        `UPDATE core.supplier_product
+         SET name_from_supplier = COALESCE($3, name_from_supplier),
+             attrs_json = $1::jsonb,
+             updated_at = NOW()
+         WHERE supplier_product_id = $2`,
+        [JSON.stringify(updatedAttrs), productId, product.name]
+      );
     }
 
-    const productId = findResult.rows[0].supplier_product_id;
-    const existingAttrs = findResult.rows[0].attrs_json || {};
-
-    // Update attrs_json
-    const updatedAttrs = {
-      ...existingAttrs,
-      cost_excluding: product.costExVat,
-      cost_including: product.costIncVat,
-      brand: product.brand,
-      // Store base discount if provided
-      ...(product.baseDiscount !== null && { base_discount: product.baseDiscount }),
-    };
-
-    // Update supplier_product
-    await client.query(
-      `UPDATE core.supplier_product
-       SET attrs_json = $1::jsonb,
-           updated_at = NOW()
-       WHERE supplier_product_id = $2`,
-      [JSON.stringify(updatedAttrs), productId]
-    );
-
-    // Update price_history
+    // Update price_history (close old, create new)
     await client.query(
       `UPDATE core.price_history
        SET is_current = false, valid_to = NOW()
@@ -329,14 +382,17 @@ async function updateProduct(
       [
         productId,
         product.costExVat,
-        'Updated from Excel - Cost Ex VAT calculated from Cost Inc VAT',
+        wasCreated 
+          ? 'Created from Excel - Cost Ex VAT calculated from Cost Inc VAT'
+          : 'Updated from Excel - Cost Ex VAT calculated from Cost Inc VAT',
       ]
     );
 
-    return { updated: true };
+    return { updated: !wasCreated, created: wasCreated };
   } catch (error) {
     return {
       updated: false,
+      created: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
@@ -509,17 +565,22 @@ async function main() {
         brandsFound.add(product.brand);
       }
 
-      const result = await updateProduct(client, supplierId, product);
+      const result = await updateOrCreateProduct(client, supplierId, product);
       
-      if (result.updated) {
+      if (result.updated || result.created) {
+        const action = result.created ? 'CREATED' : 'UPDATED';
         console.log(
-          `✅ ${product.sku}: Cost Ex VAT = R ${product.costExVat.toFixed(2)} (from R ${product.costIncVat.toFixed(2)} Inc VAT)${product.brand ? `, Brand = ${product.brand}` : ''}`
+          `✅ ${product.sku}: ${action} - Cost Ex VAT = R ${product.costExVat.toFixed(2)} (from R ${product.costIncVat.toFixed(2)} Inc VAT)${product.brand ? `, Brand = ${product.brand}` : ''}`
         );
-        updated++;
+        if (result.created) {
+          updated++;
+        } else {
+          updated++;
+        }
       } else {
-        console.log(`❌ ${product.sku}: ${result.error || 'Update failed'}`);
+        console.log(`❌ ${product.sku}: ${result.error || 'Update/Create failed'}`);
         errors++;
-        errorDetails.push({ sku: product.sku, error: result.error || 'Update failed' });
+        errorDetails.push({ sku: product.sku, error: result.error || 'Update/Create failed' });
       }
     }
 

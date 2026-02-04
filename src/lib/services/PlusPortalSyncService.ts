@@ -642,8 +642,9 @@ export class PlusPortalSyncService {
         });
         
         const scrapeResult = await this.scrapeShoppingData(page, logId);
+        const scrapedCount = scrapeResult.products.length;
         
-        if (scrapeResult.success || scrapeResult.products.length > 0) {
+        if (scrapedCount > 0) {
           dataScraped = true;
           scrapedProducts = scrapeResult.products;
           totalPages = scrapeResult.totalPages;
@@ -655,14 +656,18 @@ export class PlusPortalSyncService {
           
           console.log(`[PlusPortal] Scrape successful: ${scrapedProducts.length} products from ${totalPages} pages`);
         } else {
-          errors.push('Scraping returned no products');
+          dataScraped = false;
           if (scrapeResult.errors.length > 0) {
             errors.push(...scrapeResult.errors);
+          } else {
+            errors.push('Scraping returned no products');
           }
         }
 
         await this.updateSyncLog(logId, {
-          currentStage: `Scraped ${scrapedProducts.length} products, ready for processing...`,
+          currentStage: scrapedCount > 0
+            ? `Scraped ${scrapedProducts.length} products, ready for processing...`
+            : 'Scrape finished but no products were found',
           progressPercent: 80,
         });
       } finally {
@@ -1044,5 +1049,4 @@ export class PlusPortalSyncService {
 export function getPlusPortalSyncService(supplierId: string): PlusPortalSyncService {
   return new PlusPortalSyncService(supplierId);
 }
-
 

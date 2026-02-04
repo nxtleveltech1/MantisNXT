@@ -2382,12 +2382,76 @@ function SupplierProfileContent() {
               </CardContent>
             </Card>
 
-            {/* Sync Logs */}
+            {/* PlusPortal Sync Logs */}
             <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                   <History className="text-primary h-5 w-5" />
-                  Sync History
+                  PlusPortal Sync History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {plusPortalSyncLogs.length > 0 ? (
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-3">
+                      {plusPortalSyncLogs.map((log) => (
+                        <div
+                          key={log.logId}
+                          className="flex items-center justify-between rounded-lg border p-4"
+                        >
+                          <div className="flex-1">
+                            <div className="mb-1 flex items-center gap-2">
+                              <Clock className="text-muted-foreground h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {new Date(log.syncStartedAt).toLocaleString()}
+                                {log.syncCompletedAt &&
+                                  ` → ${new Date(log.syncCompletedAt).toLocaleString()}`}
+                              </span>
+                            </div>
+                            <div className="text-muted-foreground text-xs">
+                              {log.productsProcessed} processed, {log.productsCreated} created,{' '}
+                              {log.productsSkipped} skipped
+                            </div>
+                            {log.errors.length > 0 && (
+                              <div className="mt-1 text-xs text-red-500">
+                                {log.errors.slice(0, 3).join(', ')}
+                                {log.errors.length > 3 && '...'}
+                              </div>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              log.status === 'completed'
+                                ? 'default'
+                                : log.status === 'failed'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                          >
+                            {log.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <RefreshCw className="text-muted-foreground mb-4 h-12 w-12 opacity-50" />
+                    <p className="text-muted-foreground text-sm">No PlusPortal sync history yet</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Configure credentials above and run your first sync
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* JSON Feed Sync Logs */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <History className="text-primary h-5 w-5" />
+                  JSON Feed Sync History
                 </CardTitle>
               </CardHeader>
               <CardContent>
