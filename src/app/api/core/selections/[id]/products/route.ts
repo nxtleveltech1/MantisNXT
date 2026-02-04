@@ -73,13 +73,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
              ORDER BY dr.priority DESC
              LIMIT 1),
-            -- Brand-level discount
+            -- Brand-level discount (match by brand name from attrs_json or pricelist_row)
             (SELECT dr.discount_percent 
              FROM core.supplier_discount_rules dr
-             JOIN core.product p ON p.product_id = sp.product_id
+             JOIN public.brand b ON b.id = dr.brand_id
              WHERE dr.supplier_id = sp.supplier_id
                AND dr.scope_type = 'brand'
-               AND dr.brand_id = p.brand_id
+               AND UPPER(TRIM(b.name)) = UPPER(TRIM(COALESCE(
+                 sp.attrs_json->>'brand',
+                 (SELECT r.brand 
+                  FROM spp.pricelist_row r
+                  JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+                  WHERE r.supplier_sku = sp.supplier_sku AND r.brand IS NOT NULL AND r.brand <> ''
+                  ORDER BY u.received_at DESC, r.row_num DESC
+                  LIMIT 1),
+                 ''
+               )))
                AND dr.is_active = true
                AND dr.valid_from <= NOW()
                AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
