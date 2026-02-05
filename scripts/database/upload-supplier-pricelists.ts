@@ -227,6 +227,7 @@ function mapRowToPricelistRow(
   const colRsp = findColumn(headers, ['rsp', 'retail', 'retail price', 'suggested retail', 'list price', 'rrp']);
   const colCategory = findColumn(headers, ['category', 'cat', 'group', 'type', 'class']);
   const colStock = findColumn(headers, ['stock', 'qty', 'quantity', 'qty on hand', 'stock qty', 'available', 'soh']);
+  const colBaseDiscount = findColumn(headers, ['base discount', 'discount', 'discount %', 'discount percent', 'disc', 'base disc']);
 
   // Extract values
   const sku = colSku >= 0 ? String(row[headers[colSku]] || '').trim() : '';
@@ -251,6 +252,20 @@ function mapRowToPricelistRow(
   const category = colCategory >= 0 ? String(row[headers[colCategory]] || '').trim() : undefined;
   const stockQty = colStock >= 0 ? parseInt(String(row[headers[colStock]] || '0')) || 0 : 0;
 
+  // Parse discount percentage (handles "-25%", "25%", "25", etc.)
+  let baseDiscount: number | undefined = undefined;
+  if (colBaseDiscount >= 0) {
+    const discountValue = String(row[headers[colBaseDiscount]] || '').trim();
+    if (discountValue) {
+      // Remove % sign and parse
+      const cleaned = discountValue.replace(/%/g, '').replace(/-/g, '').trim();
+      const parsed = parseFloat(cleaned);
+      if (!isNaN(parsed) && parsed > 0) {
+        baseDiscount = parsed;
+      }
+    }
+  }
+
   // Build attrs_json
   const attrs: Record<string, unknown> = {};
   if (stockQty > 0) attrs.stock_qty = stockQty;
@@ -260,6 +275,10 @@ function mapRowToPricelistRow(
   }
   if (colCostIncVat >= 0 && colCostExVat < 0) {
     attrs.cost_inc_vat = normalizePrice(row[headers[colCostIncVat]]);
+  }
+  if (baseDiscount !== undefined) {
+    attrs.base_discount = baseDiscount;
+    attrs.base_discount_percent = baseDiscount;
   }
 
   return {
@@ -335,7 +354,7 @@ async function uploadPricelistFile(config: FileConfig): Promise<void> {
     console.log('\n✅ Validating upload...');
     const validationResult = await pricelistService.validateUpload(upload.upload_id);
     
-    if (validationResult.status === 'valid') {
+    if (validationResult.status === 'valid' || validationResult.status === 'validated' || validationResult.status === 'warning') {
       console.log(`   ✅ Validation passed: ${validationResult.summary.valid_rows} valid rows`);
       
       if (validationResult.summary.error_rows > 0) {
@@ -344,12 +363,34 @@ async function uploadPricelistFile(config: FileConfig): Promise<void> {
       if (validationResult.summary.warning_rows > 0) {
         console.log(`   ⚠️  ${validationResult.summary.warning_rows} warnings found`);
       }
+
+      // Merge into core catalog
+      console.log('\n🔄 Merging pricelist into core catalog...');
+      const mergeResult = await pricelistService.mergePricelist(upload.upload_id, {
+        skipInvalidRows: validationResult.status === 'warning',
+      });
+
+      if (mergeResult.success) {
+        console.log(`   ✅ Merge complete:`);
+        console.log(`      Products created: ${mergeResult.products_created}`);
+        console.log(`      Products updated: ${mergeResult.products_updated}`);
+        console.log(`      Prices updated: ${mergeResult.prices_updated}`);
+        
+        if (mergeResult.errors.length > 0) {
+          console.log(`   ⚠️  Merge errors: ${mergeResult.errors.length}`);
+          mergeResult.errors.slice(0, 5).forEach(err => console.log(`      - ${err}`));
+        }
+      } else {
+        console.log(`   ❌ Merge failed: ${mergeResult.errors.join(', ')}`);
+        throw new Error(`Merge failed: ${mergeResult.errors.join(', ')}`);
+      }
     } else {
-      console.log(`   ⚠️  Validation status: ${validationResult.status}`);
+      console.log(`   ❌ Validation failed: ${validationResult.status}`);
       console.log(`   Errors: ${validationResult.summary.error_rows}, Warnings: ${validationResult.summary.warning_rows}`);
+      throw new Error(`Validation failed with status: ${validationResult.status}`);
     }
 
-    console.log(`\n✅ Successfully uploaded ${config.supplierName} pricelist`);
+    console.log(`\n✅ Successfully uploaded and merged ${config.supplierName} pricelist`);
     console.log(`   Upload ID: ${upload.upload_id}`);
     console.log(`   Rows: ${insertedCount}`);
 
