@@ -15,12 +15,15 @@ export async function POST(
     const reportType = body.type || 'project';
 
     let result;
-    if (reportType === 'timesheet') {
-      result = await ProjectsPDFService.generateTimesheetReportPDF(id, orgId, userId);
-    } else if (reportType === 'milestone') {
+    if (reportType === 'milestone') {
       result = await ProjectsPDFService.generateMilestoneReportPDF(id, orgId, userId);
-    } else {
+    } else if (reportType === 'project') {
       result = await ProjectsPDFService.generateProjectReportPDF(id, orgId, userId);
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Invalid report type. Use project or milestone.' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({

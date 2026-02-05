@@ -7,60 +7,48 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 interface Task {
-  id: string;
+  task_id: string;
   title: string;
-  status?: string;
-  dartboard?: string;
-  assignee?: string;
+  status_id?: string;
+  status_name?: string;
+  status_type?: string;
   assignees?: string[];
-  tags?: string[];
+  labels?: string[];
   priority?: string;
-  dueAt?: string;
+  due_date?: string;
+}
+
+interface Status {
+  status_id: string;
+  name: string;
+  color?: string | null;
 }
 
 interface KanbanBoardProps {
   tasks: Task[];
+  statuses: Status[];
   onTaskClick?: (task: Task) => void;
-  onCreateTask?: (status: string) => void;
+  onCreateTask?: (statusId: string) => void;
 }
 
-export function KanbanBoard({ tasks, onTaskClick, onCreateTask }: KanbanBoardProps) {
-  // Group tasks by status
+export function KanbanBoard({ tasks, statuses, onTaskClick, onCreateTask }: KanbanBoardProps) {
   const tasksByStatus = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
-    
-    tasks.forEach(task => {
-      const status = task.status || 'unstarted';
-      if (!grouped[status]) {
-        grouped[status] = [];
-      }
-      grouped[status].push(task);
-    });
-    
-    // Ensure common statuses exist even if empty
-    const commonStatuses = ['unstarted', 'in-progress', 'in review', 'completed', 'done'];
-    commonStatuses.forEach(status => {
-      if (!grouped[status]) {
-        grouped[status] = [];
-      }
-    });
-    
-    return grouped;
-  }, [tasks]);
 
-  const getStatusColor = (status: string) => {
-    const normalized = status.toLowerCase();
-    if (normalized.includes('completed') || normalized.includes('done')) {
-      return 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-800';
-    }
-    if (normalized.includes('progress') || normalized.includes('working')) {
-      return 'bg-blue-100 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800';
-    }
-    if (normalized.includes('review') || normalized.includes('testing')) {
-      return 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-800';
-    }
-    return 'bg-gray-100 dark:bg-gray-900/20 border-gray-300 dark:border-gray-800';
-  };
+    statuses.forEach(status => {
+      grouped[status.status_id] = [];
+    });
+
+    tasks.forEach(task => {
+      const statusId = task.status_id || statuses[0]?.status_id || 'unassigned';
+      if (!grouped[statusId]) {
+        grouped[statusId] = [];
+      }
+      grouped[statusId].push(task);
+    });
+
+    return grouped;
+  }, [tasks, statuses]);
 
   const getPriorityBadge = (priority?: string) => {
     if (!priority) return null;
@@ -71,11 +59,13 @@ export function KanbanBoard({ tasks, onTaskClick, onCreateTask }: KanbanBoardPro
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-        <Card key={status} className="min-w-[300px] flex-shrink-0">
+      {statuses.map(status => {
+        const statusTasks = tasksByStatus[status.status_id] || [];
+        return (
+        <Card key={status.status_id} className="min-w-[300px] flex-shrink-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold capitalize flex items-center justify-between">
-              <span>{status.replace(/-/g, ' ')}</span>
+              <span>{status.name}</span>
               <Badge variant="secondary" className="text-xs">
                 {statusTasks.length}
               </Badge>
@@ -84,8 +74,11 @@ export function KanbanBoard({ tasks, onTaskClick, onCreateTask }: KanbanBoardPro
           <CardContent className="space-y-2">
             {statusTasks.map(task => (
               <Card
-                key={task.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${getStatusColor(status)}`}
+                key={task.task_id}
+                className="cursor-pointer transition-all hover:shadow-md"
+                style={{
+                  borderColor: status.color || undefined,
+                }}
                 onClick={() => onTaskClick?.(task)}
               >
                 <CardContent className="p-3">
@@ -95,20 +88,20 @@ export function KanbanBoard({ tasks, onTaskClick, onCreateTask }: KanbanBoardPro
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {getPriorityBadge(task.priority)}
-                    {task.assignee && (
+                    {task.assignees && task.assignees.length > 0 && (
                       <Badge variant="outline" className="text-xs">
-                        {task.assignee}
+                        {task.assignees.slice(0, 2).join(', ')}
                       </Badge>
                     )}
-                    {task.dueAt && (
+                    {task.due_date && (
                       <span className="text-xs text-muted-foreground">
-                        {new Date(task.dueAt).toLocaleDateString()}
+                        {new Date(task.due_date).toLocaleDateString()}
                       </span>
                     )}
                   </div>
-                  {task.tags && task.tags.length > 0 && (
+                  {task.labels && task.labels.length > 0 && (
                     <div className="flex gap-1 mt-2 flex-wrap">
-                      {task.tags.slice(0, 3).map((tag, idx) => (
+                      {task.labels.slice(0, 3).map((tag, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
@@ -122,14 +115,14 @@ export function KanbanBoard({ tasks, onTaskClick, onCreateTask }: KanbanBoardPro
               variant="ghost"
               size="sm"
               className="w-full justify-start text-muted-foreground"
-              onClick={() => onCreateTask?.(status)}
+              onClick={() => onCreateTask?.(status.status_id)}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add task
             </Button>
           </CardContent>
         </Card>
-      ))}
+      )})}
     </div>
   );
 }

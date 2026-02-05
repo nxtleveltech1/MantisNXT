@@ -18,14 +18,14 @@ import { SCHEMA } from './schema-contract';
  * All pricing tables live in the `core` schema
  */
 export const PRICING_TABLES = {
-  PRICING_RULES: 'pricing_rule',
+  PRICING_RULES: `${SCHEMA.CORE}.pricing_rule`,
   PRICING_RULE_CONDITIONS: `${SCHEMA.CORE}.pricing_rule_conditions`,
   OPTIMIZATION_RUNS: `${SCHEMA.CORE}.optimization_runs`,
   OPTIMIZATION_RECOMMENDATIONS: `${SCHEMA.CORE}.optimization_recommendations`,
   PRICE_CHANGE_LOG: `${SCHEMA.CORE}.price_change_log`,
-  COMPETITOR_PRICES: `${SCHEMA.CORE}.competitor_prices`,
+  COMPETITOR_PRICES: `${SCHEMA.CORE}.competitor_pricing`,
   PRICE_ELASTICITY: `${SCHEMA.CORE}.price_elasticity`,
-  PRICING_AUTOMATION_CONFIG: 'pricing_automation_config',
+  PRICING_AUTOMATION_CONFIG: `${SCHEMA.CORE}.pricing_automation_config`,
   COMPETITOR_PROFILE: `${SCHEMA.CORE}.competitor_profile`,
   COMPETITOR_DATA_SOURCE: `${SCHEMA.CORE}.competitor_data_source`,
   COMPETITOR_PRODUCT_MATCH: `${SCHEMA.CORE}.competitor_product_match`,
@@ -91,12 +91,16 @@ export enum RecommendationStatus {
  */
 export interface PricingRule {
   rule_id: string;
+  org_id?: string;
   name: string;
   description?: string;
   rule_type: PricingRuleType;
   priority: number;
   is_active: boolean;
+  is_global?: boolean;
   strategy: PricingStrategy;
+
+  currency?: string;
 
   // Rule configuration (JSON)
   config: {
@@ -152,6 +156,7 @@ export interface PricingRuleCondition {
  */
 export interface OptimizationRun {
   run_id: string;
+  org_id?: string;
   run_name: string;
   strategy: PricingStrategy;
   status: OptimizationStatus;
@@ -201,6 +206,7 @@ export interface OptimizationRun {
  */
 export interface OptimizationRecommendation {
   recommendation_id: string;
+  org_id?: string;
   run_id: string;
   product_id: string;
   supplier_product_id?: string;
@@ -255,6 +261,7 @@ export interface OptimizationRecommendation {
  */
 export interface PriceChangeLog {
   log_id: string;
+  org_id?: string;
   product_id: string;
   supplier_product_id?: string;
 
@@ -289,57 +296,61 @@ export interface PriceChangeLog {
  */
 export interface CompetitorPrice {
   competitor_price_id: string;
-  product_id: string;
+  org_id: string;
+  product_id?: string;
+  inventory_item_id?: string;
   competitor_name: string;
   competitor_sku?: string;
 
   // Price data
   price: number;
   currency: string;
-  availability: 'in_stock' | 'out_of_stock' | 'limited' | 'unknown';
+  availability: 'in_stock' | 'out_of_stock' | 'limited' | 'unknown' | string;
 
   // Source
   source_url?: string;
+  source_type?: string;
   last_checked: Date;
 
   // Metadata
   created_at: Date;
+  updated_at?: Date;
   is_active: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Price Elasticity Interface
  */
+ */
 export interface PriceElasticity {
   elasticity_id: string;
-  product_id: string;
+  org_id: string;
+  product_id?: string;
+  inventory_item_id?: string;
 
   // Elasticity metrics
-  elasticity_coefficient: number; // Percentage change in demand / Percentage change in price
-  confidence_interval_lower: number;
-  confidence_interval_upper: number;
+  elasticity_coefficient: number | null;
+  confidence_interval_lower?: number | null;
+  confidence_interval_upper?: number | null;
 
   // Analysis period
-  analysis_start_date: Date;
-  analysis_end_date: Date;
-  data_points_count: number;
+  analysis_start_date?: Date | null;
+  analysis_end_date?: Date | null;
+  data_points_count?: number | null;
 
   // Optimal pricing
-  optimal_price?: number;
-  optimal_price_confidence?: number;
+  optimal_price?: number | null;
+  optimal_price_confidence?: number | null;
 
   // Currency
-  currency: string; // Currency code (e.g., 'ZAR', 'USD')
+  currency: string;
 
-  // Historical data used
-  price_range_analyzed: {
-    min_price: number;
-    max_price: number;
-  };
-  demand_range_observed: {
-    min_demand: number;
-    max_demand: number;
-  };
+  // Historical ranges
+  price_range_min?: number | null;
+  price_range_max?: number | null;
+  demand_range_min?: number | null;
+  demand_range_max?: number | null;
 
   // Metadata
   created_at: Date;
@@ -349,6 +360,7 @@ export interface PriceElasticity {
 
 /**
  * Price Performance Metrics
+ */
  */
 export interface PricePerformanceMetrics {
   product_id: string;
