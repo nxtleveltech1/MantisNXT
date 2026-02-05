@@ -248,9 +248,10 @@ export async function GET(request: NextRequest) {
                AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
              ORDER BY dr.priority DESC
              LIMIT 1),
-            -- Fallback to base_discount_percent
-            s.base_discount_percent,
+            -- Fallback: prioritize attrs_json base_discount over supplier-level defaults
             (sp.attrs_json->>'base_discount')::numeric,
+            (sp.attrs_json->>'base_discount_percent')::numeric,
+            s.base_discount_percent,
             (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
             0
           ) AS base_discount
