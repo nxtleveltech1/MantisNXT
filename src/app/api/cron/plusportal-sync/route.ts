@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
 
 const STALE_MINUTES = parseInt(process.env.PLUSPORTAL_STALE_MINUTES || '120', 10);
-const MAX_SUPPLIERS_PER_RUN = parseInt(process.env.PLUSPORTAL_CRON_MAX_SUPPLIERS || '1', 10);
+const MAX_SUPPLIERS_PER_RUN = parseInt(process.env.PLUSPORTAL_CRON_MAX_SUPPLIERS || '10', 10);
 
 function isAuthorized(request: NextRequest): boolean {
   return request.headers.get('x-vercel-cron') === '1';
