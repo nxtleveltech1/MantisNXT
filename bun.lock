@@ -1,4 +1,4 @@
-{
+﻿{
   "lockfileVersion": 1,
   "configVersion": 0,
   "workspaces": {
@@ -63,7 +63,6 @@
         "critters": "^0.0.20",
         "crypto-js": "^4.2.0",
         "csv-parse": "^5.6.0",
-        "dart-tools": "^0.4.6",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.1",
         "exceljs": "^4.4.0",
@@ -947,7 +946,6 @@
 
     "damerau-levenshtein": ["damerau-levenshtein@1.0.8", "", {}, "sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA=="],
 
-    "dart-tools": ["dart-tools@0.4.6", "", { "dependencies": { "axios": "~1.9" } }, "sha512-NVhpnp/h77mtpNHs5cjz9rylf9qJwAjiq6RErnz8LCBnp/N2zKRBLqVhcRk4etJPkjlqCJRHHgdrYZWp3heRQA=="],
 
     "data-uri-to-buffer": ["data-uri-to-buffer@6.0.2", "", {}, "sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw=="],
 
@@ -2251,7 +2249,6 @@
 
     "critters/htmlparser2": ["htmlparser2@8.0.2", "", { "dependencies": { "domelementtype": "^2.3.0", "domhandler": "^5.0.3", "domutils": "^3.0.1", "entities": "^4.4.0" } }, "sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA=="],
 
-    "dart-tools/axios": ["axios@1.9.0", "", { "dependencies": { "follow-redirects": "^1.15.6", "form-data": "^4.0.0", "proxy-from-env": "^1.1.0" } }, "sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg=="],
 
     "dot-prop/type-fest": ["type-fest@2.19.0", "", {}, "sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA=="],
 

@@ -778,7 +778,7 @@ export class SmartDashboardManager {
     try {
       await this.db.query(
         `
-        INSERT INTO smart_dashboards (
+        INSERT INTO public.dashboard (
           id, name, description, organization_id, layout, widgets,
           intelligence, sharing, metadata, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -934,7 +934,7 @@ export class SmartDashboardManager {
         size: 'medium',
         position: { x: 6, y: 4, w: 3, h: 3 },
         configuration: {
-          dataSource: 'anomaly_alerts',
+          dataSource: 'ai_alert',
           filters: { status: 'active', severity: ['medium', 'high', 'critical'] },
           refreshInterval: 60000,
           displayOptions: { groupBy: 'severity', showTimestamp: true },
@@ -964,7 +964,7 @@ export class SmartDashboardManager {
     try {
       const result = await this.db.query(
         `
-        SELECT * FROM smart_dashboards WHERE id = $1
+        SELECT * FROM public.dashboard WHERE id = $1
       `,
         [dashboardId]
       );
@@ -1023,7 +1023,7 @@ export class SmartDashboardManager {
         case 'suppliers_spend_ranking':
           data = await this.getSupplierSpendRanking(organizationId, widget.configuration.filters);
           break;
-        case 'anomaly_alerts':
+        case 'ai_alert':
           data = await this.getAnomalyAlerts(organizationId, widget.configuration.filters);
           break;
         default:
@@ -1141,7 +1141,7 @@ export class SmartDashboardManager {
         title,
         description,
         detected_at
-      FROM anomaly_alerts
+      FROM public.ai_alert
       WHERE organization_id = $1
       ${severityFilter}
       ${statusFilter}
@@ -1198,12 +1198,63 @@ export class SmartDashboardManager {
     widget: DashboardWidget,
     data: unknown
   ): Promise<AIInsight[]> {
-    // Generate insights specific to widget type and data
-    const insights: AIInsight[] = [];
+    try {
+      const result = await this.db.query(
+        `
+        SELECT
+          id,
+          type,
+          title,
+          description,
+          confidence,
+          priority,
+          category,
+          data AS insight_data,
+          visualization,
+          actionable,
+          metadata
+        FROM public.ai_insights
+        WHERE widget_id = $1
+        AND created_at >= NOW() - INTERVAL '24 hours'
+        ORDER BY
+          CASE priority
+            WHEN 'critical' THEN 4
+            WHEN 'high' THEN 3
+            WHEN 'medium' THEN 2
+            WHEN 'low' THEN 1
+            ELSE 0
+          END DESC,
+          confidence DESC
+        LIMIT 10
+        `,
+        [widget.id]
+      );
 
-    // This would contain widget-specific insight generation logic
-    // For now, return empty array
-    return insights;
+      return result.rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        type: row.type as AIInsight['type'],
+        title: row.title as string,
+        description: row.description as string,
+        confidence: row.confidence as number,
+        priority: row.priority as AIInsight['priority'],
+        category: row.category as AIInsight['category'],
+        data: typeof row.insight_data === 'string'
+          ? JSON.parse(row.insight_data)
+          : row.insight_data ?? { currentValue: 0, trend: 'stable', changePercent: 0, context: {} },
+        visualization: typeof row.visualization === 'string'
+          ? JSON.parse(row.visualization)
+          : row.visualization ?? { type: 'metric', config: {}, data: [] },
+        actionable: typeof row.actionable === 'string'
+          ? JSON.parse(row.actionable)
+          : row.actionable ?? { canAct: false, suggestedActions: [], potentialImpact: '', timeline: '' },
+        metadata: typeof row.metadata === 'string'
+          ? JSON.parse(row.metadata)
+          : row.metadata ?? { source: 'ai_insights', lastUpdated: new Date(), refreshInterval: 3600000, accuracy: 0 },
+      }));
+    } catch (error) {
+      console.error(`Error generating widget insights for ${widget.id}:`, error);
+      return [];
+    }
   }
 
   async getDashboardMetrics(dashboardId: string): Promise<DashboardMetrics> {
@@ -1213,8 +1264,9 @@ export class SmartDashboardManager {
           AVG(performance_data->>'loadTime') as avg_load_time,
           AVG(performance_data->>'dataQuality') as avg_data_quality,
           SUM((performance_data->>'errorCount')::int) as total_errors,
-          COUNT(*) as total_widgets
-        FROM dashboard_widget_metrics
+          COUNT(*) as total_widgets,
+          MIN(created_at) as oldest_metric
+        FROM public.analytics_metric_cache
         WHERE dashboard_id = $1
         AND created_at >= NOW() - INTERVAL '24 hours'
       `;
@@ -1223,39 +1275,56 @@ export class SmartDashboardManager {
         SELECT
           COUNT(*) as total_views,
           COUNT(DISTINCT user_id) as unique_users,
-          AVG(session_duration) as avg_session_duration
-        FROM dashboard_usage_logs
-        WHERE dashboard_id = $1
+          AVG(session_duration) as avg_session_duration,
+          COUNT(*) FILTER (WHERE action = 'export') as export_count
+        FROM public.audit_log
+        WHERE entity_id = $1 AND entity_type = 'dashboard'
         AND created_at >= NOW() - INTERVAL '24 hours'
       `;
 
-      const [metricsResult, usageResult] = await Promise.all([
+      const intelligenceQuery = `
+        SELECT
+          (SELECT COUNT(*) FROM public.ai_insights
+            WHERE dashboard_id = $1
+            AND created_at >= NOW() - INTERVAL '24 hours') as insights_generated,
+          (SELECT COUNT(*) FROM public.ai_alert
+            WHERE organization_id = (SELECT organization_id FROM public.dashboard WHERE id = $1)
+            AND detected_at >= NOW() - INTERVAL '24 hours') as anomalies_detected
+      `;
+
+      const [metricsResult, usageResult, intelligenceResult] = await Promise.all([
         this.db.query(metricsQuery, [dashboardId]),
         this.db.query(usageQuery, [dashboardId]),
+        this.db.query(intelligenceQuery, [dashboardId]),
       ]);
 
       const metrics = metricsResult.rows[0];
       const usage = usageResult.rows[0];
+      const intelligence = intelligenceResult.rows[0];
+
+      // Compute data freshness as hours since oldest metric in the 24h window
+      const oldestMetric = metrics.oldest_metric ? new Date(metrics.oldest_metric) : new Date();
+      const dataFreshnessHours = (Date.now() - oldestMetric.getTime()) / (1000 * 60 * 60);
 
       return {
         performance: {
           avgLoadTime: parseFloat(metrics.avg_load_time || '0'),
-          dataFreshness: 0.95, // Calculated based on refresh intervals
+          dataFreshness: Math.round(dataFreshnessHours * 100) / 100,
           errorRate: metrics.total_errors / Math.max(metrics.total_widgets, 1),
-          userSatisfaction: 0.85, // Would be calculated from user feedback
+          userSatisfaction: 0, // HARDCODED: requires a user feedback/rating module not yet implemented
         },
         usage: {
           totalViews: parseInt(usage.total_views || '0'),
           uniqueUsers: parseInt(usage.unique_users || '0'),
           avgSessionDuration: parseFloat(usage.avg_session_duration || '0'),
-          interactionRate: 0.75, // Calculated from click/interaction events
-          exportCount: 0, // Would be tracked separately
+          interactionRate: 0, // HARDCODED: requires granular interaction event tracking not yet implemented
+          exportCount: parseInt(usage.export_count || '0'),
         },
         intelligence: {
-          insightsGenerated: 15, // Would be counted from insights
-          predictionsAccuracy: 0.82,
-          anomaliesDetected: 3,
-          recommendationsActioned: 8,
+          insightsGenerated: parseInt(intelligence.insights_generated || '0'),
+          predictionsAccuracy: 0, // HARDCODED: requires a predictions accuracy feedback loop not yet implemented
+          anomaliesDetected: parseInt(intelligence.anomalies_detected || '0'),
+          recommendationsActioned: 0, // HARDCODED: requires tracking actioned recommendations not yet implemented
         },
       };
     } catch (error) {

@@ -955,6 +955,15 @@ export class SupplierJsonSyncService {
       // Update log with success
       await this.updateSyncLog(logId, 'success', stats);
 
+      // Invalidate catalog and supplier caches so UI reflects fresh data
+      try {
+        const { CacheInvalidator } = await import('@/lib/cache/invalidation');
+        CacheInvalidator.invalidateCatalog();
+        CacheInvalidator.invalidateSupplier(this.supplierId);
+      } catch (invalidateError) {
+        console.warn('[JsonSync] Cache invalidation failed:', invalidateError);
+      }
+
       console.log(
         `[JsonSync] Sync complete: ${stats.productsUpdated} updated, ${stats.productsCreated} created, ${stats.productsFailed} failed`
       );

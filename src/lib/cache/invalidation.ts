@@ -51,6 +51,7 @@ export class CacheInvalidator {
     revalidatePath(`/api/products/${productId}`);
     revalidatePath(`/api/inventory/${productId}`); // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
     revalidatePath(`/products/${productId}`);
+    revalidatePath(`/api/catalog/products/${productId}`);
 
     // Invalidate list pages
     revalidatePath('/api/products');
@@ -62,12 +63,31 @@ export class CacheInvalidator {
     revalidateTag('products');
     revalidateTag(`product-${productId}`);
 
+    // Invalidate catalog views that include this product
+    this.invalidateCatalog();
+
     // Cascade to supplier if provided
     if (supplierId) {
       this.invalidateSupplier(supplierId);
     }
 
     console.log('🔄 Cache invalidated for product:', productId);
+  }
+
+  /**
+   * Invalidate catalog cache (Supplier Inventory Portfolio)
+   * Call after: pricing/stock updates that should reflect in catalog
+   */
+  static invalidateCatalog() {
+    revalidatePath('/api/catalog/products');
+    revalidatePath('/api/catalog/products/export');
+    revalidatePath('/api/catalog/metrics');
+    revalidatePath('/api/catalog/suppliers');
+    revalidatePath('/api/catalog/categories');
+    revalidatePath('/api/catalog/brands');
+    revalidateTag('catalog');
+
+    console.log('🔄 Cache invalidated for catalog');
   }
 
   /**

@@ -79,16 +79,16 @@ export async function GET(request: NextRequest) {
         'Supplier Performance Issue' as title,
         CONCAT('Supplier ', name, ' has concerning metrics') as description,
         CASE
-          WHEN payment_terms_days > 60 THEN 'high'
-          WHEN payment_terms_days > 30 THEN 'medium'
+          WHEN COALESCE(CASE WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER) ELSE 30 END, 30) > 60 THEN 'high'
+          WHEN COALESCE(CASE WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER) ELSE 30 END, 30) > 30 THEN 'medium'
           ELSE 'low'
         END as severity,
-        payment_terms_days as value,
+        COALESCE(CASE WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER) ELSE 30 END, 30) as value,
         30 as threshold,
         NOW() as detected_at
       FROM core.supplier
-      WHERE payment_terms_days > 30
-      ORDER BY payment_terms_days DESC
+      WHERE COALESCE(CASE WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER) ELSE 30 END, 30) > 30
+      ORDER BY value DESC
       LIMIT $1
     `;
 

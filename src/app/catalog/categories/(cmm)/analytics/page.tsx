@@ -56,51 +56,7 @@ interface CategoryData {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
-const DEMO_ANALYTICS: TagAnalytics[] = [
-  {
-    tagId: 'tag-instruments',
-    tagName: 'Instruments',
-    totalSales: 1250,
-    totalTurnover: 125000,
-    totalMargin: 31250,
-    productCount: 45,
-    avgPrice: 899.99,
-  },
-  {
-    tagId: 'tag-acoustic',
-    tagName: 'Acoustic',
-    totalSales: 680,
-    totalTurnover: 68000,
-    totalMargin: 17000,
-    productCount: 23,
-    avgPrice: 599.99,
-  },
-  {
-    tagId: 'tag-electric',
-    tagName: 'Electric',
-    totalSales: 420,
-    totalTurnover: 84000,
-    totalMargin: 21000,
-    productCount: 15,
-    avgPrice: 1299.99,
-  },
-];
-
-const DEMO_SEASONALITY: SeasonalityData[] = [
-  { month: 'Jan', sales: 120, turnover: 12000, margin: 3000 },
-  { month: 'Feb', sales: 98, turnover: 9800, margin: 2450 },
-  { month: 'Mar', sales: 145, turnover: 14500, margin: 3625 },
-  { month: 'Apr', sales: 167, turnover: 16700, margin: 4175 },
-  { month: 'May', sales: 189, turnover: 18900, margin: 4725 },
-  { month: 'Jun', sales: 234, turnover: 23400, margin: 5850 },
-];
-
-const DEMO_CATEGORY: CategoryData[] = [
-  { name: 'Guitars', value: 45, color: '#0088FE' },
-  { name: 'Pianos', value: 25, color: '#00C49F' },
-  { name: 'Drums', value: 20, color: '#FFBB28' },
-  { name: 'Accessories', value: 10, color: '#FF8042' },
-];
+// Demo constants removed — empty states shown when API returns no data
 
 export default function AnalyticsPage() {
   const [tagAnalytics, setTagAnalytics] = useState<TagAnalytics[]>([]);
@@ -131,10 +87,10 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsDemoMode(true);
-      setTagAnalytics(DEMO_ANALYTICS);
-      setSeasonalityData(DEMO_SEASONALITY);
-      setCategoryData(DEMO_CATEGORY);
+      setIsDemoMode(false);
+      setTagAnalytics([]);
+      setSeasonalityData([]);
+      setCategoryData([]);
       setSchemaMode('demo');
     } finally {
       setLoading(false);

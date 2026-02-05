@@ -19,7 +19,7 @@ export function useDashboardData(): UseDashboardDataResult {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const res = await fetch('/api/dashboard/metrics', {
+      const res = await fetch('/api/dashboard_metrics', {
         headers: { 'Content-Type': 'application/json' },
       });
       if (!res.ok) throw new Error('Failed to fetch metrics');

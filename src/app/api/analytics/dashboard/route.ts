@@ -20,6 +20,8 @@ export const GET = withAuth(async (request: NextRequest) => {
         outOfStockResult,
         inventoryValueResult,
         supplierMetricsResult,
+        prevPeriodStockResult,
+        prevPeriodSuppliersResult,
       ] = await Promise.all([
         pool.query<{ count: string }>(
           'SELECT COUNT(*) as count FROM core.supplier WHERE active = $1',
@@ -45,10 +47,33 @@ export const GET = withAuth(async (request: NextRequest) => {
             SELECT
               COUNT(*) as total_suppliers,
               COUNT(*) FILTER (WHERE active = true) as active_suppliers,
-              0 as preferred_suppliers,
-              75 as avg_performance_score
+              COALESCE((
+                SELECT COUNT(DISTINCT sp.supplier_id)
+                FROM core.supplier_performance sp
+                WHERE sp.score >= 80
+              ), 0) as preferred_suppliers,
+              COALESCE((
+                SELECT AVG(sp.score)
+                FROM core.supplier_performance sp
+              ), 0) as avg_performance_score
             FROM core.supplier
           `
+        ),
+        // Previous period stock count (30 days ago snapshot via stock_movement)
+        pool.query<{ prev_count: string; prev_value: string }>(
+          `SELECT
+             COUNT(DISTINCT sm.supplier_product_id) as prev_count,
+             COALESCE(SUM(ABS(sm.qty_change)), 0) as prev_value
+           FROM core.stock_movement sm
+           WHERE sm.movement_date >= NOW() - INTERVAL '60 days'
+             AND sm.movement_date < NOW() - INTERVAL '30 days'`
+        ),
+        // Previous period supplier count
+        pool.query<{ prev_active: string }>(
+          `SELECT COUNT(*) as prev_active
+           FROM core.supplier
+           WHERE active = true
+             AND created_at < NOW() - INTERVAL '30 days'`
         ),
       ]);
 
@@ -76,38 +101,50 @@ export const GET = withAuth(async (request: NextRequest) => {
             alertsGenerated: Number(lowStockResult.rows[0]?.count ?? 0) + outOfStockCount,
             performanceScore: Number(supplierMetrics.avg_performance_score ?? 75),
           },
-          performanceTrends: [
-            {
-              metric: 'Supplier Performance',
-              value: Number(supplierMetrics.avg_performance_score ?? 75),
-              change: '+2.1%',
-              trend: 'up',
-            },
-            {
-              metric: 'Inventory Value',
-              value: totalInventoryValue,
-              change: '+5.3%',
-              trend: 'up',
-            },
-            {
-              metric: 'Active Suppliers',
-              value: Number(supplierMetrics.active_suppliers ?? 0),
-              change: '+8.2%',
-              trend: 'up',
-            },
-            {
-              metric: 'Stock Accuracy',
-              value: Math.max(
-                85,
-                100 -
-                  (outOfStockCount /
-                    Math.max(1, Number(inventoryCountResult.rows[0]?.count ?? 1))) *
-                    100
-              ),
-              change: '+0.3%',
-              trend: 'up',
-            },
-          ],
+          performanceTrends: (() => {
+            const currentActive = Number(supplierMetrics.active_suppliers ?? 0);
+            const prevActive = Number(prevPeriodSuppliersResult.rows[0]?.prev_active ?? currentActive);
+            const activeChange = prevActive > 0 ? ((currentActive - prevActive) / prevActive * 100) : 0;
+
+            const currentItems = Number(inventoryCountResult.rows[0]?.count ?? 0);
+            const prevItems = Number(prevPeriodStockResult.rows[0]?.prev_count ?? currentItems);
+            const itemsChange = prevItems > 0 ? ((currentItems - prevItems) / prevItems * 100) : 0;
+
+            const stockAccuracy = Math.max(0, 100 - (outOfStockCount / Math.max(1, currentItems)) * 100);
+
+            const computeTrend = (change: number): 'up' | 'down' | 'stable' =>
+              change > 1 ? 'up' : change < -1 ? 'down' : 'stable';
+
+            const formatChange = (change: number): string | null =>
+              change === 0 ? null : `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+
+            return [
+              {
+                metric: 'Supplier Performance',
+                value: Number(supplierMetrics.avg_performance_score ?? 0),
+                change: formatChange(activeChange),
+                trend: computeTrend(activeChange),
+              },
+              {
+                metric: 'Inventory Value',
+                value: totalInventoryValue,
+                change: formatChange(itemsChange),
+                trend: computeTrend(itemsChange),
+              },
+              {
+                metric: 'Active Suppliers',
+                value: currentActive,
+                change: formatChange(activeChange),
+                trend: computeTrend(activeChange),
+              },
+              {
+                metric: 'Stock Accuracy',
+                value: stockAccuracy,
+                change: null,
+                trend: 'stable' as const,
+              },
+            ];
+          })(),
         },
         meta: { organizationId },
         timestamp: new Date().toISOString(),

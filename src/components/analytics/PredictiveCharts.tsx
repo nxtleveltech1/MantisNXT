@@ -127,273 +127,8 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock predictive charts data
-  const mockCharts: PredictiveChart[] = [
-    {
-      id: 'spend_forecast',
-      title: 'Spend Forecast & Anomaly Detection',
-      description: 'AI-powered spend prediction with confidence intervals and anomaly detection',
-      type: 'composed',
-      category: 'Financial',
-      data: [
-        {
-          period: 'Jan',
-          actual: 280000,
-          predicted: 285000,
-          confidence: { lower: 275000, upper: 295000 },
-        },
-        {
-          period: 'Feb',
-          actual: 295000,
-          predicted: 290000,
-          confidence: { lower: 280000, upper: 300000 },
-        },
-        {
-          period: 'Mar',
-          actual: 310000,
-          predicted: 305000,
-          confidence: { lower: 295000, upper: 315000 },
-          anomaly: true,
-        },
-        {
-          period: 'Apr',
-          actual: 275000,
-          predicted: 320000,
-          confidence: { lower: 310000, upper: 330000 },
-          anomaly: true,
-        },
-        {
-          period: 'May',
-          predicted: 335000,
-          confidence: { lower: 325000, upper: 345000 },
-        },
-        {
-          period: 'Jun',
-          predicted: 350000,
-          confidence: { lower: 340000, upper: 360000 },
-        },
-        {
-          period: 'Jul',
-          predicted: 365000,
-          confidence: { lower: 350000, upper: 380000 },
-        },
-      ],
-      anomalies: [
-        {
-          id: 'anomaly_1',
-          period: 'Mar',
-          value: 310000,
-          expectedValue: 305000,
-          deviation: 1.6,
-          severity: 'medium',
-          factors: ['Seasonal demand increase', 'New supplier onboarding'],
-          confidence: 87,
-        },
-        {
-          id: 'anomaly_2',
-          period: 'Apr',
-          value: 275000,
-          expectedValue: 320000,
-          deviation: -14.1,
-          severity: 'high',
-          factors: ['Delayed procurement', 'Budget freeze'],
-          confidence: 92,
-        },
-      ],
-      metrics: {
-        accuracy: 94.2,
-        trendDirection: 'up',
-        volatility: 12.5,
-        nextPeriodPrediction: 335000,
-        confidence: 89,
-      },
-      insights: {
-        key: '12% growth trend identified',
-        trend: 'Consistent upward trajectory with seasonal variations',
-        risk: 'April anomaly suggests potential budget constraints',
-        opportunity: 'Q3 forecast shows optimal procurement window',
-      },
-      timeRange: '6 months',
-      unit: 'USD',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'supplier_performance',
-      title: 'Supplier Performance Prediction',
-      description: 'Predictive analysis of supplier performance metrics with risk indicators',
-      type: 'line',
-      category: 'Performance',
-      data: [
-        {
-          period: 'Week 1',
-          actual: 95.2,
-          predicted: 95.0,
-          confidence: { lower: 93.5, upper: 96.5 },
-        },
-        {
-          period: 'Week 2',
-          actual: 94.8,
-          predicted: 94.5,
-          confidence: { lower: 93.0, upper: 96.0 },
-        },
-        {
-          period: 'Week 3',
-          actual: 96.1,
-          predicted: 96.0,
-          confidence: { lower: 94.5, upper: 97.5 },
-        },
-        {
-          period: 'Week 4',
-          actual: 93.2,
-          predicted: 95.5,
-          confidence: { lower: 94.0, upper: 97.0 },
-          anomaly: true,
-        },
-        {
-          period: 'Week 5',
-          predicted: 94.8,
-          confidence: { lower: 93.0, upper: 96.5 },
-        },
-        {
-          period: 'Week 6',
-          predicted: 95.5,
-          confidence: { lower: 94.0, upper: 97.0 },
-        },
-      ],
-      anomalies: [
-        {
-          id: 'perf_anomaly_1',
-          period: 'Week 4',
-          value: 93.2,
-          expectedValue: 95.5,
-          deviation: -2.4,
-          severity: 'medium',
-          factors: ['Supply chain disruption', 'Quality control issues'],
-          confidence: 91,
-        },
-      ],
-      metrics: {
-        accuracy: 96.8,
-        trendDirection: 'stable',
-        volatility: 3.2,
-        nextPeriodPrediction: 94.8,
-        confidence: 94,
-      },
-      insights: {
-        key: 'Overall performance stable with minor fluctuations',
-        trend: 'Performance maintaining above 94% threshold',
-        risk: 'Week 4 dip requires supplier attention',
-        opportunity: 'Consistent performance enables expansion',
-      },
-      timeRange: '6 weeks',
-      unit: '%',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'demand_forecast',
-      title: 'Demand Forecasting',
-      description: 'AI-driven demand prediction with seasonal pattern recognition',
-      type: 'area',
-      category: 'Inventory',
-      data: [
-        {
-          period: 'Q1',
-          actual: 1250,
-          predicted: 1240,
-          confidence: { lower: 1200, upper: 1280 },
-        },
-        {
-          period: 'Q2',
-          actual: 1380,
-          predicted: 1375,
-          confidence: { lower: 1330, upper: 1420 },
-        },
-        {
-          period: 'Q3',
-          actual: 1520,
-          predicted: 1510,
-          confidence: { lower: 1460, upper: 1560 },
-        },
-        {
-          period: 'Q4',
-          predicted: 1680,
-          confidence: { lower: 1620, upper: 1740 },
-        },
-        {
-          period: 'Q1 Next',
-          predicted: 1420,
-          confidence: { lower: 1360, upper: 1480 },
-        },
-      ],
-      anomalies: [],
-      metrics: {
-        accuracy: 97.3,
-        trendDirection: 'up',
-        volatility: 8.7,
-        nextPeriodPrediction: 1680,
-        confidence: 91,
-      },
-      insights: {
-        key: '24% seasonal growth pattern identified',
-        trend: 'Strong seasonal demand with Q4 peak',
-        risk: 'Inventory shortfall risk in Q4',
-        opportunity: 'Pre-position inventory for seasonal demand',
-      },
-      timeRange: '5 quarters',
-      unit: 'units',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'risk_matrix',
-      title: 'Supply Chain Risk Prediction',
-      description: 'Predictive risk assessment with multi-factor analysis',
-      type: 'scatter',
-      category: 'Risk',
-      data: [
-        {
-          period: 'Current',
-          actual: 6.2,
-          predicted: 6.0,
-          confidence: { lower: 5.5, upper: 6.5 },
-        },
-        {
-          period: 'Next Month',
-          predicted: 5.8,
-          confidence: { lower: 5.2, upper: 6.4 },
-        },
-        {
-          period: 'Month 2',
-          predicted: 5.5,
-          confidence: { lower: 4.8, upper: 6.2 },
-        },
-        {
-          period: 'Month 3',
-          predicted: 5.2,
-          confidence: { lower: 4.5, upper: 5.9 },
-        },
-      ],
-      anomalies: [],
-      metrics: {
-        accuracy: 88.5,
-        trendDirection: 'down',
-        volatility: 15.3,
-        nextPeriodPrediction: 5.8,
-        confidence: 85,
-      },
-      insights: {
-        key: 'Risk declining through diversification',
-        trend: 'Steady improvement in risk profile',
-        risk: 'External factors may impact timeline',
-        opportunity: 'Accelerated risk reduction possible',
-      },
-      timeRange: '4 months',
-      unit: 'risk score',
-      updatedAt: new Date().toISOString(),
-    },
-  ];
-
-  // Use provided charts or mock data
-  const workingCharts = charts.length > 0 ? charts : mockCharts;
+  // Use provided charts — no mock fallback
+  const workingCharts = charts;
 
   // Filter charts by category
   const filteredCharts = useMemo(() => {
@@ -442,7 +177,8 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
           strokeWidth={2}
           className="animate-pulse cursor-pointer"
           onClick={() => {
-            const anomaly = mockCharts[0].anomalies.find(a => a.period === payload.period);
+            const sourceChart = workingCharts[0];
+            const anomaly = sourceChart?.anomalies?.find(a => a.period === payload.period);
             if (anomaly) onAnomalyClick?.(anomaly);
           }}
         />
@@ -653,6 +389,24 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
     }
   }, [realTimeUpdate]);
 
+  if (!workingCharts.length) {
+    return (
+      <Card>
+        <CardContent className="flex h-[300px] flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Brain className="h-10 w-10 opacity-40" />
+          <p className="text-sm font-medium">No predictions available</p>
+          <p className="text-xs">Predictive data will appear here once analytics are generated.</p>
+          {onRefresh && (
+            <Button variant="outline" size="sm" onClick={onRefresh} className="mt-2">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Generate Predictions
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -719,6 +473,25 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
               </Button>
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Empty State */}
+        {workingCharts.length === 0 && !loading && !error && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Brain className="mb-4 h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mb-2 text-lg font-semibold text-muted-foreground">No predictions available</h3>
+              <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
+                Predictions will appear here once enough data has been collected and analyzed.
+              </p>
+              {onRefresh && (
+                <Button variant="outline" size="sm" onClick={handleRefresh}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Generate Predictions
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Charts Grid */}

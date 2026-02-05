@@ -38,12 +38,19 @@ export async function GET(request: NextRequest) {
       const inventoryQuery = `
         SELECT
           sp.name_from_supplier as product_name,
-          0 as current_stock,
-          0 as reorder_level,
-          'maintain_current' as recommendation_type,
-          0 as stock_difference
+          COALESCE(soh.qty, 0) as current_stock,
+          10 as reorder_level,
+          CASE
+            WHEN COALESCE(soh.qty, 0) = 0 THEN 'urgent_reorder'
+            WHEN COALESCE(soh.qty, 0) <= 10 THEN 'schedule_reorder'
+            WHEN COALESCE(soh.qty, 0) > 100 THEN 'reduce_order_quantity'
+            ELSE 'maintain_current'
+          END as recommendation_type,
+          COALESCE(soh.qty, 0) - 10 as stock_difference
         FROM core.supplier_product sp
+        LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = sp.supplier_product_id
         WHERE sp.is_active = true
+        ORDER BY COALESCE(soh.qty, 0) ASC
         LIMIT 10
       `;
 

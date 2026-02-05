@@ -196,8 +196,8 @@ export class AnalyticsService {
       // Get stock movements for demand analysis
       const movementsQuery = `
         SELECT sm.*, ii.sku
-        FROM stock_movements sm
-        JOIN inventory_items ii ON sm.item_id = ii.id
+        FROM public.stock_movements sm
+        JOIN public.inventory_items ii ON sm.item_id = ii.id
         WHERE ${itemId ? 'sm.item_id = $1' : 'ii.organization_id = $1'}
         AND sm.timestamp >= NOW() - INTERVAL '6 months'
         ORDER BY sm.timestamp DESC
@@ -240,7 +240,7 @@ export class AnalyticsService {
       const itemsQuery = `
         SELECT ii.*, spl.unit_price as supplier_price
         FROM public.inventory_items ii
-        LEFT JOIN supplier_price_lists spl ON ii.sku = spl.sku
+        LEFT JOIN public.pricelist_items spl ON ii.sku = spl.sku
         WHERE ${itemId ? 'ii.id = $1' : 'ii.organization_id = $1'}
       `;
 
@@ -368,15 +368,15 @@ export class AnalyticsService {
             organizationId,
           ]),
           this.db.query(
-            "SELECT COUNT(*) FROM analytics_anomalies WHERE organization_id = $1 AND detected_at >= NOW() - INTERVAL '24 hours'",
+            "SELECT COUNT(*) FROM core.analytics_anomalies WHERE organization_id = $1 AND detected_at >= NOW() - INTERVAL '24 hours'",
             [organizationId]
           ),
           this.db.query(
-            "SELECT COUNT(*) FROM analytics_predictions WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
+            "SELECT COUNT(*) FROM core.analytics_predictions WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
             [organizationId]
           ),
           this.db.query(
-            "SELECT COUNT(*) FROM analytics_optimizations WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
+            "SELECT COUNT(*) FROM public.pricing_optimization WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL '24 hours'",
             [organizationId]
           ),
         ]);
@@ -432,7 +432,7 @@ export class AnalyticsService {
       return {
         totalSupplierRisk: totalSupplierRisk || 0,
         inventoryOptimizationOpportunities,
-        demandForecastAccuracy: 0.85, // Will be calculated from historical accuracy
+        demandForecastAccuracy: await this.calculateDemandForecastAccuracy(organizationId),
         priceOptimizationPotential: optimizations.reduce(
           (sum, opt) => sum + opt.expectedProfitIncrease,
           0
@@ -447,6 +447,21 @@ export class AnalyticsService {
   }
 
   // Helper Methods
+  private async calculateDemandForecastAccuracy(organizationId: string): Promise<number> {
+    try {
+      const result = await this.db.query(
+        `SELECT AVG(confidence) as avg_accuracy
+         FROM public.demand_forecast
+         WHERE org_id = $1
+           AND created_at >= NOW() - INTERVAL '90 days'`,
+        [organizationId]
+      );
+      return parseFloat(result.rows[0]?.avg_accuracy || '0.85');
+    } catch {
+      return 0.85; // Fallback if demand_forecast table has no data
+    }
+  }
+
   private calculateSupplierRiskScore(
     supplierId: string,
     performance: unknown[],
@@ -457,9 +472,9 @@ export class AnalyticsService {
     const riskFactors = {
       deliveryReliability: Math.max(0, 100 - (latestPerformance?.on_time_delivery_rate || 100)),
       qualityIssues: Math.max(0, 100 - (latestPerformance?.quality_acceptance_rate || 100)),
-      financialStability: Math.random() * 30, // Mock financial stability score
+      financialStability: Math.max(0, 100 - (latestPerformance?.overall_rating || 70)), // Derived from overall rating
       communicationResponse: Math.max(0, (latestPerformance?.response_time_hours || 0) - 24),
-      priceVolatility: Math.random() * 20, // Mock price volatility
+      priceVolatility: Math.max(0, (latestPerformance?.price_variance_pct || 0) * 20), // Derived from price variance if available
     };
 
     const riskScore = Object.values(riskFactors).reduce((sum, factor) => sum + factor, 0) / 5;
@@ -503,9 +518,9 @@ export class AnalyticsService {
   private async detectSystemAnomalies(organizationId: string): Promise<unknown[]> {
     // Query REAL system anomalies from analytics_anomalies table
     try {
-      const result = await query(
+      const result = await this.db.query(
         `SELECT
-          id,
+          anomaly_id as id,
           anomaly_type as type,
           severity,
           description,
@@ -513,7 +528,7 @@ export class AnalyticsService {
           entity_id,
           confidence_score,
           detected_at
-        FROM analytics_anomalies
+        FROM core.analytics_anomalies
         WHERE organization_id = $1
           AND entity_type = 'system'
           AND status = 'active'
@@ -575,7 +590,7 @@ export class AnalyticsService {
   private async cacheAnalyticsResults(type: string, data: unknown): Promise<void> {
     try {
       await this.db.query(
-        'INSERT INTO analytics_cache (type, data, created_at) VALUES ($1, $2, NOW())',
+        'INSERT INTO public.analytics_metric_cache (metric_type, metric_value, created_at) VALUES ($1, $2, NOW())',
         [type, JSON.stringify(data)]
       );
     } catch (error) {
@@ -588,7 +603,7 @@ export class AnalyticsService {
       for (const forecast of forecasts) {
         await this.db.query(
           `
-          INSERT INTO demand_forecasts (item_id, predictions, seasonality, confidence, created_at)
+          INSERT INTO public.demand_forecast (item_id, predictions, seasonality, confidence, created_at)
           VALUES ($1, $2, $3, $4, NOW())
           ON CONFLICT (item_id) DO UPDATE SET
           predictions = $2, seasonality = $3, confidence = $4, updated_at = NOW()
@@ -611,7 +626,7 @@ export class AnalyticsService {
       for (const opt of optimizations) {
         await this.db.query(
           `
-          INSERT INTO price_optimizations (item_id, current_price, optimized_price, expected_profit_increase, recommendation, created_at)
+          INSERT INTO public.pricing_optimization (item_id, current_price, optimized_price, expected_profit_increase, recommendation, created_at)
           VALUES ($1, $2, $3, $4, $5, NOW())
         `,
           [
@@ -633,7 +648,7 @@ export class AnalyticsService {
       for (const anomaly of anomalies) {
         await this.db.query(
           `
-          INSERT INTO analytics_anomalies (type, severity, description, value, threshold, detected_at)
+          INSERT INTO core.analytics_anomalies (type, severity, description, value, threshold, detected_at)
           VALUES ($1, $2, $3, $4, $5, NOW())
         `,
           [

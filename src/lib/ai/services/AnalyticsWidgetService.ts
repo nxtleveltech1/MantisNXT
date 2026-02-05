@@ -486,32 +486,24 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
 
   /**
    * Fetch financial metrics
+   * Not configured — outside the ERP scope of this service.
    */
   private async fetchFinancialData(
     orgId: string,
     query: Record<string, unknown>
   ): Promise<unknown> {
-    // Placeholder - would integrate with actual financial tables
-    return {
-      revenue: 0,
-      expenses: 0,
-      profit: 0,
-    };
+    return { message: 'Module not configured', data: null };
   }
 
   /**
    * Fetch operational metrics
+   * Not configured — outside the ERP scope of this service.
    */
   private async fetchOperationalData(
     orgId: string,
     query: Record<string, unknown>
   ): Promise<unknown> {
-    // Placeholder - would integrate with actual operational tables
-    return {
-      efficiency: 0,
-      throughput: 0,
-      utilization: 0,
-    };
+    return { message: 'Module not configured', data: null };
   }
 
   /**

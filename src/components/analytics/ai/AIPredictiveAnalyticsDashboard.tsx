@@ -284,7 +284,11 @@ export default function AIPredictiveAnalyticsDashboard() {
               <div>
                 <p className="text-muted-foreground text-sm">Active Predictions</p>
                 <p className="text-2xl font-bold">{state.predictions.length}</p>
-                <p className="text-xs text-green-600">Avg 89% accuracy</p>
+                <p className="text-xs text-green-600">
+                  {state.predictions.length > 0
+                    ? `Avg ${Math.round(state.predictions.reduce((sum, p) => sum + (p.confidence || 0), 0) / state.predictions.length)}% accuracy`
+                    : 'No data'}
+                </p>
               </div>
               <BarChart3 className="h-8 w-8 text-blue-500" />
             </div>
@@ -665,11 +669,11 @@ export default function AIPredictiveAnalyticsDashboard() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">94%</div>
+                      <div className="text-2xl font-bold text-muted-foreground">—</div>
                       <div className="text-muted-foreground text-sm">Prediction Accuracy</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">87%</div>
+                      <div className="text-2xl font-bold text-muted-foreground">—</div>
                       <div className="text-muted-foreground text-sm">Anomaly Detection</div>
                     </div>
                   </div>
@@ -677,14 +681,7 @@ export default function AIPredictiveAnalyticsDashboard() {
                   <div className="h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
-                        data={[
-                          { period: 'Jan', accuracy: 91, detection: 85 },
-                          { period: 'Feb', accuracy: 93, detection: 86 },
-                          { period: 'Mar', accuracy: 94, detection: 87 },
-                          { period: 'Apr', accuracy: 92, detection: 88 },
-                          { period: 'May', accuracy: 95, detection: 89 },
-                          { period: 'Jun', accuracy: 94, detection: 87 },
-                        ]}
+                        data={[]}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="period" />

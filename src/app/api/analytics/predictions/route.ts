@@ -32,23 +32,37 @@ export async function GET(request: NextRequest) {
       const stockPredictionQuery = `
         SELECT
           sp.name_from_supplier AS product_name,
-          0 AS current_stock,
-          0 AS reorder_level,
-          'stock_adequate' as prediction,
-          30 as days_until_action,
+          COALESCE(soh.qty, 0) AS current_stock,
+          10 AS reorder_level,
+          CASE
+            WHEN COALESCE(soh.qty, 0) = 0 THEN 'urgent_reorder'
+            WHEN COALESCE(soh.qty, 0) <= 10 THEN 'reorder_soon'
+            ELSE 'stock_adequate'
+          END as prediction,
+          CASE
+            WHEN COALESCE(soh.qty, 0) = 0 THEN 0
+            WHEN COALESCE(soh.qty, 0) <= 10 THEN 7
+            ELSE 30
+          END as days_until_action,
           'inventory' as category
         FROM core.supplier_product sp
+        LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = sp.supplier_product_id
         WHERE sp.is_active = true
+        ORDER BY COALESCE(soh.qty, 0) ASC
         LIMIT 10
       `;
 
       const stockResult = await pool.query(stockPredictionQuery);
+      const totalProducts = stockResult.rows.length;
+      const productsWithStock = stockResult.rows.filter(r => Number(r.current_stock) > 0).length;
+      const dataCoverage = totalProducts > 0 ? Math.round((productsWithStock / totalProducts) * 100) : 0;
+
       predictions.push(
         ...stockResult.rows.map(row => ({
           type: 'inventory',
           title: `Stock Prediction: ${row.product_name}`,
           prediction: row.prediction,
-          confidence: 85,
+          confidence: Math.min(95, Math.max(30, dataCoverage)),
           timeline: `${row.days_until_action} days`,
           description: `Current: ${row.current_stock}, Reorder at: ${row.reorder_level}`,
           action_required: row.prediction !== 'stock_adequate',
@@ -99,7 +113,7 @@ export async function GET(request: NextRequest) {
           type: 'supplier',
           title: `Supplier Risk: ${row.supplier_name}`,
           prediction: row.risk_prediction,
-          confidence: 78,
+          confidence: row.risk_prediction === 'risk_high' ? 90 : row.risk_prediction === 'risk_medium' ? 75 : 60,
           timeline: '30 days',
           description: `Payment terms: ${row.payment_terms_days} days`,
           action_required: row.risk_prediction !== 'risk_low',
@@ -130,7 +144,7 @@ export async function GET(request: NextRequest) {
           type: 'financial',
           title: 'Cash Flow Prediction',
           prediction: data.avg_payment_terms > 45 ? 'cash_flow_risk' : 'cash_flow_stable',
-          confidence: 72,
+          confidence: data.total_suppliers > 10 ? 80 : data.total_suppliers > 5 ? 65 : 45,
           timeline: '90 days',
           description: `${data.total_suppliers} suppliers, avg payment: ${Math.round(data.avg_payment_terms)} days`,
           action_required: data.avg_payment_terms > 45,

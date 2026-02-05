@@ -44,8 +44,15 @@ export async function GET(request: NextRequest) {
         SELECT
           COUNT(*) as total_suppliers,
           COUNT(*) FILTER (WHERE active = true) as active_suppliers,
-          0 as preferred_suppliers,
-          75 as avg_performance_score
+          COALESCE((
+            SELECT COUNT(DISTINCT sp.supplier_id)
+            FROM core.supplier_performance sp
+            WHERE sp.score >= 80
+          ), 0) as preferred_suppliers,
+          COALESCE((
+            SELECT AVG(sp.score)
+            FROM core.supplier_performance sp
+          ), 0) as avg_performance_score
         FROM core.supplier
       `),
     ]);
@@ -55,13 +62,29 @@ export async function GET(request: NextRequest) {
     const avgInventoryValue = parseFloat(inventoryResult.rows[0]?.avg_value || '0');
     const supplierMetrics = supplierMetricsResult.rows[0] || {};
 
-    // Purchase orders table not yet migrated - use placeholder values
-    const purchaseOrderMetrics = {
+    // Purchase order metrics from core.purchase_orders
+    let purchaseOrderMetrics = {
       total_orders: '0',
       pending_orders: '0',
       approved_orders: '0',
       total_value: '0',
     };
+    try {
+      const poResult = await pool.query(`
+        SELECT
+          COUNT(*) as total_orders,
+          COUNT(*) FILTER (WHERE status = 'pending' OR status = 'draft') as pending_orders,
+          COUNT(*) FILTER (WHERE status = 'approved' OR status = 'confirmed') as approved_orders,
+          COALESCE(SUM(total_amount), 0) as total_value
+        FROM core.purchase_orders
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+      `);
+      if (poResult.rows[0]) {
+        purchaseOrderMetrics = poResult.rows[0];
+      }
+    } catch {
+      // Purchase orders table may not have data yet
+    }
 
     const dashboardMetrics = {
       success: true,
@@ -110,15 +133,27 @@ export async function GET(request: NextRequest) {
         criticalAlerts: parseInt(outOfStockResult.rows[0]?.count || '0'),
 
         // Performance Indicators
-        stockTurnoverRate: 12.5, // Calculated value - could be enhanced with actual sales data
+        stockTurnoverRate: await (async () => {
+          try {
+            const tr = await pool.query(`
+              SELECT CASE WHEN avg_stock > 0
+                THEN ROUND(total_movements::numeric / avg_stock, 1) ELSE 0 END as rate
+              FROM (
+                SELECT COUNT(*) as total_movements,
+                  GREATEST(1, (SELECT AVG(qty) FROM core.stock_on_hand WHERE qty > 0)) as avg_stock
+                FROM core.stock_movement WHERE movement_date >= NOW() - INTERVAL '90 days'
+              ) sub`);
+            return parseFloat(tr.rows[0]?.rate || '0');
+          } catch { return 0; }
+        })(),
         fillRate: Math.max(
-          85,
+          0,
           100 -
             (parseInt(outOfStockResult.rows[0]?.count || '0') /
               Math.max(1, parseInt(inventoryResult.rows[0]?.count || '1'))) *
               100
         ),
-        onTimeDeliveryRate: 94.2, // This would need tracking data
+        onTimeDeliveryRate: 0, // TODO: requires logistics module
       },
       metadata: {
         dataFreshness: new Date().toISOString(),

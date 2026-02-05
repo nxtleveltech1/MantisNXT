@@ -242,7 +242,7 @@ export class WidgetDataProvider {
         COUNT(DISTINCT po.supplier_id) as suppliers_used,
         SUM(CASE WHEN po.payment_status = 'paid' THEN po.total_amount ELSE 0 END) as total_paid,
         SUM(CASE WHEN po.payment_status = 'pending' THEN po.total_amount ELSE 0 END) as total_pending
-      FROM purchase_orders po
+      FROM core.purchase_orders po
       WHERE po.org_id = $1
         AND po.created_at BETWEEN $2 AND $3
       `,
@@ -281,8 +281,8 @@ export class WidgetDataProvider {
         SUM(ABS(sm.quantity)) as total_quantity_moved,
         COUNT(DISTINCT po.id) as total_orders,
         AVG(EXTRACT(DAY FROM po.delivery_date - po.order_date)) as avg_lead_time
-      FROM stock_movement sm
-      LEFT JOIN purchase_orders po ON po.created_at BETWEEN $2 AND $3
+      FROM core.stock_movement sm
+      LEFT JOIN core.purchase_orders po ON po.created_at BETWEEN $2 AND $3
       WHERE current_setting('app.current_org_id', true)::uuid = $1
         AND sm.created_at BETWEEN $2 AND $3
       `,
@@ -314,7 +314,7 @@ export class WidgetDataProvider {
         DATE(po.created_at) as date,
         SUM(po.total_amount) as revenue,
         COUNT(*) as orders
-      FROM purchase_orders po
+      FROM core.purchase_orders po
       WHERE po.org_id = $1
         AND po.created_at BETWEEN $2 AND $3
         AND po.status = 'completed'
@@ -345,8 +345,8 @@ export class WidgetDataProvider {
         p.name,
         soh.quantity,
         p.reorder_point
-      FROM products p
-      JOIN stock_on_hand soh ON soh.product_id = p.id
+      FROM public.products p
+      JOIN core.stock_on_hand soh ON soh.product_id = p.id
       WHERE current_setting('app.current_org_id', true)::uuid = $1
         AND soh.quantity <= p.reorder_point
       ORDER BY (soh.quantity / NULLIF(p.reorder_point, 0)) ASC
