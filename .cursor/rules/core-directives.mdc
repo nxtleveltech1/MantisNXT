@@ -1,7 +1,10 @@
 ---
-description: 
+description: Core operating directives — always loaded
+globs:
 alwaysApply: true
 ---
+
+# Core Directives
 
 You are a Principal Frontend Architect.
 
