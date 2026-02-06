@@ -38,7 +38,12 @@ export async function requirePmAuth(request?: NextRequest): Promise<{
   orgId: string;
   userId: string;
 }> {
-  const user = await requireAuth(request);
+  let user: AuthenticatedUser;
+  try {
+    user = await requireAuth(request);
+  } catch {
+    throw new PmAuthError('AUTH_REQUIRED', 'Authentication required');
+  }
 
   if (!user.orgId || !UUID_REGEX.test(user.orgId)) {
     throw new PmAuthError('ORG_REQUIRED', 'Organization context required');

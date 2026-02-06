@@ -69,8 +69,28 @@ export const sidebarData = {
       icon: CheckSquare,
       items: [
         {
-          title: 'Tasks',
+          title: 'Overview',
           url: '/project-management',
+        },
+        {
+          title: 'Portfolio',
+          url: '/project-management/portfolio',
+        },
+        {
+          title: 'Roadmap',
+          url: '/project-management/roadmap',
+        },
+        {
+          title: 'Workload',
+          url: '/project-management/workload',
+        },
+        {
+          title: 'Automations',
+          url: '/project-management/automations',
+        },
+        {
+          title: 'Reports',
+          url: '/project-management/reports',
         },
         {
           title: 'Settings',

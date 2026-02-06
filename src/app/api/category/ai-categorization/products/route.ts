@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     let paramCounter = 1;
 
     if (params.status) {
-      whereClauses.push(`sp.ai_categorization_status = $${paramCounter}`);
+      whereClauses.push(`sp.ai_tagging_status = $${paramCounter}`);
       queryParams.push(params.status);
       paramCounter++;
     }
@@ -59,13 +59,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (params.confidence_min !== undefined) {
-      whereClauses.push(`sp.ai_confidence >= $${paramCounter}`);
+      whereClauses.push(`sp.ai_tag_confidence >= $${paramCounter}`);
       queryParams.push(params.confidence_min);
       paramCounter++;
     }
 
     if (params.confidence_max !== undefined) {
-      whereClauses.push(`sp.ai_confidence <= $${paramCounter}`);
+      whereClauses.push(`sp.ai_tag_confidence <= $${paramCounter}`);
       queryParams.push(params.confidence_max);
       paramCounter++;
     }
@@ -83,12 +83,12 @@ export async function GET(request: NextRequest) {
     // Sort column mapping
     const sortColumnMap: Record<string, string> = {
       name: 'sp.name_from_supplier',
-      confidence: 'sp.ai_confidence',
-      categorized_at: 'sp.ai_categorized_at',
+      confidence: 'sp.ai_tag_confidence',
+      categorized_at: 'sp.ai_tagged_at',
       supplier: 's.name',
     };
 
-    const sortColumn = sortColumnMap[params.sort_by || 'categorized_at'] || 'sp.ai_categorized_at';
+    const sortColumn = sortColumnMap[params.sort_by || 'categorized_at'] || 'sp.ai_tagged_at';
     const sortOrder = params.sort_order === 'asc' ? 'ASC' : 'DESC';
 
     // Get total count
@@ -124,15 +124,15 @@ export async function GET(request: NextRequest) {
         sp.is_new,
         sp.first_seen_at,
         sp.last_seen_at,
-        sp.ai_categorization_status,
-        sp.ai_confidence,
-        sp.ai_reasoning,
-        sp.ai_provider,
-        sp.ai_categorized_at,
-        sp.previous_confidence,
-        proposal.proposed_category_id,
-        proposal.proposed_category_name,
-        proposal.proposed_category_status,
+        sp.ai_tagging_status AS ai_categorization_status,
+        sp.ai_tag_confidence AS ai_confidence,
+        sp.ai_tag_reasoning AS ai_reasoning,
+        sp.ai_tag_provider AS ai_provider,
+        sp.ai_tagged_at AS ai_categorized_at,
+        sp.previous_tag_confidence AS previous_confidence,
+        NULL::uuid AS proposed_category_id,
+        NULL::varchar AS proposed_category_name,
+        NULL::varchar AS proposed_category_status,
         NULL::varchar AS brand,
         NULL::varchar AS category_raw,
         NULL::numeric AS current_price,
@@ -142,18 +142,6 @@ export async function GET(request: NextRequest) {
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
-      LEFT JOIN LATERAL (
-        SELECT 
-          pcp.proposed_category_id,
-          pc.display_name AS proposed_category_name,
-          pcp.status AS proposed_category_status
-        FROM core.ai_proposed_category_product pcp
-        JOIN core.ai_proposed_category pc 
-          ON pc.proposed_category_id = pcp.proposed_category_id
-        WHERE pcp.supplier_product_id = sp.supplier_product_id
-        ORDER BY pcp.updated_at DESC
-        LIMIT 1
-      ) AS proposal ON TRUE
       ${whereClause}
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT $${paramCounter}

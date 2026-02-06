@@ -10,7 +10,7 @@ export function ProjectSummaryCards({ overview }: { overview?: { projects?: { to
   const taskOverdue = overview?.tasks?.overdue ?? 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-medium text-muted-foreground">Total Projects</CardTitle>

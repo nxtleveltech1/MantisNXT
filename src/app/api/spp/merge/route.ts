@@ -99,37 +99,52 @@ export async function POST(request: NextRequest) {
             [supplier_id, product.supplier_sku]
           );
 
+          // Build attrs_json with extra fields that don't have dedicated columns
+          const attrsJson: Record<string, unknown> = {};
+          if (product.brand) attrsJson.brand = product.brand;
+          if (product.category) attrsJson.category_raw = product.category;
+          if (product.vat_code) attrsJson.vat_code = product.vat_code;
+          if (product.min_order_qty) attrsJson.min_order_qty = product.min_order_qty;
+          if (product.lead_time_days) attrsJson.lead_time_days = product.lead_time_days;
+          // Preserve any attrs from the extraction (rsp, stock_qty, etc.)
+          if (product.attrs_json) Object.assign(attrsJson, product.attrs_json);
+
           if (existingProduct.rows.length > 0) {
             // Update existing product
             const supplier_product_id = existingProduct.rows[0].supplier_product_id;
 
             await client.query(
               `UPDATE core.supplier_product
-               SET name = $1, brand = $2, uom = $3, pack_size = $4,
-                   category = $5, barcode = $6, vat_code = $7,
-                   min_order_qty = $8, lead_time_days = $9, updated_at = NOW()
-               WHERE supplier_product_id = $10`,
+               SET name_from_supplier = $1, uom = $2, pack_size = $3,
+                   barcode = $4, last_seen_at = NOW(),
+                   is_active = true, attrs_json = COALESCE(attrs_json, '{}'::jsonb) || $5::jsonb,
+                   updated_at = NOW()
+               WHERE supplier_product_id = $6`,
               [
                 product.name,
-                product.brand,
                 product.uom,
                 product.pack_size,
-                product.category,
                 product.barcode,
-                product.vat_code,
-                product.min_order_qty,
-                product.lead_time_days,
+                JSON.stringify(attrsJson),
                 supplier_product_id,
               ]
             );
 
             products_updated++;
 
-            // Insert price history
+            // Close previous current price
+            await client.query(
+              `UPDATE core.price_history
+               SET is_current = false, valid_to = NOW()
+               WHERE supplier_product_id = $1 AND is_current = true`,
+              [supplier_product_id]
+            );
+
+            // Insert new price history
             await client.query(
               `INSERT INTO core.price_history (
-                supplier_product_id, price, currency, valid_from, source
-              ) VALUES ($1, $2, $3, NOW(), 'pricelist_upload')`,
+                supplier_product_id, price, currency, valid_from, is_current, change_reason
+              ) VALUES ($1, $2, $3, NOW(), true, 'pricelist_upload')`,
               [supplier_product_id, product.price, product.currency]
             );
 
@@ -138,22 +153,18 @@ export async function POST(request: NextRequest) {
             // Create new product
             const newProduct = await client.query(
               `INSERT INTO core.supplier_product (
-                supplier_id, supplier_sku, name, brand, uom, pack_size,
-                category, barcode, vat_code, min_order_qty, lead_time_days
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                supplier_id, supplier_sku, name_from_supplier, uom, pack_size,
+                barcode, first_seen_at, last_seen_at, is_active, is_new, attrs_json
+              ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), true, true, $7::jsonb)
               RETURNING supplier_product_id`,
               [
                 supplier_id,
                 product.supplier_sku,
                 product.name,
-                product.brand,
                 product.uom,
                 product.pack_size,
-                product.category,
                 product.barcode,
-                product.vat_code,
-                product.min_order_qty,
-                product.lead_time_days,
+                JSON.stringify(attrsJson),
               ]
             );
 
@@ -162,8 +173,8 @@ export async function POST(request: NextRequest) {
             // Insert initial price
             await client.query(
               `INSERT INTO core.price_history (
-                supplier_product_id, price, currency, valid_from, source
-              ) VALUES ($1, $2, $3, NOW(), 'pricelist_upload')`,
+                supplier_product_id, price, currency, valid_from, is_current, change_reason
+              ) VALUES ($1, $2, $3, NOW(), true, 'initial_import')`,
               [newProduct.rows[0].supplier_product_id, product.price, product.currency]
             );
 

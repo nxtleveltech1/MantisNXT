@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { existsSync } from 'fs';
 
 if (process.argv.length <= 2) {
   console.error('Usage: tsx scripts/run-migrations-via-mcp.ts <sql-file> [...sql-files]');
@@ -113,6 +114,10 @@ const neonApiKey = requireEnv('NEON_API_KEY');
 const projectId = process.env.NEON_PROJECT_ID || 'proud-mud-50346856';
 const branchId = process.env.NEON_BRANCH_ID || 'br-spring-field-a9v3cjvz';
 const databaseName = process.env.NEON_DATABASE;
+const connectionString =
+  process.env.NEON_CONNECTION_STRING ||
+  process.env.DATABASE_URL ||
+  process.env.NEON_SPP_DATABASE_URL;
 
 async function connectClient(): Promise<{ client: Client; transport: StdioClientTransport }> {
   const client = new Client(
@@ -120,14 +125,9 @@ async function connectClient(): Promise<{ client: Client; transport: StdioClient
     { capabilities: { tools: {} } }
   );
   const isWindows = process.platform === 'win32';
-  const command = isWindows ? 'pwsh.exe' : 'npx';
+  const command = isWindows ? 'cmd.exe' : 'npx';
   const args = isWindows
-    ? [
-        '-NoLogo',
-        '-NoProfile',
-        '-Command',
-        `npx -y @neondatabase/mcp-server-neon start ${neonApiKey}`,
-      ]
+    ? ['/c', 'npx', '-y', '@neondatabase/mcp-server-neon', 'start', neonApiKey]
     : ['-y', '@neondatabase/mcp-server-neon', 'start', neonApiKey];
   const transport = new StdioClientTransport({
     command,
@@ -167,6 +167,10 @@ async function execSql(
     branchId,
   };
   if (databaseName) params.databaseName = databaseName;
+  if (connectionString) {
+    params.connectionString = connectionString;
+    params.connection_string = connectionString;
+  }
 
   if (toolName === 'run_sql_transaction') {
     params.sqlStatements = statements.length > 0 ? statements : [sql];

@@ -13,40 +13,39 @@ import type { CategorizationStats } from '@/lib/cmm/ai-categorization/types';
 export async function GET(request: NextRequest) {
   try {
     // Get overall stats
+    // NOTE: actual column names on core.supplier_product (foreign table) are:
+    //   ai_tagging_status, ai_tag_confidence, ai_tag_provider, ai_tagged_at, ai_tag_reasoning
     const statsSql = `
       WITH stats AS (
         SELECT 
           COUNT(*) as total_products,
           COUNT(CASE WHEN category_id IS NOT NULL THEN 1 END) as categorized_count,
-          COUNT(CASE WHEN ai_categorization_status IN ('pending', 'pending_review') THEN 1 END) as pending_count,
-          COUNT(CASE WHEN ai_categorization_status = 'pending_review' THEN 1 END) as pending_review_count,
-          COUNT(CASE WHEN ai_categorization_status = 'failed' THEN 1 END) as failed_count,
-          AVG(CASE WHEN ai_confidence IS NOT NULL THEN ai_confidence END) as avg_confidence,
-          COUNT(CASE WHEN ai_confidence >= 0.8 THEN 1 END) as high_confidence,
-          COUNT(CASE WHEN ai_confidence >= 0.6 AND ai_confidence < 0.8 THEN 1 END) as medium_confidence,
-          COUNT(CASE WHEN ai_confidence < 0.6 THEN 1 END) as low_confidence,
-          MAX(ai_categorized_at) as last_run_at
+          COUNT(CASE WHEN ai_tagging_status IN ('pending', 'pending_review') THEN 1 END) as pending_count,
+          COUNT(CASE WHEN ai_tagging_status = 'pending_review' THEN 1 END) as pending_review_count,
+          COUNT(CASE WHEN ai_tagging_status = 'failed' THEN 1 END) as failed_count,
+          AVG(CASE WHEN ai_tag_confidence IS NOT NULL THEN ai_tag_confidence END) as avg_confidence,
+          COUNT(CASE WHEN ai_tag_confidence >= 0.8 THEN 1 END) as high_confidence,
+          COUNT(CASE WHEN ai_tag_confidence >= 0.6 AND ai_tag_confidence < 0.8 THEN 1 END) as medium_confidence,
+          COUNT(CASE WHEN ai_tag_confidence < 0.6 THEN 1 END) as low_confidence,
+          MAX(ai_tagged_at) as last_run_at
         FROM core.supplier_product
+        WHERE is_active = true
       ),
       status_counts AS (
         SELECT 
-          ai_categorization_status,
+          ai_tagging_status AS ai_categorization_status,
           COUNT(*) as count
         FROM core.supplier_product
-        GROUP BY ai_categorization_status
+        WHERE is_active = true
+        GROUP BY ai_tagging_status
       ),
       provider_counts AS (
         SELECT 
-          ai_provider,
+          ai_tag_provider AS ai_provider,
           COUNT(*) as count
         FROM core.supplier_product
-        WHERE ai_provider IS NOT NULL
-        GROUP BY ai_provider
-      ),
-      active_jobs AS (
-        SELECT COUNT(*) as count
-        FROM core.ai_categorization_job
-        WHERE status IN ('queued', 'running')
+        WHERE ai_tag_provider IS NOT NULL AND is_active = true
+        GROUP BY ai_tag_provider
       )
       SELECT 
         s.total_products,
@@ -64,7 +63,7 @@ export async function GET(request: NextRequest) {
         s.medium_confidence,
         s.low_confidence,
         s.last_run_at,
-        aj.count as active_jobs_count,
+        0 as active_jobs_count,
         COALESCE(
           json_object_agg(sc.ai_categorization_status, sc.count) FILTER (WHERE sc.ai_categorization_status IS NOT NULL),
           '{}'::json
@@ -74,12 +73,11 @@ export async function GET(request: NextRequest) {
           '{}'::json
         ) as by_provider
       FROM stats s
-      CROSS JOIN active_jobs aj
       LEFT JOIN status_counts sc ON true
       LEFT JOIN provider_counts pc ON true
       GROUP BY s.total_products, s.categorized_count, s.pending_count, s.pending_review_count, s.failed_count, 
                s.avg_confidence, s.high_confidence, s.medium_confidence, s.low_confidence,
-               s.last_run_at, aj.count
+               s.last_run_at
     `;
 
     const result = await dbQuery<{

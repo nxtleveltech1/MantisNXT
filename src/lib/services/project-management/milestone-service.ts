@@ -1,7 +1,7 @@
-﻿import { query } from '@/lib/database';
-import { emitPmActivity } from './activity-service';
-import { notifyPmEvent } from './notification-service';
-import { emitWebhookEvent } from './webhook-service';
+import { query } from '@/lib/database';
+import { ActivityService } from './activity-service';
+import { NotificationService } from './notification-service';
+import { WebhookService } from './webhook-service';
 
 export type MilestoneInput = {
   orgId: string;
@@ -75,7 +75,7 @@ export const MilestoneService = {
 
     const milestone = rows[0];
 
-    await emitPmActivity({
+    await ActivityService.log({
       orgId: input.orgId,
       actorId: input.actorId,
       entityType: 'milestone',
@@ -87,27 +87,19 @@ export const MilestoneService = {
       },
     });
 
-    await notifyPmEvent({
+    await NotificationService.notify({
       orgId: input.orgId,
-      actorId: input.actorId,
-      eventType: 'pm.milestone.created',
-      entityType: 'milestone',
-      entityId: milestone.milestone_id,
-      payload: {
-        projectId: input.projectId,
-        name: input.name,
-      },
+      userId: input.actorId,
+      type: 'info',
+      title: 'Milestone created',
+      message: input.name,
+      actionUrl: `/project-management/projects/${input.projectId}`,
     });
 
-    await emitWebhookEvent({
+    await WebhookService.deliver({
       orgId: input.orgId,
-      eventType: 'pm.milestone.created',
-      entityType: 'milestone',
-      entityId: milestone.milestone_id,
-      payload: {
-        projectId: input.projectId,
-        name: input.name,
-      },
+      eventType: 'milestone.created',
+      payload: milestone,
     });
 
     return milestone;
@@ -141,7 +133,7 @@ export const MilestoneService = {
     const milestone = rows[0];
 
     if (milestone) {
-      await emitPmActivity({
+      await ActivityService.log({
         orgId,
         actorId: update.actorId,
         entityType: 'milestone',
@@ -153,27 +145,19 @@ export const MilestoneService = {
         },
       });
 
-      await notifyPmEvent({
+      await NotificationService.notify({
         orgId,
-        actorId: update.actorId,
-        eventType: 'pm.milestone.updated',
-        entityType: 'milestone',
-        entityId: milestone.milestone_id,
-        payload: {
-          projectId: milestone.project_id,
-          name: milestone.name,
-        },
+        userId: update.actorId,
+        type: 'info',
+        title: 'Milestone updated',
+        message: milestone.name,
+        actionUrl: `/project-management/projects/${milestone.project_id}`,
       });
 
-      await emitWebhookEvent({
+      await WebhookService.deliver({
         orgId,
-        eventType: 'pm.milestone.updated',
-        entityType: 'milestone',
-        entityId: milestone.milestone_id,
-        payload: {
-          projectId: milestone.project_id,
-          name: milestone.name,
-        },
+        eventType: 'milestone.updated',
+        payload: milestone,
       });
     }
 

@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- Migration: 0235_pm_suite.sql
 -- Description: Project Management Suite core.pm_* tables + remove Dart-AI storage
 -- Date: 2026-02-05
@@ -166,6 +166,32 @@ CREATE TABLE IF NOT EXISTS core.pm_label (
   CONSTRAINT pm_label_unique_name UNIQUE (project_id, name)
 );
 
+CREATE TABLE IF NOT EXISTS core.pm_sprint (
+  sprint_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  project_id uuid NOT NULL REFERENCES core.pm_project(project_id) ON DELETE CASCADE,
+  name text NOT NULL,
+  goal text,
+  start_date date,
+  end_date date,
+  status pm_sprint_status NOT NULL DEFAULT 'planned',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS core.pm_milestone (
+  milestone_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  project_id uuid NOT NULL REFERENCES core.pm_project(project_id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  due_date date,
+  status pm_milestone_status NOT NULL DEFAULT 'planned',
+  completed_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS core.pm_task (
   task_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
@@ -213,32 +239,6 @@ CREATE TABLE IF NOT EXISTS core.pm_task_label (
   task_id uuid NOT NULL REFERENCES core.pm_task(task_id) ON DELETE CASCADE,
   label_id uuid NOT NULL REFERENCES core.pm_label(label_id) ON DELETE CASCADE,
   PRIMARY KEY (task_id, label_id)
-);
-
-CREATE TABLE IF NOT EXISTS core.pm_sprint (
-  sprint_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-  project_id uuid NOT NULL REFERENCES core.pm_project(project_id) ON DELETE CASCADE,
-  name text NOT NULL,
-  goal text,
-  start_date date,
-  end_date date,
-  status pm_sprint_status NOT NULL DEFAULT 'planned',
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS core.pm_milestone (
-  milestone_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-  project_id uuid NOT NULL REFERENCES core.pm_project(project_id) ON DELETE CASCADE,
-  name text NOT NULL,
-  description text,
-  due_date date,
-  status pm_milestone_status NOT NULL DEFAULT 'planned',
-  completed_at timestamptz,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS core.pm_comment (

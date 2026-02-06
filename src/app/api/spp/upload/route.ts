@@ -196,16 +196,23 @@ export async function POST(request: NextRequest) {
         'Unit Cost',
         'COST',
         'PRICE',
+        'Dealer Excl.',
+        'Dealer Excl',
+        'Dealer Ex',
+        'Dealer Price',
+        'Dealer Cost',
       ]);
 
       const stockQty = getColumn([
         'SUPPLIER SOH',
         'Supplier SOH',
+        'SUP SOH',
         'SOH',
         'Stock',
         'Quantity',
         'Qty',
         'Stock On Hand',
+        'Supplier Stock',
       ]);
 
       const uom = getColumn(['UOM', 'Unit', 'Unit of Measure', 'Pack Size']) || 'EA';
@@ -214,9 +221,18 @@ export async function POST(request: NextRequest) {
 
       const barcode = getColumn(['Barcode', 'EAN', 'UPC', 'GTIN']);
 
+      const rspValue = getColumn([
+        'RSP',
+        'Recommended Selling Price',
+        'Selling Price',
+        'Retail Price',
+        'RRP',
+      ]);
+
       // Store additional info in attrs_json
       const attrs: unknown = {};
       if (stockQty) attrs.stock_qty = parseInt(String(stockQty)) || 0;
+      if (rspValue) attrs.rsp = parsePrice(rspValue);
       if (getColumn(['QTY ON ORDER']))
         attrs.qty_on_order = parseInt(String(getColumn(['QTY ON ORDER']))) || 0;
       if (getColumn(['NEXT SHIPMENT'])) attrs.next_shipment = getColumn(['NEXT SHIPMENT']);

@@ -437,9 +437,17 @@ export class TaggingEngine {
         continue;
       }
 
-      // Handle failed products
+      // Handle pending_review products — update status in DB
       if (result.status === 'pending_review') {
-        // Status already set by proposal workflow
+        try {
+          await this.updateProductTaggingStatus(
+            result.supplier_product_id,
+            'pending_review',
+            result.reasoning || 'New tags proposed; awaiting review'
+          );
+        } catch (e) {
+          console.error('Failed to update pending_review status:', e);
+        }
         continue;
       }
 
