@@ -127,7 +127,7 @@ export default function ProjectManagementOverview() {
                 <div key={project.project_id} className="flex items-center justify-between rounded border p-3">
                   <div>
                     <div className="text-sm font-medium">{project.name}</div>
-                    <div className="text-xs text-muted-foreground">{project.project_key} · {project.visibility}</div>
+                    <div className="text-xs text-muted-foreground">{project.project_key} {'\u00B7'} {project.visibility}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{project.status}</Badge>

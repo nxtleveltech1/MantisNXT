@@ -21,8 +21,8 @@ export function RoadmapTimeline({ items }: { items: RoadmapItem[] }) {
           <div className="flex-1">
             <div className="text-sm font-medium">{item.title}</div>
             <div className="text-xs text-muted-foreground">
-              {item.date ? new Date(item.date).toLocaleDateString() : 'No date'} · {item.type}
-              {item.status ? ` · ${item.status}` : ''}
+              {item.date ? new Date(item.date).toLocaleDateString() : 'No date'} {'\u00B7'} {item.type}
+              {item.status ? ` \u00B7 ${item.status}` : ''}
             </div>
           </div>
         </div>

@@ -141,7 +141,7 @@ export default function ProjectManagementSettingsPage() {
 
   const generateIcal = async () => {
     try {
-      const data = await fetchJson(`/api/v1/project-management/integrations/ical${projectId ? `?project_id=${projectId}` : ''}`);
+      const data = await fetchJson<any>(`/api/v1/project-management/integrations/ical${projectId ? `?project_id=${projectId}` : ''}`);
       setIcalFeed(data.feedUrl);
     } catch (error) {
       toast({ title: 'Failed to generate feed', description: error instanceof Error ? error.message : 'Unknown error', variant: 'destructive' });
@@ -168,7 +168,7 @@ export default function ProjectManagementSettingsPage() {
               onChange={e => setProjectId(e.target.value)}
             >
               <option value="">Select project</option>
-              {projectOptions.map(project => (
+              {projectOptions.map((project: any) => (
                 <option key={project.project_id} value={project.project_id}>{project.name}</option>
               ))}
             </select>
@@ -187,10 +187,10 @@ export default function ProjectManagementSettingsPage() {
               <Button onClick={() => createStatus.mutate()} disabled={!projectId || !statusName.trim()}>Add Status</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {(statuses || []).map((status: any) => (
+              {(statuses as any[] || []).map((status: any) => (
                 <Badge key={status.status_id} variant="secondary">{status.name}</Badge>
               ))}
-              {(!statuses || statuses.length === 0) && <span className="text-sm text-muted-foreground">No statuses yet.</span>}
+              {(!statuses || (statuses as any[]).length === 0) && <span className="text-sm text-muted-foreground">No statuses yet.</span>}
             </div>
           </CardContent>
         </Card>
@@ -207,12 +207,12 @@ export default function ProjectManagementSettingsPage() {
               <Button onClick={() => createLabel.mutate()} disabled={!projectId || !labelName.trim()}>Add Label</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {(labels || []).map((label: any) => (
+              {(labels as any[] || []).map((label: any) => (
                 <span key={label.label_id} className="rounded px-2 py-1 text-xs" style={{ backgroundColor: label.color || '#e2e8f0' }}>
                   {label.name}
                 </span>
               ))}
-              {(!labels || labels.length === 0) && <span className="text-sm text-muted-foreground">No labels yet.</span>}
+              {(!labels || (labels as any[]).length === 0) && <span className="text-sm text-muted-foreground">No labels yet.</span>}
             </div>
           </CardContent>
         </Card>
@@ -230,15 +230,15 @@ export default function ProjectManagementSettingsPage() {
               <Button onClick={() => createField.mutate()} disabled={!projectId || !fieldName.trim() || !fieldKey.trim()}>Add Field</Button>
             </div>
             <div className="space-y-2">
-              {(customFields || []).map((field: any) => (
+              {(customFields as any[] || []).map((field: any) => (
                 <div key={field.field_id} className="flex items-center justify-between rounded border p-3">
                   <div>
                     <div className="text-sm font-medium">{field.name}</div>
-                    <div className="text-xs text-muted-foreground">{field.key} · {field.type}</div>
+                    <div className="text-xs text-muted-foreground">{field.key} {'\u00B7'} {field.type}</div>
                   </div>
                 </div>
               ))}
-              {(!customFields || customFields.length === 0) && <span className="text-sm text-muted-foreground">No custom fields yet.</span>}
+              {(!customFields || (customFields as any[]).length === 0) && <span className="text-sm text-muted-foreground">No custom fields yet.</span>}
             </div>
           </CardContent>
         </Card>
@@ -256,13 +256,13 @@ export default function ProjectManagementSettingsPage() {
               <Button onClick={() => createWebhook.mutate()} disabled={!webhookName.trim() || !webhookUrl.trim()}>Add Webhook</Button>
             </div>
             <div className="space-y-2">
-              {(webhooks || []).map((hook: any) => (
+              {(webhooks as any[] || []).map((hook: any) => (
                 <div key={hook.webhook_id} className="rounded border p-3">
                   <div className="text-sm font-medium">{hook.name}</div>
                   <div className="text-xs text-muted-foreground">{hook.target_url}</div>
                 </div>
               ))}
-              {(!webhooks || webhooks.length === 0) && <span className="text-sm text-muted-foreground">No webhooks configured.</span>}
+              {(!webhooks || (webhooks as any[]).length === 0) && <span className="text-sm text-muted-foreground">No webhooks configured.</span>}
             </div>
           </CardContent>
         </Card>

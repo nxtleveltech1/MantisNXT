@@ -83,7 +83,7 @@ export default function AutomationsPage() {
                 rules.map(rule => (
                   <div key={rule.rule_id} className="rounded border p-3">
                     <div className="text-sm font-medium">{rule.name}</div>
-                    <div className="text-xs text-muted-foreground">{rule.trigger_type} · {rule.status}</div>
+                    <div className="text-xs text-muted-foreground">{rule.trigger_type} {'\u00B7'} {rule.status}</div>
                   </div>
                 ))
               )}
