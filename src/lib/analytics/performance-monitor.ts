@@ -211,107 +211,65 @@ export class RealTimePerformanceMonitor extends EventEmitter {
 
   /**
    * Measure API performance
+   * Returns insufficient_data when real metrics are unavailable.
    */
-  private async measureApiPerformance(organizationId: string): Promise<unknown> {
-    const startTime = Date.now();
-
-    try {
-      // Simulate API calls to key endpoints
-      const endpoints = [
-        '/api/suppliers',
-        '/api/inventory',
-        '/api/analytics/dashboard',
-        '/api/predictions',
-      ];
-
-      const measurements = await Promise.all(
-        endpoints.map(async endpoint => {
-          const endpointStart = Date.now();
-          // In real implementation, make actual HTTP requests
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
-          return Date.now() - endpointStart;
-        })
-      );
-
-      const averageResponseTime = measurements.reduce((a, b) => a + b, 0) / measurements.length;
-      const frontendTime = Math.random() * 200 + 100; // Simulate frontend rendering time
-
-      return {
-        responseTime: averageResponseTime,
-        frontendTime,
-        endpointMetrics: endpoints.map((endpoint, index) => ({
-          endpoint,
-          responseTime: measurements[index],
-        })),
-      };
-    } catch (error) {
-      console.error('API performance measurement error:', error);
-      return {
-        responseTime: 5000, // High value to indicate error
-        frontendTime: 5000,
-        endpointMetrics: [],
-      };
-    }
+  private async measureApiPerformance(_organizationId: string): Promise<unknown> {
+    // TODO: Wire to real APM / request-timing middleware when available
+    return {
+      insufficient_data: true,
+      reason: 'API performance monitoring not yet connected to real instrumentation',
+      responseTime: null,
+      frontendTime: null,
+      endpointMetrics: [],
+    };
   }
 
   /**
    * Measure database performance
+   * Returns insufficient_data when real metrics are unavailable.
    */
-  private async measureDatabasePerformance(organizationId: string): Promise<unknown> {
-    try {
-      // Simulate database performance metrics
-      const queryTimes = [
-        Math.random() * 100 + 20, // Typical query time
-        Math.random() * 200 + 50, // Complex query time
-        Math.random() * 50 + 10, // Simple query time
-      ];
-
-      const averageQueryTime = queryTimes.reduce((a, b) => a + b, 0) / queryTimes.length;
-      const slowQueries = queryTimes.filter(time => time > 100).length;
-      const connectionCount = Math.floor(Math.random() * 20) + 5;
-      const cacheHitRatio = 0.85 + Math.random() * 0.1; // 85-95%
-
-      return {
-        averageQueryTime,
-        queryTime: averageQueryTime,
-        connectionCount,
-        slowQueries,
-        cacheHitRatio,
-      };
-    } catch (error) {
-      console.error('Database performance measurement error:', error);
-      return {
-        averageQueryTime: 1000,
-        queryTime: 1000,
-        connectionCount: 0,
-        slowQueries: 10,
-        cacheHitRatio: 0.5,
-      };
-    }
+  private async measureDatabasePerformance(_organizationId: string): Promise<unknown> {
+    // TODO: Wire to pg_stat_statements or Neon metrics API
+    return {
+      insufficient_data: true,
+      reason: 'Database performance monitoring not yet connected to real instrumentation',
+      averageQueryTime: null,
+      queryTime: null,
+      connectionCount: null,
+      slowQueries: null,
+      cacheHitRatio: null,
+    };
   }
 
   /**
    * Measure resource utilization
+   * Returns insufficient_data when real metrics are unavailable.
    */
   private async measureResourceUtilization(): Promise<unknown> {
-    // Simulate system resource metrics
+    // TODO: Wire to Vercel/hosting provider metrics API
     return {
-      cpu: Math.random() * 80 + 10, // 10-90% CPU usage
-      memory: Math.random() * 70 + 20, // 20-90% memory usage
-      disk: Math.random() * 60 + 30, // 30-90% disk usage
-      network: Math.random() * 50 + 10, // 10-60% network usage
+      insufficient_data: true,
+      reason: 'Resource utilization monitoring not yet connected to real instrumentation',
+      cpu: null,
+      memory: null,
+      disk: null,
+      network: null,
     };
   }
 
   /**
    * Measure business metrics
+   * Returns insufficient_data when real metrics are unavailable.
    */
-  private async measureBusinessMetrics(organizationId: string): Promise<unknown> {
+  private async measureBusinessMetrics(_organizationId: string): Promise<unknown> {
+    // TODO: Compute from actual transaction/session data
     return {
-      transactionThroughput: Math.floor(Math.random() * 1000) + 100, // 100-1100 transactions/hour
-      userConcurrency: Math.floor(Math.random() * 50) + 5, // 5-55 concurrent users
-      errorRate: Math.random() * 0.05, // 0-5% error rate
-      availability: 0.95 + Math.random() * 0.049, // 95-99.9% availability
+      insufficient_data: true,
+      reason: 'Business metrics not yet computed from real data',
+      transactionThroughput: null,
+      userConcurrency: null,
+      errorRate: null,
+      availability: null,
     };
   }
 

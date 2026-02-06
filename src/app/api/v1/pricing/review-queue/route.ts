@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { aiPricingRecommendationService } from '@/lib/services/pricing/AIPricingRecommendationService';
+import { requireAuthOrg } from '@/lib/auth/require-org';
+import { handleError } from '@/lib/auth/middleware';
 import { z } from 'zod';
 
 /**
@@ -14,21 +16,11 @@ import { z } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
+    const { orgId: org_id } = await requireAuthOrg(request);
     const { searchParams } = new URL(request.url);
-    const org_id = searchParams.get('org_id');
-    const priority = searchParams.get('priority'); // 'high' | 'medium' | 'low'
+    const priority = searchParams.get('priority');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
-
-    if (!org_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Organization ID is required',
-        },
-        { status: 400 }
-      );
-    }
 
     // Build query with filters
     let whereClause = 'WHERE prq.org_id = $1';
@@ -100,15 +92,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching review queue:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch review queue',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
@@ -127,6 +111,7 @@ const ReviewActionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuthOrg(request);
     const body = await request.json();
     const validatedData = ReviewActionSchema.parse(body);
 
@@ -176,14 +161,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error processing review action:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to process review action',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

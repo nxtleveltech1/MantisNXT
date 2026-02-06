@@ -1,59 +1,35 @@
 import type { NextRequest } from 'next/server';
-import { query } from '@/lib/database';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { NextResponse } from 'next/server';
+import { requireAuthOrg } from '@/lib/auth/require-org';
+import { type AuthUser, handleError } from '@/lib/auth/middleware';
 
 /**
- * Get organization ID from request with fallback
- * Tries: body -> header -> query -> env -> database -> default
+ * Strict org resolution for pricing-intel routes.
+ * No fallback UUIDs. Requires authenticated org context.
+ */
+export async function getPricingIntelAuth(
+  request: NextRequest
+): Promise<{ user: AuthUser; orgId: string }> {
+  return requireAuthOrg(request);
+}
+
+/**
+ * @deprecated Use getPricingIntelAuth instead.
+ * Kept for backward-compat during migration -- delegates to strict version.
  */
 export async function getOrgId(
   request: NextRequest,
-  body?: Record<string, unknown>
+  _body?: Record<string, unknown>
 ): Promise<string> {
-  // 1. Check request body
-  if (body) {
-    const bodyOrg =
-      typeof body.orgId === 'string'
-        ? body.orgId
-        : typeof body.org_id === 'string'
-          ? (body.org_id as string)
-          : null;
-    if (bodyOrg && UUID_REGEX.test(bodyOrg)) {
-      return bodyOrg;
-    }
-  }
+  const { orgId } = await requireAuthOrg(request);
+  return orgId;
+}
 
-  // 2. Check headers
-  const headerOrg = request.headers.get('x-org-id') ?? request.headers.get('x-organization-id');
-  if (headerOrg && UUID_REGEX.test(headerOrg)) {
-    return headerOrg;
-  }
-
-  // 3. Check query params
-  const urlOrg = new URL(request.url).searchParams.get('orgId');
-  if (urlOrg && UUID_REGEX.test(urlOrg)) {
-    return urlOrg;
-  }
-
-  // 4. Check environment variable
-  const envOrgId = process.env.DEFAULT_ORG_ID;
-  if (envOrgId && UUID_REGEX.test(envOrgId)) {
-    return envOrgId;
-  }
-
-  // 5. Try database
-  try {
-    const result = await query<{ id: string }>(
-      'SELECT id FROM public.organization ORDER BY created_at LIMIT 1'
-    );
-    if (result.rows && result.rows.length > 0) {
-      return result.rows[0].id;
-    }
-  } catch (error) {
-    console.warn('Failed to fetch organization from database:', error);
-  }
-
-  // 6. Fallback to known default
-  return 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+/**
+ * Standard error handler for pricing-intel routes.
+ * Delegates to auth middleware handleError for proper status codes.
+ */
+export { handleError as handlePricingIntelError } from '@/lib/auth/middleware';
+export function handleApiError(error: unknown): NextResponse {
+  return handleError(error);
 }

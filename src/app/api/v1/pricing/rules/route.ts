@@ -3,18 +3,16 @@
  *
  * GET /api/v1/pricing/rules - List all pricing rules
  * POST /api/v1/pricing/rules - Create a new pricing rule
- *
- * Author: Aster (Principal Full-Stack & Architecture Expert)
- * Date: 2025-11-02
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PricingRuleService, type PricingRuleFilter } from '@/lib/services/PricingRuleService';
 import { PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
+import { requireAuthOrg } from '@/lib/auth/require-org';
+import { handleError } from '@/lib/auth/middleware';
 import { z } from 'zod';
 
-// Validation schema for creating pricing rules
 const CreatePricingRuleSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
@@ -37,102 +35,41 @@ const CreatePricingRuleSchema = z.object({
   created_by: z.string().optional(),
 });
 
-/**
- * GET /api/v1/pricing/rules
- *
- * List all pricing rules with optional filtering
- */
 export async function GET(request: NextRequest) {
   try {
+    const { orgId } = await requireAuthOrg(request);
     const { searchParams } = new URL(request.url);
 
     const filter: PricingRuleFilter = {};
+    if (searchParams.has('rule_type')) filter.rule_type = searchParams.get('rule_type') as PricingRuleType;
+    if (searchParams.has('strategy')) filter.strategy = searchParams.get('strategy') as PricingStrategy;
+    if (searchParams.has('is_active')) filter.is_active = searchParams.get('is_active') === 'true';
+    if (searchParams.has('search')) filter.search = searchParams.get('search') ?? undefined;
 
-    if (searchParams.has('rule_type')) {
-      filter.rule_type = searchParams.get('rule_type') as PricingRuleType;
-    }
+    const rules = await PricingRuleService.getAllRules(orgId, filter);
 
-    if (searchParams.has('strategy')) {
-      filter.strategy = searchParams.get('strategy') as PricingStrategy;
-    }
-
-    if (searchParams.has('is_active')) {
-      filter.is_active = searchParams.get('is_active') === 'true';
-    }
-
-    if (searchParams.has('search')) {
-      filter.search = searchParams.get('search') ?? undefined;
-    }
-
-    const rules = await PricingRuleService.getAllRules(filter);
-
-    return NextResponse.json({
-      success: true,
-      data: rules,
-      count: rules.length,
-    });
-  } catch (error: unknown) {
-    console.error('Error fetching pricing rules:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : undefined;
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch pricing rules',
-        details: message,
-        stack: process.env.NODE_ENV === 'development' ? stack : undefined,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, data: rules, count: rules.length });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * POST /api/v1/pricing/rules
- *
- * Create a new pricing rule
- */
 export async function POST(request: NextRequest) {
   try {
+    const { orgId } = await requireAuthOrg(request);
     const body = await request.json();
-
-    // Validate input
     const validatedData = CreatePricingRuleSchema.parse(body);
 
-    // Create the rule
-    const rule = await PricingRuleService.createRule(validatedData);
+    const rule = await PricingRuleService.createRule(orgId, validatedData);
 
     return NextResponse.json(
-      {
-        success: true,
-        data: rule,
-        message: 'Pricing rule created successfully',
-      },
+      { success: true, data: rule, message: 'Pricing rule created successfully' },
       { status: 201 }
     );
-  } catch (error: unknown) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
     }
-
-    console.error('Error creating pricing rule:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : undefined;
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to create pricing rule',
-        details: message,
-        stack: process.env.NODE_ENV === 'development' ? stack : undefined,
-      },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

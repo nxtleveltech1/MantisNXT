@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Price Analytics Service
  *
@@ -60,11 +58,17 @@ export interface ElasticityAnalysis {
   historical_data_points: number;
 }
 
+export interface InsufficientDataResponse {
+  insufficient_data: true;
+  reason: string;
+}
+
 export class PriceAnalyticsService {
   /**
    * Get price history for a product
    */
   static async getPriceHistory(
+    orgId: string,
     productId: string,
     startDate?: Date,
     endDate?: Date
@@ -76,11 +80,11 @@ export class PriceAnalyticsService {
         price_change_percent as change_percent,
         change_reason
       FROM ${PRICING_TABLES.PRICE_CHANGE_LOG}
-      WHERE product_id = $1
+      WHERE product_id = $1 AND org_id = $2
     `;
 
-    const params: unknown[] = [productId];
-    let paramCount = 2;
+    const params: unknown[] = [productId, orgId];
+    let paramCount = 3;
 
     if (startDate) {
       sql += ` AND changed_at >= $${paramCount++}`;
@@ -105,16 +109,17 @@ export class PriceAnalyticsService {
   /**
    * Get recent price changes across all products (audit log)
    */
-  static async getRecentPriceChanges(limit = 100): Promise<PriceChangeLog[]> {
+  static async getRecentPriceChanges(orgId: string, limit = 100): Promise<PriceChangeLog[]> {
     const sql = `
       SELECT pcl.*, p.name as product_name, p.sku
       FROM ${PRICING_TABLES.PRICE_CHANGE_LOG} pcl
       LEFT JOIN ${CORE_TABLES.PRODUCT} p ON pcl.product_id = p.product_id
+      WHERE pcl.org_id = $1
       ORDER BY changed_at DESC
-      LIMIT $1
+      LIMIT $2
     `;
 
-    const result = await query<unknown>(sql, [limit]);
+    const result = await query<Record<string, unknown>>(sql, [orgId, limit]);
 
     return result.rows.map(row => ({
       ...row,
@@ -126,10 +131,11 @@ export class PriceAnalyticsService {
    * Get price performance metrics for a product
    */
   static async getPerformanceMetrics(
+    orgId: string,
     productId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<PricePerformanceMetrics | null> {
+  ): Promise<PricePerformanceMetrics | InsufficientDataResponse | null> {
     // This is a comprehensive query that would need actual sales data
     // For now, we'll provide a structure based on available data
 
@@ -153,10 +159,10 @@ export class PriceAnalyticsService {
     const product = result.rows[0];
 
     // Get price history for the period
-    const priceHistory = await this.getPriceHistory(productId, startDate, endDate);
+    const priceHistory = await this.getPriceHistory(orgId, productId, startDate, endDate);
 
     if (priceHistory.length === 0) {
-      return null;
+      return { insufficient_data: true, reason: 'No price change history found for this product in the specified period' };
     }
 
     const prices = priceHistory.map(h => h.price);
@@ -195,7 +201,7 @@ export class PriceAnalyticsService {
   /**
    * Get competitor price comparison
    */
-  static async getCompetitorComparison(productId: string): Promise<CompetitorComparison | null> {
+  static async getCompetitorComparison(orgId: string, productId: string): Promise<CompetitorComparison | InsufficientDataResponse | null> {
     // Get our price
     const ourPriceSql = `
       SELECT sp.price
@@ -219,20 +225,14 @@ export class PriceAnalyticsService {
         price,
         last_checked
       FROM ${PRICING_TABLES.COMPETITOR_PRICES}
-      WHERE product_id = $1 AND is_active = true
+      WHERE product_id = $1 AND org_id = $2 AND is_active = true
       ORDER BY last_checked DESC
     `;
 
-    const competitorResult = await query<CompetitorPrice>(competitorSql, [productId]);
+    const competitorResult = await query<CompetitorPrice>(competitorSql, [productId, orgId]);
 
     if (competitorResult.rows.length === 0) {
-      return {
-        product_id: productId,
-        our_price: ourPrice,
-        competitors: [],
-        market_position: 'average',
-        market_avg_price: ourPrice,
-      };
+      return { insufficient_data: true, reason: 'No competitor pricing data available for this product' };
     }
 
     const competitors = competitorResult.rows.map(comp => ({
@@ -271,21 +271,20 @@ export class PriceAnalyticsService {
   /**
    * Calculate price elasticity for a product
    */
-  static async calculateElasticity(productId: string): Promise<ElasticityAnalysis | null> {
+  static async calculateElasticity(orgId: string, productId: string): Promise<ElasticityAnalysis | InsufficientDataResponse | null> {
     // Get existing elasticity data
     const elasticitySql = `
       SELECT *
       FROM ${PRICING_TABLES.PRICE_ELASTICITY}
-      WHERE product_id = $1 AND is_current = true
+      WHERE product_id = $1 AND org_id = $2 AND is_current = true
       ORDER BY created_at DESC
       LIMIT 1
     `;
 
-    const elasticityResult = await query<PriceElasticity>(elasticitySql, [productId]);
+    const elasticityResult = await query<PriceElasticity>(elasticitySql, [productId, orgId]);
 
     if (elasticityResult.rows.length === 0) {
-      // No elasticity data available - would need to calculate from sales history
-      return null;
+      return { insufficient_data: true, reason: 'No elasticity data available for this product. Historical sales data is required for elasticity analysis.' };
     }
 
     const elasticity = elasticityResult.rows[0];
@@ -305,9 +304,9 @@ export class PriceAnalyticsService {
       current_elasticity: elasticity.elasticity_coefficient,
       confidence: elasticity.confidence_interval_upper - elasticity.confidence_interval_lower,
       optimal_price_range: {
-        min: elasticity.price_range_analyzed.min_price,
-        max: elasticity.price_range_analyzed.max_price,
-        optimal: elasticity.optimal_price || elasticity.price_range_analyzed.max_price,
+        min: (elasticity as Record<string, unknown>).price_range_min as number ?? 0,
+        max: (elasticity as Record<string, unknown>).price_range_max as number ?? 0,
+        optimal: elasticity.optimal_price ?? (elasticity as Record<string, unknown>).price_range_max as number ?? 0,
       },
       price_sensitivity: sensitivity,
       historical_data_points: elasticity.data_points_count,
@@ -317,7 +316,7 @@ export class PriceAnalyticsService {
   /**
    * Get overall pricing analytics dashboard metrics
    */
-  static async getDashboardMetrics(days = 30): Promise<{
+  static async getDashboardMetrics(orgId: string, days = 30): Promise<{
     total_products_tracked: number;
     recent_price_changes: number;
     avg_price_change_percent: number;
@@ -342,9 +341,9 @@ export class PriceAnalyticsService {
 
     // Total products with pricing data
     const totalProductsSql = `
-      SELECT COUNT(DISTINCT pi.supplier_sku) as count
-      FROM public.pricelist_items pi
-      WHERE pi.unit_price IS NOT NULL
+      SELECT COUNT(DISTINCT sp.supplier_product_id) as count
+      FROM ${CORE_TABLES.SUPPLIER_PRODUCT} sp
+      WHERE sp.price IS NOT NULL
     `;
     const totalProductsResult = await query<{ count: number }>(totalProductsSql);
 
@@ -372,10 +371,10 @@ export class PriceAnalyticsService {
     // Products with competitor data
     const competitorsSql = `
       SELECT COUNT(DISTINCT competitor_name) as count
-      FROM public.competitor_pricing
-      WHERE is_active = true
+      FROM ${PRICING_TABLES.COMPETITOR_PRICES}
+      WHERE org_id = $1 AND is_active = true
     `;
-    const competitorsResult = await query<{ count: number }>(competitorsSql);
+    const competitorsResult = await query<{ count: number }>(competitorsSql, [orgId]);
 
     // Get actual recent price changes with product details from price_history
     const recentChangesListSql = `
@@ -403,10 +402,10 @@ export class PriceAnalyticsService {
     // Count active pricing rules
     const activeRulesSql = `
       SELECT COUNT(*) as count
-      FROM public.pricing_rule
-      WHERE is_active = true
+      FROM ${PRICING_TABLES.PRICING_RULES}
+      WHERE org_id = $1 AND is_active = true
     `;
-    const activeRulesResult = await query<{ count: number }>(activeRulesSql);
+    const activeRulesResult = await query<{ count: number }>(activeRulesSql, [orgId]);
 
     return {
       total_products_tracked: Number(totalProductsResult.rows[0]?.count || 0),
@@ -428,6 +427,7 @@ export class PriceAnalyticsService {
    * Get price trends over time
    */
   static async getPriceTrends(
+    orgId: string,
     categoryId?: string,
     brandId?: string,
     days = 90
@@ -452,11 +452,11 @@ export class PriceAnalyticsService {
         COUNT(DISTINCT pcl.product_id) as products_count
       FROM ${PRICING_TABLES.PRICE_CHANGE_LOG} pcl
       LEFT JOIN ${CORE_TABLES.PRODUCT} p ON pcl.product_id = p.product_id
-      WHERE pcl.changed_at >= $1
+      WHERE pcl.changed_at >= $1 AND pcl.org_id = $2
     `;
 
-    const params: unknown[] = [startDate];
-    let paramCount = 2;
+    const params: unknown[] = [startDate, orgId];
+    let paramCount = 3;
 
     if (categoryId) {
       sql += ` AND p.category_id = $${paramCount++}`;

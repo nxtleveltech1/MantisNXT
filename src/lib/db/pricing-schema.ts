@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Pricing Optimization Database Schema Definitions
  *
@@ -322,7 +320,6 @@ export interface CompetitorPrice {
 /**
  * Price Elasticity Interface
  */
- */
 export interface PriceElasticity {
   elasticity_id: string;
   org_id: string;
@@ -360,7 +357,6 @@ export interface PriceElasticity {
 
 /**
  * Price Performance Metrics
- */
  */
 export interface PricePerformanceMetrics {
   product_id: string;
@@ -601,15 +597,16 @@ export interface PricingAutomationConfig {
  * Type guards
  */
 export function isPricingRule(obj: unknown): obj is PricingRule {
-  return obj && typeof obj.rule_id === 'string' && typeof obj.rule_type === 'string';
+  const o = obj as Record<string, unknown>;
+  return !!o && typeof o.rule_id === 'string' && typeof o.rule_type === 'string';
 }
 
 export function isOptimizationRun(obj: unknown): obj is OptimizationRun {
-  return obj && typeof obj.run_id === 'string' && typeof obj.strategy === 'string';
+  const o = obj as Record<string, unknown>;
+  return !!o && typeof o.run_id === 'string' && typeof o.strategy === 'string';
 }
 
 export function isOptimizationRecommendation(obj: unknown): obj is OptimizationRecommendation {
-  return (
-    obj && typeof obj.recommendation_id === 'string' && typeof obj.recommended_price === 'number'
-  );
+  const o = obj as Record<string, unknown>;
+  return !!o && typeof o.recommendation_id === 'string' && typeof o.recommended_price === 'number';
 }

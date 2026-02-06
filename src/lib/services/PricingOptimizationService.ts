@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Pricing Optimization Service
  *
@@ -61,20 +59,21 @@ export class PricingOptimizationService {
   /**
    * Start a new optimization run
    */
-  static async startOptimization(input: StartOptimizationInput): Promise<OptimizationRun> {
+  static async startOptimization(orgId: string, input: StartOptimizationInput): Promise<OptimizationRun> {
     const runId = uuidv4();
 
     // Create optimization run record
     const currency = input.currency || 'ZAR';
     const sql = `
       INSERT INTO ${PRICING_TABLES.OPTIMIZATION_RUNS} (
-        run_id, run_name, strategy, status, config, scope, currency, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        run_id, org_id, run_name, strategy, status, config, scope, currency, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
 
     const result = await query<OptimizationRun>(sql, [
       runId,
+      orgId,
       input.run_name,
       input.strategy,
       OptimizationStatus.PENDING,
@@ -89,7 +88,7 @@ export class PricingOptimizationService {
     // Start optimization process asynchronously
     this.executeOptimization(run).catch(error => {
       console.error(`Optimization ${runId} failed:`, error);
-      this.updateRunStatus(runId, OptimizationStatus.FAILED, error.message);
+      this.updateRunStatus(runId, OptimizationStatus.FAILED, (error as Error).message);
     });
 
     return run;
@@ -169,7 +168,7 @@ export class PricingOptimizationService {
       await this.updateRunStatus(run.run_id, OptimizationStatus.COMPLETED);
       await this.updateRunField(run.run_id, 'completed_at', 'NOW()');
     } catch (error: unknown) {
-      await this.updateRunStatus(run.run_id, OptimizationStatus.FAILED, error.message);
+      await this.updateRunStatus(run.run_id, OptimizationStatus.FAILED, (error as Error).message);
       throw error;
     }
   }
@@ -177,23 +176,24 @@ export class PricingOptimizationService {
   /**
    * Get all optimization runs with optional filtering
    */
-  static async getAllRuns(limit = 50): Promise<OptimizationRun[]> {
+  static async getAllRuns(orgId: string, limit = 50): Promise<OptimizationRun[]> {
     const sql = `
       SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RUNS}
+      WHERE org_id = $1
       ORDER BY created_at DESC
-      LIMIT $1
+      LIMIT $2
     `;
 
-    const result = await query<OptimizationRun>(sql, [limit]);
+    const result = await query<OptimizationRun>(sql, [orgId, limit]);
     return result.rows.map(row => this.parseOptimizationRun(row));
   }
 
   /**
    * Get optimization run by ID
    */
-  static async getRunById(runId: string): Promise<OptimizationRun | null> {
-    const sql = `SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RUNS} WHERE run_id = $1`;
-    const result = await query<OptimizationRun>(sql, [runId]);
+  static async getRunById(orgId: string, runId: string): Promise<OptimizationRun | null> {
+    const sql = `SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RUNS} WHERE run_id = $1 AND org_id = $2`;
+    const result = await query<OptimizationRun>(sql, [runId, orgId]);
 
     if (result.rows.length === 0) {
       return null;
@@ -205,7 +205,7 @@ export class PricingOptimizationService {
   /**
    * Get optimization progress
    */
-  static async getProgress(runId: string): Promise<OptimizationProgress | null> {
+  static async getProgress(orgId: string, runId: string): Promise<OptimizationProgress | null> {
     const sql = `
       SELECT 
         run_id,
@@ -215,9 +215,9 @@ export class PricingOptimizationService {
         products_processed,
         (SELECT COUNT(*) FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS} WHERE run_id = $1) as total_products
       FROM ${PRICING_TABLES.OPTIMIZATION_RUNS}
-      WHERE run_id = $1
+      WHERE run_id = $1 AND org_id = $2
     `;
-    const result = await query(sql, [runId]);
+    const result = await query(sql, [runId, orgId]);
 
     if (result.rows.length === 0) {
       return null;
@@ -238,6 +238,7 @@ export class PricingOptimizationService {
    * Get recommendations for an optimization run
    */
   static async getRecommendations(
+    orgId: string,
     runId: string,
     filter?: {
       status?: RecommendationStatus;
@@ -245,9 +246,9 @@ export class PricingOptimizationService {
       min_impact?: number;
     }
   ): Promise<OptimizationRecommendation[]> {
-    let sql = `SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS} WHERE run_id = $1`;
-    const params: unknown[] = [runId];
-    let paramCount = 2;
+    let sql = `SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS} WHERE run_id = $1 AND org_id = $2`;
+    const params: unknown[] = [runId, orgId];
+    let paramCount = 3;
 
     if (filter?.status) {
       sql += ` AND status = $${paramCount++}`;
@@ -293,7 +294,7 @@ export class PricingOptimizationService {
   /**
    * Apply a single recommendation
    */
-  static async applyRecommendation(input: ApplyRecommendationInput): Promise<{
+  static async applyRecommendation(orgId: string, input: ApplyRecommendationInput): Promise<{
     success: boolean;
     priceChangeLog?: PriceChangeLog;
     error?: string;
@@ -390,7 +391,7 @@ export class PricingOptimizationService {
         return { success: true, priceChangeLog };
       });
     } catch (error: unknown) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -398,6 +399,7 @@ export class PricingOptimizationService {
    * Bulk apply recommendations
    */
   static async applyMultipleRecommendations(
+    orgId: string,
     recommendationIds: string[],
     appliedBy?: string
   ): Promise<{
@@ -410,7 +412,7 @@ export class PricingOptimizationService {
     let failed = 0;
 
     for (const recId of recommendationIds) {
-      const result = await this.applyRecommendation({
+      const result = await this.applyRecommendation(orgId, {
         recommendation_id: recId,
         applied_by: appliedBy,
       });
@@ -435,6 +437,7 @@ export class PricingOptimizationService {
    * Reject a recommendation
    */
   static async rejectRecommendation(
+    orgId: string,
     recommendationId: string,
     reason: string,
     rejectedBy?: string
@@ -442,7 +445,7 @@ export class PricingOptimizationService {
     const sql = `
       UPDATE ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS}
       SET status = $1, rejection_reason = $2
-      WHERE recommendation_id = $3 AND status = $4
+      WHERE recommendation_id = $3 AND status = $4 AND org_id = $5
     `;
 
     const result = await query(sql, [
@@ -450,6 +453,7 @@ export class PricingOptimizationService {
       reason,
       recommendationId,
       RecommendationStatus.PENDING,
+      orgId,
     ]);
 
     return (result.rowCount ?? 0) > 0;

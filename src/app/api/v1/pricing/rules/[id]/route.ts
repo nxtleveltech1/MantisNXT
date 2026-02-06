@@ -4,77 +4,68 @@
  * GET /api/v1/pricing/rules/[id] - Get specific rule
  * PUT /api/v1/pricing/rules/[id] - Update rule
  * DELETE /api/v1/pricing/rules/[id] - Delete rule
- * POST /api/v1/pricing/rules/[id]/activate - Toggle activation
- *
- * Author: Aster
- * Date: 2025-11-02
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { PricingRuleService } from '@/lib/services/PricingRuleService';
+import { requireAuthOrg } from '@/lib/auth/require-org';
+import { handleError } from '@/lib/auth/middleware';
 
 export async function GET(
   request: NextRequest,
-
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { orgId } = await requireAuthOrg(request);
     const { id } = await context.params;
-    const rule = await PricingRuleService.getRuleById(id);
+    const rule = await PricingRuleService.getRuleById(orgId, id);
 
     if (!rule) {
       return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, data: rule });
-  } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function PUT(
   request: NextRequest,
-
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { orgId } = await requireAuthOrg(request);
     const { id } = await context.params;
     const body = await request.json();
-    const rule = await PricingRuleService.updateRule(id, body);
+    const rule = await PricingRuleService.updateRule(orgId, id, body);
 
     if (!rule) {
       return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: rule,
-      message: 'Rule updated successfully',
-    });
-  } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, data: rule, message: 'Rule updated successfully' });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { orgId } = await requireAuthOrg(request);
     const { id } = await context.params;
-    const success = await PricingRuleService.deleteRule(id);
+    const success = await PricingRuleService.deleteRule(orgId, id);
 
     if (!success) {
       return NextResponse.json({ success: false, error: 'Rule not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Rule deleted successfully',
-    });
-  } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, message: 'Rule deleted successfully' });
+  } catch (error) {
+    return handleError(error);
   }
 }

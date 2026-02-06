@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "mantisnxt",
     "version":  "1.0.0",
     "private":  true,
@@ -14,6 +14,7 @@
                     "start":  "bun next start",
                     "lint":  "bun x eslint . --ext .ts,.tsx",
                     "lint:ssot":  "bun scripts/check-public-dml.ts",
+                    "lint:no-mocks":  "bun scripts/lint-no-mocks.ts",
                     "type-check":  "bun x tsc --noEmit",
                     "dry-run":  "bun --bun scripts/dry-run.ts",
                     "stabilize":  "bun scripts/system-stabilizer.js setup",

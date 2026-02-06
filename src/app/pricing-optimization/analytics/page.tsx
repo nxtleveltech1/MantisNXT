@@ -40,8 +40,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+interface DashboardMetrics {
+  avg_price_change_percent?: number;
+  products_above_market?: number;
+  products_below_market?: number;
+  optimization_opportunities?: number;
+  insufficient_data?: boolean;
+  reason?: string;
+}
+
 export default function PricingAnalyticsPage() {
-  const [dashboardMetrics, setDashboardMetrics] = useState<unknown>(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [priceTrends, setPriceTrends] = useState<PriceTrendDataPoint[]>([]);
   const [competitorData, setCompetitorData] = useState<CompetitorComparisonData[]>([]);
   const [elasticityData, setElasticityData] = useState<ElasticityChartData | null>(null);
@@ -49,18 +58,32 @@ export default function PricingAnalyticsPage() {
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [competitorsLoading, setCompetitorsLoading] = useState(false);
   const [elasticityLoading, setElasticityLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [insufficientData, setInsufficientData] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchAnalytics();
   }, []);
 
+  const handleApiResponse = async (response: Response, key: string) => {
+    if (response.status === 401 || response.status === 403) {
+      setAuthError(response.status === 401 ? 'Authentication required' : 'Organization context required');
+      return null;
+    }
+    const data = await response.json();
+    if (data.data?.insufficient_data) {
+      setInsufficientData(prev => ({ ...prev, [key]: data.data.reason || 'Insufficient data' }));
+      return null;
+    }
+    if (data.success) return data.data;
+    return null;
+  };
+
   const fetchAnalytics = async () => {
     try {
       const response = await fetch('/api/v1/pricing/analytics?type=dashboard');
-      const data = await response.json();
-      if (data.success) {
-        setDashboardMetrics(data.data);
-      }
+      const result = await handleApiResponse(response, 'dashboard');
+      if (result) setDashboardMetrics(result);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
     } finally {
@@ -72,10 +95,8 @@ export default function PricingAnalyticsPage() {
     setTrendsLoading(true);
     try {
       const response = await fetch('/api/v1/pricing/analytics?type=trends&days=90');
-      const data = await response.json();
-      if (data.success) {
-        setPriceTrends(data.data);
-      }
+      const result = await handleApiResponse(response, 'trends');
+      if (result) setPriceTrends(result);
     } catch (error) {
       console.error('Failed to fetch price trends:', error);
     } finally {
@@ -86,13 +107,10 @@ export default function PricingAnalyticsPage() {
   const fetchCompetitorData = async () => {
     setCompetitorsLoading(true);
     try {
-      // Fetch competitor comparison data
-      // This would need to be implemented in the API or use existing competitor endpoints
-      // For now, using placeholder structure
       const response = await fetch('/api/v1/pricing/analytics?type=competitor');
-      const data = await response.json();
-      if (data.success && Array.isArray(data.data)) {
-        setCompetitorData(data.data);
+      const result = await handleApiResponse(response, 'competitors');
+      if (result && Array.isArray(result)) {
+        setCompetitorData(result);
       }
     } catch (error) {
       console.error('Failed to fetch competitor data:', error);
@@ -104,9 +122,9 @@ export default function PricingAnalyticsPage() {
   const fetchElasticityData = async () => {
     setElasticityLoading(true);
     try {
-      // This would need product-specific elasticity data
-      // For now, using placeholder structure
-      setElasticityData(null);
+      const response = await fetch('/api/v1/pricing/analytics?type=elasticity');
+      const result = await handleApiResponse(response, 'elasticity');
+      if (result) setElasticityData(result);
     } catch (error) {
       console.error('Failed to fetch elasticity data:', error);
     } finally {
@@ -130,6 +148,17 @@ export default function PricingAnalyticsPage() {
           </p>
         </div>
 
+        {authError && (
+          <Card className="border-destructive bg-destructive/10">
+            <CardContent className="pt-6">
+              <p className="text-destructive text-sm font-medium">{authError}</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Please sign in and ensure you have an active organization to view analytics.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -149,7 +178,9 @@ export default function PricingAnalyticsPage() {
                   <div className="text-2xl font-bold">
                     {loading
                       ? '...'
-                      : `${dashboardMetrics?.avg_price_change_percent?.toFixed(1) || '0'}%`}
+                      : dashboardMetrics?.avg_price_change_percent != null
+                        ? `${dashboardMetrics.avg_price_change_percent.toFixed(1)}%`
+                        : '—'}
                   </div>
                   <p className="text-muted-foreground text-xs">Last 30 days</p>
                 </CardContent>
@@ -162,7 +193,7 @@ export default function PricingAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {loading ? '...' : dashboardMetrics?.products_above_market || '0'}
+                    {loading ? '...' : dashboardMetrics?.products_above_market ?? '—'}
                   </div>
                   <p className="text-muted-foreground text-xs">Products priced higher</p>
                 </CardContent>
@@ -175,7 +206,7 @@ export default function PricingAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {loading ? '...' : dashboardMetrics?.products_below_market || '0'}
+                    {loading ? '...' : dashboardMetrics?.products_below_market ?? '—'}
                   </div>
                   <p className="text-muted-foreground text-xs">Products priced lower</p>
                 </CardContent>
@@ -188,7 +219,7 @@ export default function PricingAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {loading ? '...' : dashboardMetrics?.optimization_opportunities || '0'}
+                    {loading ? '...' : dashboardMetrics?.optimization_opportunities ?? '—'}
                   </div>
                   <p className="text-muted-foreground text-xs">Potential improvements</p>
                 </CardContent>
@@ -223,29 +254,16 @@ export default function PricingAnalyticsPage() {
                 <CardDescription>Products with best price-to-performance ratio</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between border-b pb-3 last:border-0"
-                    >
-                      <div>
-                        <p className="font-medium">Product #{i}</p>
-                        <p className="text-muted-foreground text-sm">
-                          SKU-{i.toString().padStart(5, '0')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(99.99 + i * 10, 'ZAR')}</p>
-                          <p className="text-muted-foreground text-sm">{25 + i * 5}% margin</p>
-                        </div>
-                        <Badge variant="default">
-                          <TrendingUp className="mr-1 h-3 w-3" />+{i * 2}%
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-muted-foreground flex h-[200px] items-center justify-center text-center">
+                  <div>
+                    <Target className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                    <p className="font-medium">Insufficient data</p>
+                    <p className="mt-1 text-sm">
+                      Performance metrics require pricing history and optimization data.
+                      <br />
+                      Run a pricing optimization first to populate this view.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -292,42 +310,23 @@ export default function PricingAnalyticsPage() {
                 {elasticityData ? (
                   <ElasticityChart data={elasticityData} loading={elasticityLoading} />
                 ) : (
-                  <div className="space-y-4">
-                    <div className="text-muted-foreground flex h-[300px] items-center justify-center">
-                      {elasticityLoading ? (
-                        'Loading elasticity data...'
-                      ) : (
-                        <div className="text-center">
-                          <p className="mb-4">No elasticity data available</p>
-                          <button
-                            onClick={fetchElasticityData}
-                            className="text-primary text-sm hover:underline"
-                          >
-                            Load elasticity analysis
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {[
-                        { name: 'Highly Elastic', coef: -2.5, color: 'red' },
-                        { name: 'Moderately Elastic', coef: -1.2, color: 'yellow' },
-                        { name: 'Unit Elastic', coef: -1.0, color: 'blue' },
-                        { name: 'Inelastic', coef: -0.5, color: 'green' },
-                      ].map((item, i) => (
-                        <div key={i} className="rounded-lg border p-4">
-                          <div className="mb-2 flex items-center justify-between">
-                            <p className="font-medium">{item.name} Products</p>
-                            <Badge>{Math.abs(item.coef).toFixed(1)}</Badge>
-                          </div>
-                          <p className="text-muted-foreground text-sm">
-                            {item.coef > -1
-                              ? 'Low price sensitivity - can increase prices'
-                              : 'High price sensitivity - focus on volume'}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="text-muted-foreground flex h-[300px] items-center justify-center">
+                    {elasticityLoading ? (
+                      'Loading elasticity data...'
+                    ) : insufficientData.elasticity ? (
+                      <div className="text-center">
+                        <Target className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                        <p className="font-medium">Insufficient data</p>
+                        <p className="mt-1 text-sm">{insufficientData.elasticity}</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="mb-4">Load elasticity data to see demand sensitivity analysis</p>
+                        <Button variant="outline" size="sm" onClick={fetchElasticityData}>
+                          Load elasticity analysis
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -358,14 +357,10 @@ function ManualCompetitorPriceForm() {
     setMessage(null);
 
     try {
-      // Get org_id from context or use default
-      const org_id = '00000000-0000-0000-0000-000000000000'; // TODO: Get from auth context
-
       const response = await fetch('/api/v1/pricing/competitors/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          org_id,
           prices: [
             {
               product_id: formData.product_id,

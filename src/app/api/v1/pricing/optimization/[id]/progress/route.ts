@@ -1,62 +1,31 @@
 /**
  * Optimization Progress API
  *
- * GET /api/v1/pricing/optimization/[id]/progress - Get progress for an optimization run
- */
-
-import { NextRequest, NextResponse } from 'next/server';
-import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
-
-/**
  * GET /api/v1/pricing/optimization/[id]/progress
- * Get current progress for an optimization run
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
+import { requireAuthOrg } from '@/lib/auth/require-org';
+import { handleError } from '@/lib/auth/middleware';
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const runId = params.id;
+    const { orgId } = await requireAuthOrg(request);
+    const { id } = await context.params;
 
-    if (!runId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Optimization run ID is required',
-        },
-        { status: 400 }
-      );
-    }
-
-    const progress = await PricingOptimizationService.getProgress(runId);
+    const progress = await PricingOptimizationService.getProgress(orgId, id);
 
     if (!progress) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Optimization run not found',
-        },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Optimization run not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: progress,
-    });
+    return NextResponse.json({ success: true, data: progress });
   } catch (error) {
-    console.error('Error fetching optimization progress:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch optimization progress',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
-
-
-
-
-
-
-

@@ -3,6 +3,8 @@
  *
  * Handles CRUD operations for pricing rules, rule evaluation,
  * conflict detection, and rule application logic.
+ *
+ * All methods require an authenticated org_id parameter.
  */
 
 import { query } from '@/lib/database';
@@ -10,28 +12,35 @@ import type { PricingRule } from '@/lib/db/pricing-schema';
 import { PRICING_TABLES, PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 
-const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000000';
-
 type DbPricingRuleRow = {
-  id: string;
-  org_id: string | null;
+  rule_id: string;
+  org_id: string;
   name: string;
   description: string | null;
+  rule_type: string;
   strategy: string;
-  priority: number | null;
+  priority: number;
   is_active: boolean;
-  is_global: boolean | null;
+  is_global: boolean;
+  currency: string;
   markup_percentage: number | string | null;
   fixed_margin: number | string | null;
   min_price: number | string | null;
   max_price: number | string | null;
+  config: unknown;
   conditions: unknown;
   category_id: string | null;
   brand_id: string | null;
   supplier_id: string | null;
   inventory_item_id: string | null;
+  category_ids: string[] | null;
+  brand_ids: string[] | null;
+  supplier_ids: string[] | null;
+  product_ids: string[] | null;
   valid_from: string | null;
   valid_until: string | null;
+  created_by: string | null;
+  last_modified_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -43,10 +52,13 @@ export interface CreatePricingRuleInput {
   priority: number;
   strategy: PricingStrategy;
   config: PricingRule['config'];
+  currency?: string;
   applies_to_categories?: string[];
   applies_to_brands?: string[];
   applies_to_suppliers?: string[];
   applies_to_products?: string[];
+  valid_from?: Date;
+  valid_until?: Date;
   created_by?: string;
 }
 
@@ -88,22 +100,7 @@ export class PricingRuleService {
   /**
    * Create a new pricing rule
    */
-  static async createRule(input: CreatePricingRuleInput): Promise<PricingRule> {
-    const dbStrategy = this.mapRuleTypeToDbStrategy(input.rule_type);
-    const pricingStrategy = input.strategy ?? PricingStrategy.MAXIMIZE_PROFIT;
-
-    const conditions = this.buildConditions({
-      base: {},
-      pricingStrategy,
-      ruleType: input.rule_type,
-      config: input.config,
-      applies_to_categories: input.applies_to_categories,
-      applies_to_brands: input.applies_to_brands,
-      applies_to_suppliers: input.applies_to_suppliers,
-      applies_to_products: input.applies_to_products,
-    });
-
-    // Determine if this is a global rule (no specific entity targeting)
+  static async createRule(orgId: string, input: CreatePricingRuleInput): Promise<PricingRule> {
     const isGlobal =
       !input.applies_to_products?.length &&
       !input.applies_to_categories?.length &&
@@ -113,50 +110,49 @@ export class PricingRuleService {
     const result = await query<DbPricingRuleRow>(
       `
         INSERT INTO ${PRICING_TABLES.PRICING_RULES} (
-          org_id,
-          name,
-          description,
-          strategy,
-          inventory_item_id,
-          category_id,
-          supplier_id,
-          brand_id,
-          markup_percentage,
-          fixed_margin,
-          min_price,
-          max_price,
-          conditions,
-          is_active,
-          is_global,
-          priority,
-          valid_from,
-          valid_until
+          org_id, name, description, rule_type, strategy, priority,
+          is_active, is_global, currency,
+          inventory_item_id, category_id, supplier_id, brand_id,
+          category_ids, brand_ids, supplier_ids, product_ids,
+          markup_percentage, fixed_margin, min_price, max_price,
+          config, conditions, valid_from, valid_until, created_by
         )
         VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8,
-          $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+          $1, $2, $3, $4, $5, $6,
+          true, $7, $8,
+          $9, $10, $11, $12,
+          $13, $14, $15, $16,
+          $17, $18, $19, $20,
+          $21, $22, $23, $24, $25
         )
         RETURNING *
       `,
       [
-        DEFAULT_ORG_ID,
+        orgId,
         input.name,
         input.description ?? null,
-        dbStrategy,
+        input.rule_type,
+        input.strategy ?? PricingStrategy.MAXIMIZE_PROFIT,
+        input.priority,
+        isGlobal,
+        input.currency ?? 'ZAR',
         input.applies_to_products?.[0] ?? null,
         input.applies_to_categories?.[0] ?? null,
         input.applies_to_suppliers?.[0] ?? null,
         input.applies_to_brands?.[0] ?? null,
+        input.applies_to_categories?.length ? input.applies_to_categories : null,
+        input.applies_to_brands?.length ? input.applies_to_brands : null,
+        input.applies_to_suppliers?.length ? input.applies_to_suppliers : null,
+        input.applies_to_products?.length ? input.applies_to_products : null,
         input.config?.markup_percent ?? null,
         input.config?.margin_percent ?? null,
         input.config?.min_price ?? null,
         input.config?.max_price ?? null,
-        JSON.stringify(conditions),
-        true,
-        isGlobal,
-        input.priority,
-        new Date(),
-        null,
+        JSON.stringify(input.config ?? {}),
+        JSON.stringify({}),
+        input.valid_from ?? new Date(),
+        input.valid_until ?? null,
+        input.created_by ?? null,
       ]
     );
 
@@ -164,45 +160,25 @@ export class PricingRuleService {
   }
 
   /**
-   * Get all pricing rules with optional filtering
+   * Get all pricing rules for an org, with optional filtering.
+   * Also returns global rules.
    */
-  static async getAllRules(filter?: PricingRuleFilter): Promise<PricingRule[]> {
+  static async getAllRules(orgId: string, filter?: PricingRuleFilter): Promise<PricingRule[]> {
     let sql = `
-      SELECT
-        id,
-        org_id,
-        name,
-        description,
-        strategy,
-        priority,
-        is_active,
-        is_global,
-        markup_percentage,
-        fixed_margin,
-        min_price,
-        max_price,
-        conditions,
-        category_id,
-        brand_id,
-        supplier_id,
-        inventory_item_id,
-        valid_from,
-        valid_until,
-        created_at,
-        updated_at
+      SELECT *
       FROM ${PRICING_TABLES.PRICING_RULES}
-      WHERE 1=1
+      WHERE (org_id = $1 OR is_global = true)
     `;
-    const params: unknown[] = [];
-    let paramCount = 1;
+    const params: unknown[] = [orgId];
+    let paramCount = 2;
 
     if (filter?.rule_type) {
-      sql += ` AND strategy = $${paramCount++}`;
-      params.push(this.mapRuleTypeToDbStrategy(filter.rule_type));
+      sql += ` AND rule_type = $${paramCount++}`;
+      params.push(filter.rule_type);
     }
 
     if (filter?.strategy) {
-      sql += ` AND conditions ->> 'pricing_strategy' = $${paramCount++}`;
+      sql += ` AND strategy = $${paramCount++}`;
       params.push(filter.strategy);
     }
 
@@ -227,50 +203,21 @@ export class PricingRuleService {
       paramCount += 2;
     }
 
-    sql += ` ORDER BY priority DESC NULLS LAST, created_at DESC`;
+    sql += ` ORDER BY priority DESC, created_at DESC`;
 
     const result = await query<DbPricingRuleRow>(sql, params);
     return result.rows.map(row => this.parseRule(row));
   }
 
   /**
-   * Get a single pricing rule by ID
+   * Get a single pricing rule by ID, scoped to org
    */
-  static async getRuleById(ruleId: string): Promise<PricingRule | null> {
+  static async getRuleById(orgId: string, ruleId: string): Promise<PricingRule | null> {
     const result = await query<DbPricingRuleRow>(
-      `
-        SELECT
-          id,
-          org_id,
-          name,
-          description,
-          strategy,
-          priority,
-          is_active,
-          is_global,
-          markup_percentage,
-          fixed_margin,
-          min_price,
-          max_price,
-          conditions,
-          category_id,
-          brand_id,
-          supplier_id,
-          inventory_item_id,
-          valid_from,
-          valid_until,
-          created_at,
-          updated_at
-        FROM ${PRICING_TABLES.PRICING_RULES}
-        WHERE id = $1
-      `,
-      [ruleId]
+      `SELECT * FROM ${PRICING_TABLES.PRICING_RULES} WHERE rule_id = $1 AND (org_id = $2 OR is_global = true)`,
+      [ruleId, orgId]
     );
-
-    if (result.rows.length === 0) {
-      return null;
-    }
-
+    if (result.rows.length === 0) return null;
     return this.parseRule(result.rows[0]);
   }
 
@@ -278,146 +225,104 @@ export class PricingRuleService {
    * Update a pricing rule
    */
   static async updateRule(
+    orgId: string,
     ruleId: string,
     input: UpdatePricingRuleInput
   ): Promise<PricingRule | null> {
-    const existingResult = await query<DbPricingRuleRow>(
-      `
-        SELECT *
-        FROM ${PRICING_TABLES.PRICING_RULES}
-        WHERE id = $1
-      `,
-      [ruleId]
-    );
-
-    if (existingResult.rows.length === 0) {
-      return null;
-    }
-
-    const existingRow = existingResult.rows[0];
-    const existing = this.parseRule(existingRow);
+    const existing = await this.getRuleById(orgId, ruleId);
+    if (!existing) return null;
 
     const updatedName = input.name ?? existing.name;
     const updatedDescription = input.description ?? existing.description ?? null;
     const updatedRuleType = input.rule_type ?? existing.rule_type;
-    const updatedStrategy = input.strategy ?? existing.strategy ?? PricingStrategy.MAXIMIZE_PROFIT;
-    const updatedPriority = input.priority ?? existing.priority ?? 0;
-    const updatedConfig: PricingRule['config'] = input.config ?? existing.config ?? {};
+    const updatedStrategy = input.strategy ?? existing.strategy;
+    const updatedPriority = input.priority ?? existing.priority;
+    const updatedConfig = input.config ?? existing.config;
     const updatedCategories = input.applies_to_categories ?? existing.applies_to_categories ?? [];
     const updatedBrands = input.applies_to_brands ?? existing.applies_to_brands ?? [];
     const updatedSuppliers = input.applies_to_suppliers ?? existing.applies_to_suppliers ?? [];
     const updatedProducts = input.applies_to_products ?? existing.applies_to_products ?? [];
 
-    const mergedConditions = this.buildConditions({
-      base: this.parseConditions(existingRow.conditions),
-      pricingStrategy: updatedStrategy,
-      ruleType: updatedRuleType,
-      config: updatedConfig,
-      applies_to_categories: updatedCategories,
-      applies_to_brands: updatedBrands,
-      applies_to_suppliers: updatedSuppliers,
-      applies_to_products: updatedProducts,
-    });
-
-    const updates: string[] = [];
-    const params: unknown[] = [];
-    let paramCount = 1;
-
-    updates.push(`name = $${paramCount++}`);
-    params.push(updatedName);
-
-    updates.push(`description = $${paramCount++}`);
-    params.push(updatedDescription);
-
-    updates.push(`strategy = $${paramCount++}`);
-    params.push(this.mapRuleTypeToDbStrategy(updatedRuleType));
-
-    updates.push(`priority = $${paramCount++}`);
-    params.push(updatedPriority);
-
-    updates.push(`markup_percentage = $${paramCount++}`);
-    params.push(updatedConfig?.markup_percent ?? null);
-
-    updates.push(`fixed_margin = $${paramCount++}`);
-    params.push(updatedConfig?.margin_percent ?? null);
-
-    updates.push(`min_price = $${paramCount++}`);
-    params.push(updatedConfig?.min_price ?? null);
-
-    updates.push(`max_price = $${paramCount++}`);
-    params.push(updatedConfig?.max_price ?? null);
-
-    updates.push(`category_id = $${paramCount++}`);
-    params.push(updatedCategories[0] ?? null);
-
-    updates.push(`brand_id = $${paramCount++}`);
-    params.push(updatedBrands[0] ?? null);
-
-    updates.push(`supplier_id = $${paramCount++}`);
-    params.push(updatedSuppliers[0] ?? null);
-
-    updates.push(`inventory_item_id = $${paramCount++}`);
-    params.push(updatedProducts[0] ?? null);
-
-    updates.push(`conditions = $${paramCount++}`);
-    params.push(JSON.stringify(mergedConditions));
-
-    updates.push(`updated_at = NOW()`);
-
-    params.push(ruleId);
+    const isGlobal =
+      !updatedProducts.length &&
+      !updatedCategories.length &&
+      !updatedSuppliers.length &&
+      !updatedBrands.length;
 
     const result = await query<DbPricingRuleRow>(
       `
         UPDATE ${PRICING_TABLES.PRICING_RULES}
-        SET ${updates.join(', ')}
-        WHERE id = $${paramCount}
+        SET name = $1, description = $2, rule_type = $3, strategy = $4,
+            priority = $5, is_global = $6,
+            markup_percentage = $7, fixed_margin = $8, min_price = $9, max_price = $10,
+            category_id = $11, brand_id = $12, supplier_id = $13, inventory_item_id = $14,
+            category_ids = $15, brand_ids = $16, supplier_ids = $17, product_ids = $18,
+            config = $19, updated_at = NOW(), last_modified_by = $20
+        WHERE rule_id = $21 AND org_id = $22
         RETURNING *
       `,
-      params
+      [
+        updatedName,
+        updatedDescription,
+        updatedRuleType,
+        updatedStrategy,
+        updatedPriority,
+        isGlobal,
+        updatedConfig?.markup_percent ?? null,
+        updatedConfig?.margin_percent ?? null,
+        updatedConfig?.min_price ?? null,
+        updatedConfig?.max_price ?? null,
+        updatedCategories[0] ?? null,
+        updatedBrands[0] ?? null,
+        updatedSuppliers[0] ?? null,
+        updatedProducts[0] ?? null,
+        updatedCategories.length ? updatedCategories : null,
+        updatedBrands.length ? updatedBrands : null,
+        updatedSuppliers.length ? updatedSuppliers : null,
+        updatedProducts.length ? updatedProducts : null,
+        JSON.stringify(updatedConfig ?? {}),
+        input.last_modified_by ?? null,
+        ruleId,
+        orgId,
+      ]
     );
 
+    if (result.rows.length === 0) return null;
     return this.parseRule(result.rows[0]);
   }
 
   /**
    * Delete a pricing rule
    */
-  static async deleteRule(ruleId: string): Promise<boolean> {
-    const result = await query(`DELETE FROM ${PRICING_TABLES.PRICING_RULES} WHERE id = $1`, [
-      ruleId,
-    ]);
+  static async deleteRule(orgId: string, ruleId: string): Promise<boolean> {
+    const result = await query(
+      `DELETE FROM ${PRICING_TABLES.PRICING_RULES} WHERE rule_id = $1 AND org_id = $2`,
+      [ruleId, orgId]
+    );
     return (result.rowCount ?? 0) > 0;
   }
 
   /**
-   * Activate or deactivate a pricing rule
+   * Toggle rule activation
    */
   static async toggleRuleActivation(
+    orgId: string,
     ruleId: string,
     isActive: boolean
   ): Promise<PricingRule | null> {
     const result = await query<DbPricingRuleRow>(
-      `
-        UPDATE ${PRICING_TABLES.PRICING_RULES}
-        SET is_active = $1, updated_at = NOW()
-        WHERE id = $2
-        RETURNING *
-      `,
-      [isActive, ruleId]
+      `UPDATE ${PRICING_TABLES.PRICING_RULES} SET is_active = $1, updated_at = NOW() WHERE rule_id = $2 AND org_id = $3 RETURNING *`,
+      [isActive, ruleId, orgId]
     );
-
-    if (result.rows.length === 0) {
-      return null;
-    }
-
+    if (result.rows.length === 0) return null;
     return this.parseRule(result.rows[0]);
   }
 
   /**
-   * Detect conflicts between pricing rules
+   * Detect conflicts between active rules for an org
    */
-  static async detectConflicts(): Promise<RuleConflict[]> {
-    const rules = await this.getAllRules({ is_active: true });
+  static async detectConflicts(orgId: string): Promise<RuleConflict[]> {
+    const rules = await this.getAllRules(orgId, { is_active: true });
     const conflicts: RuleConflict[] = [];
 
     for (let i = 0; i < rules.length; i++) {
@@ -425,17 +330,14 @@ export class PricingRuleService {
         const rule1 = rules[i];
         const rule2 = rules[j];
 
-        if (rule1.priority === rule2.priority) {
-          const hasOverlap = this.checkScopeOverlap(rule1, rule2);
-          if (hasOverlap) {
-            conflicts.push({
-              rule1,
-              rule2,
-              conflict_type: 'priority',
-              description: `Rules "${rule1.name}" and "${rule2.name}" share priority ${rule1.priority} with overlapping scope`,
-              severity: 'high',
-            });
-          }
+        if (rule1.priority === rule2.priority && this.checkScopeOverlap(rule1, rule2)) {
+          conflicts.push({
+            rule1,
+            rule2,
+            conflict_type: 'priority',
+            description: `Rules "${rule1.name}" and "${rule2.name}" share priority ${rule1.priority} with overlapping scope`,
+            severity: 'high',
+          });
         }
 
         if (this.hasContradictoryConfig(rule1, rule2)) {
@@ -457,10 +359,11 @@ export class PricingRuleService {
    * Calculate price for a product based on applicable rules
    */
   static async calculateProductPrice(
+    orgId: string,
     productId: string,
     baseCost?: number
   ): Promise<ProductPriceCalculation> {
-    const productResult = await query<unknown>(
+    const productResult = await query<Record<string, unknown>>(
       `
         SELECT p.*, sp.cost
         FROM ${CORE_TABLES.PRODUCT} p
@@ -476,16 +379,17 @@ export class PricingRuleService {
     }
 
     const product = productResult.rows[0];
-    const cost = baseCost || product.cost || 0;
-    const currentPrice = product.price || 0;
+    const cost = baseCost || (product.cost as number) || 0;
+    const currentPrice = (product.price as number) || 0;
 
-    const applicableRules = await this.getApplicableRules(product);
+    const allRules = await this.getAllRules(orgId, { is_active: true });
+    const applicableRules = allRules.filter(rule => this.ruleAppliesToProduct(rule, product));
 
     let calculatedPrice = cost;
     const appliedRules: ProductPriceCalculation['applied_rules'] = [];
 
     for (const rule of applicableRules) {
-      const adjustment = this.applyRule(rule, calculatedPrice, cost, product);
+      const adjustment = this.applyRule(rule, calculatedPrice, cost);
       if (adjustment !== 0) {
         calculatedPrice += adjustment;
         appliedRules.push({
@@ -508,57 +412,44 @@ export class PricingRuleService {
     };
   }
 
-  /**
-   * Get rules applicable to a specific product
-   */
-  private static async getApplicableRules(product: unknown): Promise<PricingRule[]> {
-    const allRules = await this.getAllRules({ is_active: true });
+  // ─── Private helpers ───────────────────────────────────
 
-    return allRules.filter(rule => {
-      if (rule.applies_to_categories?.length) {
-        if (!product.category_id || !rule.applies_to_categories.includes(product.category_id)) {
-          return false;
-        }
-      }
+  private static ruleAppliesToProduct(
+    rule: PricingRule,
+    product: Record<string, unknown>
+  ): boolean {
+    if (rule.is_global) return true;
 
-      if (rule.applies_to_brands?.length) {
-        if (!product.brand_id || !rule.applies_to_brands.includes(product.brand_id)) {
-          return false;
-        }
-      }
-
-      if (rule.applies_to_suppliers?.length) {
-        if (!product.supplier_id || !rule.applies_to_suppliers.includes(product.supplier_id)) {
-          return false;
-        }
-      }
-
-      if (rule.applies_to_products?.length) {
-        if (!rule.applies_to_products.includes(product.product_id)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
+    if (rule.applies_to_products?.length) {
+      if (!rule.applies_to_products.includes(product.product_id as string)) return false;
+    }
+    if (rule.applies_to_categories?.length) {
+      if (
+        !product.category_id ||
+        !rule.applies_to_categories.includes(product.category_id as string)
+      )
+        return false;
+    }
+    if (rule.applies_to_brands?.length) {
+      if (!product.brand_id || !rule.applies_to_brands.includes(product.brand_id as string))
+        return false;
+    }
+    if (rule.applies_to_suppliers?.length) {
+      if (
+        !product.supplier_id ||
+        !rule.applies_to_suppliers.includes(product.supplier_id as string)
+      )
+        return false;
+    }
+    return true;
   }
 
-  /**
-   * Apply a single pricing rule to calculate adjustment
-   */
-  private static applyRule(
-    rule: PricingRule,
-    currentPrice: number,
-    cost: number,
-    product: unknown
-  ): number {
+  private static applyRule(rule: PricingRule, currentPrice: number, cost: number): number {
     const config = rule.config;
 
     switch (rule.rule_type) {
       case PricingRuleType.COST_PLUS:
-        if (config.markup_percent) {
-          return cost * (config.markup_percent / 100);
-        }
+        if (config.markup_percent) return cost * (config.markup_percent / 100);
         if (config.margin_percent) {
           const targetPrice = cost / (1 - config.margin_percent / 100);
           return targetPrice - currentPrice;
@@ -582,105 +473,72 @@ export class PricingRuleService {
     }
   }
 
-  /**
-   * Check if two rules have overlapping scope
-   */
   private static checkScopeOverlap(rule1: PricingRule, rule2: PricingRule): boolean {
-    if (
-      (!rule1.applies_to_categories || rule1.applies_to_categories.length === 0) &&
-      (!rule1.applies_to_brands || rule1.applies_to_brands.length === 0) &&
-      (!rule1.applies_to_suppliers || rule1.applies_to_suppliers.length === 0) &&
-      (!rule1.applies_to_products || rule1.applies_to_products.length === 0) &&
-      (!rule2.applies_to_categories || rule2.applies_to_categories.length === 0) &&
-      (!rule2.applies_to_brands || rule2.applies_to_brands.length === 0) &&
-      (!rule2.applies_to_suppliers || rule2.applies_to_suppliers.length === 0) &&
-      (!rule2.applies_to_products || rule2.applies_to_products.length === 0)
-    ) {
-      return true;
-    }
+    const isEmpty = (r: PricingRule) =>
+      !r.applies_to_categories?.length &&
+      !r.applies_to_brands?.length &&
+      !r.applies_to_suppliers?.length &&
+      !r.applies_to_products?.length;
 
-    if (rule1.applies_to_categories && rule2.applies_to_categories) {
-      const overlap = rule1.applies_to_categories.some(cat =>
-        rule2.applies_to_categories!.includes(cat)
-      );
-      if (overlap) return true;
-    }
+    if (isEmpty(rule1) && isEmpty(rule2)) return true;
 
-    if (rule1.applies_to_brands && rule2.applies_to_brands) {
-      const overlap = rule1.applies_to_brands.some(brand =>
-        rule2.applies_to_brands!.includes(brand)
-      );
-      if (overlap) return true;
-    }
+    const arrayOverlap = (a?: string[], b?: string[]) =>
+      a?.length && b?.length && a.some(v => b.includes(v));
 
-    if (rule1.applies_to_products && rule2.applies_to_products) {
-      const overlap = rule1.applies_to_products.some(prod =>
-        rule2.applies_to_products!.includes(prod)
-      );
-      if (overlap) return true;
-    }
-
-    return false;
+    return !!(
+      arrayOverlap(rule1.applies_to_categories, rule2.applies_to_categories) ||
+      arrayOverlap(rule1.applies_to_brands, rule2.applies_to_brands) ||
+      arrayOverlap(rule1.applies_to_products, rule2.applies_to_products)
+    );
   }
 
-  /**
-   * Check if two rules have contradictory configurations
-   */
   private static hasContradictoryConfig(rule1: PricingRule, rule2: PricingRule): boolean {
-    if (
-      (rule1.strategy === PricingStrategy.MAXIMIZE_REVENUE &&
-        rule2.strategy === PricingStrategy.MAXIMIZE_VOLUME) ||
-      (rule2.strategy === PricingStrategy.MAXIMIZE_REVENUE &&
-        rule1.strategy === PricingStrategy.MAXIMIZE_VOLUME)
-    ) {
-      return true;
-    }
-
-    if (
-      (rule1.strategy === PricingStrategy.PREMIUM_POSITIONING &&
-        rule2.strategy === PricingStrategy.VALUE_POSITIONING) ||
-      (rule2.strategy === PricingStrategy.PREMIUM_POSITIONING &&
-        rule1.strategy === PricingStrategy.VALUE_POSITIONING)
-    ) {
-      return true;
-    }
-
-    return false;
+    const contradictions: [PricingStrategy, PricingStrategy][] = [
+      [PricingStrategy.MAXIMIZE_REVENUE, PricingStrategy.MAXIMIZE_VOLUME],
+      [PricingStrategy.PREMIUM_POSITIONING, PricingStrategy.VALUE_POSITIONING],
+    ];
+    return contradictions.some(
+      ([a, b]) =>
+        (rule1.strategy === a && rule2.strategy === b) ||
+        (rule1.strategy === b && rule2.strategy === a)
+    );
   }
 
-  /**
-   * Parse a database row into a PricingRule
-   */
   private static parseRule(row: DbPricingRuleRow): PricingRule {
-    const conditions = this.parseConditions(row.conditions);
-    const config = this.extractConfig(row, conditions);
-    const applies = this.extractApplies(conditions, row);
+    const configJson = this.parseJson(row.config);
+    const config: PricingRule['config'] = {
+      ...configJson,
+      markup_percent: this.parseNumber(row.markup_percentage) ?? configJson.markup_percent,
+      margin_percent: this.parseNumber(row.fixed_margin) ?? configJson.margin_percent,
+      min_price: this.parseNumber(row.min_price) ?? configJson.min_price,
+      max_price: this.parseNumber(row.max_price) ?? configJson.max_price,
+    };
 
     return {
-      rule_id: row.id,
+      rule_id: row.rule_id,
+      org_id: row.org_id,
       name: row.name,
       description: row.description ?? undefined,
-      rule_type: this.mapDbStrategyToRuleType(row.strategy),
+      rule_type: (row.rule_type as PricingRuleType) || PricingRuleType.COST_PLUS,
       priority: row.priority ?? 0,
-      is_active: row.is_active ?? true,
-      strategy: this.mapStoredStrategyToEnum(conditions.pricing_strategy),
+      is_active: row.is_active,
+      is_global: row.is_global,
+      strategy: (row.strategy as PricingStrategy) || PricingStrategy.MAXIMIZE_PROFIT,
+      currency: row.currency ?? 'ZAR',
       config,
-      applies_to_categories: applies.categories,
-      applies_to_brands: applies.brands,
-      applies_to_suppliers: applies.suppliers,
-      applies_to_products: applies.products,
+      applies_to_categories: row.category_ids ?? (row.category_id ? [row.category_id] : []),
+      applies_to_brands: row.brand_ids ?? (row.brand_id ? [row.brand_id] : []),
+      applies_to_suppliers: row.supplier_ids ?? (row.supplier_id ? [row.supplier_id] : []),
+      applies_to_products: row.product_ids ?? (row.inventory_item_id ? [row.inventory_item_id] : []),
       created_at: new Date(row.created_at),
       updated_at: new Date(row.updated_at),
-      created_by: undefined,
-      last_modified_by: undefined,
+      created_by: row.created_by ?? undefined,
+      last_modified_by: row.last_modified_by ?? undefined,
     };
   }
 
-  private static parseConditions(value: unknown): Record<string, unknown> {
-    if (!value) {
-      return {};
-    }
-
+  private static parseJson(value: unknown): Record<string, unknown> {
+    if (!value) return {};
     if (typeof value === 'string') {
       try {
         return JSON.parse(value) ?? {};
@@ -688,177 +546,13 @@ export class PricingRuleService {
         return {};
       }
     }
-
-    if (typeof value === 'object') {
-      return { ...(value as Record<string, unknown>) };
-    }
-
+    if (typeof value === 'object') return { ...(value as Record<string, unknown>) };
     return {};
   }
 
-  private static buildConditions(options: {
-    base: Record<string, unknown>;
-    pricingStrategy: PricingStrategy;
-    ruleType: PricingRuleType;
-    config: PricingRule['config'];
-    applies_to_categories?: string[];
-    applies_to_brands?: string[];
-    applies_to_suppliers?: string[];
-    applies_to_products?: string[];
-  }): Record<string, unknown> {
-    const base = { ...(options.base ?? {}) };
-
-    base.pricing_strategy = options.pricingStrategy;
-    base.rule_type = options.ruleType;
-    base.config = options.config ?? {};
-    base.applies_to_categories = options.applies_to_categories ?? [];
-    base.applies_to_brands = options.applies_to_brands ?? [];
-    base.applies_to_suppliers = options.applies_to_suppliers ?? [];
-    base.applies_to_products = options.applies_to_products ?? [];
-
-    return base;
-  }
-
-  private static extractConfig(
-    row: DbPricingRuleRow,
-    conditions: Record<string, unknown>
-  ): PricingRule['config'] {
-    const rawConfig =
-      typeof conditions.config === 'object' && conditions.config !== null
-        ? { ...(conditions.config as Record<string, unknown>) }
-        : {};
-
-    const config = rawConfig as PricingRule['config'];
-
-    const markup = this.parseNumber(row.markup_percentage);
-    if (markup !== undefined && config.markup_percent === undefined) {
-      config.markup_percent = markup;
-    }
-
-    const margin = this.parseNumber(row.fixed_margin);
-    if (margin !== undefined && config.margin_percent === undefined) {
-      config.margin_percent = margin;
-    }
-
-    const minPrice = this.parseNumber(row.min_price);
-    if (minPrice !== undefined && config.min_price === undefined) {
-      config.min_price = minPrice;
-    }
-
-    const maxPrice = this.parseNumber(row.max_price);
-    if (maxPrice !== undefined && config.max_price === undefined) {
-      config.max_price = maxPrice;
-    }
-
-    return config;
-  }
-
-  private static extractApplies(
-    conditions: Record<string, unknown>,
-    row: DbPricingRuleRow
-  ): {
-    categories: string[];
-    brands: string[];
-    suppliers: string[];
-    products: string[];
-  } {
-    const toArray = (value: unknown): string[] =>
-      Array.isArray(value) ? value.filter(Boolean) : [];
-
-    const categories = toArray(conditions.applies_to_categories);
-    if (!categories.length && row.category_id) {
-      categories.push(row.category_id);
-    }
-
-    const brands = toArray(conditions.applies_to_brands);
-    if (!brands.length && row.brand_id) {
-      brands.push(row.brand_id);
-    }
-
-    const suppliers = toArray(conditions.applies_to_suppliers);
-    if (!suppliers.length && row.supplier_id) {
-      suppliers.push(row.supplier_id);
-    }
-
-    const products = toArray(conditions.applies_to_products);
-    if (!products.length && row.inventory_item_id) {
-      products.push(row.inventory_item_id);
-    }
-
-    return { categories, brands, suppliers, products };
-  }
-
   private static parseNumber(value: unknown): number | undefined {
-    if (value === null || value === undefined) {
-      return undefined;
-    }
-
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : undefined;
-    }
-
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-
-  private static mapRuleTypeToDbStrategy(type: PricingRuleType): string {
-    switch (type) {
-      case PricingRuleType.COST_PLUS:
-        return 'cost_plus';
-      case PricingRuleType.MARKET_BASED:
-        return 'market_based';
-      case PricingRuleType.COMPETITIVE:
-        return 'competitive';
-      case PricingRuleType.DYNAMIC:
-        return 'dynamic';
-      case PricingRuleType.BUNDLE:
-      case PricingRuleType.CLEARANCE:
-      case PricingRuleType.PROMOTIONAL:
-        return 'dynamic';
-      default:
-        return 'cost_plus';
-    }
-  }
-
-  private static mapDbStrategyToRuleType(strategy: string): PricingRuleType {
-    switch (strategy) {
-      case 'cost_plus':
-        return PricingRuleType.COST_PLUS;
-      case 'market_based':
-      case 'value_based':
-        return PricingRuleType.MARKET_BASED;
-      case 'competitive':
-        return PricingRuleType.COMPETITIVE;
-      case 'dynamic':
-      case 'tiered':
-        return PricingRuleType.DYNAMIC;
-      default:
-        return PricingRuleType.COST_PLUS;
-    }
-  }
-
-  private static mapStoredStrategyToEnum(value: unknown): PricingStrategy {
-    if (typeof value !== 'string') {
-      return PricingStrategy.MAXIMIZE_PROFIT;
-    }
-
-    const normalised = value.toLowerCase();
-
-    switch (normalised) {
-      case PricingStrategy.MAXIMIZE_REVENUE:
-        return PricingStrategy.MAXIMIZE_REVENUE;
-      case PricingStrategy.MAXIMIZE_PROFIT:
-        return PricingStrategy.MAXIMIZE_PROFIT;
-      case PricingStrategy.MAXIMIZE_VOLUME:
-        return PricingStrategy.MAXIMIZE_VOLUME;
-      case PricingStrategy.MATCH_COMPETITION:
-        return PricingStrategy.MATCH_COMPETITION;
-      case PricingStrategy.PREMIUM_POSITIONING:
-        return PricingStrategy.PREMIUM_POSITIONING;
-      case PricingStrategy.VALUE_POSITIONING:
-        return PricingStrategy.VALUE_POSITIONING;
-      default:
-        return PricingStrategy.MAXIMIZE_PROFIT;
-    }
+    if (value === null || value === undefined) return undefined;
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) ? n : undefined;
   }
 }

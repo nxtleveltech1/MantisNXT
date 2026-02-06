@@ -57,6 +57,18 @@ export const CORE_TABLES = {
   CHANNEL_ORDER: 'core.channel_order',
   CHANNEL_ORDER_ITEM: 'core.channel_order_item',
   CHANNEL_SYNC_LOG: 'core.channel_sync_log',
+
+  // Tag infrastructure tables (from migration 0032)
+  AI_TAG_LIBRARY: 'core.ai_tag_library',
+  AI_TAG_ASSIGNMENT: 'core.ai_tag_assignment',
+  AI_TAG_RULE: 'core.ai_tag_rule',
+  AI_TAG_SUGGESTION: 'core.ai_tag_suggestion',
+  AI_TAG_METADATA: 'core.ai_tag_metadata',
+  PRODUCT_ENRICHMENT_LOG: 'core.product_enrichment_log',
+  CATEGORY_ASSIGNMENT_AUDIT: 'core.category_assignment_audit',
+
+  // Category keyword mapping (from bulk categorization)
+  CATEGORY_KEYWORD_MAP: 'core.category_keyword_map',
 } as const;
 
 /**

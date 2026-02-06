@@ -913,62 +913,22 @@ export class DashboardService {
       throw new Error('Widget not found');
     }
 
-    // In production, execute the widget query
-    // For now, return mock structure based on widget type
-    const mockData = this.generateMockWidgetData(widget);
-
+    // TODO: Wire to real data providers based on widget.metric_type and widget.data_source
+    // Until real query execution is implemented, return insufficient_data
     return {
-      data: mockData,
+      data: {
+        insufficient_data: true,
+        reason: `Widget data source not yet connected for type: ${widget.widget_type}`,
+        widget_type: widget.widget_type,
+      },
       metadata: {
         widgetId,
         widgetType: widget.widget_type,
         metricType: widget.metric_type,
         lastRefresh: new Date().toISOString(),
+        status: 'insufficient_data',
       },
     };
-  }
-
-  /**
-   * Generate mock data based on widget type
-   * In production, this would be replaced with actual data queries
-   */
-  private static generateMockWidgetData(widget: Widget): unknown {
-    switch (widget.widget_type) {
-      case 'metric_card':
-        return {
-          value: Math.random() * 100,
-          label: widget.config.title || 'Metric',
-          trend: Math.random() > 0.5 ? 'up' : 'down',
-          change: (Math.random() * 20 - 10).toFixed(2),
-        };
-      case 'line_chart':
-      case 'area_chart':
-        return Array.from({ length: 30 }, (_, i) => ({
-          date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString(),
-          value: Math.random() * 100,
-        }));
-      case 'bar_chart':
-        return Array.from({ length: 7 }, (_, i) => ({
-          category: `Category ${i + 1}`,
-          value: Math.random() * 100,
-        }));
-      case 'pie_chart':
-        return [
-          { name: 'Category A', value: Math.random() * 100 },
-          { name: 'Category B', value: Math.random() * 100 },
-          { name: 'Category C', value: Math.random() * 100 },
-          { name: 'Category D', value: Math.random() * 100 },
-        ];
-      case 'table':
-        return Array.from({ length: 10 }, (_, i) => ({
-          id: i + 1,
-          name: `Item ${i + 1}`,
-          value: Math.random() * 100,
-          status: Math.random() > 0.5 ? 'active' : 'inactive',
-        }));
-      default:
-        return { message: 'No data available' };
-    }
   }
 }
 
