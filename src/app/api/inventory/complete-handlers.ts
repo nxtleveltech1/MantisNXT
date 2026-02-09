@@ -90,6 +90,7 @@ export async function getCompleteInventory(request: NextRequest) {
     const minPrice = searchParams.get('min_price');
     const maxPrice = searchParams.get('max_price');
     const location = searchParams.get('location')?.split(',');
+    const locationId = searchParams.get('location_id') ?? undefined;
     const tags = searchParams.get('tags')?.split(',');
     const sortBy = searchParams.get('sort_by') || 'name';
     const sortOrder = searchParams.get('sort_order') || 'asc';
@@ -237,10 +238,17 @@ export async function getCompleteInventory(request: NextRequest) {
       paramIndex++;
     }
 
-    // Apply location filter
+    // Apply location filter (by name)
     if (location?.length) {
       baseQuery += ` AND i.location = ANY($${paramIndex})`;
       queryParams.push(location);
+      paramIndex++;
+    }
+
+    // Apply location_id filter (by UUID)
+    if (locationId) {
+      baseQuery += ` AND i.location_id = $${paramIndex}::uuid`;
+      queryParams.push(locationId);
       paramIndex++;
     }
 
@@ -378,6 +386,12 @@ export async function getCompleteInventory(request: NextRequest) {
       countParamIndex++;
     }
 
+    if (locationId) {
+      countQuery += ` AND i.location_id = $${countParamIndex}::uuid`;
+      countParams.push(locationId);
+      countParamIndex++;
+    }
+
     if (tags?.length) {
       countQuery += ` AND i.tags && $${countParamIndex}`;
       countParams.push(tags);
@@ -455,6 +469,7 @@ export async function getCompleteInventory(request: NextRequest) {
         outOfStock,
         overStock,
         location,
+        locationId,
         tags,
       },
     });

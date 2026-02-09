@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       sortBy:
         (searchParams.get('sortBy') as 'name' | 'type' | 'created_at' | 'updated_at') || 'name',
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc',
+      include_inventory_count: searchParams.get('include_inventory_count') === 'true',
     };
 
     const result = await locationService.searchLocations(params);

@@ -4,6 +4,7 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
+import { locationService } from '@/lib/services/LocationService';
 import { findSupplierByName } from '@/lib/utils/supplier-matcher';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
@@ -584,27 +585,8 @@ export class PlusPortalCSVProcessor {
     qty: number,
     unitCost: number | null
   ): Promise<void> {
-    // Get or create default supplier location
-    const locationResult = await client.query<{ location_id: string }>(
-      `SELECT location_id FROM core.stock_location 
-       WHERE supplier_id = $1 AND type = 'supplier' 
-       LIMIT 1`,
-      [this.supplierId]
-    );
-
-    let locationId: string;
-    if (locationResult.rows.length > 0) {
-      locationId = locationResult.rows[0].location_id;
-    } else {
-      // Create supplier location
-      const newLocation = await client.query<{ location_id: string }>(
-        `INSERT INTO core.stock_location (name, type, supplier_id, is_active)
-         VALUES ($1, 'supplier', $2, true)
-         RETURNING location_id`,
-        [`Supplier Stock`, this.supplierId]
-      );
-      locationId = newLocation.rows[0].location_id;
-    }
+    const location = await locationService.getOrCreateSupplierLocation(this.supplierId);
+    const locationId = location.location_id;
 
     // Upsert stock_on_hand
     await client.query(

@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { query, withTransaction } from '@/lib/database/unified-connection';
+import { locationService } from '@/lib/services/LocationService';
 import type { InventoryItem } from '@/domain/inventory';
 
 export async function getBySku(sku: string): Promise<InventoryItem | null> {
@@ -96,15 +97,19 @@ export async function adjustStock(params: {
     );
 
     if (soh.rows.length === 0) {
-      // Create a placeholder stock_on_hand record with qty 0 then apply delta
+      const loc = await client.query(
+        `SELECT location_id FROM core.stock_location WHERE supplier_id = $1 OR type = 'internal' ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
+        [supplierId]
+      );
+      let locationId = loc.rows[0]?.location_id ?? null;
+      if (!locationId) {
+        const supplierLocation = await locationService.getOrCreateSupplierLocation(supplierId);
+        locationId = supplierLocation.location_id;
+      }
       await client.query(
         `INSERT INTO core.stock_on_hand (location_id, supplier_product_id, qty)
-         SELECT sl.location_id, $1, 0
-         FROM core.stock_location sl
-         WHERE (sl.supplier_id = $2 OR sl.type = 'internal')
-         ORDER BY CASE WHEN sl.supplier_id = $2 THEN 0 ELSE 1 END, sl.created_at ASC
-         LIMIT 1`,
-        [supplierProductId, supplierId]
+         VALUES ($1, $2, 0)`,
+        [locationId, supplierProductId]
       );
     }
 
@@ -174,16 +179,19 @@ export async function setStock(params: {
       [spId]
     );
     if (soh.rows.length === 0) {
-      // pick any internal or supplier location
       const loc = await client.query(
         `SELECT location_id FROM core.stock_location WHERE supplier_id = $1 OR type = 'internal' ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
         [supplierId]
       );
-      const locationId = loc.rows[0]?.location_id;
+      let locationId = loc.rows[0]?.location_id ?? null;
+      if (!locationId) {
+        const supplierLocation = await locationService.getOrCreateSupplierLocation(supplierId);
+        locationId = supplierLocation.location_id;
+      }
       await client.query(
         `INSERT INTO core.stock_on_hand (location_id, supplier_product_id, qty, unit_cost)
          VALUES ($1, $2, $3, $4)`,
-        [locationId ?? null, spId, quantity, unitCost ?? null]
+        [locationId, spId, quantity, unitCost ?? null]
       );
     } else {
       await client.query(

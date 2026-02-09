@@ -157,12 +157,14 @@ interface EnhancedInventoryDashboardProps {
   refreshInterval?: number;
   enableRealTime?: boolean;
   showPredictiveAnalytics?: boolean;
+  locationId?: string;
 }
 
 const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
   refreshInterval = 30000,
   enableRealTime = true,
   showPredictiveAnalytics = true,
+  locationId,
 }) => {
   // State Management
   const [metrics, setMetrics] = useState<InventoryMetrics | null>(null);
@@ -200,6 +202,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
       if (selectedCategory && selectedCategory !== 'all') qs.set('category', selectedCategory);
       // Status is filtered client-side to avoid DB dependency on reorder_point thresholds
       if (selectedSupplier && selectedSupplier !== 'all') qs.set('supplierId', selectedSupplier);
+      if (locationId) qs.set('location_id', locationId);
 
       const [
         inventoryResponse,
@@ -342,7 +345,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedSupplier]);
+  }, [searchTerm, selectedCategory, selectedSupplier, locationId]);
 
   // Real-time refresh effect
   useEffect(() => {

@@ -41,10 +41,14 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  Eye,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import type { StockLocation } from '@/types/nxt-spp';
 import { formatDistanceToNow } from 'date-fns';
+
+type LocationRow = StockLocation & { inventory_count?: number };
 
 interface LocationsTableProps {
   searchQuery?: string;
@@ -57,7 +61,7 @@ interface LocationsTableProps {
 
 interface LocationsResponse {
   success: boolean;
-  data: StockLocation[];
+  data: LocationRow[];
   pagination: {
     page: number;
     pageSize: number;
@@ -78,7 +82,7 @@ export function LocationsTable({
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingLocation, setDeletingLocation] = useState<StockLocation | null>(null);
+  const [deletingLocation, setDeletingLocation] = useState<LocationRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch locations
@@ -93,6 +97,7 @@ export function LocationsTable({
       if (searchQuery) params.append('search', searchQuery);
       if (typeFilter) params.append('type', typeFilter);
       if (statusFilter !== undefined) params.append('is_active', statusFilter.toString());
+      params.append('include_inventory_count', 'true');
 
       const response = await fetch(`/api/inventory/locations?${params}`);
       if (!response.ok) {
@@ -103,7 +108,7 @@ export function LocationsTable({
   });
 
   // Handle delete confirmation
-  const handleDeleteClick = (location: StockLocation) => {
+  const handleDeleteClick = (location: LocationRow) => {
     setDeletingLocation(location);
     setDeleteDialogOpen(true);
   };
@@ -214,19 +219,32 @@ export function LocationsTable({
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Address</TableHead>
+              <TableHead className="text-right">Inventory</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {locations.map(location => (
+            {(locations as LocationRow[]).map(location => (
               <TableRow key={location.location_id}>
                 <TableCell className="font-medium">{location.name}</TableCell>
                 <TableCell>{getTypeBadge(location.type)}</TableCell>
                 <TableCell className="max-w-xs truncate">
                   {location.address || (
                     <span className="text-muted-foreground text-sm">No address</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {typeof location.inventory_count === 'number' ? (
+                    <Link
+                      href={`/inventory?location_id=${location.location_id}`}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {location.inventory_count} items
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -251,6 +269,12 @@ export function LocationsTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href={`/inventory?location_id=${location.location_id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View inventory
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(location)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit

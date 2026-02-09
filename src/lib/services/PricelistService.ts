@@ -22,6 +22,7 @@
 
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
+import { locationService } from '@/lib/services/LocationService';
 import type {
   PricelistUpload,
   PricelistRow,
@@ -441,6 +442,20 @@ export class PricelistService {
     let pricesUpdated = 0;
     const errors: string[] = [];
 
+    let defaultLocationId: string | null = null;
+    const stockTableCheck = await dbQuery<{ exists: boolean }>(
+      'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2) as exists',
+      ['core', 'stock_on_hand']
+    );
+    if (stockTableCheck.rows[0]?.exists) {
+      try {
+        const location = await locationService.getOrCreateSupplierLocation(upload.supplier_id);
+        defaultLocationId = location.location_id;
+      } catch (locErr) {
+        console.warn('[PricelistService] getOrCreateSupplierLocation failed:', locErr);
+      }
+    }
+
     await withTransaction(async client => {
       // Detect optional brand_from_supplier column for compatibility
       let hasBrandColumn = true;
@@ -601,24 +616,8 @@ export class PricelistService {
       pricesUpdated = priceResult.rowCount || 0;
 
       // Step 4: Update stock on hand (SUP SOH) from attrs_json.stock or attrs_json.stock_qty
-      // Only update stock if core.stock_on_hand table exists
-      const stockTableCheck = await client.query(
-        'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)',
-        ['core', 'stock_on_hand']
-      );
-
-      if (stockTableCheck.rows[0]?.exists) {
-        // First, get or create a default location for this supplier
-        const locationResult = await client.query(
-          `SELECT location_id FROM core.stock_location 
-           WHERE supplier_id = $1 OR type = 'internal' 
-           ORDER BY (supplier_id = $1) DESC, created_at ASC LIMIT 1`,
-          [upload.supplier_id]
-        );
-        
-        const defaultLocationId = locationResult.rows[0]?.location_id;
-        
-        if (defaultLocationId) {
+      // Location already resolved before transaction via getOrCreateSupplierLocation
+      if (defaultLocationId) {
           const stockUpdateQuery = `
             INSERT INTO core.stock_on_hand (
               location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
@@ -659,7 +658,6 @@ export class PricelistService {
             console.warn('[PricelistService] Stock update failed:', stockError);
             errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
           }
-        }
       }
 
       // Update upload status and invalidate cache on success

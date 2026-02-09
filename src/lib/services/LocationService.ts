@@ -43,10 +43,15 @@ export interface LocationSearchParams {
   pageSize?: number;
   sortBy?: 'name' | 'type' | 'created_at' | 'updated_at';
   sortOrder?: 'asc' | 'desc';
+  include_inventory_count?: boolean;
+}
+
+export interface StockLocationWithCount extends StockLocation {
+  inventory_count?: number;
 }
 
 export interface LocationSearchResult {
-  locations: StockLocation[];
+  locations: StockLocation[] | StockLocationWithCount[];
   total: number;
   page: number;
   pageSize: number;
@@ -337,6 +342,7 @@ export class LocationService {
       pageSize = 20,
       sortBy = 'name',
       sortOrder = 'asc',
+      include_inventory_count = false,
     } = params;
 
     // Build WHERE clauses
@@ -399,9 +405,28 @@ export class LocationService {
     values.push(pageSize, offset);
 
     const dataResult = await dbQuery<StockLocation>(dataQuery, values);
+    let locations: StockLocation[] | StockLocationWithCount[] = dataResult.rows;
+
+    if (include_inventory_count && dataResult.rows.length > 0) {
+      const locationIds = dataResult.rows.map(r => r.location_id);
+      const countResult = await dbQuery<{ location_id: string; inventory_count: string }>(
+        `SELECT location_id, COUNT(*)::text as inventory_count
+         FROM core.stock_on_hand
+         WHERE location_id = ANY($1::uuid[])
+         GROUP BY location_id`,
+        [locationIds]
+      );
+      const countByLocation = new Map(
+        countResult.rows.map(r => [r.location_id, parseInt(r.inventory_count, 10)])
+      );
+      locations = dataResult.rows.map(loc => ({
+        ...loc,
+        inventory_count: countByLocation.get(loc.location_id) ?? 0,
+      }));
+    }
 
     return {
-      locations: dataResult.rows,
+      locations,
       total,
       page,
       pageSize,
@@ -420,6 +445,64 @@ export class LocationService {
     });
 
     return result.locations;
+  }
+
+  /**
+   * Get or create the default supplier location for a supplier.
+   * Used by pricelist merge, setStock, and import paths so SOH is never skipped for missing location.
+   */
+  async getOrCreateSupplierLocation(
+    supplierId: string,
+    supplierName?: string
+  ): Promise<StockLocation> {
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
+    const existingQuery = `
+      SELECT
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
+        address, metadata, is_active, created_at, updated_at
+      FROM ${tableName}
+      WHERE supplier_id = $1 AND type = 'supplier' AND is_active = true
+      LIMIT 1
+    `;
+    const existing = await dbQuery<StockLocation>(existingQuery, [supplierId]);
+    if (existing.rows.length > 0) {
+      return existing.rows[0];
+    }
+
+    let name = supplierName ?? 'Supplier';
+    try {
+      name = (await this.resolveSupplierName(supplierId)) ?? name;
+    } catch {
+      // use passed-in or default
+    }
+    const baseName = `${name} - Main Warehouse`;
+    let candidateName = baseName;
+    let attempts = 0;
+    const orgId = orgColumn ? this.defaultOrgId : undefined;
+    while (attempts < 5) {
+      const isUnique = await this.isLocationNameUnique(candidateName, orgId);
+      if (isUnique) break;
+      attempts++;
+      candidateName = `${baseName} (${attempts})`;
+    }
+
+    return this.createLocation({
+      org_id: orgId,
+      name: candidateName,
+      type: 'supplier',
+      supplier_id: supplierId,
+      is_active: true,
+    });
+  }
+
+  private async resolveSupplierName(supplierId: string): Promise<string | null> {
+    const result = await dbQuery<{ name: string }>(
+      `SELECT name FROM core.supplier WHERE supplier_id = $1 LIMIT 1`,
+      [supplierId]
+    );
+    return result.rows[0]?.name ?? null;
   }
 
   /**

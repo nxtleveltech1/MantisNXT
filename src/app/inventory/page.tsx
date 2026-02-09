@@ -10,14 +10,18 @@ import SupplierInventoryView from '@/components/inventory/SupplierInventoryView'
 import ProductStockManagement from '@/components/inventory/ProductStockManagement';
 import InventoryDetailView from '@/components/inventory/InventoryDetailView';
 import { SectionQuickLinks } from '@/components/layout/SectionQuickLinks';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function InventoryPage() {
   const [selectedDetailItem, setSelectedDetailItem] = useState<string | null>(null);
   const pathname = usePathname() || '';
+  const searchParams = useSearchParams();
+  const locationIdFromUrl = searchParams.get('location_id') ?? undefined;
   const sectionLinks = useMemo(() => findSectionForPath(pathname)?.items ?? [], [pathname]);
 
   const breadcrumbs = [{ label: 'Inventory Management' }];
+
+  const defaultTab = locationIdFromUrl ? 'dashboard' : 'management';
 
   return (
     <AppLayout
@@ -38,7 +42,7 @@ export default function InventoryPage() {
           ) : null}
         </div>
 
-        <Tabs defaultValue="management" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="management">Inventory Management</TabsTrigger>
@@ -49,7 +53,7 @@ export default function InventoryPage() {
 
           <TabsContent value="dashboard" className="space-y-6">
             <AsyncBoundary>
-              <EnhancedInventoryDashboard />
+              <EnhancedInventoryDashboard locationId={locationIdFromUrl} />
             </AsyncBoundary>
           </TabsContent>
 
