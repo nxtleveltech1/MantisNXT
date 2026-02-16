@@ -300,11 +300,27 @@ export default function PortalPage() {
             />
 
             <PortalButton
+              iconOnly
+              icon={
+                <Image
+                  src="/images/NXTDigitalConnect.jpg"
+                  alt="Digital Connect"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
+              onClick={() => router.push('/digital-connect')}
+              delay={400}
+            />
+
+            <PortalButton
               icon={<Shield className="h-10 w-10" strokeWidth={1.5} />}
               sublabel="System"
               label="Administration"
               onClick={() => router.push('/system-admin')}
-              delay={400}
+              delay={450}
             />
             
             <PortalButton
@@ -312,7 +328,7 @@ export default function PortalPage() {
               sublabel="Document"
               label="Store"
               onClick={() => router.push('/docustore')}
-              delay={500}
+              delay={550}
             />
           </div>
 
