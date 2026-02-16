@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare, Globe } from 'lucide-react';
+import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -273,7 +274,15 @@ export default function PortalPage() {
             />
 
             <PortalButton
-              icon={<Globe className="h-10 w-10" strokeWidth={1.5} />}
+              icon={
+                <Image
+                  src="/images/social-media-marketing-icon.png"
+                  alt="Social Media Marketing"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                />
+              }
               sublabel="Social Media"
               label="Marketing"
               onClick={() => router.push('/social-media-app')}
