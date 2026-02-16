@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ShoppingCart, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
+import { Settings, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
@@ -262,8 +262,17 @@ export default function PortalPage() {
             />
             
             <PortalButton
-              icon={<ShoppingCart className="h-10 w-10" strokeWidth={1.5} />}
-              label="POS"
+              iconOnly
+              icon={
+                <Image
+                  src="/images/NXTPOS.jpg"
+                  alt="POS"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
               onClick={() => router.push('/pos-app')}
               delay={200}
             />
@@ -303,15 +312,15 @@ export default function PortalPage() {
               iconOnly
               icon={
                 <Image
-                  src="/images/NXTDigitalConnect.jpg"
-                  alt="Digital Connect"
+                  src="/images/NXT DIGITAL ENGAGE.jpg"
+                  alt="Digital Engage"
                   fill
                   className="object-cover rounded-2xl"
                   sizes="180px"
                 />
               }
               label=""
-              onClick={() => router.push('/digital-connect')}
+              onClick={() => window.open('https://digital.nxtdotx.online/', '_blank')}
               delay={400}
             />
 
