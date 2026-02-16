@@ -22,9 +22,11 @@ interface PortalButtonProps {
   sublabel?: string;
   onClick: () => void;
   delay?: number;
+  /** When true, icon fills the tile and no label/sublabel is shown (gloss background kept). */
+  iconOnly?: boolean;
 }
 
-function PortalButton({ icon, label, sublabel, onClick, delay = 0 }: PortalButtonProps) {
+function PortalButton({ icon, label, sublabel, onClick, delay = 0, iconOnly = false }: PortalButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -49,22 +51,30 @@ function PortalButton({ icon, label, sublabel, onClick, delay = 0 }: PortalButto
       {/* Reflection line at top */}
       <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
       
-      {/* Icon */}
-      <div className="relative z-10 text-white/90 group-hover:text-white transition-colors duration-300">
+      {/* Icon: full-bleed when iconOnly, otherwise normal */}
+      <div
+        className={
+          iconOnly
+            ? 'absolute inset-0 z-10 rounded-2xl overflow-hidden'
+            : 'relative z-10 text-white/90 group-hover:text-white transition-colors duration-300'
+        }
+      >
         {icon}
       </div>
       
-      {/* Label */}
-      <div className="relative z-10 flex flex-col items-center gap-0.5">
-        {sublabel && (
-          <span className="text-xs text-white/60 uppercase tracking-wider font-medium">
-            {sublabel}
+      {/* Label: hidden when iconOnly */}
+      {!iconOnly && (
+        <div className="relative z-10 flex flex-col items-center gap-0.5">
+          {sublabel && (
+            <span className="text-xs text-white/60 uppercase tracking-wider font-medium">
+              {sublabel}
+            </span>
+          )}
+          <span className="text-sm font-semibold text-white uppercase tracking-widest">
+            {label}
           </span>
-        )}
-        <span className="text-sm font-semibold text-white uppercase tracking-widest">
-          {label}
-        </span>
-      </div>
+        </div>
+      )}
     </button>
   );
 }
@@ -274,17 +284,17 @@ export default function PortalPage() {
             />
 
             <PortalButton
+              iconOnly
               icon={
                 <Image
                   src="/images/social-media-marketing-icon.png"
                   alt="Social Media Marketing"
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 object-contain"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
                 />
               }
-              sublabel="Social Media"
-              label="Marketing"
+              label=""
               onClick={() => router.push('/social-media-app')}
               delay={375}
             />
