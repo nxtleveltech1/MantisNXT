@@ -254,9 +254,17 @@ export default function PortalPage() {
           {/* Portal Buttons */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             <PortalButton
-              icon={<Settings className="h-10 w-10" strokeWidth={1.5} />}
-              sublabel="ERP System"
-              label="Access"
+              iconOnly
+              icon={
+                <Image
+                  src="/images/NXTERP.jpg"
+                  alt="ERP System Access"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
               onClick={() => router.push('/')}
               delay={100}
             />
@@ -304,7 +312,7 @@ export default function PortalPage() {
                 />
               }
               label=""
-              onClick={() => router.push('/social-media-app')}
+              onClick={() => window.open('https://socialextreme.nxtdotx.online/', '_blank')}
               delay={375}
             />
 

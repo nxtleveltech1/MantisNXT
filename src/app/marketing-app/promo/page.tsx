@@ -138,7 +138,7 @@ export default function PromoPage() {
                   <Button
                     className="h-20 flex flex-col gap-2"
                     variant="outline"
-                    onClick={() => router.push("/social-media-app")}
+                    onClick={() => window.open("https://socialextreme.nxtdotx.online/", "_blank")}
                   >
                     <MessageCircle className="h-6 w-6" />
                     Social Media Hub
