@@ -698,13 +698,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <div className="relative flex items-center justify-center w-full min-h-[64px] rounded-lg p-2">
               {!logoError ? (
                 <Image
-                  src="/images/logo.svg"
+                  src="/images/logotrans.png"
                   alt="MantisNXT"
                   width={200}
                   height={60}
                   className="w-full h-full object-contain"
                   priority
-                  unoptimized
                   onError={(e) => {
                     console.warn('Logo failed to load, using fallback');
                     setLogoError(true);
