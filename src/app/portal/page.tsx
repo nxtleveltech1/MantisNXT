@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, Handshake, Shield, LogOut, User, ChevronDown, FileText, MessageSquare } from 'lucide-react';
+import { Settings, Handshake, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
@@ -293,14 +293,6 @@ export default function PortalPage() {
             />
 
             <PortalButton
-              icon={<MessageSquare className="h-10 w-10" strokeWidth={1.5} />}
-              sublabel="WhatsApp"
-              label="Sales Channel"
-              onClick={() => router.push('/marketing-app')}
-              delay={350}
-            />
-
-            <PortalButton
               iconOnly
               icon={
                 <Image
@@ -333,11 +325,27 @@ export default function PortalPage() {
             />
 
             <PortalButton
+              iconOnly
+              icon={
+                <Image
+                  src="/images/stockpulse.jpg"
+                  alt="StockPulse"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
+              onClick={() => window.open('https://stocktake.nxtdotx.online/', '_blank')}
+              delay={425}
+            />
+
+            <PortalButton
               icon={<Shield className="h-10 w-10" strokeWidth={1.5} />}
               sublabel="System"
               label="Administration"
               onClick={() => router.push('/system-admin')}
-              delay={450}
+              delay={475}
             />
             
             <PortalButton
