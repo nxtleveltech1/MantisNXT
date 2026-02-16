@@ -287,7 +287,7 @@ export default function PortalPage() {
               iconOnly
               icon={
                 <Image
-                  src="/images/social-media-marketing-icon.png"
+                  src="/images/NXTSocialExtreme.jpg"
                   alt="Social Media Marketing"
                   fill
                   className="object-cover rounded-2xl"
