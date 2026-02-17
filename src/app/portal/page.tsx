@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, Handshake, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
+import { Settings, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
@@ -286,9 +286,18 @@ export default function PortalPage() {
             />
             
             <PortalButton
-              icon={<Handshake className="h-10 w-10" strokeWidth={1.5} />}
-              label="Marketplace"
-              onClick={() => router.push('/marketplace-app')}
+              iconOnly
+              icon={
+                <Image
+                  src="/images/Marketplace.jpg"
+                  alt="Marketplace"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
+              onClick={() => window.open('https://marketplace.nxtdotx.online/', '_blank')}
               delay={300}
             />
 
