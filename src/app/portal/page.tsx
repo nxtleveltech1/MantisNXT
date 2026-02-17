@@ -328,7 +328,7 @@ export default function PortalPage() {
               iconOnly
               icon={
                 <Image
-                  src="/images/stockpulse.jpg"
+                  src="/images/STOCK.jpg"
                   alt="StockPulse"
                   fill
                   className="object-cover rounded-2xl"
