@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, Shield, LogOut, User, ChevronDown, FileText } from 'lucide-react';
+import { Settings, Shield, LogOut, User, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
@@ -172,9 +172,20 @@ export default function PortalPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         </div>
 
-        {/* Top Header Bar - User Account & Logout */}
+        {/* Top Header Bar - Admin & User Account */}
         <div className="absolute top-0 left-0 right-0 z-20 p-4 md:p-6">
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-between">
+            {/* Admin Button - Top Left */}
+            <button
+              onClick={() => router.push('/system-admin')}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/60 transition-all text-white/70 hover:text-white"
+              style={{ animation: 'fadeSlideUp 0.6s ease-out forwards', opacity: 0 }}
+            >
+              <Shield className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wider hidden md:inline">Admin</span>
+            </button>
+
+            <div className="flex items-center gap-3">
             {/* User Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -225,6 +236,7 @@ export default function PortalPage() {
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden md:inline">Log Out</span>
             </Button>
+            </div>
           </div>
         </div>
 
@@ -337,7 +349,7 @@ export default function PortalPage() {
               iconOnly
               icon={
                 <Image
-                  src="/images/stockpulse (2).jpg"
+                  src="/images/NXT STOCKPULSE.JPG"
                   alt="StockPulse"
                   fill
                   className="object-cover rounded-2xl"
@@ -350,17 +362,17 @@ export default function PortalPage() {
             />
 
             <PortalButton
-              icon={<Shield className="h-10 w-10" strokeWidth={1.5} />}
-              sublabel="System"
-              label="Administration"
-              onClick={() => router.push('/system-admin')}
-              delay={475}
-            />
-            
-            <PortalButton
-              icon={<FileText className="h-10 w-10" strokeWidth={1.5} />}
-              sublabel="Document"
-              label="Store"
+              iconOnly
+              icon={
+                <Image
+                  src="/images/docustore.jpg"
+                  alt="Document Store"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
               onClick={() => router.push('/docustore')}
               delay={550}
             />
