@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import type puppeteer from 'puppeteer';
 
 type RenderHtmlToPdfOptions = {
   html: string;
@@ -25,7 +25,8 @@ let browserPromise: Promise<puppeteer.Browser> | null = null;
 
 async function getBrowser(): Promise<puppeteer.Browser> {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
+    const ppt = await import('puppeteer');
+    browserPromise = ppt.default.launch({
       headless: true,
       args: [
         '--no-sandbox',
@@ -45,10 +46,8 @@ export async function renderHtmlToPdfBuffer(options: RenderHtmlToPdfOptions): Pr
   const page = await browser.newPage();
 
   try {
-    // Most templates are self-contained (no external network); still wait for DOM stability.
     await page.setContent(options.html, { waitUntil: 'networkidle0' });
 
-    // Ensure print media rules apply.
     await page.emulateMediaType('print');
 
     const pdf = await page.pdf({
@@ -68,5 +67,3 @@ export async function renderHtmlToPdfBuffer(options: RenderHtmlToPdfOptions): Pr
     await page.close().catch(() => undefined);
   }
 }
-
-

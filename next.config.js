@@ -56,7 +56,7 @@ const nextConfig = {
     UPLOAD_DIR: process.env.UPLOAD_DIR || '/app/uploads',
   },
 
-  serverExternalPackages: ['puppeteer', 'puppeteer-core'],
+  serverExternalPackages: ['puppeteer', 'puppeteer-core', 'pdf-to-img'],
 
   // Configure headers for better caching and security
   async headers() {

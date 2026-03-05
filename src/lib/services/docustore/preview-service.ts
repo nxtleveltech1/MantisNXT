@@ -2,13 +2,12 @@
  * Document Preview Service
  *
  * Generates document preview thumbnails from PDF artifacts using pdf-to-img (PDF.js).
- * Pure JavaScript—no native binaries. Works in serverless/Vercel.
+ * Dynamic import avoids webpack bundling path-dependent native code.
  */
 
 import { query } from '@/lib/database';
 import { StorageFactory } from '@/lib/docustore/storage';
 import type { DocumentArtifact } from './types';
-import { pdf } from 'pdf-to-img';
 
 export class PreviewService {
   /**
@@ -42,11 +41,11 @@ export class PreviewService {
     }
 
     try {
+      const { pdf } = await import('pdf-to-img');
       const document = await pdf(pdfBuffer, { scale: 2 });
       const pageBuffer = await document.getPage(1);
       if (!pageBuffer) return null;
 
-      // pdf-to-img returns PNG buffer. JPEG would need sharp—PNG works everywhere
       return Buffer.isBuffer(pageBuffer) ? pageBuffer : Buffer.from(pageBuffer);
     } catch (error) {
       console.error('Preview generation failed:', error);
