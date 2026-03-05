@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       created_to: searchParams.get('created_to') || undefined,
       limit: parseInt(searchParams.get('limit') || '50', 10),
       offset: parseInt(searchParams.get('offset') || '0', 10),
+      includeSigningWorkflow: searchParams.get('includeSigningWorkflow') === 'true',
     };
 
     const { documents, total } = await DocumentService.listDocuments(filters);

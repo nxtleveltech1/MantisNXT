@@ -365,6 +365,22 @@ export default function PortalPage() {
               iconOnly
               icon={
                 <Image
+                  src="/images/NXT TIMEPULSE.png"
+                  alt="TimePulse"
+                  fill
+                  className="object-cover rounded-2xl"
+                  sizes="180px"
+                />
+              }
+              label=""
+              onClick={() => window.open('https://timepulse.nxtdotx.online/', '_blank')}
+              delay={475}
+            />
+
+            <PortalButton
+              iconOnly
+              icon={
+                <Image
                   src="/images/docustore.jpg"
                   alt="Document Store"
                   fill

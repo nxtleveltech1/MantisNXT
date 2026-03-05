@@ -66,7 +66,6 @@ export async function getOrgId(
     console.warn('Failed to fetch organization from database:', error);
   }
 
-  // 6. Fallback to known default
-  return 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  throw new Error('Organization could not be resolved. Provide x-org-id header, orgId in body/query, or DEFAULT_ORG_ID.');
 }
 

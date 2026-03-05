@@ -23,6 +23,10 @@ export interface Document {
   updated_at: string;
 }
 
+export interface DocumentWithSigning extends Document {
+  signing_workflow?: SigningWorkflowSummary;
+}
+
 export interface DocumentVersion {
   id: string;
   document_id: string;
@@ -73,6 +77,7 @@ export interface DocumentEvent {
     | 'linked'
     | 'unlinked'
     | 'pdf_generated'
+    | 'pdf_regenerated'
     | 'downloaded'
     | 'deleted'
     | 'restored'
@@ -141,6 +146,27 @@ export interface DocumentFilters {
   created_to?: string;
   limit?: number;
   offset?: number;
+  includeSigningWorkflow?: boolean;
+}
+
+export interface SigningWorkflowSummary {
+  signers: Array<{
+    id: string;
+    email: string;
+    name: string;
+    status: string;
+    signed_at?: string | null;
+    order: number;
+  }>;
+  recipients: Array<{
+    id: string;
+    email: string;
+    name?: string | null;
+    type: string;
+  }>;
+  status: string;
+  totalSigners: number;
+  signedCount: number;
 }
 
 

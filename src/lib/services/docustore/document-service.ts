@@ -13,11 +13,13 @@ import type {
   DocumentLink,
   DocumentEvent,
   DocumentWithRelations,
+  DocumentWithSigning,
   CreateDocumentInput,
   UpdateDocumentInput,
   UploadVersionInput,
   CreateLinkInput,
   DocumentFilters,
+  SigningWorkflowSummary,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -133,8 +135,11 @@ export class DocumentService {
 
   /**
    * List documents with filters
+   * When includeSigningWorkflow is true, joins signing_workflows, document_signers, signing_recipients.
    */
-  static async listDocuments(filters: DocumentFilters): Promise<{ documents: Document[]; total: number }> {
+  static async listDocuments(
+    filters: DocumentFilters
+  ): Promise<{ documents: (Document | DocumentWithSigning)[]; total: number }> {
     const conditions: string[] = ['d.org_id = $1', 'd.deleted_at IS NULL'];
     const params: unknown[] = [filters.org_id];
     let paramIndex = 2;
@@ -207,8 +212,101 @@ export class DocumentService {
       [...params, limit, offset]
     );
 
+    const documents = docsResult.rows;
+
+    if (filters.includeSigningWorkflow && documents.length > 0) {
+      const docIdsWithWorkflow = documents
+        .filter((d) => d.signing_workflow_id)
+        .map((d) => d.id);
+      if (docIdsWithWorkflow.length > 0) {
+        const signersResult = await query<{
+          document_id: string;
+          signer_id: string;
+          email: string;
+          name: string;
+          status: string;
+          signed_at: string | null;
+          signer_order: number;
+        }>(
+          `SELECT sw.document_id, ds.id as signer_id, ds.email, ds.name, ds.status, ds.signed_at, ds."order" as signer_order
+           FROM docustore.signing_workflows sw
+           JOIN docustore.document_signers ds ON ds.workflow_id = sw.id
+           WHERE sw.document_id = ANY($1)
+           ORDER BY sw.document_id, ds."order"`,
+          [docIdsWithWorkflow]
+        );
+        const recipientsResult = await query<{
+          document_id: string;
+          recipient_id: string;
+          email: string;
+          name: string | null;
+          type: string;
+        }>(
+          `SELECT sw.document_id, sr.id as recipient_id, sr.email, sr.name, sr.type
+           FROM docustore.signing_workflows sw
+           JOIN docustore.signing_recipients sr ON sr.workflow_id = sw.id
+           WHERE sw.document_id = ANY($1)`,
+          [docIdsWithWorkflow]
+        );
+        const workflowStatusResult = await query<{
+          document_id: string;
+          workflow_status: string;
+        }>(
+          `SELECT document_id, status as workflow_status
+           FROM docustore.signing_workflows
+           WHERE document_id = ANY($1)`,
+          [docIdsWithWorkflow]
+        );
+
+        const signersByDoc = new Map<string, SigningWorkflowSummary['signers']>();
+        for (const row of signersResult.rows) {
+          const list = signersByDoc.get(row.document_id) || [];
+          list.push({
+            id: row.signer_id,
+            email: row.email,
+            name: row.name,
+            status: row.status,
+            signed_at: row.signed_at,
+            order: row.signer_order,
+          });
+          signersByDoc.set(row.document_id, list);
+        }
+        const recipientsByDoc = new Map<string, SigningWorkflowSummary['recipients']>();
+        for (const row of recipientsResult.rows) {
+          const list = recipientsByDoc.get(row.document_id) || [];
+          list.push({
+            id: row.recipient_id,
+            email: row.email,
+            name: row.name,
+            type: row.type,
+          });
+          recipientsByDoc.set(row.document_id, list);
+        }
+        const statusByDoc = new Map<string, string>();
+        for (const row of workflowStatusResult.rows) {
+          statusByDoc.set(row.document_id, row.workflow_status);
+        }
+
+        const enriched = documents.map((doc) => {
+          if (!doc.signing_workflow_id) return doc;
+          const signers = signersByDoc.get(doc.id) || [];
+          const recipients = recipientsByDoc.get(doc.id) || [];
+          const signedCount = signers.filter((s) => s.status === 'signed').length;
+          const summary: SigningWorkflowSummary = {
+            signers,
+            recipients,
+            status: statusByDoc.get(doc.id) || 'draft',
+            totalSigners: signers.length,
+            signedCount,
+          };
+          return { ...doc, signing_workflow: summary } as DocumentWithSigning;
+        });
+        return { documents: enriched, total };
+      }
+    }
+
     return {
-      documents: docsResult.rows,
+      documents,
       total,
     };
   }

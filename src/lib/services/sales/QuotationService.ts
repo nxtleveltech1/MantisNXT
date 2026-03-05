@@ -8,7 +8,6 @@
 
 import { query } from '@/lib/database/unified-connection';
 import { DocumentNumberingService } from './DocumentNumberingService';
-import { QuotationPDFService } from '@/lib/services/docustore/quotation-pdf-service';
 
 export interface Quotation {
   id: string;
@@ -407,25 +406,7 @@ export class QuotationService {
         }
       }
 
-      // Generate PDF and store in DocuStore if requested or by default
-      const shouldGeneratePDF = data.generate_pdf !== false;
-      if (shouldGeneratePDF) {
-        try {
-          const quotationData = await QuotationPDFService.getQuotationForPDF(updatedResult.rows[0].id);
-          if (quotationData) {
-            await QuotationPDFService.generateQuotationPDF(
-              quotationData,
-              data.org_id,
-              data.created_by || undefined
-            );
-            console.log('Quotation PDF generated and stored in DocuStore');
-          }
-        } catch (pdfError) {
-          // Log but don't fail quotation creation if PDF generation fails
-          console.error('Error generating quotation PDF:', pdfError);
-        }
-      }
-
+      // PDF generation is handled by DocumentGenerationHooks.onQuotationCreated (called from API route)
       return updatedResult.rows[0];
     } catch (error) {
       console.error('Error creating quotation:', error);

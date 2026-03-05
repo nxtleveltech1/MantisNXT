@@ -8,21 +8,8 @@ import {
   Archive,
   ArrowLeft,
   FileText,
-  FolderOpen,
   LayoutDashboard,
   MessageSquare,
-  PenTool,
-  Plus,
-  Send,
-  Settings as SettingsIcon,
-  Users,
-  FileStack,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  History,
-  Bell,
-  Shield,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -35,15 +22,7 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/lib/auth/auth-context';
-import { useRouter } from 'next/navigation';
-
 export const docustoreSidebarData = {
-  user: {
-    name: 'John Doe',
-    email: 'admin@mantisnxt.com',
-    avatar: '/avatars/jd.jpg',
-  },
   navMain: [
     {
       title: 'Dashboard',
@@ -53,7 +32,7 @@ export const docustoreSidebarData = {
     },
     {
       title: 'Documents',
-      url: '/docustore/documents',
+      url: '/docustore',
       icon: FileText,
       items: [
         {
@@ -63,116 +42,6 @@ export const docustoreSidebarData = {
         {
           title: 'Upload Document',
           url: '/docustore/new',
-        },
-        {
-          title: 'Bulk Send',
-          url: '/docustore/bulk-send',
-        },
-      ],
-    },
-    {
-      title: 'Templates',
-      url: '/docustore/templates',
-      icon: FileStack,
-      items: [
-        {
-          title: 'All Templates',
-          url: '/docustore/templates',
-        },
-        {
-          title: 'Create Template',
-          url: '/docustore/templates/new',
-        },
-      ],
-    },
-    {
-      title: 'Signing Workflows',
-      url: '/docustore/signing',
-      icon: PenTool,
-      items: [
-        {
-          title: 'Pending My Signature',
-          url: '/docustore/signing?status=pending_your_signature',
-        },
-        {
-          title: 'Pending Others',
-          url: '/docustore/signing?status=pending_other_signatures',
-        },
-        {
-          title: 'Completed',
-          url: '/docustore/signing?status=completed',
-        },
-        {
-          title: 'Voided',
-          url: '/docustore/signing?status=voided',
-        },
-      ],
-    },
-    {
-      title: 'Folders',
-      url: '/docustore/folders',
-      icon: FolderOpen,
-      items: [
-        {
-          title: 'Manage Folders',
-          url: '/docustore/folders',
-        },
-        {
-          title: 'Shared with Me',
-          url: '/docustore/folders/shared',
-        },
-      ],
-    },
-    {
-      title: 'Team',
-      url: '/docustore/team',
-      icon: Users,
-      items: [
-        {
-          title: 'Team Members',
-          url: '/docustore/team',
-        },
-        {
-          title: 'Permissions',
-          url: '/docustore/team/permissions',
-        },
-      ],
-    },
-    {
-      title: 'Activity',
-      url: '/docustore/activity',
-      icon: History,
-      items: [
-        {
-          title: 'Recent Activity',
-          url: '/docustore/activity',
-        },
-        {
-          title: 'Audit Log',
-          url: '/docustore/activity/audit',
-        },
-      ],
-    },
-    {
-      title: 'Settings',
-      url: '/docustore/settings',
-      icon: SettingsIcon,
-      items: [
-        {
-          title: 'General',
-          url: '/docustore/settings',
-        },
-        {
-          title: 'Notifications',
-          url: '/docustore/settings/notifications',
-        },
-        {
-          title: 'Integrations',
-          url: '/docustore/settings/integrations',
-        },
-        {
-          title: 'Branding',
-          url: '/docustore/settings/branding',
         },
       ],
     },
@@ -193,8 +62,6 @@ export const docustoreSidebarData = {
 
 export function DocustoreSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [logoError, setLogoError] = useState(false);
-  const { user } = useAuth();
-  const router = useRouter();
 
   return (
     <Sidebar variant="sidebar" {...props}>
@@ -240,7 +107,7 @@ export function DocustoreSidebar({ ...props }: React.ComponentProps<typeof Sideb
         <NavSecondary items={docustoreSidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter className="space-y-2 border-t border-sidebar-border pt-2">
-        <NavUser user={docustoreSidebarData.user} />
+        <NavUser />
         <SystemProcessingMeter />
       </SidebarFooter>
     </Sidebar>

@@ -1,22 +1,17 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DocumentService } from '@/lib/services/docustore';
+import { PreviewService } from '@/lib/services/docustore/preview-service';
 import { getOrgId } from '../../../sales/_helpers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await getOrgId(request);
-    const documentId = params.id;
-    const searchParams = request.nextUrl.searchParams;
+    const { id: documentId } = await params;
 
-    const width = parseInt(searchParams.get('width') || '800', 10);
-    const height = parseInt(searchParams.get('height') || '600', 10);
-    const format = (searchParams.get('format') || 'png') as 'png' | 'jpeg';
-
-    // Get document
     const document = await DocumentService.getDocumentById(documentId, false);
 
     if (!document) {
@@ -29,14 +24,25 @@ export async function GET(
       );
     }
 
-    // TODO: Implement actual preview generation
-    // For now, return a placeholder response
-    // This would use a preview service to generate thumbnails from PDFs/images
+    const buffer = await PreviewService.generatePreview(documentId);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Preview generation not yet implemented',
-      document_id: documentId,
+    if (!buffer) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Preview not available. Document may have no PDF artifact.',
+        },
+        { status: 501 }
+      );
+    }
+
+    // pdf-to-img outputs PNG only
+    const mimeType = 'image/png';
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': mimeType,
+        'Cache-Control': 'private, max-age=3600',
+      },
     });
   } catch (error: unknown) {
     console.error('Error generating preview:', error);
@@ -49,4 +55,3 @@ export async function GET(
     );
   }
 }
-

@@ -13,6 +13,7 @@ import {
   FileText,
   FolderOpen,
   Filter,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { DocustoreSidebar } from '@/components/docustore-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -50,6 +52,7 @@ import type {
   DocumentAction,
   AdvancedSearchParams,
   DocuStoreRowItem,
+  SignerStatus,
 } from '@/types/docustore';
 
 // API response types - matches actual API response structure
@@ -69,31 +72,63 @@ interface ApiDocument {
   folder_id?: string | null;
   expires_at?: string | null;
   signing_workflow_id?: string | null;
+  signing_workflow?: {
+    signers: Array<{ id: string; email: string; name: string; status: string; signed_at?: string | null; order: number }>;
+    recipients: Array<{ id: string; email: string; name?: string | null; type: string }>;
+    status: string;
+    totalSigners: number;
+    signedCount: number;
+  };
 }
 
 // Transform API document to UI format
 function transformApiDocument(doc: ApiDocument): SigningDocument {
-  // Determine signing status based on document status and metadata
+  const sw = doc.signing_workflow;
   let signingStatus: DocumentSigningStatus = 'draft';
-  if (doc.status === 'active') {
-    const signingMeta = doc.metadata?.signing_status as string | undefined;
-    if (signingMeta === 'pending_your_signature') {
-      signingStatus = 'pending_your_signature';
-    } else if (signingMeta === 'pending_other_signatures') {
+  if (sw?.status === 'completed') {
+    signingStatus = 'completed';
+  } else if (sw?.status === 'voided' || sw?.status === 'expired') {
+    signingStatus = 'voided';
+  } else if (sw?.status === 'pending' || sw?.status === 'in_progress') {
+    if (sw.signedCount > 0 && sw.signedCount < sw.totalSigners) {
       signingStatus = 'pending_other_signatures';
-    } else if (signingMeta === 'completed' || doc.metadata?.completed) {
-      signingStatus = 'completed';
     } else {
       signingStatus = 'pending_other_signatures';
     }
+  } else if (doc.status === 'active') {
+    const signingMeta = doc.metadata?.signing_status as string | undefined;
+    if (signingMeta === 'pending_your_signature') signingStatus = 'pending_your_signature';
+    else if (signingMeta === 'pending_other_signatures') signingStatus = 'pending_other_signatures';
+    else if (signingMeta === 'completed' || doc.metadata?.completed) signingStatus = 'completed';
+    else signingStatus = 'pending_other_signatures';
   } else if (doc.status === 'archived') {
     signingStatus = 'completed';
   }
 
-  // Extract folder info from document type
-  const folderName = doc.document_type 
-    ? doc.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  const folderName = doc.document_type
+    ? doc.document_type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
     : 'Uncategorized';
+
+  const signers = (sw?.signers || []).map((s) => ({
+    id: s.id,
+    documentId: doc.id,
+    email: s.email,
+    name: s.name,
+    role: 'signer' as const,
+    status: s.status as SignerStatus,
+    signedAt: s.signed_at ?? null,
+    order: s.order,
+    avatarUrl: null,
+    avatarInitials: s.name.slice(0, 2).toUpperCase(),
+  }));
+  const recipients = (sw?.recipients || []).map((r) => ({
+    id: r.id,
+    documentId: doc.id,
+    email: r.email,
+    name: r.name ?? undefined,
+    type: r.type as 'cc' | 'bcc',
+    sentAt: null,
+  }));
 
   return {
     id: doc.id,
@@ -103,10 +138,10 @@ function transformApiDocument(doc: ApiDocument): SigningDocument {
     requiresMySignature: signingStatus === 'pending_your_signature',
     folderId: doc.folder_id || doc.document_type || 'uncategorized',
     folderName,
-    signers: [],
-    recipients: [],
-    totalSigners: 0,
-    signedCount: 0,
+    signers,
+    recipients,
+    totalSigners: sw?.totalSigners ?? 0,
+    signedCount: sw?.signedCount ?? 0,
     entityLinks: [],
     tags: doc.tags || [],
     createdAt: doc.created_at,
@@ -132,6 +167,7 @@ async function fetchDocuments(params?: {
   if (params?.search) searchParams.set('search', params.search);
   if (params?.limit) searchParams.set('limit', String(params.limit));
   if (params?.offset) searchParams.set('offset', String(params.offset));
+  searchParams.set('includeSigningWorkflow', 'true');
 
   const response = await fetch(`/api/v1/docustore?${searchParams.toString()}`);
   if (!response.ok) {
@@ -212,6 +248,7 @@ export default function DocuStorePage() {
   // Data state
   const [documents, setDocuments] = useState<SigningDocument[]>([]);
   const [folders, setFolders] = useState<DocuStoreFolder[]>([]);
+  const [foldersError, setFoldersError] = useState(false);
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({
     all: 0,
     draft: 0,
@@ -256,7 +293,7 @@ export default function DocuStorePage() {
   }, [authLoading, isAuthenticated, router]);
 
   // Load folders from API
-  const loadFolders = useCallback(async () => {
+  const loadFolders = useCallback(async (): Promise<{ success: boolean; folders: DocuStoreFolder[] }> => {
     try {
       const response = await fetch('/api/v1/docustore/folders');
       if (!response.ok) {
@@ -264,7 +301,6 @@ export default function DocuStorePage() {
       }
       const result = await response.json();
       if (result.success && result.data) {
-        // Transform folder tree to flat list for sidebar
         const flattenFolders = (tree: unknown[]): DocuStoreFolder[] => {
           const flat: DocuStoreFolder[] = [];
           for (const node of tree) {
@@ -300,10 +336,19 @@ export default function DocuStorePage() {
           }
           return flat;
         };
-        setFolders(flattenFolders(result.data));
+        const apiFolders = flattenFolders(result.data);
+        setFolders(apiFolders);
+        setFoldersError(false);
+        return { success: true, folders: apiFolders };
       }
+      setFolders([]);
+      setFoldersError(false);
+      return { success: true, folders: [] };
     } catch (error) {
       console.error('Error loading folders:', error);
+      setFoldersError(true);
+      setFolders([]);
+      return { success: false, folders: [] };
     }
   }, []);
 
@@ -323,26 +368,25 @@ export default function DocuStorePage() {
       
       const result = await fetchDocuments(params);
       setDocuments(result.documents);
-      
-      // Load folders from API
-      await loadFolders();
-      
-      // Build folders from document types as fallback
-      const derivedFolders = buildFoldersFromDocuments(result.documents);
-      if (folders.length === 0) {
-        setFolders(derivedFolders);
+
+      const foldersResult = await loadFolders();
+      const effectiveFolders =
+        foldersResult.success && foldersResult.folders.length === 0
+          ? buildFoldersFromDocuments(result.documents)
+          : foldersResult.folders;
+      if (foldersResult.success && foldersResult.folders.length === 0) {
+        setFolders(effectiveFolders);
       }
-      
-      // Calculate status counts
+
       setStatusCounts(calculateStatusCounts(result.documents));
-      setFolderCounts(calculateFolderCounts(result.documents, folders.length > 0 ? folders : derivedFolders));
+      setFolderCounts(calculateFolderCounts(result.documents, effectiveFolders));
     } catch (error) {
       console.error('Error loading documents:', error);
       toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedStatus, folders, loadFolders]);
+  }, [searchTerm, selectedStatus, loadFolders]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -705,6 +749,14 @@ export default function DocuStorePage() {
       <SidebarInset>
         <AppHeader title="DocuStore" subtitle="Document Management & Digital Signing" />
         <div className="flex flex-1 flex-col gap-6 p-6">
+          {foldersError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load folders. Documents are shown without folder grouping. Try refreshing.
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Dashboard Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
