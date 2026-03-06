@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-03-06T09:22:53.348Z",
+  "sourceFile": "c:\\Users\\garet\\Downloads\\STOCK TAKE - COUNTED UPDATES - 26-02 - 15_45.xlsx",
+  "dryRun": false,
+  "parsing": {
+    "totalRawRows": 2196,
+    "totalAfterDedup": 2194,
+    "duplicatesResolved": 2,
+    "locationBreakdown": {
+      "NXT/NXT STOCK": 1832,
+      "NXT/NXT STOCK/Rental": 190,
+      "NXT/NXT STOCK/Repairs": 74,
+      "NXT/NXT STOCK/Secondhand": 65,
+      "NXT/NXT STOCK/Studio Rentals": 33
+    }
+  },
+  "locations": {
+    "NXT/NXT STOCK": "361f0d87-ee14-4663-b09b-24316c916757",
+    "NXT/NXT STOCK/Rental": "0a9b54ef-d215-4b9b-a050-a49d6956d339",
+    "NXT/NXT STOCK/Repairs": "66e09181-bc4d-4a9f-8951-c3fe87f4eb1c",
+    "NXT/NXT STOCK/Secondhand": "73a93994-2551-49a2-a0d6-599275b1ddc3",
+    "NXT/NXT STOCK/Studio Rentals": "75f78bfe-8e00-49cb-8a7c-edbb309e7ebc"
+  },
+  "matching": {
+    "matched": 2194,
+    "unmatched": 0,
+    "matchRate": "100.0%"
+  },
+  "unmatchedSupplier": null,
+  "import": {
+    "sohCreated": 2194,
+    "sohUpdated": 0,
+    "unmatchedProductsCreated": 0,
+    "stockMovementsCreated": 2194,
+    "errors": []
+  },
+  "inventoryValue": {
+    "matchedValue": 1940026.7086999987,
+    "totalQty": 12333
+  },
+  "unmatchedSkus": []
+}

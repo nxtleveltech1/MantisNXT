@@ -31,7 +31,7 @@ BEGIN
       LIMIT 1
     )
     WHERE cost_price IS NULL;
-x110
+
   ELSE
     -- View: recreate with all required columns
     DROP VIEW IF EXISTS public.inventory_items;
