@@ -31,3 +31,27 @@
 - Stock-take impacted products with blank inventory description: **0**.
 - Screenshot sample SKUs render non-empty product names.
 - `/api/inventory` response shape unchanged.
+
+## Reset + Reapply Execution Record (March 7, 2026)
+- Execution mode: **Neon MCP-only writes** (`scripts/migrations/apply-sql-via-mcp.ts`) with `NEON_DATABASE=mantis_issoh`.
+- Source file: `c:\Users\garet\Downloads\STOCK TAKE - COUNTED UPDATES - 26-02 - 15_45.xlsx`.
+- Generated SQL: `scripts/imports/reports/generated/stocktake-reload.sql`.
+
+### Before Execution (captured 2026-03-07)
+- `reference_doc='STOCK_TAKE_2026-02-26'` movement rows: **2,294**.
+- Distinct impacted products: **2,194**.
+- Duplicate movement delta: **100**.
+- `UNMATCHED` stock-take products (`attrs_json.source='stock_take'`): **1,503**.
+
+### After Execution (captured 2026-03-07)
+- `reference_doc='STOCK_TAKE_2026-02-26'` movement rows: **2,194**.
+- Distinct impacted products: **2,194**.
+- Duplicate movement delta: **0**.
+- Spreadsheet parity check: **2,194 / 2,194 exact qty matches**.
+- `UNMATCHED` stock-take products (`attrs_json.source='stock_take'`): **1,563**.
+- `public.inventory_items.name` blank count: **0**.
+- Stock-take impacted `inventory_items.description` blank count: **0**.
+
+### Notes
+- `UNMATCHED` count changed from 1,503 -> 1,563 because matching now excludes `UNMATCHED` as a primary supplier source; true unmatched SKUs are rebuilt from current input during reapply.
+- API contract was not changed; this execution is operational data remediation only.

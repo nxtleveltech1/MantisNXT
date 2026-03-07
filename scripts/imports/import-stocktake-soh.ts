@@ -12,11 +12,12 @@
  * - This is fill-blanks only; existing non-empty values are preserved.
  *
  * Usage:
- *   bun scripts/imports/import-stocktake-soh.ts <xlsx-path> [--dry-run]
+ *   bun scripts/imports/import-stocktake-soh.ts <xlsx-path> [--dry-run] [--report-out <path>]
  *
  * Example:
  *   bun scripts/imports/import-stocktake-soh.ts "C:\Users\garet\Downloads\STOCK TAKE.xlsx"
  *   bun scripts/imports/import-stocktake-soh.ts "C:\Users\garet\Downloads\STOCK TAKE.xlsx" --dry-run
+ *   bun scripts/imports/import-stocktake-soh.ts "C:\Users\garet\Downloads\STOCK TAKE.xlsx" --report-out "scripts/imports/reports/generated/run.json"
  *
  * Requirements:
  *   - DATABASE_URL or NEON_SPP_DATABASE_URL environment variable
@@ -561,10 +562,14 @@ async function importSohAndMovements(
 async function main() {
   const xlsxPath = process.argv[2];
   const dryRun = process.argv.includes('--dry-run');
+  const reportOutFlagIndex = process.argv.indexOf('--report-out');
+  const reportOutArg = reportOutFlagIndex >= 0 ? process.argv[reportOutFlagIndex + 1] : undefined;
   const databaseUrl = process.env.DATABASE_URL || process.env.NEON_SPP_DATABASE_URL;
 
   if (!xlsxPath) {
-    console.error('Usage: bun scripts/imports/import-stocktake-soh.ts <xlsx-path> [--dry-run]');
+    console.error(
+      'Usage: bun scripts/imports/import-stocktake-soh.ts <xlsx-path> [--dry-run] [--report-out <path>]'
+    );
     process.exit(1);
   }
   if (!databaseUrl) {
@@ -829,26 +834,30 @@ async function main() {
       console.log();
     }
 
-    // Save report JSON
-    const reportPath = resolve(
-      dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')),
+    // Save report JSON (default path is timestamped to avoid overwriting tracked baseline reports).
+    const reportTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const defaultReportPath = resolve(
+      process.cwd(),
+      'scripts',
+      'imports',
       'reports',
-      'stocktake-2026-02-26-report.json'
+      'generated',
+      `stocktake-2026-02-26-report-${reportTimestamp}.json`
     );
+    const reportPath = reportOutArg ? resolve(process.cwd(), reportOutArg) : defaultReportPath;
     try {
+      mkdirSync(dirname(reportPath), { recursive: true });
       writeFileSync(reportPath, JSON.stringify(report, null, 2));
       console.log(`Report saved: ${reportPath}`);
     } catch {
-      const fallbackPath = resolve(
-        process.cwd(),
-        'scripts',
-        'imports',
-        'reports',
-        'stocktake-2026-02-26-report.json'
+      const fallbackDir = resolve(process.cwd(), 'scripts', 'imports', 'reports', 'generated');
+      mkdirSync(fallbackDir, { recursive: true });
+      const fallbackReportPath = resolve(
+        fallbackDir,
+        `stocktake-2026-02-26-report-${reportTimestamp}.json`
       );
-      mkdirSync(resolve(process.cwd(), 'scripts', 'imports', 'reports'), { recursive: true });
-      writeFileSync(fallbackPath, JSON.stringify(report, null, 2));
-      console.log(`Report saved: ${fallbackPath}`);
+      writeFileSync(fallbackReportPath, JSON.stringify(report, null, 2));
+      console.log(`Report saved: ${fallbackReportPath}`);
     }
 
     console.log('\nDone.');

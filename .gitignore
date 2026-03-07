@@ -243,3 +243,6 @@ MantisNXT.zip
 
 # clerk configuration (can include secrets)
 /.clerk/
+# Generated stock-take operation artefacts
+scripts/imports/reports/generated/
+database/operations/generated/
