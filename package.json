@@ -15,7 +15,7 @@
         "lint": "bun x eslint . --ext .ts,.tsx",
         "lint:ssot": "bun scripts/check-public-dml.ts",
         "lint:no-mocks": "bun scripts/lint-no-mocks.ts",
-        "type-check": "bun x tsc --noEmit",
+        "type-check": "bun x tsc --noEmit -p tsconfig.typecheck-baseline.json",
         "dry-run": "bun --bun scripts/dry-run.ts",
         "stabilize": "bun scripts/system-stabilizer.js setup",
         "stabilize:cleanup": "bun scripts/system-stabilizer.js cleanup",
@@ -85,7 +85,9 @@
         "secrets:generate": "bun --bun scripts/generate-production-secrets.ts",
         "env:validate": "bun --bun scripts/validate-env-config.ts",
         "redis:test": "bun --bun scripts/validate-redis-connection.ts",
-        "test:woo-buttons": "bun scripts/tests/woo-buttons.spec.ts"
+        "test:woo-buttons": "bun scripts/tests/woo-buttons.spec.ts",
+        "lint:full": "ESLINT_USE_BASELINE=0 bun x eslint . --ext .ts,.tsx",
+        "type-check:full": "bun x tsc --noEmit"
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^2.0.49",

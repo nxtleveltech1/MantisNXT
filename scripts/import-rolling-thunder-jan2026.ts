@@ -13,7 +13,9 @@ import pg from 'pg';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
-  console.error('DATABASE_URL not set. Run with: DATABASE_URL=... bun run scripts/import-rolling-thunder-jan2026.ts');
+  console.error(
+    'DATABASE_URL not set. Run with: DATABASE_URL=... bun run scripts/import-rolling-thunder-jan2026.ts'
+  );
   process.exit(1);
 }
 
@@ -73,11 +75,14 @@ function parseCSV(text: string): CsvRow[] {
     const sku = values[2]?.trim();
     if (!sku) continue;
 
+    const parsedDescription = values[3]?.trim();
+
     rows.push({
       brand: values[0]?.trim() || '',
       category: values[1]?.trim() || '',
       sku,
-      description: values[3]?.trim() || '',
+      // Fallback to SKU so blank source description cannot wipe product naming.
+      description: parsedDescription || sku,
       sup_soh: parseInt(values[4]) || 0,
       dealer_excl: parseFloat(values[5]) || 0,
       rsp: parseFloat(values[6]) || 0,
@@ -96,11 +101,14 @@ function deduplicateBySku(rows: CsvRow[]): CsvRow[] {
   for (const row of rows) {
     if (map.has(row.sku)) {
       dupeCount++;
-      console.log(`  ⚠ Duplicate SKU "${row.sku}" at row ${row.row_num} (overwriting row ${map.get(row.sku)!.row_num})`);
+      console.log(
+        `  ⚠ Duplicate SKU "${row.sku}" at row ${row.row_num} (overwriting row ${map.get(row.sku)!.row_num})`
+      );
     }
     map.set(row.sku, row);
   }
-  if (dupeCount > 0) console.log(`  → ${dupeCount} duplicate SKU(s) resolved (last occurrence wins)\n`);
+  if (dupeCount > 0)
+    console.log(`  → ${dupeCount} duplicate SKU(s) resolved (last occurrence wins)\n`);
   return Array.from(map.values());
 }
 
@@ -175,7 +183,14 @@ async function main() {
       `INSERT INTO spp.pricelist_upload
         (upload_id, supplier_id, received_at, filename, currency, valid_from, row_count, status, created_at, updated_at)
        VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'received', NOW(), NOW())`,
-      [UPLOAD_ID, SUPPLIER_ID, 'January_2026_Pricelist_Combined.csv', CURRENCY, VALID_FROM, rows.length]
+      [
+        UPLOAD_ID,
+        SUPPLIER_ID,
+        'January_2026_Pricelist_Combined.csv',
+        CURRENCY,
+        VALID_FROM,
+        rows.length,
+      ]
     );
     console.log(`   Upload ID: ${UPLOAD_ID}`);
 

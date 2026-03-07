@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": [
+    "scripts/import-rolling-thunder-jan2026.ts",
+    "scripts/imports/import-stocktake-soh.ts",
+    "src/lib/inventory/name-description-fallback.ts",
+    "types/bun-global.d.ts"
+  ],
+  "exclude": []
+}

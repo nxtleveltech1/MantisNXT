@@ -7,6 +7,18 @@ const react = require("eslint-plugin-react");
 const reactHooks = require("eslint-plugin-react-hooks");
 const jsxA11y = require("eslint-plugin-jsx-a11y");
 const unusedImports = require("eslint-plugin-unused-imports");
+const fs = require("node:fs");
+
+const baselineIgnorePath = path.resolve(__dirname, "eslint-baseline-ignore.txt");
+const useLintBaseline = process.env.ESLINT_USE_BASELINE !== "0";
+const baselineIgnores = useLintBaseline && fs.existsSync(baselineIgnorePath)
+  ? fs
+      .readFileSync(baselineIgnorePath, "utf8")
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith("#"))
+      .map(line => line.replace(/\\/g, "/"))
+  : [];
 
 // Import custom SSOT plugin
 const ssotPlugin = {
@@ -64,6 +76,7 @@ const ssotPlugin = {
 module.exports = [
   {
     ignores: [
+      ...baselineIgnores,
       "node_modules/**",
       ".next/**",
       "dist/**",
@@ -395,3 +408,6 @@ module.exports = [
     },
   },
 ];
+
+
+

@@ -6,6 +6,11 @@
  * in core.supplier_product, creates internal stock locations, updates SOH,
  * and handles unmatched SKUs under an "UNMATCHED" supplier with cost=0.
  *
+ * Text sync behavior:
+ * - For already-matched products, fills blank `name_from_supplier` and
+ *   blank `attrs_json.description` from stock-take product text.
+ * - This is fill-blanks only; existing non-empty values are preserved.
+ *
  * Usage:
  *   bun scripts/imports/import-stocktake-soh.ts <xlsx-path> [--dry-run]
  *
@@ -76,6 +81,7 @@ interface ImportReport {
     sohCreated: number;
     sohUpdated: number;
     unmatchedProductsCreated: number;
+    matchedTextUpdated?: number;
     stockMovementsCreated: number;
     errors: string[];
   };
@@ -179,10 +185,7 @@ function deduplicateRows(rows: StockTakeRow[]): DeduplicatedRow[] {
 // Step 2: Create/find internal stock locations
 // ---------------------------------------------------------------------------
 
-async function ensureLocations(
-  client: Client,
-  dryRun: boolean
-): Promise<Record<string, string>> {
+async function ensureLocations(client: Client, dryRun: boolean): Promise<Record<string, string>> {
   const locationIds: Record<string, string> = {};
 
   for (const [spreadsheetName, dbName] of Object.entries(LOCATION_MAP)) {
@@ -270,6 +273,82 @@ async function fetchCurrentCosts(
 }
 
 // ---------------------------------------------------------------------------
+// Step 3c: Fill blank matched product name/description from stock-take text
+// ---------------------------------------------------------------------------
+
+async function syncMatchedProductText(
+  client: Client,
+  matchedProducts: MatchedProduct[],
+  dryRun: boolean
+): Promise<number> {
+  if (dryRun || matchedProducts.length === 0) return 0;
+
+  let updated = 0;
+  const seen = new Set<string>();
+  const deduped = matchedProducts.filter(mp => {
+    if (seen.has(mp.supplierProductId)) return false;
+    seen.add(mp.supplierProductId);
+    return true;
+  });
+
+  const batchSize = 200;
+  for (let i = 0; i < deduped.length; i += batchSize) {
+    const batch = deduped.slice(i, i + batchSize);
+    const values: unknown[] = [];
+    const placeholders: string[] = [];
+    let p = 1;
+
+    for (const row of batch) {
+      placeholders.push(`($${p++}::uuid, $${p++}::text)`);
+      values.push(row.supplierProductId, row.row.productName);
+    }
+
+    const result = await client.query(
+      `
+      WITH incoming(supplier_product_id, product_name) AS (
+        VALUES ${placeholders.join(', ')}
+      ),
+      candidate AS (
+        SELECT
+          sp.supplier_product_id,
+          incoming.product_name,
+          COALESCE(NULLIF(BTRIM(sp.name_from_supplier), ''), '') = '' AS needs_name,
+          COALESCE(NULLIF(BTRIM(sp.attrs_json->>'description'), ''), '') = '' AS needs_description
+        FROM core.supplier_product sp
+        JOIN incoming ON incoming.supplier_product_id = sp.supplier_product_id
+        WHERE NULLIF(BTRIM(incoming.product_name), '') IS NOT NULL
+      )
+      UPDATE core.supplier_product sp
+      SET
+        name_from_supplier = CASE
+          WHEN candidate.needs_name THEN candidate.product_name
+          ELSE sp.name_from_supplier
+        END,
+        attrs_json = CASE
+          WHEN candidate.needs_description THEN
+            jsonb_set(
+              COALESCE(sp.attrs_json, '{}'::jsonb),
+              '{description}',
+              to_jsonb(candidate.product_name),
+              true
+            )
+          ELSE sp.attrs_json
+        END,
+        updated_at = NOW()
+      FROM candidate
+      WHERE sp.supplier_product_id = candidate.supplier_product_id
+        AND (candidate.needs_name OR candidate.needs_description)
+      `,
+      values
+    );
+
+    updated += result.rowCount ?? 0;
+  }
+
+  return updated;
+}
+
+// ---------------------------------------------------------------------------
 // Step 4: Handle unmatched — create UNMATCHED supplier + supplier_products
 // ---------------------------------------------------------------------------
 
@@ -346,7 +425,11 @@ async function createUnmatchedProducts(
               u.row.sku,
               u.row.productName,
               uomNormalized,
-              JSON.stringify({ source: 'stock_take', cost_excluding: 0 }),
+              JSON.stringify({
+                source: 'stock_take',
+                cost_excluding: 0,
+                description: u.row.productName,
+              }),
             ]
           );
         }
@@ -402,7 +485,13 @@ async function importSohAndMovements(
         sohPlaceholders.push(
           `($${p++}::uuid, $${p++}::uuid, $${p++}::uuid, $${p++}::integer, $${p++}::numeric, NOW(), 'import'::varchar, NOW())`
         );
-        sohValues.push(randomUUID(), item.locationId, item.supplierProductId, item.qty, item.unitCost);
+        sohValues.push(
+          randomUUID(),
+          item.locationId,
+          item.supplierProductId,
+          item.qty,
+          item.unitCost
+        );
       }
 
       const sohResult = await client.query(
@@ -425,7 +514,13 @@ async function importSohAndMovements(
         mvPlaceholders.push(
           `($${p++}::uuid, 'ADJUSTMENT', $${p++}::uuid, $${p++}::uuid, $${p++}::integer, $${p++}::varchar, 'Physical stock take count', NOW(), NOW())`
         );
-        mvValues.push(randomUUID(), item.supplierProductId, item.locationId, item.qty, REFERENCE_DOC);
+        mvValues.push(
+          randomUUID(),
+          item.supplierProductId,
+          item.locationId,
+          item.qty,
+          REFERENCE_DOC
+        );
       }
 
       const mvResult = await client.query(
@@ -440,10 +535,16 @@ async function importSohAndMovements(
       await client.query('COMMIT');
 
       if (batchNum % 5 === 0 || batchNum === totalBatches) {
-        console.log(`   Batch ${batchNum}/${totalBatches} done (${sohUpserted} SOH, ${movementsCreated} movements)`);
+        console.log(
+          `   Batch ${batchNum}/${totalBatches} done (${sohUpserted} SOH, ${movementsCreated} movements)`
+        );
       }
     } catch (err) {
-      try { await client.query('ROLLBACK'); } catch { /* already rolled back */ }
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        /* already rolled back */
+      }
       const msg = `Batch ${batchNum} failed: ${err instanceof Error ? err.message : String(err)}`;
       errors.push(msg);
       console.error(`   ERROR: ${msg}`);
@@ -473,12 +574,12 @@ async function main() {
 
   if (dryRun) console.log('=== DRY RUN MODE — no writes will be performed ===\n');
 
-    const client = new Client({
-      connectionString: databaseUrl,
-      keepAlive: true,
-      connectionTimeoutMillis: 30000,
-      query_timeout: 60000,
-    } as Record<string, unknown>);
+  const client = new Client({
+    connectionString: databaseUrl,
+    keepAlive: true,
+    connectionTimeoutMillis: 30000,
+    query_timeout: 60000,
+  } as Record<string, unknown>);
   const report: Partial<ImportReport> = {
     timestamp: new Date().toISOString(),
     sourceFile: xlsxPath,
@@ -527,7 +628,9 @@ async function main() {
       if (!locationIds[r.location]) unknownLocations.add(r.location);
     }
     if (unknownLocations.size > 0) {
-      console.warn(`   WARNING: ${unknownLocations.size} unknown location(s) — mapping to NXT Main Stock`);
+      console.warn(
+        `   WARNING: ${unknownLocations.size} unknown location(s) — mapping to NXT Main Stock`
+      );
       for (const ul of unknownLocations) {
         locationIds[ul] = locationIds['NXT/NXT STOCK'];
         console.warn(`     "${ul}" -> NXT Main Stock`);
@@ -570,10 +673,12 @@ async function main() {
       mp.unitCost = costMap.get(mp.supplierProductId) ?? null;
     }
 
+    const textSynced = await syncMatchedProductText(client, matchedProducts, dryRun);
+    console.log(`   Text fields synchronized on matched products: ${textSynced}`);
+    console.log();
+
     const matchRate =
-      allSkus.length > 0
-        ? ((skuMatches.size / allSkus.length) * 100).toFixed(1)
-        : '0.0';
+      allSkus.length > 0 ? ((skuMatches.size / allSkus.length) * 100).toFixed(1) : '0.0';
 
     report.matching = {
       matched: skuMatches.size,
@@ -639,6 +744,7 @@ async function main() {
 
     const importResult = await importSohAndMovements(client, importItems, dryRun);
     console.log(`   SOH upserted: ${importResult.sohUpserted}`);
+    console.log(`   Text sync updated: ${textSynced}`);
     console.log(`   Stock movements: ${importResult.movementsCreated}`);
     if (importResult.errors.length > 0) {
       console.log(`   Errors: ${importResult.errors.length}`);
@@ -649,6 +755,7 @@ async function main() {
       sohCreated: importResult.sohUpserted,
       sohUpdated: 0,
       unmatchedProductsCreated: unmatchedProducts.length,
+      matchedTextUpdated: textSynced,
       stockMovementsCreated: importResult.movementsCreated,
       errors: importResult.errors,
     };
@@ -683,6 +790,7 @@ async function main() {
     console.log(`  Unmatched SKUs:      ${report.matching!.unmatched}`);
     console.log(`  Match rate:          ${report.matching!.matchRate}`);
     console.log(`  SOH upserted:        ${importResult.sohUpserted}`);
+    console.log(`  Text sync updated:   ${textSynced}`);
     console.log(`  Stock movements:     ${importResult.movementsCreated}`);
     console.log(`  Total qty counted:   ${totalQty}`);
     console.log(`  Matched inv value:   R ${matchedValue.toFixed(2)}`);
@@ -692,13 +800,19 @@ async function main() {
     if (unmatchedProducts.length > 0 && unmatchedProducts.length <= 50) {
       console.log('--- Unmatched SKUs ---');
       for (const u of unmatchedProducts) {
-        console.log(`  ${u.row.sku.padEnd(25)} ${u.row.productName.substring(0, 60).padEnd(62)} QOH: ${u.row.qoh}`);
+        console.log(
+          `  ${u.row.sku.padEnd(25)} ${u.row.productName.substring(0, 60).padEnd(62)} QOH: ${u.row.qoh}`
+        );
       }
       console.log();
     } else if (unmatchedProducts.length > 50) {
-      console.log(`--- ${unmatchedProducts.length} unmatched SKUs (see report JSON for full list) ---`);
+      console.log(
+        `--- ${unmatchedProducts.length} unmatched SKUs (see report JSON for full list) ---`
+      );
       for (const u of unmatchedProducts.slice(0, 20)) {
-        console.log(`  ${u.row.sku.padEnd(25)} ${u.row.productName.substring(0, 60).padEnd(62)} QOH: ${u.row.qoh}`);
+        console.log(
+          `  ${u.row.sku.padEnd(25)} ${u.row.productName.substring(0, 60).padEnd(62)} QOH: ${u.row.qoh}`
+        );
       }
       console.log(`  ... and ${unmatchedProducts.length - 20} more`);
       console.log();
@@ -725,7 +839,13 @@ async function main() {
       writeFileSync(reportPath, JSON.stringify(report, null, 2));
       console.log(`Report saved: ${reportPath}`);
     } catch {
-      const fallbackPath = resolve(process.cwd(), 'scripts', 'imports', 'reports', 'stocktake-2026-02-26-report.json');
+      const fallbackPath = resolve(
+        process.cwd(),
+        'scripts',
+        'imports',
+        'reports',
+        'stocktake-2026-02-26-report.json'
+      );
       mkdirSync(resolve(process.cwd(), 'scripts', 'imports', 'reports'), { recursive: true });
       writeFileSync(fallbackPath, JSON.stringify(report, null, 2));
       console.log(`Report saved: ${fallbackPath}`);

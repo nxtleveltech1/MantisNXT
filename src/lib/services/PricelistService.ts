@@ -483,7 +483,7 @@ export class PricelistService {
         ? `
           $1::uuid as supplier_id,
           r.supplier_sku,
-          r.name,
+          COALESCE(NULLIF(BTRIM(r.name), ''), r.supplier_sku),
           r.brand,
           r.uom,
           r.pack_size,
@@ -499,7 +499,7 @@ export class PricelistService {
         : `
           $1::uuid as supplier_id,
           r.supplier_sku,
-          r.name,
+          COALESCE(NULLIF(BTRIM(r.name), ''), r.supplier_sku),
           r.uom,
           r.pack_size,
           r.barcode,
@@ -528,14 +528,14 @@ export class PricelistService {
         ORDER BY r.supplier_sku, r.row_num ASC
         ON CONFLICT ON CONSTRAINT supplier_product_supplier_id_supplier_sku_key DO UPDATE
         SET
-          name_from_supplier = EXCLUDED.name_from_supplier
+          name_from_supplier = COALESCE(NULLIF(BTRIM(EXCLUDED.name_from_supplier), ''), core.supplier_product.name_from_supplier)
           ${upsertBrandUpdate},
           uom = EXCLUDED.uom,
           pack_size = EXCLUDED.pack_size,
           barcode = EXCLUDED.barcode,
           stock_status = COALESCE(EXCLUDED.stock_status, core.supplier_product.stock_status),
           new_stock_eta = COALESCE(EXCLUDED.new_stock_eta, core.supplier_product.new_stock_eta),
-          attrs_json = EXCLUDED.attrs_json,
+          attrs_json = COALESCE(EXCLUDED.attrs_json, core.supplier_product.attrs_json),
           last_seen_at = NOW(),
           is_active = true,
           updated_at = NOW()
@@ -618,7 +618,7 @@ export class PricelistService {
       // Step 4: Update stock on hand (SUP SOH) from attrs_json.stock or attrs_json.stock_qty
       // Location already resolved before transaction via getOrCreateSupplierLocation
       if (defaultLocationId) {
-          const stockUpdateQuery = `
+        const stockUpdateQuery = `
             INSERT INTO core.stock_on_hand (
               location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
             )
@@ -650,14 +650,16 @@ export class PricelistService {
               as_of_ts = NOW(),
               source = 'import'
           `;
-          
-          try {
-            await client.query(stockUpdateQuery, [upload.supplier_id, uploadId, defaultLocationId]);
-          } catch (stockError) {
-            // Log but don't fail the merge if stock update fails
-            console.warn('[PricelistService] Stock update failed:', stockError);
-            errors.push(`Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
-          }
+
+        try {
+          await client.query(stockUpdateQuery, [upload.supplier_id, uploadId, defaultLocationId]);
+        } catch (stockError) {
+          // Log but don't fail the merge if stock update fails
+          console.warn('[PricelistService] Stock update failed:', stockError);
+          errors.push(
+            `Stock update warning: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`
+          );
+        }
       }
 
       // Update upload status and invalidate cache on success
