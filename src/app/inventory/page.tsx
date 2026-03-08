@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout, { findSectionForPath } from '@/components/layout/AppLayout';
 import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard';
 import AsyncBoundary from '@/components/ui/AsyncBoundary';
-import InventoryManagement from '@/components/inventory/InventoryManagement';
+import InventoryCatalogView from '@/components/inventory/InventoryCatalogView';
 import SupplierInventoryView from '@/components/inventory/SupplierInventoryView';
 import ProductStockManagement from '@/components/inventory/ProductStockManagement';
 import InventoryDetailView from '@/components/inventory/InventoryDetailView';
@@ -58,7 +58,7 @@ export default function InventoryPage() {
           </TabsContent>
 
           <TabsContent value="management" className="space-y-6">
-            <InventoryManagement />
+            <InventoryCatalogView />
           </TabsContent>
 
           <TabsContent value="supplier-view" className="space-y-6">
