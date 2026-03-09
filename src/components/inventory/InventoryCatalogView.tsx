@@ -396,7 +396,9 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
     const lowStockCount = filteredItems.filter(i => i.current_stock <= i.reorder_point && i.current_stock > 0).length;
     const outOfStockCount = filteredItems.filter(i => i.current_stock === 0).length;
     const criticalStockCount = filteredItems.filter(i => i.current_stock < 10 && i.current_stock > 0).length;
-    return { totalValue, lowStockCount, outOfStockCount, criticalStockCount, totalItems: filteredItems.length };
+    const totalProducts = new Set(filteredItems.map(i => (i as Record<string, unknown>).product_id ?? i.product?.id ?? i.id)).size;
+    const totalSkus = new Set(filteredItems.map(i => i.product?.sku).filter(Boolean)).size;
+    return { totalValue, lowStockCount, outOfStockCount, criticalStockCount, totalItems: filteredItems.length, totalProducts, totalSkus };
   }, [filteredItems]);
 
   // --- Derived filter options ---
@@ -801,7 +803,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
         )}
 
         {/* Metrics row — SPP style */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -843,6 +845,28 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
                   <p className="mt-1 text-2xl font-bold">{loading ? <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" /> : stats.criticalStockCount.toLocaleString()}</p>
                 </div>
                 <Activity className="text-muted-foreground h-8 w-8" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm">TOTAL PRODUCTS</p>
+                  <p className="mt-1 text-2xl font-bold">{loading ? <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" /> : stats.totalProducts.toLocaleString()}</p>
+                </div>
+                <Package className="text-muted-foreground h-8 w-8" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm">TOTAL SKUS</p>
+                  <p className="mt-1 text-2xl font-bold">{loading ? <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" /> : stats.totalSkus.toLocaleString()}</p>
+                </div>
+                <BarChart3 className="text-muted-foreground h-8 w-8" />
               </div>
             </CardContent>
           </Card>
