@@ -60,7 +60,7 @@ export function parseStockTakeWorkbook(filePath: string): StockTakeParseResult {
   const nameHeader = findHeader(headers, ['Product Name', 'Description', 'Descirption']);
   const locationHeader = findHeader(headers, ['Location']) ?? null;
   const uomHeader = findHeader(headers, ['UOM']) ?? null;
-  const qohHeader = findHeader(headers, ['QOH', 'Qty', 'Quantity']);
+  const qohHeader = findHeader(headers, ['QOH', 'Qty', 'Quantity', 'SOH']);
 
   if (!skuHeader || !nameHeader || !qohHeader) {
     throw new Error(
