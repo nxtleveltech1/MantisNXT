@@ -1,0 +1,12 @@
+---
+description: Prevent Superpowers SessionStart hook script from being opened or referenced
+alwaysApply: true
+---
+
+# Superpowers hook
+
+- Do not open, reference, or suggest opening the Superpowers plugin SessionStart bash script (the one that injects "using-superpowers" context).
+- If the user says that script "keeps trying to open" or wants to fix it:
+  1. **To stop the script from running:** Disable or uninstall the "Superpowers" (or "Claude Code" skills) extension in Cursor so the SessionStart hook is no longer registered.
+  2. **To remove the warning from the injected message:** If they use custom skills, move them from `~/.config/superpowers/skills` to `~/.claude/skills`, then delete the folder `~/.config/superpowers/skills`.
+- Do not add or edit hooks that run this script in this project.
