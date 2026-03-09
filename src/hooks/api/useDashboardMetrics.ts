@@ -3,6 +3,8 @@
  *
  * Phase 1 cache integration for dashboard metrics endpoint.
  * Target: 70-90% response time reduction (500ms → 50-150ms)
+ *
+ * Metric → API mapping: see docs/ANALYTICS_SOURCES.md
  */
 
 import type { UseQueryResult } from '@tanstack/react-query';

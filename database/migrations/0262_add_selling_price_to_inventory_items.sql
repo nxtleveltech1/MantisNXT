@@ -30,8 +30,9 @@ BEGIN
       AND i.selling_price IS NULL;
 
   ELSE
-    -- View: recreate with selling_price column
-    CREATE OR REPLACE VIEW public.inventory_items AS
+    -- View: drop and recreate so column order can change (REPLACE would error)
+    DROP VIEW IF EXISTS public.inventory_items;
+    CREATE VIEW public.inventory_items AS
     SELECT
       soh.soh_id::text AS id,
       sp.supplier_sku AS sku,

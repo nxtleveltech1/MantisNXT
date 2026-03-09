@@ -7,7 +7,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
-import { CORE_TABLES, SERVE_VIEWS } from '@/lib/db/schema-contract';
 
 export async function GET(request: Request) {
   try {
@@ -107,21 +106,6 @@ export async function GET(request: Request) {
       avgPrice: parseFloat(row.avg_price) || 0,
       percentage: parseFloat(row.percentage) || 0,
     }));
-
-    if (categories.length === 0 && dateRange !== 'month') {
-      const fallbackQuery = buildCategoryQuery('month');
-      const fallbackResult = await query(fallbackQuery, [], { timeout: 5000 });
-      categories = fallbackResult.rows.map((row: any) => ({
-        categoryId: row.category_id || (row.category_name ? row.category_name : 'uncategorized'),
-        categoryName: row.category_name || 'Uncategorized',
-        parentCategoryId: row.parent_category_id || null,
-        productCount: parseInt(row.product_count) || 0,
-        totalQuantity: parseInt(row.total_quantity) || 0,
-        totalValue: parseFloat(row.total_value) || 0,
-        avgPrice: parseFloat(row.avg_price) || 0,
-        percentage: parseFloat(row.percentage) || 0,
-      }));
-    }
 
     // Calculate summary stats
     const summary = {

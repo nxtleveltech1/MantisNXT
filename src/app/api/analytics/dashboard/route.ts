@@ -35,7 +35,10 @@ export const GET = withAuth(async (request: NextRequest) => {
           'SELECT COUNT(*) as out_of_stock FROM core.stock_on_hand WHERE qty = 0'
         ),
         pool.query<{ total_value: string }>(
-          'SELECT COALESCE(SUM(qty * unit_cost), 0) as total_value FROM core.stock_on_hand'
+          `SELECT COALESCE(SUM(soh.qty * COALESCE(soh.unit_cost, 0)), 0) as total_value
+           FROM core.stock_on_hand soh
+           JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
+           WHERE sp.is_active = true`
         ),
         pool.query<{
           total_suppliers: string;

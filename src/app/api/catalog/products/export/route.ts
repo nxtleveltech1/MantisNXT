@@ -327,7 +327,13 @@ export async function GET(request: NextRequest) {
         sp.is_active
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
-      LEFT JOIN core.stock_on_hand soh_sp ON soh_sp.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN LATERAL (
+        SELECT soh.selling_price
+        FROM core.stock_on_hand soh
+        WHERE soh.supplier_product_id = sp.supplier_product_id
+        ORDER BY soh.as_of_ts DESC NULLS LAST
+        LIMIT 1
+      ) soh_sp ON TRUE
       LEFT JOIN core.category c ON c.category_id = sp.category_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id

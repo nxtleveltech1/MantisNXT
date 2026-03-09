@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
         `
         SELECT
           COUNT(*) as count,
-          COALESCE(SUM(soh.qty * soh.unit_cost), 0) as total_value,
-          COALESCE(AVG(soh.qty * soh.unit_cost), 0) as avg_value
+          COALESCE(SUM(soh.qty * COALESCE(soh.unit_cost, 0)), 0) as total_value,
+          COALESCE(AVG(soh.qty * COALESCE(soh.unit_cost, 0)), 0) as avg_value
         FROM core.stock_on_hand soh
         JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
         WHERE sp.is_active = $1
@@ -57,10 +57,11 @@ export async function GET(request: NextRequest) {
       `),
     ]);
 
-    // Extract metrics from query results
-    const totalInventoryValue = parseFloat(inventoryResult.rows[0]?.total_value || '0');
-    const avgInventoryValue = parseFloat(inventoryResult.rows[0]?.avg_value || '0');
+    // Extract metrics from query results (safe parsing)
+    const totalInventoryValue = parseFloat(String(inventoryResult.rows[0]?.total_value ?? 0));
+    const avgInventoryValue = parseFloat(String(inventoryResult.rows[0]?.avg_value ?? 0));
     const supplierMetrics = supplierMetricsResult.rows[0] || {};
+    const totalSupplierProducts = parseInt(String(supplierProductsResult.rows[0]?.count ?? 0), 10);
 
     // Purchase order metrics from core.purchase_orders
     let purchaseOrderMetrics = {
@@ -93,9 +94,9 @@ export async function GET(request: NextRequest) {
         totalSuppliers: parseInt(supplierMetrics.total_suppliers || '0'),
         activeSuppliers: parseInt(supplierMetrics.active_suppliers || '0'),
         preferredSuppliers: parseInt(supplierMetrics.preferred_suppliers || '0'),
-        totalInventoryItems: parseInt(inventoryResult.rows[0]?.count || '0'),
-        totalInventoryValue: totalInventoryValue,
-        totalSupplierProducts: parseInt(supplierProductsResult.rows[0]?.count || '0'),
+        totalInventoryItems: parseInt(String(inventoryResult.rows[0]?.count ?? 0), 10),
+        totalInventoryValue,
+        totalSupplierProducts,
         averageInventoryValue: avgInventoryValue,
         lowStockAlerts: parseInt(lowStockResult.rows[0]?.count || '0'),
         outOfStockItems: parseInt(outOfStockResult.rows[0]?.count || '0'),
@@ -162,7 +163,10 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log('✅ Dashboard metrics retrieved successfully');
+    console.log('✅ Dashboard metrics retrieved successfully', {
+      inventoryValue: totalInventoryValue,
+      supplierProducts: totalSupplierProducts,
+    });
     return NextResponse.json(dashboardMetrics);
   } catch (error) {
     console.error('❌ Dashboard metrics API error:', error);

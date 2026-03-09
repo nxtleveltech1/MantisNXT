@@ -86,15 +86,43 @@ const MagicDashboard = () => {
     setMounted(true);
   }, []);
 
-  // Fetch sales data
+  // Compute date range from timeRange for sales API
+  const salesDateRange = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    switch (timeRange) {
+      case 'today':
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        start.setDate(start.getDate() - 7);
+        break;
+      case 'month':
+        start.setMonth(start.getMonth() - 1);
+        break;
+      default:
+        // custom or unknown: no date filter (all time)
+        return { startDate: undefined as Date | undefined, endDate: undefined as Date | undefined };
+    }
+    return { startDate: start, endDate: end };
+  }, [timeRange]);
+
+  // Fetch sales data (refetch when time range changes)
   useEffect(() => {
     async function fetchSalesData() {
       try {
         setSalesLoading(true);
+        const { startDate, endDate } = salesDateRange;
+        const params = (ch: string) => {
+          const p = new URLSearchParams({ channel: ch });
+          if (startDate) p.set('startDate', startDate.toISOString());
+          if (endDate) p.set('endDate', endDate.toISOString());
+          return p.toString();
+        };
         const [allRes, inStoreRes, onlineRes] = await Promise.all([
-          fetch('/api/sales/analytics?channel=all'),
-          fetch('/api/sales/analytics?channel=in-store'),
-          fetch('/api/sales/analytics?channel=online'),
+          fetch(`/api/sales/analytics?${params('all')}`),
+          fetch(`/api/sales/analytics?${params('in-store')}`),
+          fetch(`/api/sales/analytics?${params('online')}`),
         ]);
 
         const [allData, inStoreData, onlineData] = await Promise.all([
@@ -119,7 +147,7 @@ const MagicDashboard = () => {
       }
     }
     fetchSalesData();
-  }, []);
+  }, [salesDateRange]);
 
   // Data hooks
   const dashboardQuery = useDashboardMetrics();

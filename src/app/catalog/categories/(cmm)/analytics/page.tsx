@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/tags/analytics?tag=${selectedTag}`);
+      const response = await fetch(`/api/tags/analytics?tagId=${selectedTag}`);
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');
       }
