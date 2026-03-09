@@ -96,7 +96,8 @@ export async function getCompleteInventory(request: NextRequest) {
     const sortBy = searchParams.get('sort_by') || 'name';
     const sortOrder = searchParams.get('sort_order') || 'asc';
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 1000);
+    const requestedLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = Math.min(Math.max(Number.isNaN(requestedLimit) ? 50 : requestedLimit, 1), 25000);
     const includeAnalytics = searchParams.get('include_analytics') === 'true';
     const includeMovements = searchParams.get('include_movements') === 'true';
 

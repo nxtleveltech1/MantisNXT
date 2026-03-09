@@ -185,7 +185,10 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   fetchItems: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory?format=display&limit=25000');
+      const res = await fetch('/api/inventory?format=display&limit=25000', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (!res.ok) throw new Error(`INVENTORY_FETCH_FAILED: ${res.status}`);
       const payload = await res.json();
 
