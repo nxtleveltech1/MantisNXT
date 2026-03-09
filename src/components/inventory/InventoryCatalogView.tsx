@@ -88,9 +88,10 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   // Pricing
   { key: 'cost_ex_vat', label: 'Unit Cost', visible: true, order: 11, align: 'right', sortable: true, width: 90, minWidth: 70, group: 'pricing' },
   { key: 'rsp', label: 'RSP', visible: true, order: 12, align: 'right', sortable: true, width: 80, minWidth: 60, group: 'pricing' },
-  { key: 'value', label: 'Value', visible: true, order: 13, align: 'right', sortable: true, width: 100, minWidth: 70, group: 'pricing' },
+  { key: 'selling_price', label: 'Selling Price', visible: true, order: 13, align: 'right', sortable: true, width: 100, minWidth: 70, group: 'pricing' },
+  { key: 'value', label: 'Value', visible: true, order: 14, align: 'right', sortable: true, width: 100, minWidth: 70, group: 'pricing' },
   // Actions — sticky right
-  { key: 'actions', label: 'Actions', visible: true, order: 14, align: 'center', sortable: false, width: 80, minWidth: 60, sticky: 'right' },
+  { key: 'actions', label: 'Actions', visible: true, order: 15, align: 'center', sortable: false, width: 80, minWidth: 60, sticky: 'right' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -295,6 +296,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
         supplier_status: baseSupplier?.status || ((item as Record<string, unknown>).supplier_status as string) || 'inactive',
         stock_status: stockStatus,
         rsp: normalizedRsp,
+        selling_price: Number((item as Record<string, unknown>).selling_price ?? 0) || undefined,
         location: resolvedLocation,
         location_id: resolvedLocationId,
         reorder_point: Number((item as Record<string, unknown>).reorder_point || 0),
@@ -364,6 +366,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
         case 'stock_status': aVal = a.stock_status ?? ''; bVal = b.stock_status ?? ''; break;
         case 'cost_ex_vat': aVal = a.cost_per_unit_zar; bVal = b.cost_per_unit_zar; break;
         case 'rsp': aVal = a.rsp; bVal = b.rsp; break;
+        case 'selling_price': aVal = a.selling_price ?? a.rsp ?? 0; bVal = b.selling_price ?? b.rsp ?? 0; break;
         case 'value': aVal = a.total_value_zar; bVal = b.total_value_zar; break;
         default: break;
       }
@@ -470,7 +473,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
 
   // --- Sort key mapping ---
   const getSortKey = (columnKey: string): string => {
-    const map: Record<string, string> = { supplier: 'supplier_name', sku: 'sku', name: 'name', category: 'category', location: 'location', current_stock: 'current_stock', stock_status: 'stock_status', cost_ex_vat: 'cost_ex_vat', rsp: 'rsp', value: 'value' };
+    const map: Record<string, string> = { supplier: 'supplier_name', sku: 'sku', name: 'name', category: 'category', location: 'location', current_stock: 'current_stock', stock_status: 'stock_status', cost_ex_vat: 'cost_ex_vat', rsp: 'rsp', selling_price: 'selling_price', value: 'value' };
     return map[columnKey] || columnKey;
   };
 
@@ -504,6 +507,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
       'Stock Status': stockStatusLabels[item.stock_status] || item.stock_status || '-',
       'Unit Cost': item.cost_per_unit_zar || 0,
       RSP: item.rsp || 0,
+      'Selling Price': item.selling_price ?? item.rsp ?? 0,
       Value: item.total_value_zar || 0,
     }));
     if (exportData.length === 0) return;
@@ -702,6 +706,8 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
         return <TableCell key={column.key} className={cn(baseClassName, 'font-mono')} style={cellStyle}>{formatCost(row.cost_per_unit_zar)}</TableCell>;
       case 'rsp':
         return <TableCell key={column.key} className={cn(baseClassName, 'font-mono')} style={cellStyle}>{formatCost(row.rsp)}</TableCell>;
+      case 'selling_price':
+        return <TableCell key={column.key} className={cn(baseClassName, 'font-mono')} style={cellStyle}>{formatCost(row.selling_price ?? row.rsp ?? 0)}</TableCell>;
       case 'value':
         return <TableCell key={column.key} className={cn(baseClassName, 'font-mono')} style={cellStyle}>{formatCost(row.total_value_zar)}</TableCell>;
       case 'actions':

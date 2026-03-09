@@ -110,6 +110,7 @@ export default function NewQuotationPage() {
     id: string;
     sku: string;
     name: string;
+    selling_price?: number | null;
     sale_price?: number | null;
     cost_price?: number | null;
   }) => {
@@ -118,7 +119,7 @@ export default function NewQuotationPage() {
       sku: product.sku,
       name: product.name,
       quantity: 1,
-      unit_price: product.sale_price || product.cost_price || 0,
+      unit_price: product.selling_price || product.sale_price || product.cost_price || 0,
       tax_rate: 0.15, // Default 15% VAT for South Africa
       tax_amount: 0,
       subtotal: 0,

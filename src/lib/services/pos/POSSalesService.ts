@@ -25,6 +25,7 @@ export interface POSSaleItem {
   quantity: number;
   cost_price: number;
   sale_price: number;
+  selling_price?: number;
   markup_percent?: number;
 }
 
@@ -81,7 +82,8 @@ export class POSSalesService {
 
     // Calculate totals
     const itemsWithTotals = input.items.map((item) => {
-      const subtotal = item.sale_price * item.quantity;
+      const unitPrice = item.selling_price ?? item.sale_price;
+      const subtotal = unitPrice * item.quantity;
       const taxAmount = 0; // VAT handled separately if needed
       const total = subtotal + taxAmount;
       return {
@@ -151,7 +153,7 @@ export class POSSalesService {
             item.sku,
             item.name,
             item.quantity,
-            item.sale_price,
+            item.selling_price ?? item.sale_price,
             0, // Tax rate
             item.tax_amount,
             item.subtotal,
@@ -227,7 +229,7 @@ export class POSSalesService {
           product_id: item.product_id,
           name: item.name,
           quantity: item.quantity,
-          unit_price: item.sale_price,
+          unit_price: item.selling_price ?? item.sale_price,
           subtotal: item.subtotal,
         })),
         created_at: createdAt,

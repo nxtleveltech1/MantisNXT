@@ -77,14 +77,15 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'base_discount', label: 'Base Discount', visible: true, order: 21, align: 'right', sortable: false, width: 95, minWidth: 70, group: 'pricing' },
   { key: 'cost_after_discount', label: 'Cost After Discount', visible: true, order: 22, align: 'right', sortable: false, width: 115, minWidth: 90, group: 'pricing' },
   { key: 'rsp', label: 'RSP', visible: true, order: 23, align: 'right', sortable: false, width: 80, minWidth: 60, group: 'pricing' },
-  { key: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, order: 24, align: 'right', sortable: false, width: 90, minWidth: 70, group: 'pricing' },
-  { key: 'currency', label: 'Currency', visible: false, order: 25, align: 'right', sortable: false, width: 70, minWidth: 50, group: 'pricing' },
+  { key: 'selling_price', label: 'Selling Price', visible: true, order: 24, align: 'right', sortable: false, width: 100, minWidth: 70, group: 'pricing' },
+  { key: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, order: 25, align: 'right', sortable: false, width: 90, minWidth: 70, group: 'pricing' },
+  { key: 'currency', label: 'Currency', visible: false, order: 26, align: 'right', sortable: false, width: 70, minWidth: 50, group: 'pricing' },
   // Meta columns
-  { key: 'first_seen', label: 'First Seen', visible: false, order: 26, align: 'left', sortable: true, width: 90, minWidth: 70, group: 'meta' },
-  { key: 'last_seen', label: 'Last Seen', visible: false, order: 27, align: 'left', sortable: true, width: 90, minWidth: 70, group: 'meta' },
-  { key: 'active', label: 'Active', visible: false, order: 28, align: 'left', sortable: false, width: 60, minWidth: 50, group: 'meta' },
+  { key: 'first_seen', label: 'First Seen', visible: false, order: 27, align: 'left', sortable: true, width: 90, minWidth: 70, group: 'meta' },
+  { key: 'last_seen', label: 'Last Seen', visible: false, order: 28, align: 'left', sortable: true, width: 90, minWidth: 70, group: 'meta' },
+  { key: 'active', label: 'Active', visible: false, order: 29, align: 'left', sortable: false, width: 60, minWidth: 50, group: 'meta' },
   // Actions - STICKY RIGHT
-  { key: 'actions', label: 'Actions', visible: true, order: 29, align: 'center', sortable: false, width: 60, minWidth: 50, sticky: 'right' },
+  { key: 'actions', label: 'Actions', visible: true, order: 30, align: 'center', sortable: false, width: 60, minWidth: 50, sticky: 'right' },
 ];
 
 // Density configuration
@@ -192,6 +193,7 @@ type CatalogRow = {
   base_discount?: number;
   cost_after_discount?: number;
   rsp?: number;
+  selling_price?: number;
   qty_on_hand?: number;
   sup_soh?: number;
   currency?: string;
@@ -1030,6 +1032,18 @@ export function CatalogTable(props: CatalogTableProps = {}) {
               : row.attrs_json?.rsp !== undefined
                 ? formatCost(Number(row.attrs_json.rsp))
                 : '-'}
+          </TableCell>
+        );
+      case 'selling_price':
+        return (
+          <TableCell key={column.key} className={cn(className, 'font-mono')} style={cellStyle}>
+            {row.selling_price !== undefined
+              ? formatCost(row.selling_price)
+              : row.rsp !== undefined
+                ? formatCost(row.rsp)
+                : row.attrs_json?.rsp !== undefined
+                  ? formatCost(Number(row.attrs_json.rsp))
+                  : '-'}
           </TableCell>
         );
       case 'cost_inc_vat':

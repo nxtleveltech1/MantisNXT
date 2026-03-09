@@ -10,6 +10,7 @@ const UpdateItemSchema = z.object({
   cost_price: z.number().optional(),
   sale_price: z.number().optional(),
   rsp: z.number().optional(),
+  selling_price: z.number().optional(),
   reorder_point: z.number().int().optional(),
   max_stock_level: z.number().int().nullable().optional(),
   // any other mutable fields; generated/computed fields are intentionally omitted
@@ -49,6 +50,7 @@ export async function PUT(req: NextRequest) {
           if (item.cost_price !== undefined) set('cost_price', item.cost_price);
           if (item.sale_price !== undefined) set('sale_price', item.sale_price);
           if (item.rsp !== undefined) set('rsp', item.rsp);
+          if (item.selling_price !== undefined) set('selling_price', item.selling_price);
           if (item.reorder_point !== undefined) set('reorder_point', item.reorder_point);
           if (item.max_stock_level !== undefined) set('max_stock_level', item.max_stock_level);
           fields.push('updated_at = NOW()');

@@ -23,6 +23,7 @@ const inventoryItemSchema = z.object({
   cost_price: z.number().min(0, 'Cost price must be positive'),
   sale_price: z.number().min(0, 'Sale price must be positive').optional(),
   rsp: z.number().min(0, 'RSP must be positive').optional(),
+  selling_price: z.number().min(0, 'Selling price must be positive').optional(),
   currency: z.string().max(3).default('ZAR'),
   stock_qty: z.number().int().min(0, 'Stock quantity must be non-negative'),
   reserved_qty: z.number().int().min(0).default(0),
@@ -268,6 +269,7 @@ export async function getCompleteInventory(request: NextRequest) {
       'cost_price',
       'sale_price',
       'rsp',
+      'selling_price',
       'stock_qty',
       'created_at',
       'updated_at',
@@ -277,8 +279,11 @@ export async function getCompleteInventory(request: NextRequest) {
     const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name';
     const safeSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc';
 
+    const sellingPriceExpression = 'COALESCE(i.selling_price, i.sale_price, i.cost_price)';
+
     const resolveSortColumn = (field: string) => {
       if (field === 'rsp') return rspExpression;
+      if (field === 'selling_price') return sellingPriceExpression;
       return `i.${field}`;
     };
 

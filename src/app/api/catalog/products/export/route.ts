@@ -18,6 +18,7 @@ interface ExportRow {
   base_discount: number | null;
   cost_after_discount: number | null;
   rsp: number | null;
+  selling_price: number | null;
   cost_inc_vat: number | null;
   currency: string | null;
   previous_cost: number | null;
@@ -302,6 +303,7 @@ export async function GET(request: NextRequest) {
           ELSE COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL)
         END AS cost_after_discount,
         COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
+        COALESCE(soh_sp.selling_price, (sp.attrs_json->>'rsp')::numeric, NULL) AS selling_price,
         CASE
           WHEN COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) IS NOT NULL 
           THEN (
@@ -325,6 +327,7 @@ export async function GET(request: NextRequest) {
         sp.is_active
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+      LEFT JOIN core.stock_on_hand soh_sp ON soh_sp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
@@ -429,6 +432,7 @@ export async function GET(request: NextRequest) {
           COALESCE((sp.attrs_json->>'base_discount')::numeric, 0) AS base_discount,
           COALESCE((sp.attrs_json->>'cost_excluding')::numeric, NULL) AS cost_after_discount,
           COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
+          COALESCE((sp.attrs_json->>'selling_price')::numeric, (sp.attrs_json->>'rsp')::numeric, NULL) AS selling_price,
           COALESCE((sp.attrs_json->>'cost_including')::numeric, NULL) AS cost_inc_vat,
           'ZAR'::text AS currency,
           NULL::numeric AS previous_cost,
@@ -480,6 +484,7 @@ export async function GET(request: NextRequest) {
       'Base Discount %',
       'Cost After Discount',
       'RSP',
+      'Selling Price',
       'Cost IncVAT',
       'Currency',
       'Previous Cost',
@@ -503,6 +508,7 @@ export async function GET(request: NextRequest) {
       escapeCSV(formatNumber(row.base_discount)),
       escapeCSV(formatNumber(row.cost_after_discount)),
       escapeCSV(formatNumber(row.rsp)),
+      escapeCSV(formatNumber(row.selling_price)),
       escapeCSV(formatNumber(row.cost_inc_vat)),
       escapeCSV(row.currency || 'ZAR'),
       escapeCSV(formatNumber(row.previous_cost)),

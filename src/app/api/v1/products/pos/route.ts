@@ -31,6 +31,7 @@ export interface POSProduct {
   brand: string | null;
   base_cost: number;
   sale_price: number;
+  selling_price: number;
   markup_percent: number;
   available_quantity: number;
   image_url: string | null;
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
         sp.is_active,
         s.name as supplier_name,
         COALESCE(soh.unit_cost, 0) as base_cost,
+        soh.selling_price as soh_selling_price,
         COALESCE(soh.qty, 0) as available_quantity
       FROM core.supplier_product sp
       LEFT JOIN core.supplier s ON s.supplier_id = sp.supplier_id
@@ -113,6 +115,7 @@ export async function GET(request: NextRequest) {
       category: string | null;
       brand: string | null;
       base_cost: number;
+      soh_selling_price: number | null;
       available_quantity: number;
       barcode: string | null;
       is_active: boolean;
@@ -164,6 +167,7 @@ export async function GET(request: NextRequest) {
       brand: row.brand,
       base_cost: Number(row.base_cost) || 0,
       sale_price: calculateSalePrice(Number(row.base_cost) || 0),
+      selling_price: Number(row.soh_selling_price) || calculateSalePrice(Number(row.base_cost) || 0),
       markup_percent: DEFAULT_MARKUP * 100,
       available_quantity: Number(row.available_quantity) || 0,
       image_url: null, // Not in current schema

@@ -11,6 +11,7 @@ export type DbInventoryRow = {
   cost_price: number | null;
   sale_price: number | null;
   rsp?: number | null;
+  selling_price?: number | null;
   supplier_id: string | null;
   brand_id?: string | null;
 };
@@ -24,6 +25,7 @@ export type InventoryItem = {
   costPrice: number | null;
   salePrice: number | null;
   rsp?: number | null;
+  sellingPrice?: number | null;
   supplierId: string | null;
   brandId?: string | null;
 };
@@ -39,6 +41,7 @@ export function toDisplay(row: DbInventoryRow): InventoryItem {
     costPrice: c.costPrice ?? null,
     salePrice: c.salePrice ?? null,
     rsp: c.rsp ?? null,
+    sellingPrice: c.sellingPrice ?? null,
     supplierId: c.supplierId ?? null,
     brandId: c.brandId ?? null,
   };

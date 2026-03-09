@@ -84,6 +84,7 @@ export interface InventoryItem {
   cost_price: number;
   sale_price?: number;
   rsp?: number;
+  selling_price?: number;
   currency: string;
   stock_qty: number;
   reserved_qty: number;

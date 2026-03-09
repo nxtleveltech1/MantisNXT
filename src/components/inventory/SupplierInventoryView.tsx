@@ -994,6 +994,7 @@ export default function SupplierInventoryView() {
                         <TableHead>Category</TableHead>
                         <TableHead>Current Stock</TableHead>
                         <TableHead className="text-right">Unit Cost</TableHead>
+                        <TableHead className="text-right">Selling Price</TableHead>
                         <TableHead className="text-right">Total Value</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-center">
@@ -1065,6 +1066,13 @@ export default function SupplierInventoryView() {
                           </TableCell>
                           <TableCell className="text-right">
                             {formatCurrency(product.unit_cost_zar)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(
+                              (product as Record<string, unknown>).selling_price as number ??
+                              (product as Record<string, unknown>).rsp as number ??
+                              product.unit_cost_zar ?? 0
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             {product.totalStockValue

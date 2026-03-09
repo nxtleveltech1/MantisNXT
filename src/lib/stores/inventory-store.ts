@@ -295,6 +295,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           stock_status: stockStatus,
           currency,
           sale_price: r.sale_price ?? null,
+          selling_price: r.selling_price ?? null,
           rsp,
           // Add product reference for compatibility
           product: {

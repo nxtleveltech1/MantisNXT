@@ -79,6 +79,7 @@ type ColumnVisibility = {
   location: boolean;
   stock: boolean;
   rsp: boolean;
+  sellingPrice: boolean;
   value: boolean;
   status: boolean;
 };
@@ -128,6 +129,7 @@ export default function InventoryManagement() {
     location: true,
     stock: true,
     rsp: true,
+    sellingPrice: true,
     value: true,
     status: true,
   });
@@ -299,6 +301,7 @@ export default function InventoryManagement() {
           ),
         currency: item.currency || 'ZAR',
         rsp: normalizedRsp,
+        selling_price: Number(item.selling_price ?? 0) || undefined,
       };
     });
   }, [items, products, suppliers]);
@@ -439,6 +442,7 @@ export default function InventoryManagement() {
       'Reorder Point': item.reorder_point || 0,
       'Unit Cost': item.cost_per_unit_zar || 0,
       RSP: item.rsp ?? item.product?.rsp ?? item.sale_price ?? 0,
+      'Selling Price': item.selling_price ?? item.rsp ?? item.sale_price ?? 0,
       'Total Value': item.total_value_zar || 0,
       Status: item.stock_status || '-',
       Currency: item.currency || 'ZAR',
@@ -508,6 +512,7 @@ export default function InventoryManagement() {
       'Current Stock': item.current_stock || 0,
       'Unit Cost': item.cost_per_unit_zar || 0,
       RSP: item.rsp ?? item.product?.rsp ?? item.sale_price ?? 0,
+      'Selling Price': item.selling_price ?? item.rsp ?? item.sale_price ?? 0,
       'Total Value': item.total_value_zar || 0,
       Status: item.stock_status || '-',
     }));
@@ -628,7 +633,7 @@ export default function InventoryManagement() {
                       setColumnVisibility(prev => ({ ...prev, [key]: checked }))
                     }
                   >
-                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                    {key === 'sellingPrice' ? 'Selling Price' : key.charAt(0).toUpperCase() + key.slice(1)}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -1029,6 +1034,9 @@ export default function InventoryManagement() {
                           <TableHead className="text-right">Current Stock</TableHead>
                         )}
                         {columnVisibility.rsp && <TableHead className="text-right">RSP</TableHead>}
+                        {columnVisibility.sellingPrice && (
+                          <TableHead className="text-right">Selling Price</TableHead>
+                        )}
                         {columnVisibility.value && (
                           <TableHead className="text-right">Value</TableHead>
                         )}
@@ -1224,6 +1232,13 @@ export default function InventoryManagement() {
                                   {formatCurrency(item.rsp ?? item.product?.rsp ?? 0)}
                                 </p>
                                 <p className="text-muted-foreground text-xs">Rec. sell</p>
+                              </TableCell>
+                            )}
+                            {columnVisibility.sellingPrice && (
+                              <TableCell className="text-right">
+                                <p className="font-medium">
+                                  {formatCurrency(item.selling_price ?? item.rsp ?? item.sale_price ?? 0)}
+                                </p>
                               </TableCell>
                             )}
                             {columnVisibility.value && (

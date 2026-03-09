@@ -46,6 +46,7 @@ interface POSProduct {
   brand: string | null
   base_cost: number
   sale_price: number
+  selling_price?: number
   markup_percent: number
   available_quantity: number
   image_url: string | null
@@ -307,7 +308,7 @@ export default function POSInterface() {
 
   // Calculate cart totals
   const getSubtotal = () => {
-    return cart.reduce((total, item) => total + item.product.sale_price * item.quantity, 0)
+    return cart.reduce((total, item) => total + (item.product.selling_price ?? item.product.sale_price) * item.quantity, 0)
   }
 
   const getTaxAmount = () => {
@@ -345,7 +346,7 @@ export default function POSInterface() {
         name: item.product.name,
         quantity: item.quantity,
         cost_price: item.product.base_cost,
-        sale_price: item.product.sale_price,
+        sale_price: item.product.selling_price ?? item.product.sale_price,
         markup_percent: item.product.markup_percent,
       }))
 
@@ -689,7 +690,7 @@ export default function POSInterface() {
                               return (
                                 <TableCell key={col.id}>
                                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                    R{product.sale_price.toFixed(2)}
+                                    R{(product.selling_price ?? product.sale_price).toFixed(2)}
                                   </span>
                                 </TableCell>
                               )
@@ -814,7 +815,7 @@ export default function POSInterface() {
                             {item.product.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            R{item.product.sale_price.toFixed(2)} × {item.quantity}
+                            R{(item.product.selling_price ?? item.product.sale_price).toFixed(2)} × {item.quantity}
                           </p>
                         </div>
                         <div className="flex items-center gap-1">
@@ -840,7 +841,7 @@ export default function POSInterface() {
                         </div>
                         <div className="text-right w-20">
                           <div className="font-semibold text-sm text-emerald-600">
-                            R{(item.product.sale_price * item.quantity).toFixed(2)}
+                            R{((item.product.selling_price ?? item.product.sale_price) * item.quantity).toFixed(2)}
                           </div>
                           <Button
                             variant="ghost"
