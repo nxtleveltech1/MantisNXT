@@ -24,7 +24,7 @@ import {
 } from 'recharts';
 import { useLocationAnalytics, formatCurrency } from '@/hooks/api/useDashboardWidgets';
 import { Store, Globe, Truck, MapPin, Package } from 'lucide-react';
-import { CHART_COLORS, GRADIENT_PAIRS } from '@/lib/colors';
+import { CHART_COLORS } from '@/lib/colors';
 
 // Location-specific colors - professional subdued palette
 const LOCATION_CHART_COLORS = [
@@ -46,7 +46,7 @@ const LOCATION_TEXT_COLORS = [
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-xl">
+      <div className="rounded-lg border border-border bg-popover p-3 shadow-sm">
         <p className="mb-2 text-sm font-medium text-popover-foreground">{payload[0]?.payload?.locationName || payload[0]?.payload?.type}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
@@ -67,7 +67,7 @@ export function LocationDistributionWidget() {
 
   if (isLoading) {
     return (
-      <Card className="bg-card border-border rounded-xl border shadow-sm">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Product Distribution by Location</CardTitle>
           <CardDescription className="text-muted-foreground text-sm">
@@ -85,7 +85,7 @@ export function LocationDistributionWidget() {
 
   if (error || !data?.success) {
     return (
-      <Card className="bg-card border-border rounded-xl border shadow-sm">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Product Distribution by Location</CardTitle>
         </CardHeader>
@@ -112,19 +112,20 @@ export function LocationDistributionWidget() {
   }));
 
   // Get icon for location type
-  const getLocationIcon = (type: string, name: string) => {
+  const getLocationIcon = (type: string, name: string, index: number) => {
+    const color = LOCATION_TEXT_COLORS[index % LOCATION_TEXT_COLORS.length];
     const nameLower = name.toLowerCase();
-    if (nameLower.includes('online')) return <Globe className="h-4 w-4" style={{ color: CHART_COLORS[6] }} />;
-    if (nameLower.includes('drop') || type === 'supplier') return <Truck className="h-4 w-4" style={{ color: CHART_COLORS[2] }} />;
-    if (nameLower.includes('store') || nameLower.includes('main')) return <Store className="h-4 w-4" style={{ color: CHART_COLORS[7] }} />;
-    return <MapPin className="h-4 w-4" style={{ color: CHART_COLORS[8] }} />;
+    if (nameLower.includes('online')) return <Globe className="h-4 w-4" style={{ color }} />;
+    if (nameLower.includes('drop') || type === 'supplier') return <Truck className="h-4 w-4" style={{ color }} />;
+    if (nameLower.includes('store') || nameLower.includes('main')) return <Store className="h-4 w-4" style={{ color }} />;
+    return <MapPin className="h-4 w-4" style={{ color }} />;
   };
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm">
+    <Card className="rounded-lg border border-border bg-card shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Package className="h-5 w-5" style={{ color: CHART_COLORS[5] }} />
+          <Package className="h-5 w-5 text-muted-foreground" />
           Product Distribution by Location
         </CardTitle>
         <CardDescription className="text-muted-foreground text-sm">
@@ -137,20 +138,18 @@ export function LocationDistributionWidget() {
           {chartData.map((loc: any, index: number) => (
             <div
               key={loc.locationId}
-              className="rounded-lg border p-4 transition-all hover:shadow-md hover:scale-105"
+              className="rounded-lg border border-border border-l-4 bg-muted/30 p-4"
               style={{
-                borderLeftWidth: '4px',
                 borderLeftColor: LOCATION_TEXT_COLORS[index % LOCATION_TEXT_COLORS.length],
-                background: `linear-gradient(135deg, ${LOCATION_TEXT_COLORS[index % LOCATION_TEXT_COLORS.length]}08, transparent)`
               }}
             >
               <div className="mb-2 flex items-center gap-2">
-                {getLocationIcon(loc.locationType, loc.locationName)}
+                {getLocationIcon(loc.locationType, loc.locationName, index)}
                 <span className="text-sm font-medium truncate" title={loc.locationName}>
                   {loc.locationName}
                 </span>
               </div>
-              <div className="text-2xl font-bold" style={{ color: LOCATION_TEXT_COLORS[index % LOCATION_TEXT_COLORS.length] }}>
+              <div className="text-2xl font-bold text-foreground">
                 {loc.productCount.toLocaleString()}
               </div>
               <div className="text-muted-foreground mt-1 text-xs">
@@ -244,7 +243,7 @@ export function LocationDistributionWidget() {
                   className="hover:bg-muted/50 flex items-center justify-between rounded-lg p-2 transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {getLocationIcon(location.locationType, location.locationName)}
+                    {getLocationIcon(location.locationType, location.locationName, index)}
                     <div>
                       <p className="truncate text-sm font-medium">{location.locationName}</p>
                       <p className="text-muted-foreground text-xs">

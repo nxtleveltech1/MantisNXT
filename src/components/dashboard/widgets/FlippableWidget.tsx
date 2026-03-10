@@ -7,7 +7,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export interface WidgetView {
@@ -34,26 +33,30 @@ export function FlippableWidget({ views, defaultViewId, className }: FlippableWi
 
   const currentView = views[currentViewIndex];
   return (
-    <Card className={cn('bg-card border-border rounded-xl border shadow-sm', className)}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+    <Card className={cn('rounded-lg border border-border bg-card shadow-sm', className)}>
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-3">
           <div className="min-w-0 flex-1">
             <CardTitle className="truncate text-lg font-semibold">{currentView.title}</CardTitle>
             <CardDescription className="text-muted-foreground truncate text-sm">
               {currentView.description}
             </CardDescription>
           </div>
-          <div className="ml-4 flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div className="flex shrink-0 border-b border-border">
             {views.map((view, index) => (
-              <Button
+              <button
                 key={view.id}
-                variant={index === currentViewIndex ? 'default' : 'outline'}
-                size="sm"
+                type="button"
                 onClick={() => setCurrentViewIndex(index)}
-                className={`h-8 ${index === currentViewIndex ? 'bg-[#06B6D4] hover:bg-[#0891B2] text-white' : ''}`}
+                className={cn(
+                  'px-3 py-2 text-sm font-medium transition-colors',
+                  index === currentViewIndex
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 {view.title}
-              </Button>
+              </button>
             ))}
           </div>
         </div>

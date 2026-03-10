@@ -38,7 +38,7 @@ export function LoyaltySignupsWidget() {
   const data = generateMockLoyaltyData();
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm">
+    <Card className="rounded-lg border border-border bg-card shadow-sm">
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
@@ -89,7 +89,7 @@ export function ActiveMembersWidget() {
   const activePercentage = ((data.members.active / data.members.total) * 100).toFixed(1);
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm">
+    <Card className="rounded-lg border border-border bg-card shadow-sm">
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
@@ -138,7 +138,7 @@ export function PointsEconomyWidget() {
   const availablePoints = data.points.accumulated - data.points.redeemed;
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm">
+    <Card className="rounded-lg border border-border bg-card shadow-sm">
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>

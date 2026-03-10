@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTimestamp, getRelativeTime, safeParseDate } from '@/lib/utils/date-utils';
+import { cn } from '@/lib/utils';
 import { Activity, RefreshCw, AlertTriangle, Clock, User, Package, DollarSign } from 'lucide-react';
 
 interface ActivityItem {
@@ -211,7 +212,7 @@ export default function ActivityFeed({
    */
   if (loading && activities.length === 0) {
     return (
-      <Card className={className}>
+      <Card className={cn('rounded-lg border border-border shadow-sm', className)}>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Activity className="h-5 w-5" />
@@ -242,7 +243,7 @@ export default function ActivityFeed({
    */
   if (error && activities.length === 0) {
     return (
-      <Card className={className}>
+      <Card className={cn('rounded-lg border border-border shadow-sm', className)}>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -264,7 +265,7 @@ export default function ActivityFeed({
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn('rounded-lg border border-border shadow-sm', className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

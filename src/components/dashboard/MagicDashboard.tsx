@@ -240,10 +240,10 @@ const MagicDashboard = () => {
       <div className="min-h-screen space-y-6 bg-background p-6">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
-        <div className="h-[450px] animate-pulse rounded-xl bg-muted" />
+        <div className="h-[450px] animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
@@ -251,11 +251,8 @@ const MagicDashboard = () => {
   return (
     <div className="min-h-screen space-y-6 bg-background p-6 text-foreground">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-lg md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Live overview in a dark, glassy shell with subtle color pops.</p>
-        </div>
+      <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         <div className="flex items-center gap-3">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
           <Button
@@ -272,11 +269,11 @@ const MagicDashboard = () => {
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Active Suppliers</CardTitle>
-              <Building2 className="h-4 w-4 text-destructive" />
+              <Building2 className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -285,23 +282,23 @@ const MagicDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Inventory Value</CardTitle>
-              <Package className="h-4 w-4 text-primary" />
+              <Package className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-foreground">{formatZARCompact(metrics.totalInventoryValue)}</div>
-            <div className="mt-1 flex items-center gap-1 text-primary">
+            <div className="mt-1 flex items-center gap-1 text-muted-foreground">
               <TrendingUp className="h-3 w-3" />
               <span className="text-xs">+{metrics.changePercent.toFixed(1)}% vs last period</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Stock Alerts</CardTitle>
@@ -316,11 +313,11 @@ const MagicDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Supplier Products</CardTitle>
-              <Boxes className="h-4 w-4 text-destructive" />
+              <Boxes className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -332,11 +329,11 @@ const MagicDashboard = () => {
 
       {/* Sales Overview Row */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-destructive" />
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -347,11 +344,11 @@ const MagicDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">In-Store Sales</CardTitle>
-              <Store className="h-4 w-4 text-destructive" />
+              <Store className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -362,11 +359,11 @@ const MagicDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Online Sales</CardTitle>
-              <Globe className="h-4 w-4 text-destructive" />
+              <Globe className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -377,11 +374,11 @@ const MagicDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
+        <Card className="rounded-lg border border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
-              <TrendingUp className="h-4 w-4 text-destructive" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>

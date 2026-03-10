@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, AlertCircle, Info, Package } from 'lucide-react';
 import { useStockAlerts } from '@/hooks/api/useDashboardWidgets';
 import { cn } from '@/lib/utils';
-import { CHART_COLORS, MANTIS_COLORS } from '@/lib/colors';
+import { MANTIS_COLORS } from '@/lib/colors';
 
 type AlertFilter = 'all' | 'critical' | 'warning' | 'info';
 
@@ -45,7 +45,7 @@ export function StockAlertsWidget() {
 
   if (isLoading) {
     return (
-      <Card className="bg-card border-border rounded-xl border shadow-sm">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
           <CardDescription className="text-muted-foreground text-sm">
@@ -55,7 +55,7 @@ export function StockAlertsWidget() {
         <CardContent>
           <div className="space-y-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 animate-pulse rounded" style={{ background: `linear-gradient(90deg, ${CHART_COLORS[i % CHART_COLORS.length]}20, transparent)` }} />
+              <div key={i} className="h-16 animate-pulse rounded bg-muted" />
             ))}
           </div>
         </CardContent>
@@ -65,13 +65,13 @@ export function StockAlertsWidget() {
 
   if (error || !data?.success) {
     return (
-      <Card className="bg-card border-border rounded-xl border shadow-sm">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Stock Alerts</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="py-8 text-center">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8" style={{ color: MANTIS_COLORS.orange }} />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
             <p className="text-muted-foreground text-sm">Failed to load alerts</p>
           </div>
         </CardContent>
@@ -108,10 +108,10 @@ export function StockAlertsWidget() {
   };
 
   return (
-    <Card className="bg-card border-border rounded-xl border shadow-sm h-full">
+    <Card className="rounded-lg border border-border bg-card shadow-sm h-full">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" style={{ color: MANTIS_COLORS.orange }} />
+          <AlertTriangle className="h-5 w-5 text-warning" />
           Stock Alerts
         </CardTitle>
         <CardDescription className="text-muted-foreground text-sm">
@@ -122,7 +122,7 @@ export function StockAlertsWidget() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
-            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
             style={{
               backgroundColor: filter === 'all' ? MANTIS_COLORS.blue : `${MANTIS_COLORS.blue}15`,
               color: filter === 'all' ? 'white' : MANTIS_COLORS.blue,
@@ -133,7 +133,7 @@ export function StockAlertsWidget() {
           </button>
           <button
             onClick={() => setFilter('critical')}
-            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
             style={{
               backgroundColor: filter === 'critical' ? MANTIS_COLORS.red : `${MANTIS_COLORS.red}15`,
               color: filter === 'critical' ? 'white' : MANTIS_COLORS.red,
@@ -144,7 +144,7 @@ export function StockAlertsWidget() {
           </button>
           <button
             onClick={() => setFilter('warning')}
-            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
             style={{
               backgroundColor: filter === 'warning' ? MANTIS_COLORS.orange : `${MANTIS_COLORS.orange}15`,
               color: filter === 'warning' ? 'white' : MANTIS_COLORS.orange,
@@ -155,7 +155,7 @@ export function StockAlertsWidget() {
           </button>
           <button
             onClick={() => setFilter('info')}
-            className="rounded-full border px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
             style={{
               backgroundColor: filter === 'info' ? MANTIS_COLORS.cyan : `${MANTIS_COLORS.cyan}15`,
               color: filter === 'info' ? 'white' : MANTIS_COLORS.cyan,
@@ -169,7 +169,7 @@ export function StockAlertsWidget() {
       <CardContent>
         {filteredAlerts.length === 0 ? (
           <div className="py-8 text-center">
-            <Package className="mx-auto mb-2 h-8 w-8" style={{ color: MANTIS_COLORS.emerald }} />
+            <Package className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
             <p className="text-muted-foreground text-sm">No alerts to display</p>
           </div>
         ) : (
@@ -179,7 +179,7 @@ export function StockAlertsWidget() {
               return (
                 <div
                   key={`${alert.productId}-${index}`}
-                  className="rounded-lg border p-3 transition-all hover:shadow-md hover:scale-[1.01]"
+                  className="rounded-lg border p-3 transition-colors"
                   style={{
                     backgroundColor: colors.bg,
                     borderColor: colors.border,

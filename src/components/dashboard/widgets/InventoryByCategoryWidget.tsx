@@ -26,13 +26,13 @@ import {
   Legend,
 } from 'recharts';
 import { useInventoryByCategory, formatCurrency } from '@/hooks/api/useDashboardWidgets';
-import { CHART_COLORS, CATEGORY_COLORS, SALES_COLORS, GRADIENT_PAIRS } from '@/lib/colors';
+import { CHART_COLORS, CATEGORY_COLORS } from '@/lib/colors';
 
 // Custom tooltip with ZAR formatting
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-xl">
+      <div className="rounded-lg border border-border bg-popover p-3 shadow-sm">
         <p className="mb-1 text-sm font-medium text-popover-foreground">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
@@ -89,7 +89,7 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
       <div className="grid grid-cols-3 gap-4 text-center">
         {/* Categories */}
         <div className="rounded-lg p-3 bg-muted/50 border border-border">
-          <div className="text-2xl font-bold text-primary">{data.summary.totalCategories}</div>
+          <div className="text-2xl font-bold text-foreground">{data.summary.totalCategories}</div>
           <div className="text-muted-foreground text-xs">Categories</div>
         </div>
         {/* Total Value */}
@@ -99,18 +99,12 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
         </div>
         {/* Products */}
         <div className="rounded-lg p-3 bg-muted/50 border border-border">
-          <div className="text-2xl font-bold text-primary">{data.summary.totalProducts.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-foreground">{data.summary.totalProducts.toLocaleString()}</div>
           <div className="text-muted-foreground text-xs">Products</div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={chartData}>
-          <defs>
-            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
             dataKey="categoryName"
@@ -133,8 +127,8 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
             name="Value"
             stroke="#6366F1"
             strokeWidth={2}
-            fillOpacity={1}
-            fill="url(#colorValue)"
+            fillOpacity={0.15}
+            fill="#6366F1"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -164,12 +158,12 @@ export function ProductCountBarChart({ dateRange = 'month' }: { dateRange?: stri
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 text-center">
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.trend}15, ${SALES_COLORS.trend}05)`, border: `1px solid ${SALES_COLORS.trend}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.trend }}>{data.summary.totalProducts.toLocaleString()}</div>
+        <div className="rounded-lg border border-border bg-muted/50 p-3">
+          <div className="text-2xl font-bold text-foreground">{data.summary.totalProducts.toLocaleString()}</div>
           <div className="text-muted-foreground text-xs">Total Products</div>
         </div>
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.orders}15, ${SALES_COLORS.orders}05)`, border: `1px solid ${SALES_COLORS.orders}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.orders }}>{data.summary.topCategory}</div>
+        <div className="rounded-lg border border-border bg-muted/50 p-3">
+          <div className="text-2xl font-bold text-foreground">{data.summary.topCategory}</div>
           <div className="text-muted-foreground text-xs">Top Category</div>
         </div>
       </div>
@@ -246,7 +240,7 @@ export function SalesByCategoryPieChart() {
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <div className="text-2xl font-bold" style={{ color: SALES_COLORS.total }}>{formatCurrency(totalSales)}</div>
+        <div className="text-2xl font-bold text-foreground">{formatCurrency(totalSales)}</div>
         <div className="text-muted-foreground text-xs">Total Sales by Period</div>
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -325,24 +319,17 @@ export function SalesTimelineChart({ period = 'week' }: { period?: 'day' | 'week
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 text-center">
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.total}15, ${SALES_COLORS.total}05)`, border: `1px solid ${SALES_COLORS.total}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.total }}>{formatCurrency(summary.total)}</div>
+        <div className="rounded-lg border border-border bg-muted/50 p-3">
+          <div className="text-2xl font-bold text-foreground">{formatCurrency(summary.total)}</div>
           <div className="text-muted-foreground text-xs">Total Sales</div>
         </div>
-        <div className="rounded-lg p-3" style={{ background: `linear-gradient(135deg, ${SALES_COLORS.online}15, ${SALES_COLORS.online}05)`, border: `1px solid ${SALES_COLORS.online}30` }}>
-          <div className="text-2xl font-bold" style={{ color: SALES_COLORS.online }}>{summary.orders}</div>
+        <div className="rounded-lg border border-border bg-muted/50 p-3">
+          <div className="text-2xl font-bold text-foreground">{summary.orders}</div>
           <div className="text-muted-foreground text-xs">Total Orders</div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
-          <defs>
-            <linearGradient id="salesGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#6366F1" />
-              <stop offset="50%" stopColor="#8B5CF6" />
-              <stop offset="100%" stopColor="#7C3AED" />
-            </linearGradient>
-          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
             dataKey="time"
@@ -364,10 +351,10 @@ export function SalesTimelineChart({ period = 'week' }: { period?: 'day' | 'week
             type="monotone"
             dataKey="sales"
             name="Sales (ZAR)"
-            stroke="url(#salesGradient)"
-            strokeWidth={3}
-            dot={{ r: 5, fill: SALES_COLORS.total, strokeWidth: 2, stroke: 'white' }}
-            activeDot={{ r: 7, fill: SALES_COLORS.total, strokeWidth: 2, stroke: 'white' }}
+            stroke="#6366F1"
+            strokeWidth={2}
+            dot={{ r: 4, fill: '#6366F1' }}
+            activeDot={{ r: 6, fill: '#6366F1' }}
           />
         </LineChart>
       </ResponsiveContainer>
