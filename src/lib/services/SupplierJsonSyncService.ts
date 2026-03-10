@@ -408,50 +408,8 @@ export class SupplierJsonSyncService {
     let hasMore = true;
     let totalPages: number | null = null;
 
-    // Normalize feedType for comparison (case-insensitive, handle spaces)
-    const normalizedFeedType = feedType?.toLowerCase().replace(/\s+/g, '_') || '';
-
-    // For Stage One XML, fetch first page to get pagination metadata
-    if (normalizedFeedType === 'stage_one') {
-      const url = new URL(feedUrl);
-      url.searchParams.set('page', '1');
-      url.searchParams.set('per_page', '100');
-      
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          Accept: 'application/xml, application/json',
-          'User-Agent': 'MantisNXT/1.0',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Feed request failed (${response.status}): ${response.statusText}`);
-      }
-
-      const text = await response.text();
-      const products = this.parseStageOneXml(text);
-      const meta = this.extractStageOneMeta(text);
-      
-      allProducts.push(...products);
-      
-      if (meta) {
-        totalPages = meta.totalPages;
-        // If we got all products on first page, return early
-        if (meta.currentPage >= meta.totalPages) {
-          return allProducts;
-        }
-        page = 2; // Start from page 2 since we already got page 1
-      } else {
-        // No meta info, fall back to checking product count
-        if (products.length < 100) {
-          return allProducts;
-        }
-        page = 2;
-      }
-    }
-
-    // Continue pagination
+    // Unified pagination from page 1 for all feed types (JSON and XML).
+    // fetchProductsFromFeed sets page/per_page on the URL and chooses JSON vs XML per response.
     while (hasMore && page <= maxPages && (totalPages === null || page <= totalPages)) {
       const products = await this.fetchProductsFromFeed(feedUrl, feedType, page, 100);
 
@@ -459,8 +417,7 @@ export class SupplierJsonSyncService {
         hasMore = false;
       } else {
         allProducts.push(...products);
-        
-        // For Stage One with known total pages, check against that
+
         if (totalPages !== null) {
           if (page >= totalPages) {
             hasMore = false;
@@ -468,15 +425,13 @@ export class SupplierJsonSyncService {
             page++;
           }
         } else {
-          // For other formats, use product count to determine if more pages exist
           if (products.length < 100) {
             hasMore = false;
           } else {
             page++;
           }
         }
-        
-        // Small delay to be polite to the API
+
         if (hasMore) {
           await new Promise((resolve) => setTimeout(resolve, 200));
         }
@@ -1034,7 +989,8 @@ export function getSupplierJsonSyncService(supplierId: string): SupplierJsonSync
 }
 
 /**
- * Get all suppliers due for sync
+ * Get all suppliers due for sync.
+ * Used by /api/cron/json-feed-sync; ensure cron is registered in vercel.json.
  */
 export async function getSuppliersNeedingSync(): Promise<
   Array<{

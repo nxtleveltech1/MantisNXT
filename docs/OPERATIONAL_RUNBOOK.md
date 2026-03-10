@@ -10,15 +10,16 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Daily Operations](#daily-operations)
-3. [Weekly Operations](#weekly-operations)
-4. [Monthly Operations](#monthly-operations)
-5. [Incident Response](#incident-response)
-6. [Maintenance Procedures](#maintenance-procedures)
-7. [Monitoring and Alerting](#monitoring-and-alerting)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Escalation Procedures](#escalation-procedures)
-10. [Emergency Contacts](#emergency-contacts)
+2. [Scheduled Syncs (Vercel Cron)](#scheduled-syncs-vercel-cron)
+3. [Daily Operations](#daily-operations)
+4. [Weekly Operations](#weekly-operations)
+5. [Monthly Operations](#monthly-operations)
+6. [Incident Response](#incident-response)
+7. [Maintenance Procedures](#maintenance-procedures)
+8. [Monitoring and Alerting](#monitoring-and-alerting)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Escalation Procedures](#escalation-procedures)
+11. [Emergency Contacts](#emergency-contacts)
 
 ---
 
@@ -42,6 +43,27 @@ This runbook provides detailed procedures for the day-to-day operation, monitori
 - **Error Rate**: < 1% of total requests
 - **Security**: Zero security breaches
 - **Sync Success**: > 95% successful sync operations
+
+---
+
+## Scheduled Syncs (Vercel Cron)
+
+Scheduled syncs are driven **only** by Vercel Cron. No other scheduler runs these jobs.
+
+| Cron path | Schedule (UTC) | Purpose |
+|----------|----------------|---------|
+| `/api/cron/plusportal-sync` | `0 3 * * *` (03:00 daily) | PlusPortal: scrape pricing/discount data for suppliers with PlusPortal enabled |
+| `/api/cron/json-feed-sync` | `0 4 * * *` (04:00 daily) | JSON feed: sync product/stock/pricing from supplier JSON/API feeds (e.g. Stage One) |
+
+**Pattern (each cron):**
+
+1. Authorize via header `x-vercel-cron: 1` (Vercel sets this when invoking the cron).
+2. Query entities due for sync: `last_sync IS NULL OR last_sync < NOW() - interval`, ordered by `last_sync ASC`, limit N per run (env-configurable).
+3. For each entity, call the corresponding sync service; on success, the service updates `last_sync` (and status) on the supplier record.
+
+**Manual trigger:** Use the UI (“Sync Now” on the supplier Data Sync tab) or call the API (e.g. `POST /api/suppliers/[id]/sync` for JSON feed).
+
+**Env (optional):** `JSON_FEED_CRON_MAX_SUPPLIERS` (default 5); `PLUSPORTAL_CRON_MAX_SUPPLIERS` (default 10).
 
 ---
 
