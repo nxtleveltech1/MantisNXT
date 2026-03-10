@@ -1931,6 +1931,9 @@ function SupplierProfileContent() {
                             // Refresh recent uploads and activity after sync completes
                             await Promise.all([loadUploads(), loadAudit()]);
                             
+                            // Force Next.js to refresh server cache so catalog/inventory views show updated data
+                            router.refresh();
+                            
                           } catch (e: unknown) {
                             if (e.name === 'AbortError') {
                               setError('Sync is taking longer than expected. The sync may still be processing in the background. Please check sync history for status.');

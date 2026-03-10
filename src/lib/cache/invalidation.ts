@@ -20,6 +20,8 @@ export class CacheInvalidator {
     revalidatePath(`/api/suppliers/${supplierId}/inventory`);
     revalidatePath(`/api/suppliers/v3/${supplierId}`);
     revalidatePath(`/suppliers/${supplierId}`);
+    revalidatePath(`/suppliers/${supplierId}/profile`);
+    revalidatePath('/nxt-spp');
 
     // Invalidate list pages (all variants)
     revalidatePath('/api/suppliers');

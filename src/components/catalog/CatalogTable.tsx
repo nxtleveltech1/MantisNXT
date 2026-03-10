@@ -571,7 +571,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       params.set('sort_dir', sortDir);
       params.set('page', String(page));
       params.set('limit', String(limit));
-      const res = await fetch(`/api/catalog/products?${params}`);
+      const res = await fetch(`/api/catalog/products?${params}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load catalog');
       const data = await res.json();
       setRows(data.data || []);
