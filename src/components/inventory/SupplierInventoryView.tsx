@@ -1069,9 +1069,9 @@ export default function SupplierInventoryView() {
                           </TableCell>
                           <TableCell className="text-right">
                             {formatCurrency(
-                              Number((product as Record<string, unknown>).selling_price) ||
-                              Number((product as Record<string, unknown>).rsp) ||
-                              product.unit_cost_zar ?? 0
+                              (Number((product as Record<string, unknown>).selling_price) ||
+                                Number((product as Record<string, unknown>).rsp) ||
+                                product.unit_cost_zar) ?? 0
                             )}
                           </TableCell>
                           <TableCell className="text-right">
