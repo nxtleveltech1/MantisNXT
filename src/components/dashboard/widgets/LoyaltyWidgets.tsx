@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { UserPlus, Users, Gift, TrendingUp, Award } from 'lucide-react';
 import { formatCurrency } from '@/hooks/api/useDashboardWidgets';
 
