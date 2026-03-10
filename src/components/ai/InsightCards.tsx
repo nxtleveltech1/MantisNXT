@@ -632,7 +632,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                   className="group"
                 >
                   <Card
-                    className={`border-0 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                    className={`border-0 shadow-lg transition-all duration-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] ${
                       insight.priority === 'critical' ? 'ring-2 ring-red-200' : ''
                     }`}
                   >
@@ -640,7 +640,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`rounded-xl bg-gradient-to-r p-3 ${color} text-white shadow-lg`}
+                            className="rounded-lg bg-primary p-3 text-primary-foreground shadow-sm"
                           >
                             <TypeIcon className="h-5 w-5" />
                           </div>
@@ -726,7 +726,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                       </div>
 
                       {/* Impact Summary */}
-                      <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
+                      <div className="rounded-lg bg-muted p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <span className="text-sm font-medium text-blue-800">Impact</span>
                           <Badge variant="outline" className="text-xs">
@@ -780,7 +780,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                       <div className="flex flex-col gap-2 pt-2">
                         <Button
                           onClick={() => handleInsightAction(insight, insight.actions.primary)}
-                          className={`w-full bg-gradient-to-r ${color} text-white hover:opacity-90`}
+                          className="w-full bg-primary text-primary-foreground hover:opacity-90"
                         >
                           {React.createElement(insight.actions.primary.icon, {
                             className: 'h-4 w-4 mr-2',
@@ -855,7 +855,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             animate={{ opacity: 1, y: 0 }}
             className="py-12 text-center"
           >
-            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-indigo-100">
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
               <Sparkles className="h-12 w-12 text-purple-600" />
             </div>
             <h3 className="mb-2 text-lg font-semibold text-gray-900">No Insights Available</h3>
@@ -865,7 +865,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
             {!loading && (
               <Button
                 onClick={handleRefresh}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                className="bg-primary hover:opacity-90"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Insights

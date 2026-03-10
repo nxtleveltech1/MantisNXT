@@ -1309,7 +1309,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
           </ScrollArea>
 
           {loading && (
-            <div className="bg-background/50 absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-background/80 absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <RefreshCw className="text-primary mx-auto h-8 w-8 animate-spin" />
                 <div className="text-muted-foreground mt-2 text-sm">Loading products...</div>

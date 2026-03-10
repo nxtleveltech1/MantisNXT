@@ -251,7 +251,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
     switch (config.type) {
       case 'metric_card':
         return (
-          <Card className="from-primary/10 to-primary/5 bg-gradient-to-br">
+          <Card className="rounded-lg border border-border bg-card">
             <CardContent className="pt-6">
               <div className="text-center">
                 <div className="text-primary text-4xl font-bold">

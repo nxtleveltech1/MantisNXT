@@ -21,7 +21,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
     <html lang="en-ZA">
       <body className="bg-gray-50 font-sans">
         <div className="flex min-h-screen items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-lg border-2 border-red-200 bg-white p-8 shadow-xl">
+          <div className="w-full max-w-md rounded-lg border-2 border-red-200 bg-white p-8 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <div className="text-center">
               <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
                 <svg

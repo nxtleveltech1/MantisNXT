@@ -397,7 +397,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 text-white shadow-2xl"
+        className="rounded-lg bg-primary p-8 text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -405,13 +405,13 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className="rounded-xl bg-white/20 p-3 backdrop-blur-sm"
+                className="rounded-lg bg-primary-foreground/10 p-3"
               >
                 <Brain className="h-8 w-8" />
               </motion.div>
               <div>
                 <h1 className="text-3xl font-bold">
-                  <span className="bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
+                  <span className="text-primary-foreground/90">
                     <DynamicTextWrapper
                       texts={['AI Supplier Discovery', 'Intelligent Matching', 'Smart Recommendations']}
                       interval={3000}
@@ -438,7 +438,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
         </div>
       </motion.div>
       {/* AI Search Interface */}
-      <Card className="border-0 shadow-xl">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
@@ -456,7 +456,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     value={searchQuery}
                     onChange={e => handleSearchChange(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && executeSearch()}
-                    className="rounded-xl border-2 border-gray-200 py-6 pl-10 text-lg focus:border-purple-500"
+                    className="rounded-lg border-2 border-border py-6 pl-10 text-lg focus:border-primary"
                     aria-label="AI supplier search"
                   />
                   {aiProcessing && (
@@ -474,7 +474,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   onClick={executeSearch}
                   disabled={!searchQuery.trim() || aiProcessing}
                   size="lg"
-                  className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-8 text-white hover:from-purple-700 hover:to-indigo-700"
+                  className="rounded-lg bg-primary px-8 text-primary-foreground hover:opacity-90"
                 >
                   {aiProcessing ? (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -493,7 +493,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-10 mt-2 w-full rounded-xl border-2 border-gray-200 bg-white shadow-xl"
+                    className="absolute z-10 mt-2 w-full rounded-lg border-2 border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
                   >
                     {searchSuggestions.map((suggestion, index) => (
                       <motion.div
@@ -634,11 +634,11 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className="group border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
+                    <Card className="group rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="rounded-xl bg-gradient-to-r from-purple-100 to-indigo-100 p-3">
+                            <div className="rounded-lg bg-muted p-3">
                               <Building2 className="h-6 w-6 text-purple-600" />
                             </div>
                             <div>
@@ -656,7 +656,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             <div
-                              className={`rounded-full bg-gradient-to-r px-3 py-1 ${getMatchScoreColor(supplier.aiMatchScore)} text-sm font-bold text-white`}
+                              className={`rounded-full bg-primary px-3 py-1 text-sm font-bold text-primary-foreground`}
                             >
                               {supplier.aiMatchScore}% Match
                             </div>
@@ -773,7 +773,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                           <Button
                             size="sm"
                             onClick={() => onSupplierSelect?.(supplier)}
-                            className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                            className="flex-1 bg-primary hover:opacity-90"
                           >
                             <ArrowRight className="mr-1 h-4 w-4" />
                             Connect
@@ -798,11 +798,11 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="border-0 shadow-lg">
+                <Card className="rounded-lg border border-border bg-card shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div
-                        className={`rounded-xl p-3 ${
+                        className={`rounded-lg p-3 ${
                           insight.type === 'cost_opportunity'
                             ? 'bg-green-100 text-green-600'
                             : insight.type === 'market_trend'
@@ -889,7 +889,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                         </td>
                         <td className="px-2 py-4 text-center">
                           <div
-                            className={`rounded-full bg-gradient-to-r px-2 py-1 ${getMatchScoreColor(supplier.aiMatchScore)} text-sm font-medium text-white`}
+                            className="rounded-full bg-primary px-2 py-1 text-sm font-medium text-primary-foreground"
                           >
                             {supplier.aiMatchScore}%
                           </div>
@@ -965,7 +965,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="text-center">
                       <div
-                        className={`bg-gradient-to-r text-3xl font-bold ${getMatchScoreColor(selectedSupplier.aiMatchScore)} bg-clip-text text-transparent`}
+                        className="text-3xl font-bold text-foreground"
                       >
                         {selectedSupplier.aiMatchScore}%
                       </div>
@@ -1103,7 +1103,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => onSupplierSelect?.(selectedSupplier)}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                            className="flex-1 bg-primary hover:opacity-90"
                 >
                   <ArrowRight className="mr-2 h-4 w-4" />
                   Connect with Supplier

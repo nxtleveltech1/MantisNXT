@@ -23,7 +23,7 @@ export default function SubscriptionUpgradePage() {
         {/* Header */}
         <div className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="bg-primary rounded-xl p-3">
+            <div className="bg-primary rounded-lg p-3">
               <Building2 className="text-primary-foreground h-8 w-8" />
             </div>
           </div>

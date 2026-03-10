@@ -70,7 +70,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link href={`/marketplace-app/listings/${listing.id}`} className="group">
-      <Card className="overflow-hidden h-full border border-border/50 bg-card hover:border-primary/30 hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
+      <Card className="overflow-hidden h-full border border-border/50 bg-card hover:border-primary/30 transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
         {/* Image Container */}
         <div className="aspect-[4/3] relative bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
           {hasValidImage ? (
@@ -85,7 +85,7 @@ export function ListingCard({ listing }: ListingCardProps) {
               <img
                 src={imageUrl}
                 alt={listing.title}
-                className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-500  ${
                   imageLoaded ? "opacity-100" : "opacity-0"
                 }`}
                 onLoad={() => setImageLoaded(true)}
@@ -101,7 +101,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           
           {/* Sold overlay */}
           {listing.status === "sold" && (
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
               <Badge variant="secondary" className="text-base px-5 py-2 font-bold">
                 SOLD
               </Badge>
@@ -112,7 +112,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           {listing.category && (
             <Badge 
               variant="secondary" 
-              className="absolute top-3 left-3 text-xs bg-background/90 backdrop-blur-sm shadow-sm"
+              className="absolute top-3 left-3 text-xs bg-background/95 shadow-sm"
             >
               {listing.category}
             </Badge>

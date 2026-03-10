@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
-          <Card className="border-border rounded-xl border shadow-sm">
+          <Card className="border-border rounded-lg border shadow-sm">
             <CardHeader className="space-y-2 pb-4 text-center">
               <CardTitle className="text-success text-xl font-bold">
                 Email Sent Successfully
@@ -138,7 +138,7 @@ export default function ForgotPasswordPage() {
         {/* Header */}
         <div className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="bg-primary rounded-xl p-3">
+            <div className="bg-primary rounded-lg p-3">
               <Building2 className="text-primary-foreground h-8 w-8" />
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Reset Form */}
-        <Card className="border-border rounded-xl border shadow-sm">
+        <Card className="border-border rounded-lg border shadow-sm">
           <CardHeader className="space-y-2 pb-4 text-center">
             <CardTitle className="text-2xl font-bold">Forgot Your Password?</CardTitle>
             <CardDescription>

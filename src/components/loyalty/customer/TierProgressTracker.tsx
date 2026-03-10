@@ -193,7 +193,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                     initial={{ width: 0 }}
                     animate={{ width: `${data.progress_percentage}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="from-primary via-primary/90 to-primary/80 h-full rounded-full bg-gradient-to-r"
+                    className="bg-primary h-full rounded-full"
                   />
                 </div>
               </div>

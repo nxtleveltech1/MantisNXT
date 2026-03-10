@@ -466,16 +466,16 @@ What specific area would you like me to focus on?`;
   return (
     <TooltipProvider>
       <div
-        className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl`}
+        className={`flex flex-col ${isExpanded ? 'h-[600px]' : 'h-96'} overflow-hidden rounded-lg border border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.1)]`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-4 text-white">
+        <div className="bg-primary p-4 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="rounded-lg bg-white/20 p-2 backdrop-blur-sm"
+                className="rounded-lg bg-primary-foreground/10 p-2"
               >
                 <Brain className="h-5 w-5" />
               </motion.div>
@@ -532,10 +532,10 @@ What specific area would you like me to focus on?`;
                     <div
                       className={`max-w-[80%] ${
                         message.type === 'user'
-                          ? 'rounded-2xl rounded-tr-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                          ? 'rounded-lg rounded-tr-sm bg-primary text-primary-foreground'
                           : message.type === 'system'
                             ? 'rounded-lg bg-gray-100 py-2 text-center text-sm text-gray-600'
-                            : 'rounded-2xl rounded-tl-sm bg-gray-50 text-gray-800'
+                            : 'rounded-lg rounded-tl-sm bg-muted text-foreground'
                       } p-4 shadow-lg`}
                     >
                       {/* Message Header */}
@@ -664,7 +664,7 @@ What specific area would you like me to focus on?`;
                     exit={{ opacity: 0, y: -10 }}
                     className="flex justify-start"
                   >
-                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 p-4 shadow-lg">
+                    <div className="rounded-lg rounded-tl-sm bg-muted p-4 shadow-sm">
                       <div className="flex items-center gap-2">
                         <Bot className="h-4 w-4 text-indigo-600" />
                         <div className="flex gap-1">
@@ -727,7 +727,7 @@ What specific area would you like me to focus on?`;
                   onChange={e => setInputMessage(e.target.value)}
                   onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                   disabled={isProcessing}
-                  className="rounded-xl border-2 border-gray-200 py-6 pr-20 text-sm focus:border-indigo-400"
+                  className="rounded-lg border-2 border-border py-6 pr-20 text-sm focus:border-primary"
                   aria-label="Chat message input"
                 />
                 <div className="absolute top-1/2 right-2 flex -translate-y-1/2 transform gap-1">
@@ -771,7 +771,7 @@ What specific area would you like me to focus on?`;
               <Button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isProcessing}
-                className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 text-white hover:from-indigo-600 hover:to-purple-700"
+                className="rounded-lg bg-primary px-6 text-primary-foreground hover:opacity-90"
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -300,14 +300,14 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
   };
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-300">
-      <div className="bg-background animate-in slide-in-from-bottom-4 max-h-[95vh] w-full max-w-7xl overflow-hidden rounded-2xl border-0 shadow-2xl duration-500">
+    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 duration-300">
+      <div className="bg-background animate-in slide-in-from-bottom-4 max-h-[95vh] w-full max-w-7xl overflow-hidden rounded-lg border border-border shadow-[0_2px_8px_rgba(0,0,0,0.15)] duration-500">
         {/* Enhanced Header */}
-        <div className="border-b bg-gradient-to-r from-white via-gray-50 to-white p-8 shadow-sm">
+        <div className="border-b border-border bg-muted/30 p-8 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 p-4 shadow-lg">
+                <div className="rounded-lg bg-primary p-4 shadow-sm">
                   <Package className="h-10 w-10 text-white" />
                 </div>
                 <div className="absolute -right-2 -bottom-2">
@@ -326,7 +326,7 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </div>
               <div className="space-y-3">
                 <div>
-                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-3xl font-bold text-transparent">
+                  <h1 className="text-3xl font-bold text-foreground">
                     {detailedItem.product.name}
                   </h1>
                   <p className="mt-1 text-gray-600">{detailedItem.product.description}</p>
@@ -428,10 +428,10 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
         </div>
 
         {/* Enhanced Key Metrics Dashboard */}
-        <div className="border-b bg-gradient-to-br from-gray-50 via-white to-blue-50 p-8">
+        <div className="border-b border-border bg-muted/30 p-8">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-6">
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <Package className="mr-2 h-5 w-5 text-green-600" />
                   <div className="text-2xl font-bold text-green-700">
@@ -446,8 +446,8 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </Card>
             </div>
 
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <CheckCircle className="mr-2 h-5 w-5 text-blue-600" />
                   <div className="text-2xl font-bold text-blue-700">
@@ -463,8 +463,8 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </Card>
             </div>
 
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <DollarSign className="mr-2 h-5 w-5 text-purple-600" />
                   <div className="text-2xl font-bold text-purple-700">
@@ -481,8 +481,8 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </Card>
             </div>
 
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <CalendarIcon className="mr-2 h-5 w-5 text-orange-600" />
                   <div className="text-2xl font-bold text-orange-700">
@@ -502,8 +502,8 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </Card>
             </div>
 
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <Activity className="mr-2 h-5 w-5 text-teal-600" />
                   <div className="text-2xl font-bold text-teal-700">
@@ -517,8 +517,8 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
               </Card>
             </div>
 
-            <div className="group transition-all duration-300 hover:scale-105">
-              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-4 text-center shadow-sm transition-all hover:shadow-lg">
+            <div className="group transition-shadow duration-200">
+              <Card className="border border-border bg-card p-4 text-center shadow-sm transition-shadow hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
                 <div className="mb-2 flex items-center justify-center">
                   <Target className="mr-2 h-5 w-5 text-red-600" />
                   <div className="text-2xl font-bold text-red-700">
@@ -542,45 +542,45 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
         {/* Enhanced Main Content */}
         <div className="max-h-[60vh] overflow-y-auto bg-gray-50/50 p-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-6 rounded-xl border-0 bg-white p-1 shadow-sm">
+            <TabsList className="grid w-full grid-cols-6 rounded-lg border border-border bg-muted p-1 shadow-sm">
               <TabsTrigger
                 value="overview"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Package className="mr-2 h-4 w-4" />
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="analytics"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Analytics
               </TabsTrigger>
               <TabsTrigger
                 value="movements"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <History className="mr-2 h-4 w-4" />
                 Movements
               </TabsTrigger>
               <TabsTrigger
                 value="supplier"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Building2 className="mr-2 h-4 w-4" />
                 Supplier
               </TabsTrigger>
               <TabsTrigger
                 value="compliance"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-violet-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Shield className="mr-2 h-4 w-4" />
                 Compliance
               </TabsTrigger>
               <TabsTrigger
                 value="forecasting"
-                className="rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                className="rounded-lg transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Zap className="mr-2 h-4 w-4" />
                 Forecasting

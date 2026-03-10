@@ -510,12 +510,12 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
                 transition={{ delay: index * 0.1 }}
                 className="group"
               >
-                <Card className="border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
+                <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-lg bg-gradient-to-r from-purple-100 to-indigo-100 p-2">
+                          <div className="rounded-lg bg-muted p-2">
                             <BarChart3 className="h-5 w-5 text-purple-600" />
                           </div>
                           <div>
@@ -613,7 +613,7 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
                     </div>
 
                     {/* AI Insights */}
-                    <div className="space-y-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
+                    <div className="space-y-3 rounded-lg bg-muted/50 p-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-blue-600" />
                         <span className="font-medium text-blue-800">AI Insights</span>
@@ -663,7 +663,7 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
             animate={{ opacity: 1, y: 0 }}
             className="py-12 text-center"
           >
-            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-indigo-100">
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
               <BarChart3 className="h-12 w-12 text-purple-600" />
             </div>
             <h3 className="mb-2 text-lg font-semibold text-gray-900">No Charts Available</h3>
@@ -675,7 +675,7 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
             {!loading && (
               <Button
                 onClick={handleRefresh}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                className="bg-primary hover:opacity-90"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Charts

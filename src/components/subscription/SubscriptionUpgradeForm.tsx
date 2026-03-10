@@ -153,7 +153,7 @@ export function SubscriptionUpgradeForm({
 
   if (success) {
     return (
-      <Card className={cn('border-border rounded-xl border shadow-sm', className)}>
+      <Card className={cn('border-border rounded-lg border shadow-sm', className)}>
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
             <div className="bg-success/10 rounded-full p-4">
@@ -171,7 +171,7 @@ export function SubscriptionUpgradeForm({
   }
 
   return (
-    <Card className={cn('border-border rounded-xl border shadow-sm', className)}>
+    <Card className={cn('border-border rounded-lg border shadow-sm', className)}>
       <CardHeader className="space-y-2 pb-4">
         <CardTitle className="flex items-center gap-2 text-2xl font-bold">
           <CreditCard className="text-primary h-6 w-6" />

@@ -710,7 +710,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   }}
                 />
               ) : (
-                <div className="flex items-center gap-2 text-white">
+                <div className="flex items-center gap-2 text-sidebar-foreground">
                   <Building2 className="h-8 w-8" />
                   <span className="text-xl font-bold">MantisNXT</span>
                 </div>

@@ -147,7 +147,7 @@ export function LoyaltyDashboard({
     >
       {/* Hero Section - Points Balance */}
       <motion.div variants={itemVariants}>
-        <Card className="from-primary/5 via-primary/10 to-primary/5 border-primary/20 bg-gradient-to-br">
+        <Card className="rounded-lg border border-primary/20 bg-card">
           <CardContent className="pt-8 pb-6">
             <div className="space-y-6 text-center">
               {/* Points Balance */}
@@ -204,7 +204,7 @@ export function LoyaltyDashboard({
                     initial={{ width: 0 }}
                     animate={{ width: `${tier_info.progress_percentage}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="from-primary to-primary/80 absolute inset-y-0 left-0 rounded-full bg-gradient-to-r"
+                    className="bg-primary absolute inset-y-0 left-0 rounded-full"
                   />
                 </div>
                 <p className="text-muted-foreground text-sm">

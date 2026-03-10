@@ -90,7 +90,7 @@ export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
       {Array.from({ length: columns }).map((_, i) => (
         <Skeleton
           key={`header-${i}`}
-          className="h-10 animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200"
+          className="h-10 animate-pulse bg-muted"
         />
       ))}
     </div>
@@ -167,7 +167,7 @@ export const ChartSkeleton: React.FC<{ type?: 'bar' | 'line' | 'pie' }> = ({ typ
             {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="flex-1 rounded-t-lg bg-gradient-to-t from-blue-200 to-blue-300"
+                className="flex-1 rounded-t-lg bg-muted"
                 initial={{ height: 0 }}
                 animate={{ height: `${Math.random() * 80 + 20}%` }}
                 transition={{ delay: i * 0.1, duration: 0.8 }}
@@ -188,7 +188,7 @@ export const ChartSkeleton: React.FC<{ type?: 'bar' | 'line' | 'pie' }> = ({ typ
             ))}
             {/* Animated line */}
             <motion.div
-              className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"
+              className="absolute inset-0 rounded-lg bg-primary/20"
               initial={{ clipPath: 'inset(50% 100% 50% 0%)' }}
               animate={{ clipPath: 'inset(20% 0% 30% 0%)' }}
               transition={{ duration: 2, ease: 'easeInOut' }}
@@ -199,7 +199,7 @@ export const ChartSkeleton: React.FC<{ type?: 'bar' | 'line' | 'pie' }> = ({ typ
         {type === 'pie' && (
           <div className="flex h-full items-center justify-center">
             <motion.div
-              className="h-40 w-40 rounded-full bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300"
+              className="h-40 w-40 rounded-full bg-muted"
               animate={{ rotate: 360 }}
               transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
             />
@@ -314,7 +314,7 @@ export const LoadingState: React.FC<LoadingState> = ({
       <motion.div
         variants={loadingVariants}
         animate={animated ? 'spin' : undefined}
-        className={cn('rounded-full bg-gradient-to-r p-2', colors.bg)}
+        className={cn('rounded-full bg-primary p-2', colors.bg)}
       >
         <Icon className="h-6 w-6 text-white" />
       </motion.div>
@@ -333,7 +333,7 @@ export const LoadingState: React.FC<LoadingState> = ({
         variants={loadingVariants}
         animate={animated ? 'pulse' : undefined}
         className={cn(
-          'relative rounded-3xl bg-gradient-to-r p-6 shadow-2xl',
+          'relative rounded-lg border border-border bg-card p-6 shadow-sm',
           colors.bg,
           `ring-8 ${colors.ring}`
         )}
@@ -429,7 +429,7 @@ export const LoadingState: React.FC<LoadingState> = ({
         <motion.div
           variants={loadingVariants}
           animate={animated ? 'spin' : undefined}
-          className={cn('rounded-2xl bg-gradient-to-r p-3', colors.bg)}
+          className={cn('rounded-lg bg-primary p-3', colors.bg)}
         >
           <Icon className="h-8 w-8 text-white" />
         </motion.div>
@@ -453,7 +453,7 @@ export const LoadingState: React.FC<LoadingState> = ({
         <div className="relative">
           <div className="h-4 w-full rounded-full bg-gray-200">
             <motion.div
-              className={cn('h-4 rounded-full bg-gradient-to-r', colors.bg)}
+              className={cn('h-4 rounded-full bg-primary', colors.bg)}
               initial={{ width: 0 }}
               animate={{ width: `${progress || 0}%` }}
               transition={{ duration: 0.5 }}
@@ -463,7 +463,7 @@ export const LoadingState: React.FC<LoadingState> = ({
           {/* Animated shine effect */}
           {animated && (
             <motion.div
-              className="absolute inset-0 h-4 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              className="absolute inset-0 h-4 rounded-full bg-primary from-transparent via-white/30 to-transparent"
               animate={{ x: ['-100%', '100%'] }}
               transition={{
                 duration: 1.5,
@@ -614,9 +614,9 @@ export const ProductCatalogLoader: React.FC = () => (
           transition={{ delay: i * 0.05 }}
         >
           <Card className="overflow-hidden">
-            <div className="relative aspect-square bg-gradient-to-br from-gray-200 to-gray-300">
+            <div className="relative aspect-square bg-muted">
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                className="absolute inset-0 bg-primary-foreground/10 animate-pulse"
                 animate={{ x: ['-100%', '100%'] }}
                 transition={{
                   duration: 1.5,
@@ -672,14 +672,14 @@ export const GlobalLoader: React.FC<{
         exit={{ opacity: 0 }}
         className={cn(
           'fixed inset-0 z-50 flex items-center justify-center',
-          backdrop && 'bg-black/20 backdrop-blur-sm'
+          backdrop && 'bg-black/20 '
         )}
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
-          className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl"
+          className="mx-4 max-w-md rounded-lg border border-border bg-card p-8 shadow-sm"
         >
           <LoadingState
             type="loading"

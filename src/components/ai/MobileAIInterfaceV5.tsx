@@ -140,7 +140,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-3xl bg-white shadow-2xl dark:bg-gray-900"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-xl bg-background shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
         >
           {/* Drag Handle */}
           <div className="flex items-center justify-center border-b border-gray-200 py-2 dark:border-gray-700">
@@ -148,7 +148,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-white dark:border-gray-700">
+          <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5" />
               <span className="font-semibold">AI Assistant</span>
@@ -237,9 +237,9 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
                             message.role === 'user'
-                              ? 'rounded-tr-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                              ? 'rounded-tr-sm bg-primary text-primary-foreground'
                               : 'rounded-tl-sm bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
                           }`}
                         >
@@ -262,7 +262,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                         animate={{ opacity: 1 }}
                         className="flex justify-start"
                       >
-                        <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2 dark:bg-gray-800">
+                        <div className="rounded-lg rounded-tl-sm bg-muted px-4 py-2">
                           <div className="flex items-center gap-2">
                             <div className="flex gap-1">
                               {[0, 1, 2].map(i => (
@@ -320,7 +320,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                     <Button
                       type="submit"
                       disabled={!input.trim() || isLoading}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600"
+                      className="bg-primary text-primary-foreground"
                     >
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -397,7 +397,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
           animate={{ scale: 1 }}
           exit={{ scale: 0 }}
           onClick={() => setIsMinimized(false)}
-          className="fixed right-4 bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg"
+          className="fixed right-4 bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
         >
           <Brain className="h-6 w-6" />
           {isLoading && (

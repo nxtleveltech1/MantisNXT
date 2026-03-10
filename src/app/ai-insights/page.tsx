@@ -165,17 +165,15 @@ export default function AIInsightsPage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg dark:from-purple-900/20 dark:to-indigo-900/20">
+        <Card className="rounded-lg border border-border bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Insights
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                {stats.totalInsights}
-              </span>
+              <span className="text-3xl font-bold">{stats.totalInsights}</span>
               <Badge variant="secondary" className="text-xs">
                 <Sparkles className="mr-1 h-3 w-3" />
                 Active
@@ -184,9 +182,9 @@ export default function AIInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg dark:from-green-900/20 dark:to-emerald-900/20">
+        <Card className="rounded-lg border border-border bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Opportunities
             </CardTitle>
           </CardHeader>
@@ -200,9 +198,9 @@ export default function AIInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-red-50 to-rose-50 shadow-lg dark:from-red-900/20 dark:to-rose-900/20">
+        <Card className="rounded-lg border border-border bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Risks Identified
             </CardTitle>
           </CardHeader>
@@ -216,9 +214,9 @@ export default function AIInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-lg dark:from-blue-900/20 dark:to-cyan-900/20">
+        <Card className="rounded-lg border border-border bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Potential Savings
             </CardTitle>
           </CardHeader>

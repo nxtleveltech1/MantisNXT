@@ -466,7 +466,7 @@ export default function SupplierInventoryView() {
                           <div className="mb-2 flex items-start justify-between">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                                   {data.supplier.name
                                     .split(' ')
                                     .map(n => n[0])
@@ -574,13 +574,13 @@ export default function SupplierInventoryView() {
           {selectedSupplierData ? (
             <div className="space-y-6">
               {/* Supplier Header */}
-              <Card className="border-0 bg-gradient-to-r from-white to-gray-50 shadow-md">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                       <div className="relative">
                         <Avatar className="h-16 w-16 border-4 border-white shadow-lg">
-                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-700 text-lg font-bold text-white">
+                          <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
                             {selectedSupplierData.supplier.name
                               .split(' ')
                               .map(n => n[0])
@@ -596,7 +596,7 @@ export default function SupplierInventoryView() {
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <CardTitle className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl text-transparent">
+                          <CardTitle className="text-2xl font-semibold text-foreground">
                             {selectedSupplierData.supplier.name}
                           </CardTitle>
                           <div className="flex gap-2">
@@ -725,7 +725,7 @@ export default function SupplierInventoryView() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-4 gap-6">
-                    <div className="rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4 text-center">
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
                       <div className="mb-2 flex items-center justify-center">
                         <DollarSign className="mr-1 h-6 w-6 text-green-600" />
                         <div className="text-2xl font-bold text-green-700">
@@ -739,7 +739,7 @@ export default function SupplierInventoryView() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 text-center">
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
                       <div className="mb-2 flex items-center justify-center">
                         <CheckCircle className="mr-1 h-6 w-6 text-blue-600" />
                         <div className="text-2xl font-bold text-blue-700">
@@ -767,7 +767,7 @@ export default function SupplierInventoryView() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 text-center">
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
                       <div className="mb-2 flex items-center justify-center">
                         <AlertTriangle className="mr-1 h-6 w-6 text-orange-600" />
                         <div className="text-2xl font-bold text-orange-700">
@@ -789,7 +789,7 @@ export default function SupplierInventoryView() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-4 text-center">
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
                       <div className="mb-2 flex items-center justify-center">
                         <Package className="mr-1 h-6 w-6 text-red-600" />
                         <div className="text-2xl font-bold text-red-700">
@@ -938,7 +938,7 @@ export default function SupplierInventoryView() {
                       {selectedProducts.size > 0 && (
                         <Button
                           onClick={() => setShowAddToInventory(true)}
-                          className="bg-gradient-to-r from-green-600 to-emerald-600 whitespace-nowrap shadow-lg hover:from-green-700 hover:to-emerald-700"
+                          className="bg-primary whitespace-nowrap shadow-sm hover:opacity-90"
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           Add to Inventory ({selectedProducts.size})
@@ -1159,7 +1159,7 @@ export default function SupplierInventoryView() {
               <CardContent className="flex h-96 items-center justify-center">
                 <div className="space-y-6 text-center">
                   <div className="relative">
-                    <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-blue-600 to-purple-600 opacity-20" />
+                    <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20" />
                     <Building2 className="text-muted-foreground relative z-10 mx-auto h-16 w-16" />
                   </div>
                   <div className="space-y-3">

@@ -304,7 +304,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow-2xl"
+        className="rounded-lg bg-primary p-8 text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -312,7 +312,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
               <motion.div
                 animate={{ rotate: [0, 360] }}
                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="rounded-xl bg-white/20 p-3 backdrop-blur-sm"
+                className="rounded-lg bg-primary-foreground/10 p-3"
               >
                 <Brain className="h-8 w-8" />
               </motion.div>
@@ -363,10 +363,10 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
         >
           {/* Spend Metrics */}
-          <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-green-500 p-3 text-white">
+                <div className="rounded-lg bg-green-600 p-3 text-white">
                   <DollarSign className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -388,10 +388,10 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           </Card>
 
           {/* Suppliers Metrics */}
-          <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-blue-500 p-3 text-white">
+                <div className="rounded-lg bg-blue-600 p-3 text-white">
                   <Building2 className="h-6 w-6" />
                 </div>
                 <div className="flex items-center gap-1">
@@ -413,10 +413,10 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           </Card>
 
           {/* Inventory Metrics */}
-          <Card className="border-0 bg-gradient-to-br from-purple-50 to-violet-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-purple-500 p-3 text-white">
+                <div className="rounded-lg bg-purple-600 p-3 text-white">
                   <Package className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
@@ -437,10 +437,10 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           </Card>
 
           {/* Procurement Metrics */}
-          <Card className="border-0 bg-gradient-to-br from-orange-50 to-amber-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-orange-500 p-3 text-white">
+                <div className="rounded-lg bg-orange-600 p-3 text-white">
                   <FileText className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-orange-100 text-orange-800">
@@ -468,10 +468,10 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="border-0 shadow-xl">
+        <Card className="rounded-lg border border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <div className="rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 p-2 text-white">
+              <div className="rounded-lg bg-amber-500 p-2 text-white">
                 <Sparkles className="h-5 w-5" />
               </div>
               Priority Insights
@@ -493,11 +493,11 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ delay: index * 0.1 }}
-                        className="relative rounded-xl border-2 border-gray-200 bg-gradient-to-r from-white to-gray-50 p-4 transition-all duration-200 hover:border-blue-300 hover:shadow-lg"
+                        className="relative rounded-lg border-2 border-border bg-card p-4 transition-colors duration-200 hover:border-primary/50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
                       >
                         <div className="flex items-start gap-4">
                           <div
-                            className={`rounded-xl bg-gradient-to-r p-3 ${getInsightColor(insight.type, insight.priority)} text-white shadow-lg`}
+                            className="rounded-lg bg-primary p-3 text-primary-foreground shadow-sm"
                           >
                             <Icon className="h-5 w-5" />
                           </div>
@@ -549,7 +549,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           transition={{ delay: 0.3 }}
           className="grid grid-cols-1 gap-6 lg:grid-cols-2"
         >
-          <Card className="border-0 shadow-xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
@@ -577,7 +577,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />

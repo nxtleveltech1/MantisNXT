@@ -258,7 +258,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
       </div>
 
       {/* Referral Link */}
-      <Card className="border-primary/30 from-primary/5 to-primary/10 bg-gradient-to-br">
+      <Card className="rounded-lg border border-primary/30 bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Share2 className="text-primary h-5 w-5" />

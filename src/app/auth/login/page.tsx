@@ -198,7 +198,7 @@ export default function LoginPage() {
             maxWidth: '28rem',
           }}
         >
-          <div className="bg-card/80 space-y-6 rounded-lg border border-border p-6 backdrop-blur-sm">
+          <div className="bg-card/90 space-y-6 rounded-lg border border-border p-6">
             {error && (
               <Alert variant="destructive" className="rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -275,8 +275,8 @@ export default function LoginPage() {
           maxWidth: '28rem',
         }}
       >
-        {/* Login Form - Liquid glassy black panel */}
-        <div className="space-y-6 rounded-lg border border-border/20 p-6 backdrop-blur-md bg-black/90 shadow-2xl">
+        {/* Login Form */}
+        <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           {error && (
             <Alert variant="destructive" className="rounded-lg">
               <AlertCircle className="h-4 w-4" />
@@ -295,7 +295,7 @@ export default function LoginPage() {
                       <Input
                         type="email"
                         placeholder="Username or Email"
-                        className="h-12 rounded-lg placeholder:text-white text-white"
+                        className="h-12 rounded-lg"
                         autoComplete="email"
                         {...field}
                       />
@@ -315,7 +315,7 @@ export default function LoginPage() {
                         <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password"
-                          className="h-12 rounded-lg pr-12 placeholder:text-white text-white"
+                          className="h-12 rounded-lg pr-12"
                           autoComplete="current-password"
                           {...field}
                         />

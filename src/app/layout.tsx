@@ -37,13 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <html lang="en-ZA" suppressHydrationWarning>
         <head />
-        <body
-          className="theme-transition antialiased"
-          style={{
-            fontFamily:
-              'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-          }}
-        >
+        <body className="theme-transition antialiased">
           <Providers>{children}</Providers>
         </body>
       </html>

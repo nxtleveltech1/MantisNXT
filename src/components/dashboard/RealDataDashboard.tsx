@@ -111,28 +111,23 @@ const MetricCard: React.FC<MetricCardProps> = ({
   // Enhanced color scheme with semantic tokens and rings
   const colorScheme = {
     blue: {
-      icon: 'bg-primary/10 text-primary ring-1 ring-primary/20',
-      gradient: 'from-primary/5 via-background to-background',
+      icon: 'bg-primary/10 text-primary',
       change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     green: {
-      icon: 'bg-success/10 text-success ring-1 ring-success/20',
-      gradient: 'from-success/5 via-background to-background',
+      icon: 'bg-success/10 text-success',
       change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     yellow: {
-      icon: 'bg-warning/10 text-warning ring-1 ring-warning/20',
-      gradient: 'from-warning/5 via-background to-background',
+      icon: 'bg-warning/10 text-warning',
       change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     red: {
-      icon: 'bg-destructive/10 text-destructive ring-1 ring-destructive/20',
-      gradient: 'from-destructive/5 via-background to-background',
+      icon: 'bg-destructive/10 text-destructive',
       change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
     purple: {
-      icon: 'bg-accent/10 text-accent ring-1 ring-accent/20',
-      gradient: 'from-accent/5 via-background to-background',
+      icon: 'bg-accent/10 text-accent',
       change: trend === 'up' ? 'text-success' : 'text-destructive',
     },
   };
@@ -150,7 +145,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
               <div className="bg-muted h-8 w-16 rounded"></div>
               <div className="bg-muted h-3 w-24 rounded"></div>
             </div>
-            <div className="bg-muted h-12 w-12 rounded-xl"></div>
+            <div className="bg-muted h-12 w-12 rounded-lg"></div>
           </div>
         </CardContent>
       </Card>
@@ -160,9 +155,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <Card
       className={cn(
-        'group relative overflow-hidden transition-all duration-300',
-        'hover:border-primary/20 shadow-sm hover:-translate-y-1 hover:shadow-lg',
-        'border-border/50 border',
+        'group relative overflow-hidden transition-shadow duration-200',
+        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]',
+        'border-border border',
         href || onClick ? 'cursor-pointer' : ''
       )}
       {...cardProps}
@@ -173,20 +168,10 @@ const MetricCard: React.FC<MetricCardProps> = ({
         }
       }}
     >
-      {/* Subtle gradient background */}
-      <div
-        className={cn(
-          'absolute inset-0 bg-gradient-to-br opacity-40 transition-opacity duration-300',
-          `bg-gradient-to-br ${colorScheme[color].gradient}`,
-          'group-hover:opacity-60'
-        )}
-      />
-
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-2">
-            {/* Label with proper typography */}
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-medium">
               {title}
             </p>
 
@@ -194,7 +179,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-bold tracking-tight tabular-nums">{value}</p>
               {(href || onClick) && (
-                <ArrowUpRight className="text-muted-foreground h-4 w-4 -translate-x-2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+                <ArrowUpRight className="text-muted-foreground h-4 w-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               )}
             </div>
 
@@ -229,9 +214,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
           {/* Refined icon presentation */}
           <div
             className={cn(
-              'rounded-xl p-3 transition-all duration-300',
-              colorScheme[color].icon,
-              'group-hover:scale-110'
+              'rounded-lg p-3',
+              colorScheme[color].icon
             )}
           >
             {icon}
@@ -313,9 +297,8 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[] }> = ({ activities }) 
           {/* Enhanced icon with pulse effect for recent items */}
           <div
             className={cn(
-              'relative flex-shrink-0 rounded-lg p-2.5 transition-all duration-300',
-              getPriorityColor(activity.priority),
-              'group-hover:scale-110'
+              'relative flex-shrink-0 rounded-lg p-2.5 transition-colors duration-200',
+              getPriorityColor(activity.priority)
             )}
           >
             {getActivityIcon(activity.type)}
@@ -409,8 +392,8 @@ const AlertPanel: React.FC<{ alerts: AlertItem[] }> = ({ alerts }) => {
         <div
           key={alert.id}
           className={cn(
-            'relative overflow-hidden rounded-lg border transition-all duration-300',
-            'hover:-translate-x-1 hover:shadow-md',
+            'relative overflow-hidden rounded-lg border transition-shadow duration-200',
+            'hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]',
             severityConfig[alert.severity as keyof typeof severityConfig]?.bg ||
               severityConfig.info.bg,
             severityConfig[alert.severity as keyof typeof severityConfig]?.border ||
@@ -656,7 +639,7 @@ const RealDataDashboard: React.FC = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="transition-transform duration-100 active:scale-95"
+            className="transition-colors duration-150"
           >
             <RefreshCw
               className={cn(

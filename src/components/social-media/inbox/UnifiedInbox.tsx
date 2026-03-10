@@ -191,11 +191,11 @@ export default function UnifiedInbox() {
     platformIcons[selectedConversation.platform as keyof typeof platformIcons];
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="flex h-[calc(100vh-12rem)] bg-white rounded-lg border border-border shadow-sm overflow-hidden">
       {/* Conversations Sidebar */}
       <div className="w-full md:w-80 border-r border-gray-200 flex flex-col bg-white">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="p-4 border-b border-gray-200 bg-muted/50">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-gray-900">Unified Inbox</h1>
             <div className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-bold">
@@ -243,7 +243,7 @@ export default function UnifiedInbox() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center font-bold text-white text-lg">
+                      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-white text-lg">
                         {conv.userName?.charAt(0).toUpperCase() || "?"}
                       </div>
                       <div
@@ -298,7 +298,7 @@ export default function UnifiedInbox() {
           <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center font-bold text-white">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-white">
                   {selectedConversation.userName?.charAt(0).toUpperCase() || "?"}
                 </div>
                 {selectedPlatformInfo && (
@@ -364,12 +364,12 @@ export default function UnifiedInbox() {
                       }`}
                     >
                       {!isOutbound && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
+                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
                           {selectedConversation.userName?.charAt(0).toUpperCase() || "?"}
                         </div>
                       )}
                       <div
-                        className={`rounded-2xl px-4 py-2 shadow-sm ${
+                        className={`rounded-lg px-4 py-2 shadow-sm ${
                           isOutbound
                             ? "bg-blue-600 text-white rounded-br-none"
                             : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
@@ -440,7 +440,7 @@ export default function UnifiedInbox() {
                       sendMessage();
                     }
                   }}
-                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
                 <Button
                   onClick={sendMessage}

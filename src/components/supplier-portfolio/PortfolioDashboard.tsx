@@ -129,7 +129,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         return (
           <Badge
             variant="outline"
-            className="gap-1.5 border-0 bg-gradient-to-r from-blue-500 to-cyan-500 px-3 py-1 text-white shadow-sm shadow-blue-200"
+            className="gap-1.5 border border-border bg-primary/90 px-3 py-1 text-primary-foreground"
           >
             <Clock className="h-3 w-3" />
             Received
@@ -139,7 +139,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         return (
           <Badge
             variant="outline"
-            className="gap-1.5 border-0 bg-gradient-to-r from-yellow-500 to-amber-500 px-3 py-1 text-white shadow-sm shadow-yellow-200"
+            className="gap-1.5 border border-amber-500/50 bg-amber-500/90 px-3 py-1 text-white"
           >
             <Loader2 className="h-3 w-3 animate-spin" />
             Validating
@@ -149,7 +149,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         return (
           <Badge
             variant="outline"
-            className="gap-1.5 border-0 bg-gradient-to-r from-emerald-500 to-teal-500 px-3 py-1 text-white shadow-sm shadow-emerald-200"
+            className="gap-1.5 border border-emerald-500/50 bg-emerald-600 px-3 py-1 text-white"
           >
             <CheckCircle className="h-3 w-3" />
             Validated
@@ -159,7 +159,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         return (
           <Badge
             variant="default"
-            className="gap-1.5 border-0 bg-gradient-to-r from-green-600 to-emerald-600 px-3 py-1 font-semibold text-white shadow-md shadow-green-300"
+            className="gap-1.5 border border-green-600/50 bg-green-600 px-3 py-1 font-semibold text-white"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             Merged
@@ -169,7 +169,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         return (
           <Badge
             variant="destructive"
-            className="gap-1.5 border-0 bg-gradient-to-r from-red-600 to-rose-600 px-3 py-1 font-semibold text-white shadow-md shadow-red-300"
+            className="gap-1.5 border border-red-600/50 bg-red-600 px-3 py-1 font-semibold text-white"
           >
             <XCircle className="h-3.5 w-3.5" />
             Failed
@@ -217,9 +217,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
       {/* Key Metrics - Professional Gradient Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Active Suppliers Card */}
-        <Card className="group relative overflow-hidden border-0 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="from-chart-1/10 to-chart-1/5 absolute inset-0 bg-gradient-to-br via-transparent" />
-          <div className="from-chart-1/20 absolute top-0 right-0 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl" />
+        <Card className="group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <CardContent className="relative p-6">
             <div className="mb-4 flex items-start justify-between">
               <div className="space-y-1">
@@ -230,8 +228,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                   </span>
                 </div>
               </div>
-              <div className="from-chart-1 to-chart-1/80 shadow-chart-1/30 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg transition-transform duration-300 group-hover:scale-110">
-                <Users className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <Users className="h-6 w-6" />
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-sm">
@@ -245,9 +243,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         </Card>
 
         {/* Products in Catalog Card */}
-        <Card className="group relative overflow-hidden border-0 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="from-chart-2/10 to-chart-2/5 absolute inset-0 bg-gradient-to-br via-transparent" />
-          <div className="from-chart-2/20 absolute top-0 right-0 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl" />
+        <Card className="group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <CardContent className="relative p-6">
             <div className="mb-4 flex items-start justify-between">
               <div className="space-y-1">
@@ -258,8 +254,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                   </span>
                 </div>
               </div>
-              <div className="from-chart-2 to-chart-2/80 shadow-chart-2/30 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg transition-transform duration-300 group-hover:scale-110">
-                <Package className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <Package className="h-6 w-6" />
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-sm">
@@ -273,9 +269,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         </Card>
 
         {/* Selected Products Card */}
-        <Card className="group relative overflow-hidden border-0 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="from-chart-3/10 to-chart-3/5 absolute inset-0 bg-gradient-to-br via-transparent" />
-          <div className="from-chart-3/20 absolute top-0 right-0 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl" />
+        <Card className="group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <CardContent className="relative p-6">
             <div className="mb-4 flex items-start justify-between">
               <div className="space-y-1">
@@ -286,8 +280,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                   </span>
                 </div>
               </div>
-              <div className="from-chart-3 to-chart-3/80 shadow-chart-3/30 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg transition-transform duration-300 group-hover:scale-110">
-                <CheckCircle2 className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <CheckCircle2 className="h-6 w-6" />
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-sm">
@@ -301,9 +295,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         </Card>
 
         {/* Inventory Value Card */}
-        <Card className="group relative overflow-hidden border-0 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="from-chart-5/10 to-chart-5/5 absolute inset-0 bg-gradient-to-br via-transparent" />
-          <div className="from-chart-5/20 absolute top-0 right-0 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl" />
+        <Card className="group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <CardContent className="relative p-6">
             <div className="mb-4 flex items-start justify-between">
               <div className="space-y-1">
@@ -314,8 +306,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                   </span>
                 </div>
               </div>
-              <div className="from-chart-5 to-chart-5/80 shadow-chart-5/30 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg transition-transform duration-300 group-hover:scale-110">
-                <DollarSign className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <DollarSign className="h-6 w-6" />
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-sm">
@@ -332,11 +324,11 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
       {/* Main Content Grid */}
       <div className="grid grid-cols-3 gap-6">
         {/* Recent Uploads - Left 2/3 */}
-        <Card className="border-border col-span-2 shadow-lg">
-          <CardHeader className="border-border border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
+        <Card className="border-border col-span-2 rounded-lg border shadow-sm">
+          <CardHeader className="border-border border-b bg-muted/50">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <FileUp className="h-5 w-5 text-white" />
                 </div>
                 Recent Uploads
@@ -353,19 +345,19 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 hover:bg-muted/50 border-border border-b-2">
-                        <TableHead className="text-foreground text-xs font-semibold tracking-wide uppercase">
+                        <TableHead className="text-foreground text-xs font-semibold">
                           Supplier
                         </TableHead>
-                        <TableHead className="text-foreground text-xs font-semibold tracking-wide uppercase">
+                        <TableHead className="text-foreground text-xs font-semibold">
                           File
                         </TableHead>
-                        <TableHead className="text-foreground text-xs font-semibold tracking-wide uppercase">
+                        <TableHead className="text-foreground text-xs font-semibold">
                           Date
                         </TableHead>
-                        <TableHead className="text-foreground text-right text-xs font-semibold tracking-wide uppercase">
+                          <TableHead className="text-foreground text-right text-xs font-semibold">
                           Rows
                         </TableHead>
-                        <TableHead className="text-foreground text-xs font-semibold tracking-wide uppercase">
+                        <TableHead className="text-foreground text-xs font-semibold">
                           Status
                         </TableHead>
                       </TableRow>
@@ -381,7 +373,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                         >
                           <TableCell className="text-foreground py-4 font-semibold">
                             <div className="flex items-center gap-2">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white shadow-sm">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                                 {upload.supplier_name.charAt(0).toUpperCase()}
                               </div>
                               {upload.supplier_name}
@@ -432,7 +424,7 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900 dark:to-cyan-900">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
                     <FileUp className="h-10 w-10 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h3 className="text-foreground mb-2 text-lg font-semibold">No uploads yet</h3>

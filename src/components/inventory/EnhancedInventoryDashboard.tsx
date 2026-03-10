@@ -514,7 +514,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 p-8 text-white shadow-2xl"
+        className="rounded-lg bg-primary p-8 text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -522,7 +522,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               <motion.div
                 animate={{ rotateY: [0, 360] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                className="rounded-xl bg-white/20 p-3 backdrop-blur-sm"
+                className="rounded-lg bg-white/10 p-3"
               >
                 <Package className="h-8 w-8" />
               </motion.div>
@@ -573,10 +573,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5"
         >
           {/* Total Value */}
-          <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-green-500 p-3 text-white">
+                <div className="rounded-lg bg-green-600 p-3 text-white">
                   <DollarSign className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -597,10 +597,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Stock Health */}
-          <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-blue-500 p-3 text-white">
+                <div className="rounded-lg bg-blue-600 p-3 text-white">
                   <Gauge className="h-6 w-6" />
                 </div>
                 <div className="flex items-center gap-1">
@@ -624,10 +624,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Turnover Rate */}
-          <Card className="border-0 bg-gradient-to-br from-purple-50 to-violet-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-purple-500 p-3 text-white">
+                <div className="rounded-lg bg-purple-600 p-3 text-white">
                   <Activity className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
@@ -655,10 +655,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Forecast Accuracy */}
-          <Card className="border-0 bg-gradient-to-br from-orange-50 to-amber-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-orange-500 p-3 text-white">
+                <div className="rounded-lg bg-orange-600 p-3 text-white">
                   <Target className="h-6 w-6" />
                 </div>
                 <Badge variant="secondary" className="bg-orange-100 text-orange-800">
@@ -682,10 +682,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           </Card>
 
           {/* Stock Alerts */}
-          <Card className="border-0 bg-gradient-to-br from-red-50 to-rose-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <div className="rounded-xl bg-red-500 p-3 text-white">
+                <div className="rounded-lg bg-red-600 p-3 text-white">
                   <Bell className="h-6 w-6" />
                 </div>
                 <div className="flex gap-1">
@@ -720,10 +720,10 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-0 shadow-xl">
+          <Card className="rounded-lg border border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
-                <div className="animate-pulse rounded-lg bg-gradient-to-r from-red-400 to-red-600 p-2 text-white">
+                <div className="animate-pulse rounded-lg bg-red-600 p-2 text-white">
                   <Bell className="h-5 w-5" />
                 </div>
                 Critical Stock Alerts
@@ -741,7 +741,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="rounded-xl border-l-4 border-red-500 bg-gradient-to-r from-red-50 to-red-100 p-4 transition-all duration-200 hover:shadow-md"
+                      className="rounded-lg border-l-4 border-red-500 bg-muted/50 p-4 transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -795,7 +795,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 gap-6">
               {/* Stock Status Chart */}
-              <Card className="border-0 shadow-xl">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PieChartIcon className="h-5 w-5" />
@@ -841,7 +841,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               </Card>
 
               {/* Inventory Trends */}
-              <Card className="border-0 shadow-xl">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
@@ -882,7 +882,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           {/* Items Tab */}
           <TabsContent value="items" className="space-y-6">
             {/* Search and Filters */}
-            <Card className="border-0 shadow-xl">
+            <Card className="rounded-lg border border-border bg-card shadow-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -1078,7 +1078,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 gap-6">
-              <Card className="border-0 shadow-xl">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardHeader>
                   <CardTitle>ABC Analysis</CardTitle>
                 </CardHeader>
@@ -1098,7 +1098,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-xl">
+              <Card className="rounded-lg border border-border bg-card shadow-sm">
                 <CardHeader>
                   <CardTitle>Velocity Analysis</CardTitle>
                 </CardHeader>
@@ -1127,7 +1127,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
           {/* Movements Tab */}
           <TabsContent value="movements" className="space-y-6">
-            <Card className="border-0 shadow-xl">
+            <Card className="rounded-lg border border-border bg-card shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />

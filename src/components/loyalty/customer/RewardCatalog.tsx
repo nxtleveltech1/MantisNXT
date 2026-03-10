@@ -318,7 +318,7 @@ export function RewardCatalog({ customerId, currentPoints }: RewardCatalogProps)
                     {/* Image placeholder */}
                     <div
                       className={cn(
-                        'from-primary/10 to-primary/5 flex items-center justify-center rounded-lg bg-gradient-to-br',
+                        'flex items-center justify-center rounded-lg bg-muted',
                         viewMode === 'grid' ? 'aspect-video' : 'h-32 w-32 shrink-0'
                       )}
                     >

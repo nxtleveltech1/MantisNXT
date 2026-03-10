@@ -363,7 +363,7 @@ export default function TransactionComplete({
 
         <Button
           onClick={onNewSale}
-          className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+          className="w-full h-14 text-lg font-semibold bg-primary text-primary-foreground hover:opacity-90"
         >
           <ArrowRight className="h-5 w-5 mr-2" />
           Start New Sale

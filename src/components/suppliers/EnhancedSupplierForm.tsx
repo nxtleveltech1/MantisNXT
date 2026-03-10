@@ -642,7 +642,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             <Button
               variant="outline"
               onClick={() => setShowWebDiscovery(true)}
-              className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100"
+              className="border-border bg-muted/50 hover:bg-muted"
             >
               <Globe className="mr-2 h-4 w-4" />
               Web Discovery

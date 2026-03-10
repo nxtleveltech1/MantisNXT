@@ -90,7 +90,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Image Gallery */}
         <div className="space-y-4">
-          <div className="aspect-square relative bg-gradient-to-br from-muted to-muted/50 rounded-lg overflow-hidden">
+          <div className="aspect-square relative bg-muted rounded-lg overflow-hidden">
             {currentImageValid ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,13 +105,13 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 hover:bg-background transition-colors"
                     >
                       <ChevronLeft className="size-5" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 hover:bg-background transition-colors"
                     >
                       <ChevronRight className="size-5" />
                     </button>

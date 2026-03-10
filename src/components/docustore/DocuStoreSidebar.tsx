@@ -104,7 +104,7 @@ export function DocuStoreSidebar({
       <div className="p-6 pb-4">
         <div className="flex items-center gap-2">
           <div className="relative">
-            <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold tracking-tight text-foreground">
               Docu
             </span>
             <span className="text-2xl font-light tracking-tight text-foreground">Store</span>
@@ -139,7 +139,7 @@ export function DocuStoreSidebar({
         <div className="mb-6">
           <button
             onClick={() => setFoldersExpanded(!foldersExpanded)}
-            className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>Folders</span>
             <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export function DocuStoreSidebar({
         <div className="mb-6">
           <button
             onClick={() => setStatusesExpanded(!statusesExpanded)}
-            className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>Statuses</span>
             {statusesExpanded ? (

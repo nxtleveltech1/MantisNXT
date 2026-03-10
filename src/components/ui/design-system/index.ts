@@ -239,7 +239,7 @@ export const componentVariants = {
       flat: 'bg-neutral-50 border border-neutral-200 rounded-lg',
       ghost: 'bg-transparent',
       premium:
-        'bg-gradient-to-br from-white to-neutral-50 border-2 border-primary-200 shadow-xl rounded-xl',
+        'rounded-lg border-2 border-border bg-card shadow-sm',
     },
 
     padding: {

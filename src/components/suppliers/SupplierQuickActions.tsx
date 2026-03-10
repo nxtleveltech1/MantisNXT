@@ -125,7 +125,7 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Quick Action Buttons */}
-      <Card className="rounded-xl border border-gray-200 shadow-md">
+      <Card className="rounded-lg border border-border shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Activity className="h-4 w-4 text-purple-600" />
@@ -136,9 +136,9 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
           {/* Refresh Data */}
           <button
             onClick={onRefreshData}
-            className="group flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 p-3 transition-all duration-200 hover:from-green-100 hover:to-emerald-100"
+            className="group flex w-full items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 transition-colors duration-200 hover:bg-muted"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-sm transition-shadow group-hover:shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600 text-white shadow-sm transition-shadow group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
               <RefreshCw className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium text-gray-700">Refresh Data</span>
@@ -147,9 +147,9 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
           {/* Upload Pricelist */}
           <button
             onClick={onUploadPricelist}
-            className="group flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 transition-all duration-200 hover:from-blue-100 hover:to-indigo-100"
+            className="group flex w-full items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 transition-colors duration-200 hover:bg-muted"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm transition-shadow group-hover:shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition-shadow group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
               <Upload className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium text-gray-700">Upload Pricelist</span>
@@ -158,9 +158,9 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
           {/* View Analytics */}
           <button
             onClick={onViewAnalytics}
-            className="group flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50 p-3 transition-all duration-200 hover:from-purple-100 hover:to-pink-100"
+            className="group flex w-full items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 transition-colors duration-200 hover:bg-muted"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-sm transition-shadow group-hover:shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm transition-shadow group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
               <BarChart3 className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium text-gray-700">View Analytics</span>
@@ -169,7 +169,7 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
       </Card>
 
       {/* Recent Activity Feed */}
-      <Card className="rounded-xl border border-purple-200 bg-gradient-to-br from-white to-purple-50/30 shadow-md">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Clock className="h-4 w-4 text-purple-600" />
@@ -235,7 +235,7 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
       </Card>
 
       {/* Performance Summary */}
-      <Card className="rounded-xl border border-green-200 bg-gradient-to-br from-white to-green-50/30 shadow-md">
+      <Card className="rounded-lg border border-border bg-card shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <TrendingUp className="h-4 w-4 text-green-600" />

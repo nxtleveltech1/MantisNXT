@@ -38,11 +38,11 @@ export default function CustomerSidebar() {
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
         {/* Customer Vital Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-50 p-3 rounded-xl">
+          <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-[10px] font-bold text-blue-400 uppercase">Lifetime Value</p>
             <p className="text-lg font-black text-blue-900">R 45,200</p>
           </div>
-          <div className="bg-green-50 p-3 rounded-xl">
+          <div className="bg-green-50 p-3 rounded-lg">
             <p className="text-[10px] font-bold text-green-400 uppercase">Trust Score</p>
             <p className="text-lg font-black text-green-900">98/100</p>
           </div>
@@ -50,7 +50,7 @@ export default function CustomerSidebar() {
 
         {/* Contact Info */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-xs font-bold text-gray-900 font-semibold flex items-center gap-2">
             <User size={14} />
             Details
           </h3>
@@ -68,7 +68,7 @@ export default function CustomerSidebar() {
 
         {/* Tags */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-xs font-bold text-gray-900 font-semibold flex items-center gap-2">
             <Tag size={14} />
             Segmentation
           </h3>
@@ -81,7 +81,7 @@ export default function CustomerSidebar() {
 
         {/* Recent History */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-xs font-bold text-gray-900 font-semibold flex items-center gap-2">
             <History size={14} />
             Recent Activity
           </h3>

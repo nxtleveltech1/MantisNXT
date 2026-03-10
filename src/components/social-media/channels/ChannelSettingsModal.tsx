@@ -115,8 +115,8 @@ export default function ChannelSettingsModal({ isOpen, onClose, channel, onUpdat
         <div className="space-y-6">
           {/* Sync Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Data synchronization</h3>
-            <div className="p-4 bg-muted rounded-xl border border-border flex items-center justify-between">
+            <h3 className="text-sm font-bold text-foreground font-semibold">Data synchronization</h3>
+            <div className="p-4 bg-muted rounded-lg border border-border flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground">Manual refresh</p>
                 <p className="text-xs text-muted-foreground">
@@ -138,9 +138,9 @@ export default function ChannelSettingsModal({ isOpen, onClose, channel, onUpdat
 
           {/* Preferences */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Channel preferences</h3>
+            <h3 className="text-sm font-bold text-foreground font-semibold">Channel preferences</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border border-border rounded-xl hover:bg-accent/30 transition-colors">
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/30 transition-colors">
                 <div className="flex items-center space-x-3">
                   <Bell size={18} className="text-muted-foreground" />
                   <div>
@@ -151,7 +151,7 @@ export default function ChannelSettingsModal({ isOpen, onClose, channel, onUpdat
                 <Switch defaultChecked />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-border rounded-xl hover:bg-accent/30 transition-colors">
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/30 transition-colors">
                 <div className="flex items-center space-x-3">
                   <Shield size={18} className="text-muted-foreground" />
                   <div>

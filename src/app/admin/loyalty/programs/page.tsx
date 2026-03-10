@@ -115,8 +115,8 @@ export default function LoyaltyProgramsPage() {
               <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600">
-                      <Star className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Star className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">VIP Rewards</h3>
@@ -165,8 +165,8 @@ export default function LoyaltyProgramsPage() {
               <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600">
-                      <Target className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Target className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">Standard Points</h3>
@@ -216,8 +216,8 @@ export default function LoyaltyProgramsPage() {
               <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600">
-                      <Award className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Award className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">Referral Bonus</h3>

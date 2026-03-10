@@ -137,7 +137,7 @@ export function AdvancedSearchDialog({
         <div className="grid gap-5 py-4">
           {/* Search Text */}
           <div className="space-y-2">
-            <Label htmlFor="search" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Label htmlFor="search" className="text-xs font-semibold font-medium text-muted-foreground">
               Search Text
             </Label>
             <div className="relative">
@@ -155,7 +155,7 @@ export function AdvancedSearchDialog({
           {/* Status and Document Type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold font-medium text-muted-foreground">
                 Status
               </Label>
               <Select
@@ -178,7 +178,7 @@ export function AdvancedSearchDialog({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold font-medium text-muted-foreground">
                 Document Type
               </Label>
               <Select
@@ -202,7 +202,7 @@ export function AdvancedSearchDialog({
           {/* Signer Filters */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="signerName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="signerName" className="text-xs font-semibold font-medium text-muted-foreground">
                 Signer Name
               </Label>
               <Input
@@ -214,7 +214,7 @@ export function AdvancedSearchDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="signerEmail" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="signerEmail" className="text-xs font-semibold font-medium text-muted-foreground">
                 Signer Email
               </Label>
               <Input
@@ -229,7 +229,7 @@ export function AdvancedSearchDialog({
 
           {/* Date Range */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Label className="text-xs font-semibold font-medium text-muted-foreground flex items-center gap-2">
               <Calendar className="h-3 w-3" />
               Date Range
             </Label>
@@ -252,7 +252,7 @@ export function AdvancedSearchDialog({
           {/* Sort Options */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold font-medium text-muted-foreground">
                 Sort By
               </Label>
               <Select
@@ -275,7 +275,7 @@ export function AdvancedSearchDialog({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold font-medium text-muted-foreground">
                 Sort Order
               </Label>
               <Select

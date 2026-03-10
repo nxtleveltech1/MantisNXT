@@ -790,7 +790,7 @@ function SupplierProfilesContent() {
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 font-semibold text-white">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
                               {supplier.name.charAt(0).toUpperCase()}
                             </div>
                             <div>

@@ -146,7 +146,7 @@ export class BulletproofErrorBoundary extends Component<ErrorBoundaryProps, Erro
 
       return (
         <div
-          className="dark:to-background flex min-h-screen items-center justify-center bg-gradient-to-b from-red-50 to-white p-4 dark:from-red-950/20"
+          className="dark:to-background flex min-h-screen items-center justify-center bg-background p-4"
           role="alert"
           aria-live="assertive"
           aria-atomic="true"

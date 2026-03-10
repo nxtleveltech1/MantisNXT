@@ -29,7 +29,7 @@ export function MarketplaceHeader({ searchQuery = "" }: MarketplaceHeaderProps) 
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background border-b">
       <div className="container flex h-16 items-center gap-4 px-4">
         <Button variant="outline" size="sm" onClick={() => router.push("/portal")}>
           <ArrowLeft className="h-4 w-4 mr-2" />

@@ -189,7 +189,7 @@ export function AIPriceExtractionPanel() {
   return (
     <div className="space-y-6">
       <Card className="border-primary/10 shadow-md">
-        <CardHeader className="flex flex-col gap-2 border-b bg-gradient-to-r from-slate-50 via-white to-indigo-50">
+        <CardHeader className="flex flex-col gap-2 border-b border-border bg-muted/50">
           <div className="text-primary flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
             <Badge variant="outline">AI Price Extraction</Badge>

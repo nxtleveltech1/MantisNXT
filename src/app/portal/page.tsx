@@ -31,46 +31,34 @@ function PortalButton({ icon, label, sublabel, onClick, delay = 0, iconOnly = fa
     <button
       onClick={onClick}
       className="group relative flex flex-col items-center justify-center gap-3 p-8 min-w-[180px] min-h-[160px]
-        rounded-2xl border border-white/10 
-        bg-gradient-to-b from-white/10 to-white/5
-        backdrop-blur-xl shadow-2xl
-        transition-all duration-500 ease-out
-        hover:scale-105 hover:border-white/25 hover:from-white/15 hover:to-white/10
-        hover:shadow-[0_0_40px_rgba(255,255,255,0.1)]
-        active:scale-95"
+        rounded-lg border border-white/20
+        bg-black/60 text-white
+        shadow-[0_2px_8px_rgba(0,0,0,0.2)]
+        transition-colors duration-200
+        hover:bg-black/70 hover:border-white/30"
       style={{
         animationDelay: `${delay}ms`,
-        animation: 'fadeSlideUp 0.8s ease-out forwards',
+        animation: 'fadeSlideUp 0.5s ease-out forwards',
         opacity: 0,
       }}
     >
-      {/* Glow effect on hover */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-red-500/0 to-red-500/0 
-        group-hover:from-red-500/10 group-hover:to-transparent transition-all duration-500" />
-      
-      {/* Reflection line at top */}
-      <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-      
-      {/* Icon: full-bleed when iconOnly, otherwise normal */}
       <div
         className={
           iconOnly
-            ? 'absolute inset-0 z-10 rounded-2xl overflow-hidden'
-            : 'relative z-10 text-white/90 group-hover:text-white transition-colors duration-300'
+            ? 'absolute inset-0 z-10 rounded-lg overflow-hidden'
+            : 'relative z-10'
         }
       >
         {icon}
       </div>
-      
-      {/* Label: hidden when iconOnly */}
       {!iconOnly && (
         <div className="relative z-10 flex flex-col items-center gap-0.5">
           {sublabel && (
-            <span className="text-xs text-white/60 uppercase tracking-wider font-medium">
+            <span className="text-xs text-white/70 font-medium">
               {sublabel}
             </span>
           )}
-          <span className="text-sm font-semibold text-white uppercase tracking-widest">
+          <span className="text-sm font-semibold">
             {label}
           </span>
         </div>
@@ -175,32 +163,30 @@ export default function PortalPage() {
         {/* Top Header Bar - Admin & User Account */}
         <div className="absolute top-0 left-0 right-0 z-20 p-4 md:p-6">
           <div className="flex items-center justify-between">
-            {/* Admin Button - Top Left */}
             <button
               onClick={() => router.push('/system-admin')}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/60 transition-all text-white/70 hover:text-white"
-              style={{ animation: 'fadeSlideUp 0.6s ease-out forwards', opacity: 0 }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 bg-black/60 text-white/90 hover:bg-black/70 transition-colors duration-150"
+              style={{ animation: 'fadeSlideUp 0.5s ease-out forwards', opacity: 0 }}
             >
               <Shield className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wider hidden md:inline">Admin</span>
+              <span className="text-sm font-medium hidden md:inline">Admin</span>
             </button>
 
             <div className="flex items-center gap-3">
-            {/* User Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/60 transition-all">
+                <button className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/20 bg-black/60 hover:bg-black/70 transition-colors duration-150 text-white">
                   <Avatar className="h-9 w-9 border border-white/20">
                     <AvatarImage src={user?.profile_image} alt={user?.name || 'User'} />
-                    <AvatarFallback className="bg-red-900/50 text-white text-sm">
+                    <AvatarFallback className="bg-white/10 text-white text-sm">
                       {user?.name ? getInitials(user.name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:flex flex-col items-start">
-                    <span className="text-sm font-medium text-white">{user?.name || 'User'}</span>
-                    <span className="text-xs text-white/60">{user?.email}</span>
+                    <span className="text-sm font-medium">{user?.name || 'User'}</span>
+                    <span className="text-xs text-white/70">{user?.email}</span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-white/60" />
+                  <ChevronDown className="h-4 w-4 text-white/70" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -231,7 +217,7 @@ export default function PortalPage() {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="px-4 py-2 rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-red-900/50 hover:border-red-800/50 text-white transition-all"
+              className="px-4 py-2 rounded-lg border border-white/20 bg-black/60 hover:bg-red-900/40 text-white transition-colors duration-150"
             >
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden md:inline">Log Out</span>
@@ -245,20 +231,14 @@ export default function PortalPage() {
           {/* Spacer to push content below the background logo */}
           <div className="flex-1 min-h-[40vh]" />
           
-          {/* Branding Section - Tagline only, logo is in background */}
-          <div 
+          <div
             className="flex flex-col items-center mb-4"
-            style={{
-              animation: 'fadeSlideUp 0.6s ease-out forwards',
-            }}
+            style={{ animation: 'fadeSlideUp 0.5s ease-out forwards' }}
           >
-            {/* Subtitle */}
-            <p className="text-lg text-white/80 tracking-[0.3em] uppercase mb-2">
+            <p className="text-base text-white font-medium mb-1">
               NXT Level Tech
             </p>
-            
-            {/* Tagline */}
-            <p className="text-sm text-white/60 tracking-[0.2em] uppercase text-center max-w-md">
+            <p className="text-sm text-white/70 text-center max-w-md">
               AI Driven Supplier Business Management Platform
             </p>
           </div>
@@ -272,7 +252,7 @@ export default function PortalPage() {
                   src="/images/NXTERP.jpg"
                   alt="ERP System Access"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -288,7 +268,7 @@ export default function PortalPage() {
                   src="/images/NXTPOS.jpg"
                   alt="POS"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -304,7 +284,7 @@ export default function PortalPage() {
                   src="/images/Marketplace.jpg"
                   alt="Marketplace"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -320,7 +300,7 @@ export default function PortalPage() {
                   src="/images/NXTSocialExtreme.jpg"
                   alt="Social Media Marketing"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -336,7 +316,7 @@ export default function PortalPage() {
                   src="/images/NXT DIGITAL ENGAGE.jpg"
                   alt="Digital Engage"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -352,7 +332,7 @@ export default function PortalPage() {
                   src="/images/NXT STOCKPULSE.JPG"
                   alt="StockPulse"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -368,7 +348,7 @@ export default function PortalPage() {
                   src="/images/NXT TIMEPULSE.png"
                   alt="TimePulse"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -384,7 +364,7 @@ export default function PortalPage() {
                   src="/images/docustore.jpg"
                   alt="Document Store"
                   fill
-                  className="object-cover rounded-2xl"
+                  className="object-cover rounded-lg"
                   sizes="180px"
                 />
               }
@@ -392,17 +372,6 @@ export default function PortalPage() {
               onClick={() => router.push('/docustore')}
               delay={550}
             />
-          </div>
-
-          {/* Subtle footer sparkle */}
-          <div className="absolute bottom-8 right-8">
-            <svg 
-              className="w-6 h-6 text-white/40"
-              viewBox="0 0 24 24" 
-              fill="currentColor"
-            >
-              <path d="M12 2L13.09 8.26L19 7L14.14 11.14L20 16L13.09 14.09L12 22L10.91 14.09L4 16L9.86 11.14L5 7L10.91 8.26L12 2Z" />
-            </svg>
           </div>
         </div>
       </div>

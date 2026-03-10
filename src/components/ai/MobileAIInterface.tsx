@@ -137,16 +137,16 @@ const MobileAIInterface: React.FC<MobileAIInterfaceProps> = ({
   ];
 
   return (
-    <div className="relative flex h-screen flex-col bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+    <div className="relative flex h-screen flex-col bg-background">
       {/* Mobile Header */}
-      <div className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 shadow-sm backdrop-blur-md">
+      <div className="sticky top-0 z-40 border-b border-gray-200 bg-background shadow-sm border-b border-border">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 p-2 text-white"
+                className="rounded-lg bg-primary p-2 text-primary-foreground"
               >
                 <Brain className="h-5 w-5" />
               </motion.div>
@@ -302,7 +302,7 @@ const MobileAIInterface: React.FC<MobileAIInterfaceProps> = ({
                       action.action();
                       setShowQuickActions(false);
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 ${action.color} rounded-full text-white shadow-lg transition-all duration-200 hover:shadow-xl`}
+                    className={`flex items-center gap-3 px-4 py-3 ${action.color} rounded-full text-white shadow-lg transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]`}
                     aria-label={action.label}
                   >
                     <Icon className="h-5 w-5" />
@@ -316,7 +316,7 @@ const MobileAIInterface: React.FC<MobileAIInterfaceProps> = ({
 
         <Button
           onClick={() => setShowQuickActions(!showQuickActions)}
-          className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:shadow-xl"
+          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-sm transition-shadow duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
           aria-label="Quick actions menu"
         >
           <motion.div
@@ -334,7 +334,7 @@ const MobileAIInterface: React.FC<MobileAIInterfaceProps> = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm"
+            className="rounded-full bg-black/60 px-3 py-1 text-xs text-white"
           >
             ← Swipe to navigate →
           </motion.div>

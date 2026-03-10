@@ -617,7 +617,7 @@ function SupplierProfileContent() {
           <CardContent className="p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg">
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                   <Building2 className="h-8 w-8" />
                 </div>
                 <div className="space-y-1">

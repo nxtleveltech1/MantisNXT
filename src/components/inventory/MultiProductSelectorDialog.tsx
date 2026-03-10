@@ -1317,7 +1317,7 @@ export default function MultiProductSelectorDialog({
                 });
                 handleBulkAdd();
               }}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 shadow-lg hover:from-green-700 hover:to-emerald-700"
+              className="bg-primary shadow-sm hover:opacity-90"
               title={
                 !canSubmit
                   ? 'Select products and enter quantities > 0'

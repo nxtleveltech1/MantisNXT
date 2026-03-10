@@ -217,35 +217,29 @@ export default function AnalyticsPage() {
   return (
     <BuildSafeErrorBoundary level="page">
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+        <div className="min-h-screen bg-background">
           <div className="container mx-auto space-y-8 px-4 py-8">
-            {/* Header */}
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
-                <h1 className="flex items-center gap-3 text-4xl font-bold text-gray-900">
-                  <div className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 p-3 text-white">
+                <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+                  <div className="rounded-lg bg-primary p-3 text-primary-foreground">
                     <Brain className="h-8 w-8" />
                   </div>
                   AI-Enhanced Analytics
                 </h1>
-                <p className="text-lg text-gray-600">
+                <p className="text-muted-foreground">
                   Intelligent procurement insights with predictive analytics and supplier
                   intelligence
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="border-green-300 bg-green-100 text-green-800">
+                <Badge variant="secondary">
                   <Activity className="mr-1 h-4 w-4" />
                   Live Data
                 </Badge>
                 <Button
                   onClick={() => setChatVisible(!chatVisible)}
-                  className={`${
-                    chatVisible
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                      : 'border-indigo-200 bg-white text-indigo-600'
-                  } transition-all duration-200`}
                   variant={chatVisible ? 'default' : 'outline'}
                   aria-label={chatVisible ? 'Hide AI Assistant' : 'Show AI Assistant'}
                 >
@@ -263,13 +257,13 @@ export default function AnalyticsPage() {
               >
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                   <TabsList
-                    className="grid w-full grid-cols-4 rounded-xl border border-gray-200 bg-white/80 p-1 shadow-lg backdrop-blur-sm"
+                    className="grid w-full grid-cols-4 rounded-lg border border-border bg-muted p-1"
                     role="tablist"
                     aria-label="Analytics dashboard sections"
                   >
                     <TabsTrigger
                       value="dashboard"
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                       role="tab"
                       aria-controls="dashboard-panel"
                     >
@@ -278,7 +272,7 @@ export default function AnalyticsPage() {
                     </TabsTrigger>
                     <TabsTrigger
                       value="predictions"
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                       role="tab"
                       aria-controls="predictions-panel"
                     >
@@ -287,7 +281,7 @@ export default function AnalyticsPage() {
                     </TabsTrigger>
                     <TabsTrigger
                       value="insights"
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                       role="tab"
                       aria-controls="insights-panel"
                     >
@@ -296,7 +290,7 @@ export default function AnalyticsPage() {
                     </TabsTrigger>
                     <TabsTrigger
                       value="suppliers"
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                       role="tab"
                       aria-controls="suppliers-panel"
                     >

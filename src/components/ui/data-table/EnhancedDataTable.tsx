@@ -793,7 +793,7 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
         </div>
 
         {/* Table Container */}
-        <Card className="overflow-hidden border-0 shadow-xl">
+        <Card className="overflow-hidden rounded-lg border border-border shadow-sm">
           <div
             ref={tableRef}
             className="max-h-[70vh] overflow-auto rounded-lg border border-gray-200"

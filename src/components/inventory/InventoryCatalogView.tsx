@@ -991,7 +991,7 @@ export default function InventoryCatalogView({ isPopOut = false, initialParams }
                           key={`group-${group.group}-${idx}`}
                           colSpan={group.colSpan}
                           className={cn(
-                            'text-center text-[10px] font-semibold uppercase tracking-wider py-1 px-1',
+                            'text-center text-[10px] font-semibold py-1 px-1',
                             groupColors[group.group] || 'bg-muted',
                             isLeftSticky && 'sticky left-0 z-20',
                             isRightSticky && 'sticky right-0 z-20',

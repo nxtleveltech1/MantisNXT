@@ -157,7 +157,7 @@ export function CostComparison({ quotes, selectedQuoteId, onQuoteSelect }: CostC
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     {/* Total Cost */}
                     <div className="space-y-1">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wide">
+                      <div className="text-muted-foreground text-xs font-medium">
                         Total Cost
                       </div>
                       <div className="text-lg font-bold text-primary">
@@ -167,7 +167,7 @@ export function CostComparison({ quotes, selectedQuoteId, onQuoteSelect }: CostC
 
                     {/* Delivery ETA */}
                     <div className="space-y-1">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wide flex items-center gap-1">
+                      <div className="text-muted-foreground text-xs font-medium flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         Delivery
                       </div>
@@ -188,7 +188,7 @@ export function CostComparison({ quotes, selectedQuoteId, onQuoteSelect }: CostC
 
                     {/* Cost Breakdown - Base */}
                     <div className="space-y-1">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wide">
+                      <div className="text-muted-foreground text-xs font-medium">
                         Base Rate
                       </div>
                       <div className="font-medium">
@@ -200,7 +200,7 @@ export function CostComparison({ quotes, selectedQuoteId, onQuoteSelect }: CostC
 
                     {/* Cost Breakdown - Extras */}
                     <div className="space-y-1">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wide">
+                      <div className="text-muted-foreground text-xs font-medium">
                         Fees & VAT
                       </div>
                       <div className="font-medium">

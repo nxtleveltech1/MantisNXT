@@ -142,7 +142,7 @@ export function SignerPopover({
       >
         {/* Signers Section */}
         <div className="p-3">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h4 className="text-xs font-semibold text-muted-foreground font-semibold mb-3">
             Signers
           </h4>
           <div className="space-y-3">
@@ -183,7 +183,7 @@ export function SignerPopover({
           <>
             <Separator />
             <div className="p-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              <h4 className="text-xs font-semibold text-muted-foreground font-semibold mb-3">
                 Recipients
               </h4>
               <div className="space-y-2">

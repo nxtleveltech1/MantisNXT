@@ -465,8 +465,8 @@ export function GlobalErrorBoundaryFallback({
   }, [errorInfo]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-50 p-4">
-      <Card className="w-full max-w-2xl border-red-300 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-2xl rounded-lg border border-border shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
         <CardHeader className="space-y-6 border-b border-red-200 bg-red-50">
           <div className="flex items-start space-x-4">
             <div className="rounded-full bg-red-100 p-4">

@@ -75,7 +75,7 @@ export default function POSHome() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+              <Card className="rounded-lg border border-border bg-card shadow-sm text-foreground">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Total Sales (30d)</CardTitle>
               <DollarSign className="h-5 w-5 opacity-80" />
@@ -105,7 +105,7 @@ export default function POSHome() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-red-500 text-white">
+          <Card className="rounded-lg border border-border bg-card shadow-sm text-foreground">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Low Stock Alert</CardTitle>
               <Package className="h-5 w-5 opacity-80" />
@@ -127,7 +127,7 @@ export default function POSHome() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <Card className="rounded-lg border border-border bg-card shadow-sm text-foreground">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Total Products</CardTitle>
               <TrendingUp className="h-5 w-5 opacity-80" />
@@ -155,7 +155,7 @@ export default function POSHome() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Button
                     size="lg"
-                    className="h-24 flex-col gap-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                    className="h-24 flex-col gap-3 bg-primary text-primary-foreground hover:opacity-90 shadow-sm"
                     onClick={() => router.push("/pos-app/pos")}
                   >
                     <ShoppingCart className="h-8 w-8" />

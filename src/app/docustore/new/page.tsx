@@ -183,7 +183,7 @@ export default function NewDocumentPage() {
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <Label htmlFor="title" className="text-xs font-bold font-semibold text-muted-foreground">
                         Document Title <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative">
@@ -200,7 +200,7 @@ export default function NewDocumentPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description</Label>
+                      <Label htmlFor="description" className="text-xs font-bold font-semibold text-muted-foreground">Description</Label>
                       <Textarea
                         id="description"
                         value={formData.description}
@@ -222,7 +222,7 @@ export default function NewDocumentPage() {
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div 
-                      className={`relative border-2 border-dashed rounded-xl p-10 transition-all text-center
+                      className={`relative border-2 border-dashed rounded-lg p-10 transition-all text-center
                         ${selectedFile ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/30 hover:bg-muted/50'}`}
                     >
                       {selectedFile ? (
@@ -287,7 +287,7 @@ export default function NewDocumentPage() {
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="document_type" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Document Type</Label>
+                      <Label htmlFor="document_type" className="text-xs font-bold font-semibold text-muted-foreground">Document Type</Label>
                       <Input
                         id="document_type"
                         value={formData.document_type}
@@ -297,7 +297,7 @@ export default function NewDocumentPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="tags" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tags</Label>
+                      <Label htmlFor="tags" className="text-xs font-bold font-semibold text-muted-foreground">Tags</Label>
                       <Input
                         id="tags"
                         value={formData.tags}

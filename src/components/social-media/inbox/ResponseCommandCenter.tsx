@@ -37,7 +37,7 @@ export default function ResponseCommandCenter() {
   };
 
   return (
-    <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-2xl p-6 text-white shadow-xl mb-8">
+    <div className="rounded-lg border border-border bg-card p-6 shadow-sm mb-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -57,16 +57,16 @@ export default function ResponseCommandCenter() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
             {isSyncing ? "Syncing..." : "Sync Messages"}
           </Button>
-          <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20 backdrop-blur-sm">
+          <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-full border border-border">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider">Live System</span>
+            <span className="text-xs font-bold font-semibold">Live System</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Metric 1 */}
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
+        <div className="bg-muted/50 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-blue-300 uppercase">Avg Response Time</span>
             <Clock size={16} className="text-blue-300" />
@@ -80,7 +80,7 @@ export default function ResponseCommandCenter() {
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm relative overflow-hidden group">
+        <div className="bg-muted/50 rounded-lg p-4 border border-border relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/20 blur-2xl group-hover:bg-red-500/30 transition-all" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-red-300 uppercase">SLA Breaches</span>
@@ -93,7 +93,7 @@ export default function ResponseCommandCenter() {
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
+        <div className="bg-muted/50 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-green-300 uppercase">Resolution Rate</span>
             <CheckCircle2 size={16} className="text-green-300" />
@@ -105,7 +105,7 @@ export default function ResponseCommandCenter() {
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-xl p-4 border border-yellow-500/30 backdrop-blur-sm">
+        <div className="bg-muted/50 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-yellow-300 uppercase">Top Performer</span>
             <Trophy size={16} className="text-yellow-400" />

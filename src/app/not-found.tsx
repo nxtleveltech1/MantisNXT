@@ -8,7 +8,7 @@ import { Home, ArrowLeft, Building2, FileX, Search, HelpCircle } from 'lucide-re
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl text-center">
         {/* Logo and Branding */}
         <div className="mb-8 flex items-center justify-center gap-3">
@@ -22,7 +22,7 @@ export default function NotFound() {
         </div>
 
         {/* Main 404 Content */}
-        <Card className="mb-8 border-0 bg-white/80 shadow-xl backdrop-blur-sm">
+        <Card className="mb-8 rounded-lg border border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <CardContent className="p-12">
             <div className="mb-6 flex justify-center">
               <div className="relative">
@@ -61,7 +61,7 @@ export default function NotFound() {
 
         {/* Quick Navigation Links */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card className="cursor-pointer border-0 bg-white/60 backdrop-blur-sm transition-shadow hover:shadow-md">
+          <Card className="cursor-pointer rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <Link href="/suppliers" className="group block text-center">
                 <Building2 className="mx-auto mb-3 h-8 w-8 text-blue-600 group-hover:text-blue-700" />
@@ -71,7 +71,7 @@ export default function NotFound() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer border-0 bg-white/60 backdrop-blur-sm transition-shadow hover:shadow-md">
+          <Card className="cursor-pointer rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <Link href="/purchase-orders" className="group block text-center">
                 <Search className="mx-auto mb-3 h-8 w-8 text-blue-600 group-hover:text-blue-700" />
@@ -81,7 +81,7 @@ export default function NotFound() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer border-0 bg-white/60 backdrop-blur-sm transition-shadow hover:shadow-md">
+          <Card className="cursor-pointer rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <Link href="/analytics" className="group block text-center">
                 <HelpCircle className="mx-auto mb-3 h-8 w-8 text-blue-600 group-hover:text-blue-700" />

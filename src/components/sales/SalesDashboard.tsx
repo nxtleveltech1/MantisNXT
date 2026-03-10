@@ -26,7 +26,7 @@ interface SalesDashboardProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-3 shadow-xl">
+            <div className="rounded-lg border border-border bg-card p-3 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
                 <p className="mb-1 text-sm font-medium text-white">{label}</p>
                 {payload.map((entry: any, index: number) => (
                     <p key={index} className="text-sm" style={{ color: entry.color }}>

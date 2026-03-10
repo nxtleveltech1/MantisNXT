@@ -331,7 +331,7 @@ export function DocumentTableHeader({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 px-4 py-3 bg-muted/30 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+        'flex items-center gap-4 px-4 py-3 bg-muted/30 border-b text-xs font-semibold font-semibold text-muted-foreground',
         className
       )}
     >

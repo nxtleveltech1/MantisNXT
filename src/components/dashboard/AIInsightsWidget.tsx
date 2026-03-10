@@ -244,10 +244,7 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({
             </Button>
           </Link>
           <Link href="/ai-insights?tab=chat">
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
-            >
+            <Button size="sm" variant="secondary">
               <MessageCircle className="h-4 w-4" />
             </Button>
           </Link>

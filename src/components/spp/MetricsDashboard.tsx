@@ -54,7 +54,7 @@ function MetricCard({
     trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
 
   return (
-    <Card className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <Card className="rounded-lg border border-border bg-card shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-sm font-semibold text-gray-900">{title}</CardTitle>
         <div className={cn('rounded-lg p-2', iconColor)}>
@@ -142,7 +142,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* New Products Alert */}
       {newProductsCount > 0 && (
-        <Card className="rounded-xl border border-blue-200 bg-blue-50 shadow-sm md:col-span-2">
+        <Card className="rounded-lg border border-blue-200 bg-blue-50 shadow-sm md:col-span-2">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="rounded-lg bg-blue-100 p-2">
@@ -162,7 +162,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* Price Changes Alert */}
       {(metrics?.recent_price_changes_count || 0) > 0 && (
-        <Card className="rounded-xl border border-amber-200 bg-amber-50 shadow-sm md:col-span-2">
+        <Card className="rounded-lg border border-amber-200 bg-amber-50 shadow-sm md:col-span-2">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="rounded-lg bg-amber-100 p-2">

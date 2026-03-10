@@ -184,7 +184,7 @@ export default function ConnectionModal({ isOpen, onClose, channel, onSuccess }:
       <DialogContent className="max-w-2xl">
         <DialogHeader className="space-y-3">
           <div className="flex items-center gap-4">
-            <div className={`${platformInfo.bg} p-3 rounded-xl ${platformInfo.color}`}>
+            <div className={`${platformInfo.bg} p-3 rounded-lg ${platformInfo.color}`}>
               <Icon size={24} />
             </div>
             <div className="text-left">

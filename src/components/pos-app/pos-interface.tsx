@@ -475,7 +475,7 @@ export default function POSInterface() {
                     variant="default"
                     size="sm"
                     onClick={addSelectedToCart}
-                    className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                    className="gap-2 bg-primary text-primary-foreground hover:opacity-90"
                   >
                     <ShoppingBag className="h-4 w-4" />
                     Add {selectedRows.size} to Cart
@@ -525,10 +525,10 @@ export default function POSInterface() {
 
         {/* Data Table */}
         <Card className="flex-1 border-0 shadow-lg overflow-hidden flex flex-col">
-          <CardHeader className="pb-3 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
+          <CardHeader className="pb-3 border-b border-border bg-muted/50">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                   <Package className="h-5 w-5 text-white" />
                 </div>
                 Products Catalog
@@ -725,7 +725,7 @@ export default function POSInterface() {
                                     variant={isInCart ? "secondary" : "default"}
                                     className={cn(
                                       "h-8 px-3",
-                                      !isInCart && "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                                      !isInCart && "bg-primary text-primary-foreground hover:opacity-90"
                                     )}
                                     disabled={product.available_quantity === 0}
                                     onClick={() => addToCart(product)}
@@ -779,10 +779,10 @@ export default function POSInterface() {
 
         {/* Cart */}
         <Card className="border-0 shadow-lg flex-1 flex flex-col overflow-hidden">
-          <CardHeader className="pb-3 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
+          <CardHeader className="pb-3 border-b border-border bg-muted/50">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                   <ShoppingCart className="h-4 w-4 text-white" />
                 </div>
                 Cart ({cart.length})
@@ -942,7 +942,7 @@ export default function POSInterface() {
 
                   <Button
                     onClick={processOrder}
-                    className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg"
+                    className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-sm"
                     disabled={isProcessing || !selectedCustomer}
                   >
                     {isProcessing ? (

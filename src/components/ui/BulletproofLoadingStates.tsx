@@ -239,7 +239,7 @@ export const FullPageLoader: React.FC<{
 }> = ({ message = 'Loading application...' }) => {
   return (
     <div
-      className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center "
       role="status"
       aria-live="polite"
       aria-label={message}

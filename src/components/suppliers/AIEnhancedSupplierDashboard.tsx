@@ -134,7 +134,7 @@ export default function AIEnhancedSupplierDashboard({
     <TooltipProvider>
       <div className={`space-y-6 ${className}`}>
         {/* AI Enhancement Header */}
-        <div className="flex items-center justify-between rounded-lg border bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 p-4">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-4">
           <div className="flex items-center gap-4">
             <div className="rounded-lg bg-purple-100 p-2">
               <Brain className="h-6 w-6 text-purple-600" />
