@@ -45,8 +45,8 @@ export default function Home() {
     <SidebarProvider defaultOpen>
       <AppSidebar />
       <SidebarInset>
-        <AppHeader title="MantisNXT Dashboard" subtitle="Live Dashboard" />
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <AppHeader title="Dashboard" />
+        <div className="flex flex-1 flex-col gap-4 p-6">
           <AsyncBoundary>
             <MagicDashboard />
           </AsyncBoundary>

@@ -39,45 +39,23 @@ export function LoyaltySignupsWidget() {
 
   return (
     <Card className="rounded-lg border border-border bg-card shadow-sm">
-      <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-sm font-medium">New Sign-ups</p>
-            <p className="text-muted-foreground/70 text-xs">Last 30 days</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <UserPlus className="h-5 w-5 text-primary" />
-          </div>
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">New sign-ups</p>
+          <UserPlus className="h-4 w-4 text-muted-foreground" />
         </div>
-
         <div className="space-y-2">
-          <div className="text-3xl font-bold">{data.signups.thisMonth}</div>
-          <div className="flex items-center gap-1 text-sm">
-            <TrendingUp
-              className={`h-4 w-4 ${data.signups.trend === 'up' ? 'text-chart-2' : 'text-destructive'}`}
-            />
-            <span
-              className={`font-medium ${data.signups.trend === 'up' ? 'text-chart-2' : 'text-destructive'}`}
-            >
-              {data.signups.trendValue}
-            </span>
-            <span className="text-muted-foreground text-xs">vs last month</span>
+          <div className="text-2xl font-semibold text-foreground">{data.signups.thisMonth}</div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <TrendingUp className="h-3 w-3" />
+            {data.signups.trendValue} vs last month
           </div>
-
-          <div className="border-border border-t pt-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total sign-ups</span>
-              <span className="font-medium">{data.signups.total}</span>
-            </div>
+          <div className="border-border border-t pt-2 text-sm">
+            <span className="text-muted-foreground">Total </span>
+            <span className="font-medium">{data.signups.total}</span>
           </div>
         </div>
-
-        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
-          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Loyalty program integration in progress
-          </p>
-        </div>
+        <p className="mt-3 text-xs text-muted-foreground">Mock data. Loyalty integration in progress.</p>
       </CardContent>
     </Card>
   );
@@ -90,43 +68,28 @@ export function ActiveMembersWidget() {
 
   return (
     <Card className="rounded-lg border border-border bg-card shadow-sm">
-      <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-sm font-medium">Active Members</p>
-            <p className="text-muted-foreground/70 text-xs">Loyalty program</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-2/10">
-            <Users className="h-5 w-5 text-chart-2" />
-          </div>
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">Active members</p>
+          <Users className="h-4 w-4 text-muted-foreground" />
         </div>
-
         <div className="space-y-2">
-          <div className="text-3xl font-bold">{data.members.active.toLocaleString()}</div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">of </span>
-            <span className="font-medium">{data.members.total.toLocaleString()}</span>
-            <span className="text-muted-foreground"> total members</span>
+          <div className="text-2xl font-semibold text-foreground">{data.members.active.toLocaleString()}</div>
+          <div className="text-sm text-muted-foreground">
+            of {data.members.total.toLocaleString()} total
           </div>
-
-          <div className="border-border space-y-2 border-t pt-3">
-            <div className="flex items-center justify-between text-sm">
+          <div className="border-border space-y-1 border-t pt-2 text-sm">
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Active rate</span>
-              <span className="font-medium text-chart-2">{activePercentage}%</span>
+              <span className="font-medium">{activePercentage}%</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Inactive</span>
               <span className="font-medium">{data.members.inactive}</span>
             </div>
           </div>
         </div>
-
-        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
-          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Loyalty program integration in progress
-          </p>
-        </div>
+        <p className="mt-3 text-xs text-muted-foreground">Mock data. Loyalty integration in progress.</p>
       </CardContent>
     </Card>
   );
@@ -139,53 +102,34 @@ export function PointsEconomyWidget() {
 
   return (
     <Card className="rounded-lg border border-border bg-card shadow-sm">
-      <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-sm font-medium">Points Economy</p>
-            <p className="text-muted-foreground/70 text-xs">Total & value</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-4/10">
-            <Gift className="h-5 w-5 text-chart-4" />
-          </div>
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">Points economy</p>
+          <Gift className="h-4 w-4 text-muted-foreground" />
         </div>
-
         <div className="space-y-2">
-          <div>
-            <div className="text-3xl font-bold">{availablePoints.toLocaleString()}</div>
-            <div className="text-muted-foreground text-xs">Available points</div>
-          </div>
-
+          <div className="text-2xl font-semibold text-foreground">{availablePoints.toLocaleString()}</div>
+          <div className="text-muted-foreground text-xs">Available points</div>
           <div className="flex items-center gap-1 text-sm">
-            <Award className="h-4 w-4 text-chart-4" />
-            <span className="font-medium text-chart-4">
-              {formatCurrency(data.points.pointsValue)}
-            </span>
-            <span className="text-muted-foreground text-xs">value</span>
+            <Award className="h-3 w-3 text-muted-foreground" />
+            {formatCurrency(data.points.pointsValue)} value
           </div>
-
-          <div className="border-border space-y-2 border-t pt-3">
-            <div className="flex items-center justify-between text-sm">
+          <div className="border-border space-y-1 border-t pt-2 text-sm">
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Accumulated</span>
               <span className="font-medium">{data.points.accumulated.toLocaleString()}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Redeemed</span>
               <span className="font-medium">{data.points.redeemed.toLocaleString()}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Redemption rate</span>
-              <span className="font-medium text-chart-4">{data.points.redemptionRate}%</span>
+              <span className="font-medium">{data.points.redemptionRate}%</span>
             </div>
           </div>
         </div>
-
-        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
-          <p className="text-xs font-medium text-warning">📦 Mock Data</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Loyalty program integration in progress
-          </p>
-        </div>
+        <p className="mt-3 text-xs text-muted-foreground">Mock data. Loyalty integration in progress.</p>
       </CardContent>
     </Card>
   );

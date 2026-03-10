@@ -1,34 +1,21 @@
 /**
- * Magic Dashboard - Premium Homepage Dashboard
- * Comprehensive dashboard with KPIs, charts, alerts, and analytics
- * All currency in ZAR (R) - South African Rands
- * Using OkLCH design system colors
+ * Magic Dashboard - Content-first layout (uncodixfy)
+ * No KPI grid; summary strip + primary chart + sections
  */
 
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { BulletproofErrorBoundary } from '@/components/ui/BulletproofErrorBoundary';
-import {
-  Package,
-  Building2,
-  AlertTriangle,
-  Boxes,
-  RefreshCw,
-  TrendingUp,
-  ShoppingCart,
-  Store,
-  Globe
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Data hooks
 import { useDashboardMetrics } from '@/hooks/api/useDashboardMetrics';
 import { useRealTimeSuppliers, useRealTimeInventory } from '@/hooks/useRealTimeDataFixed';
-import { formatCurrency } from '@/hooks/api/useDashboardWidgets';
 
-// New Widget Components
+// Widgets
+import { DashboardSummaryStrip } from '@/components/dashboard/DashboardSummaryStrip';
 import { FlippableWidget } from '@/components/dashboard/widgets/FlippableWidget';
 import {
   ProductCountBarChart,
@@ -37,34 +24,10 @@ import {
 } from '@/components/dashboard/widgets/InventoryByCategoryWidget';
 import { StockAlertsWidget } from '@/components/dashboard/widgets/StockAlertsWidget';
 import { LocationDistributionWidget } from '@/components/dashboard/widgets/LocationDistributionWidget';
-import {
-  LoyaltySignupsWidget,
-  ActiveMembersWidget,
-  PointsEconomyWidget,
-} from '@/components/dashboard/widgets/LoyaltyWidgets';
-
-// Time Range Selector
+import { LoyaltySignupsWidget, ActiveMembersWidget } from '@/components/dashboard/widgets/LoyaltyWidgets';
 import { TimeRangeSelector, useTimeRange } from '@/components/dashboard/TimeRangeSelector';
-
-// Activity Feed
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
-
-// Utils
 import { errorLogger } from '@/lib/utils/dataValidation';
-
-// ZAR Currency Formatter
-const formatZAR = (value: number) => {
-  return `R ${value.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
-const formatZARCompact = (value: number) => {
-  if (value >= 1000000) {
-    return `R ${(value / 1000000).toFixed(2)}M`;
-  } else if (value >= 1000) {
-    return `R ${(value / 1000).toFixed(1)}K`;
-  }
-  return `R ${value.toFixed(2)}`;
-};
 
 interface SalesMetrics {
   totalSales: number;
@@ -237,180 +200,59 @@ const MagicDashboard = () => {
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen space-y-6 bg-background p-6">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />
-          ))}
-        </div>
-        <div className="h-[450px] animate-pulse rounded-lg bg-muted" />
+      <div className="space-y-6 bg-background py-6">
+        <div className="h-6 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-full max-w-2xl animate-pulse rounded bg-muted" />
+        <div className="h-[400px] animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-background p-6 text-foreground">
-      {/* Header */}
-      <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+    <div className="space-y-8 bg-background pb-8 text-foreground">
+      {/* Toolbar: title + time range + refresh (no card, border-b only) */}
+      <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         <div className="flex items-center gap-3">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Suppliers</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{metrics.activeSuppliers}</div>
-            <p className="text-xs text-muted-foreground mt-1">{metrics.preferredSuppliers} preferred</p>
-          </CardContent>
-        </Card>
+      {/* Summary strip: key metrics in one line */}
+      <DashboardSummaryStrip
+        salesTotal={salesMetrics?.totalSales ?? 0}
+        orderCount={salesMetrics?.orderCount ?? 0}
+        inventoryValue={metrics.totalInventoryValue}
+        stockAlerts={metrics.stockAlerts}
+        activeSuppliers={metrics.activeSuppliers}
+        salesLoading={salesLoading}
+      />
 
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Inventory Value</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{formatZARCompact(metrics.totalInventoryValue)}</div>
-            <div className="mt-1 flex items-center gap-1 text-muted-foreground">
-              <TrendingUp className="h-3 w-3" />
-              <span className="text-xs">+{metrics.changePercent.toFixed(1)}% vs last period</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Stock Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-warning" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-warning">{metrics.stockAlerts}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.outOfStockItems} out of stock / {metrics.lowStockAlerts} low
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Supplier Products</CardTitle>
-              <Boxes className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{(metrics.totalProducts || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">Total in catalog</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Sales Overview Row */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {salesLoading ? '...' : formatZARCompact(salesMetrics?.totalSales || 0)}
-            </div>
-            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.orderCount || 0} orders total</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">In-Store Sales</CardTitle>
-              <Store className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {salesLoading ? '...' : formatZARCompact(salesMetrics?.inStoreSales || 0)}
-            </div>
-            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.inStoreOrders || 0} orders</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Online Sales</CardTitle>
-              <Globe className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {salesLoading ? '...' : formatZARCompact(salesMetrics?.onlineSales || 0)}
-            </div>
-            <p className="text-xs mt-1 text-muted-foreground">{salesMetrics?.onlineOrders || 0} orders</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-lg border border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {salesLoading ? '...' : formatZAR(salesMetrics?.avgOrderValue || 0)}
-            </div>
-            <p className="text-xs mt-1 text-muted-foreground">Per transaction</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Chart - Full Width */}
-      <div className="w-full">
+      {/* Primary content: main chart */}
+      <section className="space-y-4">
         <FlippableWidget views={mainWidgetViews} defaultViewId="product-count" />
-      </div>
+      </section>
 
-      {/* Location Distribution - Full Width */}
-      <div className="w-full">
+      {/* Section: Inventory by location */}
+      <section className="space-y-4 pt-2">
+        <h2 className="text-base font-semibold text-foreground">Inventory by location</h2>
         <LocationDistributionWidget />
-      </div>
+      </section>
 
-      {/* Bottom Row - Stock Alerts + Loyalty + Activity */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <div className="lg:col-span-1">
+      {/* Section: Alerts and activity */}
+      <section className="space-y-4 pt-2">
+        <h2 className="text-base font-semibold text-foreground">Alerts and activity</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           <StockAlertsWidget />
+          <LoyaltySignupsWidget />
+          <ActiveMembersWidget />
+          <ActivityFeed limit={6} autoRefresh refreshInterval={60000} />
         </div>
-        <LoyaltySignupsWidget />
-        <ActiveMembersWidget />
-        <div className="lg:col-span-1">
-          <ActivityFeed limit={6} autoRefresh={true} refreshInterval={60000} compact={true} />
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

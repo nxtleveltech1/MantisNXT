@@ -169,14 +169,11 @@ export default function ActivityFeed({
       return (
         <div
           key={activity.id}
-          className="flex items-start space-x-4 border-b border-border p-4 transition-colors last:border-b-0 hover:bg-muted/50"
+          className="flex items-start gap-3 border-b border-border p-3 last:border-b-0 hover:bg-muted/50"
         >
-          <div className="flex-shrink-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <IconComponent className="h-5 w-5 text-primary" />
-            </div>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+            <IconComponent className="h-4 w-4 text-muted-foreground" />
           </div>
-
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center justify-between">
               <h4 className="truncate text-sm font-medium text-foreground">{activity.title}</h4>
@@ -223,8 +220,8 @@ export default function ActivityFeed({
         <CardContent>
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-start space-x-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="h-8 w-8 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-3 w-1/2" />

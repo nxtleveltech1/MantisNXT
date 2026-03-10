@@ -118,52 +118,20 @@ export function StockAlertsWidget() {
           {summary.total} total alerts
         </CardDescription>
 
-        {/* Summary badges */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: filter === 'all' ? MANTIS_COLORS.blue : `${MANTIS_COLORS.blue}15`,
-              color: filter === 'all' ? 'white' : MANTIS_COLORS.blue,
-              borderColor: MANTIS_COLORS.blue,
-            }}
-          >
-            All ({summary.total})
-          </button>
-          <button
-            onClick={() => setFilter('critical')}
-            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: filter === 'critical' ? MANTIS_COLORS.red : `${MANTIS_COLORS.red}15`,
-              color: filter === 'critical' ? 'white' : MANTIS_COLORS.red,
-              borderColor: MANTIS_COLORS.red,
-            }}
-          >
-            Critical ({summary.critical})
-          </button>
-          <button
-            onClick={() => setFilter('warning')}
-            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: filter === 'warning' ? MANTIS_COLORS.orange : `${MANTIS_COLORS.orange}15`,
-              color: filter === 'warning' ? 'white' : MANTIS_COLORS.orange,
-              borderColor: MANTIS_COLORS.orange,
-            }}
-          >
-            Warning ({summary.warning})
-          </button>
-          <button
-            onClick={() => setFilter('info')}
-            className="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: filter === 'info' ? MANTIS_COLORS.cyan : `${MANTIS_COLORS.cyan}15`,
-              color: filter === 'info' ? 'white' : MANTIS_COLORS.cyan,
-              borderColor: MANTIS_COLORS.cyan,
-            }}
-          >
-            Info ({summary.info})
-          </button>
+        <div className="mt-3 flex border-b border-border">
+          {(['all', 'critical', 'warning', 'info'] as const).map(f => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={cn(
+                'px-3 py-2 text-sm font-medium transition-colors',
+                filter === f ? 'border-b-2 border-foreground text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {f === 'all' ? `All (${summary.total})` : `${f.charAt(0).toUpperCase() + f.slice(1)} (${summary[f === 'critical' ? 'critical' : f === 'warning' ? 'warning' : 'info']})`}
+            </button>
+          ))}
         </div>
       </CardHeader>
       <CardContent>
@@ -222,12 +190,8 @@ export function StockAlertsWidget() {
         )}
         {filteredAlerts.length > 20 && (
           <div className="mt-4 text-center">
-            <Button
-              variant="outline"
-              size="sm"
-              style={{ borderColor: MANTIS_COLORS.blue, color: MANTIS_COLORS.blue }}
-            >
-              View All {filteredAlerts.length} Alerts
+            <Button variant="outline" size="sm">
+              View all {filteredAlerts.length} alerts
             </Button>
           </div>
         )}

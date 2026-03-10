@@ -86,23 +86,9 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4 text-center">
-        {/* Categories */}
-        <div className="rounded-lg p-3 bg-muted/50 border border-border">
-          <div className="text-2xl font-bold text-foreground">{data.summary.totalCategories}</div>
-          <div className="text-muted-foreground text-xs">Categories</div>
-        </div>
-        {/* Total Value */}
-        <div className="rounded-lg p-3 bg-muted/50 border border-border">
-          <div className="text-2xl font-bold text-foreground">{formatCurrency(data.summary.totalValue)}</div>
-          <div className="text-muted-foreground text-xs">Total Value</div>
-        </div>
-        {/* Products */}
-        <div className="rounded-lg p-3 bg-muted/50 border border-border">
-          <div className="text-2xl font-bold text-foreground">{data.summary.totalProducts.toLocaleString()}</div>
-          <div className="text-muted-foreground text-xs">Products</div>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {data.summary.totalCategories} categories · {formatCurrency(data.summary.totalValue)} total value · {data.summary.totalProducts.toLocaleString()} products
+      </p>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -157,16 +143,9 @@ export function ProductCountBarChart({ dateRange = 'month' }: { dateRange?: stri
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 text-center">
-        <div className="rounded-lg border border-border bg-muted/50 p-3">
-          <div className="text-2xl font-bold text-foreground">{data.summary.totalProducts.toLocaleString()}</div>
-          <div className="text-muted-foreground text-xs">Total Products</div>
-        </div>
-        <div className="rounded-lg border border-border bg-muted/50 p-3">
-          <div className="text-2xl font-bold text-foreground">{data.summary.topCategory}</div>
-          <div className="text-muted-foreground text-xs">Top Category</div>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {data.summary.totalProducts.toLocaleString()} products · Top: {data.summary.topCategory}
+      </p>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -239,10 +218,9 @@ export function SalesByCategoryPieChart() {
 
   return (
     <div className="space-y-4">
-      <div className="text-center">
-        <div className="text-2xl font-bold text-foreground">{formatCurrency(totalSales)}</div>
-        <div className="text-muted-foreground text-xs">Total Sales by Period</div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {formatCurrency(totalSales)} total sales by period
+      </p>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
@@ -318,16 +296,9 @@ export function SalesTimelineChart({ period = 'week' }: { period?: 'day' | 'week
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 text-center">
-        <div className="rounded-lg border border-border bg-muted/50 p-3">
-          <div className="text-2xl font-bold text-foreground">{formatCurrency(summary.total)}</div>
-          <div className="text-muted-foreground text-xs">Total Sales</div>
-        </div>
-        <div className="rounded-lg border border-border bg-muted/50 p-3">
-          <div className="text-2xl font-bold text-foreground">{summary.orders}</div>
-          <div className="text-muted-foreground text-xs">Total Orders</div>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {formatCurrency(summary.total)} total · {summary.orders} orders
+      </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
