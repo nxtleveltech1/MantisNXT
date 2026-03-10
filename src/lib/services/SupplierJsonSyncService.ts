@@ -57,6 +57,12 @@ export interface SyncResult {
   details?: Record<string, unknown>;
 }
 
+/** Result of a single page fetch; totalPages is set when the API provides it (e.g. Stage One XML meta). */
+export interface FetchProductsResult {
+  products: ExternalProduct[];
+  totalPages?: number;
+}
+
 export interface SupplierFeedStatus {
   supplierId: string;
   feedUrl: string | null;
@@ -206,7 +212,12 @@ export class SupplierJsonSyncService {
   /**
    * Fetch products from the JSON feed with pagination support
    */
-  async fetchProductsFromFeed(feedUrl: string, feedType: string, page = 1, perPage = 100): Promise<ExternalProduct[]> {
+  async fetchProductsFromFeed(
+    feedUrl: string,
+    feedType: string,
+    page = 1,
+    perPage = 100
+  ): Promise<FetchProductsResult> {
     // Build URL with pagination
     const url = new URL(feedUrl);
     url.searchParams.set('page', String(page));
@@ -240,7 +251,7 @@ export class SupplierJsonSyncService {
     // Check Content-Type header to detect XML responses
     const contentType = response.headers.get('content-type') || '';
     const isXmlContentType = contentType.includes('xml') || contentType.includes('text/xml') || contentType.includes('application/xml');
-    
+
     const text = await response.text();
     const textTrimmed = text.trim();
     const isXmlResponse = isXmlContentType || textTrimmed.startsWith('<?xml');
@@ -248,7 +259,9 @@ export class SupplierJsonSyncService {
     // Handle Stage One XML feeds or any XML response
     if (normalizedFeedType === 'stage_one' || isXmlResponse) {
       console.log(`[JsonSync] Detected XML response (Content-Type: ${contentType}, startsWith: ${textTrimmed.substring(0, 20)})`);
-      return this.parseStageOneXml(text);
+      const products = this.parseStageOneXml(text);
+      const meta = this.extractStageOneMeta(text);
+      return { products, totalPages: meta?.totalPages };
     }
 
     let data;
@@ -259,7 +272,9 @@ export class SupplierJsonSyncService {
       // If it looks like XML but wasn't caught above, try parsing as XML
       if (textTrimmed.startsWith('<?xml')) {
         console.log('[JsonSync] Response appears to be XML, attempting XML parse');
-        return this.parseStageOneXml(text);
+        const products = this.parseStageOneXml(text);
+        const meta = this.extractStageOneMeta(text);
+        return { products, totalPages: meta?.totalPages };
       }
       if (textTrimmed.startsWith('<html') || textTrimmed.startsWith('<!DOCTYPE')) {
         throw new Error('Feed URL returned HTML instead of JSON. Please check the URL.');
@@ -269,11 +284,11 @@ export class SupplierJsonSyncService {
 
     // Handle both array response and wrapped response
     if (Array.isArray(data)) {
-      return data;
+      return { products: data };
     } else if (data.products && Array.isArray(data.products)) {
-      return data.products;
+      return { products: data.products };
     } else if (data.data && Array.isArray(data.data)) {
-      return data.data;
+      return { products: data.data };
     }
 
     throw new Error('Unexpected response format from feed');
@@ -411,7 +426,12 @@ export class SupplierJsonSyncService {
     // Unified pagination from page 1 for all feed types (JSON and XML).
     // fetchProductsFromFeed sets page/per_page on the URL and chooses JSON vs XML per response.
     while (hasMore && page <= maxPages && (totalPages === null || page <= totalPages)) {
-      const products = await this.fetchProductsFromFeed(feedUrl, feedType, page, 100);
+      const result = await this.fetchProductsFromFeed(feedUrl, feedType, page, 100);
+      const products = result.products;
+
+      if (totalPages === null && result.totalPages != null) {
+        totalPages = result.totalPages;
+      }
 
       if (products.length === 0) {
         hasMore = false;
