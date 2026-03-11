@@ -14,7 +14,13 @@ const MAX_SUPPLIERS_PER_RUN = parseInt(
 );
 
 function isAuthorized(request: NextRequest): boolean {
-  return request.headers.get('x-vercel-cron') === '1';
+  if (request.headers.get('x-vercel-cron') === '1') return true;
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  const auth = request.headers.get('authorization');
+  if (auth?.startsWith('Bearer ') && auth.slice(7) === secret) return true;
+  if (request.headers.get('x-cron-secret') === secret) return true;
+  return false;
 }
 
 export async function GET(request: NextRequest) {

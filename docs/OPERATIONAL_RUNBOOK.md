@@ -63,7 +63,13 @@ Scheduled syncs are driven **only** by Vercel Cron. No other scheduler runs thes
 
 **Manual trigger:** Use the UI (“Sync Now” on the supplier Data Sync tab) or call the API (e.g. `POST /api/suppliers/[id]/sync` for JSON feed).
 
-**Env (optional):** `JSON_FEED_CRON_MAX_SUPPLIERS` (default 5); `PLUSPORTAL_CRON_MAX_SUPPLIERS` (default 10).
+**External cron fallback:** If Vercel cron is not running (check Vercel Dashboard → Project → Cron Jobs), trigger the JSON feed sync externally. Set `CRON_SECRET` in Vercel env, then call:
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://nxtdotx.online/api/cron/json-feed-sync
+```
+Use cron-job.org, GitHub Actions, or similar to run daily.
+
+**Env (optional):** `JSON_FEED_CRON_MAX_SUPPLIERS` (default 5); `PLUSPORTAL_CRON_MAX_SUPPLIERS` (default 10); `CRON_SECRET` (for external cron auth).
 
 ---
 
