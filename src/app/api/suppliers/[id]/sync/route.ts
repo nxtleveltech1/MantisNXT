@@ -179,6 +179,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log(`[Sync API] Starting sync for supplier ${supplierId}`);
     const result = await service.sync();
 
+    const now = new Date().toISOString();
     return NextResponse.json({
       success: result.success,
       data: {
@@ -188,6 +189,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         productsCreated: result.productsCreated,
         productsFailed: result.productsFailed,
         errorMessage: result.errorMessage,
+        jsonFeedLastSync: now,
+        jsonFeedLastStatus: {
+          success: result.success,
+          message: result.success
+            ? `Synced ${result.productsUpdated + result.productsCreated} products`
+            : (result.errorMessage ?? 'Sync failed'),
+          productsUpdated: result.productsUpdated,
+          productsCreated: result.productsCreated,
+          timestamp: now,
+        },
       },
     });
   } catch (error) {

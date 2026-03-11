@@ -230,6 +230,7 @@ function SupplierProfileContent() {
     errorMessage: string | null;
   } | null>(null);
   const [jsonFeedCronSchedule] = useState('04:00 UTC daily');
+  const [cronRunning, setCronRunning] = useState(false);
 
   // PlusPortal state
   const [plusPortalUsername, setPlusPortalUsername] = useState('');
@@ -1926,14 +1927,23 @@ function SupplierProfileContent() {
                             }
                             
                             const data = await res.json();
-                            if (!data.success) {
-                              throw new Error(data.error || 'Sync failed');
-                            }
+                            const syncError = !data.success ? new Error(data.error || data.data?.errorMessage || 'Sync failed') : null;
                             
-                            // Reload sync logs, supplier status, recent uploads, and activity
+                            // Update UI immediately from sync response (avoids stale refetch)
+                            if (data.data?.jsonFeedLastSync && supplier) {
+                              setSupplier({
+                                ...supplier,
+                                jsonFeedLastSync: data.data.jsonFeedLastSync,
+                                jsonFeedLastStatus: data.data.jsonFeedLastStatus ?? supplier.jsonFeedLastStatus,
+                              });
+                            }
+                            if (syncError) throw syncError;
+                            
+                            // Reload sync logs and cron status (cache-bust to force fresh)
+                            const ts = Date.now();
                             const [statusRes, supplierRes] = await Promise.all([
-                              fetch(`/api/suppliers/${supplierId}/sync`),
-                              fetch(`/api/suppliers/v3/${supplierId}`),
+                              fetch(`/api/suppliers/${supplierId}/sync?_=${ts}`, { cache: 'no-store' }),
+                              fetch(`/api/suppliers/v3/${supplierId}?_=${ts}`, { cache: 'no-store' }),
                             ]);
                             
                             const statusData = await statusRes.json();
@@ -2025,6 +2035,43 @@ function SupplierProfileContent() {
                           No cron runs recorded. Check Vercel Cron Jobs or use external cron.
                         </div>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={cronRunning}
+                        onClick={async () => {
+                          setCronRunning(true);
+                          try {
+                            const res = await fetch('/api/cron/json-feed-sync', { method: 'POST' });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed');
+                            const processed = data.data?.processed ?? 0;
+                            toast.success(`Scheduled sync ran: ${processed} supplier(s) processed`);
+                            const ts = Date.now();
+                            const statusRes = await fetch(`/api/suppliers/${supplierId}/sync?_=${ts}`, { cache: 'no-store' });
+                            const statusData = await statusRes.json();
+                            if (statusData.success && statusData.data?.jsonFeedCronLastRun)
+                              setJsonFeedCronLastRun(statusData.data.jsonFeedCronLastRun);
+                            if (supplier) {
+                              const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}?_=${ts}`, { cache: 'no-store' });
+                              const supplierData = await supplierRes.json();
+                              if (supplierData.success && supplierData.data) setSupplier(supplierData.data);
+                            }
+                            router.refresh();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : 'Scheduled sync failed');
+                          } finally {
+                            setCronRunning(false);
+                          }
+                        }}
+                      >
+                        {cronRunning ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        Run scheduled sync now
+                      </Button>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Last Sync Status</Label>
