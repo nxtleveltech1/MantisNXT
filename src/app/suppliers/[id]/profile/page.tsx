@@ -222,6 +222,14 @@ function SupplierProfileContent() {
     productsFailed: number;
     errorMessage?: string;
   }>>([]);
+  const [jsonFeedCronLastRun, setJsonFeedCronLastRun] = useState<{
+    startedAt: string;
+    completedAt: string | null;
+    status: string;
+    processedCount: number;
+    errorMessage: string | null;
+  } | null>(null);
+  const [jsonFeedCronSchedule] = useState('04:00 UTC daily');
 
   // PlusPortal state
   const [plusPortalUsername, setPlusPortalUsername] = useState('');
@@ -245,6 +253,14 @@ function SupplierProfileContent() {
     progressPercent?: number;
   }>>([]);
   const [currentSyncLogId, setCurrentSyncLogId] = useState<string | null>(null);
+  const [plusPortalCronLastRun, setPlusPortalCronLastRun] = useState<{
+    startedAt: string;
+    completedAt: string | null;
+    status: string;
+    processedCount: number;
+    errorMessage: string | null;
+  } | null>(null);
+  const [plusPortalCronSchedule] = useState('03:00 UTC daily');
 
   // Discount state
   const [baseDiscount, setBaseDiscount] = useState(0);
@@ -385,7 +401,7 @@ function SupplierProfileContent() {
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data) {
-            const { status, logs } = data.data;
+            const { status, logs, jsonFeedCronLastRun: cronRun, plusPortalCronLastRun: ppCronRun } = data.data;
             if (status) {
               setFeedUrl(status.feedUrl || '');
               setFeedType(status.feedType || 'woocommerce');
@@ -395,6 +411,8 @@ function SupplierProfileContent() {
             if (logs) {
               setFeedSyncLogs(logs);
             }
+            setJsonFeedCronLastRun(cronRun ?? null);
+            setPlusPortalCronLastRun(ppCronRun ?? null);
           }
         }
       } catch (error) {
@@ -1919,8 +1937,10 @@ function SupplierProfileContent() {
                             ]);
                             
                             const statusData = await statusRes.json();
-                            if (statusData.success && statusData.data?.logs) {
-                              setFeedSyncLogs(statusData.data.logs);
+                            if (statusData.success && statusData.data) {
+                              if (statusData.data.logs) setFeedSyncLogs(statusData.data.logs);
+                              if (statusData.data.jsonFeedCronLastRun != null)
+                                setJsonFeedCronLastRun(statusData.data.jsonFeedCronLastRun);
                             }
                             
                             const supplierData = await supplierRes.json();
@@ -1962,6 +1982,50 @@ function SupplierProfileContent() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Scheduled Sync</Label>
+                      {jsonFeedCronLastRun ? (
+                        <div className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {new Date(jsonFeedCronLastRun.startedAt).toLocaleString()}
+                            </span>
+                            <Badge
+                              variant={
+                                jsonFeedCronLastRun.status === 'success'
+                                  ? 'default'
+                                  : jsonFeedCronLastRun.status === 'failed'
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                            >
+                              {jsonFeedCronLastRun.status === 'running'
+                                ? 'Running'
+                                : jsonFeedCronLastRun.status === 'success'
+                                  ? 'Success'
+                                  : 'Failed'}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground text-sm">
+                            {jsonFeedCronLastRun.processedCount === 0
+                              ? 'No suppliers due'
+                              : `${jsonFeedCronLastRun.processedCount} supplier(s) processed`}
+                          </p>
+                          {jsonFeedCronLastRun.errorMessage && (
+                            <p className="text-destructive mt-1 text-xs">
+                              {jsonFeedCronLastRun.errorMessage}
+                            </p>
+                          )}
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            Next: {jsonFeedCronSchedule}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm">
+                          No cron runs recorded. Check Vercel Cron Jobs or use external cron.
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Last Sync Status</Label>
                       {supplier?.jsonFeedLastSync ? (
@@ -2318,6 +2382,50 @@ function SupplierProfileContent() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Scheduled Sync</Label>
+                      {plusPortalCronLastRun ? (
+                        <div className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {new Date(plusPortalCronLastRun.startedAt).toLocaleString()}
+                            </span>
+                            <Badge
+                              variant={
+                                plusPortalCronLastRun.status === 'success'
+                                  ? 'default'
+                                  : plusPortalCronLastRun.status === 'failed'
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                            >
+                              {plusPortalCronLastRun.status === 'running'
+                                ? 'Running'
+                                : plusPortalCronLastRun.status === 'success'
+                                  ? 'Success'
+                                  : 'Failed'}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground text-sm">
+                            {plusPortalCronLastRun.processedCount === 0
+                              ? 'No suppliers due'
+                              : `${plusPortalCronLastRun.processedCount} supplier(s) processed`}
+                          </p>
+                          {plusPortalCronLastRun.errorMessage && (
+                            <p className="text-destructive mt-1 text-xs">
+                              {plusPortalCronLastRun.errorMessage}
+                            </p>
+                          )}
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            Next: {plusPortalCronSchedule}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm">
+                          No cron runs recorded. Check Vercel Cron Jobs.
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Last Sync Status</Label>
                       {plusPortalSyncLogs.length > 0 ? (

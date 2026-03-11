@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 import {
   SupplierJsonSyncService,
   getSupplierJsonSyncService,
@@ -14,6 +15,77 @@ import {
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+async function getLastCronRuns(): Promise<{
+  jsonFeedCronLastRun: {
+    startedAt: string;
+    completedAt: string | null;
+    status: string;
+    processedCount: number;
+    errorMessage: string | null;
+  } | null;
+  plusPortalCronLastRun: {
+    startedAt: string;
+    completedAt: string | null;
+    status: string;
+    processedCount: number;
+    errorMessage: string | null;
+  } | null;
+}> {
+  try {
+    const [jsonRes, ppRes] = await Promise.all([
+      query<{
+        started_at: Date;
+        completed_at: Date | null;
+        status: string;
+        processed_count: number;
+        error_message: string | null;
+      }>(
+        `SELECT started_at, completed_at, status, processed_count, error_message
+         FROM core.cron_execution_log
+         WHERE cron_type = 'json-feed-sync'
+         ORDER BY started_at DESC
+         LIMIT 1`
+      ),
+      query<{
+        started_at: Date;
+        completed_at: Date | null;
+        status: string;
+        processed_count: number;
+        error_message: string | null;
+      }>(
+        `SELECT started_at, completed_at, status, processed_count, error_message
+         FROM core.cron_execution_log
+         WHERE cron_type = 'plusportal-sync'
+         ORDER BY started_at DESC
+         LIMIT 1`
+      ),
+    ]);
+
+    return {
+      jsonFeedCronLastRun: jsonRes.rows[0]
+        ? {
+            startedAt: jsonRes.rows[0].started_at.toISOString(),
+            completedAt: jsonRes.rows[0].completed_at?.toISOString() ?? null,
+            status: jsonRes.rows[0].status,
+            processedCount: jsonRes.rows[0].processed_count,
+            errorMessage: jsonRes.rows[0].error_message,
+          }
+        : null,
+      plusPortalCronLastRun: ppRes.rows[0]
+        ? {
+            startedAt: ppRes.rows[0].started_at.toISOString(),
+            completedAt: ppRes.rows[0].completed_at?.toISOString() ?? null,
+            status: ppRes.rows[0].status,
+            processedCount: ppRes.rows[0].processed_count,
+            errorMessage: ppRes.rows[0].error_message,
+          }
+        : null,
+    };
+  } catch {
+    return { jsonFeedCronLastRun: null, plusPortalCronLastRun: null };
+  }
 }
 
 /**
@@ -36,14 +108,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Supplier not found' }, { status: 404 });
     }
 
-    // Get recent sync logs
-    const logs = await service.getSyncLogs(10);
+    // Get recent sync logs and cron execution status
+    const [logs, cronRuns] = await Promise.all([
+      service.getSyncLogs(10),
+      getLastCronRuns(),
+    ]);
 
     return NextResponse.json({
       success: true,
       data: {
         status,
         logs,
+        jsonFeedCronLastRun: cronRuns.jsonFeedCronLastRun,
+        plusPortalCronLastRun: cronRuns.plusPortalCronLastRun,
+        jsonFeedCronSchedule: '04:00 UTC daily',
+        plusPortalCronSchedule: '03:00 UTC daily',
       },
     });
   } catch (error) {

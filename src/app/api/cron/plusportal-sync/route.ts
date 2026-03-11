@@ -7,8 +7,34 @@ import { getPlusPortalSyncService, type ScrapedProduct } from '@/lib/services/Pl
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
 
+const CRON_TYPE = 'plusportal-sync';
 const STALE_MINUTES = parseInt(process.env.PLUSPORTAL_STALE_MINUTES || '120', 10);
 const MAX_SUPPLIERS_PER_RUN = parseInt(process.env.PLUSPORTAL_CRON_MAX_SUPPLIERS || '10', 10);
+
+async function logCronStart(): Promise<string> {
+  const res = await query<{ id: string }>(
+    `INSERT INTO core.cron_execution_log (cron_type, status)
+     VALUES ($1, 'running')
+     RETURNING id`,
+    [CRON_TYPE]
+  );
+  return res.rows[0]!.id;
+}
+
+async function logCronComplete(
+  logId: string,
+  status: 'success' | 'failed',
+  processedCount: number,
+  details: Record<string, unknown>,
+  errorMessage?: string
+) {
+  await query(
+    `UPDATE core.cron_execution_log
+     SET completed_at = NOW(), status = $1, processed_count = $2, details = $3, error_message = $4
+     WHERE id = $5`,
+    [status, processedCount, JSON.stringify(details), errorMessage ?? null, logId]
+  );
+}
 
 function isAuthorized(request: NextRequest): boolean {
   return request.headers.get('x-vercel-cron') === '1';
@@ -186,10 +212,13 @@ async function finalizeSyncResult(supplierId: string, syncResult: {
 }
 
 export async function GET(request: NextRequest) {
+  let cronLogId: string | null = null;
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    cronLogId = await logCronStart();
 
     const suppliersResult = await query<{
       supplier_id: string;
@@ -217,6 +246,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (suppliersResult.rows.length === 0) {
+      await logCronComplete(cronLogId, 'success', 0, { reason: 'no_suppliers_due' });
       return NextResponse.json({ success: true, data: { processed: 0, results: [] } });
     }
 
@@ -316,6 +346,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    await logCronComplete(cronLogId, 'success', results.length, { results }, undefined);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -324,6 +356,15 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (cronLogId) {
+      await logCronComplete(
+        cronLogId,
+        'failed',
+        0,
+        {},
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
     console.error('[PlusPortal Cron] Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
