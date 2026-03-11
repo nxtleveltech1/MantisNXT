@@ -17,9 +17,9 @@ const MAX_SUPPLIERS_PER_RUN = parseInt(
 );
 
 function isCronAuthorized(request: NextRequest): boolean {
-  if (request.headers.get('x-vercel-cron') === '1') return true;
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
+  if (!secret) return true; // No secret configured → allow (Vercel cron may not send headers)
+  if (request.headers.get('x-vercel-cron') === '1') return true;
   const authHeader = request.headers.get('authorization');
   if (authHeader?.startsWith('Bearer ') && authHeader.slice(7) === secret) return true;
   if (request.headers.get('x-cron-secret') === secret) return true;
@@ -140,76 +140,6 @@ export async function POST(request: NextRequest) {
     console.error('[JSON Feed Cron] POST Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
-
-    cronLogId = await logCronStart();
-
-    const suppliers = await getSuppliersNeedingSync();
-    const toProcess = suppliers.slice(0, MAX_SUPPLIERS_PER_RUN);
-
-    if (toProcess.length === 0) {
-      await logCronComplete(cronLogId, 'success', 0, { reason: 'no_suppliers_due' });
-      return NextResponse.json({
-        success: true,
-        data: { processed: 0, results: [] },
-      });
-    }
-
-    const results: Array<Record<string, unknown>> = [];
-
-    for (const supplier of toProcess) {
-      try {
-        const service = new SupplierJsonSyncService(supplier.supplierId);
-        const result = await service.sync();
-
-        results.push({
-          supplierId: supplier.supplierId,
-          supplierName: supplier.name,
-          success: result.success,
-          logId: result.logId,
-          productsFetched: result.productsFetched,
-          productsUpdated: result.productsUpdated,
-          productsCreated: result.productsCreated,
-          productsFailed: result.productsFailed,
-          errorMessage: result.errorMessage ?? undefined,
-        });
-      } catch (error) {
-        results.push({
-          supplierId: supplier.supplierId,
-          supplierName: supplier.name,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-
-    await logCronComplete(cronLogId, 'success', results.length, { results }, undefined);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        processed: results.length,
-        results,
-      },
-    });
-  } catch (error) {
-    if (cronLogId) {
-      await logCronComplete(
-        cronLogId,
-        'failed',
-        0,
-        {},
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    }
-    console.error('[JSON Feed Cron] Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
       { status: 500 }
     );
   }

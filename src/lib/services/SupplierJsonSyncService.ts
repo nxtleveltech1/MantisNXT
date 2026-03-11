@@ -1037,7 +1037,7 @@ export async function getSuppliersNeedingSync(): Promise<
        AND json_feed_url IS NOT NULL
        AND (
          json_feed_last_sync IS NULL
-         OR json_feed_last_sync < NOW() - (json_feed_interval_minutes || ' minutes')::INTERVAL
+         OR json_feed_last_sync < NOW() - (COALESCE(json_feed_interval_minutes, 0) || ' minutes')::INTERVAL
        )
      ORDER BY json_feed_last_sync ASC NULLS FIRST`
   );

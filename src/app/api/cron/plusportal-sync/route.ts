@@ -37,7 +37,13 @@ async function logCronComplete(
 }
 
 function isAuthorized(request: NextRequest): boolean {
-  return request.headers.get('x-vercel-cron') === '1';
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return true;
+  if (request.headers.get('x-vercel-cron') === '1') return true;
+  const auth = request.headers.get('authorization');
+  if (auth?.startsWith('Bearer ') && auth.slice(7) === secret) return true;
+  if (request.headers.get('x-cron-secret') === secret) return true;
+  return false;
 }
 
 function isLogStale(syncStartedAt: Date | string | null): boolean {
