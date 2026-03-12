@@ -518,43 +518,43 @@ function SupplierProfilesContent() {
 
     let filtered = [...suppliersList];
 
-    // Apply search filter
+    // Apply search filter (defensive: name/code/tier can be null/undefined from API)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         s =>
-          s.name.toLowerCase().includes(query) ||
-          s.code.toLowerCase().includes(query) ||
-          (s.tier && s.tier.toLowerCase().includes(query))
+          (s.name ?? '').toLowerCase().includes(query) ||
+          (s.code ?? '').toLowerCase().includes(query) ||
+          ((s as { tier?: string }).tier ?? '').toLowerCase().includes(query)
       );
     }
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(s => s.status === statusFilter);
+      filtered = filtered.filter(s => (s.status ?? '') === statusFilter);
     }
 
-    // Apply sorting
+    // Apply sorting (defensive: name/code/status can be null/undefined)
     filtered.sort((a, b) => {
       let aValue: string | number = '';
       let bValue: string | number = '';
 
       switch (sortField) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          aValue = (a.name ?? '').toLowerCase();
+          bValue = (b.name ?? '').toLowerCase();
           break;
         case 'code':
-          aValue = a.code.toLowerCase();
-          bValue = b.code.toLowerCase();
+          aValue = (a.code ?? '').toLowerCase();
+          bValue = (b.code ?? '').toLowerCase();
           break;
         case 'status':
-          aValue = a.status.toLowerCase();
-          bValue = b.status.toLowerCase();
+          aValue = (a.status ?? '').toLowerCase();
+          bValue = (b.status ?? '').toLowerCase();
           break;
         case 'tier':
-          aValue = (a.tier || '').toLowerCase();
-          bValue = (b.tier || '').toLowerCase();
+          aValue = ((a as { tier?: string }).tier ?? '').toLowerCase();
+          bValue = ((b as { tier?: string }).tier ?? '').toLowerCase();
           break;
       }
 
@@ -587,7 +587,7 @@ function SupplierProfilesContent() {
   };
 
   if (!supplier && !supplierId) {
-    const activeSuppliers = suppliers?.filter(s => s.status === 'active').length || 0;
+    const activeSuppliers = suppliers?.filter(s => (s.status ?? '') === 'active').length || 0;
     const totalSuppliers = suppliers?.length || 0;
 
     return (
@@ -791,10 +791,10 @@ function SupplierProfilesContent() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
-                              {supplier.name.charAt(0).toUpperCase()}
+                              {(supplier.name ?? '?').charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-900">{supplier.name}</div>
+                              <div className="font-semibold text-gray-900">{supplier.name ?? '—'}</div>
                               {supplier.tier && (
                                 <div className="text-muted-foreground mt-0.5 text-xs">
                                   {supplier.tier}
@@ -805,15 +805,15 @@ function SupplierProfilesContent() {
                         </TableCell>
                         <TableCell>
                           <code className="rounded bg-gray-100 px-2 py-1 font-mono text-sm text-gray-700">
-                            {supplier.code}
+                            {supplier.code ?? '—'}
                           </code>
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={supplier.status === 'active' ? 'default' : 'secondary'}
+                            variant={(supplier.status ?? '') === 'active' ? 'default' : 'secondary'}
                             className="capitalize"
                           >
-                            {supplier.status}
+                            {supplier.status ?? '—'}
                           </Badge>
                         </TableCell>
                         <TableCell>

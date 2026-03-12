@@ -1895,7 +1895,7 @@ function SupplierProfileContent() {
                             if (!res.ok) throw new Error('Failed to save configuration');
                             const data = await res.json();
                             if (data.success) {
-                              // Success notification could be added here
+                              toast.success('Configuration saved');
                             }
                           } catch (e: unknown) {
                             setError(e?.message || 'Failed to save configuration');
@@ -2078,13 +2078,17 @@ function SupplierProfileContent() {
                             if (!res.ok) throw new Error(data.error || 'Failed');
                             const processed = data.data?.processed ?? 0;
                             toast.success(`Scheduled sync ran: ${processed} supplier(s) processed`);
+                            if (data.data?.jsonFeedCronLastRun)
+                              setJsonFeedCronLastRun(data.data.jsonFeedCronLastRun);
                             const ts = Date.now();
-                            const statusRes = await fetch(`/api/suppliers/${supplierId}/sync?_=${ts}`, { cache: 'no-store' });
+                            const [statusRes, supplierRes] = await Promise.all([
+                              fetch(`/api/suppliers/${supplierId}/sync?_=${ts}`, { cache: 'no-store' }),
+                              supplier ? fetch(`/api/suppliers/v3/${supplierId}?_=${ts}`, { cache: 'no-store' }) : null,
+                            ]);
                             const statusData = await statusRes.json();
                             if (statusData.success && statusData.data?.jsonFeedCronLastRun)
                               setJsonFeedCronLastRun(statusData.data.jsonFeedCronLastRun);
-                            if (supplier) {
-                              const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}?_=${ts}`, { cache: 'no-store' });
+                            if (supplierRes) {
                               const supplierData = await supplierRes.json();
                               if (supplierData.success && supplierData.data) setSupplier(supplierData.data);
                             }

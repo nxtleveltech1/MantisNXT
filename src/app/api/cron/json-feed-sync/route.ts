@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/database';
+import { getLastCronRuns } from '@/lib/cron-execution-log';
 import {
   getSuppliersNeedingSync,
   SupplierJsonSyncService,
@@ -130,7 +131,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const out = await runCron();
-    return NextResponse.json(out);
+    const { jsonFeedCronLastRun } = await getLastCronRuns();
+    return NextResponse.json({ ...out, data: { ...out.data, jsonFeedCronLastRun } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     const stack = error instanceof Error ? error.stack : undefined;
@@ -149,7 +151,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const out = await runCron();
-    return NextResponse.json(out);
+    const { jsonFeedCronLastRun } = await getLastCronRuns();
+    return NextResponse.json({ ...out, data: { ...out.data, jsonFeedCronLastRun } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     const stack = error instanceof Error ? error.stack : undefined;

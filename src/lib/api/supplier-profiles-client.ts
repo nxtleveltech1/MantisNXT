@@ -84,7 +84,17 @@ export async function getSupplierProfile(
     if (!data.success) {
       throw new Error(data.error || 'Failed to fetch supplier profile');
     }
-    return data.data?.[0] || null;
+    const row = data.data?.[0];
+    if (!row) return null;
+    // Normalize snake_case from DB to camelCase expected by SupplierProfile type
+    return {
+      supplierId: row.supplier_id,
+      profileName: row.profile_name,
+      guidelines: row.guidelines ?? {},
+      processingConfig: row.processing_config ?? row.processingConfig ?? {},
+      qualityStandards: row.quality_standards ?? row.qualityStandards ?? {},
+      complianceRules: row.compliance_rules ?? row.complianceRules ?? {},
+    } as SupplierProfile;
   } catch (error) {
     console.error('Error fetching supplier profile:', error);
     throw error;
