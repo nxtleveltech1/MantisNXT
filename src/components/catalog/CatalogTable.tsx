@@ -589,6 +589,15 @@ export function CatalogTable(props: CatalogTableProps = {}) {
     fetchData();
   }, [fetchData]);
 
+  // Refetch when user returns to tab (e.g. after sync in another tab)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [fetchData]);
+
   // Fetch metrics
   const fetchMetrics = useCallback(async () => {
     setMetricsLoading(true);

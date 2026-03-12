@@ -1938,6 +1938,8 @@ function SupplierProfileContent() {
                                 jsonFeedLastStatus: data.data.jsonFeedLastStatus ?? supplier.jsonFeedLastStatus,
                               });
                             }
+                            if (data.data?.jsonFeedCronLastRun != null)
+                              setJsonFeedCronLastRun(data.data.jsonFeedCronLastRun);
                             if (syncError) throw syncError;
                             
                             // Reload sync logs and cron status (cache-bust to force fresh)

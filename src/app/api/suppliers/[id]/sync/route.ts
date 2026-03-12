@@ -7,6 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { query } from '@/lib/database';
 import {
   SupplierJsonSyncService,
@@ -183,6 +185,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const result = await service.sync();
 
     // Log manual sync to cron_execution_log so "Scheduled Sync" block shows last run
+    let jsonFeedCronLastRun: Awaited<ReturnType<typeof getLastCronRuns>>['jsonFeedCronLastRun'] = null;
     if (result.success) {
       try {
         await query(
@@ -200,6 +203,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             }),
           ]
         );
+        const cronRuns = await getLastCronRuns();
+        jsonFeedCronLastRun = cronRuns.jsonFeedCronLastRun;
       } catch (logErr) {
         console.warn('[Sync API] Failed to log manual sync to cron_execution_log:', logErr);
       }
@@ -225,6 +230,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           productsCreated: result.productsCreated,
           timestamp: now,
         },
+        jsonFeedCronLastRun,
       },
     });
   } catch (error) {
