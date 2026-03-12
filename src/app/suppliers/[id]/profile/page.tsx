@@ -228,6 +228,7 @@ function SupplierProfileContent() {
     status: string;
     processedCount: number;
     errorMessage: string | null;
+    details?: Record<string, unknown> | null;
   } | null>(null);
   const [jsonFeedCronSchedule] = useState('04:00 UTC daily');
   const [cronRunning, setCronRunning] = useState(false);
@@ -2000,26 +2001,36 @@ function SupplierProfileContent() {
                             <span className="text-sm font-medium">
                               {new Date(jsonFeedCronLastRun.startedAt).toLocaleString()}
                             </span>
-                            <Badge
-                              variant={
-                                jsonFeedCronLastRun.status === 'success'
-                                  ? 'default'
-                                  : jsonFeedCronLastRun.status === 'failed'
-                                    ? 'destructive'
-                                    : 'secondary'
-                              }
-                            >
-                              {jsonFeedCronLastRun.status === 'running'
-                                ? 'Running'
-                                : jsonFeedCronLastRun.status === 'success'
-                                  ? 'Success'
-                                  : 'Failed'}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              {jsonFeedCronLastRun.details?.trigger === 'manual' && (
+                                <Badge variant="outline">Manual</Badge>
+                              )}
+                              <Badge
+                                variant={
+                                  jsonFeedCronLastRun.status === 'success'
+                                    ? 'default'
+                                    : jsonFeedCronLastRun.status === 'failed'
+                                      ? 'destructive'
+                                      : 'secondary'
+                                }
+                              >
+                                {jsonFeedCronLastRun.status === 'running'
+                                  ? 'Running'
+                                  : jsonFeedCronLastRun.status === 'success'
+                                    ? 'Success'
+                                    : 'Failed'}
+                              </Badge>
+                            </div>
                           </div>
                           <p className="text-muted-foreground text-sm">
-                            {jsonFeedCronLastRun.processedCount === 0
-                              ? 'No suppliers due'
-                              : `${jsonFeedCronLastRun.processedCount} supplier(s) processed`}
+                            {jsonFeedCronLastRun.details?.trigger === 'manual'
+                              ? typeof jsonFeedCronLastRun.details?.productsUpdated === 'number' ||
+                                  typeof jsonFeedCronLastRun.details?.productsCreated === 'number'
+                                ? `${(Number(jsonFeedCronLastRun.details?.productsUpdated) || 0) + (Number(jsonFeedCronLastRun.details?.productsCreated) || 0)} products synced`
+                                : '1 supplier (manual)'
+                              : jsonFeedCronLastRun.processedCount === 0
+                                ? 'No suppliers due'
+                                : `${jsonFeedCronLastRun.processedCount} supplier(s) processed`}
                           </p>
                           {jsonFeedCronLastRun.errorMessage && (
                             <p className="text-destructive mt-1 text-xs">

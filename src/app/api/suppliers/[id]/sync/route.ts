@@ -24,6 +24,7 @@ async function getLastCronRuns(): Promise<{
     status: string;
     processedCount: number;
     errorMessage: string | null;
+    details?: Record<string, unknown> | null;
   } | null;
   plusPortalCronLastRun: {
     startedAt: string;
@@ -41,8 +42,9 @@ async function getLastCronRuns(): Promise<{
         status: string;
         processed_count: number;
         error_message: string | null;
+        details: Record<string, unknown> | null;
       }>(
-        `SELECT started_at, completed_at, status, processed_count, error_message
+        `SELECT started_at, completed_at, status, processed_count, error_message, details
          FROM core.cron_execution_log
          WHERE cron_type = 'json-feed-sync'
          ORDER BY started_at DESC
@@ -71,6 +73,7 @@ async function getLastCronRuns(): Promise<{
             status: jsonRes.rows[0].status,
             processedCount: jsonRes.rows[0].processed_count,
             errorMessage: jsonRes.rows[0].error_message,
+            details: jsonRes.rows[0].details ?? null,
           }
         : null,
       plusPortalCronLastRun: ppRes.rows[0]
@@ -178,6 +181,29 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Perform sync (optimized with batching)
     console.log(`[Sync API] Starting sync for supplier ${supplierId}`);
     const result = await service.sync();
+
+    // Log manual sync to cron_execution_log so "Scheduled Sync" block shows last run
+    if (result.success) {
+      try {
+        await query(
+          `INSERT INTO core.cron_execution_log (
+             cron_type, status, completed_at, processed_count, details
+           ) VALUES ($1, 'success', NOW(), 1, $2::jsonb)`,
+          [
+            'json-feed-sync',
+            JSON.stringify({
+              trigger: 'manual',
+              supplier_id: supplierId,
+              productsUpdated: result.productsUpdated,
+              productsCreated: result.productsCreated,
+              productsFetched: result.productsFetched,
+            }),
+          ]
+        );
+      } catch (logErr) {
+        console.warn('[Sync API] Failed to log manual sync to cron_execution_log:', logErr);
+      }
+    }
 
     const now = new Date().toISOString();
     return NextResponse.json({
