@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 const CRON_TYPE = 'json-feed-sync';
 const MAX_SUPPLIERS_PER_RUN = parseInt(
-  process.env.JSON_FEED_CRON_MAX_SUPPLIERS || '5',
+  process.env.JSON_FEED_CRON_MAX_SUPPLIERS || '1',
   10
 );
 
