@@ -50,8 +50,8 @@ export function SystemProcessingMeter() {
         SYSTEM PROCESSING
       </p>
 
-      {/* Horizontal UV Meter - 7 Circular Lights */}
-      <div className="flex items-center justify-between gap-1.5">
+      {/* Horizontal UV Meter - 7 Circular Lights (small dots, same row width) */}
+      <div className="flex w-full items-center justify-between gap-1">
         {lights.map((light, index) => {
           const isActive = index < activeLights;
           const shouldFlicker = isActive && flickerState[index];
@@ -59,16 +59,16 @@ export function SystemProcessingMeter() {
           return (
             <div key={index} className="relative flex flex-1 justify-center">
               <div
-                className={`h-4 w-4 rounded-full transition-all duration-100 ${
+                className={`h-2 w-2 rounded-full transition-all duration-100 ${
                   isActive ? 'opacity-100' : 'opacity-15'
                 }`}
                 style={{
                   backgroundColor: light.color,
                   boxShadow: isActive
-                    ? `0 0 20px ${light.color}, 0 0 12px ${light.color}DD, 0 0 6px ${light.color}FF, inset 0 1px 3px rgba(255,255,255,0.7)`
+                    ? `0 0 10px ${light.color}, 0 0 6px ${light.color}DD, 0 0 3px ${light.color}FF, inset 0 1px 2px rgba(255,255,255,0.5)`
                     : 'none',
                   filter: isActive
-                    ? `brightness(1.5) drop-shadow(0 0 8px ${light.color})`
+                    ? `brightness(1.5) drop-shadow(0 0 4px ${light.color})`
                     : 'brightness(0.3)',
                   animation: shouldFlicker ? 'flicker 0.12s ease-in-out infinite' : 'none',
                 }}

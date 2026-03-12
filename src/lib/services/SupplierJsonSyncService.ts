@@ -637,25 +637,12 @@ export class SupplierJsonSyncService {
   }
 
   /**
-   * Update price history for a product
+   * Update price history for a product.
+   * Always closes the current record and inserts a new one when we have a price,
+   * so previous_cost and cost_diff are available (previous = last sync's price).
    */
   private async updatePriceHistory(supplierProductId: string, newPrice: number): Promise<void> {
-    // Get current price
-    const current = await query<{ price: number }>(
-      `SELECT price FROM core.price_history
-       WHERE supplier_product_id = $1 AND is_current = true
-       ORDER BY valid_from DESC LIMIT 1`,
-      [supplierProductId]
-    );
-
-    const currentPrice = current.rows[0]?.price;
-
-    // Only update if price changed
-    if (currentPrice !== undefined && Math.abs(currentPrice - newPrice) < 0.01) {
-      return;
-    }
-
-    // Close current price record
+    // Close current price record if one exists (so it becomes "previous" for catalog)
     await query(
       `UPDATE core.price_history
        SET valid_to = NOW(), is_current = false
@@ -663,7 +650,7 @@ export class SupplierJsonSyncService {
       [supplierProductId]
     );
 
-    // Create new price record
+    // Create new price record (same or changed price; gives audit trail and enables cost_diff)
     await this.createPriceHistory(supplierProductId, newPrice);
   }
 
