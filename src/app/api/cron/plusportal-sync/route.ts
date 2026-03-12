@@ -6,34 +6,45 @@ import { getPlusPortalSyncService, type ScrapedProduct } from '@/lib/services/Pl
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
+export const dynamic = 'force-dynamic';
 
 const CRON_TYPE = 'plusportal-sync';
 const STALE_MINUTES = parseInt(process.env.PLUSPORTAL_STALE_MINUTES || '120', 10);
 const MAX_SUPPLIERS_PER_RUN = parseInt(process.env.PLUSPORTAL_CRON_MAX_SUPPLIERS || '10', 10);
 
-async function logCronStart(): Promise<string> {
-  const res = await query<{ id: string }>(
-    `INSERT INTO core.cron_execution_log (cron_type, status)
-     VALUES ($1, 'running')
-     RETURNING id`,
-    [CRON_TYPE]
-  );
-  return res.rows[0]!.id;
+async function logCronStart(): Promise<string | null> {
+  try {
+    const res = await query<{ id: string }>(
+      `INSERT INTO core.cron_execution_log (cron_type, status)
+       VALUES ($1, 'running')
+       RETURNING id`,
+      [CRON_TYPE]
+    );
+    return res.rows[0]!.id;
+  } catch (e) {
+    console.error('[PlusPortal Cron] logCronStart failed:', e);
+    return null;
+  }
 }
 
 async function logCronComplete(
-  logId: string,
+  logId: string | null,
   status: 'success' | 'failed',
   processedCount: number,
   details: Record<string, unknown>,
   errorMessage?: string
-) {
-  await query(
-    `UPDATE core.cron_execution_log
-     SET completed_at = NOW(), status = $1, processed_count = $2, details = $3, error_message = $4
-     WHERE id = $5`,
-    [status, processedCount, JSON.stringify(details), errorMessage ?? null, logId]
-  );
+): Promise<void> {
+  if (!logId) return;
+  try {
+    await query(
+      `UPDATE core.cron_execution_log
+       SET completed_at = NOW(), status = $1, processed_count = $2, details = $3, error_message = $4
+       WHERE id = $5`,
+      [status, processedCount, JSON.stringify(details), errorMessage ?? null, logId]
+    );
+  } catch (e) {
+    console.error('[PlusPortal Cron] logCronComplete failed:', e);
+  }
 }
 
 function isAuthorized(request: NextRequest): boolean {

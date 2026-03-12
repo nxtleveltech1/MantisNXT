@@ -126,6 +126,9 @@ async function runCron(): Promise<{ success: boolean; data?: { processed: number
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isCronAuthorized(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const out = await runCron();
     return NextResponse.json(out);
   } catch (error) {

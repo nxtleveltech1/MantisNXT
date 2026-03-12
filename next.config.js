@@ -1,3 +1,7 @@
+// Suppress baseline-browser-mapping "over two months old" warning (must run before any other code)
+process.env.BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA =
+  process.env.BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA || 'true';
+
 /** @type {import('next').NextConfig} */
 const path = require('path');
 
