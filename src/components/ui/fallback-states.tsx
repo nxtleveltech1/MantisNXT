@@ -47,26 +47,26 @@ export const NetworkFallback: React.FC<NetworkFallbackProps> = ({
   };
 
   return (
-    <Card className={cn('border-orange-200 bg-orange-50/50', containerClasses[level], className)}>
+    <Card className={cn('border-border bg-muted/50', containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
         <div className="relative">
           {isOnline ? (
-            <Wifi className="h-12 w-12 text-orange-500" />
+            <Wifi className="h-12 w-12 text-warning" />
           ) : (
-            <WifiOff className="h-12 w-12 text-orange-500" />
+            <WifiOff className="h-12 w-12 text-warning" />
           )}
           {queuedRequests > 0 && (
-            <Badge className="absolute -top-2 -right-2 bg-orange-500 text-white">
+            <Badge className="absolute -right-2 -top-2 bg-warning text-warning-foreground">
               {queuedRequests}
             </Badge>
           )}
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-orange-900">
+          <h3 className="text-lg font-semibold text-foreground">
             {isOnline ? 'Connection Issues' : "You're Offline"}
           </h3>
-          <p className="max-w-md text-orange-700">
+          <p className="max-w-md text-muted-foreground">
             {isOnline
               ? "We're having trouble reaching our servers. Please check your connection and try again."
               : `You're currently offline. ${queuedRequests > 0 ? `${queuedRequests} requests will be processed when connection is restored.` : 'Some features may not be available.'}`}
@@ -79,7 +79,7 @@ export const NetworkFallback: React.FC<NetworkFallbackProps> = ({
               onClick={onRetry}
               variant="outline"
               size="sm"
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               {retryLabel}
@@ -88,7 +88,7 @@ export const NetworkFallback: React.FC<NetworkFallbackProps> = ({
               onClick={() => window.location.reload()}
               variant="outline"
               size="sm"
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Reload Page
@@ -144,29 +144,28 @@ export const ApiErrorFallback: React.FC<ApiErrorFallbackProps> = ({
   };
 
   const getSeverityColor = () => {
-    if (statusCode && statusCode >= 500) return 'red';
-    if (statusCode && statusCode >= 400) return 'orange';
-    return 'yellow';
+    if (statusCode && statusCode >= 500) return 'destructive';
+    if (statusCode && statusCode >= 400) return 'warning';
+    return 'warning';
   };
 
   const colorClasses = {
-    red: 'border-red-200 bg-red-50/50 text-red-700',
-    orange: 'border-orange-200 bg-orange-50/50 text-orange-700',
-    yellow: 'border-yellow-200 bg-yellow-50/50 text-yellow-700',
+    destructive: 'border-destructive/30 bg-destructive/10 text-destructive',
+    warning: 'border-warning/30 bg-warning/10 text-warning',
   };
 
   const iconColors = {
-    red: 'text-red-500',
-    orange: 'text-orange-500',
-    yellow: 'text-yellow-500',
+    destructive: 'text-destructive',
+    warning: 'text-warning',
   };
 
   const severity = getSeverityColor();
+  const severityKey = severity as keyof typeof colorClasses;
 
   return (
-    <Card className={cn(colorClasses[severity], containerClasses[level], className)}>
+    <Card className={cn(colorClasses[severityKey], containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-        <AlertTriangle className={cn('h-12 w-12', iconColors[severity])} />
+        <AlertTriangle className={cn('h-12 w-12', iconColors[severityKey])} />
 
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">
@@ -186,11 +185,7 @@ export const ApiErrorFallback: React.FC<ApiErrorFallbackProps> = ({
               onClick={onRetry}
               variant="outline"
               size="sm"
-              className={cn(
-                severity === 'red' && 'border-red-300 hover:bg-red-100',
-                severity === 'orange' && 'border-orange-300 hover:bg-orange-100',
-                severity === 'yellow' && 'border-yellow-300 hover:bg-yellow-100'
-              )}
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               {retryLabel}
@@ -200,11 +195,7 @@ export const ApiErrorFallback: React.FC<ApiErrorFallbackProps> = ({
                 onClick={() => (window.location.href = '/')}
                 variant="outline"
                 size="sm"
-                className={cn(
-                  severity === 'red' && 'border-red-300 hover:bg-red-100',
-                  severity === 'orange' && 'border-orange-300 hover:bg-orange-100',
-                  severity === 'yellow' && 'border-yellow-300 hover:bg-yellow-100'
-                )}
+                className="border-border text-foreground hover:bg-muted"
               >
                 <Home className="mr-2 h-4 w-4" />
                 Go Home
@@ -232,13 +223,13 @@ export const DatabaseErrorFallback: React.FC<FallbackStateProps> = ({
   };
 
   return (
-    <Card className={cn('border-red-200 bg-red-50/50', containerClasses[level], className)}>
+    <Card className={cn('border-destructive/30 bg-destructive/10', containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-        <Database className="h-12 w-12 text-red-500" />
+        <Database className="h-12 w-12 text-destructive" />
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-red-900">Database Connection Error</h3>
-          <p className="max-w-md text-red-700">
+          <h3 className="text-lg font-semibold text-foreground">Database Connection Error</h3>
+          <p className="max-w-md text-muted-foreground">
             We are unable to connect to the database. This is likely a temporary issue that our team
             is working to resolve.
           </p>
@@ -250,7 +241,7 @@ export const DatabaseErrorFallback: React.FC<FallbackStateProps> = ({
               onClick={onRetry}
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-700 hover:bg-red-100"
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               {retryLabel}
@@ -259,7 +250,7 @@ export const DatabaseErrorFallback: React.FC<FallbackStateProps> = ({
               onClick={() => window.location.reload()}
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-700 hover:bg-red-100"
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Reload Page
@@ -286,13 +277,13 @@ export const TimeoutFallback: React.FC<FallbackStateProps> = ({
   };
 
   return (
-    <Card className={cn('border-yellow-200 bg-yellow-50/50', containerClasses[level], className)}>
+    <Card className={cn('border-warning/30 bg-warning/10', containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-        <AlertTriangle className="h-12 w-12 text-yellow-500" />
+        <AlertTriangle className="h-12 w-12 text-warning" />
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-yellow-900">Request Timeout</h3>
-          <p className="max-w-md text-yellow-700">
+          <h3 className="text-lg font-semibold text-foreground">Request Timeout</h3>
+          <p className="max-w-md text-muted-foreground">
             The request is taking longer than expected. This might be due to high server load or
             network issues.
           </p>
@@ -304,7 +295,7 @@ export const TimeoutFallback: React.FC<FallbackStateProps> = ({
               onClick={onRetry}
               variant="outline"
               size="sm"
-              className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+              className="border-border text-foreground hover:bg-muted"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               {retryLabel}
@@ -375,13 +366,13 @@ export const MaintenanceFallback: React.FC<FallbackStateProps> = ({
   };
 
   return (
-    <Card className={cn('border-blue-200 bg-blue-50/50', containerClasses[level], className)}>
+    <Card className={cn('border-info/30 bg-info/10', containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-        <Settings className="h-12 w-12 text-blue-500" />
+        <Settings className="h-12 w-12 text-info" />
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-blue-900">Under Maintenance</h3>
-          <p className="max-w-md text-blue-700">
+          <h3 className="text-lg font-semibold text-foreground">Under Maintenance</h3>
+          <p className="max-w-md text-muted-foreground">
             We are currently performing scheduled maintenance to improve your experience. Please
             check back shortly.
           </p>
@@ -391,7 +382,7 @@ export const MaintenanceFallback: React.FC<FallbackStateProps> = ({
           onClick={() => window.location.reload()}
           variant="outline"
           size="sm"
-          className="border-blue-300 text-blue-700 hover:bg-blue-100"
+          className="border-border text-foreground hover:bg-muted"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
           Check Again
@@ -414,13 +405,13 @@ export const HelpFallback: React.FC<FallbackStateProps & { supportUrl?: string }
   };
 
   return (
-    <Card className={cn('border-gray-200 bg-gray-50/50', containerClasses[level], className)}>
+    <Card className={cn('border-border bg-muted/50', containerClasses[level], className)}>
       <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-        <HelpCircle className="h-12 w-12 text-gray-500" />
+        <HelpCircle className="h-12 w-12 text-muted-foreground" />
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">Need Help?</h3>
-          <p className="max-w-md text-gray-700">
+          <h3 className="text-lg font-semibold text-foreground">Need Help?</h3>
+          <p className="max-w-md text-muted-foreground">
             If you continue to experience issues, please contact our support team for assistance.
           </p>
         </div>
@@ -430,7 +421,7 @@ export const HelpFallback: React.FC<FallbackStateProps & { supportUrl?: string }
             onClick={() => (window.location.href = supportUrl)}
             variant="outline"
             size="sm"
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="border-border text-foreground hover:bg-muted"
           >
             <HelpCircle className="mr-2 h-4 w-4" />
             Contact Support
@@ -439,7 +430,7 @@ export const HelpFallback: React.FC<FallbackStateProps & { supportUrl?: string }
             onClick={() => (window.location.href = '/')}
             variant="outline"
             size="sm"
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="border-border text-foreground hover:bg-muted"
           >
             <Home className="mr-2 h-4 w-4" />
             Go Home

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Upload, Save, Undo2, CheckCircle, AlertTriangle, Globe } from 'lucide-react';
+import { useTheme } from '@/components/theme-provider';
 
 interface GeneralSettings {
   companyName: string;
@@ -28,6 +29,7 @@ interface GeneralSettings {
 }
 
 export default function GeneralSettingsPage() {
+  const { theme: appTheme, setTheme: setAppTheme } = useTheme();
   const [settings, setSettings] = useState<GeneralSettings>({
     companyName: 'MantisNXT',
     companyDescription: 'Complete supplier management and procurement platform',
@@ -46,6 +48,18 @@ export default function GeneralSettingsPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      theme: appTheme === 'system' ? 'auto' : appTheme,
+    }));
+  }, [appTheme]);
+
+  const handleThemeChange = (value: 'light' | 'dark' | 'auto') => {
+    setAppTheme(value === 'auto' ? 'system' : value);
+    setSettings(prev => ({ ...prev, theme: value }));
+  };
 
   const handleInputChange = (field: keyof GeneralSettings, value: string) => {
     setSettings(prev => ({ ...prev, [field]: value }));
@@ -108,11 +122,11 @@ export default function GeneralSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">General Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage your company information and branding</p>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your company information and branding</p>
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-600">
+            <Badge variant="outline" className="border-warning/50 bg-warning/10 text-warning">
               <AlertTriangle className="mr-1 h-3 w-3" />
               Unsaved Changes
             </Badge>
@@ -130,9 +144,9 @@ export default function GeneralSettingsPage() {
 
       {/* Success Alert */}
       {showSuccess && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className="border-success/30 bg-success/10">
+          <CheckCircle className="h-4 w-4 text-success" />
+          <AlertDescription className="text-success">
             Settings saved successfully!
           </AlertDescription>
         </Alert>
@@ -161,7 +175,7 @@ export default function GeneralSettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="companyWebsite">Website</Label>
                 <div className="relative">
-                  <Globe className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+                  <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="companyWebsite"
                     value={settings.companyWebsite}
@@ -225,11 +239,42 @@ export default function GeneralSettingsPage() {
             <CardTitle>Branding & Theme</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Appearance — syncs with header theme toggle */}
+            <div className="space-y-2">
+              <Label>Appearance</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={settings.theme === 'light' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleThemeChange('light')}
+                >
+                  Light
+                </Button>
+                <Button
+                  variant={settings.theme === 'dark' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleThemeChange('dark')}
+                >
+                  Dark
+                </Button>
+                <Button
+                  variant={settings.theme === 'auto' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleThemeChange('auto')}
+                >
+                  System
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Matches the theme toggle in the header.</p>
+            </div>
+
+            <Separator />
+
             {/* Logo Upload */}
             <div className="space-y-2">
               <Label>Company Logo</Label>
               <div className="flex items-center gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
                   {settings.logoUrl ? (
                     <Image
                       src={settings.logoUrl}
@@ -239,7 +284,7 @@ export default function GeneralSettingsPage() {
                       className="h-12 w-12 object-contain"
                     />
                   ) : (
-                    <Building2 className="h-6 w-6 text-gray-400" />
+                    <Building2 className="h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => handleFileUpload('logoUrl')}>
@@ -247,7 +292,7 @@ export default function GeneralSettingsPage() {
                   Upload
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">Recommended: 256x256px, PNG or SVG</p>
+              <p className="text-xs text-muted-foreground">Recommended: 256x256px, PNG or SVG</p>
             </div>
 
             <Separator />
@@ -256,7 +301,7 @@ export default function GeneralSettingsPage() {
             <div className="space-y-2">
               <Label>Favicon</Label>
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-gray-50">
+                <div className="flex h-8 w-8 items-center justify-center rounded border border-border bg-muted">
                   {settings.favicon && (
                     <Image
                       src={settings.favicon}
@@ -272,7 +317,7 @@ export default function GeneralSettingsPage() {
                   Upload
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">16x16px or 32x32px, ICO or PNG</p>
+              <p className="text-xs text-muted-foreground">16x16px or 32x32px, ICO or PNG</p>
             </div>
 
             <Separator />
@@ -283,7 +328,7 @@ export default function GeneralSettingsPage() {
                 <Label htmlFor="primaryColor">Primary Color</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-8 w-8 rounded border border-gray-300"
+                    className="h-8 w-8 rounded border border-border"
                     style={{ backgroundColor: settings.primaryColor }}
                   />
                   <Input
@@ -306,7 +351,7 @@ export default function GeneralSettingsPage() {
                 <Label htmlFor="secondaryColor">Secondary Color</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-8 w-8 rounded border border-gray-300"
+                    className="h-8 w-8 rounded border border-border"
                     style={{ backgroundColor: settings.secondaryColor }}
                   />
                   <Input
@@ -331,7 +376,7 @@ export default function GeneralSettingsPage() {
             {/* Preview */}
             <div className="space-y-2">
               <Label>Preview</Label>
-              <div className="rounded-lg border bg-gray-50 p-3">
+              <div className="rounded-lg border border-border bg-muted p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <div
                     className="flex h-6 w-6 items-center justify-center rounded text-white"

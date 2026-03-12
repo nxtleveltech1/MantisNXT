@@ -26,27 +26,19 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: [
-          'Inter',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'Roboto',
           '"Helvetica Neue"',
-          'Arial',
           'sans-serif',
         ],
         inter: [
-          'Inter',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'Roboto',
           '"Helvetica Neue"',
-          'Arial',
           'sans-serif',
         ],
       },
@@ -112,6 +104,10 @@ module.exports = {
           3: 'var(--chart-3)',
           4: 'var(--chart-4)',
           5: 'var(--chart-5)',
+        },
+        nxt: {
+          accent: 'var(--nxt-accent)',
+          success: 'var(--nxt-success)',
         },
       },
       borderRadius: {

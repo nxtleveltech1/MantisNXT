@@ -361,6 +361,13 @@ node ./scripts/mcp_handshake_check.mjs --server postgres --timeout 3000
 
 > **Note:** Keep this table and configs in sync with reality. Any drift is a blocker for merge.
 
+### F) Theming (Light/Dark Mode)
+- **Toggle:** Header theme control (Sun/Moon/Monitor icon) and Admin → Settings → General → Appearance (Light / Dark / System). Both use `ThemeProvider` + `useTheme()`; choice persisted in `localStorage` key `theme`.
+- **Tokens:** Single source of truth in `src/app/globals.css`: `:root` (light) and `.dark` (dark). NXT-aligned palettes: light = Cloud Canvas style (e.g. `#fafafa` bg, white cards, red primary); dark = Charcoal (`#1a1a1a` bg, `#282828` surfaces). Semantic tokens: `--background`, `--foreground`, `--card`, `--primary`, `--destructive`, `--success`, `--nxt-accent`, `--nxt-success`, etc.
+- **Tailwind:** `darkMode: ['class']`; components use `bg-background`, `text-foreground`, `border-border`, `bg-card`, `text-muted-foreground`, and status tokens so they adapt automatically. No hardcoded `bg-white`/`text-gray-*` in shared UI.
+- **Hydration:** Inline script in `layout.tsx` sets `html` class from `localStorage` before first paint to avoid theme flash.
+- **Uncodixfy:** See `.cursor/rules/uncodixfy.mdc`; no Inter/Segoe UI/Roboto, no gradients/pills/hero sections in dashboards; semantic colors and 8–12px radius.
+
 ---
 
 **Bottom Line:**

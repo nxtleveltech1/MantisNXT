@@ -69,17 +69,14 @@ export function ThemeProvider({
       theme,
       setTheme: (newTheme: Theme) => {
         setTheme(newTheme);
-        localStorage.setItem(storageKey, newTheme);
-        applyTheme(newTheme);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKey, newTheme);
+          applyTheme(newTheme);
+        }
       },
     }),
     [theme, storageKey]
   );
-
-  // Prevent flash of unstyled content
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;
 }

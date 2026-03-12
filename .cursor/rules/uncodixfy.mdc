@@ -1,0 +1,29 @@
+---
+description: Enforce uncodixfy UI standards for all frontend UI generation. Use the uncodixfy skill when generating HTML, CSS, React, or any UI code.
+alwaysApply: true
+---
+
+# Uncodixfy — Project Rule
+
+When generating or editing frontend UI in this project, follow the **uncodixfy** skill. Reference: `@uncodixfy` / uncodixfy SKILL.md.
+
+## Banned patterns (never use)
+
+- **Fonts:** Do not use `Inter`, `Segoe UI`, `Roboto`, `Arial`, or `Trebuchet MS` unless already in the project. Use the project font stack from `globals.css` (`--font-sans`) or Tailwind `font-sans`.
+- **Gradients:** No soft corporate gradients, gradient text, gradient borders, or gradient fills as default UI.
+- **Pills / radius:** No pill shapes; border radius 8–12px max (no 20–32px everywhere).
+- **Hero sections:** No hero blocks or decorative hero copy inside dashboards or internal UI.
+- **Eyebrows:** No `<small>` eyebrow labels, uppercase letter-spaced labels, or "MARCH SNAPSHOT" style headers.
+- **Animations:** No transform animations on hover (e.g. translateX), no bouncy animations; use 100–200ms ease for opacity/color only.
+- **Shadows:** No dramatic drop shadows (e.g. 0 24px 60px); max subtle 0 2px 8px rgba(0,0,0,0.1).
+- **Panels:** No floating glassmorphism, frosted panels, or detached rounded shells as default.
+- **Blue default:** Avoid blue as the default primary; prefer project semantic tokens (NXT uses red accent).
+
+## Required
+
+- Use semantic tokens: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `--primary`, `--destructive`, `--success`, etc.
+- Sidebars: solid background, simple border, 240–260px width.
+- Buttons/cards: solid fills or simple borders, 8–10px radius.
+- Tables: clean rows, simple borders, left-aligned text.
+
+Apply to all new and modified UI in `src/` (components, app pages, layouts).

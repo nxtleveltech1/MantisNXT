@@ -36,7 +36,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       signUpFallbackRedirectUrl={signUpFallbackRedirectUrl}
     >
       <html lang="en-ZA" suppressHydrationWarning>
-        <head />
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){var s=document.documentElement,t=localStorage.getItem('theme');var r=(t==='light'||t==='dark')?t:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');s.classList.add(r);})();`,
+            }}
+          />
+        </head>
         <body className="theme-transition antialiased">
           <Providers>{children}</Providers>
         </body>

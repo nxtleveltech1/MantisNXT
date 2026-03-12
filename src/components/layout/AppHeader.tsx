@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
@@ -218,7 +219,7 @@ function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {notificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
               {notificationCount > 9 ? '9+' : notificationCount}
             </span>
           )}
@@ -404,6 +405,8 @@ export function AppHeader({ title, subtitle, children }: AppHeaderProps) {
 
         {/* Notifications */}
         <NotificationBell />
+
+        <ThemeToggle />
 
         {/* User Account */}
         <UserAccount />
