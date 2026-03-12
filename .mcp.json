@@ -1,5 +1,11 @@
 {
   "mcpServers": {
+    "vercel-mcp": {
+      "url": "https://mcp.vercel.com",
+      "headers": {
+        "Authorization": "Bearer vcp_0G6HcWXSlSiBnTfbdWn6xxepI4k8ipmToVm35LPNRp8EjvpKK13de2Mv"
+      }
+    },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@latest"] },
     "sequential-thinking": {
       "command": "npx",

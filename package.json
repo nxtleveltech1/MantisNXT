@@ -9,7 +9,7 @@
         "dev:status": "bun scripts/dev-server-manager.js status",
         "dev:restart": "bun scripts/dev-server-manager.js restart",
         "dev:raw": "bun next dev --webpack",
-        "build": "bun next build --webpack",
+        "build": "bun x cross-env BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true bun next build --webpack",
         "build:strict": "bun run type-check && bun next build --webpack",
         "start": "bun next start",
         "lint": "bun x eslint . --ext .ts,.tsx",
@@ -196,13 +196,17 @@
         "zustand": "^5.0.8"
     },
     "overrides": {
-        "zod": "^3.25.76"
+        "zod": "^3.25.76",
+        "baseline-browser-mapping": "^2.10.0",
+        "browserslist>baseline-browser-mapping": "^2.10.0"
     },
     "devDependencies": {
         "@modelcontextprotocol/sdk": "^0.6.1",
         "@types/jszip": "^3.4.1",
         "@types/pdf-parse": "^1.1.5",
+        "baseline-browser-mapping": "^2.10.0",
         "chrome-devtools-mcp": "^0.4.0",
+        "cross-env": "^10.1.0",
         "dotenv": "^17.2.2",
         "eslint": "^9.35.0",
         "eslint-config-next": "^15.5.3",

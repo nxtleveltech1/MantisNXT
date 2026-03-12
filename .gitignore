@@ -246,3 +246,5 @@ MantisNXT.zip
 # Generated stock-take operation artefacts
 scripts/imports/reports/generated/
 database/operations/generated/
+.vercel
+.env*.local
