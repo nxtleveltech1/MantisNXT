@@ -26,6 +26,8 @@ const ALWAYS_PUBLIC_ENDPOINTS = [
   '/api/health/database-connections',
   '/api/health/frontend',
   '/api/health/system',
+  '/api/cron/json-feed-sync',
+  '/api/cron/plusportal-sync',
   '/api/core/selections',
   '/api/v1/products/pos',
   '/api/v1/sales/pos',
@@ -88,6 +90,11 @@ function isPublicApiEndpoint(pathname: string, method: string): boolean {
 export default clerkMiddleware(async (auth, request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
+
+  // CRITICAL: Cron endpoints must bypass auth before any Clerk logic (prevents 404 from auth.protect)
+  if (pathname === '/api/cron/json-feed-sync' || pathname === '/api/cron/plusportal-sync') {
+    return NextResponse.next();
+  }
 
   // Skip auth for public routes defined in Clerk matcher
   if (isPublicRoute(request)) {

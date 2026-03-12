@@ -33,29 +33,39 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
   return !!userId;
 }
 
-async function logCronStart(): Promise<string> {
-  const res = await query<{ id: string }>(
-    `INSERT INTO core.cron_execution_log (cron_type, status)
-     VALUES ($1, 'running')
-     RETURNING id`,
-    [CRON_TYPE]
-  );
-  return res.rows[0]!.id;
+async function logCronStart(): Promise<string | null> {
+  try {
+    const res = await query<{ id: string }>(
+      `INSERT INTO core.cron_execution_log (cron_type, status)
+       VALUES ($1, 'running')
+       RETURNING id`,
+      [CRON_TYPE]
+    );
+    return res.rows[0]!.id;
+  } catch (e) {
+    console.error('[JSON Feed Cron] logCronStart failed:', e);
+    return null;
+  }
 }
 
 async function logCronComplete(
-  logId: string,
+  logId: string | null,
   status: 'success' | 'failed',
   processedCount: number,
   details: Record<string, unknown>,
   errorMessage?: string
-) {
-  await query(
-    `UPDATE core.cron_execution_log
-     SET completed_at = NOW(), status = $1, processed_count = $2, details = $3, error_message = $4
-     WHERE id = $5`,
-    [status, processedCount, JSON.stringify(details), errorMessage ?? null, logId]
-  );
+): Promise<void> {
+  if (!logId) return;
+  try {
+    await query(
+      `UPDATE core.cron_execution_log
+       SET completed_at = NOW(), status = $1, processed_count = $2, details = $3, error_message = $4
+       WHERE id = $5`,
+      [status, processedCount, JSON.stringify(details), errorMessage ?? null, logId]
+    );
+  } catch (e) {
+    console.error('[JSON Feed Cron] logCronComplete failed:', e);
+  }
 }
 
 async function runCron(): Promise<{ success: boolean; data?: { processed: number; results?: unknown[] }; error?: string }> {
@@ -116,14 +126,14 @@ async function runCron(): Promise<{ success: boolean; data?: { processed: number
 
 export async function GET(request: NextRequest) {
   try {
-    // GET is used by Vercel cron and "Run" in dashboard; allow without auth so it always runs
-    // (CRON_SECRET is often not sent by Vercel; see github.com/vercel/vercel/issues/11303)
     const out = await runCron();
     return NextResponse.json(out);
   } catch (error) {
-    console.error('[JSON Feed Cron] Error:', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error('[JSON Feed Cron] GET Error:', msg, stack);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { success: false, error: msg, stack: process.env.NODE_ENV === 'development' ? stack : undefined },
       { status: 500 }
     );
   }
@@ -131,15 +141,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isAuthorized(request))) {
+    const authorized = await isAuthorized(request).catch(() => false);
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const out = await runCron();
     return NextResponse.json(out);
   } catch (error) {
-    console.error('[JSON Feed Cron] POST Error:', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error('[JSON Feed Cron] POST Error:', msg, stack);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { success: false, error: msg, stack: process.env.NODE_ENV === 'development' ? stack : undefined },
       { status: 500 }
     );
   }
