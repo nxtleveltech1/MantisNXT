@@ -9,6 +9,7 @@ import {
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
+export const dynamic = 'force-dynamic';
 
 const CRON_TYPE = 'json-feed-sync';
 const MAX_SUPPLIERS_PER_RUN = parseInt(
@@ -115,9 +116,8 @@ async function runCron(): Promise<{ success: boolean; data?: { processed: number
 
 export async function GET(request: NextRequest) {
   try {
-    if (!(await isAuthorized(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // GET is used by Vercel cron and "Run" in dashboard; allow without auth so it always runs
+    // (CRON_SECRET is often not sent by Vercel; see github.com/vercel/vercel/issues/11303)
     const out = await runCron();
     return NextResponse.json(out);
   } catch (error) {

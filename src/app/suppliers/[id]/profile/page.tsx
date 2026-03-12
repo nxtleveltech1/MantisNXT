@@ -1994,7 +1994,25 @@ function SupplierProfileContent() {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Scheduled Sync</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="text-sm font-medium">Scheduled Sync</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-muted-foreground"
+                          onClick={() => {
+                            fetch(`/api/suppliers/${supplierId}/sync?_=${Date.now()}`, { cache: 'no-store' })
+                              .then((r) => r.json())
+                              .then((d) => {
+                                if (d.success && d.data?.jsonFeedCronLastRun)
+                                  setJsonFeedCronLastRun(d.data.jsonFeedCronLastRun);
+                              });
+                          }}
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Refresh
+                        </Button>
+                      </div>
                       {jsonFeedCronLastRun ? (
                         <div className="rounded-lg border p-4">
                           <div className="mb-2 flex items-center justify-between">
@@ -2043,7 +2061,7 @@ function SupplierProfileContent() {
                         </div>
                       ) : (
                         <div className="text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm">
-                          No cron runs recorded. Check Vercel Cron Jobs or use external cron.
+                          No cron runs recorded. Run in Vercel or use &quot;Run scheduled sync now&quot; below, then click Refresh.
                         </div>
                       )}
                       <Button
