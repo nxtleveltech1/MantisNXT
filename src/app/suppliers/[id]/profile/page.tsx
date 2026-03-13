@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import {
   Select,
@@ -174,6 +175,7 @@ function SupplierProfileContent() {
   const params = useParams();
   const router = useRouter();
   const search = useSearchParams();
+  useToast(); // Keep hook count stable; use sonnerToast.success/error for notifications
   const supplierId = String(params?.id || '');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   
