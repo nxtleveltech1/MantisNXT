@@ -226,6 +226,7 @@ function SupplierProfileContent() {
   // JSON Feed state
   const [feedUrl, setFeedUrl] = useState('');
   const [feedType, setFeedType] = useState('woocommerce');
+  const [feedSaving, setFeedSaving] = useState(false);
   const [feedEnabled, setFeedEnabled] = useState(false);
   const [feedInterval, setFeedInterval] = useState(60);
   const [feedSyncing, setFeedSyncing] = useState(false);
@@ -1809,6 +1810,11 @@ function SupplierProfileContent() {
 
           {/* Data Sync Tab */}
           <TabsContent value="sync" className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -1895,12 +1901,15 @@ function SupplierProfileContent() {
                     <div className="flex gap-3">
                       <Button
                         variant="outline"
+                        disabled={feedSaving || !feedUrl}
                         onClick={async () => {
                           try {
                             setError(null);
+                            setFeedSaving(true);
                             const res = await fetch(`/api/suppliers/${supplierId}/sync`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
                               body: JSON.stringify({
                                 feedUrl,
                                 feedType,
@@ -1908,18 +1917,45 @@ function SupplierProfileContent() {
                                 intervalMinutes: feedInterval,
                               }),
                             });
-                            if (!res.ok) throw new Error('Failed to save configuration');
-                            const data = await res.json();
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) {
+                              throw new Error(data.error || data.details || `Failed to save (${res.status})`);
+                            }
                             if (data.success) {
-                              toast.success('Configuration saved');
+                              setError(null);
+                              toast.success('Configuration saved. Next cron at 04:00 UTC will sync if due.');
+                              const statusRes = await fetch(`/api/suppliers/${supplierId}/sync`, {
+                                credentials: 'include',
+                              });
+                              if (statusRes.ok) {
+                                const statusData = await statusRes.json();
+                                if (statusData.success && statusData.data?.status) {
+                                  const s = statusData.data.status;
+                                  setFeedUrl(s.feedUrl || '');
+                                  setFeedType(s.feedType || 'woocommerce');
+                                  setFeedEnabled(s.feedEnabled || false);
+                                  setFeedInterval(s.intervalMinutes || 60);
+                                }
+                              }
                             }
                           } catch (e: unknown) {
-                            setError(e?.message || 'Failed to save configuration');
+                            setError(e instanceof Error ? e.message : 'Failed to save configuration');
+                          } finally {
+                            setFeedSaving(false);
                           }
                         }}
                       >
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Save Configuration
+                        {feedSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Save Configuration
+                          </>
+                        )}
                       </Button>
 
                       <Button
@@ -1934,6 +1970,7 @@ function SupplierProfileContent() {
                             
                             const res = await fetch(`/api/suppliers/${supplierId}/sync`, {
                               method: 'POST',
+                              credentials: 'include',
                               signal: controller.signal,
                             });
                             clearTimeout(timeoutId);
@@ -2101,7 +2138,10 @@ function SupplierProfileContent() {
                         onClick={async () => {
                           setCronRunning(true);
                           try {
-                            const res = await fetch('/api/cron/json-feed-sync', { method: 'POST' });
+                            const res = await fetch('/api/cron/json-feed-sync', {
+                              method: 'POST',
+                              credentials: 'include',
+                            });
                             const data = await res.json();
                             if (!res.ok) throw new Error(data.error || 'Failed');
                             const processed = data.data?.processed ?? 0;
