@@ -4,14 +4,12 @@
  * Provides system health status for:
  * - Application
  * - Database connection pool
- * - Redis cache
- * - Session store
+ * - Session store (no-op; auth is Clerk)
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { dbHealthCheck, getDbMetrics } from '@/lib/database/connection-pool';
-import { redisHealthCheck } from '@/lib/cache/redis-client';
 import { sessionStore } from '@/lib/cache/redis-session-store';
 
 interface HealthStatus {
@@ -25,11 +23,6 @@ interface HealthStatus {
       status: 'healthy' | 'unhealthy';
       latency?: number;
       poolInfo?: unknown;
-      error?: string;
-    };
-    redis: {
-      status: 'healthy' | 'unhealthy';
-      latency?: number;
       error?: string;
     };
     sessions: {
@@ -47,26 +40,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const detailed = request.nextUrl.searchParams.get('detailed') === 'true';
 
   try {
-    // Perform health checks in parallel
-    const [dbCheck, redisCheck] = await Promise.all([
+    const [dbCheck, sessionCheck] = await Promise.all([
       dbHealthCheck().catch(err => ({
         healthy: false,
         error: err.message,
         latency: undefined,
         poolInfo: undefined,
       })),
-      redisHealthCheck().catch(err => ({
-        healthy: false,
-        error: err.message,
-        latency: undefined,
-      })),
+      checkSessionStore(),
     ]);
 
-    // Check session store
-    const sessionCheck = await checkSessionStore();
-
-    // Determine overall status
-    const status = determineOverallStatus(dbCheck, redisCheck, sessionCheck);
+    const status = dbCheck.healthy ? 'healthy' : 'unhealthy';
 
     const health: HealthStatus = {
       status,
@@ -81,32 +65,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           poolInfo: 'poolInfo' in dbCheck ? dbCheck.poolInfo : undefined,
           error: 'error' in dbCheck ? dbCheck.error : undefined,
         },
-        redis: {
-          status: redisCheck.healthy ? 'healthy' : 'unhealthy',
-          latency: 'latency' in redisCheck ? redisCheck.latency : undefined,
-          error: 'error' in redisCheck ? redisCheck.error : undefined,
-        },
         sessions: sessionCheck,
       },
     };
 
-    // Add detailed metrics if requested
     if (detailed) {
       const dbMetrics = await getDbMetrics().catch(() => null);
       if (dbMetrics) {
-        health.metrics = {
-          database: dbMetrics,
-        };
+        health.metrics = { database: dbMetrics };
       }
     }
 
-    // Return appropriate status code
-    const httpStatus = status === 'healthy' ? 200 : status === 'degraded' ? 200 : 503;
-
+    const httpStatus = status === 'healthy' ? 200 : 503;
     return NextResponse.json(health, { status: httpStatus });
   } catch (error) {
     console.error('Health check error:', error);
-
     return NextResponse.json(
       {
         status: 'unhealthy',
@@ -125,39 +98,11 @@ async function checkSessionStore(): Promise<{
 }> {
   try {
     const count = await sessionStore.count();
-    return {
-      status: 'healthy',
-      count,
-    };
+    return { status: 'healthy', count };
   } catch (error) {
     return {
       status: 'unhealthy',
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
-}
-
-function determineOverallStatus(
-  dbCheck: unknown,
-  redisCheck: unknown,
-  sessionCheck: unknown
-): 'healthy' | 'degraded' | 'unhealthy' {
-  // Database is critical
-  if (!dbCheck.healthy) {
-    return 'unhealthy';
-  }
-
-  // Redis and sessions are important but not critical
-  const redisHealthy = redisCheck.healthy;
-  const sessionsHealthy = sessionCheck.status === 'healthy';
-
-  if (redisHealthy && sessionsHealthy) {
-    return 'healthy';
-  }
-
-  if (!redisHealthy || !sessionsHealthy) {
-    return 'degraded';
-  }
-
-  return 'healthy';
 }

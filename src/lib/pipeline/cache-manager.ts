@@ -3,7 +3,6 @@
 /**
  * Production-Grade Multi-Tier Caching System
  * L1: In-memory cache with LRU eviction
- * L2: Redis cache (optional) for distributed systems
  * Stale-while-revalidate pattern for high availability
  */
 

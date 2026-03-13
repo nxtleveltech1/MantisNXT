@@ -124,7 +124,6 @@ function getApplicationMetrics(): string {
 
   // Configuration status
   const dbConfigured = process.env.DATABASE_URL ? 1 : 0;
-  const redisConfigured = process.env.REDIS_URL ? 1 : 0;
   const supabaseConfigured =
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 1 : 0;
 
@@ -133,14 +132,6 @@ function getApplicationMetrics(): string {
     dbConfigured,
     {},
     'Database configuration status',
-    'gauge'
-  );
-
-  metrics += formatPrometheusMetric(
-    'mantisnxt_config_redis_configured',
-    redisConfigured,
-    {},
-    'Redis configuration status',
     'gauge'
   );
 

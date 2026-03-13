@@ -13,7 +13,6 @@
  */
 
 import crypto from 'crypto';
-import { createClient } from 'redis';
 import { Client } from 'pg';
 
 // ============================================================================
@@ -123,16 +122,6 @@ const ENV_VARIABLES: EnvVariable[] = [
     minLength: 32,
     minEntropy: 256,
     description: 'Encryption key for 2FA TOTP secrets',
-  },
-
-  // Redis
-  {
-    name: 'REDIS_URL',
-    required: true,
-    type: 'url',
-    pattern: /^redis(s)?:\/\/.+/,
-    description: 'Redis connection URL',
-    example: 'redis://default:password@hostname:6379',
   },
 
   // Application
@@ -393,56 +382,6 @@ async function testDatabaseConnection(): Promise<{
   }
 }
 
-/**
- * Test Redis connection
- */
-async function testRedisConnection(): Promise<{
-  valid: boolean;
-  message: string;
-  details?: any;
-}> {
-  const redisUrl = process.env.REDIS_URL;
-  if (!redisUrl) {
-    return {
-      valid: false,
-      message: 'REDIS_URL not set',
-    };
-  }
-
-  const client = createClient({
-    url: redisUrl,
-    socket: {
-      connectTimeout: 5000,
-      reconnectStrategy: false,
-    },
-  });
-
-  try {
-    await client.connect();
-    const pong = await client.ping();
-
-    if (pong !== 'PONG') {
-      throw new Error(`Unexpected ping response: ${pong}`);
-    }
-
-    const info = await client.info();
-    const version = info.match(/redis_version:([^\r\n]+)/)?.[1] || 'unknown';
-
-    await client.quit();
-
-    return {
-      valid: true,
-      message: 'Redis connection successful',
-      details: { version },
-    };
-  } catch (error) {
-    return {
-      valid: false,
-      message: `Redis connection failed: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-}
-
 // ============================================================================
 // MAIN EXECUTION
 // ============================================================================
@@ -483,17 +422,6 @@ async function main() {
     status: dbResult.valid ? 'passed' : 'failed',
     message: dbResult.message,
     details: dbResult.details,
-  });
-
-  // Test Redis connection
-  console.log('⏳ Testing Redis connection...\n');
-  const redisResult = await testRedisConnection();
-  results.push({
-    category: 'Redis',
-    name: 'Redis Connection',
-    status: redisResult.valid ? 'passed' : 'failed',
-    message: redisResult.message,
-    details: redisResult.details,
   });
 
   // Display results
@@ -568,4 +496,4 @@ if (require.main === module) {
   });
 }
 
-export { validateEnvVariable, testDatabaseConnection, testRedisConnection };
+export { validateEnvVariable, testDatabaseConnection };

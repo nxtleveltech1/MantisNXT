@@ -105,13 +105,6 @@ export default function MonitoringDashboard() {
       lastCheck: '15 seconds ago'
     },
     {
-      name: 'Redis Cache',
-      status: 'online',
-      uptime: '99.99%',
-      responseTime: 8,
-      lastCheck: '45 seconds ago'
-    },
-    {
       name: 'Email Service',
       status: 'degraded',
       uptime: '98.12%',

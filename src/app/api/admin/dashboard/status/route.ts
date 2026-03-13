@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { dbHealthCheck, getDbMetrics } from '@/lib/database/connection-pool';
-import { redisHealthCheck } from '@/lib/cache/redis-client';
 import { verifyAuth, isAdmin } from '@/lib/auth/auth-helper';
 
 export interface ServiceStatus {
@@ -66,25 +65,6 @@ export async function GET(request: NextRequest) {
         name: 'Database',
         status: 'down',
         message: error instanceof Error ? error.message : 'Connection failed',
-        lastChecked: now,
-      });
-    }
-
-    // Check Redis health
-    try {
-      const redisCheck = await redisHealthCheck();
-      services.push({
-        name: 'Cache (Redis)',
-        status: redisCheck.healthy ? 'operational' : 'degraded',
-        latency: redisCheck.latency,
-        message: redisCheck.healthy ? 'Operational' : redisCheck.error || 'Not connected',
-        lastChecked: now,
-      });
-    } catch {
-      services.push({
-        name: 'Cache (Redis)',
-        status: 'degraded',
-        message: 'Redis not available (using fallback)',
         lastChecked: now,
       });
     }

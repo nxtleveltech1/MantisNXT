@@ -81,16 +81,6 @@ async function gatherSystemData() {
       lastCheck: now.toISOString(),
       url: '/health/email',
     },
-    {
-      name: 'Cache Layer (Redis)',
-      status: 'healthy',
-      responseTime: 2 + Math.random() * 8,
-      uptime: '99.97%',
-      requestsPerSecond: Math.floor(Math.random() * 1000) + 500,
-      errors: 0,
-      lastCheck: now.toISOString(),
-      url: '/health/cache',
-    },
   ];
 
   // Database health with more detailed metrics
@@ -121,24 +111,24 @@ async function gatherSystemData() {
       },
     },
     {
-      name: 'Redis Cache',
-      host: 'cache.internal',
+      name: 'PostgreSQL (Secondary)',
+      host: 'db-secondary.internal',
       status: 'connected',
-      responseTime: 1 + Math.random() * 5,
+      responseTime: 8 + Math.random() * 15,
       connections: {
         active: Math.floor(Math.random() * 25) + 5,
         total: 50,
         max: 100,
       },
       queryPerformance: {
-        avgQueryTime: 1 + Math.random() * 3,
-        slowQueries: 0,
-        totalQueries: Math.floor(Math.random() * 50000) + 25000,
+        avgQueryTime: 8 + Math.random() * 12,
+        slowQueries: Math.floor(Math.random() * 2),
+        totalQueries: Math.floor(Math.random() * 5000) + 2000,
       },
-      memory: {
-        used: Math.floor(Math.random() * 1000) + 500,
-        total: 2048,
-        percentage: Math.floor(Math.random() * 60) + 30,
+      replication: { status: 'healthy', lag: Math.random() * 50, followerCount: 1 },
+      backups: {
+        lastBackup: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'success',
       },
     },
     {

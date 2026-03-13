@@ -34,9 +34,6 @@ const envSchema = z.object({
   DB_POOL_IDLE_TIMEOUT: z.string().regex(/^\d+$/).default('30000'),
   DB_POOL_CONNECTION_TIMEOUT: z.string().regex(/^\d+$/).default('120000'),
 
-  // Redis
-  REDIS_URL: z.string().default('redis://localhost:6379'),
-
   // Authentication & Security
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
@@ -271,15 +268,6 @@ class EnvironmentConfig {
         idleTimeout: parseInt(this.env.DB_POOL_IDLE_TIMEOUT, 10),
         connectionTimeout: parseInt(this.env.DB_POOL_CONNECTION_TIMEOUT, 10),
       },
-    };
-  }
-
-  /**
-   * Get Redis configuration
-   */
-  public getRedisConfig() {
-    return {
-      url: this.env.REDIS_URL,
     };
   }
 

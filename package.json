@@ -84,7 +84,6 @@
         "// Production Configuration": "Environment and secrets management",
         "secrets:generate": "bun --bun scripts/generate-production-secrets.ts",
         "env:validate": "bun --bun scripts/validate-env-config.ts",
-        "redis:test": "bun --bun scripts/validate-redis-connection.ts",
         "test:woo-buttons": "bun scripts/tests/woo-buttons.spec.ts",
         "lint:full": "ESLINT_USE_BASELINE=0 bun x eslint . --ext .ts,.tsx",
         "type-check:full": "bun x tsc --noEmit"
@@ -218,7 +217,6 @@
         "lint-staged": "^15.2.0",
         "prettier": "^3.1.0",
         "prettier-plugin-tailwindcss": "^0.7.1",
-        "redis": "^5.8.2",
         "tsconfig-paths": "^4.2.0",
         "tsx": "^4.7.0",
         "wait-on": "^7.2.0",

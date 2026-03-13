@@ -2,7 +2,7 @@
   "name": "MantisNXT Dev",
   "dockerComposeFile": ["../docker-compose.dev.yml"],
   "service": "app",
-  "runServices": ["app", "redis"],
+  "runServices": ["app"],
   "workspaceFolder": "/app",
   "overrideCommand": true,
   "shutdownAction": "stopCompose",
