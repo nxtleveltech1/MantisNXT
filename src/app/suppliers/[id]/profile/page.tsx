@@ -58,6 +58,22 @@ import {
   XCircle,
 } from 'lucide-react';
 
+/** Format cron schedule as "HH:mm UTC daily (HH:mm TZ)" using client local timezone */
+function formatCronScheduleWithLocal(utcHour: number, utcMinute: number): string {
+  const utcStr = `${String(utcHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')} UTC daily`;
+  const date = new Date(Date.UTC(2020, 0, 1, utcHour, utcMinute));
+  const local = date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  });
+  return `${utcStr} (${local})`;
+}
+
+const JSON_FEED_CRON_SCHEDULE = formatCronScheduleWithLocal(4, 0);
+const PLUSPORTAL_CRON_SCHEDULE = formatCronScheduleWithLocal(3, 0);
+
 type Supplier = {
   id: string;
   name: string;
@@ -230,7 +246,7 @@ function SupplierProfileContent() {
     errorMessage: string | null;
     details?: Record<string, unknown> | null;
   } | null>(null);
-  const [jsonFeedCronSchedule] = useState('04:00 UTC daily');
+  const jsonFeedCronSchedule = JSON_FEED_CRON_SCHEDULE;
   const [cronRunning, setCronRunning] = useState(false);
 
   // PlusPortal state
@@ -262,7 +278,7 @@ function SupplierProfileContent() {
     processedCount: number;
     errorMessage: string | null;
   } | null>(null);
-  const [plusPortalCronSchedule] = useState('03:00 UTC daily');
+  const plusPortalCronSchedule = PLUSPORTAL_CRON_SCHEDULE;
 
   // Discount state
   const [baseDiscount, setBaseDiscount] = useState(0);
@@ -2026,6 +2042,9 @@ function SupplierProfileContent() {
                             <div className="flex items-center gap-2">
                               {jsonFeedCronLastRun?.details?.trigger === 'manual' && (
                                 <Badge variant="outline">Manual</Badge>
+                              )}
+                              {jsonFeedCronLastRun && jsonFeedCronLastRun.details?.trigger !== 'manual' && (
+                                <Badge variant="outline">Scheduled</Badge>
                               )}
                               {!jsonFeedCronLastRun && <Badge variant="outline">Manual</Badge>}
                               <Badge

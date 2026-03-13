@@ -9,7 +9,7 @@ The inventory management system has been fully integrated with the NXT-SPP (Supp
 **Quick Start:**
 - Access the system at: `http://localhost:3000/nxt-spp`
 - See [Integration Documentation](docs/INTEGRATION_COMPLETE.md) for details
-- See [NXT-SPP README](NXT-SPP-README.md) for API reference
+- See [NXT-SPP README](docs/modules/nxt-spp/README.md) for API reference
 
 ## Features
 
@@ -179,7 +179,7 @@ The system follows a 3-layer architecture:
 ## Documentation
 
 - [Integration Documentation](docs/INTEGRATION_COMPLETE.md) - Complete integration guide
-- [NXT-SPP README](NXT-SPP-README.md) - API reference and technical details
+- [NXT-SPP README](docs/modules/nxt-spp/README.md) - API reference and technical details
 - [Database Schema](database/schema/) - Schema documentation
 - [Type Definitions](src/types/nxt-spp.ts) - TypeScript interfaces
 

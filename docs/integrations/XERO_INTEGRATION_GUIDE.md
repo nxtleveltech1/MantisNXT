@@ -1,6 +1,6 @@
 # Xero Accounting Integration Guide
 
-This guide covers the setup and configuration of the Xero accounting integration with MantisNXT.
+This guide covers the setup and configuration of the Xero accounting integration with MantisNXT. For **Cursor/AI access** to Xero via MCP (invoices, contacts, reports from the IDE), see [XERO_MCP_SETUP.md](./XERO_MCP_SETUP.md).
 
 ## Prerequisites
 

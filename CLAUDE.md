@@ -310,6 +310,7 @@ Blockers: <if any + proposed resolution>
 | `http` | allowlisted fetch | `http.fetch` | `HTTP_ALLOWLIST` | `api.example.com` | disabled |
 | `slack` | notifications | `slack.postMessage` | `SLACK_BOT_TOKEN` | `slack.com` | disabled |
 | `s3` | object store | `s3.get`, `s3.put` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` | `s3.<region>.amazonaws.com` | disabled |
+| `xero` | Xero accounting, inventory, reports via MCP (optional, local only; not in shipped config) | `list-organisation-details`, `list-invoices`, `list-contacts`, `list-items`, etc. | `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET`, `XERO_REDIRECT_URI`, `XERO_SCOPES`, `XERO_STATE` | `login.xero.com`, `identity.xero.com`, `api.xero.com` | optional, local |
 
 **Example configs (illustrative — verify against current SDK docs):**
 
