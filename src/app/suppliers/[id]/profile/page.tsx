@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -174,7 +174,6 @@ function SupplierProfileContent() {
   const params = useParams();
   const router = useRouter();
   const search = useSearchParams();
-  const { toast } = useToast();
   const supplierId = String(params?.id || '');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   
@@ -1923,7 +1922,7 @@ function SupplierProfileContent() {
                             }
                             if (data.success) {
                               setError(null);
-                              toast.success('Configuration saved. Next cron at 04:00 UTC will sync if due.');
+                              sonnerToast.success('Configuration saved. Next cron at 04:00 UTC will sync if due.');
                               const statusRes = await fetch(`/api/suppliers/${supplierId}/sync`, {
                                 credentials: 'include',
                               });
@@ -2145,7 +2144,7 @@ function SupplierProfileContent() {
                             const data = await res.json();
                             if (!res.ok) throw new Error(data.error || 'Failed');
                             const processed = data.data?.processed ?? 0;
-                            toast.success(`Scheduled sync ran: ${processed} supplier(s) processed`);
+                            sonnerToast.success(`Scheduled sync ran: ${processed} supplier(s) processed`);
                             if (data.data?.jsonFeedCronLastRun)
                               setJsonFeedCronLastRun(data.data.jsonFeedCronLastRun);
                             const ts = Date.now();
@@ -2162,7 +2161,7 @@ function SupplierProfileContent() {
                             }
                             router.refresh();
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : 'Scheduled sync failed');
+                            sonnerToast.error(e instanceof Error ? e.message : 'Scheduled sync failed');
                           } finally {
                             setCronRunning(false);
                           }

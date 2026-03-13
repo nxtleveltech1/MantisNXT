@@ -158,9 +158,88 @@ export async function GET(request: NextRequest) {
       supplier_discounts AS (
         SELECT 
           sp.supplier_product_id,
-          COALESCE(s.base_discount_percent, 0) AS base_discount
+          COALESCE(
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'sku'
+               AND dr.supplier_sku = sp.supplier_sku
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             JOIN public.brand b ON b.id = dr.brand_id
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'brand'
+               AND UPPER(TRIM(b.name)) = UPPER(TRIM(COALESCE(
+                 sp.attrs_json->>'brand',
+                 (SELECT r.brand 
+                  FROM spp.pricelist_row r
+                  JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+                  WHERE r.supplier_sku = sp.supplier_sku AND r.brand IS NOT NULL AND r.brand <> ''
+                  ORDER BY u.received_at DESC, r.row_num DESC
+                  LIMIT 1),
+                 ''
+               )))
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'category'
+               AND dr.category_id = sp.category_id
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            CASE
+              WHEN LOWER(s.name) = 'stage one'
+                AND (
+                  LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%truss%'
+                  OR (LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%stage%'
+                      AND LOWER(COALESCE(c.name, cat.category_raw, '')) NOT LIKE '%stage piano%')
+                  OR LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%staging%'
+                  OR LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%rigging%'
+                )
+              THEN 0
+              ELSE NULL
+            END,
+            (SELECT dr.discount_percent 
+             FROM core.supplier_discount_rules dr
+             WHERE dr.supplier_id = sp.supplier_id
+               AND dr.scope_type = 'supplier'
+               AND dr.is_active = true
+               AND dr.valid_from <= NOW()
+               AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
+             ORDER BY dr.priority DESC
+             LIMIT 1),
+            (sp.attrs_json->>'base_discount')::numeric,
+            (sp.attrs_json->>'base_discount_percent')::numeric,
+            s.base_discount_percent,
+            (sprof.guidelines->'pricing'->>'discount_percentage')::numeric,
+            0
+          ) AS base_discount
         FROM core.supplier_product sp
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+        LEFT JOIN core.category c ON c.category_id = sp.category_id
+        LEFT JOIN LATERAL (
+          SELECT r.category_raw
+          FROM spp.pricelist_row r
+          JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+          WHERE r.supplier_sku = sp.supplier_sku AND r.category_raw IS NOT NULL AND r.category_raw <> ''
+          ORDER BY u.received_at DESC, r.row_num DESC
+          LIMIT 1
+        ) cat ON TRUE
+        LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
+          AND sprof.profile_name = 'default' 
+          AND sprof.is_active = true
       )
       SELECT
         sp.supplier_product_id,

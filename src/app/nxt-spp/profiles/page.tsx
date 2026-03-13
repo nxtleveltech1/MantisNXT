@@ -242,6 +242,64 @@ function SupplierProfilesContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supplierId]);
 
+  // Hooks must be called unconditionally (before any early returns)
+  const suppliersRef = useRef<Supplier[]>([]);
+  const suppliersKeyRef = useRef<string>('');
+  const [suppliersVersion, setSuppliersVersion] = useState(0);
+
+  useEffect(() => {
+    const currentKey = suppliers.map(s => s.id).sort().join(',');
+    if (suppliersKeyRef.current !== currentKey) {
+      suppliersRef.current = suppliers;
+      suppliersKeyRef.current = currentKey;
+      setSuppliersVersion(v => v + 1);
+    }
+  }, [suppliers]);
+
+  const filteredAndSortedSuppliers = useMemo(() => {
+    const suppliersList = suppliersRef.current;
+    if (!suppliersList || suppliersList.length === 0) return [];
+    let filtered = [...suppliersList];
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        s =>
+          (s.name ?? '').toLowerCase().includes(query) ||
+          (s.code ?? '').toLowerCase().includes(query) ||
+          ((s as { tier?: string }).tier ?? '').toLowerCase().includes(query)
+      );
+    }
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(s => (s.status ?? '') === statusFilter);
+    }
+    filtered.sort((a, b) => {
+      let aValue: string | number = '';
+      let bValue: string | number = '';
+      switch (sortField) {
+        case 'name':
+          aValue = (a.name ?? '').toLowerCase();
+          bValue = (b.name ?? '').toLowerCase();
+          break;
+        case 'code':
+          aValue = (a.code ?? '').toLowerCase();
+          bValue = (b.code ?? '').toLowerCase();
+          break;
+        case 'status':
+          aValue = (a.status ?? '').toLowerCase();
+          bValue = (b.status ?? '').toLowerCase();
+          break;
+        case 'tier':
+          aValue = ((a as { tier?: string }).tier ?? '').toLowerCase();
+          bValue = ((b as { tier?: string }).tier ?? '').toLowerCase();
+          break;
+      }
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return filtered;
+  }, [suppliersVersion, searchQuery, statusFilter, sortField, sortDirection]);
+
   const loadSuppliersList = useCallback(async () => {
     try {
       setLoading(true);
@@ -493,78 +551,6 @@ function SupplierProfilesContent() {
       </AppLayout>
     );
   }
-
-  // Filter and sort suppliers for directory view
-  // Use ref to store suppliers and prevent infinite loops from array reference changes
-  const suppliersRef = useRef<Supplier[]>([]);
-  const suppliersKeyRef = useRef<string>('');
-  const [suppliersVersion, setSuppliersVersion] = useState(0);
-  
-  // Update ref only when suppliers actually change (by comparing IDs)
-  useEffect(() => {
-    const currentKey = suppliers.map(s => s.id).sort().join(',');
-    if (suppliersKeyRef.current !== currentKey) {
-      suppliersRef.current = suppliers;
-      suppliersKeyRef.current = currentKey;
-      setSuppliersVersion(v => v + 1); // Trigger re-render
-    }
-  }, [suppliers]);
-
-  const filteredAndSortedSuppliers = useMemo(() => {
-    const suppliersList = suppliersRef.current;
-    if (!suppliersList || suppliersList.length === 0) {
-      return [];
-    }
-
-    let filtered = [...suppliersList];
-
-    // Apply search filter (defensive: name/code/tier can be null/undefined from API)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        s =>
-          (s.name ?? '').toLowerCase().includes(query) ||
-          (s.code ?? '').toLowerCase().includes(query) ||
-          ((s as { tier?: string }).tier ?? '').toLowerCase().includes(query)
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(s => (s.status ?? '') === statusFilter);
-    }
-
-    // Apply sorting (defensive: name/code/status can be null/undefined)
-    filtered.sort((a, b) => {
-      let aValue: string | number = '';
-      let bValue: string | number = '';
-
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name ?? '').toLowerCase();
-          bValue = (b.name ?? '').toLowerCase();
-          break;
-        case 'code':
-          aValue = (a.code ?? '').toLowerCase();
-          bValue = (b.code ?? '').toLowerCase();
-          break;
-        case 'status':
-          aValue = (a.status ?? '').toLowerCase();
-          bValue = (b.status ?? '').toLowerCase();
-          break;
-        case 'tier':
-          aValue = ((a as { tier?: string }).tier ?? '').toLowerCase();
-          bValue = ((b as { tier?: string }).tier ?? '').toLowerCase();
-          break;
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [suppliersVersion, searchQuery, statusFilter, sortField, sortDirection]);
 
   const handleSort = (field: 'name' | 'code' | 'status' | 'tier') => {
     if (sortField === field) {

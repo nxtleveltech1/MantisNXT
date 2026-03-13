@@ -124,6 +124,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                AND (dr.valid_until IS NULL OR dr.valid_until >= NOW())
              ORDER BY dr.priority DESC
              LIMIT 1),
+            -- Stage/Truss exclusion for Stage One: no discount for these categories
+            CASE
+              WHEN LOWER(s.name) = 'stage one'
+                AND (
+                  LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%truss%'
+                  OR (LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%stage%'
+                      AND LOWER(COALESCE(c.name, cat.category_raw, '')) NOT LIKE '%stage piano%')
+                  OR LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%staging%'
+                  OR LOWER(COALESCE(c.name, cat.category_raw, '')) LIKE '%rigging%'
+                )
+              THEN 0
+              ELSE NULL
+            END,
             -- Supplier-level discount rule
             (SELECT dr.discount_percent 
              FROM core.supplier_discount_rules dr
@@ -144,6 +157,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           ) AS base_discount
         FROM core.supplier_product sp
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+        LEFT JOIN core.category c ON c.category_id = sp.category_id
+        LEFT JOIN LATERAL (
+          SELECT r.category_raw
+          FROM spp.pricelist_row r
+          JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+          WHERE r.supplier_sku = sp.supplier_sku AND r.category_raw IS NOT NULL AND r.category_raw <> ''
+          ORDER BY u.received_at DESC, r.row_num DESC
+          LIMIT 1
+        ) cat ON TRUE
         LEFT JOIN public.supplier_profiles sprof ON sprof.supplier_id = sp.supplier_id 
           AND sprof.profile_name = 'default' 
           AND sprof.is_active = true
