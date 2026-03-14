@@ -254,157 +254,6 @@ export const sidebarData = {
       ],
     },
     {
-      title: 'Sales Services',
-      url: '/sales/quotations',
-      icon: FileText,
-      items: [
-        {
-          title: 'Quotations',
-          url: '/sales/quotations',
-        },
-        {
-          title: 'Sales Orders',
-          url: '/sales/sales-orders',
-        },
-        {
-          title: 'Proforma Invoices',
-          url: '/sales/proforma-invoices',
-        },
-        {
-          title: 'Invoices',
-          url: '/sales/invoices',
-        },
-      ],
-    },
-    {
-      title: 'Sales Channels',
-      url: '/sales-channels',
-      icon: Store,
-      items: [
-        {
-          title: 'WooCommerce',
-          url: '/sales-channels?channel=woocommerce',
-        },
-        {
-          title: 'WhatsApp',
-          url: '/sales-channels?channel=whatsapp',
-        },
-        {
-          title: 'Facebook',
-          url: '/sales-channels?channel=facebook',
-        },
-        {
-          title: 'Instagram',
-          url: '/sales-channels?channel=instagram',
-        },
-        {
-          title: 'TikTok',
-          url: '/sales-channels?channel=tiktok',
-        },
-      ],
-    },
-    {
-      title: 'Courier Logistics',
-      url: '/logistics/dashboard',
-      icon: Truck,
-      items: [
-        {
-          title: 'Dashboard',
-          url: '/logistics/dashboard',
-        },
-        {
-          title: 'Deliveries',
-          url: '/logistics/deliveries',
-        },
-        {
-          title: 'New Delivery',
-          url: '/logistics/deliveries/new',
-        },
-        {
-          title: 'Courier Providers',
-          url: '/logistics/couriers',
-        },
-        {
-          title: 'Route Planning',
-          url: '/logistics/routes',
-        },
-        {
-          title: 'Tracking',
-          url: '/logistics/tracking',
-        },
-        {
-          title: 'Reports',
-          url: '/logistics/reports',
-        },
-        {
-          title: 'Settings',
-          url: '/logistics/settings',
-        },
-      ],
-    },
-    {
-      title: 'Rentals',
-      url: '/rentals',
-      icon: Calendar,
-      items: [
-        {
-          title: 'Dashboard',
-          url: '/rentals',
-        },
-        {
-          title: 'Equipment',
-          url: '/rentals/equipment',
-        },
-        {
-          title: 'Reservations',
-          url: '/rentals/reservations',
-        },
-        {
-          title: 'New Reservation',
-          url: '/rentals/reservations/new',
-        },
-        {
-          title: 'Packages',
-          url: '/rentals/packages',
-        },
-        {
-          title: 'Damage Reports',
-          url: '/rentals/damage',
-        },
-      ],
-    },
-    {
-      title: 'Repairs Workshop',
-      url: '/repairs',
-      icon: Wrench,
-      items: [
-        {
-          title: 'Dashboard',
-          url: '/repairs',
-        },
-        {
-          title: 'Repair Orders',
-          url: '/repairs/orders',
-        },
-        {
-          title: 'New Repair Order',
-          url: '/repairs/orders/new',
-        },
-        {
-          title: 'Technicians',
-          url: '/repairs/technicians',
-        },
-        {
-          title: 'Preventive Maintenance',
-          url: '/repairs/preventive-maintenance',
-        },
-        {
-          title: 'Parts Inventory',
-          url: '/repairs/parts',
-        },
-      ],
-    },
-    {
       title: 'Financial',
       url: '/financial',
       icon: DollarSign,
@@ -634,6 +483,31 @@ export const sidebarData = {
       url: '/communication/messages',
       icon: MessageSquare,
     },
+    {
+      name: 'Sales Services',
+      url: '/sales/quotations',
+      icon: FileText,
+    },
+    {
+      name: 'Sales Channels',
+      url: '/sales-channels',
+      icon: Store,
+    },
+    {
+      name: 'Courier Logistics',
+      url: '/logistics/dashboard',
+      icon: Truck,
+    },
+    {
+      name: 'Rentals',
+      url: '/rentals',
+      icon: Calendar,
+    },
+    {
+      name: 'Repairs Workshop',
+      url: '/repairs',
+      icon: Wrench,
+    },
   ],
 };
 
@@ -646,17 +520,17 @@ const MODULE_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibili
   'Suppliers': 'suppliers',
   'Product Management': 'productManagement',
   'Customers': 'customers',
-  'Sales Services': 'salesServices',
-  'Sales Channels': 'salesChannels',
-  'Courier Logistics': 'courierLogistics',
-  'Rentals': 'rentals',
-  'Repairs Workshop': 'repairsWorkshop',
   'Financial': 'financial',
   'Support': 'support',
 };
 
 const PROJECT_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibilityService').ModuleVisibilitySettings> = {
   'Communication': 'communication',
+  'Sales Services': 'salesServices',
+  'Sales Channels': 'salesChannels',
+  'Courier Logistics': 'courierLogistics',
+  'Rentals': 'rentals',
+  'Repairs Workshop': 'repairsWorkshop',
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
