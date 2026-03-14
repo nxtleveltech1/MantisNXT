@@ -1,9 +1,10 @@
 /**
  * Xero Invoices Sync API
- * 
+ *
+ * GET /api/xero/sync/invoices?type=ACCPAY|ACCREC
  * POST /api/xero/sync/invoices
- * 
- * Sync sales invoices and supplier bills to Xero.
+ *
+ * List (GET) or sync (POST) invoices to/from Xero.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,6 +15,48 @@ import {
 } from '@/lib/xero/sync/invoices';
 import { validateXeroRequest, validateSyncParams, successResponse } from '@/lib/xero/validation';
 import { handleApiError } from '@/lib/xero/errors';
+
+export async function GET(request: NextRequest) {
+  try {
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+
+    const { orgId } = validation;
+    const type = request.nextUrl.searchParams.get('type') as 'ACCPAY' | 'ACCREC' | null;
+
+    const result = await fetchInvoicesFromXero(orgId, {
+      type: type ?? undefined,
+    });
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error, errorCode: result.errorCode },
+        { status: 400 }
+      );
+    }
+
+    const invoices = (result.data ?? []).map((inv) => ({
+      id: inv.InvoiceID,
+      invoice_number: inv.InvoiceNumber ?? inv.InvoiceID,
+      vendor_id: inv.Type === 'ACCPAY' ? inv.Contact?.ContactID : undefined,
+      customer_id: inv.Type === 'ACCREC' ? inv.Contact?.ContactID : undefined,
+      contact_name: inv.Contact?.Name,
+      status: (inv.Status ?? '').toLowerCase(),
+      total_amount: inv.Total ?? 0,
+      due_date: inv.DueDate ?? inv.Date,
+      currency: inv.CurrencyCode ?? 'ZAR',
+      date: inv.Date,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: invoices,
+      count: invoices.length,
+    });
+  } catch (error) {
+    return handleApiError(error, 'Xero Fetch Invoices');
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

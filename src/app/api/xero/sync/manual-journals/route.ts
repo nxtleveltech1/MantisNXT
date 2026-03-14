@@ -1,9 +1,10 @@
 /**
  * Xero Manual Journals Sync API
  *
+ * GET /api/xero/sync/manual-journals
  * POST /api/xero/sync/manual-journals
  *
- * Sync manual journal entries to Xero.
+ * List (GET) or sync (POST) manual journals to/from Xero.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,6 +14,47 @@ import {
 } from '@/lib/xero/sync/manual-journals';
 import { validateXeroRequest, validateSyncParams, successResponse } from '@/lib/xero/validation';
 import { handleApiError } from '@/lib/xero/errors';
+
+export async function GET(request: NextRequest) {
+  try {
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+
+    const { orgId } = validation;
+    const fromDate = request.nextUrl.searchParams.get('fromDate') || undefined;
+    const toDate = request.nextUrl.searchParams.get('toDate') || undefined;
+
+    const result = await fetchManualJournalsFromXero(orgId, {
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
+
+    if (!result.success || !result.data) {
+      return NextResponse.json(
+        { error: result.error ?? 'Failed to fetch manual journals' },
+        { status: 400 }
+      );
+    }
+
+    const list = result.data.map((mj) => {
+      const debits = (mj.JournalLines ?? []).filter((l) => (l.LineAmount ?? 0) > 0).reduce((s, l) => s + (l.LineAmount ?? 0), 0);
+      const credits = (mj.JournalLines ?? []).filter((l) => (l.LineAmount ?? 0) < 0).reduce((s, l) => s + Math.abs(l.LineAmount ?? 0), 0);
+      return {
+        id: mj.ManualJournalID,
+        entry_number: mj.Narration ?? mj.ManualJournalID ?? '',
+        description: mj.Narration ?? '',
+        date: (mj as { JournalDate?: string }).JournalDate ?? (mj as { Date?: string }).Date,
+        is_posted: mj.Status === 'POSTED',
+        total_debits: debits,
+        total_credits: credits,
+      };
+    });
+
+    return NextResponse.json({ success: true, data: list, count: list.length });
+  } catch (error) {
+    return handleApiError(error, 'Xero Fetch Manual Journals');
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

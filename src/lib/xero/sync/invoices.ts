@@ -426,3 +426,57 @@ export async function fetchInvoicesFromXero(
     };
   }
 }
+
+/**
+ * Fetch a single invoice from Xero by ID (for webhook real-time sync)
+ */
+export async function getInvoiceFromXero(
+  orgId: string,
+  xeroInvoiceId: string
+): Promise<SyncResult<XeroInvoice>> {
+  try {
+    const { tokenSet, tenantId } = await getValidTokenSet(orgId);
+    const xero = getXeroClient();
+    xero.setTokenSet(tokenSet);
+
+    const response = await callXeroApi(tenantId, async () => {
+      return xero.accountingApi.getInvoices(
+        tenantId,
+        undefined, // modifiedAfter
+        undefined, // where
+        undefined, // order
+        [xeroInvoiceId], // IDs - fetch single invoice
+        undefined, // invoiceNumbers
+        undefined, // contactIDs
+        undefined, // statuses
+        undefined, // page
+        false, // includeArchived
+        false, // createdByMyApp
+        undefined, // unitdp
+        false // summaryOnly
+      );
+    });
+
+    const invoice = (response.body?.invoices || [])[0] as XeroInvoice | undefined;
+
+    if (!invoice?.InvoiceID) {
+      return {
+        success: false,
+        error: 'Invoice not found',
+        errorCode: 'NOT_FOUND',
+      };
+    }
+
+    return {
+      success: true,
+      data: invoice,
+    };
+  } catch (error) {
+    const parsedError = parseXeroApiError(error);
+    return {
+      success: false,
+      error: parsedError.message,
+      errorCode: parsedError.code,
+    };
+  }
+}

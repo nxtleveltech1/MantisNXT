@@ -851,7 +851,27 @@ export class ARService {
         ]
       );
 
-      return result.rows[0];
+      const id = result.rows[0].id;
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncCreditNoteToXero } = await import('@/lib/xero/sync/credit-notes');
+        if (await hasActiveConnection(data.org_id)) {
+          syncCreditNoteToXero(data.org_id, {
+            id,
+            contactId: data.customer_id,
+            creditNoteNumber,
+            date: data.credit_note_date || new Date().toISOString().split('T')[0],
+            reference: data.notes ?? undefined,
+            type: 'sales',
+            lineItems: [{ description: data.reason, quantity: 1, unitPrice: data.total_amount }],
+          }).catch((syncErr) => {
+            console.error('[Xero Sync] Failed to sync AR credit note:', syncErr);
+          });
+        }
+      } catch {
+        // ignore
+      }
+      return { id };
     } catch (error) {
       console.error('Error creating credit note:', error);
       throw error;

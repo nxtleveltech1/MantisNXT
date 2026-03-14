@@ -9,12 +9,23 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useXeroConnection } from '@/hooks/useXeroConnection';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
+
+type ListSource = 'nxt' | 'xero';
 
 interface CreditNote {
   id: string;
   credit_note_number: string;
-  vendor_id: string;
+  vendor_id?: string;
   invoice_id?: string;
   amount: number;
   currency: string;
@@ -24,35 +35,54 @@ interface CreditNote {
 }
 
 export default function APCreditNotesPage() {
+  const { isConnected: xeroConnected } = useXeroConnection();
+  const [source, setSource] = useState<ListSource>('nxt');
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCreditNotes() {
+      setLoading(true);
+      setError(null);
       try {
-        const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-        // Note: This endpoint may not exist yet, but we'll create a placeholder
-        const response = await fetch(`/api/v1/financial/ap/credit-notes?org_id=${orgId}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setCreditNotes(result.data || []);
+        if (source === 'xero') {
+          const response = await fetch('/api/xero/sync/credit-notes?type=ACCPAYCREDIT');
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            setCreditNotes(
+              result.data.map((cn: { CreditNoteID?: string; CreditNoteNumber?: string; Total?: number; Status?: string; Date?: string }) => ({
+                id: cn.CreditNoteID ?? '',
+                credit_note_number: cn.CreditNoteNumber ?? cn.CreditNoteID ?? '',
+                amount: cn.Total ?? 0,
+                currency: 'ZAR',
+                credit_note_date: cn.Date ?? '',
+                status: (cn.Status ?? '').toLowerCase(),
+              }))
+            );
+          } else {
+            setError(result.error || 'Failed to fetch from Xero');
+            setCreditNotes([]);
+          }
         } else {
-          // If endpoint doesn't exist, just show empty state
-          setCreditNotes([]);
+          const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+          const response = await fetch(`/api/v1/financial/ap/credit-notes?org_id=${orgId}`);
+          const result = await response.json();
+          if (response.ok && result.success !== false && !result.error) {
+            setCreditNotes(result.data ?? []);
+          } else {
+            setCreditNotes([]);
+          }
         }
-        setLoading(false);
       } catch (err) {
-        console.error('Error fetching credit notes:', err);
-        // Don't show error if endpoint doesn't exist
         setCreditNotes([]);
+      } finally {
         setLoading(false);
       }
     }
 
     fetchCreditNotes();
-  }, []);
+  }, [source]);
 
   return (
     <AppLayout
@@ -64,14 +94,28 @@ export default function APCreditNotesPage() {
       ]}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-muted-foreground">Manage accounts payable credit notes</p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Credit Note
-          </Button>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="ap-cn-source" className="text-sm text-muted-foreground">
+              Source
+            </Label>
+            <Select value={source} onValueChange={(v) => setSource(v as ListSource)}>
+              <SelectTrigger id="ap-cn-source" className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nxt">NXT</SelectItem>
+                {xeroConnected && <SelectItem value="xero">Xero</SelectItem>}
+              </SelectContent>
+            </Select>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Credit Note
+            </Button>
+          </div>
         </div>
 
         <Card>

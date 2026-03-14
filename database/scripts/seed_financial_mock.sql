@@ -175,4 +175,125 @@ VALUES (
 )
 ON CONFLICT (id) DO UPDATE SET total_amount = EXCLUDED.total_amount;
 
+-- Cost Center
+INSERT INTO cost_centers (id, org_id, cost_center_code, cost_center_name, is_active)
+VALUES (
+  'cccc1111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'CC001',
+  'Head Office',
+  true
+)
+ON CONFLICT (id) DO UPDATE SET cost_center_name = EXCLUDED.cost_center_name;
+
+-- Project Costing
+INSERT INTO project_costing (id, org_id, project_code, project_name, start_date, budget_amount, actual_cost, status, cost_center_id)
+VALUES (
+  'bbbb1111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'PRJ-001',
+  'Demo Project',
+  CURRENT_DATE - INTERVAL '90 days',
+  50000.00,
+  12500.00,
+  'active',
+  'cccc1111-aaaa-1111-aaaa-111111111111'
+)
+ON CONFLICT (id) DO UPDATE SET project_name = EXCLUDED.project_name;
+
+-- Tax Return
+INSERT INTO tax_returns (id, org_id, return_period, fiscal_year, return_type, due_date, total_tax_due, status)
+VALUES (
+  'dddd1111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  to_char(CURRENT_DATE, 'YYYY-MM'),
+  EXTRACT(YEAR FROM CURRENT_DATE)::integer,
+  'vat',
+  CURRENT_DATE + INTERVAL '20 days',
+  15000.00,
+  'draft'
+)
+ON CONFLICT (id) DO UPDATE SET total_tax_due = EXCLUDED.total_tax_due;
+
+-- Tax Return Line
+INSERT INTO tax_return_lines (id, tax_return_id, line_number, description, amount)
+VALUES (
+  'dddd2111-aaaa-1111-aaaa-111111111111',
+  'dddd1111-aaaa-1111-aaaa-111111111111',
+  1,
+  'VAT on sales',
+  15000.00
+)
+ON CONFLICT (id) DO UPDATE SET amount = EXCLUDED.amount;
+
+-- FA Asset Category
+INSERT INTO fa_asset_categories (id, org_id, category_code, category_name, default_depreciation_method, default_useful_life_years, is_active)
+VALUES (
+  'fafa1111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'IT',
+  'IT Equipment',
+  'straight_line',
+  5,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+
+-- FA Asset Register
+INSERT INTO fa_asset_register (id, org_id, asset_number, asset_name, asset_category_id, purchase_date, purchase_cost, current_value, depreciation_method, useful_life_years, status)
+VALUES (
+  'fafa2111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'AST-001',
+  'Demo Laptop',
+  'fafa1111-aaaa-1111-aaaa-111111111111',
+  CURRENT_DATE - INTERVAL '365 days',
+  25000.00,
+  20000.00,
+  'straight_line',
+  5,
+  'active'
+)
+ON CONFLICT (id) DO UPDATE SET current_value = EXCLUDED.current_value;
+
+-- GL Fiscal Year
+INSERT INTO gl_fiscal_years (id, org_id, fiscal_year, start_date, end_date, is_closed)
+VALUES (
+  'eeee8111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  EXTRACT(YEAR FROM CURRENT_DATE)::integer,
+  date_trunc('year', CURRENT_DATE)::date,
+  (date_trunc('year', CURRENT_DATE) + INTERVAL '1 year' - INTERVAL '1 day')::date,
+  false
+)
+ON CONFLICT (org_id, fiscal_year) DO UPDATE SET start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date;
+
+-- GL Period
+INSERT INTO gl_periods (id, org_id, period, fiscal_year, start_date, end_date, is_closed)
+VALUES (
+  'eeee9111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  to_char(CURRENT_DATE, 'YYYY-MM'),
+  EXTRACT(YEAR FROM CURRENT_DATE)::integer,
+  date_trunc('month', CURRENT_DATE)::date,
+  (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month' - INTERVAL '1 day')::date,
+  false
+)
+ON CONFLICT (org_id, period, fiscal_year) DO UPDATE SET start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date;
+
+-- GL Account Balance (account_id is placeholder; no FK in schema)
+INSERT INTO gl_account_balances (id, org_id, account_id, period, fiscal_year, opening_balance, debit_total, credit_total, closing_balance)
+VALUES (
+  'eeeea111-aaaa-1111-aaaa-111111111111',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  'aaaaaaaa-1111-1111-1111-111111111111',
+  to_char(CURRENT_DATE, 'YYYY-MM'),
+  EXTRACT(YEAR FROM CURRENT_DATE)::integer,
+  0,
+  10000.00,
+  5000.00,
+  5000.00
+)
+ON CONFLICT (org_id, account_id, period, fiscal_year) DO UPDATE SET closing_balance = EXCLUDED.closing_balance, debit_total = EXCLUDED.debit_total, credit_total = EXCLUDED.credit_total;
+
 COMMIT;

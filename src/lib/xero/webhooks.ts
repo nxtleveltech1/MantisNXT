@@ -223,7 +223,11 @@ export async function processWebhookEvent(
       case 'PAYMENT':
         await handlePaymentEvent(event);
         break;
-      
+
+      case 'CREDIT_NOTE':
+        await handleCreditNoteEvent(event);
+        break;
+
       default:
         console.log(`[Xero Webhook] Unhandled event category: ${event.eventCategory}`);
     }
@@ -241,15 +245,11 @@ export async function processWebhookEvent(
 }
 
 /**
- * Handle invoice webhook event
- * 
- * When an invoice is updated in Xero, update the corresponding
- * NXT invoice status (especially payment status)
+ * Handle invoice webhook event — real-time sync: fetch from Xero and upsert into NXT
  */
 async function handleInvoiceEvent(event: XeroWebhookEventPayload): Promise<void> {
   console.log(`[Xero Webhook] Invoice event: ${event.eventType} for ${event.resourceId}`);
-  
-  // Find org that has this Xero tenant connected
+
   const connection = await query<{ org_id: string }>(
     `SELECT org_id FROM xero_connections 
      WHERE xero_tenant_id = $1 AND is_active = true`,
@@ -263,45 +263,34 @@ async function handleInvoiceEvent(event: XeroWebhookEventPayload): Promise<void>
 
   const orgId = connection.rows[0].org_id;
 
-  // Find the NXT entity mapped to this Xero invoice
-  const mapping = await query<{ nxt_entity_id: string }>(
-    `SELECT nxt_entity_id FROM xero_entity_mappings
-     WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'invoice'`,
-    [orgId, event.resourceId]
-  );
+  try {
+    const { getInvoiceFromXero } = await import('./sync/invoices');
+    const { upsertInvoiceFromXero } = await import('./sync/xero-to-nxt');
 
-  if (mapping.rows.length === 0) {
-    // Invoice doesn't exist in our system - might be created directly in Xero
-    // Could optionally sync it to NXT here
-    console.log('[Xero Webhook] No NXT mapping found for invoice:', event.resourceId);
-    return;
+    const result = await getInvoiceFromXero(orgId, event.resourceId);
+    if (!result.success || !result.data) {
+      console.log('[Xero Webhook] Could not fetch invoice from Xero:', result.error);
+      return;
+    }
+
+    const upsertResult = await upsertInvoiceFromXero(orgId, result.data);
+    if (upsertResult.success) {
+      console.log('[Xero Webhook] Invoice synced to NXT:', upsertResult.nxtId);
+    } else {
+      console.warn('[Xero Webhook] Invoice upsert failed:', upsertResult.error);
+    }
+  } catch (err) {
+    console.error('[Xero Webhook] handleInvoiceEvent error:', err);
+    throw err;
   }
-
-  const nxtEntityId = mapping.rows[0].nxt_entity_id;
-
-  // Mark the mapping as needing sync (to be picked up by a background job)
-  await query(
-    `UPDATE xero_entity_mappings 
-     SET sync_status = 'pending', 
-         xero_updated_date_utc = $3,
-         updated_at = NOW()
-     WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'invoice'`,
-    [orgId, event.resourceId, event.eventDateUtc]
-  );
-
-  console.log(`[Xero Webhook] Invoice ${event.resourceId} marked for sync, NXT ID: ${nxtEntityId}`);
 }
 
 /**
- * Handle contact webhook event
- * 
- * When a contact is updated in Xero, mark the corresponding
- * NXT supplier/customer for sync
+ * Handle contact webhook event — real-time sync: fetch from Xero and upsert into NXT
  */
 async function handleContactEvent(event: XeroWebhookEventPayload): Promise<void> {
   console.log(`[Xero Webhook] Contact event: ${event.eventType} for ${event.resourceId}`);
-  
-  // Find org that has this Xero tenant connected
+
   const connection = await query<{ org_id: string }>(
     `SELECT org_id FROM xero_connections 
      WHERE xero_tenant_id = $1 AND is_active = true`,
@@ -315,40 +304,26 @@ async function handleContactEvent(event: XeroWebhookEventPayload): Promise<void>
 
   const orgId = connection.rows[0].org_id;
 
-  // Find the NXT entity mapped to this Xero contact
-  const mapping = await query<{ nxt_entity_id: string }>(
-    `SELECT nxt_entity_id FROM xero_entity_mappings
-     WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'contact'`,
-    [orgId, event.resourceId]
-  );
+  try {
+    const { getContactFromXero } = await import('./sync/contacts');
+    const { upsertContactFromXero } = await import('./sync/xero-to-nxt');
 
-  if (mapping.rows.length === 0) {
-    // Contact doesn't exist in our system - new contact from Xero
-    console.log('[Xero Webhook] No NXT mapping found for contact:', event.resourceId);
-    
-    // Store for potential import later
-    await query(
-      `INSERT INTO xero_entity_mappings (
-        org_id, entity_type, nxt_entity_id, xero_entity_id, 
-        sync_status, xero_updated_date_utc
-      ) VALUES ($1, 'contact', uuid_generate_v4(), $2, 'pending', $3)
-      ON CONFLICT (org_id, entity_type, nxt_entity_id) DO NOTHING`,
-      [orgId, event.resourceId, event.eventDateUtc]
-    );
-    return;
+    const result = await getContactFromXero(orgId, event.resourceId);
+    if (!result.success || !result.data) {
+      console.log('[Xero Webhook] Could not fetch contact from Xero:', result.error);
+      return;
+    }
+
+    const upsertResult = await upsertContactFromXero(orgId, result.data);
+    if (upsertResult.success) {
+      console.log('[Xero Webhook] Contact synced to NXT:', upsertResult.nxtId);
+    } else {
+      console.warn('[Xero Webhook] Contact upsert failed:', upsertResult.error);
+    }
+  } catch (err) {
+    console.error('[Xero Webhook] handleContactEvent error:', err);
+    throw err;
   }
-
-  // Mark for sync
-  await query(
-    `UPDATE xero_entity_mappings 
-     SET sync_status = 'pending', 
-         xero_updated_date_utc = $3,
-         updated_at = NOW()
-     WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'contact'`,
-    [orgId, event.resourceId, event.eventDateUtc]
-  );
-
-  console.log(`[Xero Webhook] Contact ${event.resourceId} marked for sync`);
 }
 
 /**
@@ -359,8 +334,7 @@ async function handleContactEvent(event: XeroWebhookEventPayload): Promise<void>
  */
 async function handlePaymentEvent(event: XeroWebhookEventPayload): Promise<void> {
   console.log(`[Xero Webhook] Payment event: ${event.eventType} for ${event.resourceId}`);
-  
-  // Find org that has this Xero tenant connected
+
   const connection = await query<{ org_id: string }>(
     `SELECT org_id FROM xero_connections 
      WHERE xero_tenant_id = $1 AND is_active = true`,
@@ -374,37 +348,67 @@ async function handlePaymentEvent(event: XeroWebhookEventPayload): Promise<void>
 
   const orgId = connection.rows[0].org_id;
 
-  // Check if we have this payment mapped
-  const mapping = await query<{ nxt_entity_id: string }>(
-    `SELECT nxt_entity_id FROM xero_entity_mappings
-     WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'payment'`,
-    [orgId, event.resourceId]
+  try {
+    const { applyPaymentFromXero } = await import('./sync/xero-to-nxt');
+    const { fetchPaymentsFromXero } = await import('./sync/payments');
+    const paymentsResult = await fetchPaymentsFromXero(orgId);
+    const payment = paymentsResult.success && paymentsResult.data
+      ? paymentsResult.data.find((p: { PaymentID?: string }) => p.PaymentID === event.resourceId)
+      : null;
+    if (payment) {
+      await applyPaymentFromXero(orgId, payment);
+    }
+  } catch (err) {
+    console.error('[Xero Webhook] handlePaymentEvent error:', err);
+  }
+}
+
+/**
+ * Handle credit note webhook event — real-time sync: fetch from Xero and upsert into NXT
+ */
+async function handleCreditNoteEvent(event: XeroWebhookEventPayload): Promise<void> {
+  console.log(`[Xero Webhook] Credit note event: ${event.eventType} for ${event.resourceId}`);
+
+  const connection = await query<{ org_id: string }>(
+    `SELECT org_id FROM xero_connections 
+     WHERE xero_tenant_id = $1 AND is_active = true`,
+    [event.tenantId]
   );
 
-  if (mapping.rows.length > 0) {
-    // Payment exists in our system - mark for status sync
-    await query(
-      `UPDATE xero_entity_mappings 
-       SET sync_status = 'pending', 
-           xero_updated_date_utc = $3,
-           updated_at = NOW()
-       WHERE org_id = $1 AND xero_entity_id = $2 AND entity_type = 'payment'`,
-      [orgId, event.resourceId, event.eventDateUtc]
+  if (connection.rows.length === 0) {
+    console.log('[Xero Webhook] No active connection for tenant:', event.tenantId);
+    return;
+  }
+
+  const orgId = connection.rows[0].org_id;
+
+  try {
+    const { fetchCreditNotesFromXero } = await import('./sync/credit-notes');
+    const { upsertCreditNoteFromXero } = await import('./sync/xero-to-nxt');
+
+    const result = await fetchCreditNotesFromXero(orgId);
+    if (!result.success || !result.data) {
+      console.log('[Xero Webhook] Could not fetch credit notes from Xero:', result.error);
+      return;
+    }
+
+    const creditNote = result.data.find(
+      (cn: { CreditNoteID?: string }) => cn.CreditNoteID === event.resourceId
     );
-    console.log(`[Xero Webhook] Payment ${event.resourceId} marked for sync`);
-  } else {
-    // New payment from Xero - create pending mapping for import
-    console.log(`[Xero Webhook] New payment from Xero: ${event.resourceId}`);
-    
-    // Store for potential import - this payment may update an invoice we know about
-    await query(
-      `INSERT INTO xero_entity_mappings (
-        org_id, entity_type, nxt_entity_id, xero_entity_id, 
-        sync_status, xero_updated_date_utc
-      ) VALUES ($1, 'payment', uuid_generate_v4(), $2, 'pending', $3)
-      ON CONFLICT (org_id, entity_type, nxt_entity_id) DO NOTHING`,
-      [orgId, event.resourceId, event.eventDateUtc]
-    );
+    if (!creditNote) {
+      console.log('[Xero Webhook] Credit note not found in Xero response:', event.resourceId);
+      return;
+    }
+
+    const upsertResult = await upsertCreditNoteFromXero(orgId, creditNote);
+    if (upsertResult.success) {
+      console.log('[Xero Webhook] Credit note synced to NXT:', upsertResult.nxtId);
+    } else {
+      console.warn('[Xero Webhook] Credit note upsert failed:', upsertResult.error);
+    }
+  } catch (err) {
+    console.error('[Xero Webhook] handleCreditNoteEvent error:', err);
+    throw err;
   }
 }
 

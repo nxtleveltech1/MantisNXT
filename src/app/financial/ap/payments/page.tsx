@@ -10,37 +10,86 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { APService, type APPayment } from '@/lib/services/financial';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { type APPayment } from '@/lib/services/financial';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
+type ListSource = 'nxt' | 'xero';
+
+interface PaymentRow {
+  id: string;
+  payment_number?: string;
+  amount: number;
+  currency: string;
+  payment_date?: string;
+  created_at?: string;
+  status: string;
+  payment_method?: string;
+  vendor_id?: string;
+  reference_number?: string;
+  invoice_number?: string;
+}
+
 export default function APPaymentsPage() {
-  const [payments, setPayments] = useState<APPayment[]>([]);
+  const { isConnected: xeroConnected } = useXeroConnection();
+  const [source, setSource] = useState<ListSource>('nxt');
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPayments() {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch('/api/v1/financial/ap/payments');
-        const result = await response.json();
-
-        if (result.success) {
-          setPayments(result.data || []);
+        if (source === 'xero') {
+          const response = await fetch('/api/xero/sync/payments?invoiceType=ACCPAY');
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            setPayments(
+              result.data.map((p: { id: string; amount: number; date?: string; reference?: string; status: string; invoice_number?: string }) => ({
+                id: p.id,
+                amount: p.amount,
+                currency: 'ZAR',
+                payment_date: p.date,
+                created_at: p.date,
+                status: p.status,
+                reference_number: p.reference,
+                invoice_number: p.invoice_number,
+              }))
+            );
+          } else {
+            setError(result.error || 'Failed to fetch from Xero');
+            setPayments([]);
+          }
         } else {
-          setError(result.error || 'Failed to fetch payments');
+          const response = await fetch('/api/v1/financial/ap/payments');
+          const result = await response.json();
+          if (response.ok && result.success !== false && !result.error) {
+            setPayments((result.data ?? []) as PaymentRow[]);
+          } else {
+            setError(result.error || 'Failed to fetch payments');
+            setPayments([]);
+          }
         }
       } catch (err) {
-        console.error('Error fetching payments:', err);
         setError(err instanceof Error ? err.message : 'Failed to load payments');
+        setPayments([]);
       } finally {
         setLoading(false);
       }
     }
 
     fetchPayments();
-  }, []);
+  }, [source]);
 
   const formatCurrency = (amount: number, currency: string = 'ZAR') => {
     return new Intl.NumberFormat('en-ZA', {
@@ -71,16 +120,30 @@ export default function APPaymentsPage() {
       ]}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-muted-foreground">Manage accounts payable payments</p>
           </div>
-          <Button asChild>
-            <Link href="/financial/ap/payments/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Payment
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="ap-pay-source" className="text-sm text-muted-foreground">
+              Source
+            </Label>
+            <Select value={source} onValueChange={(v) => setSource(v as ListSource)}>
+              <SelectTrigger id="ap-pay-source" className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nxt">NXT</SelectItem>
+                {xeroConnected && <SelectItem value="xero">Xero</SelectItem>}
+              </SelectContent>
+            </Select>
+            <Button asChild>
+              <Link href="/financial/ap/payments/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Payment
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -100,11 +163,11 @@ export default function APPaymentsPage() {
                 {payments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg border-border hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="font-medium">{payment.payment_number}</div>
+                        <div className="font-medium">{payment.payment_number ?? payment.invoice_number ?? payment.id}</div>
                         <span
                           className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeColor(
                             payment.status
@@ -114,8 +177,9 @@ export default function APPaymentsPage() {
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Vendor: {payment.vendor_id} | Method: {payment.payment_method.replace('_', ' ')} | Date:{' '}
-                        {new Date(payment.payment_date).toLocaleDateString()}
+                        {payment.vendor_id ? `Vendor: ${payment.vendor_id} | ` : ''}
+                        Method: {payment.payment_method?.replace('_', ' ') ?? '-'} | Date:{' '}
+                        {new Date(payment.payment_date ?? payment.created_at ?? '').toLocaleDateString()}
                       </div>
                       {payment.reference_number && (
                         <div className="text-xs text-muted-foreground mt-1">
@@ -123,17 +187,19 @@ export default function APPaymentsPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <XeroSyncStatus entityType="payment" entityId={payment.id} />
-                      <XeroSyncButton entityType="payment" entityId={payment.id} size="sm" />
-                      <XeroEntityLink entityType="payment" entityId={payment.id} size="sm" />
-                    </div>
+                    {source === 'nxt' && (
+                      <div className="flex items-center gap-2">
+                        <XeroSyncStatus entityType="payment" entityId={payment.id} />
+                        <XeroSyncButton entityType="payment" entityId={payment.id} size="sm" />
+                        <XeroEntityLink entityType="payment" entityId={payment.id} size="sm" />
+                      </div>
+                    )}
                     <div className="text-right">
                       <div className="font-medium text-lg">
                         {formatCurrency(payment.amount, payment.currency)}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(payment.created_at).toLocaleDateString()}
+                        {new Date(payment.created_at ?? payment.payment_date ?? '').toLocaleDateString()}
                       </div>
                     </div>
                   </div>

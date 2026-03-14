@@ -195,6 +195,39 @@ export class GLService {
         );
       }
 
+      // Sync to Xero if connected (fire and forget)
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncManualJournalToXero } = await import('@/lib/xero/sync/manual-journals');
+        if (await hasActiveConnection(data.org_id)) {
+          const accountIds = [...new Set(data.lines.map((l) => l.account_id))];
+          const accountRows = await query<{ id: string; code?: string; account_code?: string }>(
+            'SELECT id, code, account_code FROM account WHERE id = ANY($1)',
+            [accountIds]
+          );
+          const codeByAccountId: Record<string, string> = {};
+          for (const row of accountRows.rows) {
+            const code = row.code ?? row.account_code ?? row.id;
+            codeByAccountId[row.id] = String(code);
+          }
+          const journalLines = data.lines.map((line) => ({
+            lineAmount: line.debit_amount > 0 ? line.debit_amount : -line.credit_amount,
+            accountCode: codeByAccountId[line.account_id] ?? line.account_id,
+            description: line.description,
+          }));
+          syncManualJournalToXero(data.org_id, {
+            id: entry.id,
+            narration: data.description,
+            date: data.entry_date || new Date().toISOString().split('T')[0],
+            journalLines,
+          }).catch((syncErr) => {
+            console.error('[Xero Sync] Failed to sync manual journal:', syncErr);
+          });
+        }
+      } catch {
+        // ignore
+      }
+
       return entry;
     } catch (error) {
       console.error('Error creating journal entry:', error);
