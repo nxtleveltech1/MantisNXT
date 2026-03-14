@@ -1,31 +1,35 @@
 /**
  * Xero Disconnect
- * 
+ *
  * POST /api/xero/disconnect
- * 
+ *
  * Disconnects the Xero integration for the authenticated organization.
+ * Org can come from Clerk or from header X-Org-Id / body org_id.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { revokeConnection, hasActiveConnection, getXeroConnection } from '@/lib/xero/token-manager';
 import { getXeroClient } from '@/lib/xero/client';
 import { decryptPII } from '@/lib/security/encryption';
 import { handleApiError } from '@/lib/xero/errors';
 
-export async function POST() {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidOrgId(value: string | null): boolean {
+  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
+}
+
+export async function POST(request: NextRequest) {
   try {
-    // Verify user is authenticated
-    const { userId, orgId } = await auth();
-    
+    const { userId, orgId: clerkOrgId } = await auth();
+    const orgId = clerkOrgId ?? request.headers.get('x-org-id') ?? null;
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
     }
-
-    if (!orgId) {
+    if (!isValidOrgId(orgId)) {
       return NextResponse.json(
         { error: 'No organization selected.' },
         { status: 400 }

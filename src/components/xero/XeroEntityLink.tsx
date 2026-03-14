@@ -2,16 +2,18 @@
 
 /**
  * Xero Entity Link Component
- * 
+ *
  * Provides a link to view an entity in Xero
  */
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
+import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
+import type { XeroSyncEntityType } from './xero-sync-utils';
 
 interface XeroEntityLinkProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
+  entityType: XeroSyncEntityType;
   entityId: string;
   xeroEntityId?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'link';
@@ -37,12 +39,11 @@ export function XeroEntityLink({
       }
 
       try {
-        const response = await fetch(`/api/xero/sync/${entityType}/${entityId}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.xeroEntityId) {
-            setXeroEntityId(data.xeroEntityId);
-          }
+        const pathSegment = getXeroSyncPathSegment(entityType);
+        const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`);
+        const data = await safeParseJson<{ xeroEntityId?: string }>(response);
+        if (response.ok && data?.xeroEntityId) {
+          setXeroEntityId(data.xeroEntityId);
         }
       } catch (error) {
         console.error('Failed to fetch Xero entity ID:', error);

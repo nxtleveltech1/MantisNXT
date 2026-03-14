@@ -23,12 +23,17 @@ function generateState(orgId: string): string {
   return Buffer.from(JSON.stringify(payload)).toString('base64url');
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidOrgId(value: string | null): boolean {
+  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
+}
+
 export async function GET(request: NextRequest) {
   console.log('[Xero Auth] Starting OAuth initiation request');
 
   try {
-    // Verify user is authenticated
-    const { userId, orgId } = await auth();
+    const { userId, orgId: clerkOrgId } = await auth();
+    const orgId = clerkOrgId ?? request.nextUrl.searchParams.get('org_id') ?? null;
     console.log('[Xero Auth] Authentication check:', { userId: !!userId, orgId: !!orgId });
 
     if (!userId) {
@@ -39,10 +44,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!orgId) {
-      console.log('[Xero Auth] No org ID - no organization selected');
+    if (!isValidOrgId(orgId)) {
+      console.log('[Xero Auth] No valid org ID');
       return NextResponse.json(
-        { error: 'No organization selected. Please select an organization.' },
+        { error: 'No organization selected. Please select an organization or pass org_id.' },
         { status: 400 }
       );
     }

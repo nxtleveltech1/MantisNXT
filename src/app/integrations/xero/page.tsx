@@ -94,23 +94,27 @@ export default function XeroIntegrationPage() {
     } else if (connected === 'true') {
       toast.success(tenant ? `Connected to Xero: ${tenant}` : 'Connected to Xero');
       window.history.replaceState({}, '', '/integrations/xero');
-      // Refetch connection status so UI updates after callback
-      fetch('/api/xero/connection').then(r => r.ok && r.json()).then(data => setConnectionStatus(data)).catch(() => {});
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+      fetch(url).then(r => r.ok && r.json()).then(data => data && setConnectionStatus(data)).catch(() => {});
     }
   }, [searchParams]);
 
-  // Fetch connection status
+  // Fetch connection status (pass org_id from localStorage when Clerk has no org)
   useEffect(() => {
     async function fetchStatus() {
       setConnectionLoading(true);
       setConnectionError(null);
       try {
-        const response = await fetch('/api/xero/connection');
-        const data = await response.json();
-        if (response.ok) {
+        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+        const response = await fetch(url);
+        const ct = response.headers.get('content-type') ?? '';
+        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+        if (response.ok && data) {
           setConnectionStatus(data);
         } else {
-          setConnectionError(data.error || data.message || 'Failed to load connection status');
+          setConnectionError(data?.error || data?.message || 'Failed to load connection status');
         }
       } catch (error) {
         console.error('Failed to fetch connection status:', error);

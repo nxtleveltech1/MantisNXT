@@ -49,18 +49,26 @@ export default function APInvoicesPage() {
       try {
         if (source === 'xero') {
           const response = await fetch('/api/xero/sync/invoices?type=ACCPAY');
-          const result = await response.json();
-          if (result.success && Array.isArray(result.data)) {
+          const ct = response.headers.get('content-type') ?? '';
+          const result =
+            ct.includes('application/json')
+              ? await response.json().catch(() => null)
+              : null;
+          if (result?.success && Array.isArray(result.data)) {
             setInvoices(result.data);
           } else {
-            setError(result.error || 'Failed to fetch from Xero');
+            setError(result?.error || 'Failed to fetch from Xero');
             setInvoices([]);
           }
         } else {
           const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
           const response = await fetch(`/api/v1/financial/ap/invoices?org_id=${orgId}`);
-          const result = await response.json();
-          if (response.ok && !result.error) {
+          const ct = response.headers.get('content-type') ?? '';
+          const result =
+            ct.includes('application/json')
+              ? await response.json().catch(() => null)
+              : null;
+          if (response.ok && result && !result.error) {
             const data = (result.data ?? []) as APVendorInvoice[];
             setInvoices(
               data.map((inv) => ({
@@ -74,7 +82,7 @@ export default function APInvoicesPage() {
               }))
             );
           } else {
-            setError(result.error || 'Failed to fetch invoices');
+            setError(result?.error || 'Failed to fetch invoices');
             setInvoices([]);
           }
         }

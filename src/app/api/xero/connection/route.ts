@@ -1,22 +1,28 @@
 /**
  * Xero Connection Status
- * 
+ *
  * GET /api/xero/connection
- * 
+ *
  * Returns the current Xero connection status for the authenticated organization.
+ * Org can come from Clerk (session) or from query param org_id / header X-Org-Id (fallback when Clerk has no org).
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getXeroConnection, hasActiveConnection } from '@/lib/xero/token-manager';
 import { isXeroConfigured } from '@/lib/xero/client';
 import { handleApiError } from '@/lib/xero/errors';
 
-export async function GET() {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidOrgId(value: string | null): boolean {
+  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
+}
+
+export async function GET(request: NextRequest) {
   try {
-    // Verify user is authenticated
-    const { userId, orgId } = await auth();
-    
+    const { userId, orgId: clerkOrgId } = await auth();
+
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
@@ -24,9 +30,15 @@ export async function GET() {
       );
     }
 
-    if (!orgId) {
+    const orgId =
+      clerkOrgId ??
+      request.nextUrl.searchParams.get('org_id') ??
+      request.headers.get('x-org-id') ??
+      null;
+
+    if (!isValidOrgId(orgId)) {
       return NextResponse.json(
-        { error: 'No organization selected.' },
+        { error: 'No organization selected. Use the org switcher or add ?org_id= to the URL.' },
         { status: 400 }
       );
     }

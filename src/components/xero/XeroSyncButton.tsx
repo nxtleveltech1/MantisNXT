@@ -2,17 +2,19 @@
 
 /**
  * Xero Sync Button Component
- * 
+ *
  * Reusable button component for triggering Xero sync operations
  */
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
+import type { XeroSyncEntityType } from './xero-sync-utils';
 
 interface XeroSyncButtonProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
+  entityType: XeroSyncEntityType;
   entityId: string;
   onSyncComplete?: (result: { success: boolean; xeroEntityId?: string; error?: string }) => void;
   variant?: 'default' | 'outline' | 'ghost' | 'link';
@@ -36,21 +38,23 @@ export function XeroSyncButton({
     setLastResult(null);
 
     try {
-      const response = await fetch(`/api/xero/sync/${entityType}/${entityId}`, {
+      const pathSegment = getXeroSyncPathSegment(entityType);
+      const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const data = await response.json();
+      const data = await safeParseJson<{ success?: boolean; xeroEntityId?: string; error?: string }>(response);
 
-      if (response.ok && data.success) {
+      if (response.ok && data?.success) {
         setLastResult({ success: true, xeroEntityId: data.xeroEntityId });
         toast.success(`${entityType} synced to Xero successfully`);
         onSyncComplete?.({ success: true, xeroEntityId: data.xeroEntityId });
       } else {
         setLastResult({ success: false });
-        toast.error(data.error || `Failed to sync ${entityType} to Xero`);
-        onSyncComplete?.({ success: false, error: data.error });
+        const errMsg = data?.error ?? (data ? 'Sync failed' : 'Invalid response from server');
+        toast.error(errMsg);
+        onSyncComplete?.({ success: false, error: errMsg });
       }
     } catch (error) {
       setLastResult({ success: false });

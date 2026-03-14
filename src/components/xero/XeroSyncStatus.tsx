@@ -2,16 +2,18 @@
 
 /**
  * Xero Sync Status Component
- * 
+ *
  * Displays the sync status badge for an entity
  */
 
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
+import type { XeroSyncEntityType } from './xero-sync-utils';
 
 interface XeroSyncStatusProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
+  entityType: XeroSyncEntityType;
   entityId: string;
   className?: string;
 }
@@ -30,9 +32,10 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
   useEffect(() => {
     async function fetchStatus() {
       try {
-        const response = await fetch(`/api/xero/sync/${entityType}/${entityId}`);
-        if (response.ok) {
-          const data = await response.json();
+        const pathSegment = getXeroSyncPathSegment(entityType);
+        const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`);
+        const data = await safeParseJson<SyncStatus>(response);
+        if (response.ok && data) {
           setStatus(data);
         }
       } catch (error) {

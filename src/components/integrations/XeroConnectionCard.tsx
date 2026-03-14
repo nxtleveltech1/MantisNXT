@@ -42,12 +42,16 @@ export function XeroConnectionCard() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/xero/connection');
-      const data = await response.json();
-      if (response.ok) {
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+      const response = await fetch(url);
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+      if (response.ok && data) {
         setStatus(data);
       } else {
-        setError(data.error || data.message || 'Failed to load connection status');
+        const msg = data?.error || data?.message || 'Failed to load connection status';
+        setError(msg);
       }
     } catch (err) {
       console.error('Failed to fetch Xero connection status:', err);
@@ -65,14 +69,16 @@ export function XeroConnectionCard() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const response = await fetch('/api/xero/auth');
-      const data = await response.json();
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const url = orgId ? `/api/xero/auth?org_id=${encodeURIComponent(orgId)}` : '/api/xero/auth';
+      const response = await fetch(url);
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
 
-      if (response.ok && data.redirectUrl) {
-        // Redirect to Xero OAuth
+      if (response.ok && data?.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        const errorMessage = data.error || data.message || 'Failed to initiate Xero connection';
+        const errorMessage = data?.error || data?.message || 'Failed to initiate Xero connection';
         toast.error(errorMessage);
       }
     } catch (error) {
@@ -91,14 +97,18 @@ export function XeroConnectionCard() {
 
     setDisconnecting(true);
     try {
-      const response = await fetch('/api/xero/disconnect', { method: 'POST' });
-      const data = await response.json();
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (orgId) headers['X-Org-Id'] = orgId;
+      const response = await fetch('/api/xero/disconnect', { method: 'POST', headers });
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
 
-      if (response.ok && data.success) {
+      if (response.ok && data?.success) {
         toast.success('Disconnected from Xero');
         await fetchStatus();
       } else {
-        const errorMessage = data.error || data.message || 'Failed to disconnect';
+        const errorMessage = data?.error || data?.message || 'Failed to disconnect';
         toast.error(errorMessage);
       }
     } catch (error) {
@@ -113,13 +123,16 @@ export function XeroConnectionCard() {
   const handleReconnect = async () => {
     setConnecting(true);
     try {
-      const response = await fetch('/api/xero/auth?force=true');
-      const data = await response.json();
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const base = orgId ? `/api/xero/auth?org_id=${encodeURIComponent(orgId)}&force=true` : '/api/xero/auth?force=true';
+      const response = await fetch(base);
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
 
-      if (response.ok && data.redirectUrl) {
+      if (response.ok && data?.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        const errorMessage = data.error || data.message || 'Failed to reconnect to Xero';
+        const errorMessage = data?.error || data?.message || 'Failed to reconnect to Xero';
         toast.error(errorMessage);
       }
     } catch (error) {
@@ -148,14 +161,31 @@ export function XeroConnectionCard() {
   }
 
   if (error && !status) {
+    const isNoOrg = /no organization selected/i.test(error);
     return (
       <Card>
         <CardHeader>
           <CardTitle>Xero Accounting</CardTitle>
-          <CardDescription>Connection status unavailable</CardDescription>
+          <CardDescription>
+            {isNoOrg ? 'Organization required' : 'Connection status unavailable'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-destructive">{error}</p>
+          {isNoOrg ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Xero is linked to an organization. Select an organization from your org switcher in the header, or
+                ensure your app has set an organization (e.g. in Financial or Dashboard) so this page can load
+                connection status.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                If you use a single organization, set <code className="rounded bg-muted px-1">org_id</code> in
+                localStorage to your organization UUID, then retry.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
           <Button variant="outline" size="sm" onClick={() => fetchStatus()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
