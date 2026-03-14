@@ -39,11 +39,18 @@ interface XeroConnectionStatus {
   scopes: string[];
 }
 
+interface EnvCheck {
+  xero_client_id?: { set: boolean };
+  xero_client_secret?: { set: boolean };
+}
+
 export default function XeroSettingsPage() {
   const [connectionStatus, setConnectionStatus] = useState<XeroConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [envCheck, setEnvCheck] = useState<EnvCheck | null>(null);
+  const [envCheckLoading, setEnvCheckLoading] = useState(true);
 
   // Get the app URL for webhook configuration
   const appUrl = typeof window !== 'undefined' 
@@ -58,9 +65,12 @@ export default function XeroSettingsPage() {
       setLoading(true);
       setConnectionError(null);
       try {
-        const response = await fetch('/api/xero/connection');
-        const data = await response.json();
-        if (response.ok) {
+        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+        const response = await fetch(url);
+        const ct = response.headers.get('content-type') ?? '';
+        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+        if (response.ok && data) {
           const conn = data.connection;
           setConnectionStatus({
             isConfigured: data.isConfigured ?? data.configured ?? false,
@@ -72,7 +82,7 @@ export default function XeroSettingsPage() {
             scopes: Array.isArray(data.scopes) ? data.scopes : conn?.scopes ?? [],
           });
         } else {
-          setConnectionError(data.error || data.message || 'Failed to load connection status');
+          setConnectionError(data?.error || data?.message || 'Failed to load connection status');
         }
       } catch (error) {
         console.error('Failed to fetch connection status:', error);
@@ -82,6 +92,30 @@ export default function XeroSettingsPage() {
       }
     }
     fetchStatus();
+  }, []);
+
+  useEffect(() => {
+    async function fetchEnvCheck() {
+      setEnvCheckLoading(true);
+      try {
+        const res = await fetch('/api/xero/test/env-check');
+        const ct = res.headers.get('content-type') ?? '';
+        const data = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+        if (res.ok && data) {
+          setEnvCheck({
+            xero_client_id: data.xero_client_id,
+            xero_client_secret: data.xero_client_secret,
+          });
+        } else {
+          setEnvCheck(null);
+        }
+      } catch {
+        setEnvCheck(null);
+      } finally {
+        setEnvCheckLoading(false);
+      }
+    }
+    fetchEnvCheck();
   }, []);
 
   const copyToClipboard = (text: string, label: string) => {
@@ -346,9 +380,15 @@ export default function XeroSettingsPage() {
                     </td>
                     <td className="py-2 text-muted-foreground">OAuth Client ID from Xero</td>
                     <td className="py-2">
-                      <Badge variant={connectionStatus?.isConfigured ? 'default' : 'destructive'}>
-                        {connectionStatus?.isConfigured ? 'Set' : 'Missing'}
-                      </Badge>
+                      {envCheckLoading ? (
+                        <Badge variant="secondary">Checking...</Badge>
+                      ) : envCheck?.xero_client_id ? (
+                        <Badge variant={envCheck.xero_client_id.set ? 'default' : 'destructive'}>
+                          {envCheck.xero_client_id.set ? 'Set' : 'Missing'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Unknown</Badge>
+                      )}
                     </td>
                   </tr>
                   <tr>
@@ -357,9 +397,15 @@ export default function XeroSettingsPage() {
                     </td>
                     <td className="py-2 text-muted-foreground">OAuth Client Secret from Xero</td>
                     <td className="py-2">
-                      <Badge variant={connectionStatus?.isConfigured ? 'default' : 'destructive'}>
-                        {connectionStatus?.isConfigured ? 'Set' : 'Missing'}
-                      </Badge>
+                      {envCheckLoading ? (
+                        <Badge variant="secondary">Checking...</Badge>
+                      ) : envCheck?.xero_client_secret ? (
+                        <Badge variant={envCheck.xero_client_secret.set ? 'default' : 'destructive'}>
+                          {envCheck.xero_client_secret.set ? 'Set' : 'Missing'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Unknown</Badge>
+                      )}
                     </td>
                   </tr>
                   <tr>

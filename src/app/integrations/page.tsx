@@ -52,11 +52,12 @@ export default function IntegrationsPage() {
   useEffect(() => {
     async function fetchXeroStatus() {
       try {
-        const response = await fetch('/api/xero/connection');
-        if (response.ok) {
-          const data = await response.json();
-          setXeroStatus(data);
-        }
+        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+        const response = await fetch(url);
+        const ct = response.headers.get('content-type') ?? '';
+        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+        if (response.ok && data) setXeroStatus(data);
       } catch (error) {
         console.error('Failed to fetch Xero status:', error);
       } finally {

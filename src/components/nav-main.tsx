@@ -46,15 +46,18 @@ export function NavMain({
     useEffect(() => {
       async function fetchStatus() {
         try {
-          const response = await fetch('/api/xero/connection');
-          if (response.ok) {
-            const data = await response.json();
+          const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+          const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+          const response = await fetch(url);
+          const ct = response.headers.get('content-type') ?? '';
+          const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+          if (response.ok && data) {
             setStatus({
               connected: data.connected || false,
               tokenExpiring: data.connection?.tokenStatus?.isExpired || false,
             });
           }
-        } catch (error) {
+        } catch {
           // Silent fail - don't show indicator if can't fetch
         }
       }

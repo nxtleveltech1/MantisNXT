@@ -9,9 +9,12 @@ export function useXeroConnection() {
   useEffect(() => {
     async function check() {
       try {
-        const res = await fetch('/api/xero/connection');
-        const data = await res.json();
-        setIsConnected(data.isConnected === true || data.connected === true);
+        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+        const res = await fetch(url);
+        const ct = res.headers.get('content-type') ?? '';
+        const data = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+        setIsConnected(data?.isConnected === true || data?.connected === true);
       } catch {
         setIsConnected(false);
       } finally {
