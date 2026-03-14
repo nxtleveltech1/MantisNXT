@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { GLService, type JournalEntry } from '@/lib/services/financial';
+import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 export default function JournalEntriesPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -83,6 +84,11 @@ export default function JournalEntriesPage() {
                     <div className="text-sm text-muted-foreground">
                       {entry.description} | {entry.is_posted ? 'Posted' : 'Draft'}
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <XeroSyncStatus entityType="manual-journal" entityId={entry.id} />
+                    <XeroSyncButton entityType="manual-journal" entityId={entry.id} size="sm" />
+                    <XeroEntityLink entityType="manual-journal" entityId={entry.id} size="sm" />
                   </div>
                   <div className="text-right">
                     <div className="font-medium">

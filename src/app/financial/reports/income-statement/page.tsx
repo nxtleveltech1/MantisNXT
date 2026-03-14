@@ -7,6 +7,17 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type ReportSource = 'nxt' | 'xero';
 
 interface IncomeStatementData {
   revenue: {
@@ -28,32 +39,76 @@ interface IncomeStatementData {
   net_income: number;
 }
 
+function mapXeroPLToIncomeStatement(pl: {
+  sections: Array<{ title: string; total: number; items: Array<{ accountName: string; amount: number }> }>;
+  revenue: number;
+  costOfSales: number;
+  grossProfit: number;
+  operatingExpenses: number;
+  netProfit: number;
+}): IncomeStatementData {
+  const revenueSection = pl.sections.find((s) => s.title.toLowerCase().includes('revenue') || s.title.toLowerCase().includes('income'));
+  const cogsSection = pl.sections.find((s) => s.title.toLowerCase().includes('cost of sales') || s.title.toLowerCase().includes('cogs'));
+  const expSection = pl.sections.find((s) => s.title.toLowerCase().includes('expense'));
+  return {
+    revenue: {
+      items: (revenueSection?.items ?? []).map((i) => ({ name: i.accountName, amount: i.amount })),
+      total: pl.revenue,
+    },
+    cost_of_sales: {
+      items: (cogsSection?.items ?? []).map((i) => ({ name: i.accountName, amount: i.amount })),
+      total: pl.costOfSales,
+    },
+    gross_profit: pl.grossProfit,
+    operating_expenses: {
+      items: (expSection?.items ?? []).map((i) => ({ name: i.accountName, amount: i.amount })),
+      total: pl.operatingExpenses,
+    },
+    operating_income: pl.grossProfit - pl.operatingExpenses,
+    other_income: 0,
+    other_expenses: 0,
+    net_income: pl.netProfit,
+  };
+}
+
 export default function IncomeStatementPage() {
+  const { isConnected: xeroConnected } = useXeroConnection();
+  const [source, setSource] = useState<ReportSource>('nxt');
   const [data, setData] = useState<IncomeStatementData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchIncomeStatement() {
+      setLoading(true);
       try {
-        const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-        const response = await fetch(`/api/v1/financial/reports/income-statement?org_id=${orgId}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setData(result.data);
+        if (source === 'xero') {
+          const response = await fetch('/api/xero/reports/profit-loss?parsed=true');
+          const result = await response.json();
+          if (result.success && result.data) {
+            setData(mapXeroPLToIncomeStatement(result.data));
+          } else {
+            setData(null);
+          }
         } else {
-          setData(null);
+          const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+          const response = await fetch(`/api/v1/financial/reports/income-statement?org_id=${orgId}`);
+          const result = await response.json();
+          if (result.success) {
+            setData(result.data);
+          } else {
+            setData(null);
+          }
         }
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching income statement:', err);
         setData(null);
+      } finally {
         setLoading(false);
       }
     }
 
     fetchIncomeStatement();
-  }, []);
+  }, [source]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -72,8 +127,20 @@ export default function IncomeStatementPage() {
       ]}
     >
       <div className="space-y-4">
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <p className="text-muted-foreground">Profit and loss statement for the current period</p>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="pl-source" className="text-sm text-muted-foreground">Source</Label>
+            <Select value={source} onValueChange={(v) => setSource(v as ReportSource)}>
+              <SelectTrigger id="pl-source" className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nxt">NXT</SelectItem>
+                {xeroConnected && <SelectItem value="xero">Xero</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card>

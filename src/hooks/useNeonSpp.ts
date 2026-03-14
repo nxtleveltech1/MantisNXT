@@ -32,6 +32,7 @@ export const sppKeys = {
     [...sppKeys.all, 'products', filters] as const,
   selectionProducts: (selectionId: string) =>
     [...sppKeys.selection(selectionId), 'products'] as const,
+  activity: (limit?: number) => [...sppKeys.all, 'activity', limit] as const,
 };
 
 // ============================================================================
@@ -103,6 +104,38 @@ export function useDashboardMetrics() {
 }
 
 // ============================================================================
+// RECENT ACTIVITY (unified uploads + syncs)
+// ============================================================================
+
+export interface RecentActivityItem {
+  type: 'upload' | 'sync';
+  id: string;
+  supplier_id: string | null;
+  supplier_name: string;
+  source: string;
+  timestamp: string;
+  row_count: number;
+  status: string;
+  details?: Record<string, unknown>;
+}
+
+export function useRecentActivity(limit: number = 25) {
+  return useQuery({
+    queryKey: sppKeys.activity(limit),
+    queryFn: async (): Promise<RecentActivityItem[]> => {
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      const response = await fetch(`/api/spp/activity?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch activity');
+      const data = await response.json();
+      return data.data ?? [];
+    },
+    staleTime: 1 * 60 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+}
+
+// ============================================================================
 // PRICELIST UPLOADS
 // ============================================================================
 
@@ -121,6 +154,7 @@ export function usePricelistUploads(filters?: { limit?: number; status?: string 
       return data.data?.uploads || [];
     },
     staleTime: 1 * 60 * 1000, // 1 minute
+    refetchInterval: 30 * 1000, // 30s - sync/upload from other tabs or cron shows up
   });
 }
 

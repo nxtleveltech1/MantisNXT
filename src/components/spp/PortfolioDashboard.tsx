@@ -19,13 +19,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileUp, RefreshCw } from 'lucide-react';
+import { FileUp, RefreshCw, Activity } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
-
-interface PricelistUploadWithSupplier extends PricelistUpload {
-  supplier_name?: string;
-}
-import { useDashboardMetrics, usePricelistUploads } from '@/hooks/useNeonSpp';
+import { useDashboardMetrics, usePricelistUploads, useRecentActivity } from '@/hooks/useNeonSpp';
 import { MetricsDashboard } from './MetricsDashboard';
 import { SkeletonDashboard } from './LoadingStates';
 import { ConnectionError, EmptyState } from './ErrorStates';
@@ -45,20 +41,25 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
     refetch: refetchMetrics,
   } = useDashboardMetrics();
   const {
-    data: uploadsData,
     isLoading: uploadsLoading,
     error: uploadsError,
     refetch: refetchUploads,
   } = usePricelistUploads({ limit: 10 });
+  const {
+    data: activityData,
+    isLoading: activityLoading,
+    error: activityError,
+    refetch: refetchActivity,
+  } = useRecentActivity(25);
 
-  // Ensure uploads is always an array and properly typed
-  const uploads: PricelistUploadWithSupplier[] = Array.isArray(uploadsData) ? uploadsData : [];
+  const activities = Array.isArray(activityData) ? activityData : [];
 
-  const loading = metricsLoading || uploadsLoading;
+  const loading = metricsLoading || uploadsLoading || activityLoading;
 
   const handleRefresh = () => {
     refetchMetrics();
     refetchUploads();
+    refetchActivity();
   };
 
   const handleNavigate = (tab: string) => {
@@ -75,7 +76,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
         return (
           <Badge
             variant="outline"
-            className="rounded-full border-blue-200 bg-blue-50 px-2.5 py-0.5 text-blue-700"
+            className="rounded-full border-blue-200 bg-blue-50 px-2.5 py-0.5 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
           >
             <div className="mr-1.5 h-1.5 w-1.5 rounded-full bg-blue-600" />
             Received
@@ -85,7 +86,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
         return (
           <Badge
             variant="outline"
-            className="rounded-full border-yellow-200 bg-yellow-50 px-2.5 py-0.5 text-yellow-700"
+            className="rounded-full border-yellow-200 bg-yellow-50 px-2.5 py-0.5 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-300"
           >
             <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
             Validating
@@ -95,17 +96,18 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
         return (
           <Badge
             variant="outline"
-            className="rounded-full border-green-200 bg-green-50 px-2.5 py-0.5 text-green-700"
+            className="rounded-full border-green-200 bg-green-50 px-2.5 py-0.5 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
           >
             <div className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-600" />
             Validated
           </Badge>
         );
       case 'merged':
+      case 'completed':
         return (
-          <Badge className="rounded-full bg-green-600 px-2.5 py-0.5 text-white">
+          <Badge className="rounded-full bg-green-600 px-2.5 py-0.5 text-white dark:bg-green-700">
             <div className="mr-1.5 h-1.5 w-1.5 rounded-full bg-white" />
-            Merged
+            {status === 'completed' ? 'Completed' : 'Merged'}
           </Badge>
         );
       case 'failed':
@@ -113,6 +115,13 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
           <Badge variant="destructive" className="rounded-full px-2.5 py-0.5">
             <div className="mr-1.5 h-1.5 w-1.5 rounded-full bg-white" />
             Failed
+          </Badge>
+        );
+      case 'started':
+        return (
+          <Badge variant="outline" className="rounded-full px-2.5 py-0.5">
+            <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+            Running
           </Badge>
         );
       default:
@@ -124,13 +133,20 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
     }
   };
 
+  const getTypeLabel = (type: string, source: string) => {
+    if (type === 'upload') return 'Upload';
+    if (source === 'JSON Feed Sync') return 'JSON Sync';
+    if (source === 'PlusPortal Sync') return 'PlusPortal';
+    return source || type;
+  };
+
   // Loading state
   if (loading && !metrics) {
     return <SkeletonDashboard />;
   }
 
   // Error state
-  if (metricsError || uploadsError) {
+  if (metricsError || uploadsError || activityError) {
     return <ConnectionError onRetry={handleRefresh} />;
   }
 
@@ -153,20 +169,23 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
       {/* Key Metrics */}
       <MetricsDashboard metrics={metrics || null} loading={loading} />
 
-      {/* Recent Uploads - Full Width */}
+      {/* Recent Activity - uploads + syncs */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileUp className="h-5 w-5" />
-            Recent Uploads
+            <Activity className="h-5 w-5" />
+            Recent Activity
           </CardTitle>
+          <p className="text-muted-foreground text-sm">
+            File uploads and JSON/PlusPortal syncs. Updates every 30s.
+          </p>
         </CardHeader>
         <CardContent>
-          {uploads.length === 0 ? (
+          {activities.length === 0 ? (
             <EmptyState
-              icon={FileUp}
-              title="No Uploads Yet"
-              message="Start by uploading your first supplier pricelist to build your product catalog."
+              icon={Activity}
+              title="No Activity Yet"
+              message="Upload a pricelist or run a sync from a supplier profile to see activity here."
               action={() => handleNavigate('upload')}
               actionLabel="Upload Pricelist"
             />
@@ -175,25 +194,27 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Type</TableHead>
                     <TableHead>Supplier</TableHead>
-                    <TableHead>File</TableHead>
+                    <TableHead>File / Source</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Rows</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {uploads.map(upload => (
-                    <TableRow key={upload.upload_id}>
+                  {activities.map(item => (
+                    <TableRow key={`${item.type}-${item.id}`}>
                       <TableCell className="font-medium">
-                        {upload.supplier_name || 'Unknown'}
+                        {getTypeLabel(item.type, item.source)}
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate">{upload.filename}</TableCell>
-                      <TableCell className="text-sm">{formatDate(upload.received_at)}</TableCell>
+                      <TableCell className="font-medium">{item.supplier_name}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{item.source}</TableCell>
+                      <TableCell className="text-sm">{formatDate(item.timestamp)}</TableCell>
                       <TableCell className="text-right">
-                        {upload.row_count.toLocaleString()}
+                        {item.row_count.toLocaleString()}
                       </TableCell>
-                      <TableCell>{getStatusBadge(upload.status)}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -216,7 +237,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               </div>
               <div className="mb-1 text-lg font-semibold">Upload</div>
               <div className="text-3xl font-bold">
-                {uploads.filter(u => u.status === 'merged').length}
+                {activities.filter(a => a.type === 'upload' && a.status === 'merged').length}
               </div>
               <div className="text-muted-foreground mt-1 text-sm">Merged uploads</div>
             </div>

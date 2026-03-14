@@ -265,3 +265,103 @@ export function parseAgedReceivablesReport(report: XeroReport): AgedReceivablesR
     contacts,
   };
 }
+
+/**
+ * Parse an Aged Payables report into structured format
+ */
+export interface AgedPayablesReport {
+  reportDate: string;
+  totalOutstanding: number;
+  contacts: Array<{
+    contactId: string;
+    contactName: string;
+    current: number;
+    thirtyDays: number;
+    sixtyDays: number;
+    ninetyDays: number;
+    older: number;
+    total: number;
+  }>;
+}
+
+export function parseAgedPayablesReport(report: XeroReport): AgedPayablesReport {
+  if (!report.Rows || report.Rows.length === 0) {
+    throw new Error('Invalid report: No rows found');
+  }
+
+  const reportDate = report.ReportDate || new Date().toISOString().split('T')[0];
+  const contacts: AgedPayablesReport['contacts'] = [];
+  let totalOutstanding = 0;
+
+  function parseRows(rows: XeroReportRow[]): void {
+    for (const row of rows) {
+      if (row.RowType === 'Row' && row.Cells && row.Cells.length >= 6) {
+        const contactName = row.Cells[0]?.Value || '';
+        const contactId = row.Cells[0]?.Attributes?.[0]?.Id || '';
+        const current = parseFloat(row.Cells[1]?.Value?.replace(/,/g, '') || '0') || 0;
+        const thirtyDays = parseFloat(row.Cells[2]?.Value?.replace(/,/g, '') || '0') || 0;
+        const sixtyDays = parseFloat(row.Cells[3]?.Value?.replace(/,/g, '') || '0') || 0;
+        const ninetyDays = parseFloat(row.Cells[4]?.Value?.replace(/,/g, '') || '0') || 0;
+        const older = parseFloat(row.Cells[5]?.Value?.replace(/,/g, '') || '0') || 0;
+        const total = current + thirtyDays + sixtyDays + ninetyDays + older;
+
+        if (contactName && total > 0) {
+          contacts.push({
+            contactId,
+            contactName,
+            current: Math.abs(current),
+            thirtyDays: Math.abs(thirtyDays),
+            sixtyDays: Math.abs(sixtyDays),
+            ninetyDays: Math.abs(ninetyDays),
+            older: Math.abs(older),
+            total: Math.abs(total),
+          });
+          totalOutstanding += Math.abs(total);
+        }
+      } else if (row.RowType === 'Section' && row.Rows) {
+        parseRows(row.Rows);
+      }
+    }
+  }
+
+  parseRows(report.Rows);
+
+  return {
+    reportDate,
+    totalOutstanding,
+    contacts,
+  };
+}
+
+export interface TrialBalanceReportRow {
+  account_code: string;
+  account_name: string;
+  debit: number;
+  credit: number;
+}
+
+export function parseTrialBalanceReport(report: XeroReport): TrialBalanceReportRow[] {
+  const rows: TrialBalanceReportRow[] = [];
+  if (!report.Rows) return rows;
+
+  function walkRows(rowList: XeroReportRow[]): void {
+    for (const row of rowList) {
+      if (row.RowType === 'Row' && row.Cells && row.Cells.length >= 4) {
+        const accountCode = row.Cells[0]?.Value ?? '';
+        const accountName = row.Cells[1]?.Value ?? '';
+        const debitStr = row.Cells[2]?.Value?.replace(/,/g, '') ?? '0';
+        const creditStr = row.Cells[3]?.Value?.replace(/,/g, '') ?? '0';
+        const debit = parseFloat(debitStr) || 0;
+        const credit = parseFloat(creditStr) || 0;
+        if (accountCode || accountName) {
+          rows.push({ account_code: accountCode, account_name: accountName, debit, credit });
+        }
+      } else if (row.RowType === 'Section' && row.Rows) {
+        walkRows(row.Rows);
+      }
+    }
+  }
+
+  walkRows(report.Rows);
+  return rows;
+}

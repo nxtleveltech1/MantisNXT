@@ -444,6 +444,20 @@ export const sidebarData = {
             },
           ],
         },
+        {
+          title: 'Xero Accounting',
+          url: '/integrations/xero',
+          items: [
+            {
+              title: 'Connection & Sync',
+              url: '/integrations/xero',
+            },
+            {
+              title: 'Settings',
+              url: '/integrations/xero/settings',
+            },
+          ],
+        },
       ],
     },
     {

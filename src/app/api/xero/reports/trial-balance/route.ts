@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { fetchTrialBalanceReport } from '@/lib/xero/sync/reports';
+import { parseTrialBalanceReport } from '@/lib/xero/sync/report-parsers';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
 import { handleApiError } from '@/lib/xero/errors';
 
@@ -40,10 +41,20 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const date = searchParams.get('date') || undefined;
+    const parsed = searchParams.get('parsed') === 'true';
 
     const result = await fetchTrialBalanceReport(orgId, {
       date,
     });
+
+    if (parsed && result.success && result.data) {
+      const parsedData = parseTrialBalanceReport(result.data);
+      return NextResponse.json({
+        success: true,
+        data: parsedData,
+        rawReport: result.data,
+      });
+    }
 
     return NextResponse.json(result);
 

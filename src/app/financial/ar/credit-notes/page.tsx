@@ -9,6 +9,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 interface CreditNote {
   id: string;
@@ -95,6 +96,11 @@ export default function ARCreditNotesPage() {
                         Customer: {note.customer_id} | Status: {note.status}
                         {note.reason && ` | Reason: ${note.reason}`}
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <XeroSyncStatus entityType="credit-note" entityId={note.id} />
+                      <XeroSyncButton entityType="credit-note" entityId={note.id} size="sm" />
+                      <XeroEntityLink entityType="credit-note" entityId={note.id} size="sm" />
                     </div>
                     <div className="text-right">
                       <div className="font-medium">

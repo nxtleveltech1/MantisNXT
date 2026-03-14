@@ -8,34 +8,64 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReportService, type BalanceSheet } from '@/lib/services/financial';
+import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type ReportSource = 'nxt' | 'xero';
 
 export default function BalanceSheetPage() {
+  const { isConnected: xeroConnected } = useXeroConnection();
+  const [source, setSource] = useState<ReportSource>('nxt');
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchBalanceSheet() {
+      setLoading(true);
+      setError(null);
       try {
-        const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-        const response = await fetch(`/api/v1/financial/reports/balance-sheet?org_id=${orgId}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setBalanceSheet(result.data);
+        if (source === 'xero') {
+          const response = await fetch('/api/xero/reports/balance-sheet?parsed=true');
+          const result = await response.json();
+          if (result.success && result.data) {
+            const x = result.data as { assets: { current: number; fixed: number; total: number }; liabilities: { total: number }; equity: number };
+            setBalanceSheet({
+              assets: { current_assets: [], fixed_assets: [], total_assets: x.assets.total },
+              liabilities: { current_liabilities: [], long_term_liabilities: [], total_liabilities: x.liabilities.total },
+              equity: [],
+              total_equity: x.equity,
+              total_liabilities_and_equity: x.liabilities.total + x.equity,
+            });
+          } else {
+            setError(result.error || 'Failed to load from Xero');
+          }
         } else {
-          setError(result.error || 'Failed to generate balance sheet');
+          const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+          const response = await fetch(`/api/v1/financial/reports/balance-sheet?org_id=${orgId}`);
+          const result = await response.json();
+          if (result.success) {
+            setBalanceSheet(result.data);
+          } else {
+            setError(result.error || 'Failed to generate balance sheet');
+          }
         }
-        setLoading(false);
       } catch (err) {
-        console.error('Error fetching balance sheet:', err);
         setError(err instanceof Error ? err.message : 'Failed to load balance sheet');
+      } finally {
         setLoading(false);
       }
     }
 
     fetchBalanceSheet();
-  }, []);
+  }, [source]);
 
   return (
     <AppLayout 
@@ -47,8 +77,20 @@ export default function BalanceSheetPage() {
       ]}
     >
       <div className="space-y-4">
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <p className="text-muted-foreground">Financial position statement</p>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="source" className="text-sm text-muted-foreground">Source</Label>
+            <Select value={source} onValueChange={(v) => setSource(v as ReportSource)}>
+              <SelectTrigger id="source" className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nxt">NXT</SelectItem>
+                {xeroConnected && <SelectItem value="xero">Xero</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
       <Card>

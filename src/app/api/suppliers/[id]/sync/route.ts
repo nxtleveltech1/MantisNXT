@@ -112,6 +112,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log(`[Sync API] Starting sync for supplier ${supplierId}`);
     const result = await service.sync();
 
+    // Record in ai_agent_audit so Recent Activity shows JSON Feed Sync
+    try {
+      await query(
+        `INSERT INTO public.ai_agent_audit (supplier_id, upload_id, action, status, details, started_at, finished_at)
+         VALUES ($1::uuid, NULL, 'JSON Feed Sync', $2, $3::jsonb, NOW(), NOW())`,
+        [
+          supplierId,
+          result.success ? 'completed' : 'failed',
+          JSON.stringify({
+            source: 'json-feed',
+            productsFetched: result.productsFetched,
+            productsUpdated: result.productsUpdated,
+            productsCreated: result.productsCreated,
+            productsFailed: result.productsFailed,
+            errorMessage: result.errorMessage ?? undefined,
+          }),
+        ]
+      );
+    } catch (auditErr) {
+      console.warn('[Sync API] Failed to write ai_agent_audit:', auditErr);
+    }
+
     // Log manual sync to cron_execution_log so "Scheduled Sync" block shows last run
     let jsonFeedCronLastRun: Awaited<ReturnType<typeof getLastCronRuns>>['jsonFeedCronLastRun'] = null;
     const now = new Date().toISOString();

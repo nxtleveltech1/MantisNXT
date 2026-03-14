@@ -577,7 +577,29 @@ export class ARService {
         throw new Error('Receipt not found after creation');
       }
 
-      return receiptResult.rows[0];
+      const receipt = receiptResult.rows[0];
+
+      // Sync to Xero if connected (fire and forget)
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncPaymentToXero } = await import('@/lib/xero/sync/payments');
+        const isConnected = await hasActiveConnection(receipt.org_id);
+        if (isConnected) {
+          syncPaymentToXero(receipt.org_id, {
+            id: receipt.id,
+            invoiceId: salesInvoiceId,
+            amount: paymentData.amount,
+            date: receipt.receipt_date,
+            reference: paymentData.reference_number ?? undefined,
+          }).catch((syncError) => {
+            console.error('[Xero Sync] Failed to sync AR receipt after record payment:', syncError);
+          });
+        }
+      } catch (xeroError) {
+        console.error('[Xero Sync] Error syncing AR receipt to Xero:', xeroError);
+      }
+
+      return receipt;
     } catch (error) {
       console.error('Error recording sales invoice payment:', error);
       throw error;
@@ -627,6 +649,35 @@ export class ARService {
         `UPDATE ar_receipts SET status = 'paid', updated_at = now() WHERE id = $1`,
         [receiptId]
       );
+
+      // Sync to Xero if connected (fire and forget) — use first allocation
+      if (allocations.length > 0) {
+        try {
+          const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+          const { syncPaymentToXero } = await import('@/lib/xero/sync/payments');
+          const recRow = await query<{ org_id: string; amount: number; receipt_date: string; reference_number: string | null }>(
+            'SELECT org_id, amount, receipt_date, reference_number FROM ar_receipts WHERE id = $1',
+            [receiptId]
+          );
+          if (recRow.rows[0]) {
+            const r = recRow.rows[0];
+            const isConnected = await hasActiveConnection(r.org_id);
+            if (isConnected) {
+              syncPaymentToXero(r.org_id, {
+                id: receiptId,
+                invoiceId: allocations[0].invoice_id,
+                amount: allocations[0].amount,
+                date: r.receipt_date,
+                reference: r.reference_number ?? undefined,
+              }).catch((syncError) => {
+                console.error('[Xero Sync] Failed to sync AR receipt after allocation:', syncError);
+              });
+            }
+          }
+        } catch (xeroError) {
+          console.error('[Xero Sync] Error syncing AR receipt to Xero:', xeroError);
+        }
+      }
     } catch (error) {
       console.error('Error allocating receipt:', error);
       throw error;

@@ -200,6 +200,46 @@ export class APService {
         );
       }
 
+      // Sync to Xero if connected (fire and forget)
+      try {
+        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+        const { syncSupplierInvoiceToXero } = await import('@/lib/xero/sync/invoices');
+        const isConnected = await hasActiveConnection(data.org_id);
+        if (isConnected) {
+          const lineItemsResult = await query<{
+            description: string;
+            quantity: number;
+            unit_price: number;
+            tax_rate: number;
+            account_id: string | null;
+          }>(
+            'SELECT description, quantity, unit_price, tax_rate, account_id FROM ap_invoice_line_items WHERE ap_invoice_id = $1 ORDER BY line_number',
+            [invoice.id]
+          );
+          const nxtInvoice = {
+            id: invoice.id,
+            supplierId: invoice.vendor_id,
+            invoiceNumber: invoice.vendor_invoice_number,
+            invoiceDate: invoice.invoice_date,
+            dueDate: invoice.due_date,
+            currency: invoice.currency,
+            reference: invoice.notes ?? undefined,
+            lineItems: lineItemsResult.rows.map((item) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unit_price,
+              taxRate: item.tax_rate,
+              accountCode: item.account_id ?? undefined,
+            })),
+          };
+          syncSupplierInvoiceToXero(data.org_id, nxtInvoice).catch((syncError) => {
+            console.error('[Xero Sync] Failed to sync AP invoice after creation:', syncError);
+          });
+        }
+      } catch (xeroError) {
+        console.error('[Xero Sync] Error checking Xero connection:', xeroError);
+      }
+
       return invoice;
     } catch (error) {
       console.error('Error creating vendor invoice:', error);
@@ -523,6 +563,35 @@ export class APService {
         `UPDATE ap_payments SET status = 'paid', updated_at = now() WHERE id = $1`,
         [paymentId]
       );
+
+      // Sync to Xero if connected (fire and forget) — use first allocation
+      if (allocations.length > 0) {
+        try {
+          const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+          const { syncPaymentToXero } = await import('@/lib/xero/sync/payments');
+          const payRow = await query<{ org_id: string; amount: number; payment_date: string; reference_number: string | null }>(
+            'SELECT org_id, amount, payment_date, reference_number FROM ap_payments WHERE id = $1',
+            [paymentId]
+          );
+          if (payRow.rows[0]) {
+            const p = payRow.rows[0];
+            const isConnected = await hasActiveConnection(p.org_id);
+            if (isConnected) {
+              syncPaymentToXero(p.org_id, {
+                id: paymentId,
+                invoiceId: allocations[0].invoice_id,
+                amount: allocations[0].amount,
+                date: p.payment_date,
+                reference: p.reference_number ?? undefined,
+              }).catch((syncError) => {
+                console.error('[Xero Sync] Failed to sync AP payment after allocation:', syncError);
+              });
+            }
+          }
+        } catch (xeroError) {
+          console.error('[Xero Sync] Error syncing AP payment to Xero:', xeroError);
+        }
+      }
     } catch (error) {
       console.error('Error allocating payment:', error);
       throw error;

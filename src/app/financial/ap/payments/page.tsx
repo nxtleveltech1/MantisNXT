@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { APService, type APPayment } from '@/lib/services/financial';
+import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 export default function APPaymentsPage() {
   const [payments, setPayments] = useState<APPayment[]>([]);
@@ -121,6 +122,11 @@ export default function APPaymentsPage() {
                           Reference: {payment.reference_number}
                         </div>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <XeroSyncStatus entityType="payment" entityId={payment.id} />
+                      <XeroSyncButton entityType="payment" entityId={payment.id} size="sm" />
+                      <XeroEntityLink entityType="payment" entityId={payment.id} size="sm" />
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-lg">

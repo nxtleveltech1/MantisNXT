@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 interface Receipt {
   id: string;
@@ -136,6 +137,11 @@ export default function ARReceiptsPage() {
                       {receipt.invoice_id && (
                         <div className="text-xs text-muted-foreground mt-1">Invoice: {receipt.invoice_id}</div>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <XeroSyncStatus entityType="payment" entityId={receipt.id} />
+                      <XeroSyncButton entityType="payment" entityId={receipt.id} size="sm" />
+                      <XeroEntityLink entityType="payment" entityId={receipt.id} size="sm" />
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-lg">

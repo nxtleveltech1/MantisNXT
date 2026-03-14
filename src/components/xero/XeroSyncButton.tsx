@@ -12,7 +12,7 @@ import { Loader2, RefreshCw, CheckCircle, XCircle, ArrowRightLeft } from 'lucide
 import { toast } from 'sonner';
 
 interface XeroSyncButtonProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note';
+  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
   entityId: string;
   onSyncComplete?: (result: { success: boolean; xeroEntityId?: string; error?: string }) => void;
   variant?: 'default' | 'outline' | 'ghost' | 'link';

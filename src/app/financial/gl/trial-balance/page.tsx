@@ -7,6 +7,17 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type ReportSource = 'nxt' | 'xero';
 
 interface TrialBalanceItem {
   account_code: string;
@@ -16,32 +27,46 @@ interface TrialBalanceItem {
 }
 
 export default function TrialBalancePage() {
+  const { isConnected: xeroConnected } = useXeroConnection();
+  const [source, setSource] = useState<ReportSource>('nxt');
   const [data, setData] = useState<TrialBalanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTrialBalance() {
+      setLoading(true);
+      setError(null);
       try {
-        const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-        const response = await fetch(`/api/v1/financial/gl/trial-balance?org_id=${orgId}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setData(result.data || []);
+        if (source === 'xero') {
+          const response = await fetch('/api/xero/reports/trial-balance?parsed=true');
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            setData(result.data);
+          } else {
+            setError(result.error || 'Failed to load from Xero');
+            setData([]);
+          }
         } else {
-          setData([]);
+          const orgId = localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+          const response = await fetch(`/api/v1/financial/gl/trial-balance?org_id=${orgId}`);
+          const result = await response.json();
+          if (result.success) {
+            setData(result.data || []);
+          } else {
+            setData([]);
+          }
         }
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching trial balance:', err);
         setData([]);
+      } finally {
         setLoading(false);
       }
     }
 
     fetchTrialBalance();
-  }, []);
+  }, [source]);
 
   const totals = data.reduce(
     (acc, item) => ({
@@ -61,8 +86,20 @@ export default function TrialBalancePage() {
       ]}
     >
       <div className="space-y-4">
-        <div>
+        <div className="flex items-center justify-between gap-4">
           <p className="text-muted-foreground">Trial balance report showing debits and credits</p>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="tb-source" className="text-sm text-muted-foreground">Source</Label>
+            <Select value={source} onValueChange={(v) => setSource(v as ReportSource)}>
+              <SelectTrigger id="tb-source" className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nxt">NXT</SelectItem>
+                {xeroConnected && <SelectItem value="xero">Xero</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card>

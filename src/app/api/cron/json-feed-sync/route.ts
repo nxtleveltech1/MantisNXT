@@ -99,6 +99,28 @@ async function runCron(): Promise<{ success: boolean; data?: { processed: number
           productsFailed: result.productsFailed,
           errorMessage: result.errorMessage ?? undefined,
         });
+        // Record in ai_agent_audit so Recent Activity shows JSON Feed Sync (scheduled)
+        try {
+          await query(
+            `INSERT INTO public.ai_agent_audit (supplier_id, upload_id, action, status, details, started_at, finished_at)
+             VALUES ($1::uuid, NULL, 'JSON Feed Sync', $2, $3::jsonb, NOW(), NOW())`,
+            [
+              supplier.supplierId,
+              result.success ? 'completed' : 'failed',
+              JSON.stringify({
+                source: 'json-feed',
+                trigger: 'scheduled',
+                productsFetched: result.productsFetched,
+                productsUpdated: result.productsUpdated,
+                productsCreated: result.productsCreated,
+                productsFailed: result.productsFailed,
+                errorMessage: result.errorMessage ?? undefined,
+              }),
+            ]
+          );
+        } catch (auditErr) {
+          console.warn('[JSON Feed Cron] ai_agent_audit insert failed:', auditErr);
+        }
       } catch (error) {
         results.push({
           supplierId: supplier.supplierId,

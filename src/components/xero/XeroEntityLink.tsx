@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 
 interface XeroEntityLinkProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note';
+  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
   entityId: string;
   xeroEntityId?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'link';
@@ -74,6 +74,8 @@ export function XeroEntityLink({
         return `${baseUrl}/Purchase/View.aspx?PurchaseOrderID=${xeroEntityId}`;
       case 'credit-note':
         return `${baseUrl}/AccountsReceivable/View.aspx?CreditNoteID=${xeroEntityId}`;
+      case 'manual-journal':
+        return `${baseUrl}/Accounting/ManualJournals/View/${xeroEntityId}`;
       default:
         return baseUrl;
     }

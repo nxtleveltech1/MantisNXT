@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 
 interface XeroSyncStatusProps {
-  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note';
+  entityType: 'invoice' | 'quote' | 'contact' | 'payment' | 'item' | 'purchase-order' | 'credit-note' | 'manual-journal';
   entityId: string;
   className?: string;
 }
