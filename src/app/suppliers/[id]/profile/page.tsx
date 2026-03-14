@@ -75,6 +75,15 @@ function formatCronScheduleWithLocal(utcHour: number, utcMinute: number): string
 const JSON_FEED_CRON_SCHEDULE = formatCronScheduleWithLocal(4, 0);
 const PLUSPORTAL_CRON_SCHEDULE = formatCronScheduleWithLocal(3, 0);
 
+/** Human-readable sync interval for display (e.g. 240 -> "every 4 hours") */
+function formatSyncIntervalLabel(minutes: number): string {
+  if (minutes >= 1440) return 'daily';
+  if (minutes >= 60) return `every ${minutes / 60} hour(s)`;
+  if (minutes >= 30) return 'every 30 minutes';
+  if (minutes >= 15) return 'every 15 minutes';
+  return `every ${minutes} min`;
+}
+
 type Supplier = {
   id: string;
   name: string;
@@ -1925,18 +1934,35 @@ function SupplierProfileContent() {
                             if (data.success) {
                               setError(null);
                               sonnerToast.success('Configuration saved. Next cron at 04:00 UTC will sync if due.');
-                              const statusRes = await fetch(`/api/suppliers/${supplierId}/sync`, {
-                                credentials: 'include',
-                              });
-                              if (statusRes.ok) {
-                                const statusData = await statusRes.json();
-                                if (statusData.success && statusData.data?.status) {
-                                  const s = statusData.data.status;
-                                  setFeedUrl(s.feedUrl || '');
-                                  setFeedType(s.feedType || 'woocommerce');
-                                  setFeedEnabled(s.feedEnabled || false);
-                                  setFeedInterval(s.intervalMinutes || 60);
+                              const s = data.data?.status;
+                              if (s) {
+                                setFeedUrl(s.feedUrl || '');
+                                setFeedType(s.feedType || 'woocommerce');
+                                setFeedEnabled(s.feedEnabled || false);
+                                setFeedInterval(s.intervalMinutes ?? 60);
+                              } else {
+                                const statusRes = await fetch(`/api/suppliers/${supplierId}/sync?_=${Date.now()}`, {
+                                  credentials: 'include',
+                                  cache: 'no-store',
+                                });
+                                if (statusRes.ok) {
+                                  const statusData = await statusRes.json();
+                                  if (statusData.success && statusData.data?.status) {
+                                    const s2 = statusData.data.status;
+                                    setFeedUrl(s2.feedUrl || '');
+                                    setFeedType(s2.feedType || 'woocommerce');
+                                    setFeedEnabled(s2.feedEnabled || false);
+                                    setFeedInterval(s2.intervalMinutes ?? 60);
+                                  }
                                 }
+                              }
+                              const supplierRes = await fetch(`/api/suppliers/v3/${supplierId}?_=${Date.now()}`, {
+                                credentials: 'include',
+                                cache: 'no-store',
+                              });
+                              if (supplierRes.ok) {
+                                const supplierData = await supplierRes.json();
+                                if (supplierData.success && supplierData.data) setSupplier(supplierData.data);
                               }
                             }
                           } catch (e: unknown) {
@@ -2124,7 +2150,7 @@ function SupplierProfileContent() {
                             </p>
                           ) : null}
                           <p className="text-muted-foreground mt-1 text-xs">
-                            Next: {jsonFeedCronSchedule}
+                            Cron at 04:00 UTC daily. Your sync runs when due ({formatSyncIntervalLabel(feedInterval)}).
                           </p>
                         </div>
                       ) : (
