@@ -5,6 +5,7 @@ import { AuthProvider } from '@/lib/auth/auth-context';
 import { QueryProvider } from '@/lib/query-provider';
 import AsyncBoundary from '@/components/ui/AsyncBoundary';
 import { ThemeProvider } from '@/components/theme-provider';
+import { OrgBootstrap } from '@/components/layout/OrgBootstrap';
 import { ActivityTrackingInitializer } from '@/lib/activity-tracker';
 import { AutoLogoutHandler } from '@/components/auth/AutoLogoutHandler';
 import { Toaster } from 'sonner';
@@ -17,6 +18,7 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider defaultTheme="system" storageKey="theme">
       <QueryProvider>
+        <OrgBootstrap />
         <AuthProvider>
           <AsyncBoundary>
             {children}

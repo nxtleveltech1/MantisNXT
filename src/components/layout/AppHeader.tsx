@@ -14,9 +14,16 @@ import {
   ChevronDown,
   Command,
   X,
+  Building2,
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/auth-context';
+import {
+  fetchCurrentOrg,
+  setStoredOrg,
+  getStoredOrgId,
+  getStoredOrgName,
+} from '@/lib/org/current-org';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -351,11 +358,63 @@ function UserAccount() {
   );
 }
 
+// Single-org switcher: bootstraps org_id from API and shows current org in header
+function OrgSwitcher() {
+  const [orgName, setOrgName] = useState<string | null>(() => getStoredOrgName());
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const storedId = getStoredOrgId();
+    if (storedId && getStoredOrgName()) {
+      setLoaded(true);
+      return;
+    }
+    fetchCurrentOrg().then((res) => {
+      if (res.success && res.data?.id) {
+        setStoredOrg(res.data.id, res.data.name ?? 'Default Organization');
+        setOrgName(res.data.name ?? 'Default Organization');
+      }
+      setLoaded(true);
+    });
+  }, []);
+
+  if (!loaded || !orgName) return null;
+
+  return (
+    <>
+      <Separator orientation="vertical" className="mx-1 h-4" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Building2 className="h-4 w-4 shrink-0" />
+            <span className="hidden max-w-[140px] truncate sm:inline">{orgName}</span>
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            Current organization
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="cursor-default">
+            <Building2 className="mr-2 h-4 w-4" />
+            <span className="truncate">{orgName}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
+
 // Main Header Component
 export function AppHeader({ title, subtitle, children }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-40 relative flex h-16 shrink-0 items-center gap-3 border-b bg-background px-4">
-      {/* Left: Sidebar & Title Section */}
+      {/* Left: Sidebar & Title Section & Org */}
       <div className="flex flex-1 items-center gap-2 overflow-hidden">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
@@ -375,6 +434,7 @@ export function AppHeader({ title, subtitle, children }: AppHeaderProps) {
             )}
           </>
         )}
+        <OrgSwitcher />
       </div>
 
       {/* Custom Actions */}

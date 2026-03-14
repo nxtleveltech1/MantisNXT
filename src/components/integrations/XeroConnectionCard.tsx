@@ -174,13 +174,8 @@ export function XeroConnectionCard() {
           {isNoOrg ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Xero is linked to an organization. Select an organization from your org switcher in the header, or
-                ensure your app has set an organization (e.g. in Financial or Dashboard) so this page can load
-                connection status.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                If you use a single organization, set <code className="rounded bg-muted px-1">org_id</code> in
-                localStorage to your organization UUID, then retry.
+                The current organization is shown in the header (next to the page title). If you still see this message,
+                the app may still be loading it—click Retry once the org name appears in the header.
               </p>
             </>
           ) : (
