@@ -37,29 +37,35 @@ export async function GET() {
     if (!isConfigured) {
       return NextResponse.json({
         configured: false,
+        isConfigured: false,
         connected: false,
+        isConnected: false,
         message: 'Xero integration is not configured for this application.',
       });
     }
 
     // Check connection status
     const isConnected = await hasActiveConnection(orgId);
-    
+
     if (!isConnected) {
       return NextResponse.json({
         configured: true,
+        isConfigured: true,
         connected: false,
+        isConnected: false,
         message: 'Not connected to Xero. Click Connect to authorize.',
       });
     }
 
     // Get connection details
     const connection = await getXeroConnection(orgId);
-    
+
     if (!connection) {
       return NextResponse.json({
         configured: true,
+        isConfigured: true,
         connected: false,
+        isConnected: false,
         message: 'Connection record not found.',
       });
     }
@@ -73,21 +79,33 @@ export async function GET() {
       Math.floor((tokenExpiresAt.getTime() - now.getTime()) / 60000)
     );
 
+    const connectionData = {
+      tenantId: connection.xeroTenantId,
+      tenantName: connection.xeroTenantName,
+      connectedAt: connection.connectedAt,
+      lastSyncAt: connection.lastSyncAt,
+      scopes: connection.scopes ?? [],
+      tokenStatus: {
+        isExpired: isTokenExpired,
+        expiresInMinutes: tokenExpiresInMinutes,
+        expiresAt: tokenExpiresAt,
+      },
+    };
+
     return NextResponse.json({
       configured: true,
+      isConfigured: true,
       connected: true,
-      connection: {
-        tenantId: connection.xeroTenantId,
-        tenantName: connection.xeroTenantName,
-        connectedAt: connection.connectedAt,
-        lastSyncAt: connection.lastSyncAt,
-        scopes: connection.scopes,
-        tokenStatus: {
-          isExpired: isTokenExpired,
-          expiresInMinutes: tokenExpiresInMinutes,
-          expiresAt: tokenExpiresAt,
-        },
-      },
+      isConnected: true,
+      message: 'Connected to Xero.',
+      connection: connectionData,
+      // Normalized flat shape for settings and integrations pages
+      tenantId: connection.xeroTenantId,
+      tenantName: connection.xeroTenantName ?? null,
+      connectedAt: connection.connectedAt,
+      lastSyncAt: connection.lastSyncAt ?? null,
+      tokenExpiresAt: tokenExpiresAt.toISOString(),
+      scopes: connection.scopes ?? [],
     });
 
   } catch (error) {

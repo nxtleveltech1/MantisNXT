@@ -7,7 +7,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,19 +32,26 @@ interface XeroConnectionStatus {
 }
 
 export function XeroConnectionCard() {
-  const router = useRouter();
   const [status, setStatus] = useState<XeroConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
   const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/xero/connection');
       const data = await response.json();
-      setStatus(data);
-    } catch (error) {
-      console.error('Failed to fetch Xero connection status:', error);
+      if (response.ok) {
+        setStatus(data);
+      } else {
+        setError(data.error || data.message || 'Failed to load connection status');
+      }
+    } catch (err) {
+      console.error('Failed to fetch Xero connection status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to check Xero connection status');
       toast.error('Failed to check Xero connection status');
     } finally {
       setLoading(false);
@@ -136,6 +142,24 @@ export function XeroConnectionCard() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">Checking connection status...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error && !status) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Xero Accounting</CardTitle>
+          <CardDescription>Connection status unavailable</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button variant="outline" size="sm" onClick={() => fetchStatus()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );

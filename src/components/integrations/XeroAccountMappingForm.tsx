@@ -57,16 +57,23 @@ export function XeroAccountMappingForm() {
       const mappingsData = await mappingsRes.json();
 
       if (!accountsRes.ok) {
-        const errorMessage = accountsData.error || accountsData.message || 'Failed to fetch accounts';
-        throw new Error(errorMessage);
+        const msg = accountsData.error || accountsData.message || 'Failed to fetch accounts';
+        const friendly = msg.toLowerCase().includes('not connected')
+          ? 'Connect to Xero first to load accounts and configure mappings.'
+          : msg;
+        throw new Error(friendly);
       }
 
       if (!mappingsRes.ok) {
-        const errorMessage = mappingsData.error || mappingsData.message || 'Failed to fetch mappings';
-        throw new Error(errorMessage);
+        const msg = mappingsData.error || mappingsData.message || 'Failed to fetch mappings';
+        const friendly = msg.toLowerCase().includes('not connected')
+          ? 'Connect to Xero first to load mappings.'
+          : msg;
+        throw new Error(friendly);
       }
 
-      setAccounts(accountsData.accounts || []);
+      const accountList = accountsData.accounts || [];
+      setAccounts(accountList);
       setMappings(mappingsData.mappings || []);
 
       // Initialize selected mappings from current config
@@ -85,6 +92,8 @@ export function XeroAccountMappingForm() {
     } catch (err) {
       console.error('Failed to fetch Xero data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
+      setAccounts([]);
+      setMappings([]);
     } finally {
       setLoading(false);
     }

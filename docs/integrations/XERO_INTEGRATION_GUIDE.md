@@ -8,6 +8,22 @@ This guide covers the setup and configuration of the Xero accounting integration
 2. Xero Developer Portal access (https://developer.xero.com)
 3. Vercel deployment access for environment variables
 
+## Production Checklist
+
+Before going live, confirm:
+
+| Check | Where | Value / Action |
+|-------|--------|----------------|
+| **Env: XERO_CLIENT_ID** | Vercel → Settings → Environment Variables | Set from Xero Developer Portal |
+| **Env: XERO_CLIENT_SECRET** | Vercel | Set from Xero Developer Portal |
+| **Env: XERO_WEBHOOK_KEY** | Vercel | Copy from Xero App → Webhooks (required for intent-to-receive) |
+| **Env: NEXT_PUBLIC_APP_URL** | Vercel | Production URL only, e.g. `https://nxtdotx.online` (no trailing slash, no path) |
+| **Env: PII_ENCRYPTION_KEY** | Vercel | 32-byte key from `openssl rand -base64 32` |
+| **OAuth Redirect URI** | Xero Developer Portal → Your App | Exactly: `{NEXT_PUBLIC_APP_URL}/api/xero/callback` (e.g. `https://nxtdotx.online/api/xero/callback`) |
+| **Webhook Delivery URL** | Xero Developer Portal → Webhooks | Exactly: `{NEXT_PUBLIC_APP_URL}/api/xero/webhooks` (e.g. `https://nxtdotx.online/api/xero/webhooks`) |
+
+After changing any of the above in Vercel, **redeploy** the application. Use `/api/xero/test/env-check` (while signed in) to verify env vars; do not expose the response in production.
+
 ## Environment Variables Setup
 
 Add the following environment variables to your Vercel project:
@@ -118,6 +134,24 @@ Map NXT transaction types to your Xero chart of accounts:
 | Invoices (AR) | NXT → Xero | On finalize |
 | Bills (AP) | NXT → Xero | On create |
 | Payments | Bidirectional | Webhook / Manual |
+
+## Verification (Phase 6)
+
+After deployment, run these checks (while signed in with an org selected):
+
+1. **Test routes** (browser or `curl` with auth cookie):
+   - `GET /api/xero/test/connection?orgId=<your-org-id>` — connection check
+   - `GET /api/xero/test/env-check` — env vars (values masked)
+   - `GET /api/xero/test/database?orgId=<your-org-id>` — DB access
+
+2. **Smoke test**:
+   - Connect: Integrations → Xero → Connect to Xero → complete OAuth → land back on `/integrations/xero` with success toast.
+   - Connection status: Settings and Integrations list show tenant and last sync.
+   - Disconnect: Disconnect from Xero → confirm status shows not connected.
+   - Sync: Connect again → Sync Operations → run Contacts (or another) sync → Activity Log shows entries.
+   - Mappings: Account Mappings tab loads accounts and saves mappings.
+
+3. **Webhook**: In Xero Developer Portal, ensure webhook delivery URL is `https://nxtdotx.online/api/xero/webhooks` and “Intent to receive” passes (200 response; `XERO_WEBHOOK_KEY` set and matching).
 
 ## Troubleshooting
 

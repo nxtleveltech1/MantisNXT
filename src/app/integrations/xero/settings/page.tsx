@@ -42,6 +42,7 @@ interface XeroConnectionStatus {
 export default function XeroSettingsPage() {
   const [connectionStatus, setConnectionStatus] = useState<XeroConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   // Get the app URL for webhook configuration
@@ -54,14 +55,28 @@ export default function XeroSettingsPage() {
 
   useEffect(() => {
     async function fetchStatus() {
+      setLoading(true);
+      setConnectionError(null);
       try {
         const response = await fetch('/api/xero/connection');
+        const data = await response.json();
         if (response.ok) {
-          const data = await response.json();
-          setConnectionStatus(data);
+          const conn = data.connection;
+          setConnectionStatus({
+            isConfigured: data.isConfigured ?? data.configured ?? false,
+            isConnected: data.isConnected ?? data.connected ?? false,
+            tenantName: data.tenantName ?? conn?.tenantName ?? null,
+            tenantId: data.tenantId ?? conn?.tenantId ?? null,
+            connectedAt: data.connectedAt ?? conn?.connectedAt ?? null,
+            tokenExpiresAt: data.tokenExpiresAt ?? conn?.tokenStatus?.expiresAt ?? null,
+            scopes: Array.isArray(data.scopes) ? data.scopes : conn?.scopes ?? [],
+          });
+        } else {
+          setConnectionError(data.error || data.message || 'Failed to load connection status');
         }
       } catch (error) {
         console.error('Failed to fetch connection status:', error);
+        setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
       } finally {
         setLoading(false);
       }
@@ -115,6 +130,11 @@ export default function XeroSettingsPage() {
             <CardContent className="space-y-4">
               {loading ? (
                 <p className="text-muted-foreground">Loading...</p>
+              ) : connectionError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{connectionError}</AlertDescription>
+                </Alert>
               ) : connectionStatus?.isConnected ? (
                 <>
                   <div className="space-y-3">

@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import { XeroConnectionCard, XeroAccountMappingForm } from '@/components/integrations';
@@ -27,8 +28,10 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SyncLog {
   id: string;
@@ -68,25 +71,52 @@ interface SyncSummary {
 }
 
 export default function XeroIntegrationPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('connection');
   const [connectionStatus, setConnectionStatus] = useState<XeroConnectionStatus | null>(null);
+  const [connectionLoading, setConnectionLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncSummary, setSyncSummary] = useState<SyncSummary[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  // OAuth callback query params: show toast and clear URL
+  useEffect(() => {
+    const error = searchParams.get('xero_error');
+    const errorDesc = searchParams.get('xero_error_description');
+    const connected = searchParams.get('xero_connected');
+    const tenant = searchParams.get('xero_tenant');
+    if (error || errorDesc) {
+      toast.error(errorDesc || error || 'Xero authorization failed');
+      window.history.replaceState({}, '', '/integrations/xero');
+    } else if (connected === 'true') {
+      toast.success(tenant ? `Connected to Xero: ${tenant}` : 'Connected to Xero');
+      window.history.replaceState({}, '', '/integrations/xero');
+      // Refetch connection status so UI updates after callback
+      fetch('/api/xero/connection').then(r => r.ok && r.json()).then(data => setConnectionStatus(data)).catch(() => {});
+    }
+  }, [searchParams]);
+
   // Fetch connection status
   useEffect(() => {
     async function fetchStatus() {
+      setConnectionLoading(true);
+      setConnectionError(null);
       try {
         const response = await fetch('/api/xero/connection');
+        const data = await response.json();
         if (response.ok) {
-          const data = await response.json();
           setConnectionStatus(data);
+        } else {
+          setConnectionError(data.error || data.message || 'Failed to load connection status');
         }
       } catch (error) {
         console.error('Failed to fetch connection status:', error);
+        setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
+      } finally {
+        setConnectionLoading(false);
       }
     }
     fetchStatus();
@@ -209,6 +239,20 @@ export default function XeroIntegrationPage() {
 
           {/* Connection Tab */}
           <TabsContent value="connection" className="space-y-6">
+            {connectionError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{connectionError}</AlertDescription>
+              </Alert>
+            )}
+            {connectionLoading && !connectionStatus ? (
+              <Card>
+                <CardContent className="flex items-center gap-2 py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground">Loading connection status...</span>
+                </CardContent>
+              </Card>
+            ) : (
             <div className="grid gap-6 lg:grid-cols-2">
               <XeroConnectionCard />
               
@@ -299,6 +343,7 @@ export default function XeroIntegrationPage() {
                 </CardContent>
               </Card>
             </div>
+            )}
           </TabsContent>
 
           {/* Account Mappings Tab */}
