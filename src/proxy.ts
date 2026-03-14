@@ -49,6 +49,7 @@ const ALWAYS_PUBLIC_ENDPOINTS = [
   '/api/v1/integrations/woocommerce/test',
   '/api/v1/integrations/woocommerce',
   '/api/webhooks/clerk',
+  '/api/xero/webhooks',
 ];
 
 // ===========================================
