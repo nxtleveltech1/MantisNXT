@@ -50,24 +50,26 @@ export default function FinancialDashboardPage() {
         const apAgingResponse = await fetch(`/api/v1/financial/ap/aging?org_id=${orgId}`);
         const apAgingData = await apAgingResponse.json();
 
-        // Calculate totals from aging reports
-        const arAging = arAgingData.success && arAgingData.data.length > 0
-          ? arAgingData.data.reduce((acc: any, item: any) => ({
-              current: acc.current + item.current,
-              days_1_30: acc.days_1_30 + item.days_1_30,
-              days_31_60: acc.days_31_60 + item.days_31_60,
-              days_61_90: acc.days_61_90 + item.days_61_90,
-              days_over_90: acc.days_over_90 + item.days_over_90,
+        // Calculate totals from aging reports (defensive: data may be missing or non-array)
+        const arData = Array.isArray(arAgingData?.data) ? arAgingData.data : [];
+        const apData = Array.isArray(apAgingData?.data) ? apAgingData.data : [];
+        const arAging = arAgingData?.success && arData.length > 0
+          ? arData.reduce((acc: Record<string, number>, item: Record<string, number>) => ({
+              current: acc.current + (Number(item.current) || 0),
+              days_1_30: acc.days_1_30 + (Number(item.days_1_30) || 0),
+              days_31_60: acc.days_31_60 + (Number(item.days_31_60) || 0),
+              days_61_90: acc.days_61_90 + (Number(item.days_61_90) || 0),
+              days_over_90: acc.days_over_90 + (Number(item.days_over_90) || 0),
             }), { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_over_90: 0 })
           : { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_over_90: 0 };
 
-        const apAging = apAgingData.success && apAgingData.data.length > 0
-          ? apAgingData.data.reduce((acc: any, item: any) => ({
-              current: acc.current + item.current,
-              days_1_30: acc.days_1_30 + item.days_1_30,
-              days_31_60: acc.days_31_60 + item.days_31_60,
-              days_61_90: acc.days_61_90 + item.days_61_90,
-              days_over_90: acc.days_over_90 + item.days_over_90,
+        const apAging = apAgingData?.success && apData.length > 0
+          ? apData.reduce((acc: Record<string, number>, item: Record<string, number>) => ({
+              current: acc.current + (Number(item.current) || 0),
+              days_1_30: acc.days_1_30 + (Number(item.days_1_30) || 0),
+              days_31_60: acc.days_31_60 + (Number(item.days_31_60) || 0),
+              days_61_90: acc.days_61_90 + (Number(item.days_61_90) || 0),
+              days_over_90: acc.days_over_90 + (Number(item.days_over_90) || 0),
             }), { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_over_90: 0 })
           : { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_over_90: 0 };
 
@@ -76,8 +78,8 @@ export default function FinancialDashboardPage() {
           ar_balance: arAging.current + arAging.days_1_30 + arAging.days_31_60 + arAging.days_61_90 + arAging.days_over_90,
           cash_balance: 0, // Would fetch from cash management API
           net_income: 0, // Would fetch from income statement
-          ar_aging,
-          ap_aging,
+          ar_aging: arAging,
+          ap_aging: apAging,
         });
         setLoading(false);
       } catch (err) {
