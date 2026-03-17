@@ -358,27 +358,65 @@ function UserAccount() {
   );
 }
 
-// Single-org switcher: bootstraps org_id from API and shows current org in header
+// Org switcher: list all orgs, allow selection, persist to localStorage
+interface OrgItem {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 function OrgSwitcher() {
-  const [orgName, setOrgName] = useState<string | null>(() => getStoredOrgName());
+  const [organizations, setOrganizations] = useState<OrgItem[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(() => getStoredOrgId());
+  const [selectedOrgName, setSelectedOrgName] = useState<string | null>(() => getStoredOrgName());
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const storedId = getStoredOrgId();
-    if (storedId && getStoredOrgName()) {
-      setLoaded(true);
-      return;
-    }
-    fetchCurrentOrg().then((res) => {
-      if (res.success && res.data?.id) {
-        setStoredOrg(res.data.id, res.data.name ?? 'Default Organization');
-        setOrgName(res.data.name ?? 'Default Organization');
+    async function load() {
+      try {
+        const listRes = await fetch('/api/v1/organizations');
+        const listCt = listRes.headers.get('content-type') ?? '';
+        const listData =
+          listCt.includes('application/json') ? await listRes.json().catch(() => null) : null;
+        if (listRes.ok && listData?.success && Array.isArray(listData?.data?.organizations)) {
+          const orgs = listData.data.organizations as OrgItem[];
+          setOrganizations(orgs);
+          const storedId = getStoredOrgId();
+          const storedName = getStoredOrgName();
+          const matched = orgs.find((o) => o.id === storedId);
+          if (matched) {
+            setSelectedOrgId(matched.id);
+            setSelectedOrgName(matched.name);
+          } else if (orgs.length > 0) {
+            const first = orgs[0];
+            setStoredOrg(first.id, first.name);
+            setSelectedOrgId(first.id);
+            setSelectedOrgName(first.name);
+          }
+        } else {
+          const res = await fetchCurrentOrg();
+          if (res.success && res.data?.id) {
+            setStoredOrg(res.data.id, res.data.name ?? 'Default Organization');
+            setOrganizations([{ id: res.data.id, name: res.data.name ?? 'Default Organization', slug: res.data.slug ?? 'default' }]);
+            setSelectedOrgId(res.data.id);
+            setSelectedOrgName(res.data.name ?? 'Default Organization');
+          }
+        }
+      } finally {
+        setLoaded(true);
       }
-      setLoaded(true);
-    });
+    }
+    load();
   }, []);
 
-  if (!loaded || !orgName) return null;
+  const handleSelectOrg = (org: OrgItem) => {
+    setStoredOrg(org.id, org.name);
+    setSelectedOrgId(org.id);
+    setSelectedOrgName(org.name);
+  };
+
+  if (!loaded) return null;
+  const displayName = selectedOrgName ?? (organizations[0]?.name ?? 'Select organization');
 
   return (
     <>
@@ -391,19 +429,32 @@ function OrgSwitcher() {
             className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <Building2 className="h-4 w-4 shrink-0" />
-            <span className="hidden max-w-[140px] truncate sm:inline">{orgName}</span>
+            <span className="hidden max-w-[140px] truncate sm:inline">{displayName}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            Current organization
+            {organizations.length > 1 ? 'Switch organization' : 'Current organization'}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-default">
-            <Building2 className="mr-2 h-4 w-4" />
-            <span className="truncate">{orgName}</span>
-          </DropdownMenuItem>
+          {organizations.length === 0 ? (
+            <DropdownMenuItem className="cursor-default">
+              <Building2 className="mr-2 h-4 w-4" />
+              <span className="truncate">{displayName}</span>
+            </DropdownMenuItem>
+          ) : (
+            organizations.map((org) => (
+              <DropdownMenuItem
+                key={org.id}
+                onClick={() => handleSelectOrg(org)}
+                className="cursor-pointer"
+              >
+                <Building2 className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">{org.name}</span>
+              </DropdownMenuItem>
+            ))
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>
