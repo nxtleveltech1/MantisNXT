@@ -67,6 +67,14 @@
         "chrome-devtools-mcp@latest"
       ],
       "env": {}
+    },
+    "xero": {
+      "command": "npx",
+      "args": ["-y", "@xeroapi/xero-mcp-server@latest"],
+      "env": {
+        "XERO_CLIENT_ID": "<XERO_CLIENT_ID from .env.local>",
+        "XERO_CLIENT_SECRET": "<XERO_CLIENT_SECRET from .env.local>"
+      }
     }
   }
 }

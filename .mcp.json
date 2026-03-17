@@ -28,6 +28,14 @@
     "github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"] },
     "git-mcp": { "command": "npx", "args": ["mcp-remote", "https://gitmcp.io/{owner}/{repo}"] },
     "chrome-devtools": { "command": "npx", "args": ["chrome-devtools-mcp@latest"] },
-    "TestSprite": { "command": "npx @testsprite/testsprite-mcp@latest", "args": [] }
+    "TestSprite": { "command": "npx @testsprite/testsprite-mcp@latest", "args": [] },
+    "xero": {
+      "command": "npx",
+      "args": ["-y", "@xeroapi/xero-mcp-server@latest"],
+      "env": {
+        "XERO_CLIENT_ID": "A9B4788DB9444DDC9DB09EA0C6A6C920",
+        "XERO_CLIENT_SECRET": "VrPzaUqa2-EellVcut_lJjGb-Iiv4QxNJemU54YlhwTMCuDX"
+      }
+    }
   }
 }

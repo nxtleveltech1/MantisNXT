@@ -17,7 +17,7 @@ export async function GET() {
     }
 
     const result = await query<{ id: string; name: string; slug: string }>(
-      `SELECT id, name, slug FROM organization ORDER BY name ASC`
+      `SELECT id, name, slug FROM organization WHERE is_active = true ORDER BY name ASC`
     );
 
     const organizations = (result.rows ?? []).map((row) => ({
