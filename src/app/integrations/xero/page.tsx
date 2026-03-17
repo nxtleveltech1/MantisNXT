@@ -7,10 +7,11 @@
  * Includes connection management and account mappings.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
+import { setStoredOrg } from '@/lib/org/current-org';
 import { XeroConnectionCard, XeroAccountMappingForm } from '@/components/integrations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,19 +83,25 @@ export default function XeroIntegrationPage() {
   const [syncSummary, setSyncSummary] = useState<SyncSummary[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // OAuth callback query params: show toast and clear URL
   useEffect(() => {
-    const error = searchParams.get('xero_error');
-    const errorDesc = searchParams.get('xero_error_description');
-    const connected = searchParams.get('xero_connected');
-    const tenant = searchParams.get('xero_tenant');
+    const error = searchParams?.get('xero_error') ?? null;
+    const errorDesc = searchParams?.get('xero_error_description') ?? null;
+    const connected = searchParams?.get('xero_connected') ?? null;
+    const tenant = searchParams?.get('xero_tenant') ?? null;
     if (error || errorDesc) {
       toast.error(errorDesc || error || 'Xero authorization failed');
       window.history.replaceState({}, '', '/integrations/xero');
     } else if (connected === 'true') {
       toast.success(tenant ? `Connected to Xero: ${tenant}` : 'Connected to Xero');
       window.history.replaceState({}, '', '/integrations/xero');
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const urlOrgId = searchParams?.get('org_id') ?? null;
+      const orgId = storedOrgId || urlOrgId || null;
+      if (urlOrgId && !storedOrgId) setStoredOrg(urlOrgId, 'From URL');
       const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
       fetch(url).then(r => r.ok && r.json()).then(data => data && setConnectionStatus(data)).catch(() => {});
     }
@@ -103,16 +110,30 @@ export default function XeroIntegrationPage() {
   const fetchStatus = useCallback(async () => {
     setConnectionLoading(true);
     setConnectionError(null);
+    const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+    const urlOrgId = searchParams?.get('org_id') ?? null;
+    const orgId = storedOrgId || urlOrgId || null;
+    if (urlOrgId && !storedOrgId) setStoredOrg(urlOrgId, 'From URL');
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
       const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
       const response = await fetch(url);
       const ct = response.headers.get('content-type') ?? '';
       const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
       if (response.ok && data) {
+        retryCountRef.current = 0;
         setConnectionStatus(data);
       } else {
-        setConnectionError(data?.error || data?.message || 'Failed to load connection status');
+        const errorMsg = data?.error || data?.message || 'Failed to load connection status';
+        const isNoOrg = response.status === 400 && typeof errorMsg === 'string' && errorMsg.includes('No organization selected');
+        if (isNoOrg && !orgId && retryCountRef.current < 2) {
+          retryCountRef.current += 1;
+          retryTimeoutRef.current = setTimeout(() => {
+            retryTimeoutRef.current = null;
+            fetchStatus();
+          }, 400);
+        } else {
+          setConnectionError(errorMsg);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch connection status:', error);
@@ -120,11 +141,20 @@ export default function XeroIntegrationPage() {
     } finally {
       setConnectionLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handler = () => fetchStatus();

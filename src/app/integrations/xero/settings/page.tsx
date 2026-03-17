@@ -6,9 +6,11 @@
  * Configuration for webhooks, sync options, and connection details.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
+import { setStoredOrg } from '@/lib/org/current-org';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,32 +46,44 @@ interface EnvCheck {
   xero_client_secret?: { set: boolean };
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 400;
+
 export default function XeroSettingsPage() {
+  const searchParams = useSearchParams();
   const [connectionStatus, setConnectionStatus] = useState<XeroConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [envCheck, setEnvCheck] = useState<EnvCheck | null>(null);
   const [envCheckLoading, setEnvCheckLoading] = useState(true);
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get the app URL for webhook configuration
-  const appUrl = typeof window !== 'undefined' 
-    ? window.location.origin 
+  const appUrl = typeof window !== 'undefined'
+    ? window.location.origin
     : process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com';
-  
+
   const webhookUrl = `${appUrl}/api/xero/webhooks`;
   const callbackUrl = `${appUrl}/api/xero/callback`;
 
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     setConnectionError(null);
+    const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+    const urlOrgId = searchParams?.get('org_id') ?? null;
+    const orgId = storedOrgId || urlOrgId || null;
+    if (urlOrgId && !storedOrgId) {
+      setStoredOrg(urlOrgId, 'From URL');
+    }
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
       const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
       const response = await fetch(url);
       const ct = response.headers.get('content-type') ?? '';
       const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
       if (response.ok && data) {
+        retryCountRef.current = 0;
         const conn = data.connection;
         setConnectionStatus({
           isConfigured: data.isConfigured ?? data.configured ?? false,
@@ -81,7 +95,17 @@ export default function XeroSettingsPage() {
           scopes: Array.isArray(data.scopes) ? data.scopes : conn?.scopes ?? [],
         });
       } else {
-        setConnectionError(data?.error || data?.message || 'Failed to load connection status');
+        const errorMsg = data?.error || data?.message || 'Failed to load connection status';
+        const isNoOrg = response.status === 400 && typeof errorMsg === 'string' && errorMsg.includes('No organization selected');
+        if (isNoOrg && !orgId && retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current += 1;
+          retryTimeoutRef.current = setTimeout(() => {
+            retryTimeoutRef.current = null;
+            fetchStatus();
+          }, RETRY_DELAY_MS);
+        } else {
+          setConnectionError(errorMsg);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch connection status:', error);
@@ -89,11 +113,20 @@ export default function XeroSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handler = () => fetchStatus();

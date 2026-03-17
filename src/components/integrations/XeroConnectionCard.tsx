@@ -6,12 +6,14 @@
  * Displays Xero connection status and provides connect/disconnect actions.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, Unplug } from 'lucide-react';
 import { toast } from 'sonner';
+import { setStoredOrg } from '@/lib/org/current-org';
 
 interface XeroConnectionStatus {
   configured: boolean;
@@ -31,27 +33,49 @@ interface XeroConnectionStatus {
   };
 }
 
+function getOrgId(searchParams: ReturnType<typeof useSearchParams> | null): string | null {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem('org_id');
+  const urlOrg = searchParams?.get('org_id') ?? null;
+  const orgId = stored || urlOrg || null;
+  if (urlOrg && !stored) setStoredOrg(urlOrg, 'From URL');
+  return orgId;
+}
+
 export function XeroConnectionCard() {
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<XeroConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const orgId = getOrgId(searchParams);
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
       const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
       const response = await fetch(url);
       const ct = response.headers.get('content-type') ?? '';
       const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
       if (response.ok && data) {
+        retryCountRef.current = 0;
         setStatus(data);
       } else {
         const msg = data?.error || data?.message || 'Failed to load connection status';
-        setError(msg);
+        const isNoOrg = response.status === 400 && typeof msg === 'string' && msg.includes('No organization selected');
+        if (isNoOrg && !orgId && retryCountRef.current < 2) {
+          retryCountRef.current += 1;
+          retryTimeoutRef.current = setTimeout(() => {
+            retryTimeoutRef.current = null;
+            fetchStatus();
+          }, 400);
+        } else {
+          setError(msg);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch Xero connection status:', err);
@@ -60,11 +84,20 @@ export function XeroConnectionCard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handler = () => fetchStatus();
@@ -75,7 +108,7 @@ export function XeroConnectionCard() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const orgId = getOrgId(searchParams);
       const url = orgId ? `/api/xero/auth?org_id=${encodeURIComponent(orgId)}` : '/api/xero/auth';
       const response = await fetch(url);
       const ct = response.headers.get('content-type') ?? '';
@@ -103,7 +136,7 @@ export function XeroConnectionCard() {
 
     setDisconnecting(true);
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const orgId = getOrgId(searchParams);
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (orgId) headers['X-Org-Id'] = orgId;
       const response = await fetch('/api/xero/disconnect', { method: 'POST', headers });
@@ -129,7 +162,7 @@ export function XeroConnectionCard() {
   const handleReconnect = async () => {
     setConnecting(true);
     try {
-      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const orgId = getOrgId(searchParams);
       const base = orgId ? `/api/xero/auth?org_id=${encodeURIComponent(orgId)}&force=true` : '/api/xero/auth?force=true';
       const response = await fetch(base);
       const ct = response.headers.get('content-type') ?? '';
