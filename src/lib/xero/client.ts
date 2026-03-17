@@ -13,7 +13,8 @@ import { XeroClient } from 'xero-node';
 
 const XERO_CLIENT_ID = process.env.XERO_CLIENT_ID;
 const XERO_CLIENT_SECRET = process.env.XERO_CLIENT_SECRET;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+// Strip trailing slash - Xero requires exact match with Redirect URIs in Developer Portal
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 // OAuth2 scopes for Xero API access
 // See: https://developer.xero.com/documentation/guides/oauth2/scopes

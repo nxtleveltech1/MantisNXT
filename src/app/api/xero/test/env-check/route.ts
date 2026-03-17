@@ -23,6 +23,10 @@ export async function GET() {
       set: Boolean(process.env.NEXT_PUBLIC_APP_URL),
       value: process.env.NEXT_PUBLIC_APP_URL || 'not set',
     },
+    redirect_uri: (() => {
+      const base = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+      return `${base}/api/xero/callback`;
+    })(),
     pii_encryption_key: {
       set: Boolean(process.env.PII_ENCRYPTION_KEY),
       length: process.env.PII_ENCRYPTION_KEY?.length || 0,

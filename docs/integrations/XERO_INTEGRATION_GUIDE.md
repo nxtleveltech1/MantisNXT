@@ -166,12 +166,26 @@ After deployment, run these checks (while signed in with an org selected):
 4. Redeploy the application
 5. In Xero, resend the intent-to-receive validation
 
-### OAuth Connection Fails
+### "Invalid redirect_uri" / "unauthorized_client" (Error 500)
+
+**Cause**: The callback URL sent to Xero does not exactly match a Redirect URI in your Xero app config.
+
+**Solution**:
+1. Call `GET /api/xero/test/env-check` (while signed in) and note the `redirect_uri` value
+2. In Xero Developer Portal → Your App (NXT LEVEL TECH) → **Configuration** → **Redirect URIs**:
+   - Add exactly: `https://nxtdotx.online/api/xero/callback` (no trailing slash)
+   - Remove any old or incorrect URIs (e.g. localhost, wrong domain)
+3. In Vercel → Settings → Environment Variables:
+   - Set `NEXT_PUBLIC_APP_URL` = `https://nxtdotx.online` (no trailing slash, no path)
+4. **Redeploy** after changing env vars (NEXT_PUBLIC_* is baked in at build time)
+5. Retry Connect to Xero
+
+### OAuth Connection Fails (general)
 
 **Cause**: Redirect URI mismatch or invalid credentials.
 
 **Solution**:
-1. Verify `NEXT_PUBLIC_APP_URL` matches your domain exactly
+1. Verify `NEXT_PUBLIC_APP_URL` matches your domain exactly (no trailing slash)
 2. Check that OAuth redirect URI in Xero app matches: `{NEXT_PUBLIC_APP_URL}/api/xero/callback`
 3. Verify `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` are correct
 
