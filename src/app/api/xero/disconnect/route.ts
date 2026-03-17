@@ -14,7 +14,8 @@ import { getXeroClient } from '@/lib/xero/client';
 import { decryptPII } from '@/lib/security/encryption';
 import { handleApiError } from '@/lib/xero/errors';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Accept any RFC 4122 UUID. Org IDs like bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb fail strict UUID v4.
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidOrgId(value: string | null): boolean {
   return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
 }
