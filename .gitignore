@@ -41,6 +41,7 @@ server.log
 
 # MCP local config (may contain API keys)
 .mcp.json
+.cursor/mcp.json
 
 # Vercel
 .vercel

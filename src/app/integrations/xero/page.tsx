@@ -7,7 +7,7 @@
  * Includes connection management and account mappings.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
@@ -100,31 +100,37 @@ export default function XeroIntegrationPage() {
     }
   }, [searchParams]);
 
-  // Fetch connection status (pass org_id from localStorage when Clerk has no org)
-  useEffect(() => {
-    async function fetchStatus() {
-      setConnectionLoading(true);
-      setConnectionError(null);
-      try {
-        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-        const response = await fetch(url);
-        const ct = response.headers.get('content-type') ?? '';
-        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
-        if (response.ok && data) {
-          setConnectionStatus(data);
-        } else {
-          setConnectionError(data?.error || data?.message || 'Failed to load connection status');
-        }
-      } catch (error) {
-        console.error('Failed to fetch connection status:', error);
-        setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
-      } finally {
-        setConnectionLoading(false);
+  const fetchStatus = useCallback(async () => {
+    setConnectionLoading(true);
+    setConnectionError(null);
+    try {
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+      const response = await fetch(url);
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+      if (response.ok && data) {
+        setConnectionStatus(data);
+      } else {
+        setConnectionError(data?.error || data?.message || 'Failed to load connection status');
       }
+    } catch (error) {
+      console.error('Failed to fetch connection status:', error);
+      setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
+    } finally {
+      setConnectionLoading(false);
     }
-    fetchStatus();
   }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    const handler = () => fetchStatus();
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
+  }, [fetchStatus]);
 
   // Fetch sync logs when on activity tab
   useEffect(() => {

@@ -20,6 +20,7 @@ export function setStoredOrg(id: string, name?: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, id);
   if (name != null) localStorage.setItem(NAME_KEY, name);
+  window.dispatchEvent(new CustomEvent('org-changed', { detail: { orgId: id } }));
 }
 
 export interface CurrentOrgResponse {

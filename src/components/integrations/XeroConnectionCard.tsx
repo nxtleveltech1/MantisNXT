@@ -66,6 +66,12 @@ export function XeroConnectionCard() {
     fetchStatus();
   }, [fetchStatus]);
 
+  useEffect(() => {
+    const handler = () => fetchStatus();
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
+  }, [fetchStatus]);
+
   const handleConnect = async () => {
     setConnecting(true);
     try {

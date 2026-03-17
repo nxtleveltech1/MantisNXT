@@ -6,7 +6,7 @@
  * Configuration for webhooks, sync options, and connection details.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -60,39 +60,46 @@ export default function XeroSettingsPage() {
   const webhookUrl = `${appUrl}/api/xero/webhooks`;
   const callbackUrl = `${appUrl}/api/xero/callback`;
 
-  useEffect(() => {
-    async function fetchStatus() {
-      setLoading(true);
-      setConnectionError(null);
-      try {
-        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-        const response = await fetch(url);
-        const ct = response.headers.get('content-type') ?? '';
-        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
-        if (response.ok && data) {
-          const conn = data.connection;
-          setConnectionStatus({
-            isConfigured: data.isConfigured ?? data.configured ?? false,
-            isConnected: data.isConnected ?? data.connected ?? false,
-            tenantName: data.tenantName ?? conn?.tenantName ?? null,
-            tenantId: data.tenantId ?? conn?.tenantId ?? null,
-            connectedAt: data.connectedAt ?? conn?.connectedAt ?? null,
-            tokenExpiresAt: data.tokenExpiresAt ?? conn?.tokenStatus?.expiresAt ?? null,
-            scopes: Array.isArray(data.scopes) ? data.scopes : conn?.scopes ?? [],
-          });
-        } else {
-          setConnectionError(data?.error || data?.message || 'Failed to load connection status');
-        }
-      } catch (error) {
-        console.error('Failed to fetch connection status:', error);
-        setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
-      } finally {
-        setLoading(false);
+  const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    setConnectionError(null);
+    try {
+      const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
+      const response = await fetch(url);
+      const ct = response.headers.get('content-type') ?? '';
+      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+      if (response.ok && data) {
+        const conn = data.connection;
+        setConnectionStatus({
+          isConfigured: data.isConfigured ?? data.configured ?? false,
+          isConnected: data.isConnected ?? data.connected ?? false,
+          tenantName: data.tenantName ?? conn?.tenantName ?? null,
+          tenantId: data.tenantId ?? conn?.tenantId ?? null,
+          connectedAt: data.connectedAt ?? conn?.connectedAt ?? null,
+          tokenExpiresAt: data.tokenExpiresAt ?? conn?.tokenStatus?.expiresAt ?? null,
+          scopes: Array.isArray(data.scopes) ? data.scopes : conn?.scopes ?? [],
+        });
+      } else {
+        setConnectionError(data?.error || data?.message || 'Failed to load connection status');
       }
+    } catch (error) {
+      console.error('Failed to fetch connection status:', error);
+      setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
+    } finally {
+      setLoading(false);
     }
-    fetchStatus();
   }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    const handler = () => fetchStatus();
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
+  }, [fetchStatus]);
 
   useEffect(() => {
     async function fetchEnvCheck() {
