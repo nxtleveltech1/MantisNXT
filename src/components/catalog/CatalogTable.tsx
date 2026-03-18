@@ -700,8 +700,11 @@ export function CatalogTable(props: CatalogTableProps = {}) {
       column.align === 'right' && 'text-right',
       column.align === 'center' && 'text-center',
       column.sortable && 'cursor-pointer hover:bg-muted/50',
-      // Sticky positioning
-      isSticky && 'sticky z-20 bg-background',
+      // Sticky header row (freeze column headings on scroll)
+      'sticky z-30 bg-card',
+      showGroupHeaders ? 'top-6' : 'top-0',
+      // Sticky left/right columns
+      isSticky && 'z-20',
       column.sticky === 'right' && 'right-0',
       // Shadow for sticky columns
       column.sticky === 'left' && scrollPosition.left > 0 && index === visibleColumns.filter(c => c.sticky === 'left').length - 1 && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]',
@@ -1393,7 +1396,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
         >
           <TooltipProvider delayDuration={300}>
             <Table className="border-collapse">
-              <TableHeader className="sticky top-0 z-30 bg-background">
+              <TableHeader>
                 {/* Optional group header row */}
                 {showGroupHeaders && (
                   <TableRow className="h-6 border-b-0">
@@ -1417,7 +1420,7 @@ export function CatalogTable(props: CatalogTableProps = {}) {
                           key={`group-${group.group}-${idx}`}
                           colSpan={group.colSpan}
                           className={cn(
-                            'text-center text-[10px] font-semibold py-1 px-1',
+                            'text-center text-[10px] font-semibold py-1 px-1 sticky top-0 z-30',
                             groupColors[group.group] || 'bg-muted',
                             isSticky && 'sticky left-0 z-20',
                             isRightSticky && 'sticky right-0 z-20'
