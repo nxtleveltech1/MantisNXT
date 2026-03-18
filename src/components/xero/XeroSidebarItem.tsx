@@ -2,7 +2,7 @@
 
 /**
  * Xero Sidebar Item with Status Indicator
- * 
+ *
  * Renders Xero sidebar item with connection status indicator
  */
 
@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { Circle } from 'lucide-react';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 interface XeroConnectionStatus {
   connected: boolean;
@@ -24,11 +25,11 @@ export function XeroSidebarItem() {
   useEffect(() => {
     async function fetchStatus() {
       try {
-        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-        const response = await fetch(url);
-        const ct = response.headers.get('content-type') ?? '';
-        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+        const response = await fetch(buildClientXeroUrl('/api/xero/connection'), {
+          headers: getClientXeroHeaders(),
+        });
+        const contentType = response.headers.get('content-type') ?? '';
+        const data = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
         if (response.ok && data) {
           setStatus({
             connected: data.connected || false,
@@ -39,7 +40,10 @@ export function XeroSidebarItem() {
         console.error('Failed to fetch Xero status:', error);
       }
     }
-    fetchStatus();
+
+    void fetchStatus();
+    window.addEventListener('org-changed', fetchStatus);
+    return () => window.removeEventListener('org-changed', fetchStatus);
   }, []);
 
   const getStatusColor = () => {
@@ -53,9 +57,7 @@ export function XeroSidebarItem() {
     <SidebarMenuSubButton asChild isActive={pathname === '/integrations/xero'}>
       <Link href="/integrations/xero" className="flex items-center gap-2">
         <span>Xero Accounting</span>
-        {status && (
-          <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />
-        )}
+        {status && <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />}
       </Link>
     </SidebarMenuSubButton>
   );

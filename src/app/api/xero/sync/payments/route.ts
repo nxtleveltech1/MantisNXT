@@ -8,30 +8,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import {
   syncPaymentToXero,
   fetchPaymentsFromXero,
 } from '@/lib/xero/sync/payments';
-import { hasActiveConnection } from '@/lib/xero/token-manager';
 import { handleApiError } from '@/lib/xero/errors';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    if (!userId || !orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized or no organization selected.' },
-        { status: 401 }
-      );
-    }
-    const isConnected = await hasActiveConnection(orgId);
-    if (!isConnected) {
-      return NextResponse.json(
-        { error: 'Not connected to Xero.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const invoiceType = request.nextUrl.searchParams.get('invoiceType') as
       | 'ACCPAY'
@@ -72,29 +60,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
-
-    const isConnected = await hasActiveConnection(orgId);
-    if (!isConnected) {
-      return NextResponse.json(
-        { error: 'Not connected to Xero. Please connect first.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const body = await request.json();
     const { type, data } = body as { 

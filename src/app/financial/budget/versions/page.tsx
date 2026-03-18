@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 type ListSource = 'nxt' | 'xero';
 
@@ -32,7 +33,9 @@ export default function BudgetVersionsPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/budgets');
+          const response = await fetch(buildClientXeroUrl('/api/xero/budgets'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && result.data) {
             const data = result.data as { data?: unknown[] };
@@ -113,4 +116,5 @@ export default function BudgetVersionsPage() {
     </AppLayout>
   );
 }
+
 

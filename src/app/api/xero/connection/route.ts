@@ -8,42 +8,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { getXeroConnection, hasActiveConnection } from '@/lib/xero/token-manager';
 import { isXeroConfigured } from '@/lib/xero/client';
 import { handleApiError } from '@/lib/xero/errors';
-
-// Accept any RFC 4122 UUID (8-4-4-4-12 hex). Org IDs like bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
-// are valid in DB but fail strict UUID v4 regex (version digit must be 1-5).
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isValidOrgId(value: string | null): boolean {
-  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
-}
+import { resolveXeroRequestContext } from '@/lib/xero/org-context';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId: clerkOrgId } = await auth();
+    const context = await resolveXeroRequestContext(request, {
+      requireUser: true,
+      requireOrg: true,
+      allowExplicitClerkMismatch: true,
+    });
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
+    if (context.error) {
+      return context.error;
     }
 
-    const orgId =
-      clerkOrgId ??
-      request.nextUrl.searchParams.get('org_id') ??
-      request.headers.get('x-org-id') ??
-      null;
-
-    if (!isValidOrgId(orgId)) {
-      return NextResponse.json(
-        { error: 'No organization selected. Use the org switcher or add ?org_id= to the URL.' },
-        { status: 400 }
-      );
-    }
+    const { orgId } = context;
 
     // Check if Xero is configured at application level
     const isConfigured = isXeroConfigured();

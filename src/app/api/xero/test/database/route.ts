@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/database';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function GET(request: NextRequest) {
   const results = {
@@ -17,22 +17,9 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    // Verify user authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { userId, orgId } = validation;
 
     console.log('[DB Test] Starting database tests for org:', orgId);
 
@@ -54,6 +41,8 @@ export async function GET(request: NextRequest) {
       };
       return NextResponse.json(results, { status: 500 });
     }
+
+    results.checks.auth = { userId: !!userId, orgId };
 
     // Test 2: Check if Xero tables exist
     const tablesToCheck = [

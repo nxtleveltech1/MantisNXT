@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/database';
 import { handleApiError } from '@/lib/xero/errors';
+import { validateXeroRequest } from '@/lib/xero/validation';
 import type { XeroAccountMappingKey } from '@/lib/xero/types';
 
 interface AccountMapping {
@@ -24,23 +24,11 @@ interface AccountMapping {
 /**
  * GET - Retrieve current account mappings
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Get default mapping keys with current mappings
     const result = await query<{
@@ -94,21 +82,9 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const body = await request.json();
     const { mappings } = body as { 

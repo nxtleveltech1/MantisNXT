@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { type ARCustomerInvoice } from '@/lib/services/financial';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
@@ -49,7 +50,9 @@ export default function ARInvoicesPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/sync/invoices?type=ACCREC');
+          const response = await fetch(buildClientXeroUrl('/api/xero/sync/invoices?type=ACCREC'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
             setInvoices(result.data);
@@ -195,3 +198,4 @@ export default function ARInvoicesPage() {
     </AppLayout>
   );
 }
+

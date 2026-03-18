@@ -8,34 +8,25 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { revokeConnection, hasActiveConnection, getXeroConnection } from '@/lib/xero/token-manager';
 import { getXeroClient } from '@/lib/xero/client';
 import { decryptPII } from '@/lib/security/encryption';
 import { handleApiError } from '@/lib/xero/errors';
-
-// Accept any RFC 4122 UUID. Org IDs like bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb fail strict UUID v4.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isValidOrgId(value: string | null): boolean {
-  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
-}
+import { resolveXeroRequestContext } from '@/lib/xero/org-context';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId: clerkOrgId } = await auth();
-    const orgId = clerkOrgId ?? request.headers.get('x-org-id') ?? null;
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
+    const context = await resolveXeroRequestContext(request, {
+      requireUser: true,
+      requireOrg: true,
+      allowExplicitClerkMismatch: true,
+    });
+
+    if (context.error) {
+      return context.error;
     }
-    if (!isValidOrgId(orgId)) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+
+    const { orgId } = context;
 
     // Check if connected
     const isConnected = await hasActiveConnection(orgId);
@@ -68,7 +59,8 @@ export async function POST(request: NextRequest) {
         // Xero doesn't have a direct revoke endpoint, but we can 
         // disconnect the app from the user's side by invalidating our stored tokens
         // The user can also revoke from their Xero account settings
-        
+        void xero;
+        void refreshToken;
         console.log('[Xero Disconnect] Revoking connection for tenant:', connection.xeroTenantName);
       } catch (revokeError) {
         // Log but don't fail - we still want to remove local connection

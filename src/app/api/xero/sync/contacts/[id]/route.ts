@@ -8,7 +8,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { syncSupplierToXero, syncCustomerToXero } from '@/lib/xero/sync/contacts';
 import { validateXeroRequest, successResponse } from '@/lib/xero/validation';
 import { handleApiError } from '@/lib/xero/errors';
@@ -21,14 +20,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Try to fetch as supplier first
     const supplierResult = await query<Supplier>(
@@ -145,14 +139,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Check sync status
     const result = await query<{
@@ -183,3 +172,5 @@ export async function GET(
     return handleApiError(error, 'Xero Contact Status');
   }
 }
+
+

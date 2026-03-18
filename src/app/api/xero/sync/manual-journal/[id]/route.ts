@@ -2,32 +2,27 @@
  * Xero Single Manual Journal Sync API
  *
  * POST /api/xero/sync/manual-journal/[id]
- * GET /api/xero/sync/manual-journal/[id] — sync status
+ * GET /api/xero/sync/manual-journal/[id] - sync status
  *
  * Sync a single NXT journal entry to Xero as a manual journal.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { syncManualJournalToXero } from '@/lib/xero/sync/manual-journals';
 import { handleApiError } from '@/lib/xero/errors';
 import { query } from '@/lib/database';
 import { GLService } from '@/lib/services/financial';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const entry = await GLService.getJournalEntryById(id, orgId);
     if (!entry) {
@@ -84,19 +79,14 @@ export async function POST(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const result = await query<{
       xero_entity_id: string;

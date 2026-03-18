@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -43,7 +44,9 @@ export default function ARAgingPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/reports/aged-receivables?parsed=true');
+          const response = await fetch(buildClientXeroUrl('/api/xero/reports/aged-receivables?parsed=true'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && result.data?.contacts) {
             setAgingData(
@@ -236,4 +239,5 @@ export default function ARAgingPage() {
     </AppLayout>
   );
 }
+
 

@@ -2,31 +2,26 @@
  * Xero Single Payment Sync API
  *
  * POST /api/xero/sync/payment/[id]
- * GET /api/xero/sync/payment/[id] — sync status
+ * GET /api/xero/sync/payment/[id] - sync status
  *
  * Sync a single payment (AP payment or AR receipt) by NXT ID to Xero.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { syncPaymentToXero } from '@/lib/xero/sync/payments';
 import { handleApiError } from '@/lib/xero/errors';
 import { query } from '@/lib/database';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Try AP payment first
     const apPayment = await query<{
@@ -112,19 +107,14 @@ export async function POST(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const result = await query<{
       xero_entity_id: string;

@@ -8,10 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { getXeroClient, getAppUrl } from '@/lib/xero/client';
 import { saveTokenSet } from '@/lib/xero/token-manager';
 import type { XeroTenant } from '@/lib/xero/types';
+import { appendOrgId, resolveXeroRequestContext } from '@/lib/xero/org-context';
 
 /**
  * Parse and validate state parameter
@@ -63,6 +63,10 @@ function parseState(state: string): { orgId: string; nonce: string; timestamp: n
   }
 }
 
+function integrationUrl(appUrl: string, orgId?: string | null) {
+  return appendOrgId(new URL('/integrations/xero', appUrl), orgId);
+}
+
 export async function GET(request: NextRequest) {
   const appUrl = getAppUrl();
   const searchParams = request.nextUrl.searchParams;
@@ -85,7 +89,7 @@ export async function GET(request: NextRequest) {
   // Handle OAuth errors from Xero
   if (error) {
     console.error('[Xero Callback] OAuth error from Xero:', { error, errorDescription });
-    const errorUrl = new URL('/integrations/xero', appUrl);
+    const errorUrl = integrationUrl(appUrl);
     errorUrl.searchParams.set('xero_error', error);
     errorUrl.searchParams.set('xero_error_description', errorDescription || 'Authorization failed');
     return NextResponse.redirect(errorUrl);
@@ -94,14 +98,14 @@ export async function GET(request: NextRequest) {
   // Validate required parameters
   if (!code) {
     console.error('[Xero Callback] Missing authorization code');
-    const errorUrl = new URL('/integrations/xero', appUrl);
+    const errorUrl = integrationUrl(appUrl);
     errorUrl.searchParams.set('xero_error', 'missing_code');
     return NextResponse.redirect(errorUrl);
   }
 
   if (!state) {
     console.error('[Xero Callback] Missing state parameter');
-    const errorUrl = new URL('/integrations/xero', appUrl);
+    const errorUrl = integrationUrl(appUrl);
     errorUrl.searchParams.set('xero_error', 'missing_state');
     return NextResponse.redirect(errorUrl);
   }
@@ -111,32 +115,44 @@ export async function GET(request: NextRequest) {
   const statePayload = parseState(state);
   if (!statePayload) {
     console.error('[Xero Callback] Invalid state parameter');
-    const errorUrl = new URL('/integrations/xero', appUrl);
+    const errorUrl = integrationUrl(appUrl);
     errorUrl.searchParams.set('xero_error', 'invalid_state');
     return NextResponse.redirect(errorUrl);
   }
 
   console.log('[Xero Callback] State validated for org:', statePayload.orgId);
 
-  // Verify user is authenticated and matches state org
+  // Verify user is authenticated and inspect current org context
   console.log('[Xero Callback] Verifying user authentication');
-  const { userId, orgId } = await auth();
+  const context = await resolveXeroRequestContext(request, {
+    requireUser: false,
+    requireOrg: false,
+    allowExplicitClerkMismatch: true,
+  });
 
-  if (!userId) {
+  if (!context.userId) {
     console.log('[Xero Callback] User not authenticated - redirecting to sign-in');
     const errorUrl = new URL('/sign-in', appUrl);
     errorUrl.searchParams.set('redirect_url', '/integrations/xero');
     return NextResponse.redirect(errorUrl);
   }
 
-  if (!orgId || orgId !== statePayload.orgId) {
-    console.error('[Xero Callback] Organization mismatch:', { authOrgId: orgId, stateOrgId: statePayload.orgId });
-    const errorUrl = new URL('/integrations/xero', appUrl);
-    errorUrl.searchParams.set('xero_error', 'org_mismatch');
+  if (context.explicitOrgId && context.explicitOrgId !== statePayload.orgId) {
+    console.error('[Xero Callback] Organization context changed:', {
+      explicitOrgId: context.explicitOrgId,
+      clerkOrgId: context.clerkOrgId,
+      stateOrgId: statePayload.orgId,
+    });
+    const errorUrl = integrationUrl(appUrl, statePayload.orgId);
+    errorUrl.searchParams.set('xero_error', 'org_context_changed');
+    errorUrl.searchParams.set(
+      'xero_error_description',
+      'The selected organization changed during the Xero connection flow. Switch back to the same organization and try again.'
+    );
     return NextResponse.redirect(errorUrl);
   }
 
-  console.log('[Xero Callback] User authenticated for org:', orgId);
+  console.log('[Xero Callback] User authenticated for org:', statePayload.orgId);
 
   try {
     console.log('[Xero Callback] Initializing Xero client');
@@ -155,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     if (!tenants || tenants.length === 0) {
       console.error('[Xero Callback] No tenants available');
-      const errorUrl = new URL('/integrations/xero', appUrl);
+      const errorUrl = integrationUrl(appUrl, statePayload.orgId);
       errorUrl.searchParams.set('xero_error', 'no_tenants');
       return NextResponse.redirect(errorUrl);
     }
@@ -166,12 +182,12 @@ export async function GET(request: NextRequest) {
     console.log('[Xero Callback] Selected tenant:', tenant.tenantName, tenant.tenantId);
 
     console.log('[Xero Callback] Saving token set to database');
-    await saveTokenSet(orgId, tokenSet, tenant);
+    await saveTokenSet(statePayload.orgId, tokenSet, tenant);
 
     console.log('[Xero Callback] Successfully connected to Xero tenant:', tenant.tenantName);
 
     // Redirect to success page
-    const successUrl = new URL('/integrations/xero', appUrl);
+    const successUrl = integrationUrl(appUrl, statePayload.orgId);
     successUrl.searchParams.set('xero_connected', 'true');
     successUrl.searchParams.set('xero_tenant', tenant.tenantName || '');
     return NextResponse.redirect(successUrl);
@@ -179,7 +195,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[Xero Callback] Error exchanging code for tokens:', err);
 
-    const errorUrl = new URL('/integrations/xero', appUrl);
+    const errorUrl = integrationUrl(appUrl, statePayload.orgId);
     errorUrl.searchParams.set('xero_error', 'token_exchange_failed');
     errorUrl.searchParams.set(
       'xero_error_description',

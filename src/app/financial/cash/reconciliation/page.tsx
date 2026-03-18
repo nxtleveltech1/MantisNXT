@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 interface Reconciliation {
   id: string;
@@ -49,7 +50,7 @@ export default function BankReconciliationPage() {
       }
     }
 
-    fetchReconciliations();
+    void fetchReconciliations();
   }, []);
 
   async function fetchFromXero() {
@@ -59,7 +60,10 @@ export default function BankReconciliationPage() {
       const from = new Date();
       from.setMonth(from.getMonth() - 1);
       const response = await fetch(
-        `/api/xero/bank-transactions?fromDate=${from.toISOString().split('T')[0]}&toDate=${new Date().toISOString().split('T')[0]}`
+        buildClientXeroUrl(
+          `/api/xero/bank-transactions?fromDate=${from.toISOString().split('T')[0]}&toDate=${new Date().toISOString().split('T')[0]}`
+        ),
+        { headers: getClientXeroHeaders() }
       );
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
@@ -125,7 +129,7 @@ export default function BankReconciliationPage() {
             ) : (
               <div className="space-y-2">
                 {reconciliations.map((rec) => (
-                  <div key={rec.id} className="flex items-center justify-between p-3 border rounded">
+                  <div key={rec.id} className="flex items-center justify-between rounded border p-3">
                     <div>
                       <div className="font-medium">{rec.bank_account_name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -142,7 +146,7 @@ export default function BankReconciliationPage() {
                           }).format(rec.difference)}
                         </span>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(rec.status)}`}>
+                      <span className={`rounded-full px-2 py-1 text-xs ${getStatusBadge(rec.status)}`}>
                         {rec.status.replace('_', ' ')}
                       </span>
                     </div>
@@ -172,4 +176,3 @@ export default function BankReconciliationPage() {
     </AppLayout>
   );
 }
-

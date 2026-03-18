@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { type APVendorInvoice } from '@/lib/services/financial';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
@@ -48,7 +49,9 @@ export default function APInvoicesPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/sync/invoices?type=ACCPAY');
+          const response = await fetch(buildClientXeroUrl('/api/xero/sync/invoices?type=ACCPAY'), {
+            headers: getClientXeroHeaders(),
+          });
           const ct = response.headers.get('content-type') ?? '';
           const result =
             ct.includes('application/json')
@@ -196,3 +199,4 @@ export default function APInvoicesPage() {
     </AppLayout>
   );
 }
+

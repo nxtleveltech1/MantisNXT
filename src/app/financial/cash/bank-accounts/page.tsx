@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 type ListSource = 'nxt' | 'xero';
 
@@ -39,7 +40,9 @@ export default function BankAccountsPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/accounts');
+          const response = await fetch(buildClientXeroUrl('/api/xero/accounts'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && Array.isArray(result.accounts)) {
             const bank = result.accounts.filter((a: { type?: string }) => a.type === 'BANK');
@@ -152,4 +155,5 @@ export default function BankAccountsPage() {
     </AppLayout>
   );
 }
+
 

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
 type ListSource = 'nxt' | 'xero';
@@ -47,7 +48,9 @@ export default function APCreditNotesPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/sync/credit-notes?type=ACCPAYCREDIT');
+          const response = await fetch(buildClientXeroUrl('/api/xero/sync/credit-notes?type=ACCPAYCREDIT'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
             setCreditNotes(
@@ -167,4 +170,5 @@ export default function APCreditNotesPage() {
     </AppLayout>
   );
 }
+
 

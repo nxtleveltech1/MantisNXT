@@ -8,10 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { buildConsentUrl, isXeroConfigured } from '@/lib/xero/client';
 import { hasActiveConnection } from '@/lib/xero/token-manager';
 import { handleApiError } from '@/lib/xero/errors';
+import { resolveXeroRequestContext } from '@/lib/xero/org-context';
 import crypto from 'crypto';
 
 /**
@@ -23,36 +23,30 @@ function generateState(orgId: string): string {
   return Buffer.from(JSON.stringify(payload)).toString('base64url');
 }
 
-// Accept any RFC 4122 UUID. Org IDs like bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb fail strict UUID v4.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isValidOrgId(value: string | null): boolean {
-  return typeof value === 'string' && value.length > 0 && UUID_REGEX.test(value);
-}
-
 export async function GET(request: NextRequest) {
   console.log('[Xero Auth] Starting OAuth initiation request');
 
   try {
-    const { userId, orgId: clerkOrgId } = await auth();
-    const orgId = clerkOrgId ?? request.nextUrl.searchParams.get('org_id') ?? null;
-    console.log('[Xero Auth] Authentication check:', { userId: !!userId, orgId: !!orgId });
+    const context = await resolveXeroRequestContext(request, {
+      requireUser: true,
+      requireOrg: true,
+      allowExplicitClerkMismatch: false,
+    });
 
-    if (!userId) {
-      console.log('[Xero Auth] No user ID - unauthorized');
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
+    console.log('[Xero Auth] Authentication check:', {
+      userId: !!context.userId,
+      orgId: !!context.orgId,
+      explicitOrgId: context.explicitOrgId,
+      clerkOrgId: context.clerkOrgId,
+      hasMismatch: context.hasMismatch,
+    });
+
+    if (context.error) {
+      console.log('[Xero Auth] Request context invalid');
+      return context.error;
     }
 
-    if (!isValidOrgId(orgId)) {
-      console.log('[Xero Auth] No valid org ID');
-      return NextResponse.json(
-        { error: 'No organization selected. Please select an organization or pass org_id.' },
-        { status: 400 }
-      );
-    }
-
+    const { orgId } = context;
     console.log('[Xero Auth] User authenticated for org:', orgId);
 
     // Check if Xero is configured

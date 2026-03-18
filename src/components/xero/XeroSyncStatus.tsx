@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
 import type { XeroSyncEntityType } from './xero-sync-utils';
 
@@ -33,7 +34,9 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
     async function fetchStatus() {
       try {
         const pathSegment = getXeroSyncPathSegment(entityType);
-        const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`);
+        const response = await fetch(buildClientXeroUrl(`/api/xero/sync/${pathSegment}/${entityId}`), {
+          headers: getClientXeroHeaders(),
+        });
         const data = await safeParseJson<SyncStatus>(response);
         if (response.ok && data) {
           setStatus(data);
@@ -45,13 +48,13 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
       }
     }
 
-    fetchStatus();
+    void fetchStatus();
   }, [entityType, entityId]);
 
   if (loading) {
     return (
       <Badge variant="secondary" className={className}>
-        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
         Checking...
       </Badge>
     );
@@ -60,7 +63,7 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
   if (!status) {
     return (
       <Badge variant="secondary" className={className}>
-        <Clock className="h-3 w-3 mr-1" />
+        <Clock className="mr-1 h-3 w-3" />
         Not Synced
       </Badge>
     );
@@ -69,7 +72,7 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
   if (status.error) {
     return (
       <Badge variant="destructive" className={className}>
-        <XCircle className="h-3 w-3 mr-1" />
+        <XCircle className="mr-1 h-3 w-3" />
         Error
       </Badge>
     );
@@ -78,7 +81,7 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
   if (status.synced && status.xeroEntityId) {
     return (
       <Badge variant="default" className={className}>
-        <CheckCircle className="h-3 w-3 mr-1" />
+        <CheckCircle className="mr-1 h-3 w-3" />
         Synced
       </Badge>
     );
@@ -86,7 +89,7 @@ export function XeroSyncStatus({ entityType, entityId, className }: XeroSyncStat
 
   return (
     <Badge variant="secondary" className={className}>
-      <Clock className="h-3 w-3 mr-1" />
+      <Clock className="mr-1 h-3 w-3" />
       Not Synced
     </Badge>
   );

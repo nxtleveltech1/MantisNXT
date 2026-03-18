@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 export default function CostCentersPage() {
   const { isConnected: xeroConnected } = useXeroConnection();
@@ -20,7 +21,9 @@ export default function CostCentersPage() {
     if (!xeroConnected) return;
     setLoading(true);
     try {
-      const response = await fetch('/api/xero/tracking-categories');
+      const response = await fetch(buildClientXeroUrl('/api/xero/tracking-categories'), {
+      headers: getClientXeroHeaders(),
+    });
       const result = await response.json();
       const data = result.data as { data?: unknown[] } | undefined;
         if (result.success && Array.isArray(data?.data)) {
@@ -77,4 +80,5 @@ export default function CostCentersPage() {
     </AppLayout>
   );
 }
+
 

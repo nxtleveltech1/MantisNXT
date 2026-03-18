@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 export function useXeroConnection() {
   const [isConnected, setIsConnected] = useState(false);
@@ -9,11 +10,11 @@ export function useXeroConnection() {
   useEffect(() => {
     async function check() {
       try {
-        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-        const res = await fetch(url);
-        const ct = res.headers.get('content-type') ?? '';
-        const data = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+        const response = await fetch(buildClientXeroUrl('/api/xero/connection'), {
+          headers: getClientXeroHeaders(),
+        });
+        const contentType = response.headers.get('content-type') ?? '';
+        const data = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
         setIsConnected(data?.isConnected === true || data?.connected === true);
       } catch {
         setIsConnected(false);
@@ -21,7 +22,16 @@ export function useXeroConnection() {
         setLoading(false);
       }
     }
-    check();
+
+    void check();
+
+    const handler = () => {
+      setLoading(true);
+      void check();
+    };
+
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
   }, []);
 
   return { isConnected, loading };

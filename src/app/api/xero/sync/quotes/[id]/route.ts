@@ -8,7 +8,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { QuotationService } from '@/lib/services/sales';
 import { syncQuoteToXero } from '@/lib/xero/sync/quotes';
 import { validateXeroRequest, successResponse } from '@/lib/xero/validation';
@@ -21,14 +20,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const quotation = await QuotationService.getQuotationById(id, orgId);
     if (!quotation) {
@@ -73,14 +67,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Check sync status
     const result = await query<{
@@ -111,3 +100,5 @@ export async function GET(
     return handleApiError(error, 'Xero Quote Status');
   }
 }
+
+

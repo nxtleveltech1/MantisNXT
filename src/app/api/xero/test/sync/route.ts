@@ -7,9 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { fetchContactsFromXero, syncSupplierToXero } from '@/lib/xero/sync/contacts';
 import { fetchInvoicesFromXero } from '@/lib/xero/sync/invoices';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function GET(request: NextRequest) {
   const results = {
@@ -18,24 +18,12 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    // Verify user authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { userId, orgId } = validation;
 
     console.log('[Sync Test] Starting sync operations test for org:', orgId);
+    results.checks.auth = { userId: !!userId, orgId };
 
     // Test 1: Fetch contacts from Xero
     try {

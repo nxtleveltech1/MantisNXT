@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { type JournalEntry } from '@/lib/services/financial';
 import { XeroSyncButton, XeroSyncStatus, XeroEntityLink } from '@/components/xero';
 
@@ -37,7 +38,9 @@ export default function JournalEntriesPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/sync/manual-journals');
+          const response = await fetch(buildClientXeroUrl('/api/xero/sync/manual-journals'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
             setEntries(result.data as JournalEntry[]);
@@ -150,3 +153,4 @@ export default function JournalEntriesPage() {
     </AppLayout>
   );
 }
+

@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
 import type { XeroSyncEntityType } from './xero-sync-utils';
 
@@ -39,9 +40,12 @@ export function XeroSyncButton({
 
     try {
       const pathSegment = getXeroSyncPathSegment(entityType);
-      const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`, {
+      const response = await fetch(buildClientXeroUrl(`/api/xero/sync/${pathSegment}/${entityId}`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getClientXeroHeaders(),
+        },
       });
 
       const data = await safeParseJson<{ success?: boolean; xeroEntityId?: string; error?: string }>(response);
@@ -80,13 +84,7 @@ export function XeroSyncButton({
   };
 
   return (
-    <Button
-      onClick={handleSync}
-      disabled={syncing}
-      variant={variant}
-      size={size}
-      className={className}
-    >
+    <Button onClick={handleSync} disabled={syncing} variant={variant} size={size} className={className}>
       {getIcon()}
       <span className={size === 'icon' ? 'sr-only' : 'ml-2'}>
         {syncing ? 'Syncing...' : lastResult?.success ? 'Synced' : 'Sync to Xero'}

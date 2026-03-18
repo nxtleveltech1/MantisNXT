@@ -7,39 +7,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { 
   syncPurchaseOrderToXero,
   fetchPurchaseOrdersFromXero,
 } from '@/lib/xero/sync/purchase-orders';
-import { hasActiveConnection } from '@/lib/xero/token-manager';
 import { handleApiError } from '@/lib/xero/errors';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
-
-    const isConnected = await hasActiveConnection(orgId);
-    if (!isConnected) {
-      return NextResponse.json(
-        { error: 'Not connected to Xero. Please connect first.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const body = await request.json();
     const { type, data } = body as { 

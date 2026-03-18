@@ -12,7 +12,6 @@ import {
   AlertCircle,
   Clock,
   Calculator,
-  RefreshCw,
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { buildClientXeroUrl, getClientXeroHeaders, getClientXeroOrgId } from '@/lib/xero/client-org';
 
 interface XeroConnectionStatus {
   isConfigured: boolean;
@@ -48,26 +48,32 @@ export default function IntegrationsPage() {
   const [xeroStatus, setXeroStatus] = useState<XeroConnectionStatus | null>(null);
   const [isLoadingXero, setIsLoadingXero] = useState(true);
 
-  // Fetch Xero connection status
   useEffect(() => {
     async function fetchXeroStatus() {
       try {
-        const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-        const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-        const response = await fetch(url);
-        const ct = response.headers.get('content-type') ?? '';
-        const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
-        if (response.ok && data) setXeroStatus(data);
+        const response = await fetch(buildClientXeroUrl('/api/xero/connection'), {
+          headers: getClientXeroHeaders(),
+        });
+        const contentType = response.headers.get('content-type') ?? '';
+        const data = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
+        if (response.ok && data) {
+          setXeroStatus(data);
+        }
       } catch (error) {
         console.error('Failed to fetch Xero status:', error);
       } finally {
         setIsLoadingXero(false);
       }
     }
-    fetchXeroStatus();
+
+    void fetchXeroStatus();
+    window.addEventListener('org-changed', fetchXeroStatus);
+    return () => window.removeEventListener('org-changed', fetchXeroStatus);
   }, []);
 
-  // Static integrations (WooCommerce, Odoo) - would fetch from API in production
+  const xeroOrgId = getClientXeroOrgId();
+  const xeroHref = xeroOrgId ? `/integrations/xero?org_id=${encodeURIComponent(xeroOrgId)}` : '/integrations/xero';
+
   const staticIntegrations: Integration[] = [
     {
       id: '1',
@@ -97,7 +103,6 @@ export default function IntegrationsPage() {
     },
   ];
 
-  // Build Xero integration from connection status
   const xeroIntegration: Integration | null = xeroStatus?.isConnected
     ? {
         id: 'xero',
@@ -105,7 +110,7 @@ export default function IntegrationsPage() {
         provider: 'xero',
         status: 'active',
         lastSync: xeroStatus.lastSyncAt,
-        syncFrequency: null, // On-demand sync
+        syncFrequency: null,
         stats: {
           contacts: 0,
           invoices: 0,
@@ -114,11 +119,7 @@ export default function IntegrationsPage() {
       }
     : null;
 
-  // Combine all integrations
-  const integrations: Integration[] = [
-    ...(xeroIntegration ? [xeroIntegration] : []),
-    ...staticIntegrations,
-  ];
+  const integrations: Integration[] = [...(xeroIntegration ? [xeroIntegration] : []), ...staticIntegrations];
 
   const getProviderIcon = (provider: string) => {
     switch (provider) {
@@ -154,16 +155,12 @@ export default function IntegrationsPage() {
       inactive: 'outline',
     };
 
-    return (
-      <Badge variant={variants[status] || 'outline'}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+    return <Badge variant={variants[status] || 'outline'}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
   };
 
   const formatLastSync = (lastSync: string | null) => {
     if (!lastSync) return 'Never';
-    
+
     const date = new Date(lastSync);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -175,17 +172,14 @@ export default function IntegrationsPage() {
     return `${Math.floor(diffMins / 1440)} days ago`;
   };
 
-  const activeCount = integrations.filter(i => i.status === 'active').length;
+  const activeCount = integrations.filter((integration) => integration.status === 'active').length;
 
   return (
-    <AppLayout title="System Integrations" breadcrumbs={[{ label: 'Integrations' }]}>
+    <AppLayout title="System Integrations" breadcrumbs={[{ label: 'Integrations' }]}> 
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground">
-              Connect and sync MantisNXT with external systems
-            </p>
+            <p className="text-muted-foreground">Connect and sync MantisNXT with external systems</p>
           </div>
 
           <DropdownMenu>
@@ -197,7 +191,7 @@ export default function IntegrationsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/integrations/xero" className="cursor-pointer">
+                <Link href={xeroHref} className="cursor-pointer">
                   <Calculator className="mr-2 h-4 w-4" />
                   Xero Accounting
                 </Link>
@@ -218,29 +212,26 @@ export default function IntegrationsPage() {
           </DropdownMenu>
         </div>
 
-        {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Integrations</CardTitle>
-              <Plug className="text-muted-foreground h-4 w-4" />
+              <Plug className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeCount}</div>
-              <p className="text-muted-foreground text-xs">
-                of {integrations.length} configured
-              </p>
+              <p className="text-xs text-muted-foreground">of {integrations.length} configured</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Last 24 Hours</CardTitle>
-              <Clock className="text-muted-foreground h-4 w-4" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,247</div>
-              <p className="text-muted-foreground text-xs">records synced</p>
+              <p className="text-xs text-muted-foreground">records synced</p>
             </CardContent>
           </Card>
 
@@ -251,7 +242,7 @@ export default function IntegrationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">99.8%</div>
-              <p className="text-muted-foreground text-xs">across all integrations</p>
+              <p className="text-xs text-muted-foreground">across all integrations</p>
             </CardContent>
           </Card>
 
@@ -262,12 +253,11 @@ export default function IntegrationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">2</div>
-              <p className="text-muted-foreground text-xs">require attention</p>
+              <p className="text-xs text-muted-foreground">require attention</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Xero Quick Setup Card (if not connected) */}
         {!isLoadingXero && xeroStatus?.isConfigured && !xeroStatus?.isConnected && (
           <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
             <CardHeader>
@@ -285,7 +275,7 @@ export default function IntegrationsPage() {
             </CardHeader>
             <CardContent>
               <Button asChild>
-                <Link href="/integrations/xero">
+                <Link href={xeroHref}>
                   <Plug className="mr-2 h-4 w-4" />
                   Set Up Xero Integration
                 </Link>
@@ -294,9 +284,8 @@ export default function IntegrationsPage() {
           </Card>
         )}
 
-        {/* Integration Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-          {integrations.map(integration => (
+          {integrations.map((integration) => (
             <Card key={integration.id} className="transition-shadow hover:shadow-lg">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -317,11 +306,10 @@ export default function IntegrationsPage() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {/* Sync Stats */}
                 <div className="grid grid-cols-2 gap-4">
                   {Object.entries(integration.stats).map(([key, value]) => (
                     <div key={key} className="space-y-1">
-                      <p className="text-muted-foreground text-sm capitalize">
+                      <p className="text-sm capitalize text-muted-foreground">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </p>
                       <p className="text-2xl font-bold">{value}</p>
@@ -329,7 +317,6 @@ export default function IntegrationsPage() {
                   ))}
                 </div>
 
-                {/* Sync Frequency / Actions */}
                 <div className="flex items-center justify-between border-t pt-4">
                   <div className="text-sm">
                     {integration.syncFrequency ? (
@@ -342,20 +329,21 @@ export default function IntegrationsPage() {
                     )}
                   </div>
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/integrations/${integration.provider}`}>Manage</Link>
+                    <Link href={integration.provider === 'xero' ? xeroHref : `/integrations/${integration.provider}`}>
+                      Manage
+                    </Link>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-          {/* Add New Integration Card */}
           {integrations.length === 0 && (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Plug className="text-muted-foreground mb-4 h-12 w-12" />
+                <Plug className="mb-4 h-12 w-12 text-muted-foreground" />
                 <h3 className="mb-2 text-lg font-semibold">No integrations yet</h3>
-                <p className="text-muted-foreground mb-4 text-center text-sm">
+                <p className="mb-4 text-center text-sm text-muted-foreground">
                   Connect your first external system to start syncing data
                 </p>
                 <DropdownMenu>
@@ -367,7 +355,7 @@ export default function IntegrationsPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center">
                     <DropdownMenuItem asChild>
-                      <Link href="/integrations/xero">
+                      <Link href={xeroHref}>
                         <Calculator className="mr-2 h-4 w-4" />
                         Xero Accounting
                       </Link>
@@ -391,13 +379,10 @@ export default function IntegrationsPage() {
           )}
         </div>
 
-        {/* Recent Activity */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Sync Activity</CardTitle>
-            <CardDescription>
-              Latest synchronization operations across all integrations
-            </CardDescription>
+            <CardDescription>Latest synchronization operations across all integrations</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -435,10 +420,7 @@ export default function IntegrationsPage() {
                   integration: 'Odoo Production',
                 },
               ].map((activity, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between border-b py-2 last:border-0"
-                >
+                <div key={index} className="flex items-center justify-between border-b py-2 last:border-0">
                   <div className="flex items-center gap-3">
                     {activity.status === 'completed' ? (
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -449,8 +431,8 @@ export default function IntegrationsPage() {
                       <p className="text-sm font-medium">
                         {activity.operation} {activity.count} {activity.entity}
                       </p>
-                      <p className="text-muted-foreground text-xs">
-                        {activity.integration} • {activity.time}
+                      <p className="text-xs text-muted-foreground">
+                        {activity.integration} - {activity.time}
                       </p>
                     </div>
                   </div>

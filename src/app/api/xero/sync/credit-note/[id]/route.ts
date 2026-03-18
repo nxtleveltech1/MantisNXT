@@ -2,31 +2,26 @@
  * Xero Single Credit Note Sync API
  *
  * POST /api/xero/sync/credit-note/[id]
- * GET /api/xero/sync/credit-note/[id] — sync status
+ * GET /api/xero/sync/credit-note/[id] - sync status
  *
  * Sync a single credit note (AP or AR) by NXT ID to Xero.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { syncCreditNoteToXero } from '@/lib/xero/sync/credit-notes';
 import { handleApiError } from '@/lib/xero/errors';
 import { query } from '@/lib/database';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Try AP credit note first
     const apCn = await query<{
@@ -116,19 +111,14 @@ export async function POST(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     const result = await query<{
       xero_entity_id: string;

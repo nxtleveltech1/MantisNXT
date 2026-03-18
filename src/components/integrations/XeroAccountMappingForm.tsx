@@ -2,16 +2,17 @@
 
 /**
  * Xero Account Mapping Form
- * 
+ *
  * UI for configuring NXT account type to Xero account code mappings.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { setStoredOrg } from '@/lib/org/current-org';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, Save, RefreshCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -34,6 +35,17 @@ interface AccountMapping {
   isRequired: boolean;
 }
 
+function getFriendlyXeroErrorMessage(errorCode: string | null, fallback?: string | null) {
+  switch (errorCode) {
+    case 'org_context_mismatch':
+      return 'The selected organization does not match your active authenticated organization. Switch to the same organization and try again.';
+    case 'missing_org':
+      return 'No organization selected. Choose an organization in the header and try again.';
+    default:
+      return fallback || errorCode || 'Failed to load Xero data';
+  }
+}
+
 export function XeroAccountMappingForm() {
   const [accounts, setAccounts] = useState<XeroAccount[]>([]);
   const [mappings, setMappings] = useState<AccountMapping[]>([]);
@@ -42,22 +54,54 @@ export function XeroAccountMappingForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getOrgId = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+
+    const storedOrgId = localStorage.getItem('org_id');
+    const urlOrgId = new URLSearchParams(window.location.search).get('org_id');
+    const orgId = storedOrgId || urlOrgId || null;
+
+    if (urlOrgId && !storedOrgId) {
+      setStoredOrg(urlOrgId, 'From URL');
+    }
+
+    return orgId;
+  }, []);
+
+  const buildApiUrl = useCallback(
+    (path: string) => {
+      const orgId = getOrgId();
+      if (!orgId) return path;
+
+      const separator = path.includes('?') ? '&' : '?';
+      return `${path}${separator}org_id=${encodeURIComponent(orgId)}`;
+    },
+    [getOrgId]
+  );
+
+  const getOrgHeaders = useCallback((): HeadersInit => {
+    const orgId = getOrgId();
+    return orgId ? { 'X-Org-Id': orgId } : {};
+  }, [getOrgId]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Fetch accounts and mappings in parallel
       const [accountsRes, mappingsRes] = await Promise.all([
-        fetch('/api/xero/accounts'),
-        fetch('/api/xero/mappings'),
+        fetch(buildApiUrl('/api/xero/accounts'), { headers: getOrgHeaders() }),
+        fetch(buildApiUrl('/api/xero/mappings'), { headers: getOrgHeaders() }),
       ]);
 
       const accountsData = await accountsRes.json();
       const mappingsData = await mappingsRes.json();
 
       if (!accountsRes.ok) {
-        const msg = accountsData.error || accountsData.message || 'Failed to fetch accounts';
+        const msg = getFriendlyXeroErrorMessage(
+          typeof accountsData?.error === 'string' ? accountsData.error : null,
+          accountsData?.error || accountsData?.message || 'Failed to fetch accounts'
+        );
         const friendly = msg.toLowerCase().includes('not connected')
           ? 'Connect to Xero first to load accounts and configure mappings.'
           : msg;
@@ -65,7 +109,10 @@ export function XeroAccountMappingForm() {
       }
 
       if (!mappingsRes.ok) {
-        const msg = mappingsData.error || mappingsData.message || 'Failed to fetch mappings';
+        const msg = getFriendlyXeroErrorMessage(
+          typeof mappingsData?.error === 'string' ? mappingsData.error : null,
+          mappingsData?.error || mappingsData?.message || 'Failed to fetch mappings'
+        );
         const friendly = msg.toLowerCase().includes('not connected')
           ? 'Connect to Xero first to load mappings.'
           : msg;
@@ -76,7 +123,6 @@ export function XeroAccountMappingForm() {
       setAccounts(accountList);
       setMappings(mappingsData.mappings || []);
 
-      // Initialize selected mappings from current config
       const initial: Record<string, { id: string; code: string; name: string }> = {};
       for (const mapping of mappingsData.mappings || []) {
         if (mapping.xeroAccountId && mapping.xeroAccountCode) {
@@ -88,7 +134,6 @@ export function XeroAccountMappingForm() {
         }
       }
       setSelectedMappings(initial);
-
     } catch (err) {
       console.error('Failed to fetch Xero data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -97,16 +142,25 @@ export function XeroAccountMappingForm() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [buildApiUrl, getOrgHeaders]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const handler = () => {
+      void fetchData();
+    };
+
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
   }, [fetchData]);
 
   const handleAccountSelect = (mappingKey: string, accountId: string) => {
-    const account = accounts.find(a => a.id === accountId);
+    const account = accounts.find((item) => item.id === accountId);
     if (account) {
-      setSelectedMappings(prev => ({
+      setSelectedMappings((prev) => ({
         ...prev,
         [mappingKey]: {
           id: account.id,
@@ -119,9 +173,8 @@ export function XeroAccountMappingForm() {
 
   const handleSave = async () => {
     setSaving(true);
-    
+
     try {
-      // Build mappings array
       const mappingsToSave = Object.entries(selectedMappings).map(([key, value]) => ({
         mappingKey: key,
         xeroAccountId: value.id,
@@ -129,21 +182,26 @@ export function XeroAccountMappingForm() {
         xeroAccountName: value.name,
       }));
 
-      const response = await fetch('/api/xero/mappings', {
+      const response = await fetch(buildApiUrl('/api/xero/mappings'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getOrgHeaders(),
+        },
         body: JSON.stringify({ mappings: mappingsToSave }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        const errorMessage = data.error || data.message || 'Failed to save mappings';
+        const errorMessage = getFriendlyXeroErrorMessage(
+          typeof data?.error === 'string' ? data.error : null,
+          data?.error || data?.message || 'Failed to save mappings'
+        );
         throw new Error(errorMessage);
       }
 
       toast.success('Account mappings saved successfully');
-      // Refresh mappings to show updated state
       await fetchData();
     } catch (err) {
       console.error('Failed to save mappings:', err);
@@ -154,34 +212,38 @@ export function XeroAccountMappingForm() {
     }
   };
 
-  // Filter accounts by appropriate type for each mapping
   const getFilteredAccounts = (mappingKey: string): XeroAccount[] => {
     switch (mappingKey) {
       case 'sales_revenue':
       case 'service_revenue':
       case 'rental_revenue':
       case 'shipping_revenue':
-        return accounts.filter(a => a.type === 'REVENUE' || a.class === 'REVENUE');
-      
+        return accounts.filter((account) => account.type === 'REVENUE' || account.class === 'REVENUE');
+
       case 'cost_of_goods_sold':
-        return accounts.filter(a => a.type === 'DIRECTCOSTS' || a.class === 'EXPENSE');
-      
+        return accounts.filter((account) => account.type === 'DIRECTCOSTS' || account.class === 'EXPENSE');
+
       case 'shipping_expense':
-        return accounts.filter(a => a.type === 'EXPENSE' || a.type === 'OVERHEADS' || a.class === 'EXPENSE');
-      
+        return accounts.filter(
+          (account) =>
+            account.type === 'EXPENSE' || account.type === 'OVERHEADS' || account.class === 'EXPENSE'
+        );
+
       case 'inventory_asset':
-        return accounts.filter(a => a.type === 'INVENTORY' || a.type === 'CURRENT' || a.class === 'ASSET');
-      
+        return accounts.filter(
+          (account) => account.type === 'INVENTORY' || account.type === 'CURRENT' || account.class === 'ASSET'
+        );
+
       case 'accounts_receivable':
-        return accounts.filter(a => a.type === 'CURRENT' || a.class === 'ASSET');
-      
+        return accounts.filter((account) => account.type === 'CURRENT' || account.class === 'ASSET');
+
       case 'accounts_payable':
       case 'deposits_received':
-        return accounts.filter(a => a.type === 'CURRLIAB' || a.class === 'LIABILITY');
-      
+        return accounts.filter((account) => account.type === 'CURRLIAB' || account.class === 'LIABILITY');
+
       case 'bank_account':
-        return accounts.filter(a => a.type === 'BANK');
-      
+        return accounts.filter((account) => account.type === 'BANK');
+
       default:
         return accounts;
     }
@@ -213,8 +275,8 @@ export function XeroAccountMappingForm() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button onClick={fetchData} variant="outline" className="mt-4">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button onClick={() => void fetchData()} variant="outline" className="mt-4">
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </CardContent>
@@ -222,23 +284,15 @@ export function XeroAccountMappingForm() {
     );
   }
 
-  const hasUnsavedChanges = mappings.some(m => {
-    const current = selectedMappings[m.mappingKey];
-    const saved = m.xeroAccountId;
-    return current?.id !== saved;
-  });
-
   const missingRequired = mappings
-    .filter(m => m.isRequired && !selectedMappings[m.mappingKey])
-    .map(m => m.displayName);
+    .filter((mapping) => mapping.isRequired && !selectedMappings[mapping.mappingKey])
+    .map((mapping) => mapping.displayName);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Xero Account Mappings</CardTitle>
-        <CardDescription>
-          Map NXT transaction types to your Xero chart of accounts
-        </CardDescription>
+        <CardDescription>Map NXT transaction types to your Xero chart of accounts</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -255,14 +309,12 @@ export function XeroAccountMappingForm() {
           {mappings.map((mapping) => {
             const filteredAccounts = getFilteredAccounts(mapping.mappingKey);
             const selected = selectedMappings[mapping.mappingKey];
-            
+
             return (
               <div key={mapping.mappingKey} className="grid gap-2">
                 <Label htmlFor={mapping.mappingKey} className="flex items-center gap-2">
                   {mapping.displayName}
-                  {mapping.isRequired && (
-                    <span className="text-destructive">*</span>
-                  )}
+                  {mapping.isRequired && <span className="text-destructive">*</span>}
                 </Label>
                 {mapping.description && (
                   <p className="text-xs text-muted-foreground">{mapping.description}</p>
@@ -291,22 +343,19 @@ export function XeroAccountMappingForm() {
       </CardContent>
 
       <CardFooter className="flex justify-between border-t pt-4">
-        <Button variant="outline" onClick={fetchData} disabled={saving}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button variant="outline" onClick={() => void fetchData()} disabled={saving}>
+          <RefreshCw className="mr-2 h-4 w-4" />
           Refresh Accounts
         </Button>
-        <Button
-          onClick={handleSave}
-          disabled={saving || missingRequired.length > 0}
-        >
+        <Button onClick={() => void handleSave()} disabled={saving || missingRequired.length > 0}>
           {saving ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="mr-2 h-4 w-4" />
               Save Mappings
             </>
           )}

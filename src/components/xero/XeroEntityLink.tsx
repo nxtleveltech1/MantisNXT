@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { getXeroSyncPathSegment, safeParseJson } from './xero-sync-utils';
 import type { XeroSyncEntityType } from './xero-sync-utils';
 
@@ -40,7 +41,9 @@ export function XeroEntityLink({
 
       try {
         const pathSegment = getXeroSyncPathSegment(entityType);
-        const response = await fetch(`/api/xero/sync/${pathSegment}/${entityId}`);
+        const response = await fetch(buildClientXeroUrl(`/api/xero/sync/${pathSegment}/${entityId}`), {
+          headers: getClientXeroHeaders(),
+        });
         const data = await safeParseJson<{ xeroEntityId?: string }>(response);
         if (response.ok && data?.xeroEntityId) {
           setXeroEntityId(data.xeroEntityId);
@@ -50,14 +53,13 @@ export function XeroEntityLink({
       }
     }
 
-    fetchXeroId();
+    void fetchXeroId();
   }, [entityType, entityId, providedXeroId]);
 
   if (!xeroEntityId) {
     return null;
   }
 
-  // Xero URL patterns
   const getXeroUrl = () => {
     const baseUrl = 'https://go.xero.com';
     switch (entityType) {
@@ -83,18 +85,8 @@ export function XeroEntityLink({
   };
 
   return (
-    <Button
-      variant={variant}
-      size={size}
-      className={className}
-      asChild
-    >
-      <a
-        href={getXeroUrl()}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2"
-      >
+    <Button variant={variant} size={size} className={className} asChild>
+      <a href={getXeroUrl()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
         <ExternalLink className="h-4 w-4" />
         <span className={size === 'icon' ? 'sr-only' : ''}>View in Xero</span>
       </a>

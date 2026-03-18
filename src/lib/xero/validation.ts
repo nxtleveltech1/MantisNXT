@@ -5,15 +5,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { isXeroConfigured } from './client';
 import { hasActiveConnection } from './token-manager';
 import { handleApiError } from './errors';
+import { resolveXeroRequestContext } from './org-context';
 
 export interface ValidationResult {
   userId: string;
   orgId: string;
   isConnected: boolean;
+  clerkOrgId?: string | null;
+  explicitOrgId?: string | null;
+  hasMismatch?: boolean;
   error?: NextResponse;
 }
 
@@ -25,32 +28,25 @@ export async function validateXeroRequest(
   requireConnection: boolean = true
 ): Promise<ValidationResult> {
   try {
-    // Verify user is authenticated
-    const { userId, orgId } = await auth();
+    const context = await resolveXeroRequestContext(request, {
+      requireUser: true,
+      requireOrg: true,
+      allowExplicitClerkMismatch: true,
+    });
 
-    if (!userId) {
+    if (context.error) {
       return {
-        userId: '',
-        orgId: '',
+        userId: context.userId,
+        orgId: context.orgId,
         isConnected: false,
-        error: NextResponse.json(
-          { error: 'Unauthorized. Please sign in.' },
-          { status: 401 }
-        ),
+        clerkOrgId: context.clerkOrgId,
+        explicitOrgId: context.explicitOrgId,
+        hasMismatch: context.hasMismatch,
+        error: context.error,
       };
     }
 
-    if (!orgId) {
-      return {
-        userId,
-        orgId: '',
-        isConnected: false,
-        error: NextResponse.json(
-          { error: 'No organization selected. Please select an organization.' },
-          { status: 400 }
-        ),
-      };
-    }
+    const { userId, orgId, clerkOrgId, explicitOrgId, hasMismatch } = context;
 
     // Check if Xero is configured
     if (!isXeroConfigured()) {
@@ -58,6 +54,9 @@ export async function validateXeroRequest(
         userId,
         orgId,
         isConnected: false,
+        clerkOrgId,
+        explicitOrgId,
+        hasMismatch,
         error: NextResponse.json(
           { error: 'Xero integration is not configured. Please contact support.' },
           { status: 500 }
@@ -74,6 +73,9 @@ export async function validateXeroRequest(
           userId,
           orgId,
           isConnected: false,
+          clerkOrgId,
+          explicitOrgId,
+          hasMismatch,
           error: NextResponse.json(
             { error: 'Not connected to Xero. Please connect first.' },
             { status: 400 }
@@ -86,8 +88,10 @@ export async function validateXeroRequest(
       userId,
       orgId,
       isConnected,
+      clerkOrgId,
+      explicitOrgId,
+      hasMismatch,
     };
-
   } catch (error) {
     return {
       userId: '',

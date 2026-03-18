@@ -2,7 +2,7 @@
 
 /**
  * Xero Integration Page
- * 
+ *
  * Main page for managing Xero accounting integration.
  * Includes connection management and account mappings.
  */
@@ -71,6 +71,19 @@ interface SyncSummary {
   lastSyncedAt: string | null;
 }
 
+function getFriendlyXeroErrorMessage(errorCode: string | null, fallback?: string | null) {
+  switch (errorCode) {
+    case 'org_context_mismatch':
+      return 'The selected organization does not match your active authenticated organization. Switch to the same organization and try again.';
+    case 'org_context_changed':
+      return 'The selected organization changed during the Xero connection flow. Switch back to the same organization and try again.';
+    case 'missing_org':
+      return 'No organization selected. Choose an organization in the header and try again.';
+    default:
+      return fallback || errorCode || 'Xero authorization failed';
+  }
+}
+
 export default function XeroIntegrationPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('connection');
@@ -86,100 +99,99 @@ export default function XeroIntegrationPage() {
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // OAuth callback query params: show toast and clear URL
-  useEffect(() => {
-    const error = searchParams?.get('xero_error') ?? null;
-    const errorDesc = searchParams?.get('xero_error_description') ?? null;
-    const connected = searchParams?.get('xero_connected') ?? null;
-    const tenant = searchParams?.get('xero_tenant') ?? null;
-    if (error || errorDesc) {
-      toast.error(errorDesc || error || 'Xero authorization failed');
-      window.history.replaceState({}, '', '/integrations/xero');
-    } else if (connected === 'true') {
-      toast.success(tenant ? `Connected to Xero: ${tenant}` : 'Connected to Xero');
-      window.history.replaceState({}, '', '/integrations/xero');
-      const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-      const urlOrgId = searchParams?.get('org_id') ?? null;
-      const orgId = storedOrgId || urlOrgId || null;
-      if (urlOrgId && !storedOrgId) setStoredOrg(urlOrgId, 'From URL');
-      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-      fetch(url).then(r => r.ok && r.json()).then(data => data && setConnectionStatus(data)).catch(() => {});
+  const getOrgId = useCallback(() => {
+    const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
+    const urlOrgId = searchParams?.get('org_id') ?? null;
+    const orgId = storedOrgId || urlOrgId || null;
+
+    if (urlOrgId && !storedOrgId) {
+      setStoredOrg(urlOrgId, 'From URL');
     }
+
+    return orgId;
   }, [searchParams]);
+
+  const buildApiUrl = useCallback(
+    (path: string) => {
+      const orgId = getOrgId();
+      if (!orgId) return path;
+
+      const separator = path.includes('?') ? '&' : '?';
+      return `${path}${separator}org_id=${encodeURIComponent(orgId)}`;
+    },
+    [getOrgId]
+  );
+
+  const getOrgHeaders = useCallback((): HeadersInit => {
+    const orgId = getOrgId();
+    return orgId ? { 'X-Org-Id': orgId } : {};
+  }, [getOrgId]);
+
+  const getCleanPath = useCallback(() => {
+    const orgId = getOrgId();
+    return orgId ? `/integrations/xero?org_id=${encodeURIComponent(orgId)}` : '/integrations/xero';
+  }, [getOrgId]);
+
+  const getSettingsHref = useCallback(() => {
+    const orgId = getOrgId();
+    return orgId
+      ? `/integrations/xero/settings?org_id=${encodeURIComponent(orgId)}`
+      : '/integrations/xero/settings';
+  }, [getOrgId]);
 
   const fetchStatus = useCallback(async () => {
     setConnectionLoading(true);
     setConnectionError(null);
-    const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-    const urlOrgId = searchParams?.get('org_id') ?? null;
-    const orgId = storedOrgId || urlOrgId || null;
-    if (urlOrgId && !storedOrgId) setStoredOrg(urlOrgId, 'From URL');
+    const orgId = getOrgId();
+
     try {
-      const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-      const response = await fetch(url);
-      const ct = response.headers.get('content-type') ?? '';
-      const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+      const response = await fetch(buildApiUrl('/api/xero/connection'), {
+        headers: getOrgHeaders(),
+      });
+      const contentType = response.headers.get('content-type') ?? '';
+      const data = contentType.includes('application/json')
+        ? await response.json().catch(() => null)
+        : null;
+
       if (response.ok && data) {
         retryCountRef.current = 0;
         setConnectionStatus(data);
-      } else {
-        const errorMsg = data?.error || data?.message || 'Failed to load connection status';
-        const isNoOrg = response.status === 400 && typeof errorMsg === 'string' && errorMsg.includes('No organization selected');
-        if (isNoOrg && !orgId && retryCountRef.current < 2) {
-          retryCountRef.current += 1;
-          retryTimeoutRef.current = setTimeout(() => {
-            retryTimeoutRef.current = null;
-            fetchStatus();
-          }, 400);
-        } else {
-          setConnectionError(errorMsg);
-        }
+        return;
       }
+
+      const errorCode = typeof data?.error === 'string' ? data.error : null;
+      const fallbackMessage = typeof data?.message === 'string'
+        ? data.message
+        : typeof data?.error === 'string'
+          ? data.error
+          : 'Failed to load connection status';
+      const errorMessage = getFriendlyXeroErrorMessage(errorCode, fallbackMessage);
+      const isNoOrg = response.status === 400 && errorCode === 'missing_org';
+
+      if (isNoOrg && !orgId && retryCountRef.current < 2) {
+        retryCountRef.current += 1;
+        retryTimeoutRef.current = setTimeout(() => {
+          retryTimeoutRef.current = null;
+          void fetchStatus();
+        }, 400);
+        return;
+      }
+
+      setConnectionError(errorMessage);
     } catch (error) {
       console.error('Failed to fetch connection status:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to load connection status');
     } finally {
       setConnectionLoading(false);
     }
-  }, [searchParams]);
-
-  useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
-
-  useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const handler = () => fetchStatus();
-    window.addEventListener('org-changed', handler);
-    return () => window.removeEventListener('org-changed', handler);
-  }, [fetchStatus]);
-
-  // Fetch sync logs when on activity tab
-  useEffect(() => {
-    if (activeTab === 'activity' && connectionStatus?.connected) {
-      fetchSyncLogs();
-    }
-  }, [activeTab, connectionStatus?.connected]);
-
-  // Fetch sync summary when connected
-  useEffect(() => {
-    if (connectionStatus?.connected) {
-      fetchSyncSummary();
-    }
-  }, [connectionStatus?.connected]);
+  }, [buildApiUrl, getOrgHeaders, getOrgId]);
 
   async function fetchSyncSummary() {
     setLoadingSummary(true);
     try {
-      const response = await fetch('/api/xero/sync-summary');
+      const response = await fetch(buildApiUrl('/api/xero/sync-summary'), {
+        headers: getOrgHeaders(),
+      });
       if (response.ok) {
         const data = await response.json();
         setSyncSummary(data.summary || []);
@@ -194,7 +206,9 @@ export default function XeroIntegrationPage() {
   async function fetchSyncLogs() {
     setLoadingLogs(true);
     try {
-      const response = await fetch('/api/xero/sync-logs');
+      const response = await fetch(buildApiUrl('/api/xero/sync-logs'), {
+        headers: getOrgHeaders(),
+      });
       if (response.ok) {
         const data = await response.json();
         setSyncLogs(data.logs || []);
@@ -213,20 +227,26 @@ export default function XeroIntegrationPage() {
   async function handleSync(entityType: string) {
     setSyncing(entityType);
     try {
-      const response = await fetch(`/api/xero/sync/${entityType}`, {
+      const response = await fetch(buildApiUrl(`/api/xero/sync/${entityType}`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getOrgHeaders(),
+        },
         body: JSON.stringify({ type: 'fetch' }),
       });
 
       const data = await response.json();
 
-      if (response.ok && (data.success !== false)) {
+      if (response.ok && data.success !== false) {
         toast.success(`${entityType} sync completed`);
-        fetchSyncLogs();
-        fetchSyncSummary(); // Refresh sync summary after successful sync
+        await fetchSyncLogs();
+        await fetchSyncSummary();
       } else {
-        const errorMessage = data.error || data.message || `Failed to sync ${entityType}`;
+        const errorMessage = getFriendlyXeroErrorMessage(
+          typeof data?.error === 'string' ? data.error : null,
+          data?.message || data?.error || `Failed to sync ${entityType}`
+        );
         toast.error(errorMessage);
       }
     } catch (error) {
@@ -238,6 +258,60 @@ export default function XeroIntegrationPage() {
     }
   }
 
+  useEffect(() => {
+    const error = searchParams?.get('xero_error') ?? null;
+    const errorDesc = searchParams?.get('xero_error_description') ?? null;
+    const connected = searchParams?.get('xero_connected') ?? null;
+    const tenant = searchParams?.get('xero_tenant') ?? null;
+    const cleanPath = getCleanPath();
+
+    if (error || errorDesc) {
+      toast.error(getFriendlyXeroErrorMessage(error, errorDesc));
+      window.history.replaceState({}, '', cleanPath);
+      return;
+    }
+
+    if (connected === 'true') {
+      toast.success(tenant ? `Connected to Xero: ${tenant}` : 'Connected to Xero');
+      window.history.replaceState({}, '', cleanPath);
+      void fetchStatus();
+    }
+  }, [fetchStatus, getCleanPath, searchParams]);
+
+  useEffect(() => {
+    void fetchStatus();
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      void fetchStatus();
+    };
+
+    window.addEventListener('org-changed', handler);
+    return () => window.removeEventListener('org-changed', handler);
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    if (activeTab === 'activity' && connectionStatus?.connected) {
+      void fetchSyncLogs();
+    }
+  }, [activeTab, connectionStatus?.connected]);
+
+  useEffect(() => {
+    if (connectionStatus?.connected) {
+      void fetchSyncSummary();
+    }
+  }, [connectionStatus?.connected]);
+
   const isConnected = connectionStatus?.connected && connectionStatus?.connection;
 
   const breadcrumbs = [
@@ -248,15 +322,12 @@ export default function XeroIntegrationPage() {
   return (
     <AppLayout title="Xero Accounting" breadcrumbs={breadcrumbs}>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-muted-foreground">
-              Manage your Xero accounting integration
-            </p>
+            <p className="text-muted-foreground">Manage your Xero accounting integration</p>
           </div>
           <Button variant="outline" asChild>
-            <Link href="/integrations/xero/settings">
+            <Link href={getSettingsHref()}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Link>
@@ -277,7 +348,6 @@ export default function XeroIntegrationPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Connection Tab */}
           <TabsContent value="connection" className="space-y-6">
             {connectionError && (
               <Alert variant="destructive">
@@ -293,110 +363,105 @@ export default function XeroIntegrationPage() {
                 </CardContent>
               </Card>
             ) : (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <XeroConnectionCard />
-              
-              {/* Sync Summary Cards */}
-              {isConnected && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <XeroConnectionCard />
+
+                {isConnected && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Sync Summary</CardTitle>
+                      <CardDescription>Entities synced with Xero</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingSummary ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : syncSummary.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No sync data available</p>
+                      ) : (
+                        <div className="grid gap-3">
+                          {syncSummary.map((summary) => (
+                            <div
+                              key={summary.entityType}
+                              className="flex items-center justify-between border-b pb-2 last:border-0"
+                            >
+                              <span className="text-sm font-medium capitalize">{summary.entityType}</span>
+                              <div className="text-right">
+                                <div className="text-sm font-semibold">{summary.totalSynced}</div>
+                                {summary.lastSyncedAt && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {new Date(summary.lastSyncedAt).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card>
                   <CardHeader>
-                    <CardTitle>Sync Summary</CardTitle>
-                    <CardDescription>
-                      Entities synced with Xero
-                    </CardDescription>
+                    <CardTitle>Integration Overview</CardTitle>
+                    <CardDescription>What syncs between MantisNXT and Xero</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {loadingSummary ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Users className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Contacts</p>
+                          <p className="text-sm text-muted-foreground">
+                            Sync suppliers and customers bidirectionally
+                          </p>
+                        </div>
                       </div>
-                    ) : syncSummary.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No sync data available</p>
-                    ) : (
-                      <div className="grid gap-3">
-                        {syncSummary.map((summary) => (
-                          <div key={summary.entityType} className="flex items-center justify-between border-b pb-2 last:border-0">
-                            <span className="text-sm font-medium capitalize">{summary.entityType}</span>
-                            <div className="text-right">
-                              <div className="text-sm font-semibold">{summary.totalSynced}</div>
-                              {summary.lastSyncedAt && (
-                                <div className="text-xs text-muted-foreground">
-                                  {new Date(summary.lastSyncedAt).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex items-start gap-3">
+                        <FileText className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Invoices & Bills</p>
+                          <p className="text-sm text-muted-foreground">
+                            Create sales invoices (AR) and supplier bills (AP)
+                          </p>
+                        </div>
                       </div>
-                    )}
+                      <div className="flex items-start gap-3">
+                        <CreditCard className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Payments</p>
+                          <p className="text-sm text-muted-foreground">
+                            Record and receive payment updates
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Package className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Products/Items</p>
+                          <p className="text-sm text-muted-foreground">
+                            Sync inventory items and pricing
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-              )}
-              
-              {/* Quick Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Integration Overview</CardTitle>
-                  <CardDescription>
-                    What syncs between MantisNXT and Xero
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Contacts</p>
-                        <p className="text-sm text-muted-foreground">
-                          Sync suppliers and customers bidirectionally
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Invoices & Bills</p>
-                        <p className="text-sm text-muted-foreground">
-                          Create sales invoices (AR) and supplier bills (AP)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Payments</p>
-                        <p className="text-sm text-muted-foreground">
-                          Record and receive payment updates
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Products/Items</p>
-                        <p className="text-sm text-muted-foreground">
-                          Sync inventory items and pricing
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+              </div>
             )}
           </TabsContent>
 
-          {/* Account Mappings Tab */}
           <TabsContent value="mappings">
             <XeroAccountMappingForm />
           </TabsContent>
 
-          {/* Sync Operations Tab */}
           <TabsContent value="sync" className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <Users className="h-4 w-4" />
                     Contacts
                   </CardTitle>
@@ -409,13 +474,13 @@ export default function XeroIntegrationPage() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('contacts')}
+                    onClick={() => void handleSync('contacts')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'contacts' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <ArrowRightLeft className="h-4 w-4 mr-2" />
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
                     )}
                     Sync Contacts
                   </Button>
@@ -424,7 +489,7 @@ export default function XeroIntegrationPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <FileText className="h-4 w-4" />
                     Invoices
                   </CardTitle>
@@ -437,13 +502,13 @@ export default function XeroIntegrationPage() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('invoices')}
+                    onClick={() => void handleSync('invoices')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'invoices' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="mr-2 h-4 w-4" />
                     )}
                     Fetch Invoices
                   </Button>
@@ -452,26 +517,24 @@ export default function XeroIntegrationPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <CreditCard className="h-4 w-4" />
                     Payments
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Fetch recent payments from Xero.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Fetch recent payments from Xero.</p>
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('payments')}
+                    onClick={() => void handleSync('payments')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'payments' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="mr-2 h-4 w-4" />
                     )}
                     Fetch Payments
                   </Button>
@@ -480,7 +543,7 @@ export default function XeroIntegrationPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <Package className="h-4 w-4" />
                     Items
                   </CardTitle>
@@ -493,13 +556,13 @@ export default function XeroIntegrationPage() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('items')}
+                    onClick={() => void handleSync('items')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'items' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <ArrowRightLeft className="h-4 w-4 mr-2" />
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
                     )}
                     Sync Items
                   </Button>
@@ -508,26 +571,24 @@ export default function XeroIntegrationPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <FileText className="h-4 w-4" />
                     Purchase Orders
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Sync purchase orders with Xero.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Sync purchase orders with Xero.</p>
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('purchase-orders')}
+                    onClick={() => void handleSync('purchase-orders')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'purchase-orders' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <ArrowRightLeft className="h-4 w-4 mr-2" />
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
                     )}
                     Sync POs
                   </Button>
@@ -536,7 +597,7 @@ export default function XeroIntegrationPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <FileText className="h-4 w-4" />
                     Quotes
                   </CardTitle>
@@ -549,13 +610,13 @@ export default function XeroIntegrationPage() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleSync('quotes')}
+                    onClick={() => void handleSync('quotes')}
                     disabled={syncing !== null}
                   >
                     {syncing === 'quotes' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="mr-2 h-4 w-4" />
                     )}
                     Fetch Quotes
                   </Button>
@@ -564,27 +625,19 @@ export default function XeroIntegrationPage() {
             </div>
           </TabsContent>
 
-          {/* Activity Log Tab */}
           <TabsContent value="activity">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Sync Activity Log</CardTitle>
-                    <CardDescription>
-                      Recent synchronization operations
-                    </CardDescription>
+                    <CardDescription>Recent synchronization operations</CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={fetchSyncLogs}
-                    disabled={loadingLogs}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => void fetchSyncLogs()} disabled={loadingLogs}>
                     {loadingLogs ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="mr-2 h-4 w-4" />
                     )}
                     Refresh
                   </Button>
@@ -596,8 +649,8 @@ export default function XeroIntegrationPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : syncLogs.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <div className="py-8 text-center text-muted-foreground">
+                    <Clock className="mx-auto mb-4 h-12 w-12 opacity-50" />
                     <p>No sync activity yet</p>
                     <p className="text-sm">Activity will appear here after sync operations</p>
                   </div>
@@ -619,19 +672,14 @@ export default function XeroIntegrationPage() {
                               {log.action} {log.entityType}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {log.recordsSucceeded}/{log.recordsProcessed} records •{' '}
-                              {new Date(log.createdAt).toLocaleString()}
+                              {log.recordsSucceeded}/{log.recordsProcessed} records - {new Date(log.createdAt).toLocaleString()}
                             </p>
                             {log.errorMessage && (
-                              <p className="text-sm text-destructive mt-1">
-                                {log.errorMessage}
-                              </p>
+                              <p className="mt-1 text-sm text-destructive">{log.errorMessage}</p>
                             )}
                           </div>
                         </div>
-                        <Badge
-                          variant={log.direction === 'to_xero' ? 'default' : 'secondary'}
-                        >
+                        <Badge variant={log.direction === 'to_xero' ? 'default' : 'secondary'}>
                           {log.direction === 'to_xero' ? 'To Xero' : 'From Xero'}
                         </Badge>
                       </div>

@@ -7,20 +7,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/database';
 import { handleApiError } from '@/lib/xero/errors';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function GET(request: NextRequest) {
   try {
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Get sync summary by entity type
     const result = await query<{

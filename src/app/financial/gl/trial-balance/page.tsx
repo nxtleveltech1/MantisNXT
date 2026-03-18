@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -39,7 +40,9 @@ export default function TrialBalancePage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/reports/trial-balance?parsed=true');
+          const response = await fetch(buildClientXeroUrl('/api/xero/reports/trial-balance?parsed=true'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
             setData(result.data);
@@ -173,4 +176,5 @@ export default function TrialBalancePage() {
     </AppLayout>
   );
 }
+
 

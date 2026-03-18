@@ -16,6 +16,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
 export function NavMain({
   items,
@@ -38,19 +39,18 @@ export function NavMain({
   label?: string | null;
 }) {
   const pathname = usePathname();
-  
-  // Xero Status Indicator Component
+
   function XeroStatusIndicator() {
     const [status, setStatus] = useState<{ connected: boolean; tokenExpiring?: boolean } | null>(null);
 
     useEffect(() => {
       async function fetchStatus() {
         try {
-          const orgId = typeof window !== 'undefined' ? localStorage.getItem('org_id') : null;
-          const url = orgId ? `/api/xero/connection?org_id=${encodeURIComponent(orgId)}` : '/api/xero/connection';
-          const response = await fetch(url);
-          const ct = response.headers.get('content-type') ?? '';
-          const data = ct.includes('application/json') ? await response.json().catch(() => null) : null;
+          const response = await fetch(buildClientXeroUrl('/api/xero/connection'), {
+            headers: getClientXeroHeaders(),
+          });
+          const contentType = response.headers.get('content-type') ?? '';
+          const data = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
           if (response.ok && data) {
             setStatus({
               connected: data.connected || false,
@@ -58,13 +58,17 @@ export function NavMain({
             });
           }
         } catch {
-          // Silent fail - don't show indicator if can't fetch
+          // Silent fail - do not show indicator if the status check fails.
         }
       }
-      fetchStatus();
-      // Refresh every 5 minutes
+
+      void fetchStatus();
       const interval = setInterval(fetchStatus, 5 * 60 * 1000);
-      return () => clearInterval(interval);
+      window.addEventListener('org-changed', fetchStatus);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('org-changed', fetchStatus);
+      };
     }, []);
 
     if (!status) return null;
@@ -75,25 +79,20 @@ export function NavMain({
       return 'text-red-500';
     };
 
-    return (
-      <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />
-    );
+    return <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />;
   }
 
   return (
     <SidebarGroup>
       {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
       <SidebarMenu>
-        {items.map(item => {
-          // Check if any child is active to keep parent open
-          const isChildActive = item.items?.some(subItem =>
-            pathname?.startsWith(subItem.url) ||
-            subItem.items?.some(subSubItem => pathname?.startsWith(subSubItem.url))
+        {items.map((item) => {
+          const isChildActive = item.items?.some(
+            (subItem) => pathname?.startsWith(subItem.url) || subItem.items?.some((subSubItem) => pathname?.startsWith(subSubItem.url))
           );
           const isOpen = item.isActive || isChildActive;
           const hasSubItems = item.items && item.items.length > 0;
 
-          // If no sub-items, render as direct link
           if (!hasSubItems) {
             return (
               <SidebarMenuItem key={item.title}>
@@ -107,7 +106,6 @@ export function NavMain({
             );
           }
 
-          // Has sub-items, render as collapsible
           return (
             <Collapsible key={item.title} asChild defaultOpen={isOpen} className="group/collapsible">
               <SidebarMenuItem>
@@ -120,9 +118,8 @@ export function NavMain({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map(subItem => {
-                      const isSubChildActive = subItem.items?.some(subSubItem => pathname?.startsWith(subSubItem.url));
-                      // If it has sub-items, we need to check if we should keep IT open too
+                    {item.items?.map((subItem) => {
+                      const isSubChildActive = subItem.items?.some((subSubItem) => pathname?.startsWith(subSubItem.url));
                       return (
                         <SidebarMenuSubItem key={subItem.title}>
                           {subItem.items?.length ? (
@@ -136,7 +133,7 @@ export function NavMain({
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                   <SidebarMenuSub>
-                                    {subItem.items.map(subSubItem => (
+                                    {subItem.items.map((subSubItem) => (
                                       <SidebarMenuSubItem key={subSubItem.title}>
                                         <SidebarMenuSubButton asChild isActive={pathname === subSubItem.url}>
                                           <Link href={subSubItem.url}>
@@ -153,14 +150,12 @@ export function NavMain({
                             <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
                               <Link href={subItem.url} className="flex items-center gap-2">
                                 <span>{subItem.title}</span>
-                                {subItem.title === 'Xero Accounting' && (
-                                  <XeroStatusIndicator />
-                                )}
+                                {subItem.title === 'Xero Accounting' && <XeroStatusIndicator />}
                               </Link>
                             </SidebarMenuSubButton>
                           )}
                         </SidebarMenuSubItem>
-                      )
+                      );
                     })}
                   </SidebarMenuSub>
                 </CollapsibleContent>

@@ -7,9 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { getValidTokenSet, getXeroConnection } from '@/lib/xero/token-manager';
 import { getXeroClient } from '@/lib/xero/client';
+import { validateXeroRequest } from '@/lib/xero/validation';
 
 export async function GET(request: NextRequest) {
   const results = {
@@ -18,22 +18,9 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    // Verify user authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
-    }
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected.' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { userId, orgId } = validation;
 
     results.checks.auth = { userId: !!userId, orgId };
 

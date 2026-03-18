@@ -8,7 +8,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { ARService } from '@/lib/services/financial';
 import { APService } from '@/lib/services/financial';
 import { syncSalesInvoiceToXero, syncSupplierInvoiceToXero } from '@/lib/xero/sync/invoices';
@@ -22,14 +21,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, true);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Determine invoice type by checking both AR and AP tables
     const arInvoice = await ARService.getARInvoiceById(id, orgId);
@@ -135,14 +129,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'No organization selected' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateXeroRequest(request, false);
+    if (validation.error) return validation.error;
+    const { orgId } = validation;
 
     // Check sync status
     const result = await query<{
@@ -173,3 +162,5 @@ export async function GET(
     return handleApiError(error, 'Xero Invoice Status');
   }
 }
+
+

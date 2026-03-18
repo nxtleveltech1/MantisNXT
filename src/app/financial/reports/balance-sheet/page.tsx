@@ -9,6 +9,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReportService, type BalanceSheet } from '@/lib/services/financial';
 import { useXeroConnection } from '@/hooks/useXeroConnection';
+import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -33,7 +34,9 @@ export default function BalanceSheetPage() {
       setError(null);
       try {
         if (source === 'xero') {
-          const response = await fetch('/api/xero/reports/balance-sheet?parsed=true');
+          const response = await fetch(buildClientXeroUrl('/api/xero/reports/balance-sheet?parsed=true'), {
+            headers: getClientXeroHeaders(),
+          });
           const result = await response.json();
           if (result.success && result.data) {
             const x = result.data as { assets: { current: number; fixed: number; total: number }; liabilities: { total: number }; equity: number };
@@ -142,3 +145,4 @@ export default function BalanceSheetPage() {
     </AppLayout>
   );
 }
+
