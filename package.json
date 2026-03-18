@@ -9,8 +9,8 @@
         "dev:status": "bun scripts/dev-server-manager.js status",
         "dev:restart": "bun scripts/dev-server-manager.js restart",
         "dev:raw": "bun next dev --webpack",
-        "build": "bun next build --webpack",
-        "build:strict": "bun run type-check && bun next build --webpack",
+        "build": "node scripts/build-next.cjs",
+        "build:strict": "bun run type-check && node scripts/build-next.cjs",
         "start": "bun next start",
         "lint": "bun x eslint . --ext .ts,.tsx",
         "lint:ssot": "bun scripts/check-public-dml.ts",
@@ -42,7 +42,7 @@
         "ai:verify": "bun scripts/verify-ai-providers.js",
         "validate:api": "bun scripts/validate-api-endpoints.ts",
         "validate:browser": "./node_modules/.bin/chrome-devtools-mcp validate --url http://localhost:3000",
-        "prepare": "bun x husky install",
+        "prepare": "node scripts/prepare-husky.cjs",
         "lint:fix": "bun x eslint . --ext .ts,.tsx --fix",
         "format": "bun x prettier --write \"**/*.{ts,tsx,json,md}\"",
         "format:check": "bun x prettier --check \"**/*.{ts,tsx,json,md}\"",
@@ -233,3 +233,4 @@
         ]
     }
 }
+

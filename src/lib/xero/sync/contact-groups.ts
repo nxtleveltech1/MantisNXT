@@ -208,3 +208,7 @@ export async function addContactsToGroup(
     };
   }
 }
+
+
+export const addContactsToContactGroup = addContactsToGroup;
+
