@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getXeroClient, getAppUrl } from '@/lib/xero/client';
+import { getAppUrl, getOAuthCallbackClient } from '@/lib/xero/client';
 import { saveTokenSet } from '@/lib/xero/token-manager';
 import type { XeroTenant } from '@/lib/xero/types';
 import { appendOrgId, resolveXeroRequestContext } from '@/lib/xero/org-context';
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
 
   try {
     console.log('[Xero Callback] Initializing Xero client');
-    const xero = getXeroClient();
+    const xero = await getOAuthCallbackClient(state);
 
     console.log('[Xero Callback] Exchanging authorization code for tokens');
     const fullCallbackUrl = request.url;
@@ -204,3 +204,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(errorUrl);
   }
 }
+
