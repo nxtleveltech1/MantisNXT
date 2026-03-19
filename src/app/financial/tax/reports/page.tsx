@@ -8,7 +8,8 @@ import { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TaxReport {
   id: string;
@@ -18,41 +19,45 @@ interface TaxReport {
 }
 
 const availableReports: TaxReport[] = [
-  {
-    id: '1',
-    name: 'VAT Summary',
-    description: 'Summary of VAT collected and paid',
-    type: 'vat',
-  },
-  {
-    id: '2',
-    name: 'Income Tax Summary',
-    description: 'Annual income tax summary',
-    type: 'income',
-  },
-  {
-    id: '3',
-    name: 'PAYE Summary',
-    description: 'Employee payroll tax summary',
-    type: 'paye',
-  },
-  {
-    id: '4',
-    name: 'Tax Liability Report',
-    description: 'Outstanding tax liabilities',
-    type: 'liability',
-  },
+  { id: '1', name: 'VAT Summary', description: 'Summary of VAT collected and paid', type: 'vat' },
+  { id: '2', name: 'Income Tax Summary', description: 'Annual income tax summary', type: 'income' },
+  { id: '3', name: 'PAYE Summary', description: 'Employee payroll tax summary', type: 'paye' },
+  { id: '4', name: 'Tax Liability Report', description: 'Outstanding tax liabilities', type: 'liability' },
 ];
 
-export default function TaxReportsPage() {
-  const [generating, setGenerating] = useState<string | null>(null);
+function getOrgId(): string {
+  if (typeof window === 'undefined') return 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  return localStorage.getItem('org_id') || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+}
 
-  const handleGenerate = async (reportId: string) => {
-    setGenerating(reportId);
-    // Simulate report generation
-    setTimeout(() => {
-      setGenerating(null);
-    }, 2000);
+export default function TaxReportsPage() {
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownload = async (report: TaxReport) => {
+    setDownloading(report.id);
+    try {
+      const res = await fetch(
+        `/api/v1/financial/tax/reports/${report.type}/pdf?org_id=${getOrgId()}`
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tax-report-${report.type}-${new Date().toISOString().slice(0, 7)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${report.name}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setDownloading(null);
+    }
   };
 
   return (
@@ -86,13 +91,14 @@ export default function TaxReportsPage() {
                       <div className="mt-3 flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleGenerate(report.id)}
-                          disabled={generating === report.id}
+                          onClick={() => handleDownload(report)}
+                          disabled={downloading === report.id}
                         >
-                          {generating === report.id ? 'Generating...' : 'Generate'}
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Download className="h-4 w-4 mr-1" />
+                          {downloading === report.id ? (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="mr-1 h-4 w-4" />
+                          )}
                           Download
                         </Button>
                       </div>
