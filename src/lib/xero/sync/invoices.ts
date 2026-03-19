@@ -11,11 +11,12 @@ import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapSupplierInvoiceToXero, generateSyncHash, formatDateForXero } from '../mappers';
 import { parseXeroApiError, XeroSyncError } from '../errors';
-import { 
-  getXeroEntityId, 
-  saveEntityMapping, 
-  getAccountMappings 
+import {
+  getXeroEntityId,
+  saveEntityMapping,
+  getAccountMappings,
 } from './helpers';
+import { resolveFiscalPosition } from '@/lib/financial/fiscal-position';
 import type { XeroInvoice, SyncResult, XeroAccountMappingConfig, XeroTaxType } from '../types';
 
 // ============================================================================
@@ -107,15 +108,43 @@ function mapInvoiceStatusToXero(status: string): 'DRAFT' | 'SUBMITTED' | 'AUTHOR
   }
 }
 
+/** Optional contact context for fiscal position resolution */
+export interface FiscalContactContext {
+  countryId?: number | null;
+  stateId?: number | null;
+}
+
+/**
+ * Apply fiscal position overrides to Xero invoice line items (account code and tax type)
+ */
+function applyFiscalOverridesToInvoice(
+  xeroInvoice: XeroInvoice,
+  overrides: { accountOverrides: Array<{ odooAccountCodeSrc: string; xeroAccountCodeDest: string }>; taxOverrides: Array<{ xeroTaxType: string | null }> }
+): void {
+  const accountMap = new Map(overrides.accountOverrides.map((a) => [a.odooAccountCodeSrc, a.xeroAccountCodeDest]));
+  const taxType = overrides.taxOverrides[0]?.xeroTaxType;
+  if (xeroInvoice.LineItems) {
+    for (const line of xeroInvoice.LineItems) {
+      if (line.AccountCode && accountMap.has(line.AccountCode)) {
+        line.AccountCode = accountMap.get(line.AccountCode)!;
+      }
+      if (taxType != null) {
+        line.TaxType = taxType as XeroTaxType;
+      }
+    }
+  }
+}
+
 /**
  * Sync a sales invoice (AR) to Xero as ACCREC
  */
 export async function syncSalesInvoiceToXero(
   orgId: string,
-  invoice: NxtSalesInvoice
+  invoice: NxtSalesInvoice,
+  contactFiscal?: FiscalContactContext
 ): Promise<SyncResult<XeroInvoice>> {
   const startTime = Date.now();
-  
+
   try {
     const { tokenSet, tenantId } = await getValidTokenSet(orgId);
     const xero = getXeroClient();
@@ -137,9 +166,23 @@ export async function syncSalesInvoiceToXero(
 
     // Check if already synced
     const existingXeroId = await getXeroEntityId(orgId, 'invoice', invoice.id);
-    
+
     // Map to Xero format
-    const xeroInvoice = mapSalesInvoiceToXero(invoice, xeroContactId, accountMappings);
+    let xeroInvoice = mapSalesInvoiceToXero(invoice, xeroContactId, accountMappings);
+
+    // Resolve fiscal position and apply overrides if contact context provided
+    if (contactFiscal?.countryId != null || contactFiscal?.stateId != null) {
+      const fp = await resolveFiscalPosition(orgId, {
+        countryId: contactFiscal.countryId ?? undefined,
+        stateId: contactFiscal.stateId ?? undefined,
+      });
+      if (fp) {
+        applyFiscalOverridesToInvoice(xeroInvoice, {
+          accountOverrides: fp.accountOverrides,
+          taxOverrides: fp.taxOverrides.map((t) => ({ xeroTaxType: t.xeroTaxType })),
+        });
+      }
+    }
     if (existingXeroId) {
       xeroInvoice.InvoiceID = existingXeroId;
     }
@@ -159,7 +202,7 @@ export async function syncSalesInvoiceToXero(
         throw new XeroSyncError(
           'No invoices returned from Xero API',
           'invoice',
-          invoice.id,
+          bill.id,
           'NO_INVOICES_RETURNED'
         );
       }
@@ -174,7 +217,7 @@ export async function syncSalesInvoiceToXero(
         throw new XeroSyncError(
           'No invoices returned from Xero API',
           'invoice',
-          invoice.id,
+          bill.id,
           'NO_INVOICES_RETURNED'
         );
       }
@@ -185,12 +228,12 @@ export async function syncSalesInvoiceToXero(
       throw new XeroSyncError(
         'No InvoiceID returned from Xero',
         'invoice',
-        invoice.id,
+        bill.id,
         'NO_INVOICE_ID'
       );
     }
 
-    await saveEntityMapping(orgId, 'invoice', invoice.id, result.InvoiceID, syncHash);
+    await saveEntityMapping(orgId, 'invoice', bill.id, result.InvoiceID, syncHash);
 
     await logSyncSuccess(orgId, 'invoice', action, 'to_xero', {
       nxtEntityId: invoice.id,
@@ -244,10 +287,11 @@ export async function syncSupplierInvoiceToXero(
       taxRate?: number;
       accountCode?: string;
     }>;
-  }
+  },
+  contactFiscal?: FiscalContactContext
 ): Promise<SyncResult<XeroInvoice>> {
   const startTime = Date.now();
-  
+
   try {
     const { tokenSet, tenantId } = await getValidTokenSet(orgId);
     const xero = getXeroClient();
@@ -269,13 +313,27 @@ export async function syncSupplierInvoiceToXero(
 
     // Check if already synced
     const existingXeroId = await getXeroEntityId(orgId, 'invoice', bill.id);
-    
+
     // Map to Xero format
-    const xeroInvoice = mapSupplierInvoiceToXero(bill, xeroContactId, accountMappings);
+    let xeroInvoice = mapSupplierInvoiceToXero(bill, xeroContactId, accountMappings);
     if (existingXeroId) {
       xeroInvoice.InvoiceID = existingXeroId;
     }
-    
+
+    // Resolve fiscal position and apply overrides if contact context provided
+    if (contactFiscal?.countryId != null || contactFiscal?.stateId != null) {
+      const fp = await resolveFiscalPosition(orgId, {
+        countryId: contactFiscal.countryId ?? undefined,
+        stateId: contactFiscal.stateId ?? undefined,
+      });
+      if (fp) {
+        applyFiscalOverridesToInvoice(xeroInvoice, {
+          accountOverrides: fp.accountOverrides,
+          taxOverrides: fp.taxOverrides.map((t) => ({ xeroTaxType: t.xeroTaxType })),
+        });
+      }
+    }
+
     const syncHash = generateSyncHash(xeroInvoice);
 
     let result: XeroInvoice;
