@@ -25,6 +25,7 @@ import {
   CreditCard,
   Package,
   ArrowRightLeft,
+  Upload,
   Clock,
   CheckCircle,
   XCircle,
@@ -93,6 +94,7 @@ export default function XeroIntegrationPage() {
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [pushAllSyncing, setPushAllSyncing] = useState(false);
   const [syncSummary, setSyncSummary] = useState<SyncSummary[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
@@ -255,6 +257,33 @@ export default function XeroIntegrationPage() {
       toast.error(errorMessage);
     } finally {
       setSyncing(null);
+    }
+  }
+
+  async function handlePushAll() {
+    setPushAllSyncing(true);
+    try {
+      const response = await fetch(buildApiUrl('/api/xero/sync/push-all'), {
+        method: 'POST',
+        headers: getOrgHeaders(),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success === true) {
+        const s = data.summary ?? {};
+        toast.success(
+          `Push complete: ${s.contacts ?? '—'}, ${s.items ?? '—'}, ${s.arInvoices ?? '—'}, ${s.apInvoices ?? '—'}`
+        );
+        await fetchSyncLogs();
+        await fetchSyncSummary();
+      } else {
+        toast.error(data?.error ?? 'Push to Xero failed');
+      }
+    } catch (error) {
+      console.error('Push to Xero failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Push to Xero failed');
+    } finally {
+      setPushAllSyncing(false);
     }
   }
 
@@ -458,6 +487,30 @@ export default function XeroIntegrationPage() {
           </TabsContent>
 
           <TabsContent value="sync" className="space-y-6">
+            <Card className="border-primary/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Upload className="h-4 w-4" />
+                  Push NXT to Xero
+                </CardTitle>
+                <CardDescription>
+                  Sync all contacts, items, and invoices from this org to Xero in one go.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={() => void handlePushAll()}
+                  disabled={pushAllSyncing || syncing !== null}
+                >
+                  {pushAllSyncing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-2 h-4 w-4" />
+                  )}
+                  Push NXT to Xero
+                </Button>
+              </CardContent>
+            </Card>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="pb-3">

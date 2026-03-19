@@ -254,6 +254,26 @@ export const sidebarData = {
       ],
     },
     {
+      title: 'Sales Services',
+      url: '/sales/quotations',
+      icon: FileText,
+      items: [
+        { title: 'Quotations', url: '/sales/quotations' },
+        { title: 'Sales Orders', url: '/sales/sales-orders' },
+        { title: 'Invoices', url: '/sales/invoices' },
+        { title: 'Proforma Invoices', url: '/sales/proforma-invoices' },
+      ],
+    },
+    {
+      title: 'Sales Channels',
+      url: '/sales-channels',
+      icon: Store,
+      items: [
+        { title: 'Overview', url: '/sales-channels' },
+        { title: 'Add Channel', url: '/sales-channels/new' },
+      ],
+    },
+    {
       title: 'Financial',
       url: '/financial',
       icon: DollarSign,
@@ -496,31 +516,42 @@ export const sidebarData = {
       name: 'Communication',
       url: '/communication/messages',
       icon: MessageSquare,
-    },
-    {
-      name: 'Sales Services',
-      url: '/sales/quotations',
-      icon: FileText,
-    },
-    {
-      name: 'Sales Channels',
-      url: '/sales-channels',
-      icon: Store,
+      items: [{ title: 'Messages', url: '/communication/messages' }],
     },
     {
       name: 'Courier Logistics',
       url: '/logistics/dashboard',
       icon: Truck,
+      items: [
+        { title: 'Dashboard', url: '/logistics/dashboard' },
+        { title: 'Deliveries', url: '/logistics/deliveries' },
+        { title: 'Couriers', url: '/logistics/couriers' },
+        { title: 'Tracking', url: '/logistics/tracking' },
+        { title: 'Routes', url: '/logistics/routes' },
+        { title: 'Reports', url: '/logistics/reports' },
+        { title: 'Settings', url: '/logistics/settings' },
+      ],
     },
     {
       name: 'Rentals',
       url: '/rentals',
       icon: Calendar,
+      items: [
+        { title: 'Overview', url: '/rentals' },
+        { title: 'Equipment', url: '/rentals/equipment' },
+        { title: 'Packages', url: '/rentals/packages' },
+        { title: 'Reservations', url: '/rentals/reservations' },
+        { title: 'Damage', url: '/rentals/damage' },
+      ],
     },
     {
       name: 'Repairs Workshop',
       url: '/repairs',
       icon: Wrench,
+      items: [
+        { title: 'Overview', url: '/repairs' },
+        { title: 'Orders', url: '/repairs/orders' },
+      ],
     },
   ],
 };
@@ -534,14 +565,14 @@ const MODULE_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibili
   'Suppliers': 'suppliers',
   'Product Management': 'productManagement',
   'Customers': 'customers',
+  'Sales Services': 'salesServices',
+  'Sales Channels': 'salesChannels',
   'Financial': 'financial',
   'Support': 'support',
 };
 
 const PROJECT_KEY_MAP: Record<string, keyof import('@/lib/services/ModuleVisibilityService').ModuleVisibilitySettings> = {
   'Communication': 'communication',
-  'Sales Services': 'salesServices',
-  'Sales Channels': 'salesChannels',
   'Courier Logistics': 'courierLogistics',
   'Rentals': 'rentals',
   'Repairs Workshop': 'repairsWorkshop',

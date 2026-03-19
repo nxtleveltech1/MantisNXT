@@ -55,6 +55,7 @@
         "analyze:browser": "ANALYZE=true BUNDLE_ANALYZE=browser bun run build",
         "// Integration Scripts": "Commands for full inventory integration",
         "db:seed:financial": "bun scripts/database/seed-financial-mock.ts",
+        "db:seed:xero-demo": "bun scripts/seed-xero-demo-dotx.ts",
         "db:purge": "psql $NEON_SPP_DATABASE_URL -f database/scripts/purge_all_inventory_data.sql",
         "db:verify-schema": "psql $NEON_SPP_DATABASE_URL -f database/scripts/verify_schema_exists.sql",
         "db:create-schemas": "psql $NEON_SPP_DATABASE_URL -f database/scripts/create_missing_schemas.sql",
