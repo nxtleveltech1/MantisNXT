@@ -8,9 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getXeroConnection, hasActiveConnection } from '@/lib/xero/token-manager';
+import { getXeroConnection, hasActiveConnection, getValidTokenSet } from '@/lib/xero/token-manager';
 import { isXeroConfigured } from '@/lib/xero/client';
-import { handleApiError } from '@/lib/xero/errors';
+import { handleApiError, isAuthError } from '@/lib/xero/errors';
 import { resolveXeroRequestContext } from '@/lib/xero/org-context';
 
 export async function GET(request: NextRequest) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get connection details
-    const connection = await getXeroConnection(orgId);
+    let connection = await getXeroConnection(orgId);
 
     if (!connection) {
       return NextResponse.json({
@@ -66,7 +66,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Calculate token expiry status
+    // Attempt refresh when returning status so UI sees up-to-date token state (connect-once, stay connected)
+    try {
+      await getValidTokenSet(orgId);
+      connection = await getXeroConnection(orgId) ?? connection;
+    } catch (error) {
+      if (!isAuthError(error)) {
+        throw error;
+      }
+      // Refresh failed (e.g. REFRESH_FAILED, DECRYPTION_FAILED): return 200 with isExpired so UI shows "Token expired. Please reconnect."
+    }
+
     const now = new Date();
     const tokenExpiresAt = new Date(connection.tokenExpiresAt);
     const isTokenExpired = tokenExpiresAt <= now;

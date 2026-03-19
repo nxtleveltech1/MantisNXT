@@ -28,6 +28,7 @@ const ALWAYS_PUBLIC_ENDPOINTS = [
   '/api/health/system',
   '/api/cron/json-feed-sync',
   '/api/cron/plusportal-sync',
+  '/api/cron/xero-token-refresh',
   '/api/core/selections',
   '/api/v1/products/pos',
   '/api/v1/sales/pos',
@@ -93,7 +94,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const method = request.method;
 
   // CRITICAL: Cron endpoints must bypass auth before any Clerk logic (prevents 404 from auth.protect)
-  if (pathname === '/api/cron/json-feed-sync' || pathname === '/api/cron/plusportal-sync') {
+  if (pathname === '/api/cron/json-feed-sync' || pathname === '/api/cron/plusportal-sync' || pathname === '/api/cron/xero-token-refresh') {
     return NextResponse.next();
   }
 
