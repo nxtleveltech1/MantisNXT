@@ -465,6 +465,14 @@ export const sidebarData = {
           ],
         },
         {
+          title: 'Odoo Config',
+          url: '/financial/odoo-config',
+        },
+        {
+          title: 'Reconciliation',
+          url: '/financial/reconciliation',
+        },
+        {
           title: 'Xero Accounting',
           url: '/integrations/xero',
           items: [

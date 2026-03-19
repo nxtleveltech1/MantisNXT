@@ -8,7 +8,8 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { DollarSign, TrendingUp, TrendingDown, FileJson } from 'lucide-react';
 
 interface DashboardData {
   ap_balance: number;
@@ -124,6 +125,15 @@ export default function FinancialDashboardPage() {
   return (
     <AppLayout title="Financial Dashboard" breadcrumbs={[{ label: 'Financial', href: '/financial' }]}>
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <Link
+            href="/financial/odoo-config"
+            className="inline-flex items-center gap-2 rounded border border-border bg-card px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          >
+            <FileJson className="h-4 w-4" />
+            Odoo Config & Xero Sync
+          </Link>
+        </div>
 
       {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
