@@ -11,6 +11,8 @@ import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapSupplierInvoiceToXero, generateSyncHash, formatDateForXero } from '../mappers';
 import { parseXeroApiError, XeroSyncError } from '../errors';
+import { query } from '@/lib/database';
+import { syncCustomerToXero } from './contacts';
 import {
   getXeroEntityId,
   saveEntityMapping,
@@ -114,6 +116,55 @@ export interface FiscalContactContext {
   stateId?: number | null;
 }
 
+async function ensureCustomerContactMapping(orgId: string, customerId: string): Promise<string | null> {
+  const existingContactId = await getXeroEntityId(orgId, 'contact', customerId);
+  if (existingContactId) return existingContactId;
+
+  const customerResult = await query<{
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    company: string | null;
+    tax_number: string | null;
+    address: {
+      street?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    } | null;
+  }>(
+    `SELECT id, name, email, phone, company, tax_number, address
+     FROM customer
+     WHERE id = $1 AND org_id = $2`,
+    [customerId, orgId]
+  );
+  const customer = customerResult.rows[0];
+  if (!customer) return null;
+
+  const contactSync = await syncCustomerToXero(orgId, {
+    id: customer.id,
+    name: customer.name,
+    email: customer.email || undefined,
+    phone: customer.phone || undefined,
+    company: customer.company || undefined,
+    taxNumber: customer.tax_number || undefined,
+    address: customer.address
+      ? {
+          street: customer.address.street,
+          city: customer.address.city,
+          state: customer.address.state,
+          postalCode: customer.address.postal_code,
+          country: customer.address.country,
+        }
+      : undefined,
+  });
+
+  if (!contactSync.success) return null;
+  return await getXeroEntityId(orgId, 'contact', customerId);
+}
+
 /**
  * Apply fiscal position overrides to Xero invoice line items (account code and tax type)
  */
@@ -151,7 +202,10 @@ export async function syncSalesInvoiceToXero(
     xero.setTokenSet(tokenSet);
 
     // Get Xero contact ID for customer
-    const xeroContactId = await getXeroEntityId(orgId, 'contact', invoice.customerId);
+    let xeroContactId = await getXeroEntityId(orgId, 'contact', invoice.customerId);
+    if (!xeroContactId) {
+      xeroContactId = await ensureCustomerContactMapping(orgId, invoice.customerId);
+    }
     if (!xeroContactId) {
       throw new XeroSyncError(
         `Customer ${invoice.customerName || invoice.customerId} not synced to Xero. Sync customer first.`,

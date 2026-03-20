@@ -100,6 +100,41 @@ export interface QuotationUpdate {
 }
 
 export class QuotationService {
+  private static async scheduleQuotationSync(orgId: string, quotation: Quotation): Promise<void> {
+    try {
+      const { hasActiveConnection } = await import('@/lib/xero/token-manager');
+      const { syncQuoteToXero } = await import('@/lib/xero/sync/quotes');
+
+      const isConnected = await hasActiveConnection(orgId);
+      if (!isConnected) return;
+
+      const items = await this.getQuotationItems(quotation.id);
+      const nxtQuote = {
+        id: quotation.id,
+        customerId: quotation.customer_id,
+        quoteNumber: quotation.document_number,
+        date: quotation.created_at,
+        expiryDate: quotation.valid_until || undefined,
+        title: quotation.reference_number || undefined,
+        summary: quotation.notes || undefined,
+        terms: undefined,
+        status: quotation.status,
+        currency: quotation.currency,
+        lineItems: items.map((item) => ({
+          description: item.description || item.name,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+        })),
+      };
+
+      void syncQuoteToXero(orgId, nxtQuote).catch((syncError) => {
+        console.error('[Xero Sync] Failed to sync quotation:', syncError);
+      });
+    } catch (xeroError) {
+      console.error('[Xero Sync] Error scheduling quotation sync:', xeroError);
+    }
+  }
+
   static async getQuotations(
     orgId: string,
     limit = 50,
@@ -308,43 +343,8 @@ export class QuotationService {
 
       const finalQuotation = updatedResult.rows[0];
 
-      // Sync to Xero if connected (fire and forget - don't block quotation creation)
-      try {
-        const { hasActiveConnection } = await import('@/lib/xero/token-manager');
-        const { syncQuoteToXero } = await import('@/lib/xero/sync/quotes');
-        
-        const isConnected = await hasActiveConnection(data.org_id);
-        if (isConnected) {
-          const items = await this.getQuotationItems(finalQuotation.id);
-          
-          const nxtQuote = {
-            id: finalQuotation.id,
-            customerId: finalQuotation.customer_id,
-            quoteNumber: finalQuotation.document_number,
-            date: finalQuotation.created_at,
-            expiryDate: finalQuotation.valid_until || undefined,
-            title: finalQuotation.reference_number || undefined,
-            summary: finalQuotation.notes || undefined,
-            terms: undefined,
-            status: finalQuotation.status,
-            currency: finalQuotation.currency,
-            lineItems: items.map(item => ({
-              description: item.description || item.name,
-              quantity: item.quantity,
-              unitPrice: item.unit_price,
-            })),
-          };
-
-          // Sync asynchronously - don't await to avoid blocking
-          syncQuoteToXero(data.org_id, nxtQuote).catch((syncError) => {
-            console.error('[Xero Sync] Failed to sync quotation after creation:', syncError);
-            // Log error but don't throw - quotation creation succeeded
-          });
-        }
-      } catch (xeroError) {
-        // Xero sync failure should not block quotation creation
-        console.error('[Xero Sync] Error checking Xero connection:', xeroError);
-      }
+      // Sync to Xero in background - don't block quotation creation
+      void this.scheduleQuotationSync(data.org_id, finalQuotation);
 
       // Handle delivery options if provided
       if (data.delivery_options) {
@@ -407,7 +407,10 @@ export class QuotationService {
       }
 
       // PDF generation is handled by DocumentGenerationHooks.onQuotationCreated (called from API route)
-      return updatedResult.rows[0];
+      const updatedQuotation = updatedResult.rows[0];
+      void this.scheduleQuotationSync(orgId, updatedQuotation);
+
+      return updatedQuotation;
     } catch (error) {
       console.error('Error creating quotation:', error);
       if (error instanceof Error) {
@@ -539,7 +542,10 @@ export class QuotationService {
         [id]
       );
 
-      return updatedResult.rows[0];
+      const updatedQuotation = updatedResult.rows[0];
+      void this.scheduleQuotationSync(orgId, updatedQuotation);
+
+      return updatedQuotation;
     } catch (error) {
       console.error('Error updating quotation:', error);
       throw error;

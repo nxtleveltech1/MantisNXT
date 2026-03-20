@@ -10,6 +10,7 @@ import { callXeroApi } from '../rate-limiter';
 import { logSyncSuccess, logSyncError } from '../sync-logger';
 import { mapQuotationToXero, generateSyncHash } from '../mappers';
 import { parseXeroApiError, XeroSyncError } from '../errors';
+import { syncCustomerToXero } from './contacts';
 import { query } from '@/lib/database';
 import type { XeroQuote, SyncResult, XeroAccountMappingConfig } from '../types';
 
@@ -90,6 +91,55 @@ async function getAccountMappings(orgId: string): Promise<Partial<XeroAccountMap
   return mappings;
 }
 
+async function ensureCustomerContactMapping(orgId: string, customerId: string): Promise<string | null> {
+  const existingContactId = await getXeroEntityId(orgId, 'contact', customerId);
+  if (existingContactId) return existingContactId;
+
+  const customerResult = await query<{
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    company: string | null;
+    tax_number: string | null;
+    address: {
+      street?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    } | null;
+  }>(
+    `SELECT id, name, email, phone, company, tax_number, address
+     FROM customer
+     WHERE id = $1 AND org_id = $2`,
+    [customerId, orgId]
+  );
+  const customer = customerResult.rows[0];
+  if (!customer) return null;
+
+  const contactSync = await syncCustomerToXero(orgId, {
+    id: customer.id,
+    name: customer.name,
+    email: customer.email || undefined,
+    phone: customer.phone || undefined,
+    company: customer.company || undefined,
+    taxNumber: customer.tax_number || undefined,
+    address: customer.address
+      ? {
+          street: customer.address.street,
+          city: customer.address.city,
+          state: customer.address.state,
+          postalCode: customer.address.postal_code,
+          country: customer.address.country,
+        }
+      : undefined,
+  });
+
+  if (!contactSync.success) return null;
+  return await getXeroEntityId(orgId, 'contact', customerId);
+}
+
 // ============================================================================
 // SYNC QUOTE TO XERO
 // ============================================================================
@@ -110,7 +160,10 @@ export async function syncQuoteToXero(
     xero.setTokenSet(tokenSet);
 
     // Get Xero contact ID for customer
-    const xeroContactId = await getXeroEntityId(orgId, 'contact', quote.customerId);
+    let xeroContactId = await getXeroEntityId(orgId, 'contact', quote.customerId);
+    if (!xeroContactId) {
+      xeroContactId = await ensureCustomerContactMapping(orgId, quote.customerId);
+    }
     console.log(`[Xero Quote Sync] Xero contact ID: ${xeroContactId || 'NOT FOUND'}`);
     if (!xeroContactId) {
       throw new XeroSyncError(

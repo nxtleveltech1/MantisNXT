@@ -6,6 +6,7 @@
 
 import { query } from '@/lib/database/unified-connection';
 import { DocumentNumberingService } from './DocumentNumberingService';
+import { scheduleSyncSalesInvoiceToXero } from '@/lib/xero/sync/sales-ar-bridge';
 
 export interface Invoice {
   id: string;
@@ -181,7 +182,9 @@ export class InvoiceService {
         documentNumber = await DocumentNumberingService.generateDocumentNumber(data.org_id, 'INV');
       }
 
-      // Insert invoice
+      const requestedStatus = data.status || 'draft';
+
+      // Insert invoice as draft first so AR/GL triggers execute after line items exist
       const invoiceResult = await query<Invoice>(
         `INSERT INTO invoices (
           org_id, customer_id, sales_order_id, proforma_invoice_id, document_number, status, currency,
@@ -194,7 +197,7 @@ export class InvoiceService {
           data.sales_order_id || null,
           data.proforma_invoice_id || null,
           documentNumber,
-          data.status || 'draft',
+          'draft',
           data.currency || 'ZAR',
           data.due_date || null,
           data.reference_number || null,
@@ -237,13 +240,27 @@ export class InvoiceService {
         }
       }
 
+      if (requestedStatus !== 'draft') {
+        await query(
+          `UPDATE invoices
+           SET status = $1
+           WHERE id = $2 AND org_id = $3`,
+          [requestedStatus, invoice.id, data.org_id]
+        );
+      }
+
       // Totals are calculated by trigger, fetch updated invoice
       const updatedResult = await query<Invoice>(
         'SELECT * FROM invoices WHERE id = $1',
         [invoice.id]
       );
 
-      return updatedResult.rows[0];
+      const createdInvoice = updatedResult.rows[0];
+      if (createdInvoice.status !== 'draft') {
+        void scheduleSyncSalesInvoiceToXero(data.org_id, createdInvoice.id);
+      }
+
+      return createdInvoice;
     } catch (error) {
       console.error('Error creating invoice:', error);
       throw error;
@@ -380,7 +397,12 @@ export class InvoiceService {
         [id]
       );
 
-      return updatedResult.rows[0];
+      const updatedInvoice = updatedResult.rows[0];
+      if (updatedInvoice.status !== 'draft') {
+        void scheduleSyncSalesInvoiceToXero(updatedInvoice.org_id, updatedInvoice.id);
+      }
+
+      return updatedInvoice;
     } catch (error) {
       console.error('Error updating invoice:', error);
       throw error;
