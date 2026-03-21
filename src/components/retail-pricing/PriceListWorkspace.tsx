@@ -44,7 +44,16 @@ import {
   type PricingMode,
   type RoundingMode,
 } from '@/lib/retail-pricing/price-rules';
-import { ChevronRight, Download, RefreshCw, Save } from 'lucide-react';
+import {
+  ChevronRight,
+  Download,
+  Loader2,
+  Package,
+  RefreshCw,
+  Save,
+  SlidersHorizontal,
+  Table2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -102,7 +111,8 @@ export function PriceListWorkspace() {
   const [ruleLoading, setRuleLoading] = useState(false);
 
   const [page, setPage] = useState(1);
-  const [saving, setSaving] = useState(false);
+  /** Only the PUT / bulk-apply request — do not tie to fetchItems() or the button feels "stuck" */
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     void fetchItems();
@@ -485,14 +495,19 @@ export function PriceListWorkspace() {
       updates.push({ id: row.id, selling_price: Math.round(neu * 100) / 100 });
     }
     if (updates.length === 0) {
-      toast.message('No price changes to apply');
+      toast.message(
+        'No price changes to apply — new prices match current prices for this view, or costs are missing.',
+      );
       return;
     }
-    setSaving(true);
+    setApplying(true);
+    const ac = new AbortController();
+    const t = window.setTimeout(() => ac.abort(), 120_000);
     try {
       const res = await fetch('/api/inventory', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        signal: ac.signal,
         body: JSON.stringify({
           action: 'bulk_update',
           items: updates.map(({ id, selling_price }) => ({
@@ -506,13 +521,32 @@ export function PriceListWorkspace() {
         throw new Error(data.error || `Apply failed (${res.status})`);
       }
       toast.success(`Applied pricing to ${updates.length} line(s)`);
-      await fetchItems();
+      setApplying(false);
+      void fetchItems().catch(() => {
+        toast.message('Prices saved; list refresh failed — use refresh or reload the page.');
+      });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Apply failed');
+      if (e instanceof Error && e.name === 'AbortError') {
+        toast.error('Apply timed out — try fewer rows or check the network.');
+      } else {
+        toast.error(e instanceof Error ? e.message : 'Apply failed');
+      }
+      setApplying(false);
     } finally {
-      setSaving(false);
+      window.clearTimeout(t);
     }
   };
+
+  const linesToChange = useMemo(() => {
+    let n = 0;
+    for (const row of baseFiltered) {
+      const neu = previewForRow(row);
+      if (neu == null || !Number.isFinite(neu)) continue;
+      const cur = effectiveSellingPrice(row);
+      if (Math.abs(neu - cur) >= 0.005) n++;
+    }
+    return n;
+  }, [baseFiltered, previewForRow]);
 
   const filterChips = useMemo(() => {
     const chips: { label: string }[] = [];
@@ -542,9 +576,14 @@ export function PriceListWorkspace() {
     inStockOnly,
   ]);
 
+  const supplierLabel =
+    supplierId === 'all'
+      ? 'All suppliers'
+      : supplierOptions.find(o => o.id === supplierId)?.name ?? supplierId;
+
   return (
     <Card className="border-border bg-card rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-6 p-6 sm:p-8">
         {error ? (
           <div className="text-destructive flex items-center gap-2 text-sm">
             {error}
@@ -554,6 +593,37 @@ export function PriceListWorkspace() {
           </div>
         ) : null}
 
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="border-border bg-muted/30 flex items-start gap-3 rounded-[10px] border p-4">
+            <Package className="text-primary mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Rows in view</p>
+              <p className="text-foreground text-2xl font-semibold tabular-nums">
+                {baseFiltered.length}
+              </p>
+            </div>
+          </div>
+          <div className="border-border bg-muted/30 flex items-start gap-3 rounded-[10px] border p-4">
+            <SlidersHorizontal className="text-primary mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Ready to apply</p>
+              <p className="text-foreground text-2xl font-semibold tabular-nums">{linesToChange}</p>
+            </div>
+          </div>
+          <div className="border-border bg-muted/30 flex items-start gap-3 rounded-[10px] border p-4">
+            <Table2 className="text-primary mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-xs font-medium">Supplier scope</p>
+              <p className="text-foreground truncate text-sm font-semibold">{supplierLabel}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-border space-y-4 rounded-[10px] border bg-background p-4 sm:p-5">
+          <h2 className="text-foreground flex items-center gap-2 text-sm font-semibold tracking-tight">
+            <Package className="h-4 w-4 text-primary" aria-hidden />
+            Scope and filters
+          </h2>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2 min-w-[220px]">
             <Label htmlFor="pl-supplier">Supplier</Label>
@@ -597,7 +667,7 @@ export function PriceListWorkspace() {
         </div>
 
         {scopeFiltered ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 pt-2">
             <div className="space-y-1">
               <Label>Search</Label>
               <div className="relative">
@@ -672,37 +742,58 @@ export function PriceListWorkspace() {
         ) : null}
 
         {filterChips.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-1">
             {filterChips.map(c => (
               <span
                 key={c.label}
-                className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-[8px] border px-2 py-1 text-xs"
+                className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-[8px] border px-2 py-1 text-xs font-medium"
               >
                 {c.label}
               </span>
             ))}
           </div>
         ) : null}
+        </div>
 
+        <div className="border-border space-y-4 rounded-[10px] border bg-background p-4 sm:p-5">
+          <h2 className="text-foreground flex items-center gap-2 text-sm font-semibold tracking-tight">
+            <SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden />
+            Pricing rules
+          </h2>
         <Tabs
           value={pricingTab}
           onValueChange={v => setPricingTab(v as PricingMode)}
           className="w-full"
         >
-          <TabsList className="bg-muted/50 flex h-auto flex-wrap justify-start gap-1 rounded-[10px] p-1">
-            <TabsTrigger value="margin_pct" className="rounded-[8px]">
+          <TabsList className="bg-muted/50 flex h-auto min-h-[2.75rem] flex-wrap justify-start gap-1 rounded-[10px] p-1.5">
+            <TabsTrigger
+              value="margin_pct"
+              className="data-[state=active]:bg-card rounded-[8px] px-4 py-2 text-sm font-semibold"
+            >
               Margin %
             </TabsTrigger>
-            <TabsTrigger value="markup_pct" className="rounded-[8px]">
+            <TabsTrigger
+              value="markup_pct"
+              className="data-[state=active]:bg-card rounded-[8px] px-4 py-2 text-sm font-semibold"
+            >
               Markup %
             </TabsTrigger>
-            <TabsTrigger value="fixed_price" className="rounded-[8px]">
+            <TabsTrigger
+              value="fixed_price"
+              className="data-[state=active]:bg-card rounded-[8px] px-4 py-2 text-sm font-semibold"
+            >
               Fixed price
             </TabsTrigger>
-            <TabsTrigger value="cost_plus_value" className="rounded-[8px]">
+            <TabsTrigger
+              value="cost_plus_value"
+              className="data-[state=active]:bg-card rounded-[8px] px-4 py-2 text-sm font-semibold"
+            >
               Cost + value
             </TabsTrigger>
-            <TabsTrigger value="rule_based" className="rounded-[8px]">
+            <TabsTrigger
+              value="rule_based"
+              className="data-[state=active]:bg-card rounded-[8px] px-4 py-2 text-sm font-semibold"
+            >
               Rule-based
             </TabsTrigger>
           </TabsList>
@@ -786,7 +877,7 @@ export function PriceListWorkspace() {
           </TabsContent>
         </Tabs>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="border-border mt-4 flex flex-col gap-4 border-t pt-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <Label className="text-muted-foreground text-xs">Cost basis</Label>
             <RadioGroup
@@ -860,7 +951,13 @@ export function PriceListWorkspace() {
             </div>
           </div>
         </div>
+        </div>
 
+        <div className="border-border space-y-3 rounded-[10px] border bg-background p-4 sm:p-5">
+          <h2 className="text-foreground flex items-center gap-2 text-sm font-semibold tracking-tight">
+            <Table2 className="h-4 w-4 text-primary" aria-hidden />
+            Preview
+          </h2>
         <div className="border-border overflow-x-auto rounded-[10px] border">
           <Table>
             <TableHeader>
@@ -955,7 +1052,7 @@ export function PriceListWorkspace() {
           </Table>
         </div>
 
-        <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs">
           <span>
             Showing {(pageSafe - 1) * PAGE_SIZE + 1}–
             {Math.min(pageSafe * PAGE_SIZE, baseFiltered.length)} of {baseFiltered.length} rows
@@ -965,7 +1062,7 @@ export function PriceListWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-[8px]"
+              className="rounded-[8px] font-medium"
               disabled={pageSafe <= 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
             >
@@ -975,7 +1072,7 @@ export function PriceListWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-[8px]"
+              className="rounded-[8px] font-medium"
               disabled={pageSafe >= totalPages}
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             >
@@ -983,24 +1080,37 @@ export function PriceListWorkspace() {
             </Button>
           </div>
         </div>
+        </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+        <div className="border-border bg-muted/20 flex flex-wrap items-center justify-end gap-3 rounded-[10px] border p-4 sm:gap-4">
           <Button
             type="button"
             variant="outline"
-            className="rounded-[8px]"
+            size="lg"
+            className="h-11 min-w-[7rem] rounded-[10px] border-2 font-semibold"
             onClick={resetWorkspace}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Reset
           </Button>
-          <Button type="button" variant="outline" className="rounded-[8px]" onClick={saveDraft}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-11 min-w-[7rem] rounded-[10px] border-2 font-semibold"
+            onClick={saveDraft}
+          >
             <Save className="mr-2 h-4 w-4" />
             Save draft
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" className="rounded-[8px]">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-11 min-w-[8rem] rounded-[10px] border-2 font-semibold"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -1016,12 +1126,16 @@ export function PriceListWorkspace() {
           </DropdownMenu>
           <Button
             type="button"
-            className="rounded-[8px] bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={saving || loading}
+            size="lg"
+            className="h-12 min-w-[12rem] rounded-[10px] px-8 text-base font-semibold transition-opacity duration-150 hover:opacity-95 disabled:opacity-60"
+            disabled={applying}
             onClick={() => void applyPricing()}
           >
+            {applying ? (
+              <Loader2 className="mr-2 h-5 w-5 shrink-0 animate-spin" aria-hidden />
+            ) : null}
             Apply pricing
-            <ChevronRight className="ml-1 h-4 w-4" />
+            <ChevronRight className="ml-1 h-5 w-5 shrink-0" />
           </Button>
         </div>
       </CardContent>
