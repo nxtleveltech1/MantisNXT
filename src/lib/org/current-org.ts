@@ -23,6 +23,15 @@ export function setStoredOrg(id: string, name?: string): void {
   window.dispatchEvent(new CustomEvent('org-changed', { detail: { orgId: id } }));
 }
 
+/**
+ * Merge into fetch headers so server routes using getOrgId() resolve the org
+ * selected in the header switcher (localStorage org_id).
+ */
+export function orgHeadersForApi(): Record<string, string> {
+  const id = getStoredOrgId();
+  return id ? { 'x-org-id': id } : {};
+}
+
 export interface CurrentOrgResponse {
   success: boolean;
   data?: { id: string; name?: string; slug?: string; source?: string };

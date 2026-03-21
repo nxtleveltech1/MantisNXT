@@ -407,10 +407,7 @@ export class QuotationService {
       }
 
       // PDF generation is handled by DocumentGenerationHooks.onQuotationCreated (called from API route)
-      const updatedQuotation = updatedResult.rows[0];
-      void this.scheduleQuotationSync(orgId, updatedQuotation);
-
-      return updatedQuotation;
+      return finalQuotation;
     } catch (error) {
       console.error('Error creating quotation:', error);
       if (error instanceof Error) {

@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { DeliveryOptionsInput } from '@/types/logistics';
+import { parseLineItemQuantity, roundMoney2 } from '@/lib/format/line-item-numbers';
+import { orgHeadersForApi } from '@/lib/org/current-org';
 
 interface QuotationItem {
   product_id?: string;
@@ -119,7 +121,7 @@ export default function NewQuotationPage() {
       sku: product.sku,
       name: product.name,
       quantity: 1,
-      unit_price: product.selling_price || product.sale_price || product.cost_price || 0,
+      unit_price: roundMoney2(product.selling_price || product.sale_price || product.cost_price || 0),
       tax_rate: 0.15, // Default 15% VAT for South Africa
       tax_amount: 0,
       subtotal: 0,
@@ -165,7 +167,7 @@ export default function NewQuotationPage() {
         name: 'Courier Delivery',
         description: `${options.service_tier?.charAt(0).toUpperCase()}${options.service_tier?.slice(1) || 'Standard'} delivery service`,
         quantity: 1,
-        unit_price: options.selected_quote_cost,
+        unit_price: roundMoney2(options.selected_quote_cost),
         tax_rate: 0.15, // VAT on delivery
         tax_amount: options.selected_quote_cost * 0.15,
         subtotal: options.selected_quote_cost,
@@ -216,8 +218,8 @@ export default function NewQuotationPage() {
       return;
     }
 
-    if (productItems.some(item => item.quantity <= 0)) {
-      toast.error('All items must have a quantity greater than 0');
+    if (productItems.some(item => item.quantity <= 0 || !Number.isInteger(item.quantity))) {
+      toast.error('Quantity must be a whole number greater than 0');
       return;
     }
 
@@ -240,15 +242,15 @@ export default function NewQuotationPage() {
         }
 
         // Ensure all numeric values are proper numbers
-        const quantity = Number(item.quantity);
-        const unitPrice = Number(item.unit_price);
+        const quantity = Math.floor(Number(item.quantity));
+        const unitPrice = roundMoney2(Number(item.unit_price));
         const taxRate = Number(item.tax_rate);
         const taxAmount = Number(item.tax_amount);
         const subtotal = Number(item.subtotal);
         const total = Number(item.total);
 
         // Validate numbers
-        if (isNaN(quantity) || quantity <= 0) {
+        if (isNaN(quantity) || quantity <= 0 || !Number.isInteger(quantity)) {
           throw new Error(`Item ${index + 1}: Invalid quantity`);
         }
         if (isNaN(unitPrice) || unitPrice < 0) {
@@ -307,7 +309,7 @@ export default function NewQuotationPage() {
 
       const response = await fetch('/api/v1/sales/quotations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...orgHeadersForApi() },
         body: JSON.stringify(payload),
       });
 
@@ -476,20 +478,30 @@ export default function NewQuotationPage() {
                                   <Label>Quantity *</Label>
                                   <Input
                                     type="number"
+                                    inputMode="numeric"
                                     value={item.quantity}
-                                    onChange={e => updateItem(index, { quantity: parseFloat(e.target.value) || 0 })}
-                                    min="0.01"
-                                    step="0.01"
+                                    onChange={e =>
+                                      updateItem(index, { quantity: parseLineItemQuantity(e.target.value) })
+                                    }
+                                    min={1}
+                                    step={1}
                                   />
                                 </div>
                                 <div>
                                   <Label>Unit Price (ZAR) *</Label>
                                   <Input
                                     type="number"
+                                    inputMode="decimal"
                                     value={item.unit_price}
-                                    onChange={e => updateItem(index, { unit_price: parseFloat(e.target.value) || 0 })}
-                                    min="0"
-                                    step="0.01"
+                                    onChange={e => {
+                                      const raw = e.target.value;
+                                      const n = parseFloat(raw);
+                                      updateItem(index, {
+                                        unit_price: Number.isNaN(n) ? 0 : roundMoney2(n),
+                                      });
+                                    }}
+                                    min={0}
+                                    step={0.01}
                                   />
                                 </div>
                                 <div>
