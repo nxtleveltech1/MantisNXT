@@ -1,7 +1,9 @@
 # Pricing Optimization Module - Comprehensive Review
 
+> **2026-03 update:** The `/pricing-optimization` App Router module and optimization-run APIs were **removed**. Retail workflows live under **`/retail-pricing`**; competitive intel under **`/market-analysis`**. Permanent redirects map old URLs. This document is retained for historical DB review notes.
+
 **Date:** 2025-01-27  
-**Status:** Critical Issues Found - Fixes Required
+**Status:** Critical Issues Found - Fixes Required (historical)
 
 ## Executive Summary
 

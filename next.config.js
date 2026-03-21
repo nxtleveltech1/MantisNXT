@@ -229,9 +229,69 @@ const nextConfig = {
     // optimizeCss: true, // Disabled to prevent syntax errors in production builds
   },
 
-  // Configure redirects if needed
   async redirects() {
-    return [];
+    return [
+      {
+        source: '/pricing-optimization/competitive-intelligence/positioning',
+        destination: '/market-analysis/competitive-position',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/competitive-intelligence/positioning/:path*',
+        destination: '/market-analysis/competitive-position',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/competitive-intelligence/:path*',
+        destination: '/market-analysis/:path*',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/competitive-intelligence',
+        destination: '/market-analysis',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/optimization/:path*',
+        destination: '/retail-pricing/price-positioning',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/optimization',
+        destination: '/retail-pricing/price-positioning',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/analytics',
+        destination: '/retail-pricing/analytics',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/rules',
+        destination: '/retail-pricing/rules',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization',
+        destination: '/retail-pricing/price-positioning',
+        permanent: true,
+      },
+      {
+        source: '/retail-pricing/selling-prices',
+        destination: '/retail-pricing/price-positioning',
+        permanent: true,
+      },
+      {
+        source: '/retail-pricing/selling-prices/:path*',
+        destination: '/retail-pricing/price-positioning',
+        permanent: true,
+      },
+      {
+        source: '/pricing-optimization/:path*',
+        destination: '/retail-pricing/:path*',
+        permanent: true,
+      },
+    ];
   },
 };
 

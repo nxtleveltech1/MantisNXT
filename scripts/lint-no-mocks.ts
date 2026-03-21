@@ -25,7 +25,8 @@ const SCAN_DIRS = [
   'src/app/api/v1/pricing',
   'src/app/api/v1/pricing-intel',
   'src/app/api/analytics',
-  'src/app/pricing-optimization',
+  'src/app/retail-pricing',
+  'src/app/market-analysis',
 ];
 
 // File extensions to check

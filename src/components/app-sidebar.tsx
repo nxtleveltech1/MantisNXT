@@ -180,65 +180,65 @@ export const sidebarData = {
         },
         {
           title: 'Retail Price Listing',
-          url: '/pricing-optimization',
+          url: '/retail-pricing/price-positioning',
           items: [
             {
-              title: 'Overview',
-              url: '/pricing-optimization',
+              title: 'Price positioning',
+              url: '/retail-pricing/price-positioning',
             },
             {
               title: 'Analytics',
-              url: '/pricing-optimization/analytics',
+              url: '/retail-pricing/analytics',
             },
             {
-              title: 'Price History',
-              url: '/pricing-optimization/competitive-intelligence/history',
-            },
-            {
-              title: 'Price Positioning',
-              url: '/pricing-optimization/competitive-intelligence/positioning',
+              title: 'Price history',
+              url: '/retail-pricing/price-history',
             },
             {
               title: 'Rules',
-              url: '/pricing-optimization/rules',
-            },
-            {
-              title: 'Optimization Runs',
-              url: '/pricing-optimization/optimization',
+              url: '/retail-pricing/rules',
             },
           ],
         },
         {
           title: 'Market Analysis',
-          url: '/pricing-optimization/competitive-intelligence',
+          url: '/market-analysis',
           items: [
             {
               title: 'Competitors',
-              url: '/pricing-optimization/competitive-intelligence/competitors',
+              url: '/market-analysis/competitors',
             },
             {
               title: 'Competitive Intelligence',
-              url: '/pricing-optimization/competitive-intelligence',
+              url: '/market-analysis',
             },
             {
               title: 'Trend Analysis',
-              url: '/pricing-optimization/competitive-intelligence/trends',
+              url: '/market-analysis/trends',
             },
             {
               title: 'Scraping Jobs',
-              url: '/pricing-optimization/competitive-intelligence/jobs',
+              url: '/market-analysis/jobs',
             },
             {
               title: 'Product Matches',
-              url: '/pricing-optimization/competitive-intelligence/matches',
+              url: '/market-analysis/matches',
+            },
+            {
+              title: 'Competitor price history',
+              url: '/market-analysis/history',
+            },
+            {
+              title: 'Competitive position',
+              url: '/market-analysis/competitive-position',
             },
             {
               title: 'Settings',
-              url: '/pricing-optimization/competitive-intelligence/settings',
+              url: '/market-analysis/settings',
             },
             {
               title: 'Alerts',
-              url: '/pricing-optimization/competitive-intelligence/alerts',
+              url: '/market-analysis/alerts',
             },
           ],
         },

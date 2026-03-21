@@ -1,5 +1,7 @@
 # Pricing & Optimization System - Database Documentation
 
+> **App routes (2026-03):** UI moved to **`/retail-pricing`** (selling prices, rules, internal history) and **`/market-analysis`** (competitors, scraping, competitor history/charts). Optimization **run** REST endpoints were removed; database tables described below may still exist for legacy data.
+
 ## Overview
 
 **Migration:** `0013_pricing_optimization.sql`

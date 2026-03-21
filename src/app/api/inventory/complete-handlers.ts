@@ -781,7 +781,7 @@ async function handleBulkUpdate(body: unknown) {
 
         if (updateFields.length === 0) continue;
 
-        updateFields.push(`updated_at = NOW()`);
+        updateFields.push(`as_of_ts = NOW()`);
 
         const resultPayload: Record<string, unknown> = { id: item.id };
 

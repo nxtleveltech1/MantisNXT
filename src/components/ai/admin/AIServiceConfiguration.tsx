@@ -137,7 +137,7 @@ const SERVICE_INFO = {
   },
   pricing_recommendation: {
     name: 'Pricing Recommendation',
-    description: 'AI-powered pricing optimization with impact analysis and risk assessment',
+    description: 'AI-assisted margin and price suggestions aligned with retail listing rules',
     icon: '💰',
     providers: ['openai', 'anthropic'],
     defaultModel: 'claude-3-5-sonnet',

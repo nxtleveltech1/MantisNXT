@@ -27,7 +27,6 @@ export { LoyaltyAnalyticsService } from './LoyaltyAnalyticsService';
 // ============================================================================
 
 export { PricingRuleService } from './PricingRuleService';
-export { PricingOptimizationService } from './PricingOptimizationService';
 export { PriceAnalyticsService } from './PriceAnalyticsService';
 export { PriceListProcessor } from './PriceListProcessor';
 export { PricelistService } from './PricelistService';
