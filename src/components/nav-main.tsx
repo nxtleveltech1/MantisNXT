@@ -18,6 +18,25 @@ import {
 } from '@/components/ui/sidebar';
 import { buildClientXeroUrl, getClientXeroHeaders } from '@/lib/xero/client-org';
 
+function normalizePath(path: string) {
+  if (!path) return '/';
+  const [base] = path.split('?');
+  if (base === '/') return base;
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
+/** Active when path equals this item or is under it (nested submenu parent row). */
+function isNestedNavParentActive(
+  path: string | null | undefined,
+  subItem: { url: string; items?: { url: string }[] }
+) {
+  if (!path) return false;
+  if (!subItem.items?.length) return normalizePath(path) === normalizePath(subItem.url);
+  const nu = normalizePath(subItem.url);
+  const pn = normalizePath(path);
+  return pn === nu || pn.startsWith(`${nu}/`);
+}
+
 export function NavMain({
   items,
   label = 'Platform',
@@ -126,7 +145,9 @@ export function NavMain({
                             <Collapsible asChild defaultOpen={isSubChildActive} className="group/subcollapsible">
                               <div>
                                 <CollapsibleTrigger asChild>
-                                  <SidebarMenuSubButton isActive={pathname === subItem.url}>
+                                  <SidebarMenuSubButton
+                                    isActive={isNestedNavParentActive(pathname, subItem)}
+                                  >
                                     <span>{subItem.title}</span>
                                     <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/subcollapsible:rotate-90" />
                                   </SidebarMenuSubButton>

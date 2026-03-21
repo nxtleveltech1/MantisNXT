@@ -50,9 +50,23 @@ export const findSectionForPath = (pathname: string) => {
     }
   };
 
+  type NavSubNode = { url: string; items?: NavSubNode[] };
+  const walkNested = (
+    sectionItem: (typeof sidebarData.navMain)[number],
+    nodes: NavSubNode[] | undefined
+  ) => {
+    if (!nodes?.length) return;
+    for (const node of nodes) {
+      registerMatch(sectionItem, node.url);
+      if (node.items?.length) {
+        walkNested(sectionItem, node.items);
+      }
+    }
+  };
+
   sidebarData.navMain.forEach(item => {
     registerMatch(item, item.url);
-    item.items?.forEach(subItem => registerMatch(item, subItem.url));
+    walkNested(item, item.items);
   });
 
   return bestMatch?.item ?? null;

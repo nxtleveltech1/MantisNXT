@@ -19,6 +19,24 @@ const normalizePath = (path: string) => {
   return base.endsWith('/') ? base.slice(0, -1) : base;
 };
 
+/** Longest matching prefix among links (exact or path under link). */
+function resolveActiveLinkUrl(
+  links: SectionQuickLinksProps['links'],
+  activePath: string
+): string | null {
+  const normPath = normalizePath(activePath);
+  let best: { norm: string; raw: string } | null = null;
+  for (const link of links) {
+    const normLink = normalizePath(link.url);
+    const matches = normPath === normLink || normPath.startsWith(`${normLink}/`);
+    if (!matches) continue;
+    if (!best || normLink.length > best.norm.length) {
+      best = { norm: normLink, raw: link.url };
+    }
+  }
+  return best?.raw ?? null;
+}
+
 export function SectionQuickLinks({
   sectionTitle,
   links,
@@ -26,6 +44,8 @@ export function SectionQuickLinks({
   className,
 }: SectionQuickLinksProps) {
   if (!links?.length) return null;
+
+  const activeLinkUrl = resolveActiveLinkUrl(links, activePath);
 
   return (
     <div
@@ -36,7 +56,8 @@ export function SectionQuickLinks({
       )}
     >
       {links.map(link => {
-        const isActive = normalizePath(activePath) === normalizePath(link.url);
+        const isActive =
+          activeLinkUrl != null && normalizePath(link.url) === normalizePath(activeLinkUrl);
         return (
           <Link
             key={`${link.title}-${link.url}`}

@@ -180,7 +180,7 @@ export const sidebarData = {
         },
         {
           title: 'Retail Price Listing',
-          url: '/retail-pricing/price-positioning',
+          url: '/retail-pricing',
           items: [
             {
               title: 'Price positioning',
