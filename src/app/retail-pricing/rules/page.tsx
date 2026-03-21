@@ -9,7 +9,7 @@ export default function RetailPricingRulesPage() {
     <AppLayout
       title="Retail pricing rules"
       breadcrumbs={[
-        { label: 'Retail Price Listing', href: '/retail-pricing/price-positioning' },
+        { label: 'Retail Price Listing', href: '/retail-pricing/price-list' },
         { label: 'Rules' },
       ]}
     >

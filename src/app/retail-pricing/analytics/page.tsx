@@ -77,7 +77,7 @@ export default function RetailPricingAnalyticsPage() {
     <AppLayout
       title="Retail pricing analytics"
       breadcrumbs={[
-        { label: 'Retail Price Listing', href: '/retail-pricing/price-positioning' },
+        { label: 'Retail Price Listing', href: '/retail-pricing/price-list' },
         { label: 'Analytics' },
       ]}
     >
@@ -94,7 +94,7 @@ export default function RetailPricingAnalyticsPage() {
             </p>
           </div>
           <Button variant="outline" size="sm" className="rounded-[10px]" asChild>
-            <Link href="/retail-pricing/price-positioning">Edit selling prices</Link>
+            <Link href="/retail-pricing/price-list">Set retail prices</Link>
           </Button>
         </div>
 

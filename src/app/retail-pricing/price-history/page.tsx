@@ -102,7 +102,7 @@ export default function RetailPriceHistoryPage() {
     <AppLayout
       title="Price history"
       breadcrumbs={[
-        { label: 'Retail Price Listing', href: '/retail-pricing/price-positioning' },
+        { label: 'Retail Price Listing', href: '/retail-pricing/price-list' },
         { label: 'Price history' },
       ]}
     >

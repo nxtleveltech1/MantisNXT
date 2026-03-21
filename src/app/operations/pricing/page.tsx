@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function LegacyPricingRedirectPage() {
-  redirect('/retail-pricing/price-positioning');
+  redirect('/retail-pricing/price-list');
 }

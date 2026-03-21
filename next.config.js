@@ -253,12 +253,12 @@ const nextConfig = {
       },
       {
         source: '/pricing-optimization/optimization/:path*',
-        destination: '/retail-pricing/price-positioning',
+        destination: '/retail-pricing/price-list',
         permanent: true,
       },
       {
         source: '/pricing-optimization/optimization',
-        destination: '/retail-pricing/price-positioning',
+        destination: '/retail-pricing/price-list',
         permanent: true,
       },
       {
@@ -273,7 +273,7 @@ const nextConfig = {
       },
       {
         source: '/pricing-optimization',
-        destination: '/retail-pricing/price-positioning',
+        destination: '/retail-pricing/price-list',
         permanent: true,
       },
       {
