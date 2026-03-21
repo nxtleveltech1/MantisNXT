@@ -179,12 +179,24 @@ export const sidebarData = {
           url: '/catalog/metadata',
         },
         {
-          title: 'Pricing Optimization',
+          title: 'Retail Price Listing',
           url: '/pricing-optimization',
           items: [
             {
               title: 'Overview',
               url: '/pricing-optimization',
+            },
+            {
+              title: 'Analytics',
+              url: '/pricing-optimization/analytics',
+            },
+            {
+              title: 'Price History',
+              url: '/pricing-optimization/competitive-intelligence/history',
+            },
+            {
+              title: 'Price Positioning',
+              url: '/pricing-optimization/competitive-intelligence/positioning',
             },
             {
               title: 'Rules',
@@ -194,17 +206,23 @@ export const sidebarData = {
               title: 'Optimization Runs',
               url: '/pricing-optimization/optimization',
             },
+          ],
+        },
+        {
+          title: 'Market Analysis',
+          url: '/pricing-optimization/competitive-intelligence',
+          items: [
             {
-              title: 'Analytics',
-              url: '/pricing-optimization/analytics',
+              title: 'Competitors',
+              url: '/pricing-optimization/competitive-intelligence/competitors',
             },
             {
               title: 'Competitive Intelligence',
               url: '/pricing-optimization/competitive-intelligence',
             },
             {
-              title: 'Competitors',
-              url: '/pricing-optimization/competitive-intelligence/competitors',
+              title: 'Trend Analysis',
+              url: '/pricing-optimization/competitive-intelligence/trends',
             },
             {
               title: 'Scraping Jobs',
@@ -215,24 +233,12 @@ export const sidebarData = {
               url: '/pricing-optimization/competitive-intelligence/matches',
             },
             {
-              title: 'Alerts',
-              url: '/pricing-optimization/competitive-intelligence/alerts',
-            },
-            {
-              title: 'Price Positioning',
-              url: '/pricing-optimization/competitive-intelligence/positioning',
-            },
-            {
-              title: 'Price History',
-              url: '/pricing-optimization/competitive-intelligence/history',
-            },
-            {
-              title: 'Trend Analysis',
-              url: '/pricing-optimization/competitive-intelligence/trends',
-            },
-            {
               title: 'Settings',
               url: '/pricing-optimization/competitive-intelligence/settings',
+            },
+            {
+              title: 'Alerts',
+              url: '/pricing-optimization/competitive-intelligence/alerts',
             },
           ],
         },
