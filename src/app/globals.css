@@ -69,8 +69,8 @@
     monospace;
 
   /* Sidebar dimensions */
-  --sidebar-width: 16rem;
-  --sidebar-width-mobile: 18rem;
+  --sidebar-width: 20rem;
+  --sidebar-width-mobile: 20rem;
   --sidebar-width-icon: 3.5rem;
 }
 
